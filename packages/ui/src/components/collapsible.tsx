@@ -1,12 +1,13 @@
 import { cn } from '@beeui/core';
 import * as React from 'react';
 import { Pressable, View, type PressableProps, type ViewProps } from 'react-native';
+import { useControllableState } from '../hooks/use-controllable-state';
 import { Text } from './text';
 
 type CollapsibleContextValue = {
   disabled: boolean;
   open: boolean;
-  setOpen: (open: boolean) => void;
+  setOpen: (open: boolean | ((previous: boolean) => boolean)) => void;
 };
 
 const CollapsibleContext = React.createContext<CollapsibleContextValue | null>(null);
@@ -27,20 +28,25 @@ export type CollapsibleProps = Omit<ViewProps, 'children'> & {
 };
 
 export const Collapsible = React.forwardRef<React.ComponentRef<typeof View>, CollapsibleProps>(
-  ({ children, className, defaultOpen = false, disabled = false, onOpenChange, open, ...props }, ref) => {
-    const [internalOpen, setInternalOpen] = React.useState(defaultOpen);
-    const controlled = open !== undefined;
-    const resolvedOpen = controlled ? open : internalOpen;
-
-    const setOpen = React.useCallback(
-      (nextOpen: boolean) => {
-        if (disabled) return;
-        if (!controlled) setInternalOpen(nextOpen);
-        onOpenChange?.(nextOpen);
-      },
-      [controlled, disabled, onOpenChange],
-    );
-
+  (
+    {
+      children,
+      className,
+      defaultOpen = false,
+      disabled = false,
+      onOpenChange,
+      open,
+      ...props
+    },
+    ref,
+  ) => {
+    const [resolvedOpen, setOpen] = useControllableState({
+      defaultValue: defaultOpen,
+      disabled,
+      name: 'Collapsible',
+      onChange: onOpenChange,
+      value: open,
+    });
     const context = React.useMemo(
       () => ({ disabled, open: resolvedOpen, setOpen }),
       [disabled, resolvedOpen, setOpen],
@@ -93,7 +99,7 @@ export const CollapsibleTrigger = React.forwardRef<
       disabled={isDisabled}
       onPress={(event) => {
         onPress?.(event);
-        context.setOpen(!context.open);
+        context.setOpen((previous) => !previous);
       }}
     >
       {childArray.map((child, index) =>
