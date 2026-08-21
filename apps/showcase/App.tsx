@@ -21,6 +21,8 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
+  DescriptionItem,
+  DescriptionList,
   EmptyState,
   ErrorState,
   Field,
@@ -31,7 +33,6 @@ import {
   ListGroup,
   ListGroupHeader,
   ListItem,
-  MetadataRow,
   OTPInput,
   Pagination,
   PaginationItem,
@@ -187,12 +188,12 @@ export default function App() {
                 <HStack gap="lg" wrap>
                   <Stat className="min-w-32 flex-1">
                     <StatLabel>Exports</StatLabel>
-                    <StatValue>74</StatValue>
+                    <StatValue>78</StatValue>
                     <StatHelpText>Foundation primitives</StatHelpText>
                   </Stat>
                   <Stat className="min-w-32 flex-1">
                     <StatLabel>Contract tests</StatLabel>
-                    <StatValue>36</StatValue>
+                    <StatValue>41</StatValue>
                     <StatHelpText>Before native gates</StatHelpText>
                   </Stat>
                 </HStack>
@@ -211,7 +212,7 @@ export default function App() {
                 <Timeline>
                   <TimelineItem description="Core layout and form contracts established." meta="v0.1" status="success" title="Foundation" />
                   <TimelineItem description="Bare RN and Android native build verified." meta="CI verified" status="success" title="Native portability" />
-                  <TimelineItem description="Navigation and read-only patterns in progress." meta="Current" status="primary" title="Application layer" />
+                  <TimelineItem description="Accessibility and read-only patterns in progress." meta="Current" status="primary" title="Application layer" />
                 </Timeline>
 
                 <VStack gap="xs">
@@ -223,12 +224,12 @@ export default function App() {
           </Card>
 
           <Card className="gap-4">
-            <Section description="Dependency-free application information patterns." title="Metadata">
-              <MetadataRow label="Runtime" value="React Native 0.86.2" />
-              <Separator />
-              <MetadataRow label="Styling" value="Uniwind 1.10.1" />
-              <Separator />
-              <MetadataRow description="Generated in CI" label="Native projects" value="Android + iOS" />
+            <Section description="Read-only application information patterns." title="Metadata">
+              <DescriptionList>
+                <DescriptionItem label="Runtime" value="React Native 0.86.2" />
+                <DescriptionItem label="Styling" value="Uniwind 1.10.1" />
+                <DescriptionItem description="Generated and compiled in CI" label="Native verification" value="Android + iOS Metro" />
+              </DescriptionList>
             </Section>
           </Card>
 

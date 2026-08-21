@@ -13,14 +13,16 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `VStack` | layout | Vertical specialization of `Stack`. |
 | `Section` | layout | Title/description/action/content composition for screen sections. |
 | `MetadataRow` | layout | Read-only label/value metadata presentation. |
+| `VisuallyHidden` | accessibility | Keeps non-interactive assistive content in the accessibility tree while removing it from visual layout; never a substitute for labeling an interactive control. |
 | `Text` | typography | Semantic type/tone variants. |
+| `Label` | typography/form | Semantic form/control label with accessible required-state wording and optional `nativeID` linkage. |
 | `Button` | action | Accessible pressable, variants, sizes, loading/disabled states. |
 | `ButtonLabel` | action | Explicit label primitive for composed buttons. |
 | `IconButton` | action | 44px icon action; accessible label is required. |
 | `Link` | action | Link semantics over `Pressable`; owns no navigation library or routing behavior. |
-| `Input` | form | Semantic focus/invalid/disabled states and themed native colors. |
+| `Input` | form | Semantic focus/invalid/disabled states, themed native colors, and Field-provided label/required relationships while preserving explicit overrides. |
 | `Textarea` | form | Multiline input using the same `Input` contract. |
-| `Field` | form | Label/description/error composition; propagates state and accessibility metadata to text controls. |
+| `Field` | form | Label/description/error composition; generates stable label `nativeID` metadata and propagates state/accessibility metadata to text controls. |
 | `HelperText` | form | Muted supporting text for form affordances without hidden state. |
 | `FormMessage` | form | Destructive form feedback with polite live-region semantics by default. |
 | `SearchInput` | form | Search keyboard/submit semantics layered on `Input`. |
@@ -64,6 +66,8 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `ListGroupHeader` | application pattern | Title/description/trailing header composition for grouped rows. |
 | `ListItem` | application pattern | Optional press behavior, inferred labels, leading/trailing slots. |
 | `SettingsItem` | application pattern | Settings row specialization with value/trailing content. |
+| `DescriptionList` | application pattern | Read-only grouped metadata composition with no formatting/data-state ownership. |
+| `DescriptionItem` | application pattern | Description-list row specialization composed from `MetadataRow`. |
 | `Card` | surface | Surface variants and spacing contract. |
 | `AlertBanner` | feedback | Semantic inline status callout with live-region behavior and optional action. |
 | `Badge` | data display | Semantic status variants with paired foreground tokens. |
@@ -85,10 +89,11 @@ This file is the canonical component inventory for BeeUI. A component is conside
 
 The next safe tranche should remain dependency-light and avoid pretending complex native behavior is solved:
 
-- `AlertDialog` semantic validation on the accepted modal-class behavior kernel
-- accessibility helpers such as visually-hidden labeling where native behavior can be tested directly
-- additional form composition helpers where native accessibility semantics are unambiguous
-- read-only data presentation only where it adds behavior beyond existing `MetadataRow`, `Stat`, and `Timeline`
+- `AlertDialog` only after validating its semantic contract against the accepted core-Modal behavior kernel
+- stronger form grouping/legend composition where native accessibility semantics are unambiguous
+- read-only data presentation only where it adds behavior beyond `MetadataRow`, `DescriptionList`, `Stat`, and `Timeline`
+
+`VisuallyHidden` is intentionally restricted to non-interactive assistive content. Interactive controls must carry their own accessible name/state rather than relying on an off-screen control.
 
 `Sheet` remains separately gated because gesture, keyboard, safe-area, and presentation behavior need stronger platform verification than a centered modal.
 

@@ -51,6 +51,7 @@ export const Input = React.forwardRef<React.ComponentRef<typeof TextInput>, Inpu
     {
       accessibilityHint,
       accessibilityLabel,
+      accessibilityLabelledBy,
       accessibilityState,
       className,
       disabled,
@@ -66,13 +67,19 @@ export const Input = React.forwardRef<React.ComponentRef<typeof TextInput>, Inpu
     const resolvedInvalid = invalid === true || field?.invalid === true;
     const resolvedHint =
       accessibilityHint ?? (resolvedInvalid ? field?.error : field?.description);
+    const resolvedAccessibilityLabel =
+      accessibilityLabel ??
+      (field?.required
+        ? `${field.label}, ${field.requiredAccessibilityLabel}`
+        : field?.label);
 
     return (
       <EngineTextInput
         ref={ref}
         {...props}
         accessibilityHint={resolvedHint}
-        accessibilityLabel={accessibilityLabel ?? field?.label}
+        accessibilityLabel={resolvedAccessibilityLabel}
+        accessibilityLabelledBy={accessibilityLabelledBy ?? field?.labelNativeID}
         accessibilityState={{ ...accessibilityState, disabled: resolvedDisabled }}
         className={cn(
           inputVariants({ invalid: resolvedInvalid, size }),

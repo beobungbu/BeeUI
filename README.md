@@ -14,8 +14,8 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 - semantic light/dark design tokens
 - reusable `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` packages
 - engine-neutral stable behavior/variant contracts with optional `className` escape hatches
-- 74 exported foundation components/subcomponents documented in `docs/components.md`
-- 36 contract tests with `jest-expo` + React Native Testing Library
+- 78 exported foundation components/subcomponents documented in `docs/components.md`
+- 41 contract tests with `jest-expo` + React Native Testing Library
 - reproducible `pnpm-lock.yaml` and frozen dependency installs
 - CI smoke bundling for Web, Android, and iOS through Expo/Metro
 - CI Expo Prebuild generation for Android and iOS native projects
@@ -26,9 +26,9 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 
 ## Component coverage
 
-Current foundation includes layout, typography, actions, forms, selection, navigation, disclosure, modal overlay, application chrome, application patterns, data display, feedback, and state compositions:
+Current foundation includes layout, accessibility, typography, actions, forms, selection, navigation, disclosure, modal overlay, application chrome, application patterns, data display, feedback, and state compositions:
 
-`Screen`, `Box`, `Stack`, `HStack`, `VStack`, `Section`, `MetadataRow`, `Text`, `Button`, `ButtonLabel`, `IconButton`, `Link`, `Input`, `Textarea`, `Field`, `HelperText`, `FormMessage`, `SearchInput`, `PasswordInput`, `OTPInput`, `Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Chip`, `ChipGroup`, `SegmentedControl`, `SegmentedControlItem`, `Pagination`, `PaginationItem`, `Breadcrumb`, `BreadcrumbItem`, `Stepper`, `StepperItem`, `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`, `Dialog`, `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`, `AppHeader`, `BottomActionBar`, `ListGroup`, `ListGroupHeader`, `ListItem`, `SettingsItem`, `Card`, `AlertBanner`, `Badge`, `Avatar`, `Stat`, `StatLabel`, `StatValue`, `StatHelpText`, `Timeline`, `TimelineItem`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `EmptyState`, and `ErrorState`.
+`Screen`, `Box`, `Stack`, `HStack`, `VStack`, `Section`, `MetadataRow`, `VisuallyHidden`, `Text`, `Label`, `Button`, `ButtonLabel`, `IconButton`, `Link`, `Input`, `Textarea`, `Field`, `HelperText`, `FormMessage`, `SearchInput`, `PasswordInput`, `OTPInput`, `Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Chip`, `ChipGroup`, `SegmentedControl`, `SegmentedControlItem`, `Pagination`, `PaginationItem`, `Breadcrumb`, `BreadcrumbItem`, `Stepper`, `StepperItem`, `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`, `Dialog`, `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`, `AppHeader`, `BottomActionBar`, `ListGroup`, `ListGroupHeader`, `ListItem`, `SettingsItem`, `DescriptionList`, `DescriptionItem`, `Card`, `AlertBanner`, `Badge`, `Avatar`, `Stat`, `StatLabel`, `StatValue`, `StatHelpText`, `Timeline`, `TimelineItem`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `EmptyState`, and `ErrorState`.
 
 Anchored overlays such as `Popover`, `DropdownMenu`, `Tooltip`, `Toast`, and `Select` remain deferred until their positioning/focus/keyboard/accessibility behavior is verified across Expo, prebuild/bare React Native, and web.
 
@@ -48,12 +48,41 @@ Run the unit/type verification suite with:
 pnpm check
 ```
 
+## Accessibility and field composition
+
+`Field` keeps the cross-platform explicit label fallback while also generating a stable label `nativeID` for React Native's Android `accessibilityLabelledBy` relationship. Required state is propagated to the control and explicit application accessibility props always win.
+
+```tsx
+import { Field, Input, Label, VisuallyHidden } from '@beeui/ui';
+
+function ProfileFields() {
+  return (
+    <>
+      <Field label="Email" required>
+        <Input keyboardType="email-address" />
+      </Field>
+
+      <Label nativeID="nickname-label">Nickname</Label>
+      <Input accessibilityLabelledBy="nickname-label" accessibilityLabel="Nickname" />
+
+      <VisuallyHidden>
+        {/* Non-interactive assistive copy only. */}
+      </VisuallyHidden>
+    </>
+  );
+}
+```
+
+`VisuallyHidden` must not be used to hide an interactive control. Buttons, links, inputs, and other interactive elements should expose their own accessible label/state.
+
 ## Application primitive example
 
 ```tsx
 import {
   Breadcrumb,
   BreadcrumbItem,
+  DescriptionItem,
+  DescriptionList,
   HStack,
   Link,
   ListGroup,
@@ -84,6 +113,11 @@ function AccountSummary() {
           <StatHelpText>3 updated today</StatHelpText>
         </Stat>
       </HStack>
+
+      <DescriptionList>
+        <DescriptionItem label="Runtime" value="React Native 0.86.2" />
+        <DescriptionItem label="Styling" value="Uniwind 1.10.1" />
+      </DescriptionList>
 
       <Stepper currentStep={2} onStepChange={(step) => console.log(step)}>
         <StepperItem step={1} title="Account" />
@@ -116,7 +150,7 @@ The current CI pipeline performs:
 1. clean `pnpm install --frozen-lockfile`
 2. an Expo-import boundary check for `packages/core/src` and `packages/ui/src`
 3. strict TypeScript checks across the workspace
-4. 36 React Native Testing Library contract tests
+4. 41 React Native Testing Library contract tests
 5. Expo/Metro export for Web
 6. Expo/Metro export for Android
 7. Expo/Metro export for iOS
@@ -125,7 +159,7 @@ The current CI pipeline performs:
 
 Every foundation tranche is accepted only after the complete pipeline passes on the PR head.
 
-Expo export proves the JavaScript/Metro bundles resolve on all three targets, Expo Prebuild proves the current configuration can generate Android and iOS native projects, and the bare-native gate proves source portability plus Android native compilation outside Expo. Remaining release verification is native iOS binary compilation on macOS and simulator/device interaction smoke testing, including dialog hardware-back/focus/screen-reader behavior.
+Expo export proves the JavaScript/Metro bundles resolve on all three targets, Expo Prebuild proves the current configuration can generate Android and iOS native projects, and the bare-native gate proves source portability plus Android native compilation outside Expo. Remaining release verification is native iOS binary compilation on macOS and simulator/device interaction smoke testing, including dialog hardware-back/focus/screen-reader behavior and assistive-technology behavior for visually hidden content.
 
 ## Workspace
 

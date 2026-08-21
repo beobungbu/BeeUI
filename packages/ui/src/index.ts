@@ -57,6 +57,12 @@ export {
   type CollapsibleTriggerProps,
 } from './components/collapsible';
 export {
+  DescriptionItem,
+  DescriptionList,
+  type DescriptionItemProps,
+  type DescriptionListProps,
+} from './components/description-list';
+export {
   Dialog,
   DialogClose,
   DialogContent,
@@ -81,6 +87,7 @@ export {
 } from './components/form-message';
 export { IconButton, type IconButtonProps } from './components/icon-button';
 export { Input, inputVariants, type InputProps } from './components/input';
+export { Label, type LabelProps } from './components/label';
 export { Link, type LinkProps } from './components/link';
 export {
   ListGroup,
@@ -174,3 +181,4 @@ export {
   type TimelineItemProps,
   type TimelineProps,
 } from './components/timeline';
+export { VisuallyHidden, type VisuallyHiddenProps } from './components/visually-hidden';
