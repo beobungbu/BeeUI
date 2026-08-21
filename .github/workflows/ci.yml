@@ -54,3 +54,43 @@ jobs:
           EXPO_NO_GIT_STATUS: 1
         working-directory: apps/showcase
         run: pnpm exec expo prebuild --clean --no-install
+
+  bare-native:
+    runs-on: [self-hosted, beeui]
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android build dependencies
+        run: |
+          sdkmanager "platform-tools" \
+            "platforms;android-35" \
+            "platforms;android-36" \
+            "build-tools;35.0.0" \
+            "build-tools;36.0.0" \
+            "ndk;27.1.12297006" \
+            "cmake;3.22.1"
+
+      - name: Prepare true bare React Native consumer
+        run: ./scripts/verify-bare-consumer.sh prepare
+
+      - name: Bundle bare consumer for Android and iOS
+        run: ./scripts/verify-bare-consumer.sh bundle
+
+      - name: Compile bare Android debug APK
+        run: ./scripts/verify-bare-consumer.sh android-build
