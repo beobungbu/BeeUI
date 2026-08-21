@@ -45,9 +45,9 @@ describe('BeeUI issue #7 high-confidence hardening', () => {
     );
 
     const row = screen.getByRole('button', {
-      name: /Notifications.*Manage alerts.*On/,
+      name: 'Notifications, Manage alerts, On',
     });
-    expect(row.props.accessibilityLabel).toBeUndefined();
+    expect(row.props.accessibilityLabel).toBe('Notifications, Manage alerts, On');
     fireEvent.press(row);
     expect(onPress).toHaveBeenCalledTimes(1);
   });
