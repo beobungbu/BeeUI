@@ -4,6 +4,10 @@ import { View, type ViewProps } from 'react-native';
 import { Box } from './box';
 import { Text } from './text';
 
+function getTimelineChildKey(item: React.ReactNode, index: number) {
+  return React.isValidElement(item) && item.key != null ? item.key : `timeline-item-${index}`;
+}
+
 type TimelineItemContextValue = {
   last: boolean;
 };
@@ -22,7 +26,10 @@ export const Timeline = React.forwardRef<React.ComponentRef<typeof View>, Timeli
     return (
       <View ref={ref} className={cn('w-full', className)} {...props}>
         {items.map((item, index) => (
-          <TimelineItemContext.Provider key={index} value={{ last: index === items.length - 1 }}>
+          <TimelineItemContext.Provider
+            key={getTimelineChildKey(item, index)}
+            value={{ last: index === items.length - 1 }}
+          >
             {item}
           </TimelineItemContext.Provider>
         ))}
