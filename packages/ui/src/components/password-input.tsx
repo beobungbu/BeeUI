@@ -21,12 +21,17 @@ export const PasswordInput = React.forwardRef<
 >(
   (
     {
+      autoCapitalize = 'none',
+      autoComplete,
+      autoCorrect = false,
       className,
       containerClassName,
       defaultVisible = false,
       hideLabel = 'Hide password',
       onVisibleChange,
       showLabel = 'Show password',
+      spellCheck = false,
+      textContentType,
       toggleClassName,
       visible,
       ...props
@@ -37,6 +42,7 @@ export const PasswordInput = React.forwardRef<
     const [internalVisible, setInternalVisible] = React.useState(defaultVisible);
     const resolvedVisible = controlled ? visible : internalVisible;
     const toggleLabel = resolvedVisible ? hideLabel : showLabel;
+    const resolvedAutoComplete = autoComplete ?? (textContentType ? undefined : 'current-password');
 
     const toggle = () => {
       const next = !resolvedVisible;
@@ -49,8 +55,13 @@ export const PasswordInput = React.forwardRef<
         <Input
           ref={ref}
           {...props}
+          autoCapitalize={autoCapitalize}
+          autoComplete={resolvedAutoComplete}
+          autoCorrect={autoCorrect}
           className={cn('min-w-0 flex-1 w-auto', className)}
           secureTextEntry={!resolvedVisible}
+          spellCheck={spellCheck}
+          textContentType={textContentType}
         />
         <Button
           accessibilityLabel={toggleLabel}
