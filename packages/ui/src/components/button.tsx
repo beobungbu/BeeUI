@@ -77,7 +77,7 @@ const spinnerColorByVariant: Record<ButtonVariant, string> = {
   destructive: 'accent-destructive-foreground',
 };
 
-export type ButtonProps = Omit<PressableProps, 'children'> &
+export type ButtonProps = Omit<PressableProps, 'accessibilityRole' | 'children'> &
   VariantProps<typeof buttonVariants> & {
     children?: React.ReactNode;
     className?: string;
@@ -88,6 +88,8 @@ export type ButtonProps = Omit<PressableProps, 'children'> &
 export const Button = React.forwardRef<React.ComponentRef<typeof Pressable>, ButtonProps>(
   (
     {
+      accessibilityLabel,
+      accessibilityState,
       children,
       className,
       disabled,
@@ -95,7 +97,6 @@ export const Button = React.forwardRef<React.ComponentRef<typeof Pressable>, But
       loading = false,
       size,
       variant,
-      accessibilityLabel,
       ...props
     },
     ref,
@@ -112,16 +113,20 @@ export const Button = React.forwardRef<React.ComponentRef<typeof Pressable>, But
     return (
       <Pressable
         ref={ref}
+        {...props}
         accessibilityLabel={accessibilityLabel ?? inferredLabel}
         accessibilityRole="button"
-        accessibilityState={{ disabled: isDisabled, busy: loading }}
+        accessibilityState={{
+          ...accessibilityState,
+          disabled: isDisabled,
+          busy: loading,
+        }}
         className={cn(
           buttonVariants({ variant: resolvedVariant, size }),
           isDisabled && 'border-disabled bg-disabled opacity-60',
           className,
         )}
         disabled={isDisabled}
-        {...props}
       >
         {loading ? (
           <EngineActivityIndicator

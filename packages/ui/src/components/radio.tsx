@@ -32,7 +32,7 @@ type RadioGroupContextValue = {
 
 const RadioGroupContext = React.createContext<RadioGroupContextValue | null>(null);
 
-export type RadioGroupProps = Omit<ViewProps, 'children'> & {
+export type RadioGroupProps = Omit<ViewProps, 'accessibilityRole' | 'children'> & {
   children?: React.ReactNode;
   className?: string;
   disabled?: boolean;
@@ -61,9 +61,9 @@ export const RadioGroup = React.forwardRef<React.ComponentRef<typeof View>, Radi
       <RadioGroupContext.Provider value={contextValue}>
         <View
           ref={ref}
+          {...props}
           accessibilityRole="radiogroup"
           className={cn('gap-2', className)}
-          {...props}
         >
           {children}
         </View>
@@ -74,7 +74,10 @@ export const RadioGroup = React.forwardRef<React.ComponentRef<typeof View>, Radi
 
 RadioGroup.displayName = 'RadioGroup';
 
-export type RadioProps = Omit<PressableProps, 'children' | 'onPress'> & {
+export type RadioProps = Omit<
+  PressableProps,
+  'accessibilityRole' | 'children' | 'onPress'
+> & {
   checked?: boolean;
   className?: string;
   indicatorClassName?: string;

@@ -46,10 +46,22 @@ export type InputProps = TextInputProps &
   };
 
 export const Input = React.forwardRef<React.ComponentRef<typeof TextInput>, InputProps>(
-  ({ className, disabled = false, editable, invalid = false, size, ...props }, ref) => (
+  (
+    {
+      accessibilityState,
+      className,
+      disabled = false,
+      editable,
+      invalid = false,
+      size,
+      ...props
+    },
+    ref,
+  ) => (
     <EngineTextInput
       ref={ref}
-      accessibilityState={{ disabled }}
+      {...props}
+      accessibilityState={{ ...accessibilityState, disabled }}
       className={cn(
         inputVariants({ invalid, size }),
         disabled && 'border-disabled bg-disabled text-disabled-foreground opacity-70',
@@ -61,7 +73,6 @@ export const Input = React.forwardRef<React.ComponentRef<typeof TextInput>, Inpu
       selectionColorClassName="accent-primary"
       selectionHandleColorClassName="accent-primary"
       underlineColorAndroidClassName="accent-transparent"
-      {...props}
     />
   ),
 );

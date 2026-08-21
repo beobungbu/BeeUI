@@ -22,28 +22,39 @@ describe('BeeUI component contracts', () => {
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
-  it('marks a loading button as disabled and busy', () => {
+  it('preserves caller accessibility state while enforcing loading semantics', () => {
     const onPress = jest.fn();
     const screen = render(
-      <Button loading onPress={onPress}>
+      <Button accessibilityState={{ selected: true }} loading onPress={onPress}>
         Save
       </Button>,
     );
     const button = screen.getByRole('button', { name: 'Save' });
 
     expect(button.props.disabled).toBe(true);
-    expect(button.props.accessibilityState).toEqual({ disabled: true, busy: true });
+    expect(button.props.accessibilityState).toEqual({
+      selected: true,
+      disabled: true,
+      busy: true,
+    });
 
     fireEvent.press(button);
     expect(onPress).not.toHaveBeenCalled();
   });
 
   it('keeps disabled inputs non-editable while preserving accessibility state', () => {
-    const screen = render(<Input accessibilityLabel="Email" disabled placeholder="Email" />);
+    const screen = render(
+      <Input
+        accessibilityLabel="Email"
+        accessibilityState={{ selected: true }}
+        disabled
+        placeholder="Email"
+      />,
+    );
     const input = screen.getByLabelText('Email');
 
     expect(input.props.editable).toBe(false);
-    expect(input.props.accessibilityState).toEqual({ disabled: true });
+    expect(input.props.accessibilityState).toEqual({ selected: true, disabled: true });
   });
 
   it('exposes checkbox state and requests controlled changes', () => {

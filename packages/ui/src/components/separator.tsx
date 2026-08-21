@@ -2,7 +2,7 @@ import { cn } from '@beeui/core';
 import * as React from 'react';
 import { View, type ViewProps } from 'react-native';
 
-export type SeparatorProps = ViewProps & {
+export type SeparatorProps = Omit<ViewProps, 'role'> & {
   className?: string;
   decorative?: boolean;
   orientation?: 'horizontal' | 'vertical';

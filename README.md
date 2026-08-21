@@ -2,7 +2,9 @@
 
 BeeUI is a production-oriented UI system for React Native written in TypeScript.
 
-The project is mobile-first, framework-light, and designed for long-lived client applications. Component APIs do not expose the styling engine. The current implementation uses Uniwind + Tailwind CSS v4, with `StyleSheet` / Reanimated reserved as escape hatches for performance-sensitive paths.
+The project is mobile-first, framework-light, and designed for long-lived client applications. Its stable behavior, semantic, and variant APIs do not require callers to know the styling engine. The current implementation uses Uniwind + Tailwind CSS v4, with `StyleSheet` / Reanimated reserved as escape hatches for performance-sensitive paths.
+
+BeeUI also exposes optional `className` overrides for shadcn-style source ownership and rapid application work. Those overrides are intentionally considered an implementation-specific styling escape hatch, not a portability guarantee.
 
 ## Current foundation
 
@@ -11,7 +13,7 @@ The project is mobile-first, framework-light, and designed for long-lived client
 - Uniwind OSS 1.10.1 + Tailwind CSS 4.3.3
 - semantic light/dark design tokens
 - reusable `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` packages
-- engine-agnostic public component APIs
+- engine-neutral stable behavior/variant contracts with optional `className` escape hatches
 - contract tests with `jest-expo` + React Native Testing Library
 - 18 foundation components/primitives documented in `docs/components.md`
 - strict TypeScript CI definition
@@ -49,12 +51,13 @@ docs/
 
 ## Design principles
 
-1. Public component APIs must not depend on Uniwind, Expo, or navigation libraries.
-2. Components consume semantic tokens, never literal brand colors.
-3. Behavior/accessibility and presentation should remain separable.
-4. Native hot paths may use `StyleSheet` or Reanimated without changing component APIs.
-5. Components must work in Expo, Expo prebuild/dev builds, and bare React Native.
-6. Web support is additive; mobile correctness takes priority.
-7. Behavior-heavy overlays are not considered production-ready until focus, portal, back-button, keyboard, and accessibility contracts are verified.
+1. Stable behavior, semantic, and variant APIs must not depend on Uniwind, Expo, or navigation libraries.
+2. Optional `className` is a current-engine escape hatch; prefer typed variants for reusable contracts.
+3. Components consume semantic tokens, never literal brand colors.
+4. Behavior/accessibility and presentation should remain separable.
+5. Native hot paths may use `StyleSheet` or Reanimated without changing stable component APIs.
+6. Components must work in Expo, Expo prebuild/dev builds, and bare React Native.
+7. Web support is additive; mobile correctness takes priority.
+8. Behavior-heavy overlays are not considered production-ready until focus, portal, back-button, keyboard, and accessibility contracts are verified.
 
 See [`docs/architecture.md`](docs/architecture.md), [`docs/components.md`](docs/components.md), and the ADRs in [`docs/decisions`](docs/decisions) for the full contract.

@@ -16,7 +16,7 @@ const skeletonVariants = cva('bg-muted', {
   },
 });
 
-export type SkeletonProps = ViewProps &
+export type SkeletonProps = Omit<ViewProps, 'accessible' | 'aria-hidden'> &
   VariantProps<typeof skeletonVariants> & {
     className?: string;
   };

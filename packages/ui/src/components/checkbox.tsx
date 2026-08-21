@@ -27,7 +27,10 @@ const checkboxIndicatorVariants = cva(
 
 export type CheckboxValue = boolean | 'indeterminate';
 
-export type CheckboxProps = Omit<PressableProps, 'children' | 'onPress'> & {
+export type CheckboxProps = Omit<
+  PressableProps,
+  'accessibilityRole' | 'children' | 'onPress'
+> & {
   checked?: CheckboxValue;
   className?: string;
   indicatorClassName?: string;
