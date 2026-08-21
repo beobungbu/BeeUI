@@ -6,10 +6,12 @@ This file is the canonical component inventory for BeeUI. A component is conside
 
 | Component | Category | Key contract |
 | --- | --- | --- |
-| `Screen` | layout | Base application surface with semantic background and optional spacing; owns no safe-area behavior. |
+| `BeeUIProvider` | application root | Provides safe-area measurement and, by default, synchronizes measured insets to Uniwind safe-area utilities; applications may disable the bridge when they already own it. |
+| `SafeArea` | layout | Explicit `react-native-safe-area-context` surface with caller-owned edge selection; BeeUI never silently adds system insets to generic screen/chrome components. |
+| `Screen` | layout | Base application surface with semantic background and optional spacing; owns no safe-area or scroll behavior. |
 | `Box` | layout | Thin `View` primitive; no design assumptions. |
 | `Stack` | layout | Typed direction/gap/alignment/wrap composition over `View`; owns no responsive policy. |
-| `HStack` | layout | Horizontal specialization of `Stack`. |
+| `HStack` | layout | Horizontal specialization of `Stack`; defaults cross-axis alignment to center and still allows explicit alignment overrides. |
 | `VStack` | layout | Vertical specialization of `Stack`. |
 | `Section` | layout | Title/description/action/content composition for screen sections. |
 | `MetadataRow` | layout | Read-only label/value metadata presentation. |
@@ -22,27 +24,27 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `Link` | action | Link semantics over `Pressable`; owns no navigation library or routing behavior. |
 | `Input` | form | Semantic focus/invalid/disabled states, themed native colors, and Field-provided label/required relationships while preserving explicit overrides. |
 | `Textarea` | form | Multiline input using the same `Input` contract. |
-| `Field` | form | Label/description/error composition; generates stable label `nativeID` metadata and propagates state/accessibility metadata to text controls. |
+| `Field` | form | Label/description/error composition for text-entry controls; generates stable label `nativeID` metadata and propagates state/accessibility metadata to text controls only. Checkbox/radio/switch labels and state remain explicit at the control/group level. |
 | `HelperText` | form | Muted supporting text for form affordances without hidden state. |
 | `FormMessage` | form | Destructive form feedback with polite live-region semantics by default. |
 | `SearchInput` | form | Search keyboard/submit semantics layered on `Input`; clearing a previously non-empty query emits one `onSearch('')` reset signal. |
 | `PasswordInput` | form | Password visibility composition with safe keyboard/autofill defaults; explicit caller overrides remain authoritative. |
 | `OTPInput` | form | Controlled/uncontrolled one-time-code input with numeric normalization, safe text-entry defaults, and completion callbacks deduplicated per completed value until the input becomes incomplete again. |
-| `Checkbox` | form | Controlled boolean/indeterminate state with checkbox semantics. |
-| `Radio` | form | Controlled radio item; works standalone or in `RadioGroup`. |
-| `RadioGroup` | form | Controlled value coordination and radiogroup semantics. |
-| `Switch` | form | Native `Switch` with semantic track/thumb colors. |
+| `Checkbox` | form | Controlled boolean/indeterminate state with checkbox semantics; enabled usage without `onCheckedChange` warns in development instead of failing silently. |
+| `Radio` | form | Controlled radio item; standalone radios may request both selection and deselection, while grouped radios remain mutually exclusive. Enabled standalone usage without `onCheckedChange` warns in development. |
+| `RadioGroup` | form | Controlled value coordination and radiogroup semantics; enabled usage without `onValueChange` warns in development. |
+| `Switch` | form | Controlled native `Switch` with semantic track/thumb colors; enabled usage without `onValueChange` warns in development. |
 | `Chip` | selection | Standalone toggle or value-scoped group item with button/radio/checkbox semantics; grouped items without a value fail safe as disabled and warn in development. |
 | `ChipGroup` | selection | Controlled/uncontrolled single or multiple selection coordination. |
-| `SegmentedControl` | selection | Controlled compact mutually exclusive selection surface with `radiogroup` semantics. |
+| `SegmentedControl` | selection | Controlled compact mutually exclusive selection surface with `radiogroup` semantics; enabled usage without `onValueChange` warns in development. |
 | `SegmentedControlItem` | selection | Accessible radio-style segment with checked-state semantics. |
 | `Pagination` | navigation | Controlled page/page-count context with normalized boundaries. |
 | `PaginationItem` | navigation | Type-enforced page/previous/next action; page items require a page number, malformed runtime page items fail safe as disabled, and boundary/selected semantics are enforced. |
-| `Breadcrumb` | navigation | Router-neutral breadcrumb composition with decorative separators hidden from accessibility. |
+| `Breadcrumb` | navigation | Router-neutral breadcrumb composition with decorative separators hidden from accessibility; supplied child keys are preserved when composing separators. |
 | `BreadcrumbItem` | navigation | Link semantics for navigable ancestors and non-interactive selected semantics for the current location. |
 | `Stepper` | navigation | Controlled current-step context with finite normalization and duplicate normalized-step detection; owns no application workflow state. |
 | `StepperItem` | navigation | Current/completed/disabled step presentation with accessible position; duplicate normalized step values fail safe as disabled. |
-| `Tabs` | navigation | Controlled tab state shared across list/triggers/content. |
+| `Tabs` | navigation | Controlled tab state shared across list/triggers/content; enabled usage without `onValueChange` warns in development. |
 | `TabsList` | navigation | Tablist semantic container. |
 | `TabsTrigger` | navigation | Accessible tab selection trigger. |
 | `TabsContent` | navigation | Active tabpanel content; inactive panels are not mounted. |
@@ -54,17 +56,17 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `AccordionTrigger` | disclosure | Accessible item trigger. |
 | `AccordionContent` | disclosure | Active item content. |
 | `Dialog` | modal overlay | Controlled/uncontrolled modal state backed by React Native core `Modal`; controlled `open` requires `onOpenChange`, with dismissable runtime fallback for malformed JS usage. |
-| `DialogTrigger` | modal overlay | Button-compatible trigger with expanded-state semantics. |
+| `DialogTrigger` | modal overlay | Button-compatible trigger that opens the modal without exposing disclosure-only `expanded` state. |
 | `DialogContent` | modal overlay | Modal surface with semantic backdrop/close paths plus registered title/description accessibility relationships while preserving explicit caller overrides. |
 | `DialogTitle` | modal overlay | Semantic dialog heading that registers stable label metadata with its containing `DialogContent`. |
 | `DialogDescription` | modal overlay | Muted supporting text that provides a primitive-text accessibility hint to its containing dialog. |
 | `DialogFooter` | modal overlay | Action-row composition. |
 | `DialogClose` | modal overlay | Button-compatible close control. |
-| `AppHeader` | application chrome | Title/description/leading/trailing composition; owns no navigation. |
-| `BottomActionBar` | application chrome | Bottom action surface; safe-area ownership stays with the application shell. |
-| `ListGroup` | application pattern | Semantic bordered surface for grouped application rows without taking ownership of row behavior. |
-| `ListGroupHeader` | application pattern | Title/description/trailing header composition for grouped rows. |
-| `ListItem` | application pattern | Optional press behavior; interactive rows synthesize deterministic accessible names from primitive title/description/trailing content unless the caller supplies an explicit label. |
+| `AppHeader` | application chrome | Title/description/leading/trailing composition; owns no navigation. Primitive titles receive header semantics; complex title nodes own their own internal accessibility semantics. |
+| `BottomActionBar` | application chrome | Bottom action surface; safe-area ownership stays explicit with the application shell via `SafeArea` or safe-area utilities. |
+| `ListGroup` | application pattern | Bordered grouped-row surface with list container semantics without taking ownership of row actions. |
+| `ListGroupHeader` | application pattern | Title/description/trailing header composition aligned to the same horizontal inset as grouped rows. |
+| `ListItem` | application pattern | Optional press behavior; interactive rows synthesize deterministic accessible names from primitive title/description/trailing content, while non-interactive rows group primitive content without hiding complex descendants. |
 | `SettingsItem` | application pattern | Settings row specialization where value and trailing content can coexist; a primitive value remains part of the synthesized accessible name even when trailing content is complex. |
 | `DescriptionList` | application pattern | Read-only grouped metadata composition with no formatting/data-state ownership. |
 | `DescriptionItem` | application pattern | Description-list row specialization composed from `MetadataRow`. |
@@ -76,7 +78,7 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `StatLabel` | data display | Muted semantic metric label. |
 | `StatValue` | data display | Prominent metric value presentation. |
 | `StatHelpText` | data display | Supporting metric context with caller-selectable semantic tone. |
-| `Timeline` | data display | Read-only ordered history composition that derives terminal connector placement from rendered children. |
+| `Timeline` | data display | Read-only ordered history composition that derives terminal connector placement from rendered children and preserves supplied child keys. |
 | `TimelineItem` | data display | Title/description/meta event presentation with semantic marker states and no workflow ownership. |
 | `Progress` | feedback | Clamped progress value and native progressbar semantics. |
 | `Spinner` | feedback | Native indicator with semantic tone mapping. |
