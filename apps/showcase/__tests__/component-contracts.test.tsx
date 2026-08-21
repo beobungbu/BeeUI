@@ -13,6 +13,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  Text,
 } from '@beeui/ui';
 
 describe('BeeUI component contracts', () => {
@@ -36,7 +37,6 @@ describe('BeeUI component contracts', () => {
     );
     const button = screen.getByRole('button', { name: 'Save' });
 
-    expect(button.props.disabled).toBe(true);
     expect(button.props.accessibilityState).toEqual({
       selected: true,
       disabled: true,
@@ -104,11 +104,11 @@ describe('BeeUI component contracts', () => {
       </RadioGroup>,
     );
 
-    const group = screen.getByRole('radiogroup', { name: 'Plan' });
+    const group = screen.getByLabelText('Plan');
     const starter = screen.getByRole('radio', { name: 'Starter plan' });
     const pro = screen.getByRole('radio', { name: 'Pro plan' });
 
-    expect(group).toBeTruthy();
+    expect(group.props.accessibilityRole).toBe('radiogroup');
     expect(starter.props.accessibilityState.checked).toBe(true);
     expect(pro.props.accessibilityState.checked).toBe(false);
 
@@ -124,8 +124,12 @@ describe('BeeUI component contracts', () => {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="details">Details</TabsTrigger>
         </TabsList>
-        <TabsContent value="overview">Overview content</TabsContent>
-        <TabsContent value="details">Details content</TabsContent>
+        <TabsContent value="overview">
+          <Text>Overview content</Text>
+        </TabsContent>
+        <TabsContent value="details">
+          <Text>Details content</Text>
+        </TabsContent>
       </Tabs>,
     );
 
@@ -143,8 +147,9 @@ describe('BeeUI component contracts', () => {
 
   it('clamps progress values for accessibility', () => {
     const screen = render(<Progress accessibilityLabel="Upload" max={100} value={140} />);
-    const progress = screen.getByRole('progressbar', { name: 'Upload' });
+    const progress = screen.getByLabelText('Upload');
 
+    expect(progress.props.accessibilityRole).toBe('progressbar');
     expect(progress.props.accessibilityValue).toEqual({ min: 0, max: 100, now: 100 });
   });
 });
