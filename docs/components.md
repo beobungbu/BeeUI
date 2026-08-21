@@ -14,9 +14,12 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `Button` | action | Accessible pressable, variants, sizes, loading/disabled states. |
 | `ButtonLabel` | action | Explicit label primitive for composed buttons. |
 | `IconButton` | action | 44px icon action; accessible label is required. |
+| `Link` | action | Link semantics over `Pressable`; owns no navigation library or routing behavior. |
 | `Input` | form | Semantic focus/invalid/disabled states and themed native colors. |
 | `Textarea` | form | Multiline input using the same `Input` contract. |
 | `Field` | form | Label/description/error composition; propagates state and accessibility metadata to text controls. |
+| `HelperText` | form | Muted supporting text for form affordances without hidden state. |
+| `FormMessage` | form | Destructive form feedback with polite live-region semantics by default. |
 | `SearchInput` | form | Search keyboard/submit semantics layered on `Input`. |
 | `PasswordInput` | form | Password visibility composition without external icon dependencies. |
 | `OTPInput` | form | Controlled/uncontrolled one-time-code input with numeric normalization and completion callback. |
@@ -30,6 +33,8 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `SegmentedControlItem` | selection | Accessible tab-style segment with selected-state semantics. |
 | `Pagination` | navigation | Controlled page/page-count context with normalized boundaries. |
 | `PaginationItem` | navigation | Page/previous/next action with selected and boundary-disabled semantics. |
+| `Stepper` | navigation | Controlled current-step context; owns no application workflow state. |
+| `StepperItem` | navigation | Current/completed/disabled step presentation with accessible step position and optional change request. |
 | `Tabs` | navigation | Controlled tab state shared across list/triggers/content. |
 | `TabsList` | navigation | Tablist semantic container. |
 | `TabsTrigger` | navigation | Accessible tab selection trigger. |
@@ -50,12 +55,18 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `DialogClose` | modal overlay | Button-compatible close control. |
 | `AppHeader` | application chrome | Title/description/leading/trailing composition; owns no navigation. |
 | `BottomActionBar` | application chrome | Bottom action surface; safe-area ownership stays with the application shell. |
+| `ListGroup` | application pattern | Semantic bordered surface for grouped application rows without taking ownership of row behavior. |
+| `ListGroupHeader` | application pattern | Title/description/trailing header composition for grouped rows. |
 | `ListItem` | application pattern | Optional press behavior, inferred labels, leading/trailing slots. |
 | `SettingsItem` | application pattern | Settings row specialization with value/trailing content. |
 | `Card` | surface | Surface variants and spacing contract. |
 | `AlertBanner` | feedback | Semantic inline status callout with live-region behavior and optional action. |
 | `Badge` | data display | Semantic status variants with paired foreground tokens. |
 | `Avatar` | data display | Image/fallback behavior with size variants. |
+| `Stat` | data display | Layout-only metric composition with no hidden state or formatting ownership. |
+| `StatLabel` | data display | Muted semantic metric label. |
+| `StatValue` | data display | Prominent metric value presentation. |
+| `StatHelpText` | data display | Supporting metric context with caller-selectable semantic tone. |
 | `Progress` | feedback | Clamped progress value and native progressbar semantics. |
 | `Spinner` | feedback | Native indicator with semantic tone mapping. |
 | `Skeleton` | feedback | Decorative static loading surface. |
@@ -65,12 +76,12 @@ This file is the canonical component inventory for BeeUI. A component is conside
 
 ## Next components
 
-The next safe tranche should focus on dependency-light application primitives and validation:
+The next safe tranche should remain dependency-light and avoid pretending complex native behavior is solved:
 
 - `AlertDialog` semantic validation on the accepted modal-class behavior kernel
-- form affordances and validation helpers
-- list grouping and metadata variants
-- lightweight breadcrumb/step/progress compositions where native semantics are clear
+- lightweight breadcrumb/history compositions where routing remains application-owned
+- additional read-only data presentation patterns built from existing primitives
+- stronger form composition helpers only where native accessibility semantics are unambiguous
 
 `Sheet` remains separately gated because gesture, keyboard, safe-area, and presentation behavior need stronger platform verification than a centered modal.
 
