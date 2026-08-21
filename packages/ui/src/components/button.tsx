@@ -84,12 +84,17 @@ export const Button = React.forwardRef<React.ComponentRef<typeof Pressable>, But
     ref,
   ) => {
     const isDisabled = disabled || loading;
-    const isTextChild = typeof children === 'string' || typeof children === 'number';
+    const childArray = React.Children.toArray(children);
+    const inferredLabel = childArray.every(
+      (child) => typeof child === 'string' || typeof child === 'number',
+    )
+      ? childArray.map(String).join('')
+      : undefined;
 
     return (
       <Pressable
         ref={ref}
-        accessibilityLabel={accessibilityLabel ?? (isTextChild ? String(children) : undefined)}
+        accessibilityLabel={accessibilityLabel ?? inferredLabel}
         accessibilityRole="button"
         accessibilityState={{ disabled: isDisabled, busy: loading }}
         className={cn(
@@ -101,20 +106,25 @@ export const Button = React.forwardRef<React.ComponentRef<typeof Pressable>, But
         {...props}
       >
         {loading ? <ActivityIndicator size="small" /> : null}
-        {isTextChild ? (
-          <Text
-            className={cn(
-              buttonLabelVariants({ variant, size }),
-              isDisabled && 'text-disabled-foreground',
-              labelClassName,
-            )}
-            variant="label"
-          >
-            {children}
-          </Text>
-        ) : (
-          children
-        )}
+        {childArray.map((child, index) => {
+          if (typeof child === 'string' || typeof child === 'number') {
+            return (
+              <Text
+                key={`button-label-${index}`}
+                className={cn(
+                  buttonLabelVariants({ variant, size }),
+                  isDisabled && 'text-disabled-foreground',
+                  labelClassName,
+                )}
+                variant="label"
+              >
+                {child}
+              </Text>
+            );
+          }
+
+          return child;
+        })}
       </Pressable>
     );
   },
