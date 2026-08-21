@@ -15,7 +15,7 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 - reusable `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` packages
 - engine-neutral stable behavior/variant contracts with optional `className` escape hatches
 - 78 exported foundation components/subcomponents documented in `docs/components.md`
-- 41 contract tests with `jest-expo` + React Native Testing Library
+- 46 contract tests with `jest-expo` + React Native Testing Library
 - reproducible `pnpm-lock.yaml` and frozen dependency installs
 - CI smoke bundling for Web, Android, and iOS through Expo/Metro
 - CI Expo Prebuild generation for Android and iOS native projects
@@ -150,7 +150,7 @@ The current CI pipeline performs:
 1. clean `pnpm install --frozen-lockfile`
 2. an Expo-import boundary check for `packages/core/src` and `packages/ui/src`
 3. strict TypeScript checks across the workspace
-4. 41 React Native Testing Library contract tests
+4. 46 React Native Testing Library contract tests
 5. Expo/Metro export for Web
 6. Expo/Metro export for Android
 7. Expo/Metro export for iOS
