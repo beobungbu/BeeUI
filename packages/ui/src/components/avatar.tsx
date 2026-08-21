@@ -41,6 +41,12 @@ const avatarFallbackVariants = cva('font-semibold text-muted-foreground', {
   },
 });
 
+type EngineImageProps = ImageProps & {
+  className?: string;
+};
+
+const EngineImage = Image as unknown as React.ComponentType<EngineImageProps>;
+
 type AvatarImageProps = Omit<ImageProps, 'source'> & {
   className?: string;
 };
@@ -87,7 +93,7 @@ export const Avatar = React.forwardRef<React.ComponentRef<typeof View>, AvatarPr
     return (
       <View ref={ref} className={cn(avatarVariants({ size }), className)} {...props}>
         {showImage ? (
-          <Image
+          <EngineImage
             {...restImageProps}
             accessible={false}
             className={cn('h-full w-full', imageClassName, imagePropsClassName)}
