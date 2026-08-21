@@ -8,6 +8,9 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | --- | --- | --- |
 | `Screen` | layout | Base application surface with semantic background and optional spacing; owns no safe-area behavior. |
 | `Box` | layout | Thin `View` primitive; no design assumptions. |
+| `Stack` | layout | Typed direction/gap/alignment/wrap composition over `View`; owns no responsive policy. |
+| `HStack` | layout | Horizontal specialization of `Stack`. |
+| `VStack` | layout | Vertical specialization of `Stack`. |
 | `Section` | layout | Title/description/action/content composition for screen sections. |
 | `MetadataRow` | layout | Read-only label/value metadata presentation. |
 | `Text` | typography | Semantic type/tone variants. |
@@ -33,6 +36,8 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `SegmentedControlItem` | selection | Accessible tab-style segment with selected-state semantics. |
 | `Pagination` | navigation | Controlled page/page-count context with normalized boundaries. |
 | `PaginationItem` | navigation | Page/previous/next action with selected and boundary-disabled semantics. |
+| `Breadcrumb` | navigation | Router-neutral breadcrumb composition with decorative separators hidden from accessibility. |
+| `BreadcrumbItem` | navigation | Link semantics for navigable ancestors and non-interactive selected semantics for the current location. |
 | `Stepper` | navigation | Controlled current-step context; owns no application workflow state. |
 | `StepperItem` | navigation | Current/completed/disabled step presentation with accessible step position and optional change request. |
 | `Tabs` | navigation | Controlled tab state shared across list/triggers/content. |
@@ -67,6 +72,8 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `StatLabel` | data display | Muted semantic metric label. |
 | `StatValue` | data display | Prominent metric value presentation. |
 | `StatHelpText` | data display | Supporting metric context with caller-selectable semantic tone. |
+| `Timeline` | data display | Read-only ordered history composition that derives terminal connector placement from rendered children. |
+| `TimelineItem` | data display | Title/description/meta event presentation with semantic marker states and no workflow ownership. |
 | `Progress` | feedback | Clamped progress value and native progressbar semantics. |
 | `Spinner` | feedback | Native indicator with semantic tone mapping. |
 | `Skeleton` | feedback | Decorative static loading surface. |
@@ -79,9 +86,9 @@ This file is the canonical component inventory for BeeUI. A component is conside
 The next safe tranche should remain dependency-light and avoid pretending complex native behavior is solved:
 
 - `AlertDialog` semantic validation on the accepted modal-class behavior kernel
-- lightweight breadcrumb/history compositions where routing remains application-owned
-- additional read-only data presentation patterns built from existing primitives
-- stronger form composition helpers only where native accessibility semantics are unambiguous
+- accessibility helpers such as visually-hidden labeling where native behavior can be tested directly
+- additional form composition helpers where native accessibility semantics are unambiguous
+- read-only data presentation only where it adds behavior beyond existing `MetadataRow`, `Stat`, and `Timeline`
 
 `Sheet` remains separately gated because gesture, keyboard, safe-area, and presentation behavior need stronger platform verification than a centered modal.
 
