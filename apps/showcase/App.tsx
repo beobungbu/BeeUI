@@ -25,7 +25,7 @@ function ThemeToggle() {
 
   return (
     <Button onPress={cycleTheme} size="sm" variant="outline">
-      Theme: {activeTheme}
+      {`Theme: ${activeTheme}`}
     </Button>
   );
 }
