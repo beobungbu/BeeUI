@@ -52,7 +52,7 @@ SegmentedControl.displayName = 'SegmentedControl';
 
 export type SegmentedControlItemProps = Omit<
   PressableProps,
-  'accessibilityRole' | 'accessibilityState' | 'children' | 'onPress' | 'role'
+  'accessibilityRole' | 'children' | 'onPress' | 'role'
 > & {
   children?: React.ReactNode;
   className?: string;
@@ -68,6 +68,7 @@ export const SegmentedControlItem = React.forwardRef<
   (
     {
       accessibilityLabel,
+      accessibilityState,
       children,
       className,
       disabled = false,
@@ -94,7 +95,7 @@ export const SegmentedControlItem = React.forwardRef<
         {...props}
         accessibilityLabel={accessibilityLabel ?? inferredLabel}
         accessibilityRole="tab"
-        accessibilityState={{ disabled: isDisabled, selected }}
+        accessibilityState={{ ...accessibilityState, disabled: isDisabled, selected }}
         className={cn(
           'min-h-9 flex-1 items-center justify-center rounded-sm border px-3 py-2 active:opacity-80',
           selected
