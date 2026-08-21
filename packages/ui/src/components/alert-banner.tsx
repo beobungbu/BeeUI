@@ -1,7 +1,7 @@
 import { cn } from '@beeui/core';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
-import { View, type ViewProps } from 'react-native';
+import { AccessibilityInfo, Platform, View, type ViewProps } from 'react-native';
 import { Box } from './box';
 import { Text, type TextProps } from './text';
 
@@ -31,9 +31,27 @@ const titleToneByVariant: Record<AlertBannerVariant, AlertTone> = {
   destructive: 'destructive',
 };
 
+function getPrimitiveAnnouncement(...values: React.ReactNode[]) {
+  if (
+    !values.every(
+      (value) => value == null || typeof value === 'string' || typeof value === 'number',
+    )
+  ) {
+    return undefined;
+  }
+
+  const parts = values
+    .filter((value): value is string | number => typeof value === 'string' || typeof value === 'number')
+    .map(String)
+    .filter(Boolean);
+
+  return parts.length > 0 ? parts.join(', ') : undefined;
+}
+
 export type AlertBannerProps = Omit<ViewProps, 'children'> &
   VariantProps<typeof alertBannerVariants> & {
     action?: React.ReactNode;
+    announcement?: string;
     className?: string;
     description?: React.ReactNode;
     live?: 'none' | 'polite' | 'assertive';
@@ -44,6 +62,7 @@ export const AlertBanner = React.forwardRef<React.ComponentRef<typeof View>, Ale
   (
     {
       action,
+      announcement,
       className,
       description,
       live = 'polite',
@@ -54,6 +73,15 @@ export const AlertBanner = React.forwardRef<React.ComponentRef<typeof View>, Ale
     ref,
   ) => {
     const resolvedVariant: AlertBannerVariant = variant ?? 'neutral';
+    const resolvedAnnouncement = announcement ?? getPrimitiveAnnouncement(title, description);
+
+    React.useEffect(() => {
+      if (Platform.OS !== 'ios' || live === 'none' || !resolvedAnnouncement) return;
+
+      AccessibilityInfo.announceForAccessibilityWithOptions(resolvedAnnouncement, {
+        queue: live === 'polite',
+      });
+    }, [live, resolvedAnnouncement]);
 
     return (
       <View
