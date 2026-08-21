@@ -27,21 +27,21 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `FormMessage` | form | Destructive form feedback with polite live-region semantics by default. |
 | `SearchInput` | form | Search keyboard/submit semantics layered on `Input`; clearing a previously non-empty query emits one `onSearch('')` reset signal. |
 | `PasswordInput` | form | Password visibility composition with safe keyboard/autofill defaults; explicit caller overrides remain authoritative. |
-| `OTPInput` | form | Controlled/uncontrolled one-time-code input with numeric normalization and completion callback. |
+| `OTPInput` | form | Controlled/uncontrolled one-time-code input with numeric normalization, safe text-entry defaults, and completion callbacks deduplicated per completed value until the input becomes incomplete again. |
 | `Checkbox` | form | Controlled boolean/indeterminate state with checkbox semantics. |
 | `Radio` | form | Controlled radio item; works standalone or in `RadioGroup`. |
 | `RadioGroup` | form | Controlled value coordination and radiogroup semantics. |
 | `Switch` | form | Native `Switch` with semantic track/thumb colors. |
-| `Chip` | selection | Standalone toggle or value-scoped group item with button/radio/checkbox semantics. |
+| `Chip` | selection | Standalone toggle or value-scoped group item with button/radio/checkbox semantics; grouped items without a value fail safe as disabled and warn in development. |
 | `ChipGroup` | selection | Controlled/uncontrolled single or multiple selection coordination. |
 | `SegmentedControl` | selection | Controlled compact mutually exclusive selection surface with `radiogroup` semantics. |
 | `SegmentedControlItem` | selection | Accessible radio-style segment with checked-state semantics. |
 | `Pagination` | navigation | Controlled page/page-count context with normalized boundaries. |
-| `PaginationItem` | navigation | Page/previous/next action with selected and boundary-disabled semantics. |
+| `PaginationItem` | navigation | Type-enforced page/previous/next action; page items require a page number, malformed runtime page items fail safe as disabled, and boundary/selected semantics are enforced. |
 | `Breadcrumb` | navigation | Router-neutral breadcrumb composition with decorative separators hidden from accessibility. |
 | `BreadcrumbItem` | navigation | Link semantics for navigable ancestors and non-interactive selected semantics for the current location. |
-| `Stepper` | navigation | Controlled current-step context; owns no application workflow state. |
-| `StepperItem` | navigation | Current/completed/disabled step presentation with accessible step position and optional change request. |
+| `Stepper` | navigation | Controlled current-step context with finite normalization and duplicate normalized-step detection; owns no application workflow state. |
+| `StepperItem` | navigation | Current/completed/disabled step presentation with accessible position; duplicate normalized step values fail safe as disabled. |
 | `Tabs` | navigation | Controlled tab state shared across list/triggers/content. |
 | `TabsList` | navigation | Tablist semantic container. |
 | `TabsTrigger` | navigation | Accessible tab selection trigger. |
@@ -65,7 +65,7 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `ListGroup` | application pattern | Semantic bordered surface for grouped application rows without taking ownership of row behavior. |
 | `ListGroupHeader` | application pattern | Title/description/trailing header composition for grouped rows. |
 | `ListItem` | application pattern | Optional press behavior; interactive rows synthesize deterministic accessible names from primitive title/description/trailing content unless the caller supplies an explicit label. |
-| `SettingsItem` | application pattern | Settings row specialization whose primitive value participates in the synthesized row accessible name. |
+| `SettingsItem` | application pattern | Settings row specialization where value and trailing content can coexist; a primitive value remains part of the synthesized accessible name even when trailing content is complex. |
 | `DescriptionList` | application pattern | Read-only grouped metadata composition with no formatting/data-state ownership. |
 | `DescriptionItem` | application pattern | Description-list row specialization composed from `MetadataRow`. |
 | `Card` | surface | Surface variants and spacing contract. |
