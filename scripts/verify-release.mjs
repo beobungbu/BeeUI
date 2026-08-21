@@ -10,6 +10,7 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(SCRIPT_DIR, '..');
 const ARTIFACT_DIR = path.join(ROOT_DIR, '.artifacts');
 const REPORT_PATH = path.join(ARTIFACT_DIR, 'release-verification.json');
+const VERIFY_SHA = process.env.BEEUI_VERIFY_SHA ?? null;
 
 const packageSpecs = [
   {
@@ -108,6 +109,7 @@ function writeReport(status, error = null) {
       {
         schemaVersion: 1,
         status,
+        commit: VERIFY_SHA,
         version: rootVersion,
         packages: packedPackages,
         checks,
@@ -163,7 +165,7 @@ try {
     assert(uiManifest.peerDependencies?.[peer] === range, `@beeui/ui peer range is explicit for ${peer}`, range);
   }
 
-  const forbiddenExpoImport = /(?:from\s+|require\s*\(\s*|import\s*\(\s*)['"]expo(?:\/[^'"]*)?['"]/;
+  const forbiddenExpoImport = /(?:from\s+|require\s*\(\s*|import\s*\(\s*|import\s+)['"]expo(?:\/[^'"]*)?['"]/;
   for (const packageDir of ['packages/core/src', 'packages/ui/src']) {
     const sourceFiles = walkFiles(path.join(ROOT_DIR, packageDir)).filter((file) => /\.[cm]?[jt]sx?$/.test(file));
     const offender = sourceFiles.find((file) => forbiddenExpoImport.test(fs.readFileSync(file, 'utf8')));
