@@ -5,8 +5,10 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
+  AppHeader,
   Avatar,
   Badge,
+  BottomActionBar,
   Box,
   Button,
   Card,
@@ -20,9 +22,12 @@ import {
   IconButton,
   Input,
   ListItem,
+  OTPInput,
+  PasswordInput,
   Progress,
   Radio,
   RadioGroup,
+  SearchInput,
   Separator,
   SettingsItem,
   Skeleton,
@@ -56,23 +61,19 @@ export default function App() {
   const [notifications, setNotifications] = React.useState(true);
   const [plan, setPlan] = React.useState<'starter' | 'pro'>('starter');
   const [tab, setTab] = React.useState('overview');
+  const [otp, setOtp] = React.useState('');
 
   return (
     <Box className="flex-1 bg-background">
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} />
-      <ScrollView contentContainerStyle={{ paddingBottom: 48 }}>
-        <Box className="mx-auto w-full max-w-2xl gap-8 px-5 pb-10 pt-16">
-          <Box className="gap-3">
-            <Box className="flex-row items-center justify-between gap-4">
-              <Box className="flex-row items-center gap-3">
-                <Avatar accessibilityLabel="BeeUI" fallback="BU" />
-                <Text variant="title">BeeUI</Text>
-              </Box>
-              <ThemeToggle />
-            </Box>
-            <Text tone="muted">React Native + TypeScript components built on semantic tokens.</Text>
-          </Box>
-
+      <AppHeader
+        description="React Native + TypeScript components built on semantic tokens."
+        leading={<Avatar accessibilityLabel="BeeUI" fallback="BU" />}
+        title="BeeUI"
+        trailing={<ThemeToggle />}
+      />
+      <ScrollView contentContainerStyle={{ paddingBottom: 96 }}>
+        <Box className="mx-auto w-full max-w-2xl gap-8 px-5 py-8">
           <Card className="gap-4" variant="raised">
             <Box className="flex-row items-center justify-between">
               <Text variant="heading">Buttons</Text>
@@ -93,6 +94,15 @@ export default function App() {
             <Text variant="heading">Form primitives</Text>
             <Field description="Used only for account notifications." label="Email" required>
               <Input autoCapitalize="none" placeholder="you@example.com" />
+            </Field>
+            <Field label="Search">
+              <SearchInput onSearch={() => undefined} placeholder="Search projects" />
+            </Field>
+            <Field label="Password">
+              <PasswordInput placeholder="Enter password" />
+            </Field>
+            <Field description="Six numeric digits." label="Verification code">
+              <OTPInput accessibilityLabel="Verification code" onValueChange={setOtp} value={otp} />
             </Field>
             <Field error="Enter a valid project name." invalid label="Project name"><Input placeholder="Invalid value" /></Field>
             <Field disabled label="Managed field"><Input placeholder="Disabled by field context" /></Field>
@@ -173,6 +183,10 @@ export default function App() {
           </Card>
         </Box>
       </ScrollView>
+      <BottomActionBar>
+        <Button size="sm" variant="ghost">Cancel</Button>
+        <Button size="sm">Save changes</Button>
+      </BottomActionBar>
     </Box>
   );
 }

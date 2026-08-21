@@ -5,6 +5,8 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
+  AppHeader,
+  BottomActionBar,
   Button,
   Checkbox,
   Collapsible,
@@ -13,9 +15,12 @@ import {
   Field,
   Input,
   ListItem,
+  OTPInput,
+  PasswordInput,
   Progress,
   Radio,
   RadioGroup,
+  SearchInput,
   Switch,
   Tabs,
   TabsContent,
@@ -36,9 +41,7 @@ describe('BeeUI component contracts', () => {
 
   it('preserves caller accessibility state while enforcing loading semantics', () => {
     const onPress = jest.fn();
-    const screen = render(
-      <Button accessibilityState={{ selected: true }} loading onPress={onPress}>Save</Button>,
-    );
+    const screen = render(<Button accessibilityState={{ selected: true }} loading onPress={onPress}>Save</Button>);
     const button = screen.getByRole('button', { name: 'Save' });
     expect(button.props.accessibilityState).toEqual({ selected: true, disabled: true, busy: true });
     fireEvent.press(button);
@@ -46,18 +49,14 @@ describe('BeeUI component contracts', () => {
   });
 
   it('keeps disabled inputs non-editable while preserving accessibility state', () => {
-    const screen = render(
-      <Input accessibilityLabel="Email" accessibilityState={{ selected: true }} disabled placeholder="Email" />,
-    );
+    const screen = render(<Input accessibilityLabel="Email" accessibilityState={{ selected: true }} disabled placeholder="Email" />);
     const input = screen.getByLabelText('Email');
     expect(input.props.editable).toBe(false);
     expect(input.props.accessibilityState).toEqual({ selected: true, disabled: true });
   });
 
   it('propagates Field label, error, and state into Input', () => {
-    const screen = render(
-      <Field error="Enter a valid email" invalid label="Email"><Input /></Field>,
-    );
+    const screen = render(<Field error="Enter a valid email" invalid label="Email"><Input /></Field>);
     const input = screen.getByLabelText('Email');
     expect(input.props.accessibilityHint).toBe('Enter a valid email');
     expect(input.props.accessibilityState.disabled).toBe(false);
@@ -101,10 +100,7 @@ describe('BeeUI component contracts', () => {
     const onValueChange = jest.fn();
     const screen = render(
       <Tabs onValueChange={onValueChange} value="overview">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="details">Details</TabsTrigger>
-        </TabsList>
+        <TabsList><TabsTrigger value="overview">Overview</TabsTrigger><TabsTrigger value="details">Details</TabsTrigger></TabsList>
         <TabsContent value="overview"><Text>Overview content</Text></TabsContent>
         <TabsContent value="details"><Text>Details content</Text></TabsContent>
       </Tabs>,
@@ -128,10 +124,7 @@ describe('BeeUI component contracts', () => {
 
   it('toggles uncontrolled Collapsible content and exposes expanded state', () => {
     const screen = render(
-      <Collapsible>
-        <CollapsibleTrigger>Advanced</CollapsibleTrigger>
-        <CollapsibleContent><Text>Advanced content</Text></CollapsibleContent>
-      </Collapsible>,
+      <Collapsible><CollapsibleTrigger>Advanced</CollapsibleTrigger><CollapsibleContent><Text>Advanced content</Text></CollapsibleContent></Collapsible>,
     );
     const trigger = screen.getByRole('button', { name: 'Advanced' });
     expect(trigger.props.accessibilityState.expanded).toBe(false);
@@ -143,14 +136,8 @@ describe('BeeUI component contracts', () => {
   it('coordinates single Accordion state', () => {
     const screen = render(
       <Accordion defaultValue="account">
-        <AccordionItem value="account">
-          <AccordionTrigger>Account</AccordionTrigger>
-          <AccordionContent><Text>Account content</Text></AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="billing">
-          <AccordionTrigger>Billing</AccordionTrigger>
-          <AccordionContent><Text>Billing content</Text></AccordionContent>
-        </AccordionItem>
+        <AccordionItem value="account"><AccordionTrigger>Account</AccordionTrigger><AccordionContent><Text>Account content</Text></AccordionContent></AccordionItem>
+        <AccordionItem value="billing"><AccordionTrigger>Billing</AccordionTrigger><AccordionContent><Text>Billing content</Text></AccordionContent></AccordionItem>
       </Accordion>,
     );
     expect(screen.getByText('Account content')).toBeTruthy();
@@ -163,8 +150,50 @@ describe('BeeUI component contracts', () => {
   it('forwards ListItem presses with inferred button labeling', () => {
     const onPress = jest.fn();
     const screen = render(<ListItem description="Account preferences" onPress={onPress} title="Settings" />);
-    const item = screen.getByRole('button', { name: 'Settings' });
-    fireEvent.press(item);
+    fireEvent.press(screen.getByRole('button', { name: 'Settings' }));
     expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('configures SearchInput and forwards submitted search text', () => {
+    const onSearch = jest.fn();
+    const screen = render(<SearchInput accessibilityLabel="Search" onSearch={onSearch} />);
+    const input = screen.getByLabelText('Search');
+    expect(input.props.inputMode).toBe('search');
+    expect(input.props.returnKeyType).toBe('search');
+    fireEvent(input, 'submitEditing', { nativeEvent: { text: 'bee ui' } });
+    expect(onSearch).toHaveBeenCalledWith('bee ui');
+  });
+
+  it('toggles PasswordInput visibility without exposing secure state in its public API', () => {
+    const screen = render(<PasswordInput accessibilityLabel="Password" />);
+    const input = screen.getByLabelText('Password');
+    expect(input.props.secureTextEntry).toBe(true);
+    fireEvent.press(screen.getByRole('button', { name: 'Show password' }));
+    expect(screen.getByLabelText('Password').props.secureTextEntry).toBe(false);
+    expect(screen.getByRole('button', { name: 'Hide password' })).toBeTruthy();
+  });
+
+  it('normalizes numeric OTP input and emits completion once length is reached', () => {
+    const onValueChange = jest.fn();
+    const onComplete = jest.fn();
+    const screen = render(
+      <OTPInput accessibilityLabel="Verification code" length={4} onComplete={onComplete} onValueChange={onValueChange} />,
+    );
+    const input = screen.getByLabelText('Verification code');
+    fireEvent.changeText(input, '12a34');
+    expect(onValueChange).toHaveBeenCalledWith('1234');
+    expect(onComplete).toHaveBeenCalledWith('1234');
+  });
+
+  it('renders application chrome without owning navigation behavior', () => {
+    const screen = render(
+      <>
+        <AppHeader description="Workspace" title="BeeUI" trailing={<Button>Help</Button>} />
+        <BottomActionBar><Button>Save</Button></BottomActionBar>
+      </>,
+    );
+    expect(screen.getByText('BeeUI')).toBeTruthy();
+    expect(screen.getByText('Workspace')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
   });
 });

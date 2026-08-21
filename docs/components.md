@@ -8,36 +8,52 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | --- | --- | --- |
 | `Box` | layout | Thin `View` primitive; no design assumptions. |
 | `Text` | typography | Semantic type/tone variants. |
-| `Separator` | layout | Decorative by default; semantic separator when requested. |
-| `Button` / `ButtonLabel` | action | Accessible pressable, variants, sizes, loading/disabled states. |
+| `Button` | action | Accessible pressable, variants, sizes, loading/disabled states. |
+| `ButtonLabel` | action | Explicit label primitive for composed buttons. |
 | `IconButton` | action | 44px icon action; accessible label is required. |
-| `Input` / `Textarea` | form | Semantic focus/invalid/disabled states and themed native colors. |
-| `Field` | form | Label/description/error composition and state propagation. |
+| `Input` | form | Semantic focus/invalid/disabled states and themed native colors. |
+| `Textarea` | form | Multiline input using the same `Input` contract. |
+| `Field` | form | Label/description/error composition; propagates state and accessibility metadata to text controls. |
+| `SearchInput` | form | Search keyboard/submit semantics layered on `Input`. |
+| `PasswordInput` | form | Password visibility composition without external icon dependencies. |
+| `OTPInput` | form | Controlled/uncontrolled one-time-code input with numeric normalization and completion callback. |
 | `Checkbox` | form | Controlled boolean/indeterminate state with checkbox semantics. |
-| `Radio` / `RadioGroup` | form | Controlled radio item/group coordination. |
-| `Switch` | form | Native switch with semantic track/thumb colors. |
-| `Tabs` / `TabsList` / `TabsTrigger` / `TabsContent` | navigation | Controlled tab state with tab semantics. |
-| `Collapsible` / `CollapsibleTrigger` / `CollapsibleContent` | disclosure | Controlled or uncontrolled disclosure with expanded semantics. |
-| `Accordion` / `AccordionItem` / `AccordionTrigger` / `AccordionContent` | disclosure | Single-value controlled or uncontrolled accordion. |
-| `ListItem` | application pattern | Accessible interactive row with leading/trailing slots. |
-| `SettingsItem` | application pattern | ListItem specialization with semantic value/trailing slot. |
+| `Radio` | form | Controlled radio item; works standalone or in `RadioGroup`. |
+| `RadioGroup` | form | Controlled value coordination and radiogroup semantics. |
+| `Switch` | form | Native `Switch` with semantic track/thumb colors. |
+| `Tabs` | navigation | Controlled tab state shared across list/triggers/content. |
+| `TabsList` | navigation | Tablist semantic container. |
+| `TabsTrigger` | navigation | Accessible tab selection trigger. |
+| `TabsContent` | navigation | Active tabpanel content; inactive panels are not mounted. |
+| `Collapsible` | disclosure | Controlled/uncontrolled disclosure state. |
+| `CollapsibleTrigger` | disclosure | Accessible expanded-state trigger. |
+| `CollapsibleContent` | disclosure | Mounts only while disclosure is open. |
+| `Accordion` | disclosure | Single-value controlled/uncontrolled disclosure coordination. |
+| `AccordionItem` | disclosure | Value-scoped accordion item. |
+| `AccordionTrigger` | disclosure | Accessible item trigger. |
+| `AccordionContent` | disclosure | Active item content. |
+| `AppHeader` | application chrome | Title/description/leading/trailing composition; owns no navigation. |
+| `BottomActionBar` | application chrome | Bottom action surface; safe-area ownership stays with the application shell. |
+| `ListItem` | application pattern | Optional press behavior, inferred labels, leading/trailing slots. |
+| `SettingsItem` | application pattern | Settings row specialization with value/trailing content. |
 | `Card` | surface | Surface variants and spacing contract. |
 | `Badge` | data display | Semantic status variants with paired foreground tokens. |
 | `Avatar` | data display | Image/fallback behavior with size variants. |
 | `Progress` | feedback | Clamped progress value and native progressbar semantics. |
 | `Spinner` | feedback | Native indicator with semantic tone mapping. |
 | `Skeleton` | feedback | Decorative static loading surface. |
-| `EmptyState` | state | Reusable title/description/icon/action composition. |
-| `ErrorState` | state | Error-specialized state composition using semantic destructive tone. |
+| `Separator` | layout | Decorative by default; semantic separator when requested. |
+| `EmptyState` | state | Neutral empty-state composition with optional action. |
+| `ErrorState` | state | Destructive error-state specialization with optional retry action. |
 
 ## Next components
 
-The next dependency-light tranche should focus on:
+The next safe tranche should focus on application patterns that remain dependency-light:
 
-- form helpers beyond text controls
-- app headers / bottom action bars
-- search / password / OTP input compositions
-- list and settings row refinements based on real app use
+- form affordances and validation helpers
+- screen/section/container composition
+- list grouping and metadata rows
+- lightweight pagination / segmented controls
 
 ## Overlay components
 
