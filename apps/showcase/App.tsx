@@ -14,6 +14,8 @@ import {
   Button,
   Card,
   Checkbox,
+  Chip,
+  ChipGroup,
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -25,6 +27,8 @@ import {
   ListItem,
   MetadataRow,
   OTPInput,
+  Pagination,
+  PaginationItem,
   PasswordInput,
   Progress,
   Radio,
@@ -32,6 +36,8 @@ import {
   Screen,
   SearchInput,
   Section,
+  SegmentedControl,
+  SegmentedControlItem,
   Separator,
   SettingsItem,
   Skeleton,
@@ -66,6 +72,9 @@ export default function App() {
   const [plan, setPlan] = React.useState<'starter' | 'pro'>('starter');
   const [tab, setTab] = React.useState('overview');
   const [otp, setOtp] = React.useState('');
+  const [filters, setFilters] = React.useState<string[]>(['mobile']);
+  const [viewMode, setViewMode] = React.useState('list');
+  const [page, setPage] = React.useState(2);
 
   return (
     <Screen>
@@ -119,6 +128,35 @@ export default function App() {
               <Radio label="Starter plan" value="starter" /><Radio label="Pro plan" value="pro" />
             </RadioGroup>
             <Box className="flex-row items-center justify-between gap-4"><Text>Notifications</Text><Switch accessibilityLabel="Notifications" onValueChange={setNotifications} value={notifications} /></Box>
+          </Card>
+
+          <Card className="gap-4">
+            <Section description="Dependency-free filters, view selection and paging." title="Selection and navigation">
+              <Text variant="label">Filters</Text>
+              <ChipGroup
+                onValueChange={(value) => setFilters(Array.isArray(value) ? value : [value])}
+                selectionMode="multiple"
+                value={filters}
+              >
+                <Chip value="mobile">Mobile</Chip>
+                <Chip value="web">Web</Chip>
+                <Chip value="design">Design</Chip>
+              </ChipGroup>
+              <Text variant="label">View</Text>
+              <SegmentedControl onValueChange={setViewMode} value={viewMode}>
+                <SegmentedControlItem value="list">List</SegmentedControlItem>
+                <SegmentedControlItem value="grid">Grid</SegmentedControlItem>
+              </SegmentedControl>
+              <Text variant="label">Page</Text>
+              <Pagination onPageChange={setPage} page={page} pageCount={4}>
+                <PaginationItem type="previous" />
+                <PaginationItem page={1} />
+                <PaginationItem page={2} />
+                <PaginationItem page={3} />
+                <PaginationItem page={4} />
+                <PaginationItem type="next" />
+              </Pagination>
+            </Section>
           </Card>
 
           <Card className="gap-4">

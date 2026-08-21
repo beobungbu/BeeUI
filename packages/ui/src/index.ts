@@ -35,6 +35,14 @@ export {
   type CheckboxValue,
 } from './components/checkbox';
 export {
+  Chip,
+  ChipGroup,
+  type ChipGroupProps,
+  type ChipGroupValue,
+  type ChipProps,
+  type ChipSelectionMode,
+} from './components/chip';
+export {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -69,6 +77,13 @@ export {
 } from './components/list-item';
 export { MetadataRow, type MetadataRowProps } from './components/metadata-row';
 export { OTPInput, type OTPInputProps } from './components/otp-input';
+export {
+  Pagination,
+  PaginationItem,
+  type PaginationItemProps,
+  type PaginationItemType,
+  type PaginationProps,
+} from './components/pagination';
 export { PasswordInput, type PasswordInputProps } from './components/password-input';
 export { Progress, progressVariants, type ProgressProps } from './components/progress';
 export {
@@ -80,6 +95,12 @@ export {
 } from './components/radio';
 export { Screen, type ScreenProps } from './components/screen';
 export { SearchInput, type SearchInputProps } from './components/search-input';
+export {
+  SegmentedControl,
+  SegmentedControlItem,
+  type SegmentedControlItemProps,
+  type SegmentedControlProps,
+} from './components/segmented-control';
 export { Section, type SectionProps } from './components/section';
 export { Separator, type SeparatorProps } from './components/separator';
 export { Skeleton, skeletonVariants, type SkeletonProps } from './components/skeleton';

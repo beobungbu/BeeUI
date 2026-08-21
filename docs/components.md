@@ -24,6 +24,12 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `Radio` | form | Controlled radio item; works standalone or in `RadioGroup`. |
 | `RadioGroup` | form | Controlled value coordination and radiogroup semantics. |
 | `Switch` | form | Native `Switch` with semantic track/thumb colors. |
+| `Chip` | selection | Standalone toggle or value-scoped group item with button/radio/checkbox semantics. |
+| `ChipGroup` | selection | Controlled/uncontrolled single or multiple selection coordination. |
+| `SegmentedControl` | selection | Controlled compact mutually exclusive selection surface. |
+| `SegmentedControlItem` | selection | Accessible tab-style segment with selected-state semantics. |
+| `Pagination` | navigation | Controlled page/page-count context with normalized boundaries. |
+| `PaginationItem` | navigation | Page/previous/next action with selected and boundary-disabled semantics. |
 | `Tabs` | navigation | Controlled tab state shared across list/triggers/content. |
 | `TabsList` | navigation | Tablist semantic container. |
 | `TabsTrigger` | navigation | Accessible tab selection trigger. |
@@ -59,13 +65,14 @@ This file is the canonical component inventory for BeeUI. A component is conside
 
 ## Next components
 
-The next safe tranche should focus on dependency-light interaction and application patterns:
+The next safe tranche should focus on dependency-light application primitives and validation:
 
-- `AlertDialog` and `Sheet` validation on the accepted modal-class behavior kernel
-- chips / filters / lightweight segmented controls
+- `AlertDialog` semantic validation on the accepted modal-class behavior kernel
 - form affordances and validation helpers
 - list grouping and metadata variants
-- lightweight pagination
+- lightweight breadcrumb/step/progress compositions where native semantics are clear
+
+`Sheet` remains separately gated because gesture, keyboard, safe-area, and presentation behavior need stronger platform verification than a centered modal.
 
 ## Anchored overlay components
 

@@ -14,8 +14,8 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 - semantic light/dark design tokens
 - reusable `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` packages
 - engine-neutral stable behavior/variant contracts with optional `className` escape hatches
-- 50 exported foundation components/subcomponents documented in `docs/components.md`
-- 20 contract tests with `jest-expo` + React Native Testing Library
+- 56 exported foundation components/subcomponents documented in `docs/components.md`
+- 24 contract tests with `jest-expo` + React Native Testing Library
 - reproducible `pnpm-lock.yaml` and frozen dependency installs
 - CI smoke bundling for Web, Android, and iOS through Expo/Metro
 - CI Expo Prebuild generation for Android and iOS native projects
@@ -24,9 +24,9 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 
 ## Component coverage
 
-Current foundation includes layout, typography, actions, forms, navigation, disclosure, modal overlay, application chrome, application patterns, data display, feedback, and state compositions:
+Current foundation includes layout, typography, actions, forms, selection, navigation, disclosure, modal overlay, application chrome, application patterns, data display, feedback, and state compositions:
 
-`Screen`, `Box`, `Section`, `MetadataRow`, `Text`, `Button`, `ButtonLabel`, `IconButton`, `Input`, `Textarea`, `Field`, `SearchInput`, `PasswordInput`, `OTPInput`, `Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`, `Dialog`, `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`, `AppHeader`, `BottomActionBar`, `ListItem`, `SettingsItem`, `Card`, `AlertBanner`, `Badge`, `Avatar`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `EmptyState`, and `ErrorState`.
+`Screen`, `Box`, `Section`, `MetadataRow`, `Text`, `Button`, `ButtonLabel`, `IconButton`, `Input`, `Textarea`, `Field`, `SearchInput`, `PasswordInput`, `OTPInput`, `Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Chip`, `ChipGroup`, `SegmentedControl`, `SegmentedControlItem`, `Pagination`, `PaginationItem`, `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`, `Dialog`, `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`, `AppHeader`, `BottomActionBar`, `ListItem`, `SettingsItem`, `Card`, `AlertBanner`, `Badge`, `Avatar`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `EmptyState`, and `ErrorState`.
 
 Anchored overlays such as `Popover`, `DropdownMenu`, `Tooltip`, `Toast`, and `Select` remain deferred until their positioning/focus/keyboard/accessibility behavior is verified across Expo, prebuild/bare React Native, and web.
 
@@ -53,13 +53,13 @@ The current CI pipeline performs:
 1. clean `pnpm install --frozen-lockfile`
 2. an Expo-import boundary check for `packages/core/src` and `packages/ui/src`
 3. strict TypeScript checks across the workspace
-4. 20 React Native Testing Library contract tests
+4. 24 React Native Testing Library contract tests
 5. Expo/Metro export for Web
 6. Expo/Metro export for Android
 7. Expo/Metro export for iOS
 8. `expo prebuild --clean --no-install` to generate both native projects
 
-The latest fully verified head passed all of these gates before the current Dialog tranche; the Dialog tranche must pass the same pipeline before being accepted.
+Every foundation tranche is accepted only after this complete pipeline passes on the PR head.
 
 Expo export proves the JavaScript/Metro bundles resolve on all three targets, and Expo Prebuild proves the current configuration can generate Android and iOS native projects. These checks do **not** claim that an APK/AAB or iOS application has been compiled or installed on a physical device. Remaining release verification is native compilation/device smoke testing and a true bare React Native consumer test.
 
