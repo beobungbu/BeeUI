@@ -26,7 +26,7 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `HelperText` | form | Muted supporting text for form affordances without hidden state. |
 | `FormMessage` | form | Destructive form feedback with polite live-region semantics by default. |
 | `SearchInput` | form | Search keyboard/submit semantics layered on `Input`. |
-| `PasswordInput` | form | Password visibility composition without external icon dependencies. |
+| `PasswordInput` | form | Password visibility composition with safe keyboard/autofill defaults; explicit caller overrides remain authoritative. |
 | `OTPInput` | form | Controlled/uncontrolled one-time-code input with numeric normalization and completion callback. |
 | `Checkbox` | form | Controlled boolean/indeterminate state with checkbox semantics. |
 | `Radio` | form | Controlled radio item; works standalone or in `RadioGroup`. |
@@ -53,7 +53,7 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `AccordionItem` | disclosure | Value-scoped accordion item. |
 | `AccordionTrigger` | disclosure | Accessible item trigger. |
 | `AccordionContent` | disclosure | Active item content. |
-| `Dialog` | modal overlay | Controlled/uncontrolled modal state backed by React Native core `Modal`. |
+| `Dialog` | modal overlay | Controlled/uncontrolled modal state backed by React Native core `Modal`; controlled `open` requires `onOpenChange`, with dismissable runtime fallback for malformed JS usage. |
 | `DialogTrigger` | modal overlay | Button-compatible trigger with expanded-state semantics. |
 | `DialogContent` | modal overlay | Modal surface with semantic backdrop, Android/web close path, and modal accessibility hints. |
 | `DialogTitle` | modal overlay | Semantic dialog heading. |
@@ -64,14 +64,14 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `BottomActionBar` | application chrome | Bottom action surface; safe-area ownership stays with the application shell. |
 | `ListGroup` | application pattern | Semantic bordered surface for grouped application rows without taking ownership of row behavior. |
 | `ListGroupHeader` | application pattern | Title/description/trailing header composition for grouped rows. |
-| `ListItem` | application pattern | Optional press behavior, inferred labels, leading/trailing slots. |
-| `SettingsItem` | application pattern | Settings row specialization with value/trailing content. |
+| `ListItem` | application pattern | Optional press behavior; interactive rows preserve native aggregation of title/description/trailing content unless the caller supplies an explicit accessibility label. |
+| `SettingsItem` | application pattern | Settings row specialization with value/trailing content included in the row's native accessible content. |
 | `DescriptionList` | application pattern | Read-only grouped metadata composition with no formatting/data-state ownership. |
 | `DescriptionItem` | application pattern | Description-list row specialization composed from `MetadataRow`. |
 | `Card` | surface | Surface variants and spacing contract. |
 | `AlertBanner` | feedback | Semantic inline status callout with live-region behavior and optional action. |
 | `Badge` | data display | Semantic status variants with paired foreground tokens. |
-| `Avatar` | data display | Image/fallback behavior with size variants. |
+| `Avatar` | data display | Image/fallback behavior with size variants; failure reset is keyed to semantic image source content rather than source object identity. |
 | `Stat` | data display | Layout-only metric composition with no hidden state or formatting ownership. |
 | `StatLabel` | data display | Muted semantic metric label. |
 | `StatValue` | data display | Prominent metric value presentation. |
