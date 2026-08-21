@@ -108,13 +108,13 @@ describe('BeeUI issue #7 remaining hardening', () => {
 
   it('exposes ListGroup list semantics and aligns its header with row padding', () => {
     const screen = render(
-      <ListGroup>
+      <ListGroup testID="list-group">
         <ListGroupHeader testID="header" title="Settings" />
         <ListItem title="Appearance" />
       </ListGroup>,
     );
 
-    expect(screen.getByRole('list')).toBeTruthy();
+    expect(screen.getByTestId('list-group').props.accessibilityRole).toBe('list');
     expect(screen.getByTestId('header').props.className).toContain('px-3');
   });
 
