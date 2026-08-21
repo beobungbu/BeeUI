@@ -42,6 +42,22 @@ export {
   type CollapsibleProps,
   type CollapsibleTriggerProps,
 } from './components/collapsible';
+export {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+  DialogTrigger,
+  type DialogCloseProps,
+  type DialogContentProps,
+  type DialogDescriptionProps,
+  type DialogFooterProps,
+  type DialogProps,
+  type DialogTitleProps,
+  type DialogTriggerProps,
+} from './components/dialog';
 export { Field, type FieldProps } from './components/field';
 export { IconButton, type IconButtonProps } from './components/icon-button';
 export { Input, inputVariants, type InputProps } from './components/input';

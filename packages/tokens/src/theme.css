@@ -39,6 +39,7 @@
       --color-focus-ring: #f59e0b;
       --color-disabled: #f2f4f7;
       --color-disabled-foreground: #98a2b3;
+      --color-overlay: #00000080;
     }
 
     @variant dark {
@@ -71,6 +72,7 @@
       --color-focus-ring: #fbbf24;
       --color-disabled: #202936;
       --color-disabled-foreground: #667085;
+      --color-overlay: #00000099;
     }
   }
 }

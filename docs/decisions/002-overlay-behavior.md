@@ -1,28 +1,49 @@
-# ADR-002: Overlay behavior layer is deferred
+# ADR-002: Split modal-class overlays from anchored overlays
 
-Status: Proposed / deferred
+Status: Accepted for Dialog; anchored overlays remain deferred
 
 ## Context
 
 Production overlays are behavior-heavy. Dialogs, sheets, popovers, menus, tooltips, selects, and toasts need correct focus management, portal behavior, hardware-back handling, keyboard handling, screen-reader semantics, and web parity.
 
-`@rn-primitives` remains a strong candidate because it is MIT licensed, unstyled, accessible, and designed for iOS/Android/web. However, current ecosystem reports around portal behavior and ESM/CJS resolution in bare React Native 0.83+ mean BeeUI should not lock it into the foundation before verification on the RN 0.86 baseline.
+The original v0.1 plan deferred all overlays while BeeUI evaluated `@rn-primitives`. That library remains useful reference material, but adopting it as a runtime foundation would also adopt its portal layer and current compatibility surface. During the RN 0.86 review, BeeUI found open upstream reports for mobile-web Dialog overlay dismissal and Portal/Jest distribution behavior.
 
-## Decision for v0.1
+Modal-class overlays and anchored overlays do not need the same primitive. React Native 0.86 already ships `Modal`; on Android its `onRequestClose` integrates with the hardware back button. React Native for Web's `Modal` provides modal ARIA behavior, contains focus, and routes Escape to the top-most modal's `onRequestClose`.
 
-- do not add an overlay dependency yet
-- do not ship ad-hoc `Modal` wrappers as production Dialog/Popover implementations
-- keep overlay component names reserved
-- validate candidate behavior layers against Expo 57 / RN 0.86 and bare RN before adopting one
+## Decision
 
-## Acceptance gate
+### Dialog-class overlays
 
-A behavior layer must pass at minimum:
+BeeUI uses React Native core `Modal` as the behavior primitive for `Dialog`.
 
-1. iOS and Android native portal rendering
-2. Expo prebuild and bare React Native builds
-3. web keyboard/focus behavior
-4. screen-reader labeling and modal isolation
-5. Android hardware-back handling
-6. nested overlay behavior
-7. deterministic tests in BeeUI's test harness
+The BeeUI layer owns:
+
+- controlled/uncontrolled open state
+- trigger and close controls
+- semantic backdrop and surface styling
+- optional backdrop dismissal
+- dialog accessibility role / modal isolation hints
+- accessibility escape mapped to the same close path
+- stable component composition API
+
+The React Native / React Native Web layer owns the platform modal window, Android back integration, web focus containment, modal isolation, and web Escape routing.
+
+This keeps `@beeui/core` / `@beeui/ui` Expo-free and avoids adding a portal dependency for a behavior that the current RN stack already provides.
+
+### Anchored overlays
+
+`Popover`, `DropdownMenu`, `Tooltip`, `Select`, and other anchor-positioned overlays remain deferred. They need positioning, collision detection, nested-overlay coordination, and web keyboard semantics that should not be approximated with a full-screen Modal.
+
+`Sheet` and `AlertDialog` may reuse the modal-class kernel later, but they are not accepted merely by aliasing `Dialog`; their gesture/destructive-action contracts require separate tests.
+
+## Evidence / gates
+
+The Dialog implementation must pass BeeUI's existing gates:
+
+1. strict TypeScript
+2. React Native Testing Library state/dismissal contracts
+3. Expo/Metro bundle for Web, Android, and iOS
+4. Expo Prebuild generation of Android and iOS native projects
+5. no Expo runtime import in `@beeui/core` / `@beeui/ui`
+
+Before v0.1 is considered fully release-ready, Dialog still requires physical/simulator native interaction smoke testing, including screen reader behavior and Android hardware back on a compiled application.

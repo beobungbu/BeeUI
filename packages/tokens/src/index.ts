@@ -32,6 +32,7 @@ export const semanticColorTokens = [
   'focus-ring',
   'disabled',
   'disabled-foreground',
+  'overlay',
 ] as const;
 
 export type SemanticColorToken = (typeof semanticColorTokens)[number];

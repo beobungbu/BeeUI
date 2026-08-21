@@ -35,6 +35,13 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `AccordionItem` | disclosure | Value-scoped accordion item. |
 | `AccordionTrigger` | disclosure | Accessible item trigger. |
 | `AccordionContent` | disclosure | Active item content. |
+| `Dialog` | modal overlay | Controlled/uncontrolled modal state backed by React Native core `Modal`. |
+| `DialogTrigger` | modal overlay | Button-compatible trigger with expanded-state semantics. |
+| `DialogContent` | modal overlay | Modal surface with semantic backdrop, Android/web close path, and modal accessibility hints. |
+| `DialogTitle` | modal overlay | Semantic dialog heading. |
+| `DialogDescription` | modal overlay | Muted dialog supporting text. |
+| `DialogFooter` | modal overlay | Action-row composition. |
+| `DialogClose` | modal overlay | Button-compatible close control. |
 | `AppHeader` | application chrome | Title/description/leading/trailing composition; owns no navigation. |
 | `BottomActionBar` | application chrome | Bottom action surface; safe-area ownership stays with the application shell. |
 | `ListItem` | application pattern | Optional press behavior, inferred labels, leading/trailing slots. |
@@ -54,13 +61,14 @@ This file is the canonical component inventory for BeeUI. A component is conside
 
 The next safe tranche should focus on dependency-light interaction and application patterns:
 
+- `AlertDialog` and `Sheet` validation on the accepted modal-class behavior kernel
 - chips / filters / lightweight segmented controls
 - form affordances and validation helpers
 - list grouping and metadata variants
 - lightweight pagination
 
-## Overlay components
+## Anchored overlay components
 
-`Dialog`, `AlertDialog`, `Sheet`, `Popover`, `DropdownMenu`, `Tooltip`, `Toast`, and `Select` are intentionally deferred until BeeUI locks a behavior layer that works across Expo, Expo prebuild, bare React Native, and web.
+`Popover`, `DropdownMenu`, `Tooltip`, `Toast`, and `Select` remain deferred until BeeUI locks an anchored behavior layer that works across Expo, Expo prebuild, bare React Native, and web.
 
-Do not implement these as ad-hoc `Modal` wrappers merely to fill out the catalog. Focus management, portals, escape/back handling, keyboard behavior, and accessibility are part of their contract.
+Do not approximate anchored overlays with full-screen modal behavior. Positioning, collision handling, nested overlays, focus, keyboard semantics, and accessibility are part of their contract.

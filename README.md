@@ -14,21 +14,21 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 - semantic light/dark design tokens
 - reusable `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` packages
 - engine-neutral stable behavior/variant contracts with optional `className` escape hatches
-- 43 exported foundation components/subcomponents documented in `docs/components.md`
-- 18 contract tests with `jest-expo` + React Native Testing Library
+- 50 exported foundation components/subcomponents documented in `docs/components.md`
+- 20 contract tests with `jest-expo` + React Native Testing Library
 - reproducible `pnpm-lock.yaml` and frozen dependency installs
 - CI smoke bundling for Web, Android, and iOS through Expo/Metro
 - CI Expo Prebuild generation for Android and iOS native projects
 - CI guard preventing Expo runtime imports in `@beeui/core` and `@beeui/ui`
-- explicit ADRs for the styling boundary and deferred overlay behavior layer
+- React Native core `Modal` behavior for `Dialog`; anchored overlays remain separately gated
 
 ## Component coverage
 
-Current foundation includes layout, typography, actions, forms, navigation, disclosure, application chrome, application patterns, data display, feedback, and state compositions:
+Current foundation includes layout, typography, actions, forms, navigation, disclosure, modal overlay, application chrome, application patterns, data display, feedback, and state compositions:
 
-`Screen`, `Box`, `Section`, `MetadataRow`, `Text`, `Button`, `ButtonLabel`, `IconButton`, `Input`, `Textarea`, `Field`, `SearchInput`, `PasswordInput`, `OTPInput`, `Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`, `AppHeader`, `BottomActionBar`, `ListItem`, `SettingsItem`, `Card`, `AlertBanner`, `Badge`, `Avatar`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `EmptyState`, and `ErrorState`.
+`Screen`, `Box`, `Section`, `MetadataRow`, `Text`, `Button`, `ButtonLabel`, `IconButton`, `Input`, `Textarea`, `Field`, `SearchInput`, `PasswordInput`, `OTPInput`, `Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`, `Dialog`, `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`, `AppHeader`, `BottomActionBar`, `ListItem`, `SettingsItem`, `Card`, `AlertBanner`, `Badge`, `Avatar`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `EmptyState`, and `ErrorState`.
 
-Behavior-heavy overlays such as `Dialog`, `Sheet`, `Popover`, `DropdownMenu`, `Tooltip`, `Toast`, and `Select` are intentionally deferred until their portal/focus/back-button/keyboard/accessibility behavior is verified across Expo, prebuild/bare React Native, and web.
+Anchored overlays such as `Popover`, `DropdownMenu`, `Tooltip`, `Toast`, and `Select` remain deferred until their positioning/focus/keyboard/accessibility behavior is verified across Expo, prebuild/bare React Native, and web.
 
 ## Quick start
 
@@ -53,15 +53,15 @@ The current CI pipeline performs:
 1. clean `pnpm install --frozen-lockfile`
 2. an Expo-import boundary check for `packages/core/src` and `packages/ui/src`
 3. strict TypeScript checks across the workspace
-4. 18 React Native Testing Library contract tests
+4. 20 React Native Testing Library contract tests
 5. Expo/Metro export for Web
 6. Expo/Metro export for Android
 7. Expo/Metro export for iOS
 8. `expo prebuild --clean --no-install` to generate both native projects
 
-The latest fully verified head passed all of these gates. Expo export proves the JavaScript/Metro bundles resolve on all three targets, and Expo Prebuild proves the current configuration can generate Android and iOS native projects.
+The latest fully verified head passed all of these gates before the current Dialog tranche; the Dialog tranche must pass the same pipeline before being accepted.
 
-These checks do **not** claim that an APK/AAB or iOS application has been compiled or installed on a physical device. Remaining release verification is native compilation/device smoke testing and a true bare React Native consumer test.
+Expo export proves the JavaScript/Metro bundles resolve on all three targets, and Expo Prebuild proves the current configuration can generate Android and iOS native projects. These checks do **not** claim that an APK/AAB or iOS application has been compiled or installed on a physical device. Remaining release verification is native compilation/device smoke testing and a true bare React Native consumer test.
 
 ## Workspace
 
@@ -87,6 +87,6 @@ docs/
 5. Native hot paths may use `StyleSheet` or Reanimated without changing stable component APIs.
 6. Components must work in Expo, Expo prebuild/dev builds, and bare React Native.
 7. Web support is additive; mobile correctness takes priority.
-8. Behavior-heavy overlays are not considered production-ready until focus, portal, back-button, keyboard, nested-overlay, and accessibility contracts are verified.
+8. Modal-class and anchored overlays may use different behavior primitives; neither class is considered production-ready until its platform-specific interaction contracts are verified.
 
 See [`docs/architecture.md`](docs/architecture.md), [`docs/components.md`](docs/components.md), and the ADRs in [`docs/decisions`](docs/decisions) for the full contract.
