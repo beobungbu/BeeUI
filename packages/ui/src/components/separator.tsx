@@ -16,7 +16,7 @@ export const Separator = React.forwardRef<React.ComponentRef<typeof View>, Separ
       accessible={decorative ? false : props.accessible}
       className={cn(
         'shrink-0 bg-border',
-        orientation === 'horizontal' ? 'h-px w-full' : 'h-full w-px',
+        orientation === 'horizontal' ? 'h-px w-full' : 'self-stretch w-px',
         className,
       )}
       role={decorative ? undefined : 'separator'}

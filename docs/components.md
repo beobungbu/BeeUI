@@ -25,7 +25,7 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `Field` | form | Label/description/error composition; generates stable label `nativeID` metadata and propagates state/accessibility metadata to text controls. |
 | `HelperText` | form | Muted supporting text for form affordances without hidden state. |
 | `FormMessage` | form | Destructive form feedback with polite live-region semantics by default. |
-| `SearchInput` | form | Search keyboard/submit semantics layered on `Input`. |
+| `SearchInput` | form | Search keyboard/submit semantics layered on `Input`; clearing a previously non-empty query emits one `onSearch('')` reset signal. |
 | `PasswordInput` | form | Password visibility composition with safe keyboard/autofill defaults; explicit caller overrides remain authoritative. |
 | `OTPInput` | form | Controlled/uncontrolled one-time-code input with numeric normalization and completion callback. |
 | `Checkbox` | form | Controlled boolean/indeterminate state with checkbox semantics. |
@@ -34,8 +34,8 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `Switch` | form | Native `Switch` with semantic track/thumb colors. |
 | `Chip` | selection | Standalone toggle or value-scoped group item with button/radio/checkbox semantics. |
 | `ChipGroup` | selection | Controlled/uncontrolled single or multiple selection coordination. |
-| `SegmentedControl` | selection | Controlled compact mutually exclusive selection surface. |
-| `SegmentedControlItem` | selection | Accessible tab-style segment with selected-state semantics. |
+| `SegmentedControl` | selection | Controlled compact mutually exclusive selection surface with `radiogroup` semantics. |
+| `SegmentedControlItem` | selection | Accessible radio-style segment with checked-state semantics. |
 | `Pagination` | navigation | Controlled page/page-count context with normalized boundaries. |
 | `PaginationItem` | navigation | Page/previous/next action with selected and boundary-disabled semantics. |
 | `Breadcrumb` | navigation | Router-neutral breadcrumb composition with decorative separators hidden from accessibility. |
@@ -55,21 +55,21 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `AccordionContent` | disclosure | Active item content. |
 | `Dialog` | modal overlay | Controlled/uncontrolled modal state backed by React Native core `Modal`; controlled `open` requires `onOpenChange`, with dismissable runtime fallback for malformed JS usage. |
 | `DialogTrigger` | modal overlay | Button-compatible trigger with expanded-state semantics. |
-| `DialogContent` | modal overlay | Modal surface with semantic backdrop, Android/web close path, and modal accessibility hints. |
-| `DialogTitle` | modal overlay | Semantic dialog heading. |
-| `DialogDescription` | modal overlay | Muted dialog supporting text. |
+| `DialogContent` | modal overlay | Modal surface with semantic backdrop/close paths plus registered title/description accessibility relationships while preserving explicit caller overrides. |
+| `DialogTitle` | modal overlay | Semantic dialog heading that registers stable label metadata with its containing `DialogContent`. |
+| `DialogDescription` | modal overlay | Muted supporting text that provides a primitive-text accessibility hint to its containing dialog. |
 | `DialogFooter` | modal overlay | Action-row composition. |
 | `DialogClose` | modal overlay | Button-compatible close control. |
 | `AppHeader` | application chrome | Title/description/leading/trailing composition; owns no navigation. |
 | `BottomActionBar` | application chrome | Bottom action surface; safe-area ownership stays with the application shell. |
 | `ListGroup` | application pattern | Semantic bordered surface for grouped application rows without taking ownership of row behavior. |
 | `ListGroupHeader` | application pattern | Title/description/trailing header composition for grouped rows. |
-| `ListItem` | application pattern | Optional press behavior; interactive rows preserve native aggregation of title/description/trailing content unless the caller supplies an explicit accessibility label. |
-| `SettingsItem` | application pattern | Settings row specialization with value/trailing content included in the row's native accessible content. |
+| `ListItem` | application pattern | Optional press behavior; interactive rows synthesize deterministic accessible names from primitive title/description/trailing content unless the caller supplies an explicit label. |
+| `SettingsItem` | application pattern | Settings row specialization whose primitive value participates in the synthesized row accessible name. |
 | `DescriptionList` | application pattern | Read-only grouped metadata composition with no formatting/data-state ownership. |
 | `DescriptionItem` | application pattern | Description-list row specialization composed from `MetadataRow`. |
 | `Card` | surface | Surface variants and spacing contract. |
-| `AlertBanner` | feedback | Semantic inline status callout with live-region behavior and optional action. |
+| `AlertBanner` | feedback | Semantic inline status callout with Android live-region behavior and iOS `AccessibilityInfo` announcement support; explicit announcement text is available for complex content. |
 | `Badge` | data display | Semantic status variants with paired foreground tokens. |
 | `Avatar` | data display | Image/fallback behavior with size variants; failure reset is keyed to semantic image source content rather than source object identity. |
 | `Stat` | data display | Layout-only metric composition with no hidden state or formatting ownership. |
@@ -81,7 +81,7 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `Progress` | feedback | Clamped progress value and native progressbar semantics. |
 | `Spinner` | feedback | Native indicator with semantic tone mapping. |
 | `Skeleton` | feedback | Decorative static loading surface. |
-| `Separator` | layout | Decorative by default; semantic separator when requested. |
+| `Separator` | layout | Decorative by default; semantic separator when requested; vertical orientation stretches across the parent's cross axis instead of relying on percentage height. |
 | `EmptyState` | state | Neutral empty-state composition with optional action. |
 | `ErrorState` | state | Destructive error-state specialization with optional retry action. |
 
