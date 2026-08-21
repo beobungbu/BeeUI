@@ -24,17 +24,44 @@ function useDialogContext() {
   return context;
 }
 
-export type DialogProps = {
+type DialogBaseProps = {
   children?: React.ReactNode;
-  defaultOpen?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  open?: boolean;
 };
 
-export function Dialog({ children, defaultOpen = false, onOpenChange, open }: DialogProps) {
-  const controlled = open !== undefined;
-  const [internalOpen, setInternalOpen] = React.useState(defaultOpen);
-  const resolvedOpen = controlled ? open : internalOpen;
+type DialogControlledProps = DialogBaseProps & {
+  defaultOpen?: never;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+};
+
+type DialogUncontrolledProps = DialogBaseProps & {
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  open?: undefined;
+};
+
+export type DialogProps = DialogControlledProps | DialogUncontrolledProps;
+
+export function Dialog(props: DialogProps) {
+  const { children, defaultOpen = false, onOpenChange, open } = props;
+  const hasOpenProp = open !== undefined;
+  const controlled = hasOpenProp && typeof onOpenChange === 'function';
+  const [internalOpen, setInternalOpen] = React.useState(open ?? defaultOpen);
+  const resolvedOpen = controlled && open !== undefined ? open : internalOpen;
+
+  React.useEffect(() => {
+    if (typeof __DEV__ !== 'undefined' && __DEV__ && hasOpenProp && !onOpenChange) {
+      console.warn(
+        'BeeUI Dialog: `open` requires `onOpenChange`. Falling back to dismissable uncontrolled behavior.',
+      );
+    }
+  }, [hasOpenProp, onOpenChange]);
+
+  React.useEffect(() => {
+    if (!controlled && hasOpenProp && open !== undefined) {
+      setInternalOpen(open);
+    }
+  }, [controlled, hasOpenProp, open]);
 
   const setOpen = React.useCallback(
     (nextOpen: boolean) => {
