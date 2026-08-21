@@ -20,6 +20,13 @@ These rules apply to all generated or hand-written BeeUI code.
 - Keep variants explicit and typed.
 - Avoid new dependencies unless they materially reduce complexity.
 
+## Styling
+
+- Tailwind/Uniwind utility names must be statically discoverable at build time.
+- Never construct utilities dynamically (for example `bg-${color}-500`). Map dynamic state to complete, literal class strings instead.
+- Prefer semantic utilities backed by the BeeUI token contract.
+- Keep platform-specific utilities explicit (`web:`, `ios:`, `android:`) and test each affected platform.
+
 ## Performance
 
 - Prefer direct `className` styling for normal UI.

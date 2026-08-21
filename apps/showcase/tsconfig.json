@@ -1,7 +1,7 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "types": ["react"]
+    "strict": true
   },
-  "include": ["App.tsx", "index.ts", "uniwind-types.d.ts"]
+  "include": ["App.tsx", "index.ts", "expo-env.d.ts", "uniwind-types.d.ts"]
 }
