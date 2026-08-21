@@ -6,7 +6,10 @@ This file is the canonical component inventory for BeeUI. A component is conside
 
 | Component | Category | Key contract |
 | --- | --- | --- |
+| `Screen` | layout | Base application surface with semantic background and optional spacing; owns no safe-area behavior. |
 | `Box` | layout | Thin `View` primitive; no design assumptions. |
+| `Section` | layout | Title/description/action/content composition for screen sections. |
+| `MetadataRow` | layout | Read-only label/value metadata presentation. |
 | `Text` | typography | Semantic type/tone variants. |
 | `Button` | action | Accessible pressable, variants, sizes, loading/disabled states. |
 | `ButtonLabel` | action | Explicit label primitive for composed buttons. |
@@ -37,6 +40,7 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `ListItem` | application pattern | Optional press behavior, inferred labels, leading/trailing slots. |
 | `SettingsItem` | application pattern | Settings row specialization with value/trailing content. |
 | `Card` | surface | Surface variants and spacing contract. |
+| `AlertBanner` | feedback | Semantic inline status callout with live-region behavior and optional action. |
 | `Badge` | data display | Semantic status variants with paired foreground tokens. |
 | `Avatar` | data display | Image/fallback behavior with size variants. |
 | `Progress` | feedback | Clamped progress value and native progressbar semantics. |
@@ -48,12 +52,12 @@ This file is the canonical component inventory for BeeUI. A component is conside
 
 ## Next components
 
-The next safe tranche should focus on application patterns that remain dependency-light:
+The next safe tranche should focus on dependency-light interaction and application patterns:
 
+- chips / filters / lightweight segmented controls
 - form affordances and validation helpers
-- screen/section/container composition
-- list grouping and metadata rows
-- lightweight pagination / segmented controls
+- list grouping and metadata variants
+- lightweight pagination
 
 ## Overlay components
 

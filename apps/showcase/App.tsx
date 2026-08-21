@@ -5,6 +5,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
+  AlertBanner,
   AppHeader,
   Avatar,
   Badge,
@@ -22,12 +23,15 @@ import {
   IconButton,
   Input,
   ListItem,
+  MetadataRow,
   OTPInput,
   PasswordInput,
   Progress,
   Radio,
   RadioGroup,
+  Screen,
   SearchInput,
+  Section,
   Separator,
   SettingsItem,
   Skeleton,
@@ -64,7 +68,7 @@ export default function App() {
   const [otp, setOtp] = React.useState('');
 
   return (
-    <Box className="flex-1 bg-background">
+    <Screen>
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} />
       <AppHeader
         description="React Native + TypeScript components built on semantic tokens."
@@ -74,20 +78,28 @@ export default function App() {
       />
       <ScrollView contentContainerStyle={{ paddingBottom: 96 }}>
         <Box className="mx-auto w-full max-w-2xl gap-8 px-5 py-8">
+          <AlertBanner
+            description="This showcase is bundled for web, Android, and iOS in CI."
+            title="Portable foundation"
+            variant="info"
+          />
+
           <Card className="gap-4" variant="raised">
-            <Box className="flex-row items-center justify-between">
-              <Text variant="heading">Buttons</Text>
-              <IconButton accessibilityLabel="Add item" variant="outline">＋</IconButton>
-            </Box>
-            <Box className="gap-3">
-              <Button>Primary action</Button>
-              <Button variant="secondary">Secondary action</Button>
-              <Button variant="outline">Outline action</Button>
-              <Button variant="ghost">Ghost action</Button>
-              <Button variant="destructive">Destructive action</Button>
-              <Button disabled>Disabled action</Button>
-              <Button loading>Loading action</Button>
-            </Box>
+            <Section
+              action={<IconButton accessibilityLabel="Add item" variant="outline">＋</IconButton>}
+              description="Variants, disabled and loading behavior."
+              title="Buttons"
+            >
+              <Box className="gap-3">
+                <Button>Primary action</Button>
+                <Button variant="secondary">Secondary action</Button>
+                <Button variant="outline">Outline action</Button>
+                <Button variant="ghost">Ghost action</Button>
+                <Button variant="destructive">Destructive action</Button>
+                <Button disabled>Disabled action</Button>
+                <Button loading>Loading action</Button>
+              </Box>
+            </Section>
           </Card>
 
           <Card className="gap-4">
@@ -95,45 +107,36 @@ export default function App() {
             <Field description="Used only for account notifications." label="Email" required>
               <Input autoCapitalize="none" placeholder="you@example.com" />
             </Field>
-            <Field label="Search">
-              <SearchInput onSearch={() => undefined} placeholder="Search projects" />
-            </Field>
-            <Field label="Password">
-              <PasswordInput placeholder="Enter password" />
-            </Field>
-            <Field description="Six numeric digits." label="Verification code">
-              <OTPInput accessibilityLabel="Verification code" onValueChange={setOtp} value={otp} />
-            </Field>
+            <Field label="Search"><SearchInput onSearch={() => undefined} placeholder="Search projects" /></Field>
+            <Field label="Password"><PasswordInput placeholder="Enter password" /></Field>
+            <Field description="Six numeric digits." label="Verification code"><OTPInput accessibilityLabel="Verification code" onValueChange={setOtp} value={otp} /></Field>
             <Field error="Enter a valid project name." invalid label="Project name"><Input placeholder="Invalid value" /></Field>
             <Field disabled label="Managed field"><Input placeholder="Disabled by field context" /></Field>
             <Field description="Optional long-form content." label="Notes"><Textarea placeholder="Long-form notes" /></Field>
             <Separator />
             <Checkbox checked={accepted} label="Accept terms" onCheckedChange={setAccepted} />
             <RadioGroup accessibilityLabel="Subscription plan" onValueChange={(value) => setPlan(value as 'starter' | 'pro')} value={plan}>
-              <Radio label="Starter plan" value="starter" />
-              <Radio label="Pro plan" value="pro" />
+              <Radio label="Starter plan" value="starter" /><Radio label="Pro plan" value="pro" />
             </RadioGroup>
-            <Box className="flex-row items-center justify-between gap-4">
-              <Text>Notifications</Text>
-              <Switch accessibilityLabel="Notifications" onValueChange={setNotifications} value={notifications} />
-            </Box>
+            <Box className="flex-row items-center justify-between gap-4"><Text>Notifications</Text><Switch accessibilityLabel="Notifications" onValueChange={setNotifications} value={notifications} /></Box>
+          </Card>
+
+          <Card className="gap-4">
+            <Section description="Dependency-free application information patterns." title="Metadata">
+              <MetadataRow label="Runtime" value="React Native 0.86.2" />
+              <Separator />
+              <MetadataRow label="Styling" value="Uniwind 1.10.1" />
+              <Separator />
+              <MetadataRow description="Generated in CI" label="Native projects" value="Android + iOS" />
+            </Section>
           </Card>
 
           <Card className="gap-4">
             <Text variant="heading">Disclosure</Text>
-            <Collapsible>
-              <CollapsibleTrigger>Advanced options</CollapsibleTrigger>
-              <CollapsibleContent><Text tone="muted">Hidden until expanded.</Text></CollapsibleContent>
-            </Collapsible>
+            <Collapsible><CollapsibleTrigger>Advanced options</CollapsibleTrigger><CollapsibleContent><Text tone="muted">Hidden until expanded.</Text></CollapsibleContent></Collapsible>
             <Accordion defaultValue="account">
-              <AccordionItem value="account">
-                <AccordionTrigger>Account</AccordionTrigger>
-                <AccordionContent><Text tone="muted">Account preferences and identity.</Text></AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="billing">
-                <AccordionTrigger>Billing</AccordionTrigger>
-                <AccordionContent><Text tone="muted">Invoices and payment settings.</Text></AccordionContent>
-              </AccordionItem>
+              <AccordionItem value="account"><AccordionTrigger>Account</AccordionTrigger><AccordionContent><Text tone="muted">Account preferences and identity.</Text></AccordionContent></AccordionItem>
+              <AccordionItem value="billing"><AccordionTrigger>Billing</AccordionTrigger><AccordionContent><Text tone="muted">Invoices and payment settings.</Text></AccordionContent></AccordionItem>
             </Accordion>
           </Card>
 
@@ -146,47 +149,23 @@ export default function App() {
 
           <Card className="gap-4">
             <Text variant="heading">Tabs</Text>
-            <Tabs onValueChange={setTab} value={tab}>
-              <TabsList>
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="details">Details</TabsTrigger>
-              </TabsList>
-              <TabsContent value="overview"><Text tone="muted">Overview content is mounted for the active tab.</Text></TabsContent>
-              <TabsContent value="details"><Text tone="muted">Details content is mounted only when selected.</Text></TabsContent>
-            </Tabs>
+            <Tabs onValueChange={setTab} value={tab}><TabsList><TabsTrigger value="overview">Overview</TabsTrigger><TabsTrigger value="details">Details</TabsTrigger></TabsList><TabsContent value="overview"><Text tone="muted">Overview content is mounted for the active tab.</Text></TabsContent><TabsContent value="details"><Text tone="muted">Details content is mounted only when selected.</Text></TabsContent></Tabs>
           </Card>
 
           <Card className="gap-4" variant="muted">
             <Text variant="heading">Status and feedback</Text>
-            <Box className="flex-row flex-wrap gap-2">
-              <Badge>Primary</Badge><Badge variant="secondary">Secondary</Badge><Badge variant="success">Success</Badge><Badge variant="warning">Warning</Badge><Badge variant="destructive">Error</Badge><Badge variant="info">Info</Badge>
-            </Box>
+            <Box className="flex-row flex-wrap gap-2"><Badge>Primary</Badge><Badge variant="secondary">Secondary</Badge><Badge variant="success">Success</Badge><Badge variant="warning">Warning</Badge><Badge variant="destructive">Error</Badge><Badge variant="info">Info</Badge></Box>
             <Separator />
             <Box className="flex-row items-center gap-5"><Spinner /><Spinner tone="success" /><Spinner tone="warning" /><Spinner tone="destructive" /></Box>
             <Progress accessibilityLabel="Profile completion" value={72} />
           </Card>
 
-          <Card className="gap-4">
-            <Text variant="heading">State compositions</Text>
-            <EmptyState description="Create your first record to get started." title="No records yet" action={<Button size="sm">Create record</Button>} />
-            <Separator />
-            <ErrorState description="The server could not load this section." action={<Button size="sm" variant="outline">Try again</Button>} />
-          </Card>
+          <Card className="gap-4"><Text variant="heading">State compositions</Text><EmptyState description="Create your first record to get started." title="No records yet" action={<Button size="sm">Create record</Button>} /><Separator /><ErrorState description="The server could not load this section." action={<Button size="sm" variant="outline">Try again</Button>} /></Card>
 
-          <Card className="gap-4">
-            <Text variant="heading">Loading surfaces</Text>
-            <Box className="flex-row items-center gap-3">
-              <Skeleton className="h-12 w-12" variant="circle" />
-              <Box className="flex-1 gap-2"><Skeleton className="w-2/3" variant="text" /><Skeleton className="w-full" variant="text" /></Box>
-            </Box>
-            <Skeleton className="h-24 w-full" />
-          </Card>
+          <Card className="gap-4"><Text variant="heading">Loading surfaces</Text><Box className="flex-row items-center gap-3"><Skeleton className="h-12 w-12" variant="circle" /><Box className="flex-1 gap-2"><Skeleton className="w-2/3" variant="text" /><Skeleton className="w-full" variant="text" /></Box></Box><Skeleton className="h-24 w-full" /></Card>
         </Box>
       </ScrollView>
-      <BottomActionBar>
-        <Button size="sm" variant="ghost">Cancel</Button>
-        <Button size="sm">Save changes</Button>
-      </BottomActionBar>
-    </Box>
+      <BottomActionBar><Button size="sm" variant="ghost">Cancel</Button><Button size="sm">Save changes</Button></BottomActionBar>
+    </Screen>
   );
 }

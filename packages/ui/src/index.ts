@@ -8,6 +8,7 @@ export {
   type AccordionProps,
   type AccordionTriggerProps,
 } from './components/accordion';
+export { AlertBanner, alertBannerVariants, type AlertBannerProps } from './components/alert-banner';
 export { AppHeader, type AppHeaderProps } from './components/app-header';
 export {
   Avatar,
@@ -50,6 +51,7 @@ export {
   type ListItemProps,
   type SettingsItemProps,
 } from './components/list-item';
+export { MetadataRow, type MetadataRowProps } from './components/metadata-row';
 export { OTPInput, type OTPInputProps } from './components/otp-input';
 export { PasswordInput, type PasswordInputProps } from './components/password-input';
 export { Progress, progressVariants, type ProgressProps } from './components/progress';
@@ -60,7 +62,9 @@ export {
   type RadioGroupProps,
   type RadioProps,
 } from './components/radio';
+export { Screen, type ScreenProps } from './components/screen';
 export { SearchInput, type SearchInputProps } from './components/search-input';
+export { Section, type SectionProps } from './components/section';
 export { Separator, type SeparatorProps } from './components/separator';
 export { Skeleton, skeletonVariants, type SkeletonProps } from './components/skeleton';
 export { Spinner, type SpinnerProps } from './components/spinner';
