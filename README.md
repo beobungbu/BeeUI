@@ -14,8 +14,9 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 - semantic light/dark design tokens
 - reusable `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` packages
 - engine-neutral stable behavior/variant contracts with optional `className` escape hatches
-- 78 exported foundation components/subcomponents documented in `docs/components.md`
-- 57 contract tests with `jest-expo` + React Native Testing Library
+- explicit safe-area foundation through `BeeUIProvider` + `SafeArea`, backed by `react-native-safe-area-context`
+- 80 exported foundation components/subcomponents documented in `docs/components.md`
+- 68 contract tests with `jest-expo` + React Native Testing Library
 - reproducible `pnpm-lock.yaml` and frozen dependency installs
 - CI smoke bundling for Web, Android, and iOS through Expo/Metro
 - CI Expo Prebuild generation for Android and iOS native projects
@@ -26,9 +27,9 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 
 ## Component coverage
 
-Current foundation includes layout, accessibility, typography, actions, forms, selection, navigation, disclosure, modal overlay, application chrome, application patterns, data display, feedback, and state compositions:
+Current foundation includes application-root integration, layout, accessibility, typography, actions, forms, selection, navigation, disclosure, modal overlay, application chrome, application patterns, data display, feedback, and state compositions:
 
-`Screen`, `Box`, `Stack`, `HStack`, `VStack`, `Section`, `MetadataRow`, `VisuallyHidden`, `Text`, `Label`, `Button`, `ButtonLabel`, `IconButton`, `Link`, `Input`, `Textarea`, `Field`, `HelperText`, `FormMessage`, `SearchInput`, `PasswordInput`, `OTPInput`, `Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Chip`, `ChipGroup`, `SegmentedControl`, `SegmentedControlItem`, `Pagination`, `PaginationItem`, `Breadcrumb`, `BreadcrumbItem`, `Stepper`, `StepperItem`, `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`, `Dialog`, `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`, `AppHeader`, `BottomActionBar`, `ListGroup`, `ListGroupHeader`, `ListItem`, `SettingsItem`, `DescriptionList`, `DescriptionItem`, `Card`, `AlertBanner`, `Badge`, `Avatar`, `Stat`, `StatLabel`, `StatValue`, `StatHelpText`, `Timeline`, `TimelineItem`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `EmptyState`, and `ErrorState`.
+`BeeUIProvider`, `SafeArea`, `Screen`, `Box`, `Stack`, `HStack`, `VStack`, `Section`, `MetadataRow`, `VisuallyHidden`, `Text`, `Label`, `Button`, `ButtonLabel`, `IconButton`, `Link`, `Input`, `Textarea`, `Field`, `HelperText`, `FormMessage`, `SearchInput`, `PasswordInput`, `OTPInput`, `Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Chip`, `ChipGroup`, `SegmentedControl`, `SegmentedControlItem`, `Pagination`, `PaginationItem`, `Breadcrumb`, `BreadcrumbItem`, `Stepper`, `StepperItem`, `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`, `Dialog`, `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`, `AppHeader`, `BottomActionBar`, `ListGroup`, `ListGroupHeader`, `ListItem`, `SettingsItem`, `DescriptionList`, `DescriptionItem`, `Card`, `AlertBanner`, `Badge`, `Avatar`, `Stat`, `StatLabel`, `StatValue`, `StatHelpText`, `Timeline`, `TimelineItem`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `EmptyState`, and `ErrorState`.
 
 Anchored overlays such as `Popover`, `DropdownMenu`, `Tooltip`, `Toast`, and `Select` remain deferred until their positioning/focus/keyboard/accessibility behavior is verified across Expo, prebuild/bare React Native, and web.
 
@@ -48,9 +49,45 @@ Run the unit/type verification suite with:
 pnpm check
 ```
 
+## Safe-area foundation
+
+BeeUI measures safe areas at the application root but keeps edge ownership explicit so app shells do not get accidental double insets from navigation, tab bars, maps, media, or nested layouts.
+
+```tsx
+import {
+  AppHeader,
+  BeeUIProvider,
+  BottomActionBar,
+  SafeArea,
+  Screen,
+} from '@beeui/ui';
+
+function AppShell() {
+  return (
+    <BeeUIProvider>
+      <Screen>
+        <SafeArea edges={['top', 'left', 'right']}>
+          <AppHeader title="BeeUI" />
+        </SafeArea>
+
+        <SafeArea className="flex-1" edges={['left', 'right']}>
+          {/* application content */}
+        </SafeArea>
+
+        <SafeArea edges={['bottom', 'left', 'right']}>
+          <BottomActionBar>{/* actions */}</BottomActionBar>
+        </SafeArea>
+      </Screen>
+    </BeeUIProvider>
+  );
+}
+```
+
+`Screen`, `AppHeader`, and `BottomActionBar` intentionally do not add safe-area padding themselves. Applications assign ownership to the shell element that actually touches a system edge. `BeeUIProvider` synchronizes measured insets to Uniwind safe-area utilities by default; set `syncUniwindInsets={false}` only when the application already owns that bridge.
+
 ## Accessibility and field composition
 
-`Field` keeps the cross-platform explicit label fallback while also generating a stable label `nativeID` for React Native's Android `accessibilityLabelledBy` relationship. Required state is propagated to the control and explicit application accessibility props always win.
+`Field` keeps the cross-platform explicit label fallback while also generating a stable label `nativeID` for React Native's Android `accessibilityLabelledBy` relationship. Required state is propagated to text-entry controls and explicit application accessibility props always win.
 
 ```tsx
 import { Field, Input, Label, VisuallyHidden } from '@beeui/ui';
@@ -72,6 +109,8 @@ function ProfileFields() {
   );
 }
 ```
+
+`Field` is deliberately scoped to text-entry composition. `Checkbox`, `Radio`/`RadioGroup`, and `Switch` keep explicit control/group labels and state instead of inheriting Field metadata. Enabled controlled primitives warn in development when their matching change callback is missing, avoiding controls that look interactive but silently ignore input.
 
 `VisuallyHidden` must not be used to hide an interactive control. Buttons, links, inputs, and other interactive elements should expose their own accessible label/state.
 
@@ -150,7 +189,7 @@ The current CI pipeline performs:
 1. clean `pnpm install --frozen-lockfile`
 2. an Expo-import boundary check for `packages/core/src` and `packages/ui/src`
 3. strict TypeScript checks across the workspace
-4. 57 React Native Testing Library contract tests
+4. 68 React Native Testing Library contract tests
 5. Expo/Metro export for Web
 6. Expo/Metro export for Android
 7. Expo/Metro export for iOS
