@@ -1,0 +1,56 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  verify:
+    runs-on: [self-hosted, beeui]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+
+      - name: Enable pnpm via Corepack
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare pnpm@10.15.0 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify core packages stay Expo-free
+        run: |
+          if grep -R -n -E "from ['\"]expo([^'\"]*)['\"]|require\(['\"]expo([^'\"]*)['\"]\)" packages/core/src packages/ui/src; then
+            echo "BeeUI core packages must not import Expo runtime modules."
+            exit 1
+          fi
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Bundle showcase for web
+        run: pnpm --filter @beeui/showcase exec expo export --platform web --output-dir dist-web
+
+      - name: Bundle showcase for Android
+        run: pnpm --filter @beeui/showcase exec expo export --platform android --output-dir dist-android
+
+      - name: Bundle showcase for iOS
+        run: pnpm --filter @beeui/showcase exec expo export --platform ios --output-dir dist-ios
+
+      - name: Generate native projects with Expo Prebuild
+        env:
+          EXPO_NO_GIT_STATUS: 1
+        working-directory: apps/showcase
+        run: pnpm exec expo prebuild --clean --no-install

@@ -1,0 +1,22 @@
+{
+  "name": "beeui-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.15.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "showcase": "pnpm --filter @beeui/showcase start",
+    "ios": "pnpm --filter @beeui/showcase ios",
+    "android": "pnpm --filter @beeui/showcase android",
+    "web": "pnpm --filter @beeui/showcase web",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm --filter @beeui/showcase test",
+    "check": "pnpm typecheck && pnpm test"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "typescript": "~5.9.2"
+  }
+}
