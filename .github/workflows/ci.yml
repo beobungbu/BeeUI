@@ -20,6 +20,7 @@ jobs:
 
       - name: Enable pnpm via Corepack
         run: |
+          npm install -g corepack@latest
           corepack enable
           corepack prepare pnpm@10.15.0 --activate
 
