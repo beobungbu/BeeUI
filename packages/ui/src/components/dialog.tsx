@@ -149,17 +149,17 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
           <View
             ref={ref}
             {...props}
-            accessibilityRole="dialog"
             accessibilityViewIsModal
             aria-modal
             className={cn(
               'w-full max-w-lg gap-4 rounded-xl border border-border bg-surface p-5',
               className,
             )}
-            onAccessibilityEscape={(event) => {
-              onAccessibilityEscape?.(event);
+            onAccessibilityEscape={() => {
+              onAccessibilityEscape?.();
               requestClose();
             }}
+            role="dialog"
           >
             {children}
           </View>
