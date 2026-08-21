@@ -51,6 +51,35 @@ type AvatarImageProps = Omit<ImageProps, 'source'> & {
   className?: string;
 };
 
+function getAvatarSourceKey(source?: ImageSourcePropType) {
+  if (source === undefined) return 'none';
+  if (typeof source === 'number') return `asset:${source}`;
+
+  const sources = Array.isArray(source) ? source : [source];
+
+  return sources
+    .map((item) => {
+      const headers = item.headers
+        ? Object.entries(item.headers)
+            .sort(([left], [right]) => left.localeCompare(right))
+            .map(([key, value]) => `${key}:${value}`)
+            .join(',')
+        : '';
+
+      return [
+        item.uri ?? '',
+        item.method ?? '',
+        item.body ?? '',
+        item.cache ?? '',
+        item.width ?? '',
+        item.height ?? '',
+        item.scale ?? '',
+        headers,
+      ].join('|');
+    })
+    .join('||');
+}
+
 export type AvatarProps = Omit<ViewProps, 'children'> &
   VariantProps<typeof avatarVariants> & {
     className?: string;
@@ -76,10 +105,11 @@ export const Avatar = React.forwardRef<React.ComponentRef<typeof View>, AvatarPr
     ref,
   ) => {
     const [failed, setFailed] = React.useState(false);
+    const sourceKey = getAvatarSourceKey(source);
 
     React.useEffect(() => {
       setFailed(false);
-    }, [source]);
+    }, [sourceKey]);
 
     const {
       className: imagePropsClassName,
