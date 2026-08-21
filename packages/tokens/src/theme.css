@@ -5,6 +5,7 @@
   --radius-lg: 14px;
   --radius-xl: 18px;
   --radius-2xl: 24px;
+  --radius-full: 9999px;
 }
 
 @layer theme {
