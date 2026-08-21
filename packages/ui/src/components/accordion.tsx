@@ -1,12 +1,13 @@
 import { cn } from '@beeui/core';
 import * as React from 'react';
 import { Pressable, View, type PressableProps, type ViewProps } from 'react-native';
+import { useControllableState } from '../hooks/use-controllable-state';
 import { Text } from './text';
 
 type AccordionContextValue = {
   collapsible: boolean;
   disabled: boolean;
-  setValue: (value: string | null) => void;
+  setValue: (value: string | null | ((previous: string | null) => string | null)) => void;
   value: string | null;
 };
 
@@ -38,20 +39,26 @@ export type AccordionProps = Omit<ViewProps, 'children'> & {
 };
 
 export const Accordion = React.forwardRef<React.ComponentRef<typeof View>, AccordionProps>(
-  ({ children, className, collapsible = true, defaultValue = null, disabled = false, onValueChange, value, ...props }, ref) => {
-    const [internalValue, setInternalValue] = React.useState<string | null>(defaultValue);
-    const controlled = value !== undefined;
-    const resolvedValue = controlled ? value : internalValue;
-
-    const setValue = React.useCallback(
-      (nextValue: string | null) => {
-        if (disabled) return;
-        if (!controlled) setInternalValue(nextValue);
-        onValueChange?.(nextValue);
-      },
-      [controlled, disabled, onValueChange],
-    );
-
+  (
+    {
+      children,
+      className,
+      collapsible = true,
+      defaultValue = null,
+      disabled = false,
+      onValueChange,
+      value,
+      ...props
+    },
+    ref,
+  ) => {
+    const [resolvedValue, setValue] = useControllableState<string | null>({
+      defaultValue,
+      disabled,
+      name: 'Accordion',
+      onChange: onValueChange,
+      value,
+    });
     const context = React.useMemo(
       () => ({ collapsible, disabled, setValue, value: resolvedValue }),
       [collapsible, disabled, resolvedValue, setValue],
@@ -124,7 +131,9 @@ export const AccordionTrigger = React.forwardRef<
       disabled={isDisabled}
       onPress={(event) => {
         onPress?.(event);
-        accordion.setValue(open && accordion.collapsible ? null : item.value);
+        accordion.setValue((previous) =>
+          previous === item.value && accordion.collapsible ? null : item.value,
+        );
       }}
     >
       {childArray.map((child, index) =>
