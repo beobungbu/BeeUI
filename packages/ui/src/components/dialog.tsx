@@ -105,13 +105,13 @@ export const DialogTrigger = React.forwardRef<
   React.ComponentRef<typeof Pressable>,
   DialogTriggerProps
 >(({ accessibilityState, onPress, ...props }, ref) => {
-  const { open, setOpen } = useDialogContext();
+  const { setOpen } = useDialogContext();
 
   return (
     <Button
       ref={ref}
       {...props}
-      accessibilityState={{ ...accessibilityState, expanded: open }}
+      accessibilityState={accessibilityState}
       onPress={(event) => {
         onPress?.(event);
         setOpen(true);
