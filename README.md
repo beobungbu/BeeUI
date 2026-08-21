@@ -18,10 +18,12 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 - 80 exported foundation components/subcomponents documented in `docs/components.md`
 - 68 contract tests with `jest-expo` + React Native Testing Library
 - reproducible `pnpm-lock.yaml` and frozen dependency installs
+- release-package verification with packed-manifest, export, dependency, and clean-consumer checks
+- CI release-verification JSON artifact for the exact commit under review
 - CI smoke bundling for Web, Android, and iOS through Expo/Metro
 - CI Expo Prebuild generation for Android and iOS native projects
 - CI guard preventing Expo runtime imports in `@beeui/core` and `@beeui/ui`
-- true bare React Native 0.86.2 consumer verification with Android/iOS Metro bundles
+- true bare React Native 0.86.2 consumer verification using installed BeeUI tarballs rather than copied workspace source
 - Android bare React Native debug APK compilation in CI
 - React Native core `Modal` behavior for `Dialog`; anchored overlays remain separately gated
 
@@ -48,6 +50,20 @@ Run the unit/type verification suite with:
 ```bash
 pnpm check
 ```
+
+Run the package/release contract independently with:
+
+```bash
+pnpm release:verify
+```
+
+The release verifier packs all BeeUI packages, validates their packed manifests/exports, installs the tarballs into a clean package consumer, rejects Expo leakage, and writes `.artifacts/release-verification.json`.
+
+## Pre-1.0 distribution
+
+BeeUI packages intentionally remain `private: true`. The repository uses workspace packages for development and packed tarballs for package-boundary verification/controlled consumer smoke tests. This does not claim that BeeUI is publicly available from npm.
+
+The intended pre-1.0 direction is a registry/CLI source-ownership workflow. That workflow is still a release-roadmap item; applications should not depend on monorepo-relative paths as a distribution contract. See `docs/release.md` for the versioning and release policy.
 
 ## Safe-area foundation
 
@@ -190,15 +206,17 @@ The current CI pipeline performs:
 2. an Expo-import boundary check for `packages/core/src` and `packages/ui/src`
 3. strict TypeScript checks across the workspace
 4. 68 React Native Testing Library contract tests
-5. Expo/Metro export for Web
-6. Expo/Metro export for Android
-7. Expo/Metro export for iOS
-8. `expo prebuild --clean --no-install` to generate both native projects
-9. a fresh bare React Native 0.86.2 consumer that rejects Expo runtime resolution, bundles Android + iOS through Metro/Uniwind, and compiles an Android debug APK with Gradle
+5. `pnpm release:verify`, including real tarball packing and clean-consumer installation
+6. upload of `.artifacts/release-verification.json` for the PR commit
+7. Expo/Metro export for Web
+8. Expo/Metro export for Android
+9. Expo/Metro export for iOS
+10. `expo prebuild --clean --no-install` to generate both native projects
+11. a fresh bare React Native 0.86.2 consumer that installs the packed BeeUI tarballs, rejects Expo runtime resolution, bundles Android + iOS through Metro/Uniwind, and compiles an Android debug APK with Gradle
 
-Every foundation tranche is accepted only after the complete pipeline passes on the PR head.
+Every foundation tranche is accepted only after the complete pipeline passes on the exact PR head.
 
-Expo export proves the JavaScript/Metro bundles resolve on all three targets, Expo Prebuild proves the current configuration can generate Android and iOS native projects, and the bare-native gate proves source portability plus Android native compilation outside Expo. Remaining release verification is native iOS binary compilation on macOS and simulator/device interaction smoke testing, including dialog hardware-back/focus/screen-reader behavior and assistive-technology behavior for visually hidden content.
+Expo export proves the JavaScript/Metro bundles resolve on all three targets, Expo Prebuild proves the current configuration can generate Android and iOS native projects, and the bare-native gate proves installed-package portability plus Android native compilation outside Expo. Native iOS binary compilation on macOS and simulator/device interaction remain explicit release gates rather than claims made by Linux CI. Those gates include safe-area behavior, Dialog hardware-back/focus/keyboard/screen-reader behavior, VoiceOver/TalkBack behavior for visually hidden content, and representative light/dark visual review.
 
 ## Workspace
 
@@ -213,7 +231,12 @@ docs/
   architecture.md    architecture constraints
   components.md      canonical component inventory
   native-verification.md  bare React Native/native-build contract
+  release.md         versioning, distribution, and release gates
   decisions/         architecture decision records
+scripts/
+  verify-release.mjs package/export/installability verifier
+  verify-bare-consumer.sh  package-installed bare RN smoke/build
+CHANGELOG.md          consumer-facing release changes and migrations
 ```
 
 ## Design principles
@@ -227,4 +250,4 @@ docs/
 7. Web support is additive; mobile correctness takes priority.
 8. Modal-class and anchored overlays may use different behavior primitives; neither class is considered production-ready until its platform-specific interaction contracts are verified.
 
-See [`docs/architecture.md`](docs/architecture.md), [`docs/components.md`](docs/components.md), [`docs/native-verification.md`](docs/native-verification.md), and the ADRs in [`docs/decisions`](docs/decisions) for the full contract.
+See [`docs/architecture.md`](docs/architecture.md), [`docs/components.md`](docs/components.md), [`docs/native-verification.md`](docs/native-verification.md), [`docs/release.md`](docs/release.md), and the ADRs in [`docs/decisions`](docs/decisions) for the full contract.

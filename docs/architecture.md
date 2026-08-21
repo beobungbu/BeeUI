@@ -100,9 +100,19 @@ BeeUI targets React Native first. It must work with Expo, Expo prebuild/dev buil
 
 Web support is allowed through React Native Web or a future dedicated web implementation sharing the same token/component contracts. Native ergonomics and correctness take priority over forcing 100% code reuse.
 
+## Distribution contract
+
+BeeUI's `0.x` packages intentionally remain private while the distribution workflow is being validated. The monorepo may consume packages through workspace links, while CI and controlled external smoke tests consume `pnpm pack` tarballs through a normal `node_modules` boundary.
+
+A packed package is accepted only when its declared exports exist, its packed surface is explicit, internal `workspace:*` ranges have been rewritten to the lockstep release version, and the tarballs can be installed into a clean consumer. `pnpm release:verify` is the canonical automated gate for this contract.
+
+Packed tarballs are not a substitute for the intended source-ownership workflow. Before `1.0`, BeeUI still needs a registry/CLI distribution path that lets an application adopt component source deliberately without depending on monorepo-relative paths. Until that workflow exists, the package manifests remain `private: true` and no public npm distribution is implied.
+
 ## Versioning direction
 
-`0.x` may evolve component APIs while the foundation is validated. Before `1.0`, BeeUI should have:
+`@beeui/core`, `@beeui/tokens`, `@beeui/ui`, and the workspace root use one lockstep version. `0.x` may evolve component APIs while the foundation is validated; intentional breaking changes require changelog and migration notes.
+
+Before `1.0`, BeeUI should have:
 
 - stable token names
 - accessibility coverage for interactive primitives
@@ -111,3 +121,5 @@ Web support is allowed through React Native Web or a future dedicated web implem
 - 25-30 production primitives
 - registry/CLI distribution workflow
 - documented migration policy
+
+The release gates and the distinction between automated Linux proof and macOS/device-only verification are defined in `docs/release.md`.

@@ -3,6 +3,7 @@ node_modules/
 dist/
 build/
 coverage/
+.artifacts/
 *.log
 .DS_Store
 .env

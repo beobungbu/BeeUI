@@ -13,7 +13,8 @@
     "web": "pnpm --filter @beeui/showcase web",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm --filter @beeui/showcase test",
-    "check": "pnpm typecheck && pnpm test"
+    "check": "pnpm typecheck && pnpm test",
+    "release:verify": "node ./scripts/verify-release.mjs"
   },
   "devDependencies": {
     "@types/react": "^19.2.0",

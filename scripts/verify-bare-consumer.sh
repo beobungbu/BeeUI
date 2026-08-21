@@ -5,8 +5,29 @@ ACTION="${1:-all}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORK_ROOT="${RUNNER_TEMP:-/tmp}/beeui-bare-consumer"
 APP_DIR="${WORK_ROOT}/BeeUIBareSmoke"
+PACKAGE_DIR="${WORK_ROOT}/packages"
 CLI_VERSION="${BEEUI_RN_CLI_VERSION:-20.2.0}"
 RN_VERSION="${BEEUI_RN_VERSION:-0.86.2}"
+
+pack_beeui() {
+  echo "::group::Pack BeeUI packages through the package boundary"
+  rm -rf "${PACKAGE_DIR}"
+  mkdir -p "${PACKAGE_DIR}"
+
+  cd "${ROOT_DIR}"
+  pnpm --filter @beeui/core pack --pack-destination "${PACKAGE_DIR}"
+  pnpm --filter @beeui/tokens pack --pack-destination "${PACKAGE_DIR}"
+  pnpm --filter @beeui/ui pack --pack-destination "${PACKAGE_DIR}"
+
+  CORE_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beeui-core-*.tgz' -print -quit)"
+  TOKENS_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beeui-tokens-*.tgz' -print -quit)"
+  UI_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beeui-ui-*.tgz' -print -quit)"
+
+  test -n "${CORE_TARBALL}" && test -f "${CORE_TARBALL}"
+  test -n "${TOKENS_TARBALL}" && test -f "${TOKENS_TARBALL}"
+  test -n "${UI_TARBALL}" && test -f "${UI_TARBALL}"
+  echo "::endgroup::"
+}
 
 prepare_consumer() {
   echo "::group::Create fresh bare React Native ${RN_VERSION} consumer"
@@ -21,15 +42,16 @@ prepare_consumer() {
     --skip-git-init true
   echo "::endgroup::"
 
+  pack_beeui
   cd "${APP_DIR}"
 
-  echo "::group::Install BeeUI runtime styling dependencies"
+  echo "::group::Install BeeUI tarballs and runtime styling dependencies"
   npm install --save-exact \
+    "${CORE_TARBALL}" \
+    "${TOKENS_TARBALL}" \
+    "${UI_TARBALL}" \
     uniwind@1.10.1 \
     tailwindcss@4.3.3 \
-    class-variance-authority@0.7.1 \
-    clsx@2.1.1 \
-    tailwind-merge@3.6.0 \
     react-native-safe-area-context@5.7.0
   echo "::endgroup::"
 
@@ -38,34 +60,14 @@ prepare_consumer() {
     exit 1
   fi
 
-  echo "::group::Vendor BeeUI source into isolated consumer"
-  mkdir -p vendor/beeui/core vendor/beeui/tokens vendor/beeui/ui src build
-  cp -R "${ROOT_DIR}/packages/core/src" vendor/beeui/core/
-  cp "${ROOT_DIR}/packages/core/package.json" vendor/beeui/core/package.json
-  cp -R "${ROOT_DIR}/packages/tokens/src" vendor/beeui/tokens/
-  cp "${ROOT_DIR}/packages/tokens/package.json" vendor/beeui/tokens/package.json
-  cp -R "${ROOT_DIR}/packages/ui/src" vendor/beeui/ui/
-  cp "${ROOT_DIR}/packages/ui/package.json" vendor/beeui/ui/package.json
+  echo "::group::Configure isolated consumer"
+  mkdir -p src build
 
   cat > metro.config.js <<'EOF'
-const path = require('path');
 const { getDefaultConfig } = require('@react-native/metro-config');
 const { withUniwindConfig } = require('uniwind/metro');
 
 const config = getDefaultConfig(__dirname);
-const vendorRoot = path.resolve(__dirname, 'vendor/beeui');
-
-config.watchFolders = [...(config.watchFolders ?? []), vendorRoot];
-config.resolver = {
-  ...config.resolver,
-  extraNodeModules: {
-    ...(config.resolver?.extraNodeModules ?? {}),
-    '@beeui/core': path.join(vendorRoot, 'core'),
-    '@beeui/tokens': path.join(vendorRoot, 'tokens'),
-    '@beeui/ui': path.join(vendorRoot, 'ui'),
-  },
-  nodeModulesPaths: [path.resolve(__dirname, 'node_modules')],
-};
 
 module.exports = withUniwindConfig(config, {
   cssEntryFile: './src/global.css',
@@ -76,10 +78,10 @@ EOF
   cat > src/global.css <<'EOF'
 @import 'tailwindcss';
 @import 'uniwind';
-@import '../vendor/beeui/tokens/src/theme.css';
+@import '@beeui/tokens/theme.css';
 
-@source '../vendor/beeui/core/src';
-@source '../vendor/beeui/ui/src';
+@source '../node_modules/@beeui/core/src';
+@source '../node_modules/@beeui/ui/src';
 EOF
 
   cat > App.tsx <<'EOF'
