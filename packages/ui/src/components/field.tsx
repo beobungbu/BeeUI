@@ -2,6 +2,7 @@ import { cn } from '@beeui/core';
 import * as React from 'react';
 import { View, type ViewProps } from 'react-native';
 import { FieldContext, type FieldContextValue } from './field-context';
+import { Label } from './label';
 import { Text } from './text';
 
 export type FieldProps = Omit<ViewProps, 'children'> & {
@@ -12,7 +13,9 @@ export type FieldProps = Omit<ViewProps, 'children'> & {
   error?: string;
   invalid?: boolean;
   label: string;
+  labelNativeID?: string;
   required?: boolean;
+  requiredAccessibilityLabel?: string;
 };
 
 export const Field = React.forwardRef<React.ComponentRef<typeof View>, FieldProps>(
@@ -25,27 +28,49 @@ export const Field = React.forwardRef<React.ComponentRef<typeof View>, FieldProp
       error,
       invalid = false,
       label,
+      labelNativeID,
       required = false,
+      requiredAccessibilityLabel = 'required',
       ...props
     },
     ref,
   ) => {
+    const reactId = React.useId();
+    const generatedLabelNativeID = `beeui-field-${reactId.replace(/:/g, '')}-label`;
+    const resolvedLabelNativeID = labelNativeID ?? generatedLabelNativeID;
     const contextValue = React.useMemo<FieldContextValue>(
-      () => ({ description, disabled, error, invalid, label }),
-      [description, disabled, error, invalid, label],
+      () => ({
+        description,
+        disabled,
+        error,
+        invalid,
+        label,
+        labelNativeID: resolvedLabelNativeID,
+        required,
+        requiredAccessibilityLabel,
+      }),
+      [
+        description,
+        disabled,
+        error,
+        invalid,
+        label,
+        required,
+        requiredAccessibilityLabel,
+        resolvedLabelNativeID,
+      ],
     );
 
     return (
       <FieldContext.Provider value={contextValue}>
         <View ref={ref} className={cn('gap-2', className)} {...props}>
-          <Text variant="label">
+          <Label
+            nativeID={resolvedLabelNativeID}
+            required={required}
+            requiredAccessibilityLabel={requiredAccessibilityLabel}
+          >
             {label}
-            {required ? (
-              <Text tone="destructive" variant="label">
-                {' *'}
-              </Text>
-            ) : null}
-          </Text>
+          </Label>
           {children}
           {invalid && error ? (
             <Text accessibilityLiveRegion="polite" role="alert" tone="destructive" variant="caption">
