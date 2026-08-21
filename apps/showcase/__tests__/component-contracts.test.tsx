@@ -3,11 +3,16 @@ import * as React from 'react';
 import {
   Button,
   Checkbox,
+  Field,
   Input,
   Progress,
   Radio,
   RadioGroup,
   Switch,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from '@beeui/ui';
 
 describe('BeeUI component contracts', () => {
@@ -57,6 +62,19 @@ describe('BeeUI component contracts', () => {
     expect(input.props.accessibilityState).toEqual({ selected: true, disabled: true });
   });
 
+  it('propagates Field label, error, and state into Input', () => {
+    const screen = render(
+      <Field error="Enter a valid email" invalid label="Email">
+        <Input />
+      </Field>,
+    );
+    const input = screen.getByLabelText('Email');
+
+    expect(input.props.accessibilityHint).toBe('Enter a valid email');
+    expect(input.props.accessibilityState.disabled).toBe(false);
+    expect(screen.getByText('Enter a valid email')).toBeTruthy();
+  });
+
   it('exposes checkbox state and requests controlled changes', () => {
     const onCheckedChange = jest.fn();
     const screen = render(
@@ -96,6 +114,31 @@ describe('BeeUI component contracts', () => {
 
     fireEvent.press(pro);
     expect(onValueChange).toHaveBeenCalledWith('pro');
+  });
+
+  it('coordinates tab selection and only mounts active content', () => {
+    const onValueChange = jest.fn();
+    const screen = render(
+      <Tabs onValueChange={onValueChange} value="overview">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="details">Details</TabsTrigger>
+        </TabsList>
+        <TabsContent value="overview">Overview content</TabsContent>
+        <TabsContent value="details">Details content</TabsContent>
+      </Tabs>,
+    );
+
+    const overview = screen.getByRole('tab', { name: 'Overview' });
+    const details = screen.getByRole('tab', { name: 'Details' });
+
+    expect(overview.props.accessibilityState.selected).toBe(true);
+    expect(details.props.accessibilityState.selected).toBe(false);
+    expect(screen.getByText('Overview content')).toBeTruthy();
+    expect(screen.queryByText('Details content')).toBeNull();
+
+    fireEvent.press(details);
+    expect(onValueChange).toHaveBeenCalledWith('details');
   });
 
   it('clamps progress values for accessibility', () => {

@@ -7,6 +7,7 @@ import {
   Button,
   Card,
   Checkbox,
+  Field,
   IconButton,
   Input,
   Progress,
@@ -16,6 +17,10 @@ import {
   Skeleton,
   Spinner,
   Switch,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   Text,
   Textarea,
 } from '@beeui/ui';
@@ -53,6 +58,7 @@ export default function App() {
   const [accepted, setAccepted] = React.useState(false);
   const [notifications, setNotifications] = React.useState(true);
   const [plan, setPlan] = React.useState<'starter' | 'pro'>('starter');
+  const [tab, setTab] = React.useState('overview');
 
   return (
     <Box className="flex-1 bg-background">
@@ -69,7 +75,7 @@ export default function App() {
             </Box>
             <Text tone="muted">
               React Native + TypeScript components built on semantic tokens. Uniwind is an
-              implementation detail, not part of the component API.
+              implementation detail behind BeeUI's stable component contracts.
             </Text>
           </Box>
 
@@ -93,10 +99,18 @@ export default function App() {
 
           <Card className="gap-4">
             <Text variant="heading">Form primitives</Text>
-            <Input autoCapitalize="none" placeholder="Email address" />
-            <Input invalid placeholder="Invalid value" />
-            <Input disabled placeholder="Disabled input" />
-            <Textarea placeholder="Long-form notes" />
+            <Field description="Used only for account notifications." label="Email" required>
+              <Input autoCapitalize="none" placeholder="you@example.com" />
+            </Field>
+            <Field error="Enter a valid project name." invalid label="Project name">
+              <Input placeholder="Invalid value" />
+            </Field>
+            <Field disabled label="Managed field">
+              <Input placeholder="Disabled by field context" />
+            </Field>
+            <Field description="Optional long-form content." label="Notes">
+              <Textarea placeholder="Long-form notes" />
+            </Field>
             <Separator />
             <Checkbox
               checked={accepted}
@@ -120,6 +134,22 @@ export default function App() {
                 value={notifications}
               />
             </Box>
+          </Card>
+
+          <Card className="gap-4">
+            <Text variant="heading">Tabs</Text>
+            <Tabs onValueChange={setTab} value={tab}>
+              <TabsList>
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="details">Details</TabsTrigger>
+              </TabsList>
+              <TabsContent value="overview">
+                <Text tone="muted">Overview content is mounted for the active tab.</Text>
+              </TabsContent>
+              <TabsContent value="details">
+                <Text tone="muted">Details content is mounted only when selected.</Text>
+              </TabsContent>
+            </Tabs>
           </Card>
 
           <Card className="gap-4" variant="muted">

@@ -1,6 +1,6 @@
 # BeeUI component catalog
 
-This file is the canonical component inventory for BeeUI. A component is considered `foundation` only when its public API is engine-neutral, semantic-token based, and has an accessibility contract.
+This file is the canonical component inventory for BeeUI. A component is considered `foundation` only when its stable behavior/variant API is semantic-token based, accessibility behavior is defined, and any implementation-specific styling escape hatch is clearly optional.
 
 ## Foundation components
 
@@ -13,10 +13,15 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `IconButton` | action | 44px icon action; accessible label is required. |
 | `Input` | form | Semantic focus/invalid/disabled states and themed native colors. |
 | `Textarea` | form | Multiline input using the same `Input` contract. |
+| `Field` | form | Label/description/error composition; propagates state and accessibility metadata to text controls. |
 | `Checkbox` | form | Controlled boolean/indeterminate state with checkbox semantics. |
 | `Radio` | form | Controlled radio item; works standalone or in `RadioGroup`. |
 | `RadioGroup` | form | Controlled value coordination and radiogroup semantics. |
 | `Switch` | form | Native `Switch` with semantic track/thumb colors. |
+| `Tabs` | navigation | Controlled tab state shared across list/triggers/content. |
+| `TabsList` | navigation | Tablist semantic container. |
+| `TabsTrigger` | navigation | Accessible tab selection trigger. |
+| `TabsContent` | navigation | Active tabpanel content; inactive panels are not mounted. |
 | `Card` | surface | Surface variants and spacing contract. |
 | `Badge` | data display | Semantic status variants with paired foreground tokens. |
 | `Avatar` | data display | Image/fallback behavior with size variants. |
@@ -27,12 +32,12 @@ This file is the canonical component inventory for BeeUI. A component is conside
 
 ## Next components
 
-The next safe tranche should focus on components that do not require an overlay/focus-management dependency:
+The next safe tranche should focus on dependency-light behavior and reusable application patterns:
 
-- form field composition (`Field`, label, description, error)
+- accordion / collapsible
 - list item / settings item primitives
-- tabs and accordion if their behavior contract can be kept dependency-light
 - empty/error state compositions
+- basic form helpers beyond text controls
 
 ## Overlay components
 
