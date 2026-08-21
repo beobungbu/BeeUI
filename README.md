@@ -8,12 +8,13 @@ The project is mobile-first, framework-light, and designed for long-lived client
 
 - React Native + TypeScript
 - Expo SDK 57 showcase (React Native 0.86)
-- Uniwind OSS + Tailwind CSS v4
+- Uniwind OSS 1.10.1 + Tailwind CSS 4.3.3
 - semantic light/dark design tokens
 - reusable `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` packages
 - engine-agnostic public component APIs
-- initial components: Box, Text, Button, Input, Card
-- strict TypeScript CI
+- contract tests with `jest-expo` + React Native Testing Library
+- 18 foundation components/primitives documented in `docs/components.md`
+- strict TypeScript CI definition
 
 ## Quick start
 
@@ -25,6 +26,12 @@ pnpm showcase
 
 Then press `i` for iOS, `a` for Android, or `w` for web in the Expo terminal.
 
+Run the verification suite with:
+
+```bash
+pnpm check
+```
+
 ## Workspace
 
 ```text
@@ -35,7 +42,9 @@ packages/
   tokens/            semantic token contract + CSS theme
   ui/                React Native components
 docs/
-  architecture.md    architecture decisions and constraints
+  architecture.md    architecture constraints
+  components.md      canonical component inventory
+  decisions/         architecture decision records
 ```
 
 ## Design principles
@@ -46,5 +55,6 @@ docs/
 4. Native hot paths may use `StyleSheet` or Reanimated without changing component APIs.
 5. Components must work in Expo, Expo prebuild/dev builds, and bare React Native.
 6. Web support is additive; mobile correctness takes priority.
+7. Behavior-heavy overlays are not considered production-ready until focus, portal, back-button, keyboard, and accessibility contracts are verified.
 
-See [`docs/architecture.md`](docs/architecture.md) for the full contract.
+See [`docs/architecture.md`](docs/architecture.md), [`docs/components.md`](docs/components.md), and the ADRs in [`docs/decisions`](docs/decisions) for the full contract.

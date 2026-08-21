@@ -1,6 +1,14 @@
 import { fireEvent, render } from '@testing-library/react-native';
 import * as React from 'react';
-import { Button, Checkbox, Input, Progress, Radio, Switch } from '@beeui/ui';
+import {
+  Button,
+  Checkbox,
+  Input,
+  Progress,
+  Radio,
+  RadioGroup,
+  Switch,
+} from '@beeui/ui';
 
 describe('BeeUI component contracts', () => {
   it('exposes an accessible button and forwards presses', () => {
@@ -58,16 +66,25 @@ describe('BeeUI component contracts', () => {
     expect(toggle.props.accessibilityState).toEqual({ checked: true, disabled: false });
   });
 
-  it('keeps radio selection controlled', () => {
-    const onCheckedChange = jest.fn();
+  it('coordinates radio values through RadioGroup', () => {
+    const onValueChange = jest.fn();
     const screen = render(
-      <Radio checked={false} label="Pro plan" onCheckedChange={onCheckedChange} />,
+      <RadioGroup accessibilityLabel="Plan" onValueChange={onValueChange} value="starter">
+        <Radio label="Starter plan" value="starter" />
+        <Radio label="Pro plan" value="pro" />
+      </RadioGroup>,
     );
-    const radio = screen.getByRole('radio', { name: 'Pro plan' });
 
-    expect(radio.props.accessibilityState).toEqual({ checked: false, disabled: false });
-    fireEvent.press(radio);
-    expect(onCheckedChange).toHaveBeenCalledWith(true);
+    const group = screen.getByRole('radiogroup', { name: 'Plan' });
+    const starter = screen.getByRole('radio', { name: 'Starter plan' });
+    const pro = screen.getByRole('radio', { name: 'Pro plan' });
+
+    expect(group).toBeTruthy();
+    expect(starter.props.accessibilityState.checked).toBe(true);
+    expect(pro.props.accessibilityState.checked).toBe(false);
+
+    fireEvent.press(pro);
+    expect(onValueChange).toHaveBeenCalledWith('pro');
   });
 
   it('clamps progress values for accessibility', () => {

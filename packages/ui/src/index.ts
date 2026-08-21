@@ -24,7 +24,13 @@ export {
 export { IconButton, type IconButtonProps } from './components/icon-button';
 export { Input, inputVariants, type InputProps } from './components/input';
 export { Progress, progressVariants, type ProgressProps } from './components/progress';
-export { Radio, radioIndicatorVariants, type RadioProps } from './components/radio';
+export {
+  Radio,
+  RadioGroup,
+  radioIndicatorVariants,
+  type RadioGroupProps,
+  type RadioProps,
+} from './components/radio';
 export { Separator, type SeparatorProps } from './components/separator';
 export { Skeleton, skeletonVariants, type SkeletonProps } from './components/skeleton';
 export { Spinner, type SpinnerProps } from './components/spinner';

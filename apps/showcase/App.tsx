@@ -11,6 +11,7 @@ import {
   Input,
   Progress,
   Radio,
+  RadioGroup,
   Separator,
   Skeleton,
   Spinner,
@@ -103,18 +104,14 @@ export default function App() {
               onCheckedChange={setAccepted}
             />
             <Checkbox checked="indeterminate" label="Partially selected" />
-            <Box className="gap-2">
-              <Radio
-                checked={plan === 'starter'}
-                label="Starter plan"
-                onCheckedChange={() => setPlan('starter')}
-              />
-              <Radio
-                checked={plan === 'pro'}
-                label="Pro plan"
-                onCheckedChange={() => setPlan('pro')}
-              />
-            </Box>
+            <RadioGroup
+              accessibilityLabel="Subscription plan"
+              onValueChange={(value) => setPlan(value as 'starter' | 'pro')}
+              value={plan}
+            >
+              <Radio label="Starter plan" value="starter" />
+              <Radio label="Pro plan" value="pro" />
+            </RadioGroup>
             <Box className="flex-row items-center justify-between gap-4">
               <Text>Notifications</Text>
               <Switch
