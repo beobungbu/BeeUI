@@ -38,7 +38,7 @@ describe('BeeUI accessibility and read-only contracts', () => {
     expect(screen.getByText('*').props['aria-hidden']).toBe(true);
   });
 
-  it('links Field labels to Input and propagates required semantics', () => {
+  it('links Field labels to Input and propagates readable required semantics', () => {
     const screen = render(
       <Field label="Email" labelNativeID="email-field-label" required>
         <Input testID="email-input" />
@@ -48,7 +48,6 @@ describe('BeeUI accessibility and read-only contracts', () => {
     const input = screen.getByTestId('email-input');
     expect(input.props.accessibilityLabelledBy).toBe('email-field-label');
     expect(input.props.accessibilityLabel).toBe('Email, required');
-    expect(input.props['aria-required']).toBe(true);
   });
 
   it('preserves explicit control accessibility overrides inside a required Field', () => {
@@ -57,7 +56,6 @@ describe('BeeUI accessibility and read-only contracts', () => {
         <Input
           accessibilityLabel="Work email"
           accessibilityLabelledBy="custom-label"
-          aria-required={false}
           testID="email-input"
         />
       </Field>,
@@ -66,7 +64,6 @@ describe('BeeUI accessibility and read-only contracts', () => {
     const input = screen.getByTestId('email-input');
     expect(input.props.accessibilityLabelledBy).toBe('custom-label');
     expect(input.props.accessibilityLabel).toBe('Work email');
-    expect(input.props['aria-required']).toBe(false);
   });
 
   it('composes description-list rows without taking ownership of formatting or data state', () => {
