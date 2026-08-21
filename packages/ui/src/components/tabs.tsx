@@ -48,7 +48,7 @@ export const Tabs = React.forwardRef<React.ComponentRef<typeof View>, TabsProps>
 
 Tabs.displayName = 'Tabs';
 
-export type TabsListProps = Omit<ViewProps, 'accessibilityRole'> & {
+export type TabsListProps = Omit<ViewProps, 'accessibilityRole' | 'role'> & {
   className?: string;
 };
 
@@ -67,7 +67,7 @@ TabsList.displayName = 'TabsList';
 
 export type TabsTriggerProps = Omit<
   PressableProps,
-  'accessibilityRole' | 'children' | 'onPress'
+  'accessibilityRole' | 'role' | 'children' | 'onPress'
 > & {
   children?: React.ReactNode;
   className?: string;

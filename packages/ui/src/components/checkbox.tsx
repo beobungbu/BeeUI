@@ -29,7 +29,7 @@ export type CheckboxValue = boolean | 'indeterminate';
 
 export type CheckboxProps = Omit<
   PressableProps,
-  'accessibilityRole' | 'children' | 'onPress'
+  'accessibilityRole' | 'role' | 'children' | 'onPress'
 > & {
   checked?: CheckboxValue;
   className?: string;

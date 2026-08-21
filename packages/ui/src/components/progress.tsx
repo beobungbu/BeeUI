@@ -16,7 +16,7 @@ const progressVariants = cva('w-full overflow-hidden rounded-full bg-muted', {
   },
 });
 
-export type ProgressProps = Omit<ViewProps, 'accessibilityRole' | 'children'> &
+export type ProgressProps = Omit<ViewProps, 'accessibilityRole' | 'role' | 'children'> &
   VariantProps<typeof progressVariants> & {
     className?: string;
     indicatorClassName?: string;

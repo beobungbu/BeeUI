@@ -32,7 +32,7 @@ type RadioGroupContextValue = {
 
 const RadioGroupContext = React.createContext<RadioGroupContextValue | null>(null);
 
-export type RadioGroupProps = Omit<ViewProps, 'accessibilityRole' | 'children'> & {
+export type RadioGroupProps = Omit<ViewProps, 'accessibilityRole' | 'role' | 'children'> & {
   children?: React.ReactNode;
   className?: string;
   disabled?: boolean;
@@ -76,7 +76,7 @@ RadioGroup.displayName = 'RadioGroup';
 
 export type RadioProps = Omit<
   PressableProps,
-  'accessibilityRole' | 'children' | 'onPress'
+  'accessibilityRole' | 'role' | 'children' | 'onPress'
 > & {
   checked?: boolean;
   className?: string;

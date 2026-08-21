@@ -10,7 +10,7 @@ type EngineSwitchProps = RNSwitchProps & {
 
 export type SwitchProps = Omit<
   RNSwitchProps,
-  'accessibilityRole' | 'ios_backgroundColor' | 'thumbColor' | 'trackColor'
+  'accessibilityRole' | 'role' | 'ios_backgroundColor' | 'thumbColor' | 'trackColor'
 >;
 
 export const Switch = React.forwardRef<React.ComponentRef<typeof RNSwitch>, SwitchProps>(

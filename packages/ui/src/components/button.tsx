@@ -77,7 +77,7 @@ const spinnerColorByVariant: Record<ButtonVariant, string> = {
   destructive: 'accent-destructive-foreground',
 };
 
-export type ButtonProps = Omit<PressableProps, 'accessibilityRole' | 'children'> &
+export type ButtonProps = Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'> &
   VariantProps<typeof buttonVariants> & {
     children?: React.ReactNode;
     className?: string;
