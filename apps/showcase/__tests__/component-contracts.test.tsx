@@ -1,6 +1,6 @@
 import { fireEvent, render } from '@testing-library/react-native';
 import * as React from 'react';
-import { Button, Input } from '@beeui/ui';
+import { Button, Checkbox, Input, Switch } from '@beeui/ui';
 
 describe('BeeUI component contracts', () => {
   it('exposes an accessible button and forwards presses', () => {
@@ -36,5 +36,25 @@ describe('BeeUI component contracts', () => {
 
     expect(input.props.editable).toBe(false);
     expect(input.props.accessibilityState).toEqual({ disabled: true });
+  });
+
+  it('exposes checkbox state and requests controlled changes', () => {
+    const onCheckedChange = jest.fn();
+    const screen = render(
+      <Checkbox checked={false} label="Accept terms" onCheckedChange={onCheckedChange} />,
+    );
+    const checkbox = screen.getByRole('checkbox', { name: 'Accept terms' });
+
+    expect(checkbox.props.accessibilityState).toEqual({ checked: false, disabled: false });
+
+    fireEvent.press(checkbox);
+    expect(onCheckedChange).toHaveBeenCalledWith(true);
+  });
+
+  it('maps switch value to its accessibility state', () => {
+    const screen = render(<Switch accessibilityLabel="Notifications" value />);
+    const toggle = screen.getByRole('switch', { name: 'Notifications' });
+
+    expect(toggle.props.accessibilityState).toEqual({ checked: true, disabled: false });
   });
 });

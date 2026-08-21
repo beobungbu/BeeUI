@@ -1,6 +1,18 @@
 import './global.css';
 
-import { Box, Button, Card, Input, Text } from '@beeui/ui';
+import {
+  Badge,
+  Box,
+  Button,
+  Card,
+  Checkbox,
+  Input,
+  Separator,
+  Spinner,
+  Switch,
+  Text,
+  Textarea,
+} from '@beeui/ui';
 import * as React from 'react';
 import { ScrollView, StatusBar } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
@@ -32,6 +44,8 @@ function ThemeToggle() {
 
 export default function App() {
   const { theme } = useUniwind();
+  const [accepted, setAccepted] = React.useState(false);
+  const [notifications, setNotifications] = React.useState(true);
 
   return (
     <Box className="flex-1 bg-background">
@@ -63,10 +77,47 @@ export default function App() {
           </Card>
 
           <Card className="gap-4">
-            <Text variant="heading">Inputs</Text>
+            <Text variant="heading">Form primitives</Text>
             <Input autoCapitalize="none" placeholder="Email address" />
             <Input invalid placeholder="Invalid value" />
             <Input disabled placeholder="Disabled input" />
+            <Textarea placeholder="Long-form notes" />
+            <Separator />
+            <Checkbox
+              checked={accepted}
+              label="Accept terms"
+              onCheckedChange={setAccepted}
+            />
+            <Checkbox checked="indeterminate" label="Partially selected" />
+            <Box className="flex-row items-center justify-between gap-4">
+              <Text>Notifications</Text>
+              <Switch
+                accessibilityLabel="Notifications"
+                onValueChange={setNotifications}
+                value={notifications}
+              />
+            </Box>
+          </Card>
+
+          <Card className="gap-4" variant="muted">
+            <Text variant="heading">Status and feedback</Text>
+            <Box className="flex-row flex-wrap gap-2">
+              <Badge>Primary</Badge>
+              <Badge variant="secondary">Secondary</Badge>
+              <Badge variant="success">Success</Badge>
+              <Badge variant="warning">Warning</Badge>
+              <Badge variant="destructive">Error</Badge>
+              <Badge variant="info">Info</Badge>
+              <Badge variant="outline">Outline</Badge>
+            </Box>
+            <Separator />
+            <Box className="flex-row items-center gap-5">
+              <Spinner />
+              <Spinner tone="success" />
+              <Spinner tone="warning" />
+              <Spinner tone="destructive" />
+              <Spinner tone="info" />
+            </Box>
           </Card>
 
           <Card className="gap-3" variant="muted">
@@ -75,6 +126,12 @@ export default function App() {
             <Text tone="muted">Muted content remains readable in light and dark themes.</Text>
             <Text tone="success" variant="label">
               Success state
+            </Text>
+            <Text tone="warning" variant="label">
+              Warning state
+            </Text>
+            <Text tone="info" variant="label">
+              Information state
             </Text>
             <Text tone="destructive" variant="label">
               Destructive state

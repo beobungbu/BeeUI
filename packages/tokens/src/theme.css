@@ -28,8 +28,11 @@
       --color-destructive: #dc2626;
       --color-destructive-foreground: #ffffff;
       --color-success: #16a34a;
+      --color-success-foreground: #ffffff;
       --color-warning: #d97706;
+      --color-warning-foreground: #ffffff;
       --color-info: #2563eb;
+      --color-info-foreground: #ffffff;
       --color-border: #eaecf0;
       --color-border-strong: #d0d5dd;
       --color-input: #ffffff;
@@ -57,8 +60,11 @@
       --color-destructive: #f87171;
       --color-destructive-foreground: #1f0a0a;
       --color-success: #4ade80;
+      --color-success-foreground: #052e16;
       --color-warning: #fbbf24;
+      --color-warning-foreground: #1f2937;
       --color-info: #60a5fa;
+      --color-info-foreground: #0b1f3a;
       --color-border: #273241;
       --color-border-strong: #3a4656;
       --color-input: #121820;
