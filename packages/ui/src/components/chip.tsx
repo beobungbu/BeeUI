@@ -101,7 +101,7 @@ ChipGroup.displayName = 'ChipGroup';
 
 export type ChipProps = Omit<
   PressableProps,
-  'accessibilityRole' | 'accessibilityState' | 'children' | 'role'
+  'accessibilityRole' | 'children' | 'role'
 > & {
   children?: React.ReactNode;
   className?: string;
@@ -116,6 +116,7 @@ export const Chip = React.forwardRef<React.ComponentRef<typeof Pressable>, ChipP
   (
     {
       accessibilityLabel,
+      accessibilityState,
       children,
       className,
       defaultSelected = false,
@@ -158,6 +159,7 @@ export const Chip = React.forwardRef<React.ComponentRef<typeof Pressable>, ChipP
         accessibilityLabel={accessibilityLabel ?? inferredLabel}
         accessibilityRole={role}
         accessibilityState={{
+          ...accessibilityState,
           disabled: isDisabled,
           ...(grouped ? { checked: resolvedSelected } : { selected: resolvedSelected }),
         }}
