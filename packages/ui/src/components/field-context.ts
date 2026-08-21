@@ -6,6 +6,9 @@ export type FieldContextValue = {
   error?: string;
   invalid: boolean;
   label: string;
+  labelNativeID: string;
+  required: boolean;
+  requiredAccessibilityLabel: string;
 };
 
 export const FieldContext = React.createContext<FieldContextValue | null>(null);
