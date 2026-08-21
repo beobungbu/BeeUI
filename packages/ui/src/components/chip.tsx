@@ -1,6 +1,7 @@
 import { cn } from '@beeui/core';
 import * as React from 'react';
 import { Pressable, View, type PressableProps, type ViewProps } from 'react-native';
+import { useControllableState } from '../hooks/use-controllable-state';
 import { Text } from './text';
 
 export type ChipSelectionMode = 'single' | 'multiple';
@@ -39,11 +40,13 @@ export const ChipGroup = React.forwardRef<React.ComponentRef<typeof View>, ChipG
     },
     ref,
   ) => {
-    const controlled = value !== undefined;
-    const [internalValue, setInternalValue] = React.useState<ChipGroupValue>(() =>
-      defaultValue ?? (selectionMode === 'multiple' ? [] : ''),
-    );
-    const resolvedValue = controlled ? value : internalValue;
+    const [resolvedValue, setValue] = useControllableState<ChipGroupValue>({
+      defaultValue: defaultValue ?? (selectionMode === 'multiple' ? [] : ''),
+      disabled,
+      name: 'ChipGroup',
+      onChange: onValueChange,
+      value,
+    });
 
     const isSelected = React.useCallback(
       (candidate: string) =>
@@ -55,26 +58,23 @@ export const ChipGroup = React.forwardRef<React.ComponentRef<typeof View>, ChipG
 
     const select = React.useCallback(
       (candidate: string) => {
-        let nextValue: ChipGroupValue;
+        setValue((previous) => {
+          if (selectionMode === 'multiple') {
+            const current = Array.isArray(previous)
+              ? previous
+              : previous
+                ? [previous]
+                : [];
+            return current.includes(candidate)
+              ? current.filter((item) => item !== candidate)
+              : [...current, candidate];
+          }
 
-        if (selectionMode === 'multiple') {
-          const current = Array.isArray(resolvedValue)
-            ? resolvedValue
-            : resolvedValue
-              ? [resolvedValue]
-              : [];
-          nextValue = current.includes(candidate)
-            ? current.filter((item) => item !== candidate)
-            : [...current, candidate];
-        } else {
-          if (isSelected(candidate)) return;
-          nextValue = candidate;
-        }
-
-        if (!controlled) setInternalValue(nextValue);
-        onValueChange?.(nextValue);
+          const current = Array.isArray(previous) ? previous[0] : previous;
+          return current === candidate ? previous : candidate;
+        });
       },
-      [controlled, isSelected, onValueChange, resolvedValue, selectionMode],
+      [selectionMode, setValue],
     );
 
     const context = React.useMemo(
@@ -134,14 +134,15 @@ export const Chip = React.forwardRef<React.ComponentRef<typeof Pressable>, ChipP
     const inGroup = group !== null;
     const grouped = inGroup && value !== undefined;
     const missingGroupValue = inGroup && value === undefined;
-    const controlled = selected !== undefined;
-    const [internalSelected, setInternalSelected] = React.useState(defaultSelected);
-    const resolvedSelected = grouped
-      ? group.isSelected(value)
-      : controlled
-        ? selected
-        : internalSelected;
     const isDisabled = disabled || group?.disabled === true || missingGroupValue;
+    const [standaloneSelected, setStandaloneSelected] = useControllableState({
+      defaultValue: defaultSelected,
+      disabled: isDisabled,
+      name: 'Chip',
+      onChange: onSelectedChange,
+      value: selected,
+    });
+    const resolvedSelected = grouped ? group.isSelected(value) : standaloneSelected;
     const childArray = React.Children.toArray(children);
     const inferredLabel = childArray.every(
       (child) => typeof child === 'string' || typeof child === 'number',
@@ -188,10 +189,7 @@ export const Chip = React.forwardRef<React.ComponentRef<typeof Pressable>, ChipP
             group.select(value);
             return;
           }
-
-          const nextSelected = !resolvedSelected;
-          if (!controlled) setInternalSelected(nextSelected);
-          onSelectedChange?.(nextSelected);
+          setStandaloneSelected((previous) => !previous);
         }}
       >
         {childArray.map((child, index) =>
