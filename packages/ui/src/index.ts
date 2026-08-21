@@ -1,3 +1,5 @@
+/// <reference path="./types/react-native-classname.d.ts" />
+
 export { Box, type BoxProps } from './components/box';
 export {
   Button,
