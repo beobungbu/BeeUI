@@ -19,6 +19,16 @@ function getPrimitiveAccessibilityLabel(...values: React.ReactNode[]) {
   return parts.length > 0 ? parts.join(', ') : undefined;
 }
 
+function renderSettingsValue(value: React.ReactNode) {
+  return typeof value === 'string' || typeof value === 'number' ? (
+    <Text tone="muted" variant="label">
+      {value}
+    </Text>
+  ) : (
+    value
+  );
+}
+
 export type ListItemProps = Omit<
   PressableProps,
   'accessibilityRole' | 'accessibilityState' | 'children' | 'role'
@@ -106,19 +116,20 @@ export type SettingsItemProps = Omit<ListItemProps, 'trailing'> & {
 
 export const SettingsItem = React.forwardRef<React.ComponentRef<typeof Pressable>, SettingsItemProps>(
   ({ accessibilityLabel, description, title, trailing, value, ...props }, ref) => {
+    const renderedValue = value == null ? null : renderSettingsValue(value);
     const resolvedTrailing =
-      trailing ??
-      (typeof value === 'string' || typeof value === 'number' ? (
-        <Text tone="muted" variant="label">
-          {value}
-        </Text>
+      renderedValue && trailing ? (
+        <Box className="flex-row items-center gap-2">
+          {renderedValue}
+          {trailing}
+        </Box>
       ) : (
-        value
-      ));
+        trailing ?? renderedValue
+      );
     const inferredLabel = getPrimitiveAccessibilityLabel(
       title,
       description,
-      trailing === undefined ? value : trailing,
+      value ?? (isPrimitiveAccessibilityContent(trailing) ? trailing : undefined),
     );
 
     return (
