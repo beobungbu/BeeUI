@@ -2,6 +2,8 @@ import { cn } from '@beeui/core';
 import { cva } from 'class-variance-authority';
 import * as React from 'react';
 import { Pressable, View, type PressableProps, type ViewProps } from 'react-native';
+import { useControllableState } from '../hooks/use-controllable-state';
+import { useFieldContext } from './field-context';
 import { Text } from './text';
 
 const radioIndicatorVariants = cva(
@@ -16,18 +18,23 @@ const radioIndicatorVariants = cva(
         true: 'border-disabled bg-disabled',
         false: '',
       },
+      invalid: {
+        true: 'border-destructive',
+        false: '',
+      },
     },
     defaultVariants: {
       checked: false,
       disabled: false,
+      invalid: false,
     },
   },
 );
 
 type RadioGroupContextValue = {
   disabled: boolean;
-  onValueChange?: (value: string) => void;
-  value?: string;
+  select: (value: string) => void;
+  value: string;
 };
 
 const RadioGroupContext = React.createContext<RadioGroupContextValue | null>(null);
@@ -35,6 +42,7 @@ const RadioGroupContext = React.createContext<RadioGroupContextValue | null>(nul
 export type RadioGroupProps = Omit<ViewProps, 'accessibilityRole' | 'role' | 'children'> & {
   children?: React.ReactNode;
   className?: string;
+  defaultValue?: string;
   disabled?: boolean;
   onValueChange?: (value: string) => void;
   value?: string;
@@ -45,6 +53,7 @@ export const RadioGroup = React.forwardRef<React.ComponentRef<typeof View>, Radi
     {
       children,
       className,
+      defaultValue = '',
       disabled = false,
       onValueChange,
       value,
@@ -52,9 +61,16 @@ export const RadioGroup = React.forwardRef<React.ComponentRef<typeof View>, Radi
     },
     ref,
   ) => {
+    const [resolvedValue, setValue] = useControllableState({
+      defaultValue,
+      disabled,
+      name: 'RadioGroup',
+      onChange: onValueChange,
+      value,
+    });
     const contextValue = React.useMemo(
-      () => ({ disabled, onValueChange, value }),
-      [disabled, onValueChange, value],
+      () => ({ disabled, select: setValue, value: resolvedValue }),
+      [disabled, resolvedValue, setValue],
     );
 
     return (
@@ -80,7 +96,9 @@ export type RadioProps = Omit<
 > & {
   checked?: boolean;
   className?: string;
+  defaultChecked?: boolean;
   indicatorClassName?: string;
+  invalid?: boolean;
   label?: string;
   labelClassName?: string;
   onCheckedChange?: (checked: boolean) => void;
@@ -90,12 +108,16 @@ export type RadioProps = Omit<
 export const Radio = React.forwardRef<React.ComponentRef<typeof Pressable>, RadioProps>(
   (
     {
+      accessibilityHint,
       accessibilityLabel,
+      accessibilityLabelledBy,
       accessibilityState,
-      checked = false,
+      checked,
       className,
+      defaultChecked = false,
       disabled = false,
       indicatorClassName,
+      invalid,
       label,
       labelClassName,
       onCheckedChange,
@@ -104,41 +126,67 @@ export const Radio = React.forwardRef<React.ComponentRef<typeof Pressable>, Radi
     },
     ref,
   ) => {
+    const field = useFieldContext();
     const group = React.useContext(RadioGroupContext);
-    const isGrouped = group !== null && value !== undefined;
-    const resolvedChecked = isGrouped ? group.value === value : checked;
-    const isDisabled = disabled === true || group?.disabled === true;
+    const inGroup = group !== null;
+    const malformedGroupItem = inGroup && value === undefined;
+    const resolvedDisabled = disabled === true || group?.disabled === true || field?.disabled === true || malformedGroupItem;
+    const resolvedInvalid = invalid === true || field?.invalid === true;
+    const [standaloneChecked, setStandaloneChecked] = useControllableState({
+      defaultValue: defaultChecked,
+      disabled: resolvedDisabled,
+      name: 'Radio',
+      onChange: onCheckedChange,
+      value: checked,
+    });
+    const resolvedChecked = inGroup && value !== undefined ? group.value === value : standaloneChecked;
+    const fieldLabel = field
+      ? field.required
+        ? `${field.label}, ${field.requiredAccessibilityLabel}`
+        : field.label
+      : undefined;
+    const resolvedHint =
+      accessibilityHint ?? (resolvedInvalid ? field?.error : field?.description);
+
+    React.useEffect(() => {
+      if (typeof __DEV__ !== 'undefined' && __DEV__ && malformedGroupItem) {
+        console.warn('BeeUI Radio: a Radio rendered inside RadioGroup requires a `value`.');
+      }
+    }, [malformedGroupItem]);
 
     return (
       <Pressable
         ref={ref}
         {...props}
-        accessibilityLabel={accessibilityLabel ?? label}
+        accessibilityHint={resolvedHint}
+        accessibilityLabel={accessibilityLabel ?? label ?? fieldLabel}
+        accessibilityLabelledBy={accessibilityLabelledBy ?? (label ? undefined : field?.labelNativeID)}
         accessibilityRole="radio"
         accessibilityState={{
           ...accessibilityState,
           checked: resolvedChecked,
-          disabled: isDisabled,
+          disabled: resolvedDisabled,
         }}
         className={cn('flex-row items-center gap-3 active:opacity-80', className)}
-        disabled={isDisabled}
+        disabled={resolvedDisabled}
         onPress={() => {
-          if (resolvedChecked) {
+          // A selected radio remains selected; deselection belongs to choosing another radio.
+          if (resolvedChecked) return;
+          if (inGroup && value !== undefined) {
+            group.select(value);
             return;
           }
-
-          if (isGrouped && value !== undefined) {
-            group?.onValueChange?.(value);
-            return;
-          }
-
-          onCheckedChange?.(true);
+          setStandaloneChecked(true);
         }}
       >
         <View
           accessible={false}
           className={cn(
-            radioIndicatorVariants({ checked: resolvedChecked, disabled: isDisabled }),
+            radioIndicatorVariants({
+              checked: resolvedChecked,
+              disabled: resolvedDisabled,
+              invalid: resolvedInvalid,
+            }),
             indicatorClassName,
           )}
           pointerEvents="none"
@@ -147,14 +195,14 @@ export const Radio = React.forwardRef<React.ComponentRef<typeof Pressable>, Radi
             <View
               className={cn(
                 'h-2.5 w-2.5 rounded-full bg-primary',
-                isDisabled && 'bg-disabled-foreground',
+                resolvedDisabled && 'bg-disabled-foreground',
               )}
             />
           ) : null}
         </View>
         {label ? (
           <Text
-            className={cn(isDisabled && 'text-disabled-foreground', labelClassName)}
+            className={cn(resolvedDisabled && 'text-disabled-foreground', labelClassName)}
             variant="body"
           >
             {label}
