@@ -3,6 +3,7 @@ import { cva } from 'class-variance-authority';
 import * as React from 'react';
 import { Pressable, View, type PressableProps, type ViewProps } from 'react-native';
 import { Text } from './text';
+import { useRequiredCallbackWarning } from './use-required-callback-warning';
 
 const radioIndicatorVariants = cva(
   'h-5 w-5 shrink-0 items-center justify-center rounded-full border',
@@ -52,6 +53,8 @@ export const RadioGroup = React.forwardRef<React.ComponentRef<typeof View>, Radi
     },
     ref,
   ) => {
+    useRequiredCallbackWarning('RadioGroup', 'onValueChange', onValueChange, disabled);
+
     const contextValue = React.useMemo(
       () => ({ disabled, onValueChange, value }),
       [disabled, onValueChange, value],
@@ -109,6 +112,8 @@ export const Radio = React.forwardRef<React.ComponentRef<typeof Pressable>, Radi
     const resolvedChecked = isGrouped ? group.value === value : checked;
     const isDisabled = disabled === true || group?.disabled === true;
 
+    useRequiredCallbackWarning('Radio', 'onCheckedChange', onCheckedChange, isDisabled || isGrouped);
+
     return (
       <Pressable
         ref={ref}
@@ -123,16 +128,12 @@ export const Radio = React.forwardRef<React.ComponentRef<typeof Pressable>, Radi
         className={cn('flex-row items-center gap-3 active:opacity-80', className)}
         disabled={isDisabled}
         onPress={() => {
-          if (resolvedChecked) {
-            return;
-          }
-
           if (isGrouped && value !== undefined) {
-            group?.onValueChange?.(value);
+            if (!resolvedChecked) group?.onValueChange?.(value);
             return;
           }
 
-          onCheckedChange?.(true);
+          onCheckedChange?.(!resolvedChecked);
         }}
       >
         <View
