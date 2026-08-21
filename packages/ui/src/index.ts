@@ -20,6 +20,12 @@ export { Badge, badgeLabelVariants, badgeVariants, type BadgeProps } from './com
 export { BottomActionBar, type BottomActionBarProps } from './components/bottom-action-bar';
 export { Box, type BoxProps } from './components/box';
 export {
+  Breadcrumb,
+  BreadcrumbItem,
+  type BreadcrumbItemProps,
+  type BreadcrumbProps,
+} from './components/breadcrumb';
+export {
   Button,
   ButtonLabel,
   buttonLabelVariants,
@@ -119,6 +125,15 @@ export { Separator, type SeparatorProps } from './components/separator';
 export { Skeleton, skeletonVariants, type SkeletonProps } from './components/skeleton';
 export { Spinner, type SpinnerProps } from './components/spinner';
 export {
+  HStack,
+  Stack,
+  VStack,
+  stackVariants,
+  type HStackProps,
+  type StackProps,
+  type VStackProps,
+} from './components/stack';
+export {
   Stat,
   StatHelpText,
   StatLabel,
@@ -153,3 +168,9 @@ export {
 } from './components/tabs';
 export { Text, textVariants, type TextProps } from './components/text';
 export { Textarea, type TextareaProps } from './components/textarea';
+export {
+  Timeline,
+  TimelineItem,
+  type TimelineItemProps,
+  type TimelineProps,
+} from './components/timeline';
