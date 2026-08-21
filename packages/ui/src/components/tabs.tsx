@@ -2,6 +2,7 @@ import { cn } from '@beeui/core';
 import * as React from 'react';
 import { Pressable, View, type PressableProps, type ViewProps } from 'react-native';
 import { Text } from './text';
+import { useRequiredCallbackWarning } from './use-required-callback-warning';
 
 type TabsContextValue = {
   disabled: boolean;
@@ -31,6 +32,8 @@ export type TabsProps = Omit<ViewProps, 'children'> & {
 
 export const Tabs = React.forwardRef<React.ComponentRef<typeof View>, TabsProps>(
   ({ children, className, disabled = false, onValueChange, value, ...props }, ref) => {
+    useRequiredCallbackWarning('Tabs', 'onValueChange', onValueChange, disabled);
+
     const contextValue = React.useMemo(
       () => ({ disabled, onValueChange, value }),
       [disabled, onValueChange, value],

@@ -2,6 +2,7 @@ import { cn } from '@beeui/core';
 import * as React from 'react';
 import { Pressable, View, type PressableProps, type ViewProps } from 'react-native';
 import { Text } from './text';
+import { useRequiredCallbackWarning } from './use-required-callback-warning';
 
 type SegmentedControlContextValue = {
   disabled: boolean;
@@ -29,6 +30,8 @@ export const SegmentedControl = React.forwardRef<
   React.ComponentRef<typeof View>,
   SegmentedControlProps
 >(({ children, className, disabled = false, onValueChange, value, ...props }, ref) => {
+  useRequiredCallbackWarning('SegmentedControl', 'onValueChange', onValueChange, disabled);
+
   const context = React.useMemo(
     () => ({ disabled, onValueChange, value }),
     [disabled, onValueChange, value],

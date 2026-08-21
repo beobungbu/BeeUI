@@ -15,12 +15,10 @@ Application / domain UI
         +---- @beeui/core engine-neutral helpers
         |
         +---- semantic class contract
-        |
         v
 Uniwind OSS + Tailwind v4 (current implementation)
         |
         +---- escape hatch: StyleSheet / Reanimated
-        |
         v
 React Native primitives
 ```
@@ -76,6 +74,25 @@ Hot-path UI is allowed to bypass it:
 - measured list cells where styling becomes material
 
 Those paths may use `StyleSheet.create` and Reanimated directly while preserving the same semantic token contract and public API.
+
+## Safe-area contract
+
+Safe-area measurement is an application-root concern, while safe-area **edge ownership** is explicit at the composition point that touches the system edge.
+
+- `BeeUIProvider` installs `react-native-safe-area-context` measurement at the root and synchronizes measured insets to Uniwind safe-area utilities by default.
+- `SafeArea` is the explicit wrapper for assigning `top`, `bottom`, `left`, and/or `right` ownership.
+- `Screen`, `AppHeader`, and `BottomActionBar` do not silently add insets. This prevents double insets when applications use native navigation headers, tab bars, maps, media surfaces, nested shells, or their own safe-area utilities.
+- Applications that already synchronize Uniwind insets may set `syncUniwindInsets={false}` on `BeeUIProvider`.
+
+A typical shell owns the top inset around `AppHeader`, side insets around main content, and the bottom inset around `BottomActionBar`. The exact split remains application-owned.
+
+## Controlled interaction contract
+
+Some BeeUI primitives are deliberately controlled (`Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Tabs`, and `SegmentedControl`). BeeUI does not invent hidden uncontrolled state for those APIs.
+
+Enabled controlled primitives must receive their matching change callback. In development, BeeUI warns when such a control would otherwise look interactive while silently discarding user input. Disabled controls may omit the callback without warning.
+
+`Field` is intentionally a text-entry composition primitive. It propagates label/required/disabled/invalid metadata to text controls; boolean and choice controls keep their own explicit label/group semantics rather than inheriting `Field` behavior implicitly.
 
 ## Platform policy
 

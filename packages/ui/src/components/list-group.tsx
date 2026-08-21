@@ -4,7 +4,7 @@ import { View, type ViewProps } from 'react-native';
 import { Box } from './box';
 import { Text } from './text';
 
-export type ListGroupProps = ViewProps & {
+export type ListGroupProps = Omit<ViewProps, 'accessibilityRole' | 'role'> & {
   className?: string;
 };
 
@@ -12,8 +12,9 @@ export const ListGroup = React.forwardRef<React.ComponentRef<typeof View>, ListG
   ({ className, ...props }, ref) => (
     <View
       ref={ref}
-      className={cn('overflow-hidden rounded-xl border border-border bg-surface', className)}
       {...props}
+      accessibilityRole="list"
+      className={cn('overflow-hidden rounded-xl border border-border bg-surface', className)}
     />
   ),
 );
@@ -33,7 +34,7 @@ export const ListGroupHeader = React.forwardRef<
 >(({ className, description, title, trailing, ...props }, ref) => (
   <View
     ref={ref}
-    className={cn('flex-row items-start gap-3 border-b border-border bg-surface-muted px-4 py-3', className)}
+    className={cn('flex-row items-start gap-3 border-b border-border bg-surface-muted px-3 py-3', className)}
     {...props}
   >
     <Box className="min-w-0 flex-1 gap-0.5">
