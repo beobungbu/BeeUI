@@ -3,6 +3,10 @@ import * as React from 'react';
 import { Pressable, View, type PressableProps, type ViewProps } from 'react-native';
 import { Text } from './text';
 
+function getBreadcrumbChildKey(item: React.ReactNode, index: number) {
+  return React.isValidElement(item) && item.key != null ? item.key : `breadcrumb-item-${index}`;
+}
+
 export type BreadcrumbProps = Omit<ViewProps, 'children'> & {
   children?: React.ReactNode;
   className?: string;
@@ -21,7 +25,7 @@ export const Breadcrumb = React.forwardRef<React.ComponentRef<typeof View>, Brea
         {...props}
       >
         {items.map((item, index) => (
-          <React.Fragment key={index}>
+          <React.Fragment key={getBreadcrumbChildKey(item, index)}>
             {item}
             {index < items.length - 1 ? (
               <View
