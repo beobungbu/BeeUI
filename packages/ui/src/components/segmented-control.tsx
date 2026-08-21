@@ -1,11 +1,12 @@
 import { cn } from '@beeui/core';
 import * as React from 'react';
 import { Pressable, View, type PressableProps, type ViewProps } from 'react-native';
+import { useControllableState } from '../hooks/use-controllable-state';
 import { Text } from './text';
 
 type SegmentedControlContextValue = {
   disabled: boolean;
-  onValueChange?: (value: string) => void;
+  select: (value: string) => void;
   value: string;
 };
 
@@ -20,33 +21,54 @@ function useSegmentedControlContext() {
 export type SegmentedControlProps = Omit<ViewProps, 'children' | 'role'> & {
   children?: React.ReactNode;
   className?: string;
+  defaultValue?: string;
   disabled?: boolean;
   onValueChange?: (value: string) => void;
-  value: string;
+  value?: string;
 };
 
 export const SegmentedControl = React.forwardRef<
   React.ComponentRef<typeof View>,
   SegmentedControlProps
->(({ children, className, disabled = false, onValueChange, value, ...props }, ref) => {
-  const context = React.useMemo(
-    () => ({ disabled, onValueChange, value }),
-    [disabled, onValueChange, value],
-  );
+>(
+  (
+    {
+      children,
+      className,
+      defaultValue = '',
+      disabled = false,
+      onValueChange,
+      value,
+      ...props
+    },
+    ref,
+  ) => {
+    const [resolvedValue, setValue] = useControllableState({
+      defaultValue,
+      disabled,
+      name: 'SegmentedControl',
+      onChange: onValueChange,
+      value,
+    });
+    const context = React.useMemo(
+      () => ({ disabled, select: setValue, value: resolvedValue }),
+      [disabled, resolvedValue, setValue],
+    );
 
-  return (
-    <SegmentedControlContext.Provider value={context}>
-      <View
-        ref={ref}
-        {...props}
-        accessibilityRole="radiogroup"
-        className={cn('flex-row rounded-md bg-muted p-1', className)}
-      >
-        {children}
-      </View>
-    </SegmentedControlContext.Provider>
-  );
-});
+    return (
+      <SegmentedControlContext.Provider value={context}>
+        <View
+          ref={ref}
+          {...props}
+          accessibilityRole="radiogroup"
+          className={cn('flex-row rounded-md bg-muted p-1', className)}
+        >
+          {children}
+        </View>
+      </SegmentedControlContext.Provider>
+    );
+  },
+);
 
 SegmentedControl.displayName = 'SegmentedControl';
 
@@ -107,7 +129,7 @@ export const SegmentedControlItem = React.forwardRef<
         disabled={isDisabled}
         onPress={(event) => {
           onPress?.(event);
-          if (!selected) control.onValueChange?.(value);
+          if (!selected) control.select(value);
         }}
       >
         {childArray.map((child, index) =>
