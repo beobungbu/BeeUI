@@ -39,7 +39,7 @@ export const SegmentedControl = React.forwardRef<
       <View
         ref={ref}
         {...props}
-        accessibilityRole="tablist"
+        accessibilityRole="radiogroup"
         className={cn('flex-row rounded-md bg-muted p-1', className)}
       >
         {children}
@@ -94,8 +94,8 @@ export const SegmentedControlItem = React.forwardRef<
         ref={ref}
         {...props}
         accessibilityLabel={accessibilityLabel ?? inferredLabel}
-        accessibilityRole="tab"
-        accessibilityState={{ ...accessibilityState, disabled: isDisabled, selected }}
+        accessibilityRole="radio"
+        accessibilityState={{ ...accessibilityState, checked: selected, disabled: isDisabled }}
         className={cn(
           'min-h-9 flex-1 items-center justify-center rounded-sm border px-3 py-2 active:opacity-80',
           selected
