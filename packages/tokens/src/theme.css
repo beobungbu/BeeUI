@@ -1,0 +1,70 @@
+@theme {
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 24px;
+}
+
+@layer theme {
+  :root {
+    @variant light {
+      --color-background: #ffffff;
+      --color-foreground: #101828;
+      --color-surface: #ffffff;
+      --color-surface-muted: #f9fafb;
+      --color-surface-raised: #ffffff;
+      --color-muted: #f2f4f7;
+      --color-muted-foreground: #667085;
+      --color-subtle-foreground: #98a2b3;
+      --color-primary: #f59e0b;
+      --color-primary-foreground: #1f2937;
+      --color-primary-hover: #d97706;
+      --color-primary-pressed: #b45309;
+      --color-secondary: #111827;
+      --color-secondary-foreground: #ffffff;
+      --color-secondary-hover: #1f2937;
+      --color-destructive: #dc2626;
+      --color-destructive-foreground: #ffffff;
+      --color-success: #16a34a;
+      --color-warning: #d97706;
+      --color-info: #2563eb;
+      --color-border: #eaecf0;
+      --color-border-strong: #d0d5dd;
+      --color-input: #ffffff;
+      --color-focus-ring: #f59e0b;
+      --color-disabled: #f2f4f7;
+      --color-disabled-foreground: #98a2b3;
+    }
+
+    @variant dark {
+      --color-background: #0b0f14;
+      --color-foreground: #f2f4f7;
+      --color-surface: #121820;
+      --color-surface-muted: #171e27;
+      --color-surface-raised: #1b2430;
+      --color-muted: #202936;
+      --color-muted-foreground: #a4adba;
+      --color-subtle-foreground: #7d8796;
+      --color-primary: #fbbf24;
+      --color-primary-foreground: #1f2937;
+      --color-primary-hover: #f59e0b;
+      --color-primary-pressed: #d97706;
+      --color-secondary: #e5e7eb;
+      --color-secondary-foreground: #111827;
+      --color-secondary-hover: #d1d5db;
+      --color-destructive: #f87171;
+      --color-destructive-foreground: #1f0a0a;
+      --color-success: #4ade80;
+      --color-warning: #fbbf24;
+      --color-info: #60a5fa;
+      --color-border: #273241;
+      --color-border-strong: #3a4656;
+      --color-input: #121820;
+      --color-focus-ring: #fbbf24;
+      --color-disabled: #202936;
+      --color-disabled-foreground: #667085;
+    }
+  }
+}

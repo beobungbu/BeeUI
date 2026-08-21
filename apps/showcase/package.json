@@ -1,0 +1,23 @@
+{
+  "name": "@beeui/showcase",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start",
+    "ios": "expo start --ios",
+    "android": "expo start --android",
+    "web": "expo start --web",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@beeui/ui": "workspace:*",
+    "expo": "~57.0.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.0",
+    "react-native-web": "^0.21.0",
+    "tailwindcss": "^4.1.18",
+    "uniwind": "^1.10.0"
+  }
+}

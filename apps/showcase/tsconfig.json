@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["react"]
+  },
+  "include": ["App.tsx", "index.ts", "uniwind-types.d.ts"]
+}
