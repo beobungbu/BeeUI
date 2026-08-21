@@ -11,6 +11,8 @@ import {
   Badge,
   BottomActionBar,
   Box,
+  Breadcrumb,
+  BreadcrumbItem,
   Button,
   Card,
   Checkbox,
@@ -22,8 +24,12 @@ import {
   EmptyState,
   ErrorState,
   Field,
+  HStack,
   IconButton,
   Input,
+  Link,
+  ListGroup,
+  ListGroupHeader,
   ListItem,
   MetadataRow,
   OTPInput,
@@ -42,6 +48,13 @@ import {
   SettingsItem,
   Skeleton,
   Spinner,
+  Stack,
+  Stat,
+  StatHelpText,
+  StatLabel,
+  StatValue,
+  Stepper,
+  StepperItem,
   Switch,
   Tabs,
   TabsContent,
@@ -49,6 +62,9 @@ import {
   TabsTrigger,
   Text,
   Textarea,
+  Timeline,
+  TimelineItem,
+  VStack,
 } from '@beeui/ui';
 import * as React from 'react';
 import { ScrollView, StatusBar } from 'react-native';
@@ -75,6 +91,7 @@ export default function App() {
   const [filters, setFilters] = React.useState<string[]>(['mobile']);
   const [viewMode, setViewMode] = React.useState('list');
   const [page, setPage] = React.useState(2);
+  const [step, setStep] = React.useState(2);
 
   return (
     <Screen>
@@ -156,6 +173,52 @@ export default function App() {
                 <PaginationItem page={4} />
                 <PaginationItem type="next" />
               </Pagination>
+            </Section>
+          </Card>
+
+          <Card className="gap-5">
+            <Section description="Layout, history and application composition without router ownership." title="Application composition">
+              <Breadcrumb accessibilityLabel="Project breadcrumb">
+                <BreadcrumbItem onPress={() => undefined}>Projects</BreadcrumbItem>
+                <BreadcrumbItem current>BeeUI</BreadcrumbItem>
+              </Breadcrumb>
+
+              <Stack gap="lg">
+                <HStack gap="lg" wrap>
+                  <Stat className="min-w-32 flex-1">
+                    <StatLabel>Exports</StatLabel>
+                    <StatValue>74</StatValue>
+                    <StatHelpText>Foundation primitives</StatHelpText>
+                  </Stat>
+                  <Stat className="min-w-32 flex-1">
+                    <StatLabel>Contract tests</StatLabel>
+                    <StatValue>36</StatValue>
+                    <StatHelpText>Before native gates</StatHelpText>
+                  </Stat>
+                </HStack>
+
+                <Stepper currentStep={step} onStepChange={setStep}>
+                  <StepperItem step={1} title="Foundation" />
+                  <StepperItem step={2} title="Application patterns" />
+                  <StepperItem step={3} title="Overlays" />
+                </Stepper>
+
+                <ListGroup>
+                  <ListGroupHeader description="Composition reuses existing row behavior." title="Workspace" />
+                  <ListItem description="Portable component system" onPress={() => undefined} title="BeeUI" />
+                </ListGroup>
+
+                <Timeline>
+                  <TimelineItem description="Core layout and form contracts established." meta="v0.1" status="success" title="Foundation" />
+                  <TimelineItem description="Bare RN and Android native build verified." meta="CI verified" status="success" title="Native portability" />
+                  <TimelineItem description="Navigation and read-only patterns in progress." meta="Current" status="primary" title="Application layer" />
+                </Timeline>
+
+                <VStack gap="xs">
+                  <Text tone="muted" variant="caption">Navigation remains application-owned.</Text>
+                  <Link onPress={() => undefined}>Open documentation</Link>
+                </VStack>
+              </Stack>
             </Section>
           </Card>
 

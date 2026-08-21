@@ -14,19 +14,21 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 - semantic light/dark design tokens
 - reusable `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` packages
 - engine-neutral stable behavior/variant contracts with optional `className` escape hatches
-- 67 exported foundation components/subcomponents documented in `docs/components.md`
-- 32 contract tests with `jest-expo` + React Native Testing Library
+- 74 exported foundation components/subcomponents documented in `docs/components.md`
+- 36 contract tests with `jest-expo` + React Native Testing Library
 - reproducible `pnpm-lock.yaml` and frozen dependency installs
 - CI smoke bundling for Web, Android, and iOS through Expo/Metro
 - CI Expo Prebuild generation for Android and iOS native projects
 - CI guard preventing Expo runtime imports in `@beeui/core` and `@beeui/ui`
+- true bare React Native 0.86.2 consumer verification with Android/iOS Metro bundles
+- Android bare React Native debug APK compilation in CI
 - React Native core `Modal` behavior for `Dialog`; anchored overlays remain separately gated
 
 ## Component coverage
 
 Current foundation includes layout, typography, actions, forms, selection, navigation, disclosure, modal overlay, application chrome, application patterns, data display, feedback, and state compositions:
 
-`Screen`, `Box`, `Section`, `MetadataRow`, `Text`, `Button`, `ButtonLabel`, `IconButton`, `Link`, `Input`, `Textarea`, `Field`, `HelperText`, `FormMessage`, `SearchInput`, `PasswordInput`, `OTPInput`, `Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Chip`, `ChipGroup`, `SegmentedControl`, `SegmentedControlItem`, `Pagination`, `PaginationItem`, `Stepper`, `StepperItem`, `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`, `Dialog`, `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`, `AppHeader`, `BottomActionBar`, `ListGroup`, `ListGroupHeader`, `ListItem`, `SettingsItem`, `Card`, `AlertBanner`, `Badge`, `Avatar`, `Stat`, `StatLabel`, `StatValue`, `StatHelpText`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `EmptyState`, and `ErrorState`.
+`Screen`, `Box`, `Stack`, `HStack`, `VStack`, `Section`, `MetadataRow`, `Text`, `Button`, `ButtonLabel`, `IconButton`, `Link`, `Input`, `Textarea`, `Field`, `HelperText`, `FormMessage`, `SearchInput`, `PasswordInput`, `OTPInput`, `Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Chip`, `ChipGroup`, `SegmentedControl`, `SegmentedControlItem`, `Pagination`, `PaginationItem`, `Breadcrumb`, `BreadcrumbItem`, `Stepper`, `StepperItem`, `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`, `Dialog`, `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`, `AppHeader`, `BottomActionBar`, `ListGroup`, `ListGroupHeader`, `ListItem`, `SettingsItem`, `Card`, `AlertBanner`, `Badge`, `Avatar`, `Stat`, `StatLabel`, `StatValue`, `StatHelpText`, `Timeline`, `TimelineItem`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `EmptyState`, and `ErrorState`.
 
 Anchored overlays such as `Popover`, `DropdownMenu`, `Tooltip`, `Toast`, and `Select` remain deferred until their positioning/focus/keyboard/accessibility behavior is verified across Expo, prebuild/bare React Native, and web.
 
@@ -50,8 +52,9 @@ pnpm check
 
 ```tsx
 import {
-  FormMessage,
-  HelperText,
+  Breadcrumb,
+  BreadcrumbItem,
+  HStack,
   Link,
   ListGroup,
   ListGroupHeader,
@@ -62,16 +65,25 @@ import {
   StatValue,
   Stepper,
   StepperItem,
+  Timeline,
+  TimelineItem,
 } from '@beeui/ui';
 
 function AccountSummary() {
   return (
     <>
-      <Stat>
-        <StatLabel>Active projects</StatLabel>
-        <StatValue>12</StatValue>
-        <StatHelpText>3 updated today</StatHelpText>
-      </Stat>
+      <Breadcrumb>
+        <BreadcrumbItem onPress={() => undefined}>Projects</BreadcrumbItem>
+        <BreadcrumbItem current>BeeUI</BreadcrumbItem>
+      </Breadcrumb>
+
+      <HStack gap="lg" wrap>
+        <Stat>
+          <StatLabel>Active projects</StatLabel>
+          <StatValue>12</StatValue>
+          <StatHelpText>3 updated today</StatHelpText>
+        </Stat>
+      </HStack>
 
       <Stepper currentStep={2} onStepChange={(step) => console.log(step)}>
         <StepperItem step={1} title="Account" />
@@ -84,15 +96,18 @@ function AccountSummary() {
         <ListItem title="Appearance" onPress={() => undefined} />
       </ListGroup>
 
-      <HelperText>Changes are saved to this device.</HelperText>
-      <FormMessage>Password is required.</FormMessage>
+      <Timeline>
+        <TimelineItem status="success" title="Created" meta="09:00" />
+        <TimelineItem status="primary" title="Reviewed" meta="10:30" />
+      </Timeline>
+
       <Link onPress={() => undefined}>Documentation</Link>
     </>
   );
 }
 ```
 
-`Link` intentionally owns no router, and `Stepper` intentionally owns no workflow state. Applications provide those behaviors.
+Navigation components intentionally own no router, and `Stepper` intentionally owns no workflow state. Applications provide those behaviors.
 
 ## Verification status
 
@@ -101,15 +116,16 @@ The current CI pipeline performs:
 1. clean `pnpm install --frozen-lockfile`
 2. an Expo-import boundary check for `packages/core/src` and `packages/ui/src`
 3. strict TypeScript checks across the workspace
-4. 32 React Native Testing Library contract tests
+4. 36 React Native Testing Library contract tests
 5. Expo/Metro export for Web
 6. Expo/Metro export for Android
 7. Expo/Metro export for iOS
 8. `expo prebuild --clean --no-install` to generate both native projects
+9. a fresh bare React Native 0.86.2 consumer that rejects Expo runtime resolution, bundles Android + iOS through Metro/Uniwind, and compiles an Android debug APK with Gradle
 
-Every foundation tranche is accepted only after this complete pipeline passes on the PR head.
+Every foundation tranche is accepted only after the complete pipeline passes on the PR head.
 
-Expo export proves the JavaScript/Metro bundles resolve on all three targets, and Expo Prebuild proves the current configuration can generate Android and iOS native projects. These checks do **not** claim that an APK/AAB or iOS application has been compiled or installed on a physical device. Remaining release verification is native compilation/device smoke testing and a true bare React Native consumer test.
+Expo export proves the JavaScript/Metro bundles resolve on all three targets, Expo Prebuild proves the current configuration can generate Android and iOS native projects, and the bare-native gate proves source portability plus Android native compilation outside Expo. Remaining release verification is native iOS binary compilation on macOS and simulator/device interaction smoke testing, including dialog hardware-back/focus/screen-reader behavior.
 
 ## Workspace
 
@@ -123,6 +139,7 @@ packages/
 docs/
   architecture.md    architecture constraints
   components.md      canonical component inventory
+  native-verification.md  bare React Native/native-build contract
   decisions/         architecture decision records
 ```
 
@@ -137,4 +154,4 @@ docs/
 7. Web support is additive; mobile correctness takes priority.
 8. Modal-class and anchored overlays may use different behavior primitives; neither class is considered production-ready until its platform-specific interaction contracts are verified.
 
-See [`docs/architecture.md`](docs/architecture.md), [`docs/components.md`](docs/components.md), and the ADRs in [`docs/decisions`](docs/decisions) for the full contract.
+See [`docs/architecture.md`](docs/architecture.md), [`docs/components.md`](docs/components.md), [`docs/native-verification.md`](docs/native-verification.md), and the ADRs in [`docs/decisions`](docs/decisions) for the full contract.
