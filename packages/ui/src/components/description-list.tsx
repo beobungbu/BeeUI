@@ -9,7 +9,7 @@ export type DescriptionListProps = ViewProps & {
 
 export const DescriptionList = React.forwardRef<React.ComponentRef<typeof View>, DescriptionListProps>(
   ({ className, ...props }, ref) => (
-    <View ref={ref} className={cn('w-full gap-0', className)} {...props} />
+    <View ref={ref} className={cn('w-full gap-1', className)} {...props} />
   ),
 );
 
@@ -21,7 +21,7 @@ export const DescriptionItem = React.forwardRef<
   React.ComponentRef<typeof View>,
   DescriptionItemProps
 >(({ className, ...props }, ref) => (
-  <MetadataRow ref={ref} className={cn('border-b border-border last:border-b-0', className)} {...props} />
+  <MetadataRow ref={ref} className={cn('rounded-md px-2', className)} {...props} />
 ));
 
 DescriptionItem.displayName = 'DescriptionItem';
