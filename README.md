@@ -14,8 +14,8 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 - semantic light/dark design tokens
 - reusable `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` packages
 - engine-neutral stable behavior/variant contracts with optional `className` escape hatches
-- 56 exported foundation components/subcomponents documented in `docs/components.md`
-- 24 contract tests with `jest-expo` + React Native Testing Library
+- 67 exported foundation components/subcomponents documented in `docs/components.md`
+- 32 contract tests with `jest-expo` + React Native Testing Library
 - reproducible `pnpm-lock.yaml` and frozen dependency installs
 - CI smoke bundling for Web, Android, and iOS through Expo/Metro
 - CI Expo Prebuild generation for Android and iOS native projects
@@ -26,7 +26,7 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 
 Current foundation includes layout, typography, actions, forms, selection, navigation, disclosure, modal overlay, application chrome, application patterns, data display, feedback, and state compositions:
 
-`Screen`, `Box`, `Section`, `MetadataRow`, `Text`, `Button`, `ButtonLabel`, `IconButton`, `Input`, `Textarea`, `Field`, `SearchInput`, `PasswordInput`, `OTPInput`, `Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Chip`, `ChipGroup`, `SegmentedControl`, `SegmentedControlItem`, `Pagination`, `PaginationItem`, `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`, `Dialog`, `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`, `AppHeader`, `BottomActionBar`, `ListItem`, `SettingsItem`, `Card`, `AlertBanner`, `Badge`, `Avatar`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `EmptyState`, and `ErrorState`.
+`Screen`, `Box`, `Section`, `MetadataRow`, `Text`, `Button`, `ButtonLabel`, `IconButton`, `Link`, `Input`, `Textarea`, `Field`, `HelperText`, `FormMessage`, `SearchInput`, `PasswordInput`, `OTPInput`, `Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Chip`, `ChipGroup`, `SegmentedControl`, `SegmentedControlItem`, `Pagination`, `PaginationItem`, `Stepper`, `StepperItem`, `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`, `Dialog`, `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`, `AppHeader`, `BottomActionBar`, `ListGroup`, `ListGroupHeader`, `ListItem`, `SettingsItem`, `Card`, `AlertBanner`, `Badge`, `Avatar`, `Stat`, `StatLabel`, `StatValue`, `StatHelpText`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `EmptyState`, and `ErrorState`.
 
 Anchored overlays such as `Popover`, `DropdownMenu`, `Tooltip`, `Toast`, and `Select` remain deferred until their positioning/focus/keyboard/accessibility behavior is verified across Expo, prebuild/bare React Native, and web.
 
@@ -46,6 +46,54 @@ Run the unit/type verification suite with:
 pnpm check
 ```
 
+## Application primitive example
+
+```tsx
+import {
+  FormMessage,
+  HelperText,
+  Link,
+  ListGroup,
+  ListGroupHeader,
+  ListItem,
+  Stat,
+  StatHelpText,
+  StatLabel,
+  StatValue,
+  Stepper,
+  StepperItem,
+} from '@beeui/ui';
+
+function AccountSummary() {
+  return (
+    <>
+      <Stat>
+        <StatLabel>Active projects</StatLabel>
+        <StatValue>12</StatValue>
+        <StatHelpText>3 updated today</StatHelpText>
+      </Stat>
+
+      <Stepper currentStep={2} onStepChange={(step) => console.log(step)}>
+        <StepperItem step={1} title="Account" />
+        <StepperItem step={2} title="Profile" />
+        <StepperItem step={3} title="Review" />
+      </Stepper>
+
+      <ListGroup>
+        <ListGroupHeader title="Settings" />
+        <ListItem title="Appearance" onPress={() => undefined} />
+      </ListGroup>
+
+      <HelperText>Changes are saved to this device.</HelperText>
+      <FormMessage>Password is required.</FormMessage>
+      <Link onPress={() => undefined}>Documentation</Link>
+    </>
+  );
+}
+```
+
+`Link` intentionally owns no router, and `Stepper` intentionally owns no workflow state. Applications provide those behaviors.
+
 ## Verification status
 
 The current CI pipeline performs:
@@ -53,7 +101,7 @@ The current CI pipeline performs:
 1. clean `pnpm install --frozen-lockfile`
 2. an Expo-import boundary check for `packages/core/src` and `packages/ui/src`
 3. strict TypeScript checks across the workspace
-4. 24 React Native Testing Library contract tests
+4. 32 React Native Testing Library contract tests
 5. Expo/Metro export for Web
 6. Expo/Metro export for Android
 7. Expo/Metro export for iOS
