@@ -35,7 +35,9 @@ export const ListItem = React.forwardRef<React.ComponentRef<typeof Pressable>, L
     ref,
   ) => {
     const interactive = typeof onPress === 'function';
-    const inferredLabel = typeof title === 'string' || typeof title === 'number' ? String(title) : undefined;
+    const isDisabled = disabled === true;
+    const inferredLabel =
+      typeof title === 'string' || typeof title === 'number' ? String(title) : undefined;
 
     return (
       <Pressable
@@ -43,15 +45,15 @@ export const ListItem = React.forwardRef<React.ComponentRef<typeof Pressable>, L
         {...props}
         accessibilityLabel={accessibilityLabel ?? (interactive ? inferredLabel : undefined)}
         accessibilityRole={interactive ? 'button' : undefined}
-        accessibilityState={interactive ? { disabled } : undefined}
+        accessibilityState={interactive ? { disabled: isDisabled } : undefined}
         accessible={interactive}
         className={cn(
           'min-h-14 w-full flex-row items-center gap-3 rounded-md px-3 py-2',
           interactive && 'active:bg-muted web:hover:bg-surface-muted',
-          disabled && 'opacity-60',
+          isDisabled && 'opacity-60',
           className,
         )}
-        disabled={disabled || !interactive}
+        disabled={isDisabled || !interactive}
         onPress={onPress}
       >
         {leading ? <Box className="shrink-0">{leading}</Box> : null}
