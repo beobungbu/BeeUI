@@ -65,7 +65,9 @@ Stack.displayName = 'Stack';
 export type HStackProps = Omit<StackProps, 'direction'>;
 
 export const HStack = React.forwardRef<React.ComponentRef<typeof View>, HStackProps>(
-  (props, ref) => <Stack ref={ref} direction="horizontal" {...props} />,
+  ({ align = 'center', ...props }, ref) => (
+    <Stack ref={ref} align={align} direction="horizontal" {...props} />
+  ),
 );
 
 HStack.displayName = 'HStack';
