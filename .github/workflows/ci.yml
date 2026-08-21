@@ -44,6 +44,16 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Verify release package contract
+        run: pnpm release:verify
+
+      - name: Upload release verification report
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-verification-${{ github.sha }}
+          path: .artifacts/release-verification.json
+          if-no-files-found: error
+
       - name: Bundle showcase for web
         run: pnpm --filter @beeui/showcase exec expo export --platform web --output-dir dist-web
 
