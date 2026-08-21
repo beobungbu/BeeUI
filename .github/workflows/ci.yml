@@ -27,6 +27,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify core packages stay Expo-free
+        run: |
+          if grep -R -n -E "from ['\"]expo([^'\"]*)['\"]|require\(['\"]expo([^'\"]*)['\"]\)" packages/core/src packages/ui/src; then
+            echo "BeeUI core packages must not import Expo runtime modules."
+            exit 1
+          fi
+
       - name: Typecheck
         run: pnpm typecheck
 
@@ -41,3 +48,9 @@ jobs:
 
       - name: Bundle showcase for iOS
         run: pnpm --filter @beeui/showcase exec expo export --platform ios --output-dir dist-ios
+
+      - name: Generate native projects with Expo Prebuild
+        env:
+          EXPO_NO_GIT_STATUS: 1
+        working-directory: apps/showcase
+        run: pnpm exec expo prebuild --clean --no-install
