@@ -4,6 +4,21 @@ import { Pressable, type PressableProps } from 'react-native';
 import { Box } from './box';
 import { Text } from './text';
 
+function isPrimitiveAccessibilityContent(value: React.ReactNode) {
+  return value == null || typeof value === 'string' || typeof value === 'number';
+}
+
+function getPrimitiveAccessibilityLabel(...values: React.ReactNode[]) {
+  if (!values.every(isPrimitiveAccessibilityContent)) return undefined;
+
+  const parts = values
+    .filter((value): value is string | number => typeof value === 'string' || typeof value === 'number')
+    .map(String)
+    .filter(Boolean);
+
+  return parts.length > 0 ? parts.join(', ') : undefined;
+}
+
 export type ListItemProps = Omit<
   PressableProps,
   'accessibilityRole' | 'accessibilityState' | 'children' | 'role'
@@ -36,12 +51,15 @@ export const ListItem = React.forwardRef<React.ComponentRef<typeof Pressable>, L
   ) => {
     const interactive = typeof onPress === 'function';
     const isDisabled = disabled === true;
+    const inferredLabel = interactive
+      ? getPrimitiveAccessibilityLabel(title, description, trailing)
+      : undefined;
 
     return (
       <Pressable
         ref={ref}
         {...props}
-        accessibilityLabel={accessibilityLabel}
+        accessibilityLabel={accessibilityLabel ?? inferredLabel}
         accessibilityRole={interactive ? 'button' : undefined}
         accessibilityState={interactive ? { disabled: isDisabled } : undefined}
         accessible={interactive}
@@ -87,22 +105,33 @@ export type SettingsItemProps = Omit<ListItemProps, 'trailing'> & {
 };
 
 export const SettingsItem = React.forwardRef<React.ComponentRef<typeof Pressable>, SettingsItemProps>(
-  ({ trailing, value, ...props }, ref) => (
-    <ListItem
-      ref={ref}
-      {...props}
-      trailing={
-        trailing ??
-        (typeof value === 'string' || typeof value === 'number' ? (
-          <Text tone="muted" variant="label">
-            {value}
-          </Text>
-        ) : (
-          value
-        ))
-      }
-    />
-  ),
+  ({ accessibilityLabel, description, title, trailing, value, ...props }, ref) => {
+    const resolvedTrailing =
+      trailing ??
+      (typeof value === 'string' || typeof value === 'number' ? (
+        <Text tone="muted" variant="label">
+          {value}
+        </Text>
+      ) : (
+        value
+      ));
+    const inferredLabel = getPrimitiveAccessibilityLabel(
+      title,
+      description,
+      trailing === undefined ? value : trailing,
+    );
+
+    return (
+      <ListItem
+        ref={ref}
+        {...props}
+        accessibilityLabel={accessibilityLabel ?? inferredLabel}
+        description={description}
+        title={title}
+        trailing={resolvedTrailing}
+      />
+    );
+  },
 );
 
 SettingsItem.displayName = 'SettingsItem';
