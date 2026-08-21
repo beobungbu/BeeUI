@@ -24,6 +24,24 @@ function useDialogContext() {
   return context;
 }
 
+type DialogContentAccessibilityContextValue = {
+  defaultDescriptionNativeID: string;
+  defaultTitleNativeID: string;
+  registerDescription: (nativeID?: string, text?: string) => void;
+  registerTitle: (nativeID?: string, text?: string) => void;
+};
+
+const DialogContentAccessibilityContext =
+  React.createContext<DialogContentAccessibilityContextValue | null>(null);
+
+function getPrimitiveText(children: React.ReactNode) {
+  const values = React.Children.toArray(children);
+  if (!values.every((value) => typeof value === 'string' || typeof value === 'number')) {
+    return undefined;
+  }
+  return values.map(String).join('');
+}
+
 type DialogBaseProps = {
   children?: React.ReactNode;
 };
@@ -125,6 +143,9 @@ export type DialogContentProps = Omit<
 export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, DialogContentProps>(
   (
     {
+      accessibilityHint,
+      accessibilityLabel,
+      accessibilityLabelledBy,
       children,
       className,
       closeOnBackdropPress = true,
@@ -140,6 +161,12 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
     ref,
   ) => {
     const { open, setOpen } = useDialogContext();
+    const reactID = React.useId().replace(/:/g, '');
+    const defaultTitleNativeID = `beeui-dialog-title-${reactID}`;
+    const defaultDescriptionNativeID = `beeui-dialog-description-${reactID}`;
+    const [titleNativeID, setTitleNativeID] = React.useState<string>();
+    const [titleText, setTitleText] = React.useState<string>();
+    const [descriptionText, setDescriptionText] = React.useState<string>();
     const { animationType = 'fade', presentationStyle = 'overFullScreen', ...restModalProps } =
       modalProps ?? {};
 
@@ -147,6 +174,23 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
       onRequestClose?.();
       setOpen(false);
     }, [onRequestClose, setOpen]);
+
+    const registerTitle = React.useCallback((nativeID?: string, text?: string) => {
+      setTitleNativeID(nativeID);
+      setTitleText(text);
+    }, []);
+    const registerDescription = React.useCallback((_nativeID?: string, text?: string) => {
+      setDescriptionText(text);
+    }, []);
+    const accessibilityContext = React.useMemo(
+      () => ({
+        defaultDescriptionNativeID,
+        defaultTitleNativeID,
+        registerDescription,
+        registerTitle,
+      }),
+      [defaultDescriptionNativeID, defaultTitleNativeID, registerDescription, registerTitle],
+    );
 
     return (
       <Modal
@@ -173,23 +217,28 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
             }}
             testID={overlayTestID}
           />
-          <View
-            ref={ref}
-            {...props}
-            accessibilityViewIsModal
-            aria-modal
-            className={cn(
-              'w-full max-w-lg gap-4 rounded-xl border border-border bg-surface p-5',
-              className,
-            )}
-            onAccessibilityEscape={() => {
-              onAccessibilityEscape?.();
-              requestClose();
-            }}
-            role="dialog"
-          >
-            {children}
-          </View>
+          <DialogContentAccessibilityContext.Provider value={accessibilityContext}>
+            <View
+              ref={ref}
+              {...props}
+              accessibilityHint={accessibilityHint ?? descriptionText}
+              accessibilityLabel={accessibilityLabel ?? titleText}
+              accessibilityLabelledBy={accessibilityLabelledBy ?? titleNativeID}
+              accessibilityViewIsModal
+              aria-modal
+              className={cn(
+                'w-full max-w-lg gap-4 rounded-xl border border-border bg-surface p-5',
+                className,
+              )}
+              onAccessibilityEscape={() => {
+                onAccessibilityEscape?.();
+                requestClose();
+              }}
+              role="dialog"
+            >
+              {children}
+            </View>
+          </DialogContentAccessibilityContext.Provider>
         </View>
       </Modal>
     );
@@ -201,9 +250,30 @@ DialogContent.displayName = 'DialogContent';
 export type DialogTitleProps = Omit<TextProps, 'accessibilityRole' | 'role' | 'variant'>;
 
 export const DialogTitle = React.forwardRef<React.ComponentRef<typeof Text>, DialogTitleProps>(
-  ({ className, ...props }, ref) => (
-    <Text ref={ref} accessibilityRole="header" className={cn('pr-8', className)} variant="heading" {...props} />
-  ),
+  ({ accessibilityLabel, children, className, nativeID, ...props }, ref) => {
+    const context = React.useContext(DialogContentAccessibilityContext);
+    const resolvedNativeID = nativeID ?? context?.defaultTitleNativeID;
+    const resolvedText = accessibilityLabel ?? getPrimitiveText(children);
+
+    React.useEffect(() => {
+      context?.registerTitle(resolvedNativeID, resolvedText);
+      return () => context?.registerTitle(undefined, undefined);
+    }, [context, resolvedNativeID, resolvedText]);
+
+    return (
+      <Text
+        ref={ref}
+        {...props}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole="header"
+        className={cn('pr-8', className)}
+        nativeID={resolvedNativeID}
+        variant="heading"
+      >
+        {children}
+      </Text>
+    );
+  },
 );
 
 DialogTitle.displayName = 'DialogTitle';
@@ -213,9 +283,30 @@ export type DialogDescriptionProps = Omit<TextProps, 'tone' | 'variant'>;
 export const DialogDescription = React.forwardRef<
   React.ComponentRef<typeof Text>,
   DialogDescriptionProps
->(({ className, ...props }, ref) => (
-  <Text ref={ref} className={className} tone="muted" variant="body" {...props} />
-));
+>(({ accessibilityLabel, children, className, nativeID, ...props }, ref) => {
+  const context = React.useContext(DialogContentAccessibilityContext);
+  const resolvedNativeID = nativeID ?? context?.defaultDescriptionNativeID;
+  const resolvedText = accessibilityLabel ?? getPrimitiveText(children);
+
+  React.useEffect(() => {
+    context?.registerDescription(resolvedNativeID, resolvedText);
+    return () => context?.registerDescription(undefined, undefined);
+  }, [context, resolvedNativeID, resolvedText]);
+
+  return (
+    <Text
+      ref={ref}
+      {...props}
+      accessibilityLabel={accessibilityLabel}
+      className={className}
+      nativeID={resolvedNativeID}
+      tone="muted"
+      variant="body"
+    >
+      {children}
+    </Text>
+  );
+});
 
 DialogDescription.displayName = 'DialogDescription';
 
