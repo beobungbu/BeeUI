@@ -29,7 +29,8 @@ prepare_consumer() {
     tailwindcss@4.3.3 \
     class-variance-authority@0.7.1 \
     clsx@2.1.1 \
-    tailwind-merge@3.6.0
+    tailwind-merge@3.6.0 \
+    react-native-safe-area-context@5.7.0
   echo "::endgroup::"
 
   if node -e "require.resolve('expo')" >/dev/null 2>&1; then
@@ -85,6 +86,7 @@ EOF
 import './src/global.css';
 
 import {
+  BeeUIProvider,
   Button,
   Card,
   Checkbox,
@@ -98,6 +100,7 @@ import {
   DialogTitle,
   DialogTrigger,
   Input,
+  SafeArea,
   Screen,
   Text,
 } from '@beeui/ui';
@@ -109,30 +112,34 @@ export default function App() {
   const [filter, setFilter] = React.useState('all');
 
   return (
-    <Screen>
-      <ScrollView contentContainerStyle={{ padding: 24 }}>
-        <Card className="gap-4">
-          <Text variant="title">BeeUI bare React Native smoke</Text>
-          <Input accessibilityLabel="Project name" placeholder="Project name" />
-          <Checkbox checked={checked} label="Enable notifications" onCheckedChange={setChecked} />
-          <ChipGroup onValueChange={(value) => setFilter(String(value))} value={filter}>
-            <Chip value="all">All</Chip>
-            <Chip value="active">Active</Chip>
-          </ChipGroup>
-          <Dialog>
-            <DialogTrigger>Open dialog</DialogTrigger>
-            <DialogContent>
-              <DialogTitle>Bare RN dialog</DialogTitle>
-              <DialogDescription>React Native core Modal without Expo runtime.</DialogDescription>
-              <DialogFooter>
-                <DialogClose variant="outline">Close</DialogClose>
-                <Button>Save</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </Card>
-      </ScrollView>
-    </Screen>
+    <BeeUIProvider>
+      <Screen>
+        <SafeArea edges={['top', 'left', 'right']} className="flex-1">
+          <ScrollView contentContainerStyle={{ padding: 24 }}>
+            <Card className="gap-4">
+              <Text variant="title">BeeUI bare React Native smoke</Text>
+              <Input accessibilityLabel="Project name" placeholder="Project name" />
+              <Checkbox checked={checked} label="Enable notifications" onCheckedChange={setChecked} />
+              <ChipGroup onValueChange={(value) => setFilter(String(value))} value={filter}>
+                <Chip value="all">All</Chip>
+                <Chip value="active">Active</Chip>
+              </ChipGroup>
+              <Dialog>
+                <DialogTrigger>Open dialog</DialogTrigger>
+                <DialogContent>
+                  <DialogTitle>Bare RN dialog</DialogTitle>
+                  <DialogDescription>React Native core Modal without Expo runtime.</DialogDescription>
+                  <DialogFooter>
+                    <DialogClose variant="outline">Close</DialogClose>
+                    <Button>Save</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </Card>
+          </ScrollView>
+        </SafeArea>
+      </Screen>
+    </BeeUIProvider>
   );
 }
 EOF

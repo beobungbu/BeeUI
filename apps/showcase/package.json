@@ -19,6 +19,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.2",
+    "react-native-safe-area-context": "~5.7.0",
     "react-native-web": "0.21.0",
     "tailwindcss": "4.3.3",
     "uniwind": "1.10.1"
@@ -35,7 +36,8 @@
     "moduleNameMapper": {
       "^@beeui/core$": "<rootDir>/../../packages/core/src/index.ts",
       "^@beeui/tokens$": "<rootDir>/../../packages/tokens/src/index.ts",
-      "^@beeui/ui$": "<rootDir>/../../packages/ui/src/index.ts"
+      "^@beeui/ui$": "<rootDir>/../../packages/ui/src/index.ts",
+      "^uniwind$": "<rootDir>/__mocks__/uniwind.ts"
     },
     "testMatch": [
       "<rootDir>/__tests__/**/*.test.ts?(x)"

@@ -119,6 +119,7 @@ export {
   type RadioGroupProps,
   type RadioProps,
 } from './components/radio';
+export { BeeUIProvider, SafeArea, type BeeUIProviderProps, type SafeAreaProps } from './components/safe-area';
 export { Screen, type ScreenProps } from './components/screen';
 export { SearchInput, type SearchInputProps } from './components/search-input';
 export {
