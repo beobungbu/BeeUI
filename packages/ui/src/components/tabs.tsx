@@ -1,11 +1,12 @@
 import { cn } from '@beeui/core';
 import * as React from 'react';
 import { Pressable, View, type PressableProps, type ViewProps } from 'react-native';
+import { useControllableState } from '../hooks/use-controllable-state';
 import { Text } from './text';
 
 type TabsContextValue = {
   disabled: boolean;
-  onValueChange?: (value: string) => void;
+  select: (value: string) => void;
   value: string;
 };
 
@@ -24,16 +25,35 @@ function useTabsContext(component: string) {
 export type TabsProps = Omit<ViewProps, 'children'> & {
   children: React.ReactNode;
   className?: string;
+  defaultValue?: string;
   disabled?: boolean;
   onValueChange?: (value: string) => void;
-  value: string;
+  value?: string;
 };
 
 export const Tabs = React.forwardRef<React.ComponentRef<typeof View>, TabsProps>(
-  ({ children, className, disabled = false, onValueChange, value, ...props }, ref) => {
+  (
+    {
+      children,
+      className,
+      defaultValue = '',
+      disabled = false,
+      onValueChange,
+      value,
+      ...props
+    },
+    ref,
+  ) => {
+    const [resolvedValue, setValue] = useControllableState({
+      defaultValue,
+      disabled,
+      name: 'Tabs',
+      onChange: onValueChange,
+      value,
+    });
     const contextValue = React.useMemo(
-      () => ({ disabled, onValueChange, value }),
-      [disabled, onValueChange, value],
+      () => ({ disabled, select: setValue, value: resolvedValue }),
+      [disabled, resolvedValue, setValue],
     );
 
     return (
@@ -123,9 +143,7 @@ export const TabsTrigger = React.forwardRef<
         )}
         disabled={isDisabled}
         onPress={() => {
-          if (!selected) {
-            tabs.onValueChange?.(value);
-          }
+          if (!selected) tabs.select(value);
         }}
       >
         {childArray.map((child, index) =>
