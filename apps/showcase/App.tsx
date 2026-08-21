@@ -1,13 +1,18 @@
 import './global.css';
 
 import {
+  Avatar,
   Badge,
   Box,
   Button,
   Card,
   Checkbox,
+  IconButton,
   Input,
+  Progress,
+  Radio,
   Separator,
+  Skeleton,
   Spinner,
   Switch,
   Text,
@@ -46,6 +51,7 @@ export default function App() {
   const { theme } = useUniwind();
   const [accepted, setAccepted] = React.useState(false);
   const [notifications, setNotifications] = React.useState(true);
+  const [plan, setPlan] = React.useState<'starter' | 'pro'>('starter');
 
   return (
     <Box className="flex-1 bg-background">
@@ -54,7 +60,10 @@ export default function App() {
         <Box className="mx-auto w-full max-w-2xl gap-8 px-5 pb-10 pt-16">
           <Box className="gap-3">
             <Box className="flex-row items-center justify-between gap-4">
-              <Text variant="title">BeeUI</Text>
+              <Box className="flex-row items-center gap-3">
+                <Avatar accessibilityLabel="BeeUI" fallback="BU" />
+                <Text variant="title">BeeUI</Text>
+              </Box>
               <ThemeToggle />
             </Box>
             <Text tone="muted">
@@ -64,7 +73,12 @@ export default function App() {
           </Box>
 
           <Card className="gap-4" variant="raised">
-            <Text variant="heading">Buttons</Text>
+            <Box className="flex-row items-center justify-between">
+              <Text variant="heading">Buttons</Text>
+              <IconButton accessibilityLabel="Add item" variant="outline">
+                ＋
+              </IconButton>
+            </Box>
             <Box className="gap-3">
               <Button>Primary action</Button>
               <Button variant="secondary">Secondary action</Button>
@@ -89,6 +103,18 @@ export default function App() {
               onCheckedChange={setAccepted}
             />
             <Checkbox checked="indeterminate" label="Partially selected" />
+            <Box className="gap-2">
+              <Radio
+                checked={plan === 'starter'}
+                label="Starter plan"
+                onCheckedChange={() => setPlan('starter')}
+              />
+              <Radio
+                checked={plan === 'pro'}
+                label="Pro plan"
+                onCheckedChange={() => setPlan('pro')}
+              />
+            </Box>
             <Box className="flex-row items-center justify-between gap-4">
               <Text>Notifications</Text>
               <Switch
@@ -118,6 +144,19 @@ export default function App() {
               <Spinner tone="destructive" />
               <Spinner tone="info" />
             </Box>
+            <Progress accessibilityLabel="Profile completion" value={72} />
+          </Card>
+
+          <Card className="gap-4">
+            <Text variant="heading">Loading surfaces</Text>
+            <Box className="flex-row items-center gap-3">
+              <Skeleton className="h-12 w-12" variant="circle" />
+              <Box className="flex-1 gap-2">
+                <Skeleton className="w-2/3" variant="text" />
+                <Skeleton className="w-full" variant="text" />
+              </Box>
+            </Box>
+            <Skeleton className="h-24 w-full" />
           </Card>
 
           <Card className="gap-3" variant="muted">

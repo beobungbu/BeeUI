@@ -1,6 +1,6 @@
 import { fireEvent, render } from '@testing-library/react-native';
 import * as React from 'react';
-import { Button, Checkbox, Input, Switch } from '@beeui/ui';
+import { Button, Checkbox, Input, Progress, Radio, Switch } from '@beeui/ui';
 
 describe('BeeUI component contracts', () => {
   it('exposes an accessible button and forwards presses', () => {
@@ -56,5 +56,24 @@ describe('BeeUI component contracts', () => {
     const toggle = screen.getByRole('switch', { name: 'Notifications' });
 
     expect(toggle.props.accessibilityState).toEqual({ checked: true, disabled: false });
+  });
+
+  it('keeps radio selection controlled', () => {
+    const onCheckedChange = jest.fn();
+    const screen = render(
+      <Radio checked={false} label="Pro plan" onCheckedChange={onCheckedChange} />,
+    );
+    const radio = screen.getByRole('radio', { name: 'Pro plan' });
+
+    expect(radio.props.accessibilityState).toEqual({ checked: false, disabled: false });
+    fireEvent.press(radio);
+    expect(onCheckedChange).toHaveBeenCalledWith(true);
+  });
+
+  it('clamps progress values for accessibility', () => {
+    const screen = render(<Progress accessibilityLabel="Upload" max={100} value={140} />);
+    const progress = screen.getByRole('progressbar', { name: 'Upload' });
+
+    expect(progress.props.accessibilityValue).toEqual({ min: 0, max: 100, now: 100 });
   });
 });

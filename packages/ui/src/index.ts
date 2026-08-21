@@ -1,3 +1,9 @@
+export {
+  Avatar,
+  avatarFallbackVariants,
+  avatarVariants,
+  type AvatarProps,
+} from './components/avatar';
 export { Badge, badgeLabelVariants, badgeVariants, type BadgeProps } from './components/badge';
 export { Box, type BoxProps } from './components/box';
 export {
@@ -15,8 +21,12 @@ export {
   type CheckboxProps,
   type CheckboxValue,
 } from './components/checkbox';
+export { IconButton, type IconButtonProps } from './components/icon-button';
 export { Input, inputVariants, type InputProps } from './components/input';
+export { Progress, progressVariants, type ProgressProps } from './components/progress';
+export { Radio, radioIndicatorVariants, type RadioProps } from './components/radio';
 export { Separator, type SeparatorProps } from './components/separator';
+export { Skeleton, skeletonVariants, type SkeletonProps } from './components/skeleton';
 export { Spinner, type SpinnerProps } from './components/spinner';
 export { Switch, type SwitchProps } from './components/switch';
 export { Text, textVariants, type TextProps } from './components/text';
