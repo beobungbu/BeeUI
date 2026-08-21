@@ -24,6 +24,20 @@ const inputVariants = cva(
   },
 );
 
+type EngineTextInputProps = TextInputProps & {
+  cursorColorClassName?: string;
+  placeholderTextColorClassName?: string;
+  selectionColorClassName?: string;
+  selectionHandleColorClassName?: string;
+  underlineColorAndroidClassName?: string;
+};
+
+const EngineTextInput = React.forwardRef<React.ComponentRef<typeof TextInput>, EngineTextInputProps>(
+  (props, ref) => <TextInput ref={ref} {...props} />,
+);
+
+EngineTextInput.displayName = 'BeeUIEngineTextInput';
+
 export type InputProps = TextInputProps &
   Omit<VariantProps<typeof inputVariants>, 'invalid'> & {
     className?: string;
@@ -33,7 +47,7 @@ export type InputProps = TextInputProps &
 
 export const Input = React.forwardRef<React.ComponentRef<typeof TextInput>, InputProps>(
   ({ className, disabled = false, editable, invalid = false, size, ...props }, ref) => (
-    <TextInput
+    <EngineTextInput
       ref={ref}
       accessibilityState={{ disabled }}
       className={cn(
@@ -41,7 +55,12 @@ export const Input = React.forwardRef<React.ComponentRef<typeof TextInput>, Inpu
         disabled && 'border-disabled bg-disabled text-disabled-foreground opacity-70',
         className,
       )}
+      cursorColorClassName="accent-primary"
       editable={!disabled && editable !== false}
+      placeholderTextColorClassName="accent-muted-foreground"
+      selectionColorClassName="accent-primary"
+      selectionHandleColorClassName="accent-primary"
+      underlineColorAndroidClassName="accent-transparent"
       {...props}
     />
   ),

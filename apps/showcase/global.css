@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 @import 'uniwind';
-@import '../../packages/tokens/src/theme.css';
+@import '@beeui/tokens/theme.css';
 
 @source '../../packages/ui/src';
 @source '../../packages/core/src';

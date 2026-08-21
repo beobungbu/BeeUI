@@ -4,6 +4,7 @@ import * as React from 'react';
 import {
   ActivityIndicator,
   Pressable,
+  type ActivityIndicatorProps,
   type PressableProps,
   type TextProps as RNTextProps,
 } from 'react-native';
@@ -60,6 +61,22 @@ const buttonLabelVariants = cva('font-semibold', {
   },
 });
 
+type ButtonVariant = NonNullable<VariantProps<typeof buttonVariants>['variant']>;
+
+type EngineActivityIndicatorProps = ActivityIndicatorProps & {
+  colorClassName?: string;
+};
+
+const EngineActivityIndicator = ActivityIndicator as React.ComponentType<EngineActivityIndicatorProps>;
+
+const spinnerColorByVariant: Record<ButtonVariant, string> = {
+  primary: 'accent-primary-foreground',
+  secondary: 'accent-secondary-foreground',
+  outline: 'accent-foreground',
+  ghost: 'accent-foreground',
+  destructive: 'accent-destructive-foreground',
+};
+
 export type ButtonProps = Omit<PressableProps, 'children'> &
   VariantProps<typeof buttonVariants> & {
     children?: React.ReactNode;
@@ -84,6 +101,7 @@ export const Button = React.forwardRef<React.ComponentRef<typeof Pressable>, But
     ref,
   ) => {
     const isDisabled = disabled || loading;
+    const resolvedVariant: ButtonVariant = variant ?? 'primary';
     const childArray = React.Children.toArray(children);
     const inferredLabel = childArray.every(
       (child) => typeof child === 'string' || typeof child === 'number',
@@ -98,21 +116,26 @@ export const Button = React.forwardRef<React.ComponentRef<typeof Pressable>, But
         accessibilityRole="button"
         accessibilityState={{ disabled: isDisabled, busy: loading }}
         className={cn(
-          buttonVariants({ variant, size }),
+          buttonVariants({ variant: resolvedVariant, size }),
           isDisabled && 'border-disabled bg-disabled opacity-60',
           className,
         )}
         disabled={isDisabled}
         {...props}
       >
-        {loading ? <ActivityIndicator size="small" /> : null}
+        {loading ? (
+          <EngineActivityIndicator
+            colorClassName={spinnerColorByVariant[resolvedVariant]}
+            size="small"
+          />
+        ) : null}
         {childArray.map((child, index) => {
           if (typeof child === 'string' || typeof child === 'number') {
             return (
               <Text
                 key={`button-label-${index}`}
                 className={cn(
-                  buttonLabelVariants({ variant, size }),
+                  buttonLabelVariants({ variant: resolvedVariant, size }),
                   isDisabled && 'text-disabled-foreground',
                   labelClassName,
                 )}
