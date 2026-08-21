@@ -72,7 +72,6 @@ export const Input = React.forwardRef<React.ComponentRef<typeof TextInput>, Inpu
       (field?.required
         ? `${field.label}, ${field.requiredAccessibilityLabel}`
         : field?.label);
-    const resolvedAriaRequired = props['aria-required'] ?? (field?.required || undefined);
 
     return (
       <EngineTextInput
@@ -82,7 +81,6 @@ export const Input = React.forwardRef<React.ComponentRef<typeof TextInput>, Inpu
         accessibilityLabel={resolvedAccessibilityLabel}
         accessibilityLabelledBy={accessibilityLabelledBy ?? field?.labelNativeID}
         accessibilityState={{ ...accessibilityState, disabled: resolvedDisabled }}
-        aria-required={resolvedAriaRequired}
         className={cn(
           inputVariants({ invalid: resolvedInvalid, size }),
           resolvedDisabled && 'border-disabled bg-disabled text-disabled-foreground opacity-70',
