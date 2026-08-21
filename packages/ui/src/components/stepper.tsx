@@ -7,6 +7,7 @@ import { Text } from './text';
 type StepperContextValue = {
   currentStep: number;
   disabled: boolean;
+  duplicateSteps: ReadonlySet<number>;
   onStepChange?: (step: number) => void;
   totalSteps: number;
 };
@@ -17,6 +18,10 @@ function useStepperContext() {
   const context = React.useContext(StepperContext);
   if (!context) throw new Error('StepperItem must be rendered inside Stepper.');
   return context;
+}
+
+function normalizeStep(step: number) {
+  return Number.isFinite(step) ? Math.max(1, Math.floor(step)) : undefined;
 }
 
 export type StepperProps = Omit<ViewProps, 'children'> & {
@@ -31,13 +36,48 @@ export const Stepper = React.forwardRef<React.ComponentRef<typeof View>, Stepper
   ({ children, className, currentStep, disabled = false, onStepChange, ...props }, ref) => {
     const renderedChildren = React.Children.toArray(children);
     const totalSteps = renderedChildren.length;
+    const finiteCurrentStep = Number.isFinite(currentStep) ? Math.floor(currentStep) : 1;
     const normalizedCurrentStep = Math.min(
-      Math.max(1, Math.floor(currentStep)),
+      Math.max(1, finiteCurrentStep),
       Math.max(1, totalSteps),
     );
+    const duplicateSteps = React.useMemo(() => {
+      const counts = new Map<number, number>();
+
+      for (const child of renderedChildren) {
+        if (!React.isValidElement<{ step?: unknown }>(child) || typeof child.props.step !== 'number') {
+          continue;
+        }
+        const normalizedStep = normalizeStep(child.props.step);
+        if (normalizedStep === undefined) continue;
+        counts.set(normalizedStep, (counts.get(normalizedStep) ?? 0) + 1);
+      }
+
+      return new Set(
+        [...counts.entries()]
+          .filter(([, count]) => count > 1)
+          .map(([step]) => step),
+      );
+    }, [renderedChildren]);
+    const duplicateStepKey = [...duplicateSteps].sort((a, b) => a - b).join(',');
+
+    React.useEffect(() => {
+      if (typeof __DEV__ !== 'undefined' && __DEV__ && duplicateStepKey) {
+        console.warn(
+          `BeeUI Stepper: duplicate normalized step values detected (${duplicateStepKey}). Duplicate items are disabled until each step value is unique.`,
+        );
+      }
+    }, [duplicateStepKey]);
+
     const context = React.useMemo(
-      () => ({ currentStep: normalizedCurrentStep, disabled, onStepChange, totalSteps }),
-      [disabled, normalizedCurrentStep, onStepChange, totalSteps],
+      () => ({
+        currentStep: normalizedCurrentStep,
+        disabled,
+        duplicateSteps,
+        onStepChange,
+        totalSteps,
+      }),
+      [disabled, duplicateSteps, normalizedCurrentStep, onStepChange, totalSteps],
     );
 
     return (
@@ -82,10 +122,11 @@ export const StepperItem = React.forwardRef<
     ref,
   ) => {
     const stepper = useStepperContext();
-    const normalizedStep = Math.max(1, Math.floor(step));
-    const current = normalizedStep === stepper.currentStep;
-    const complete = normalizedStep < stepper.currentStep;
-    const isDisabled = disabled === true || stepper.disabled;
+    const normalizedStep = normalizeStep(step) ?? 1;
+    const duplicate = stepper.duplicateSteps.has(normalizedStep);
+    const current = !duplicate && normalizedStep === stepper.currentStep;
+    const complete = !duplicate && normalizedStep < stepper.currentStep;
+    const isDisabled = disabled === true || stepper.disabled || duplicate;
     const interactive = typeof stepper.onStepChange === 'function' || typeof onPress === 'function';
     const inferredLabel =
       typeof title === 'string' || typeof title === 'number' ? String(title) : undefined;

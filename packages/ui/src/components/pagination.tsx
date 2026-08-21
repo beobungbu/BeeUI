@@ -70,16 +70,26 @@ Pagination.displayName = 'Pagination';
 
 export type PaginationItemType = 'page' | 'previous' | 'next';
 
-export type PaginationItemProps = Omit<
+type PaginationItemBaseProps = Omit<
   PressableProps,
   'accessibilityRole' | 'children' | 'role'
 > & {
   children?: React.ReactNode;
   className?: string;
   labelClassName?: string;
-  page?: number;
-  type?: PaginationItemType;
 };
+
+type PaginationPageItemProps = PaginationItemBaseProps & {
+  page: number;
+  type?: 'page';
+};
+
+type PaginationNavigationItemProps = PaginationItemBaseProps & {
+  page?: never;
+  type: 'previous' | 'next';
+};
+
+export type PaginationItemProps = PaginationPageItemProps | PaginationNavigationItemProps;
 
 export const PaginationItem = React.forwardRef<
   React.ComponentRef<typeof Pressable>,
@@ -101,6 +111,7 @@ export const PaginationItem = React.forwardRef<
     ref,
   ) => {
     const pagination = usePaginationContext();
+    const invalidPageItem = type === 'page' && !Number.isFinite(page);
     const requestedPage = Number.isFinite(page) ? Math.floor(page as number) : pagination.page;
     const targetPage =
       type === 'previous'
@@ -108,17 +119,28 @@ export const PaginationItem = React.forwardRef<
         : type === 'next'
           ? pagination.page + 1
           : requestedPage;
-    const selected = type === 'page' && targetPage === pagination.page;
+    const selected = type === 'page' && !invalidPageItem && targetPage === pagination.page;
     const outOfRange = targetPage < 1 || targetPage > pagination.pageCount;
-    const isDisabled = disabled || pagination.disabled || outOfRange;
+    const isDisabled = disabled || pagination.disabled || invalidPageItem || outOfRange;
     const childArray = React.Children.toArray(children);
-    const fallbackContent = type === 'previous' ? '‹' : type === 'next' ? '›' : String(targetPage);
+    const fallbackContent =
+      type === 'previous' ? '‹' : type === 'next' ? '›' : invalidPageItem ? '—' : String(targetPage);
     const inferredLabel =
       type === 'previous'
         ? 'Previous page'
         : type === 'next'
           ? 'Next page'
-          : `Page ${targetPage}`;
+          : invalidPageItem
+            ? 'Page'
+            : `Page ${targetPage}`;
+
+    React.useEffect(() => {
+      if (typeof __DEV__ !== 'undefined' && __DEV__ && invalidPageItem) {
+        console.warn(
+          'BeeUI PaginationItem: `type="page"` requires a finite `page` number. The item is disabled until a valid page is provided.',
+        );
+      }
+    }, [invalidPageItem]);
 
     return (
       <Pressable
@@ -138,7 +160,7 @@ export const PaginationItem = React.forwardRef<
         disabled={isDisabled}
         onPress={(event) => {
           onPress?.(event);
-          if (!selected && !outOfRange) pagination.onPageChange?.(targetPage);
+          if (!selected && !isDisabled) pagination.onPageChange?.(targetPage);
         }}
       >
         {(childArray.length > 0 ? childArray : [fallbackContent]).map((child, index) =>

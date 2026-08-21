@@ -131,26 +131,36 @@ export const Chip = React.forwardRef<React.ComponentRef<typeof Pressable>, ChipP
     ref,
   ) => {
     const group = React.useContext(ChipGroupContext);
+    const inGroup = group !== null;
+    const grouped = inGroup && value !== undefined;
+    const missingGroupValue = inGroup && value === undefined;
     const controlled = selected !== undefined;
     const [internalSelected, setInternalSelected] = React.useState(defaultSelected);
-    const grouped = group !== null && value !== undefined;
     const resolvedSelected = grouped
       ? group.isSelected(value)
       : controlled
         ? selected
         : internalSelected;
-    const isDisabled = disabled || group?.disabled === true;
+    const isDisabled = disabled || group?.disabled === true || missingGroupValue;
     const childArray = React.Children.toArray(children);
     const inferredLabel = childArray.every(
       (child) => typeof child === 'string' || typeof child === 'number',
     )
       ? childArray.map(String).join('')
       : undefined;
-    const role = grouped
+    const role = inGroup
       ? group.selectionMode === 'single'
         ? 'radio'
         : 'checkbox'
       : 'button';
+
+    React.useEffect(() => {
+      if (typeof __DEV__ !== 'undefined' && __DEV__ && missingGroupValue) {
+        console.warn(
+          'BeeUI Chip: a Chip rendered inside ChipGroup requires a `value`. The item is disabled until a value is provided.',
+        );
+      }
+    }, [missingGroupValue]);
 
     return (
       <Pressable
@@ -161,7 +171,7 @@ export const Chip = React.forwardRef<React.ComponentRef<typeof Pressable>, ChipP
         accessibilityState={{
           ...accessibilityState,
           disabled: isDisabled,
-          ...(grouped ? { checked: resolvedSelected } : { selected: resolvedSelected }),
+          ...(inGroup ? { checked: grouped ? resolvedSelected : false } : { selected: resolvedSelected }),
         }}
         className={cn(
           'min-h-9 flex-row items-center justify-center rounded-full border px-3 py-2 active:opacity-80',
