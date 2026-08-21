@@ -3,6 +3,7 @@ import { cva } from 'class-variance-authority';
 import * as React from 'react';
 import { Pressable, View, type PressableProps } from 'react-native';
 import { Text } from './text';
+import { useRequiredCallbackWarning } from './use-required-callback-warning';
 
 const checkboxIndicatorVariants = cva(
   'h-5 w-5 shrink-0 items-center justify-center rounded-sm border',
@@ -58,6 +59,8 @@ export const Checkbox = React.forwardRef<React.ComponentRef<typeof Pressable>, C
     const isDisabled = disabled === true;
     const state = checked === 'indeterminate' ? 'indeterminate' : checked ? 'checked' : 'unchecked';
     const accessibilityChecked = checked === 'indeterminate' ? 'mixed' : checked;
+
+    useRequiredCallbackWarning('Checkbox', 'onCheckedChange', onCheckedChange, isDisabled);
 
     return (
       <Pressable
