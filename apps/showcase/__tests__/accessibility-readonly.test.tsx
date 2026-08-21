@@ -35,7 +35,7 @@ describe('BeeUI accessibility and read-only contracts', () => {
     const screen = render(<Label required>Email</Label>);
 
     expect(screen.getByLabelText('Email, required')).toBeTruthy();
-    expect(screen.getByText('*').props['aria-hidden']).toBe(true);
+    expect(screen.getByText('*', { includeHiddenElements: true }).props['aria-hidden']).toBe(true);
   });
 
   it('links Field labels to Input and propagates readable required semantics', () => {
