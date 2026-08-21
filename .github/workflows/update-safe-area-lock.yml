@@ -1,0 +1,45 @@
+name: update-safe-area-lock
+
+on:
+  push:
+    branches:
+      - feat/safe-area-foundation
+
+permissions:
+  contents: write
+
+jobs:
+  lockfile:
+    if: ${{ !contains(github.event.head_commit.message, 'refresh safe-area lockfile') }}
+    runs-on: [self-hosted, beeui]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: feat/safe-area-foundation
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+
+      - name: Enable pnpm via Corepack
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare pnpm@10.15.0 --activate
+
+      - name: Refresh lockfile
+        run: pnpm install --lockfile-only --no-frozen-lockfile
+
+      - name: Commit lockfile
+        run: |
+          if git diff --quiet -- pnpm-lock.yaml; then
+            echo "Lockfile already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- pnpm-lock.yaml
+          git commit -m "chore: refresh safe-area lockfile"
+          git push origin HEAD:feat/safe-area-foundation
