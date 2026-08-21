@@ -41,8 +41,11 @@ export const Pagination = React.forwardRef<React.ComponentRef<typeof View>, Pagi
     },
     ref,
   ) => {
-    const normalizedPageCount = Math.max(1, Math.floor(pageCount));
-    const normalizedPage = Math.min(normalizedPageCount, Math.max(1, Math.floor(page)));
+    const normalizedPageCount = Number.isFinite(pageCount)
+      ? Math.max(1, Math.floor(pageCount))
+      : 1;
+    const finitePage = Number.isFinite(page) ? Math.floor(page) : 1;
+    const normalizedPage = Math.min(normalizedPageCount, Math.max(1, finitePage));
     const context = React.useMemo(
       () => ({ disabled, onPageChange, page: normalizedPage, pageCount: normalizedPageCount }),
       [disabled, normalizedPage, normalizedPageCount, onPageChange],
@@ -69,7 +72,7 @@ export type PaginationItemType = 'page' | 'previous' | 'next';
 
 export type PaginationItemProps = Omit<
   PressableProps,
-  'accessibilityRole' | 'accessibilityState' | 'children' | 'role'
+  'accessibilityRole' | 'children' | 'role'
 > & {
   children?: React.ReactNode;
   className?: string;
@@ -85,6 +88,7 @@ export const PaginationItem = React.forwardRef<
   (
     {
       accessibilityLabel,
+      accessibilityState,
       children,
       className,
       disabled = false,
@@ -97,12 +101,13 @@ export const PaginationItem = React.forwardRef<
     ref,
   ) => {
     const pagination = usePaginationContext();
+    const requestedPage = Number.isFinite(page) ? Math.floor(page as number) : pagination.page;
     const targetPage =
       type === 'previous'
         ? pagination.page - 1
         : type === 'next'
           ? pagination.page + 1
-          : Math.floor(page ?? pagination.page);
+          : requestedPage;
     const selected = type === 'page' && targetPage === pagination.page;
     const outOfRange = targetPage < 1 || targetPage > pagination.pageCount;
     const isDisabled = disabled || pagination.disabled || outOfRange;
@@ -121,7 +126,7 @@ export const PaginationItem = React.forwardRef<
         {...props}
         accessibilityLabel={accessibilityLabel ?? inferredLabel}
         accessibilityRole="button"
-        accessibilityState={{ disabled: isDisabled, selected }}
+        accessibilityState={{ ...accessibilityState, disabled: isDisabled, selected }}
         className={cn(
           'h-10 min-w-10 items-center justify-center rounded-md border px-3 active:opacity-80',
           selected
