@@ -36,14 +36,12 @@ export const ListItem = React.forwardRef<React.ComponentRef<typeof Pressable>, L
   ) => {
     const interactive = typeof onPress === 'function';
     const isDisabled = disabled === true;
-    const inferredLabel =
-      typeof title === 'string' || typeof title === 'number' ? String(title) : undefined;
 
     return (
       <Pressable
         ref={ref}
         {...props}
-        accessibilityLabel={accessibilityLabel ?? (interactive ? inferredLabel : undefined)}
+        accessibilityLabel={accessibilityLabel}
         accessibilityRole={interactive ? 'button' : undefined}
         accessibilityState={interactive ? { disabled: isDisabled } : undefined}
         accessible={interactive}
