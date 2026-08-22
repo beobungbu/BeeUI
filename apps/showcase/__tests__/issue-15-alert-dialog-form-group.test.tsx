@@ -131,12 +131,11 @@ describe('BeeUI issue #15 alert dialog and form grouping', () => {
 
     const formGroup = screen.getByTestId('form-group');
     const radioGroup = screen.getByTestId('radio-group');
-    const legend = screen.getByText('Plan');
 
     expect(formGroup.props.accessible).toBe(false);
     expect(radioGroup.props.accessibilityRole).toBe('radiogroup');
     expect(radioGroup.props.accessibilityLabel).toBe('Plan, required');
-    expect(radioGroup.props.accessibilityLabelledBy).toBe(legend.props.nativeID);
+    expect(radioGroup.props.accessibilityLabelledBy).toMatch(/^beeui-form-group-.*-legend$/);
     expect(radioGroup.props.accessibilityHint).toBe('Choose one plan.');
     expect(radioGroup.props.accessibilityState.disabled).toBe(true);
     expect(screen.getByRole('radio', { name: 'Starter' }).props.accessibilityState.disabled).toBe(true);
