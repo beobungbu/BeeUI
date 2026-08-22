@@ -9,6 +9,24 @@ export {
   type AccordionTriggerProps,
 } from './components/accordion';
 export { AlertBanner, alertBannerVariants, type AlertBannerProps } from './components/alert-banner';
+export {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+  type AlertDialogActionProps,
+  type AlertDialogCancelProps,
+  type AlertDialogContentProps,
+  type AlertDialogDescriptionProps,
+  type AlertDialogFooterProps,
+  type AlertDialogProps,
+  type AlertDialogTitleProps,
+  type AlertDialogTriggerProps,
+} from './components/alert-dialog';
 export { AppHeader, type AppHeaderProps } from './components/app-header';
 export {
   Avatar,
@@ -79,6 +97,7 @@ export {
   type DialogTriggerProps,
 } from './components/dialog';
 export { Field, type FieldProps } from './components/field';
+export { FormGroup, type FormGroupProps } from './components/form-group';
 export {
   FormMessage,
   HelperText,
