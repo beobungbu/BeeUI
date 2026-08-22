@@ -33,6 +33,7 @@ const packageSpecs = [
     requiredPackedFiles: [
       'package/src/index.ts',
       'package/src/components/popover.tsx',
+      'package/src/components/dropdown-menu.tsx',
       'package/src/components/overlay-runtime.tsx',
       'package/src/components/overlay-dismiss-events.ts',
       'package/src/components/overlay-dismiss-events.web.ts',
