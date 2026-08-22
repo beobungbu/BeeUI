@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "@beeui/core": "workspace:*",
-    "class-variance-authority": "0.7.1"
+    "class-variance-authority": "0.7.1",
+    "react-native-teleport": "^1.1.13"
   },
   "devDependencies": {
     "react": "19.2.3",

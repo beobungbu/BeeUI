@@ -29,7 +29,12 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+// Spike (#35): native portal that preserves the React fiber tree (and therefore
+// consumer context) instead of storing the node and re-rendering it at the host.
+import { Portal, PortalHost, PortalProvider } from 'react-native-teleport';
 import { subscribeOverlayPlatformDismiss } from './overlay-dismiss-events';
+
+const OVERLAY_PORTAL_HOST = 'beeui-overlay';
 
 type OverlayPortalEntry = {
   id: string;
@@ -266,22 +271,28 @@ function OverlayRuntimeProviderRoot({
   );
 
   return (
-    <OverlayRuntimeContext.Provider value={context}>
-      {children}
-      <View
-        ref={hostRef}
-        accessible={false}
-        collapsable={false}
-        onLayout={handleHostLayout}
-        pointerEvents="box-none"
-        style={[StyleSheet.absoluteFill, styles.host]}
-        testID="beeui-overlay-host"
-      >
-        {entries.map((entry) => (
-          <React.Fragment key={entry.id}>{entry.node}</React.Fragment>
-        ))}
-      </View>
-    </OverlayRuntimeContext.Provider>
+    <PortalProvider>
+      <OverlayRuntimeContext.Provider value={context}>
+        {children}
+        {/* Kept only to measure the window-origin host rect for geometry. */}
+        <View
+          ref={hostRef}
+          accessible={false}
+          collapsable={false}
+          onLayout={handleHostLayout}
+          pointerEvents="box-none"
+          style={[StyleSheet.absoluteFill, styles.host]}
+          testID="beeui-overlay-host"
+        >
+          {entries.map((entry) => (
+            <React.Fragment key={entry.id}>{entry.node}</React.Fragment>
+          ))}
+        </View>
+        {/* Teleport destination: overlay content renders here but stays in the
+            source fiber tree, so consumer context is preserved. */}
+        <PortalHost name={OVERLAY_PORTAL_HOST} style={StyleSheet.absoluteFill} />
+      </OverlayRuntimeContext.Provider>
+    </PortalProvider>
   );
 }
 
@@ -311,19 +322,12 @@ export type OverlayPortalProps = {
   overlayId: string;
 };
 
-export function OverlayPortal({ children, overlayId }: OverlayPortalProps) {
-  const { mountPortal, unmountPortal, updatePortal } = useOverlayRuntime();
-
-  React.useLayoutEffect(() => {
-    mountPortal(overlayId, children);
-    return () => unmountPortal(overlayId);
-  }, [mountPortal, overlayId, unmountPortal]);
-
-  React.useLayoutEffect(() => {
-    updatePortal(overlayId, children);
-  }, [children, overlayId, updatePortal]);
-
-  return null;
+export function OverlayPortal({ children }: OverlayPortalProps) {
+  // Guard that BeeUIProvider is mounted, same as before.
+  useOverlayRuntime();
+  // Render inline (under the caller's context) and teleport the native views to
+  // the root PortalHost. The fiber tree is preserved, so consumer context flows.
+  return <Portal hostName={OVERLAY_PORTAL_HOST}>{children}</Portal>;
 }
 
 export function useOverlayId(prefix = 'beeui-overlay') {

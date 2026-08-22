@@ -56,7 +56,7 @@ export default function SpikeApp() {
               <ContextProbe label="outside overlay" testID="spike-outside" />
 
               <Box className="items-start">
-                <Popover>
+                <Popover defaultOpen>
                   <PopoverTrigger>Open popover</PopoverTrigger>
                   <PopoverContent placement="bottom">
                     <PopoverTitle>Inside portalled content</PopoverTitle>
