@@ -212,7 +212,8 @@ export const PopoverContent = React.forwardRef<React.ComponentRef<typeof View>, 
     },
     ref,
   ) => {
-    const { anchorRef, contentNativeID, open, overlayId, setOpen } = usePopoverContext();
+    const popoverContext = usePopoverContext();
+    const { anchorRef, contentNativeID, open, overlayId, setOpen } = popoverContext;
     const resolvedNativeID = nativeID ?? contentNativeID;
     const reactID = React.useId().replace(/:/g, '');
     const defaultTitleNativeID = `${overlayId}-title-${reactID}`;
@@ -272,45 +273,47 @@ export const PopoverContent = React.forwardRef<React.ComponentRef<typeof View>, 
 
     return (
       <OverlayPortal overlayId={overlayId}>
-        {closeOnOutsidePress ? (
-          <OverlayDismissLayer
-            {...outsidePressProps}
-            overlayId={overlayId}
-            testID={outsidePressTestID}
-          />
-        ) : null}
-        <PopoverContentAccessibilityContext.Provider value={accessibilityContext}>
-          <View
-            ref={ref}
-            {...props}
-            accessibilityElementsHidden={position ? accessibilityElementsHidden : true}
-            accessibilityHint={accessibilityHint ?? descriptionText}
-            accessibilityLabel={accessibilityLabel ?? titleText}
-            accessibilityLabelledBy={accessibilityLabelledBy ?? titleNativeID}
-            aria-hidden={position ? ariaHidden : true}
-            className={cn(
-              'min-w-48 max-w-sm gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm',
-              className,
-            )}
-            importantForAccessibility={
-              position ? importantForAccessibility : 'no-hide-descendants'
-            }
-            nativeID={resolvedNativeID}
-            onAccessibilityEscape={() => {
-              onAccessibilityEscape?.();
-              if (isTopmost()) setOpen(false);
-            }}
-            onLayout={(event) => {
-              onOverlayLayout(event);
-              onLayout?.(event);
-            }}
-            pointerEvents={position ? 'auto' : 'none'}
-            role="dialog"
-            style={resolvedStyle}
-          >
-            {children}
-          </View>
-        </PopoverContentAccessibilityContext.Provider>
+        <PopoverContext.Provider value={popoverContext}>
+          {closeOnOutsidePress ? (
+            <OverlayDismissLayer
+              {...outsidePressProps}
+              overlayId={overlayId}
+              testID={outsidePressTestID}
+            />
+          ) : null}
+          <PopoverContentAccessibilityContext.Provider value={accessibilityContext}>
+            <View
+              ref={ref}
+              {...props}
+              accessibilityElementsHidden={position ? accessibilityElementsHidden : true}
+              accessibilityHint={accessibilityHint ?? descriptionText}
+              accessibilityLabel={accessibilityLabel ?? titleText}
+              accessibilityLabelledBy={accessibilityLabelledBy ?? titleNativeID}
+              aria-hidden={position ? ariaHidden : true}
+              className={cn(
+                'min-w-48 max-w-sm gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm',
+                className,
+              )}
+              importantForAccessibility={
+                position ? importantForAccessibility : 'no-hide-descendants'
+              }
+              nativeID={resolvedNativeID}
+              onAccessibilityEscape={() => {
+                onAccessibilityEscape?.();
+                if (isTopmost()) setOpen(false);
+              }}
+              onLayout={(event) => {
+                onOverlayLayout(event);
+                onLayout?.(event);
+              }}
+              pointerEvents={position ? 'auto' : 'none'}
+              role="dialog"
+              style={resolvedStyle}
+            >
+              {children}
+            </View>
+          </PopoverContentAccessibilityContext.Provider>
+        </PopoverContext.Provider>
       </OverlayPortal>
     );
   },
