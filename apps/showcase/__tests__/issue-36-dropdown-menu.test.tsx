@@ -75,13 +75,17 @@ async function resolveMenuContent(
   testID = 'content',
   size = { width: 160, height: 120 },
 ) {
-  const content = screen.getByTestId(testID, { includeHiddenElements: true });
+  const contentView = screen
+    .UNSAFE_getAllByType(View)
+    .find((node) => node.props.testID === testID);
+  expect(contentView).toBeDefined();
+
   act(() => {
-    fireEvent(content, 'layout', {
+    contentView?.props.onLayout?.({
       nativeEvent: {
         layout: { x: 0, y: 0, width: size.width, height: size.height },
       },
-    });
+    } as never);
   });
 
   await waitFor(() =>
