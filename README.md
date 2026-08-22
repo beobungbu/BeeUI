@@ -28,6 +28,8 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 - CI guard preventing Expo runtime imports in `@beeui/core` and `@beeui/ui`
 - true bare React Native 0.86.2 consumer verification using installed BeeUI tarballs rather than copied workspace source
 - Android bare React Native debug APK compilation in CI
+- Expo Showcase native iOS Simulator compilation on macOS ARM64 CI
+- true bare React Native 0.86.2 native iOS Simulator compilation on macOS ARM64 CI
 - React Native core `Modal` behavior for `Dialog` and `AlertDialog`; anchored overlays use a separate non-Modal host/runtime foundation
 
 ## Component coverage
@@ -159,7 +161,7 @@ import {
 function DeleteProject() {
   return (
     <AlertDialog>
-      <AlertDialogTrigger variant="destructive">Delete project</AlertDialogTrigger>
+      <AlertDialogTrigger variant="destructive">Delete project?</AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogTitle>Delete project?</AlertDialogTitle>
         <AlertDialogDescription>
@@ -350,10 +352,14 @@ The current CI pipeline performs:
 9. Expo/Metro export for iOS
 10. `expo prebuild --clean --no-install` to generate both native projects
 11. a fresh bare React Native 0.86.2 consumer that installs the packed BeeUI tarballs, rejects Expo runtime resolution, bundles Android + iOS through Metro/Uniwind, and compiles an Android debug APK with Gradle
+12. Expo Showcase CocoaPods installation plus native iOS Simulator `xcodebuild` on the trusted macOS ARM64 runner
+13. a fresh true bare React Native 0.86.2 consumer with CocoaPods plus native iOS Simulator `xcodebuild` on the trusted macOS ARM64 runner
 
 Every foundation tranche is accepted only after the complete pipeline passes on the exact PR head.
 
-Expo export proves the JavaScript/Metro bundles resolve on all three targets, Expo Prebuild proves the current configuration can generate Android and iOS native projects, and the bare-native gate proves installed-package portability plus Android native compilation outside Expo. Native iOS binary compilation on macOS and simulator/device interaction remain explicit release gates rather than claims made by Linux CI. Those gates include safe-area behavior, Dialog/AlertDialog hardware-back/focus/keyboard/screen-reader behavior, Popover and DropdownMenu scrolling/anchor movement/focus/keyboard/screen-reader behavior, VoiceOver/TalkBack behavior for visually hidden content, and representative light/dark visual review.
+Expo export proves the JavaScript/Metro bundles resolve on all three targets, Expo Prebuild proves the current configuration can generate Android and iOS native projects, and the bare-native Linux gate proves installed-package portability plus Android native compilation outside Expo. The macOS ARM64 `ios-native` gate proves native iOS compilation for both the generated Expo Showcase workspace and a fresh true bare React Native 0.86.2 consumer. Both iOS builds target `generic/platform=iOS Simulator`; they compile without booting or interacting with a simulator.
+
+Real runtime/device interaction remains an explicit release gate rather than a CI compile claim. That includes safe-area behavior, Dialog/AlertDialog hardware-back/focus/keyboard/screen-reader behavior, Popover and DropdownMenu scrolling/anchor movement/focus/keyboard/screen-reader behavior, VoiceOver/TalkBack behavior for visually hidden content, runtime navigation/accessibility interaction, and representative light/dark visual review.
 
 ## Workspace
 
