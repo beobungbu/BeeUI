@@ -468,8 +468,9 @@ function useRegisteredMenuItem({
       activate: () => activateRef.current(),
       focus: () => internalRef.current?.focus?.(),
     });
-    return () => unregisterItem(id);
-  }, [disabled, id, registerItem, unregisterItem]);
+  }, [disabled, id, registerItem]);
+
+  React.useEffect(() => () => unregisterItem(id), [id, unregisterItem]);
 
   return {
     current: currentItemId === id,
@@ -502,26 +503,31 @@ export const DropdownMenuItem = React.forwardRef<
     ref,
   ) => {
     const { setOpen } = useDropdownMenuRootContext();
+    const isDisabled = disabled === true;
     const activate = React.useCallback(() => {
-      if (disabled) return;
+      if (isDisabled) return;
       onSelect?.();
       if (closeOnSelect) setOpen(false);
-    }, [closeOnSelect, disabled, onSelect, setOpen]);
-    const registration = useRegisteredMenuItem({ activate, disabled, forwardedRef: ref });
+    }, [closeOnSelect, isDisabled, onSelect, setOpen]);
+    const registration = useRegisteredMenuItem({
+      activate,
+      disabled: isDisabled,
+      forwardedRef: ref,
+    });
 
     return (
       <Pressable
         ref={registration.setRef}
         {...props}
         accessibilityRole="menuitem"
-        accessibilityState={{ ...accessibilityState, disabled }}
+        accessibilityState={{ ...accessibilityState, disabled: isDisabled }}
         className={cn(
           'min-h-10 flex-row items-center gap-2 rounded-md px-3 py-2 active:bg-muted web:hover:bg-surface-muted',
           registration.current && 'bg-muted',
-          disabled && 'opacity-50',
+          isDisabled && 'opacity-50',
           className,
         )}
-        disabled={disabled}
+        disabled={isDisabled}
         onFocus={(event) => {
           registration.setCurrent();
           onFocus?.(event);
@@ -531,7 +537,7 @@ export const DropdownMenuItem = React.forwardRef<
           onHoverIn?.(event);
         }}
         onPress={(event) => {
-          if (disabled) return;
+          if (isDisabled) return;
           onPress?.(event);
           onSelect?.();
           if (closeOnSelect) setOpen(false);
@@ -578,39 +584,44 @@ export const DropdownMenuCheckboxItem = React.forwardRef<
     ref,
   ) => {
     const { setOpen } = useDropdownMenuRootContext();
+    const isDisabled = disabled === true;
     const toggle = React.useCallback(() => {
-      if (disabled) return;
+      if (isDisabled) return;
       onCheckedChange?.(!checked);
       if (closeOnSelect) setOpen(false);
-    }, [checked, closeOnSelect, disabled, onCheckedChange, setOpen]);
-    const registration = useRegisteredMenuItem({ activate: toggle, disabled, forwardedRef: ref });
+    }, [checked, closeOnSelect, isDisabled, onCheckedChange, setOpen]);
+    const registration = useRegisteredMenuItem({
+      activate: toggle,
+      disabled: isDisabled,
+      forwardedRef: ref,
+    });
 
     React.useEffect(() => {
       if (
         typeof __DEV__ !== 'undefined' &&
         __DEV__ &&
-        !disabled &&
+        !isDisabled &&
         typeof onCheckedChange !== 'function'
       ) {
         console.warn(
           'BeeUI DropdownMenuCheckboxItem: enabled controlled usage requires `onCheckedChange`.',
         );
       }
-    }, [disabled, onCheckedChange]);
+    }, [isDisabled, onCheckedChange]);
 
     return (
       <Pressable
         ref={registration.setRef}
         {...props}
         accessibilityRole="menuitem"
-        accessibilityState={{ ...accessibilityState, checked, disabled }}
+        accessibilityState={{ ...accessibilityState, checked, disabled: isDisabled }}
         className={cn(
           'min-h-10 flex-row items-center gap-2 rounded-md px-3 py-2 active:bg-muted web:hover:bg-surface-muted',
           registration.current && 'bg-muted',
-          disabled && 'opacity-50',
+          isDisabled && 'opacity-50',
           className,
         )}
-        disabled={disabled}
+        disabled={isDisabled}
         onFocus={(event) => {
           registration.setCurrent();
           onFocus?.(event);
@@ -620,7 +631,7 @@ export const DropdownMenuCheckboxItem = React.forwardRef<
           onHoverIn?.(event);
         }}
         onPress={(event) => {
-          if (disabled) return;
+          if (isDisabled) return;
           onPress?.(event);
           toggle();
         }}
@@ -726,7 +737,7 @@ export const DropdownMenuRadioItem = React.forwardRef<
     const group = React.useContext(DropdownMenuRadioGroupContext);
     if (!group) throw new Error('DropdownMenuRadioItem must be used inside DropdownMenuRadioGroup.');
     const duplicate = group.duplicateValues.has(value);
-    const resolvedDisabled = disabled || duplicate;
+    const resolvedDisabled = disabled === true || duplicate;
     const checked = group.value === value;
 
     React.useEffect(() => group.registerValue(value), [group.registerValue, value]);
