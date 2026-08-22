@@ -2,6 +2,7 @@ import { cn } from '@beeui/core';
 import { cva } from 'class-variance-authority';
 import * as React from 'react';
 import { Pressable, View, type PressableProps, type ViewProps } from 'react-native';
+import { useFormGroupContext } from './form-group-context';
 import { Text } from './text';
 import { useRequiredCallbackWarning } from './use-required-callback-warning';
 
@@ -44,6 +45,10 @@ export type RadioGroupProps = Omit<ViewProps, 'accessibilityRole' | 'role' | 'ch
 export const RadioGroup = React.forwardRef<React.ComponentRef<typeof View>, RadioGroupProps>(
   (
     {
+      accessibilityHint,
+      accessibilityLabel,
+      accessibilityLabelledBy,
+      accessibilityState,
       children,
       className,
       disabled = false,
@@ -53,11 +58,19 @@ export const RadioGroup = React.forwardRef<React.ComponentRef<typeof View>, Radi
     },
     ref,
   ) => {
-    useRequiredCallbackWarning('RadioGroup', 'onValueChange', onValueChange, disabled);
+    const formGroup = useFormGroupContext();
+    const resolvedDisabled = disabled || formGroup?.disabled === true;
+    const inheritedHint =
+      formGroup?.invalid && formGroup.error ? formGroup.error : formGroup?.description;
+    const resolvedLabelledBy =
+      accessibilityLabelledBy ??
+      (accessibilityLabel === undefined ? formGroup?.legendNativeID : undefined);
+
+    useRequiredCallbackWarning('RadioGroup', 'onValueChange', onValueChange, resolvedDisabled);
 
     const contextValue = React.useMemo(
-      () => ({ disabled, onValueChange, value }),
-      [disabled, onValueChange, value],
+      () => ({ disabled: resolvedDisabled, onValueChange, value }),
+      [onValueChange, resolvedDisabled, value],
     );
 
     return (
@@ -65,7 +78,11 @@ export const RadioGroup = React.forwardRef<React.ComponentRef<typeof View>, Radi
         <View
           ref={ref}
           {...props}
+          accessibilityHint={accessibilityHint ?? inheritedHint}
+          accessibilityLabel={accessibilityLabel ?? formGroup?.legendAccessibilityLabel}
+          accessibilityLabelledBy={resolvedLabelledBy}
           accessibilityRole="radiogroup"
+          accessibilityState={{ ...accessibilityState, disabled: resolvedDisabled }}
           className={cn('gap-2', className)}
         >
           {children}
