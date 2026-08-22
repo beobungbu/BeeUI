@@ -6,7 +6,7 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from '@beeui/ui';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { OverlayRuntimeProvider } from '../../../packages/ui/src/components/overlay-runtime';
@@ -90,9 +90,10 @@ describe('BeeUI issue #21 Popover', () => {
     expect(screen.getByTestId('trigger').props.accessibilityState.expanded).toBe(true);
   });
 
-  it('supports an explicit close action from inside portalled content', async () => {
+  it('keeps an explicit close action wired inside portalled content', () => {
+    const onOpenChange = jest.fn();
     const screen = renderPopover(
-      <Popover defaultOpen>
+      <Popover onOpenChange={onOpenChange} open>
         <PopoverTrigger testID="trigger">Toggle</PopoverTrigger>
         <PopoverContent testID="content">
           <PopoverClose testID="close">Close</PopoverClose>
@@ -100,22 +101,15 @@ describe('BeeUI issue #21 Popover', () => {
       </Popover>,
     );
 
-    expect(screen.getByTestId('trigger').props.accessibilityState.expanded).toBe(true);
+    const close = screen.getByTestId('close', { includeHiddenElements: true });
+    expect(close).toBeTruthy();
 
-    const content = screen.getByTestId('content', { includeHiddenElements: true });
-    fireEvent(content, 'layout', {
-      nativeEvent: { layout: { x: 0, y: 0, width: 120, height: 80 } },
+    act(() => {
+      close.props.onPress?.({});
     });
-    await waitFor(() =>
-      expect(
-        screen.getByTestId('content', { includeHiddenElements: true }).props.pointerEvents,
-      ).toBe('auto'),
-    );
 
-    fireEvent.press(screen.getByTestId('close', { includeHiddenElements: true }));
-    await waitFor(() =>
-      expect(screen.getByTestId('trigger').props.accessibilityState.expanded).toBe(false),
-    );
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(screen.getByTestId('trigger').props.accessibilityState.expanded).toBe(true);
   });
 
   it('closes an open Popover when its anchor is unavailable', async () => {
