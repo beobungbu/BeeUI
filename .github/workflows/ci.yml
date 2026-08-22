@@ -155,6 +155,7 @@ jobs:
           sw_vers
           xcodebuild -version
           pod --version
+          xcrun simctl list runtimes
           test "$(whoami)" = "beeui-ci"
           test "$(uname -m)" = "arm64"
 
@@ -205,14 +206,43 @@ jobs:
             exit 1
           fi
 
+          RUNTIME_ID="$(xcrun simctl list runtimes -j | python3 -c 'import json, re, sys; rs=[r for r in json.load(sys.stdin).get("runtimes", []) if r.get("isAvailable", True) and r.get("identifier", "").startswith("com.apple.CoreSimulator.SimRuntime.iOS-")]; key=lambda r: tuple(int(x) for x in re.findall(r"\d+", r.get("version", "0"))); print(max(rs, key=key)["identifier"] if rs else "")')"
+          if [ -z "$RUNTIME_ID" ]; then
+            echo "No available iOS Simulator runtime is installed."
+            exit 1
+          fi
+
+          SIMULATOR_ID="$(xcrun simctl list devices available -j | python3 -c 'import json, os, sys; data=json.load(sys.stdin).get("devices", {}); devices=data.get(os.environ["RUNTIME_ID"], []); print(devices[0]["udid"] if devices else "")' RUNTIME_ID="$RUNTIME_ID" 2>/dev/null || true)"
+          CREATED_SIMULATOR=0
+
+          if [ -z "$SIMULATOR_ID" ]; then
+            DEVICE_TYPE_ID="$(xcrun simctl list devicetypes -j | python3 -c 'import json, sys; ds=json.load(sys.stdin).get("devicetypes", []); ids=[d["identifier"] for d in ds if d.get("name", "").startswith("iPhone")]; print(ids[0] if ids else "")')"
+            if [ -z "$DEVICE_TYPE_ID" ]; then
+              echo "No iPhone Simulator device type is available."
+              exit 1
+            fi
+
+            SIMULATOR_ID="$(xcrun simctl create "BeeUI CI ${GITHUB_RUN_ID}" "$DEVICE_TYPE_ID" "$RUNTIME_ID")"
+            CREATED_SIMULATOR=1
+          fi
+
+          cleanup_simulator() {
+            if [ "$CREATED_SIMULATOR" = "1" ] && [ -n "$SIMULATOR_ID" ]; then
+              xcrun simctl delete "$SIMULATOR_ID" || true
+            fi
+          }
+          trap cleanup_simulator EXIT
+
           echo "workspace=$WORKSPACE"
           echo "scheme=$SCHEME"
+          echo "runtime=$RUNTIME_ID"
+          echo "simulator=$SIMULATOR_ID"
 
           xcodebuild \
             -workspace "$WORKSPACE" \
             -scheme "$SCHEME" \
             -configuration Debug \
             -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             CODE_SIGNING_ALLOWED=NO \
             build
