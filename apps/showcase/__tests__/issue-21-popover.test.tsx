@@ -90,16 +90,21 @@ describe('BeeUI issue #21 Popover', () => {
     expect(screen.getByTestId('trigger').props.accessibilityState.expanded).toBe(true);
   });
 
-  it('supports an explicit close action', () => {
+  it('preserves Popover context for a close action inside portalled content', async () => {
     const screen = renderPopover(
       <Popover defaultOpen>
         <PopoverTrigger testID="trigger">Toggle</PopoverTrigger>
-        <PopoverClose testID="close">Close</PopoverClose>
+        <PopoverContent testID="content">
+          <PopoverClose testID="close">Close</PopoverClose>
+        </PopoverContent>
       </Popover>,
     );
 
     expect(screen.getByTestId('trigger').props.accessibilityState.expanded).toBe(true);
-    fireEvent.press(screen.getByTestId('close'));
+    await waitFor(() =>
+      expect(screen.getByTestId('close', { includeHiddenElements: true })).toBeTruthy(),
+    );
+    fireEvent.press(screen.getByTestId('close', { includeHiddenElements: true }));
     expect(screen.getByTestId('trigger').props.accessibilityState.expanded).toBe(false);
   });
 
