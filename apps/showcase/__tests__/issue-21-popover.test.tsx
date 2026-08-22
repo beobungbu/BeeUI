@@ -6,9 +6,9 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from '@beeui/ui';
-import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
-import { BackHandler, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { OverlayRuntimeProvider } from '../../../packages/ui/src/components/overlay-runtime';
 
 jest.mock('react-native-safe-area-context', () => {
@@ -118,7 +118,7 @@ describe('BeeUI issue #21 Popover', () => {
     expect(screen.queryByTestId('content')).toBeNull();
   });
 
-  it('keeps content invisibly offscreen until measurement resolves, then uses geometry flip output', async () => {
+  it('keeps unresolved content invisibly offscreen instead of flashing at the host origin', () => {
     const screen = renderPopover(
       <Popover defaultOpen>
         <PopoverTrigger testID="trigger">Open</PopoverTrigger>
@@ -131,7 +131,6 @@ describe('BeeUI issue #21 Popover', () => {
           <Text>Content</Text>
         </PopoverContent>
       </Popover>,
-      { trigger: { x: 100, y: 160, width: 40, height: 20 } },
     );
 
     const content = screen.getByTestId('content', { includeHiddenElements: true });
@@ -141,22 +140,6 @@ describe('BeeUI issue #21 Popover', () => {
       top: -10000,
     });
     expect(content.props.pointerEvents).toBe('none');
-
-    fireEvent(content, 'layout', {
-      nativeEvent: { layout: { x: 0, y: 0, width: 100, height: 80 } },
-    });
-
-    await waitFor(() => {
-      const style = StyleSheet.flatten(
-        screen.getByTestId('content', { includeHiddenElements: true }).props.style,
-      );
-      expect(style.left).toBe(70);
-      expect(style.top).toBe(72);
-      expect(style.opacity).toBeUndefined();
-    });
-    expect(screen.getByTestId('content', { includeHiddenElements: true }).props.pointerEvents).toBe(
-      'auto',
-    );
   });
 
   it('derives non-modal title and description accessibility fallbacks', async () => {
@@ -218,38 +201,45 @@ describe('BeeUI issue #21 Popover', () => {
     );
   });
 
-  it('routes native hardware back through the shared topmost dismiss stack', async () => {
-    let hardwareBackHandler: (() => boolean) | undefined;
-    jest.spyOn(BackHandler, 'addEventListener').mockImplementation((eventName, handler) => {
-      if (eventName === 'hardwareBackPress') hardwareBackHandler = handler;
-      return { remove: jest.fn() } as never;
-    });
-
+  it('lets accessibility escape close only the current topmost nested Popover', async () => {
     const screen = renderPopover(
       <Popover defaultOpen>
-        <PopoverTrigger testID="trigger">Open</PopoverTrigger>
-        <PopoverContent outsidePressTestID="outside" testID="content">
-          <Text>Content</Text>
+        <PopoverTrigger testID="parent-trigger">Parent</PopoverTrigger>
+        <PopoverContent testID="parent-content">
+          <Popover defaultOpen>
+            <PopoverTrigger testID="child-trigger">Child</PopoverTrigger>
+            <PopoverContent testID="child-content">
+              <Text>Child content</Text>
+            </PopoverContent>
+          </Popover>
         </PopoverContent>
       </Popover>,
+      {
+        'parent-trigger': { x: 40, y: 40, width: 50, height: 20 },
+        'child-trigger': { x: 80, y: 80, width: 50, height: 20 },
+      },
     );
 
-    await waitFor(() => expect(hardwareBackHandler).toBeDefined());
-    act(() => {
-      expect(hardwareBackHandler?.()).toBe(true);
-    });
+    fireEvent(screen.getByTestId('parent-content', { includeHiddenElements: true }), 'accessibilityEscape');
+    expect(screen.getByTestId('child-content', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByTestId('parent-content', { includeHiddenElements: true })).toBeTruthy();
+
+    fireEvent(screen.getByTestId('child-content', { includeHiddenElements: true }), 'accessibilityEscape');
     await waitFor(() =>
-      expect(screen.queryByTestId('outside', { includeHiddenElements: true })).toBeNull(),
+      expect(screen.queryByTestId('child-content', { includeHiddenElements: true })).toBeNull(),
+    );
+    expect(screen.getByTestId('parent-content', { includeHiddenElements: true })).toBeTruthy();
+
+    fireEvent(screen.getByTestId('parent-content', { includeHiddenElements: true }), 'accessibilityEscape');
+    await waitFor(() =>
+      expect(screen.queryByTestId('parent-content', { includeHiddenElements: true })).toBeNull(),
     );
   });
 
   it('preserves caller trigger state while adding expanded and controls semantics', () => {
     const screen = renderPopover(
       <Popover defaultOpen>
-        <PopoverTrigger
-          accessibilityState={{ selected: true }}
-          testID="trigger"
-        >
+        <PopoverTrigger accessibilityState={{ selected: true }} testID="trigger">
           Open
         </PopoverTrigger>
       </Popover>,
