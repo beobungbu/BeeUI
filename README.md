@@ -161,7 +161,7 @@ import {
 function DeleteProject() {
   return (
     <AlertDialog>
-      <AlertDialogTrigger variant="destructive">Delete project?</AlertDialogTrigger>
+      <AlertDialogTrigger variant="destructive">Delete project</AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogTitle>Delete project?</AlertDialogTitle>
         <AlertDialogDescription>
