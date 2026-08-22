@@ -15,8 +15,9 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 - reusable `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` packages
 - engine-neutral stable behavior/variant contracts with optional `className` escape hatches
 - explicit safe-area foundation through `BeeUIProvider` + `SafeArea`, backed by `react-native-safe-area-context`
+- pure anchored-overlay geometry resolver with deterministic flip/shift/collision and RTL-aware alignment
 - 89 exported foundation components/subcomponents documented in `docs/components.md`
-- 76 contract tests with `jest-expo` + React Native Testing Library
+- 85 contract tests with `jest-expo` + React Native Testing Library
 - reproducible `pnpm-lock.yaml` and frozen dependency installs
 - release-package verification with packed-manifest, export, dependency, and clean-consumer checks
 - CI release-verification JSON artifact for the exact commit under review
@@ -25,7 +26,7 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 - CI guard preventing Expo runtime imports in `@beeui/core` and `@beeui/ui`
 - true bare React Native 0.86.2 consumer verification using installed BeeUI tarballs rather than copied workspace source
 - Android bare React Native debug APK compilation in CI
-- React Native core `Modal` behavior for `Dialog` and `AlertDialog`; anchored overlays remain separately gated
+- React Native core `Modal` behavior for `Dialog` and `AlertDialog`; anchored overlay rendering/measurement remains separately gated
 
 ## Component coverage
 
@@ -33,7 +34,7 @@ Current foundation includes application-root integration, layout, accessibility,
 
 `BeeUIProvider`, `SafeArea`, `Screen`, `Box`, `Stack`, `HStack`, `VStack`, `Section`, `MetadataRow`, `VisuallyHidden`, `Text`, `Label`, `Button`, `ButtonLabel`, `IconButton`, `Link`, `Input`, `Textarea`, `Field`, `FormGroup`, `HelperText`, `FormMessage`, `SearchInput`, `PasswordInput`, `OTPInput`, `Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Chip`, `ChipGroup`, `SegmentedControl`, `SegmentedControlItem`, `Pagination`, `PaginationItem`, `Breadcrumb`, `BreadcrumbItem`, `Stepper`, `StepperItem`, `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`, `Dialog`, `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`, `AlertDialog`, `AlertDialogTrigger`, `AlertDialogContent`, `AlertDialogTitle`, `AlertDialogDescription`, `AlertDialogFooter`, `AlertDialogCancel`, `AlertDialogAction`, `AppHeader`, `BottomActionBar`, `ListGroup`, `ListGroupHeader`, `ListItem`, `SettingsItem`, `DescriptionList`, `DescriptionItem`, `Card`, `AlertBanner`, `Badge`, `Avatar`, `Stat`, `StatLabel`, `StatValue`, `StatHelpText`, `Timeline`, `TimelineItem`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `EmptyState`, and `ErrorState`.
 
-Anchored overlays such as `Popover`, `DropdownMenu`, `Tooltip`, `Toast`, and `Select` remain deferred until their positioning/focus/keyboard/accessibility behavior is verified across Expo, prebuild/bare React Native, and web.
+Anchored overlays such as `Popover`, `DropdownMenu`, `Tooltip`, and `Select` are still deferred as public components. Their deterministic geometry kernel now exists, but host/portal strategy, measurement, keyboard/focus behavior, outside dismissal, nested overlays, and platform accessibility must be verified before shipping them. `Toast` will use a separate transient-notification contract because it is not anchor-positioned.
 
 ## Quick start
 
@@ -174,6 +175,12 @@ function DeleteProject() {
 
 BeeUI does not claim a browser-style focus trap or a dedicated native `alertdialog` accessibility role where React Native core does not expose that contract. Native simulator/device screen-reader behavior remains part of the release verification matrix.
 
+## Anchored overlay geometry
+
+BeeUI now has a pure geometry kernel in `@beeui/core` that resolves anchor-relative coordinates independently from rendering. It supports four sides, logical start/center/end alignment, RTL, offsets, collision padding, opposite-side flip, viewport shift, overflow metadata, and available-space metadata.
+
+The geometry kernel is intentionally not a public `Popover` implementation. It does not measure nodes, render a host/portal, react to keyboard/scroll/layout changes, manage outside dismissal, restore focus, or coordinate nested overlays. Those behaviors are the next anchored-overlay phase. See `docs/anchored-overlays.md` for the contract.
+
 ## Application primitive example
 
 ```tsx
@@ -249,7 +256,7 @@ The current CI pipeline performs:
 1. clean `pnpm install --frozen-lockfile`
 2. an Expo-import boundary check for `packages/core/src` and `packages/ui/src`
 3. strict TypeScript checks across the workspace
-4. 76 React Native Testing Library contract tests
+4. 85 React Native Testing Library contract tests
 5. `pnpm release:verify`, including real tarball packing and clean-consumer installation
 6. upload of `.artifacts/release-verification.json` for the PR commit
 7. Expo/Metro export for Web
@@ -272,6 +279,7 @@ packages/
   tokens/            semantic token contract + CSS theme
   ui/                React Native components
 docs/
+  anchored-overlays.md anchored overlay geometry/phase contract
   architecture.md    architecture constraints
   components.md      canonical component inventory
   native-verification.md  bare React Native/native-build contract
@@ -294,4 +302,4 @@ CHANGELOG.md          consumer-facing release changes and migrations
 7. Web support is additive; mobile correctness takes priority.
 8. Modal-class and anchored overlays may use different behavior primitives; neither class is considered production-ready until its platform-specific interaction contracts are verified.
 
-See [`docs/architecture.md`](docs/architecture.md), [`docs/components.md`](docs/components.md), [`docs/native-verification.md`](docs/native-verification.md), [`docs/release.md`](docs/release.md), and the ADRs in [`docs/decisions`](docs/decisions) for the full contract.
+See [`docs/architecture.md`](docs/architecture.md), [`docs/anchored-overlays.md`](docs/anchored-overlays.md), [`docs/components.md`](docs/components.md), [`docs/native-verification.md`](docs/native-verification.md), [`docs/release.md`](docs/release.md), and the ADRs in [`docs/decisions`](docs/decisions) for the full contract.
