@@ -2,6 +2,12 @@
 
 These rules apply to all generated or hand-written BeeUI code.
 
+## Toolchain
+
+- Use Node.js `24.13.1` exactly for local development, CI, release verification, Expo prebuild, and native consumer verification.
+- Use pnpm `10.15.0` through Corepack.
+- Do not lower, float, or independently change the Node.js version in package metadata, version-manager files, CI workflows, or native build scripts.
+
 ## Architecture
 
 - Keep stable behavior, semantic, and variant APIs independent from Uniwind, Expo, routers, storage, networking, and business logic.
