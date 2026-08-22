@@ -34,6 +34,7 @@ jest.mock('react-native-safe-area-context', () => {
         </View>
       ),
     ),
+    useSafeAreaInsets: () => insets,
   };
 });
 
