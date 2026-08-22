@@ -1,0 +1,21 @@
+name: macOS runner smoke
+
+on:
+  push:
+    branches:
+      - ci/macos-runner-smoke
+
+jobs:
+  smoke:
+    runs-on: [self-hosted, beeui-macos]
+    timeout-minutes: 10
+    steps:
+      - name: Runner process smoke
+        run: |
+          set -euo pipefail
+          whoami
+          uname -m
+          sw_vers
+          echo "process spawn ok"
+          xcodebuild -version
+          /opt/homebrew/bin/pod --version
