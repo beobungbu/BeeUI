@@ -112,7 +112,28 @@ Centered modal-class components use React Native core `Modal` as the accepted be
 
 BeeUI does not claim browser-style focus trapping or a dedicated native `alertdialog` role when React Native core does not expose those semantics. Focus, keyboard, VoiceOver/TalkBack, hardware-back, and destructive-confirmation interaction remain simulator/device release gates.
 
-Anchored overlays are a separate behavior class. `Popover`, `DropdownMenu`, `Tooltip`, `Toast`, and `Select` must not be approximated by full-screen modal behavior because positioning, collision, nested overlay behavior, keyboard/focus semantics, and accessibility are part of their contract.
+Anchored overlays are a separate behavior class. `Popover`, `DropdownMenu`, `Tooltip`, and `Select` must not be approximated by full-screen modal behavior because positioning, collision, nested overlay behavior, keyboard/focus semantics, and accessibility are part of their contract. `Toast` is likewise an above-content surface but is not anchor-positioned and will use a separate transient-notification contract.
+
+## Anchored overlay geometry contract
+
+The first anchored-overlay layer is a pure geometry resolver in `@beeui/core`. It intentionally has no React, React Native, Expo, DOM, portal, gesture, or keyboard dependency.
+
+`resolveAnchoredOverlayPosition()` accepts measured anchor/overlay/viewport geometry plus preferred placement, alignment, direction, offsets, and collision padding. It supports `top`/`right`/`bottom`/`left` placement and `start`/`center`/`end` alignment.
+
+The resolver follows these rules:
+
+- preferred placement is evaluated first
+- the exact opposite side is considered only when the preferred candidate overflows
+- the opposite side wins only when its total overflow is lower
+- optional shifting clamps the chosen candidate into the padded viewport without changing the resolved placement label
+- top/bottom `start` and `end` are logical and reverse under RTL
+- left/right vertical alignment does not reverse under RTL
+- non-finite geometry normalizes to finite safe values and negative sizes/padding normalize to zero
+- the result exposes resolved coordinates, flip/shift flags, pre-shift placement overflow, final overflow, and available space on all four sides
+
+This geometry layer does not render or measure anything and does not own open state, dismissal, focus, keyboard handling, portal/host behavior, nested overlays, or z-order. Those are phase-2 responsibilities and must be solved before a public anchored component is considered production-ready.
+
+The detailed contract and phase split are documented in `docs/anchored-overlays.md`.
 
 ## Platform policy
 

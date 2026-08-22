@@ -16,7 +16,7 @@ const packageSpecs = [
   {
     name: '@beeui/core',
     dir: 'packages/core',
-    requiredPackedFiles: ['package/src/index.ts'],
+    requiredPackedFiles: ['package/src/index.ts', 'package/src/utils/anchored-overlay.ts'],
   },
   {
     name: '@beeui/tokens',

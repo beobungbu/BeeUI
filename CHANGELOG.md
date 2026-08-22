@@ -10,6 +10,7 @@ All notable consumer-facing changes to BeeUI are recorded here.
 - A documented release/versioning contract that separates automated Linux verification from macOS/device-only gates.
 - `AlertDialog` composition for destructive/confirmation flows, including non-dismissible backdrops, explicit native request-close policy, cancel actions, and destructive actions.
 - `FormGroup` legend/description/error composition with metadata inheritance for semantic `RadioGroup` descendants without collapsing child controls into one accessibility element.
+- A pure anchored-overlay geometry resolver in `@beeui/core` with deterministic placement, flip, shift, collision padding, available-space metadata, and RTL-aware alignment.
 
 ### Changed
 
