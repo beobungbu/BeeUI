@@ -149,7 +149,7 @@ export const PopoverTrigger = React.forwardRef<
     <Button
       ref={setTriggerRef}
       {...props}
-      accessibilityControls={contentNativeID}
+      aria-controls={contentNativeID}
       accessibilityState={{ ...accessibilityState, expanded: open }}
       onPress={(event) => {
         onPress?.(event);
