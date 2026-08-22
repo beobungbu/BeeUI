@@ -196,10 +196,6 @@ type WebKeyboardEvent = {
   preventDefault?: () => void;
 };
 
-type WebKeyboardViewProps = {
-  onKeyDown?: (event: WebKeyboardEvent) => void;
-};
-
 export type DropdownMenuContentProps = Omit<ViewProps, 'role'> & {
   align?: DropdownMenuAlign;
   alignOffset?: number;
@@ -223,6 +219,7 @@ export const DropdownMenuContent = React.forwardRef<
   (
     {
       accessibilityElementsHidden,
+      'aria-hidden': ariaHidden,
       align = 'start',
       alignOffset = 0,
       avoidKeyboard = false,
@@ -395,7 +392,7 @@ export const DropdownMenuContent = React.forwardRef<
               {...props}
               {...webKeyboardProps}
               accessibilityElementsHidden={position ? accessibilityElementsHidden : true}
-              aria-hidden={position ? props['aria-hidden'] : true}
+              aria-hidden={position ? ariaHidden : true}
               className={cn(
                 'min-w-48 max-w-sm rounded-lg border border-border bg-surface p-1 shadow-sm',
                 className,
@@ -450,6 +447,7 @@ function useRegisteredMenuItem({
 }) {
   const context = React.useContext(DropdownMenuItemsContext);
   if (!context) throw new Error('DropdownMenu items must be used inside DropdownMenuContent.');
+  const { currentItemId, registerItem, setCurrentItem, unregisterItem } = context;
   const id = useOverlayId('beeui-dropdown-menu-item');
   const internalRef = React.useRef<MenuFocusableNode | null>(null);
   const activateRef = React.useRef(activate);
@@ -464,19 +462,19 @@ function useRegisteredMenuItem({
   );
 
   React.useEffect(() => {
-    context.registerItem({
+    registerItem({
       id,
       disabled,
       activate: () => activateRef.current(),
       focus: () => internalRef.current?.focus?.(),
     });
-    return () => context.unregisterItem(id);
-  }, [context, disabled, id]);
+    return () => unregisterItem(id);
+  }, [disabled, id, registerItem, unregisterItem]);
 
   return {
-    current: context.currentItemId === id,
+    current: currentItemId === id,
     id,
-    setCurrent: () => context.setCurrentItem(id),
+    setCurrent: () => setCurrentItem(id),
     setRef,
   };
 }
