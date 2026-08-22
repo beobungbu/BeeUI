@@ -146,7 +146,22 @@ The second anchored-overlay layer lives internally in `@beeui/ui` and is install
 - Android hardware back, Web Escape, and outside presses target only the topmost registered dismissable overlay. Nested overlays therefore dismiss child-first and one event never cascades through multiple levels.
 - Measurement overrides used by automated tests are internal seams only; production positioning continues to rely on real window-coordinate measurement.
 
-The accepted geometry/runtime layers are shared infrastructure, not proof that every public anchored component has complete semantics. `Popover`, `DropdownMenu`, `Select`, and `Tooltip` must still define component-level open-state, trigger, focus restoration, keyboard navigation, screen-reader, and device-verification behavior before they are considered production-ready.
+## Public Popover contract
+
+`Popover` is the first public component layered on the accepted geometry/runtime kernels. It does not introduce another portal, positioning engine, or Modal path.
+
+- Controlled mode requires `open` + `onOpenChange`; uncontrolled mode supports `defaultOpen` and optional observation through `onOpenChange`.
+- `PopoverTrigger` remains a BeeUI `Button`-compatible anchor, toggles state, preserves caller accessibility state, adds `expanded`, and links to content through React Native 0.86's typed `aria-controls` prop.
+- `PopoverContent` delegates all coordinates to `useAnchoredOverlayPosition()`. Default placement is bottom/center with finite offsets, safe-area collision handling, flip/shift enabled, and keyboard avoidance opt-in.
+- Content is non-modal. It does not hide application siblings, set modal accessibility isolation, or claim a browser-style focus trap.
+- Until both anchor geometry and content size exist, the content measures invisibly offscreen with pointer interaction disabled rather than rendering visibly at `(0,0)`.
+- Losing the anchor while open closes the Popover instead of reusing stale coordinates.
+- Outside press, Android hardware back, Web Escape, and accessibility escape may close only the topmost registered Popover, so nested overlays dismiss child-first.
+- Title/description composition follows stable native-ID registration and explicit caller accessibility text remains authoritative.
+
+Automated Linux tests establish state, geometry integration, nesting/dismiss ordering, semantics, package inclusion, and cross-target bundling. They do not claim automatic focus restoration or final keyboard/VoiceOver/TalkBack interaction. Those remain web/simulator/device release gates.
+
+`DropdownMenu`, `Select`, and `Tooltip` must add their own component semantics on the same runtime. In particular, menu/select keyboard navigation and option/item semantics must not be inferred from Popover alone.
 
 The detailed contract and phase split are documented in `docs/anchored-overlays.md`.
 
