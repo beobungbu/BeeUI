@@ -161,7 +161,7 @@ jobs:
       github.event_name == 'push' ||
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, beeui-macos]
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -313,5 +313,23 @@ jobs:
         with:
           name: ios-xcodebuild-log-${{ github.run_id }}
           path: ${{ runner.temp }}/beeui-xcodebuild.log
+          if-no-files-found: warn
+          retention-days: 2
+
+      - name: Prepare true bare React Native consumer for iOS
+        run: ./scripts/verify-bare-consumer.sh prepare
+
+      - name: Compile bare React Native consumer for iOS Simulator
+        run: |
+          set -euo pipefail
+          log="$RUNNER_TEMP/beeui-bare-ios-xcodebuild.log"
+          ./scripts/verify-bare-consumer.sh ios-build 2>&1 | tee "$log"
+
+      - name: Upload bare iOS xcodebuild log
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bare-ios-xcodebuild-log-${{ github.run_id }}
+          path: ${{ runner.temp }}/beeui-bare-ios-xcodebuild.log
           if-no-files-found: warn
           retention-days: 2
