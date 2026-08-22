@@ -138,7 +138,16 @@ export function measureOverlayNodeInWindow(
   return true;
 }
 
-function OverlayRuntimeProviderRoot({ children }: { children?: React.ReactNode }) {
+export type OverlayRuntimeProviderProps = {
+  children?: React.ReactNode;
+  /** Internal deterministic measurement seam used by contract tests. */
+  hostRectOverride?: AnchoredOverlayRect;
+};
+
+function OverlayRuntimeProviderRoot({
+  children,
+  hostRectOverride,
+}: OverlayRuntimeProviderProps) {
   const [entries, setEntries] = React.useState<OverlayPortalEntry[]>([]);
   const [hostRect, setHostRect] = React.useState<AnchoredOverlayRect | null>(null);
   const hostRef = React.useRef<React.ComponentRef<typeof View>>(null);
@@ -150,6 +159,16 @@ function OverlayRuntimeProviderRoot({ children }: { children?: React.ReactNode }
     () => ({ x: 0, y: 0, width: windowWidth, height: windowHeight }),
     [windowHeight, windowWidth],
   );
+  const overriddenHostRect = React.useMemo(
+    () => (hostRectOverride ? finiteRect(hostRectOverride) : null),
+    [
+      hostRectOverride?.height,
+      hostRectOverride?.width,
+      hostRectOverride?.x,
+      hostRectOverride?.y,
+    ],
+  );
+  const resolvedHostRect = overriddenHostRect ?? hostRect;
 
   const mountPortal = React.useCallback((id: string, node: React.ReactNode) => {
     setEntries((current) => {
@@ -191,20 +210,22 @@ function OverlayRuntimeProviderRoot({ children }: { children?: React.ReactNode }
   const isTopmost = React.useCallback((id: string) => dismissStackRef.current.isTopmost(id), []);
 
   const remeasureHost = React.useCallback(() => {
+    if (overriddenHostRect) return;
     measureOverlayNodeInWindow(hostRef.current, (nextRect) => {
       if (nextRect) setRectIfChanged(setHostRect, nextRect);
     });
-  }, []);
+  }, [overriddenHostRect]);
 
   const handleHostLayout = React.useCallback(
     (event: LayoutChangeEvent) => {
+      if (overriddenHostRect) return;
       const fallback = finiteRect(event.nativeEvent.layout);
       const scheduled = measureOverlayNodeInWindow(hostRef.current, (nextRect) => {
         setRectIfChanged(setHostRect, nextRect ?? fallback);
       });
       if (!scheduled) setRectIfChanged(setHostRect, fallback);
     },
-    [],
+    [overriddenHostRect],
   );
 
   React.useEffect(() => remeasureHost(), [remeasureHost, windowHeight, windowWidth]);
@@ -215,7 +236,7 @@ function OverlayRuntimeProviderRoot({ children }: { children?: React.ReactNode }
     () => ({
       dismissIfTopmost,
       dismissTop,
-      hostRect,
+      hostRect: resolvedHostRect,
       isTopmost,
       keyboardRect,
       mountPortal,
@@ -230,12 +251,12 @@ function OverlayRuntimeProviderRoot({ children }: { children?: React.ReactNode }
     [
       dismissIfTopmost,
       dismissTop,
-      hostRect,
       isTopmost,
       keyboardRect,
       mountPortal,
       registerDismissable,
       remeasureHost,
+      resolvedHostRect,
       safeAreaInsets,
       unmountPortal,
       unregisterDismissable,
@@ -264,10 +285,17 @@ function OverlayRuntimeProviderRoot({ children }: { children?: React.ReactNode }
   );
 }
 
-export function OverlayRuntimeProvider({ children }: { children?: React.ReactNode }) {
+export function OverlayRuntimeProvider({
+  children,
+  hostRectOverride,
+}: OverlayRuntimeProviderProps) {
   const parent = React.useContext(OverlayRuntimeContext);
   if (parent) return <>{children}</>;
-  return <OverlayRuntimeProviderRoot>{children}</OverlayRuntimeProviderRoot>;
+  return (
+    <OverlayRuntimeProviderRoot hostRectOverride={hostRectOverride}>
+      {children}
+    </OverlayRuntimeProviderRoot>
+  );
 }
 
 function useOverlayRuntime() {
