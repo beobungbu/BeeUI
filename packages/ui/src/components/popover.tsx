@@ -51,6 +51,7 @@ type PopoverContentAccessibilityContextValue = {
   defaultTitleNativeID: string;
   registerDescription: (nativeID?: string, text?: string) => void;
   registerTitle: (nativeID?: string, text?: string) => void;
+  setOpen: (open: boolean) => void;
 };
 
 const PopoverContentAccessibilityContext =
@@ -260,8 +261,15 @@ export const PopoverContent = React.forwardRef<React.ComponentRef<typeof View>, 
         defaultTitleNativeID,
         registerDescription,
         registerTitle,
+        setOpen,
       }),
-      [defaultDescriptionNativeID, defaultTitleNativeID, registerDescription, registerTitle],
+      [
+        defaultDescriptionNativeID,
+        defaultTitleNativeID,
+        registerDescription,
+        registerTitle,
+        setOpen,
+      ],
     );
 
     if (!open) return null;
@@ -387,7 +395,11 @@ export const PopoverClose = React.forwardRef<
   React.ComponentRef<typeof Pressable>,
   PopoverCloseProps
 >(({ onPress, ...props }, ref) => {
-  const { setOpen } = usePopoverContext();
+  const contentContext = React.useContext(PopoverContentAccessibilityContext);
+  const popoverContext = React.useContext(PopoverContext);
+  const setOpen = contentContext?.setOpen ?? popoverContext?.setOpen;
+
+  if (!setOpen) throw new Error('Popover components must be used inside Popover.');
 
   return (
     <Button
