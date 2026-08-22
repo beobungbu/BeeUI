@@ -257,6 +257,6 @@ describe('BeeUI issue #21 Popover', () => {
 
     const trigger = screen.getByTestId('trigger');
     expect(trigger.props.accessibilityState).toMatchObject({ expanded: true, selected: true });
-    expect(trigger.props.accessibilityControls).toEqual(expect.stringContaining('beeui-popover'));
+    expect(trigger.props['aria-controls']).toEqual(expect.stringContaining('beeui-popover'));
   });
 });
