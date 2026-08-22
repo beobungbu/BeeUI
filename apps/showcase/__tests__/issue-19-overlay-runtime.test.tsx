@@ -338,14 +338,11 @@ describe('BeeUI issue #19 overlay host runtime', () => {
     }
 
     const screen = render(
-      <OverlayRuntimeProvider>
+      <OverlayRuntimeProvider hostRectOverride={{ x: 50, y: 100, width: 300, height: 400 }}>
         <PositionHarness />
       </OverlayRuntimeProvider>,
     );
 
-    fireEvent(screen.getByTestId('beeui-overlay-host'), 'layout', {
-      nativeEvent: { layout: { x: 50, y: 100, width: 300, height: 400 } },
-    });
     fireEvent(screen.getByTestId('overlay-content'), 'layout', {
       nativeEvent: { layout: { x: 0, y: 0, width: 100, height: 50 } },
     });
