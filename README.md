@@ -318,7 +318,7 @@ function AccountSummary() {
       </Stepper>
 
       <ListGroup>
-        <ListGroupHeader title="Settings" onPress={() => undefined} />
+        <ListGroupHeader title="Settings" />
         <ListItem title="Appearance" onPress={() => undefined} />
       </ListGroup>
 
