@@ -6,6 +6,7 @@ import {
   initialWindowMetrics,
 } from 'react-native-safe-area-context';
 import { Uniwind, withUniwind } from 'uniwind';
+import { OverlayRuntimeProvider } from './overlay-runtime';
 
 const StyledSafeAreaView = withUniwind(NativeSafeAreaView);
 
@@ -35,8 +36,9 @@ function UniwindSafeAreaBridge({ children }: { children?: React.ReactNode }) {
 }
 
 /**
- * Optional BeeUI application-root integration. It owns safe-area measurement only;
- * individual screens/components still opt into the edges they need.
+ * BeeUI application-root integration. It owns safe-area measurement and one shared
+ * anchored-overlay runtime/host; individual screens/components still opt into the
+ * safe-area edges and overlay behavior they need.
  */
 export function BeeUIProvider({
   children,
@@ -46,7 +48,9 @@ export function BeeUIProvider({
 }: BeeUIProviderProps) {
   return (
     <NativeSafeAreaProvider initialMetrics={initialMetrics} {...props}>
-      {syncUniwindInsets ? <UniwindSafeAreaBridge>{children}</UniwindSafeAreaBridge> : children}
+      <OverlayRuntimeProvider>
+        {syncUniwindInsets ? <UniwindSafeAreaBridge>{children}</UniwindSafeAreaBridge> : children}
+      </OverlayRuntimeProvider>
     </NativeSafeAreaProvider>
   );
 }

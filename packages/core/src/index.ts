@@ -13,3 +13,13 @@ export {
   type AnchoredOverlaySize,
   type ResolveAnchoredOverlayPositionOptions,
 } from './utils/anchored-overlay';
+export {
+  constrainOverlayViewportToKeyboard,
+  createOverlayDismissStack,
+  getSafeAreaCollisionPadding,
+  mergeOverlayCollisionPadding,
+  windowRectToHostRect,
+  type OverlayDismissHandler,
+  type OverlayDismissReason,
+  type OverlayDismissStack,
+} from './utils/overlay-runtime';

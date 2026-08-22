@@ -131,7 +131,22 @@ The resolver follows these rules:
 - non-finite geometry normalizes to finite safe values and negative sizes/padding normalize to zero
 - the result exposes resolved coordinates, flip/shift flags, pre-shift placement overflow, final overflow, and available space on all four sides
 
-This geometry layer does not render or measure anything and does not own open state, dismissal, focus, keyboard handling, portal/host behavior, nested overlays, or z-order. Those are phase-2 responsibilities and must be solved before a public anchored component is considered production-ready.
+The geometry layer does not render or measure anything and does not own open state, dismissal, focus, keyboard handling, portal/host behavior, nested overlays, or z-order.
+
+## Anchored overlay runtime contract
+
+The second anchored-overlay layer lives internally in `@beeui/ui` and is installed by `BeeUIProvider`. Applications should not need a separate overlay provider.
+
+- One runtime owns one native overlay host. Nested BeeUI providers reuse the outer runtime rather than creating another host.
+- Portal entries retain deterministic insertion order and are removed when their owner unmounts.
+- The host and anchors are measured in window coordinates. Rendering coordinates are derived by translating the resolved window position into host-local coordinates; host origin `(0,0)` is never assumed.
+- The runtime reuses safe-area data already owned at the application root and only applies collision padding for unsafe window edges that still intersect the host.
+- Keyboard-constrained viewport behavior is explicit policy input. The runtime exposes keyboard geometry but does not force all overlays to avoid it.
+- Anchor remeasurement occurs on open and environment changes and is also exposed explicitly for scroll/layout integrations. BeeUI does not hide continuous high-frequency polling inside the runtime.
+- Android hardware back, Web Escape, and outside presses target only the topmost registered dismissable overlay. Nested overlays therefore dismiss child-first and one event never cascades through multiple levels.
+- Measurement overrides used by automated tests are internal seams only; production positioning continues to rely on real window-coordinate measurement.
+
+The accepted geometry/runtime layers are shared infrastructure, not proof that every public anchored component has complete semantics. `Popover`, `DropdownMenu`, `Select`, and `Tooltip` must still define component-level open-state, trigger, focus restoration, keyboard navigation, screen-reader, and device-verification behavior before they are considered production-ready.
 
 The detailed contract and phase split are documented in `docs/anchored-overlays.md`.
 
