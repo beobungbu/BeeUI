@@ -70,6 +70,27 @@ async function waitForMenuItem(screen: ReturnType<typeof renderMenu>, testID: st
   return screen.getByTestId(testID, { includeHiddenElements: true });
 }
 
+async function resolveMenuContent(
+  screen: ReturnType<typeof renderMenu>,
+  testID = 'content',
+  size = { width: 160, height: 120 },
+) {
+  const content = screen.getByTestId(testID, { includeHiddenElements: true });
+  act(() => {
+    fireEvent(content, 'layout', {
+      nativeEvent: {
+        layout: { x: 0, y: 0, width: size.width, height: size.height },
+      },
+    });
+  });
+
+  await waitFor(() =>
+    expect(screen.getByTestId(testID, { includeHiddenElements: true }).props.pointerEvents).toBe(
+      'auto',
+    ),
+  );
+}
+
 describe('BeeUI issue #36 DropdownMenu', () => {
   const originalPlatformOS = Platform.OS;
 
@@ -122,11 +143,11 @@ describe('BeeUI issue #36 DropdownMenu', () => {
       </DropdownMenu>,
     );
 
-    const item = await waitForMenuItem(screen, 'item');
+    await waitForMenuItem(screen, 'item');
+    await resolveMenuContent(screen);
+    const item = screen.getByTestId('item');
     expect(item.props.accessibilityRole).toBe('menuitem');
-    act(() => {
-      item.props.onPress?.({} as never);
-    });
+    fireEvent.press(item);
 
     expect(calls).toEqual(['press', 'select']);
     await waitFor(() =>
@@ -149,9 +170,7 @@ describe('BeeUI issue #36 DropdownMenu', () => {
 
     const item = await waitForMenuItem(screen, 'disabled-item');
     expect(item.props.accessibilityState.disabled).toBe(true);
-    act(() => {
-      item.props.onPress?.({} as never);
-    });
+    fireEvent.press(item);
     expect(onSelect).not.toHaveBeenCalled();
     expect(screen.getByTestId('content', { includeHiddenElements: true })).toBeTruthy();
   });
@@ -173,11 +192,11 @@ describe('BeeUI issue #36 DropdownMenu', () => {
       </DropdownMenu>,
     );
 
-    const item = await waitForMenuItem(screen, 'checkbox-item');
+    await waitForMenuItem(screen, 'checkbox-item');
+    await resolveMenuContent(screen);
+    const item = screen.getByTestId('checkbox-item');
     expect(item.props.accessibilityState.checked).toBe(false);
-    act(() => {
-      item.props.onPress?.({} as never);
-    });
+    fireEvent.press(item);
     expect(onCheckedChange).toHaveBeenCalledWith(true);
     expect(screen.getByTestId('content', { includeHiddenElements: true })).toBeTruthy();
   });
@@ -200,14 +219,14 @@ describe('BeeUI issue #36 DropdownMenu', () => {
       </DropdownMenu>,
     );
 
-    const compact = await waitForMenuItem(screen, 'compact');
-    const comfortable = await waitForMenuItem(screen, 'comfortable');
+    await waitForMenuItem(screen, 'comfortable');
+    await resolveMenuContent(screen);
+    const compact = screen.getByTestId('compact');
+    const comfortable = screen.getByTestId('comfortable');
     expect(compact.props.accessibilityState.checked).toBe(true);
     expect(comfortable.props.accessibilityState.checked).toBe(false);
 
-    act(() => {
-      comfortable.props.onPress?.({} as never);
-    });
+    fireEvent.press(comfortable);
     expect(onValueChange).toHaveBeenCalledWith('comfortable');
     expect(screen.getByTestId('content', { includeHiddenElements: true })).toBeTruthy();
   });
