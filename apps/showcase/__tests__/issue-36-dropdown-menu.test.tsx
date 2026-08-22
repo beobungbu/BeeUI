@@ -124,7 +124,9 @@ describe('BeeUI issue #36 DropdownMenu', () => {
 
     const item = await waitForMenuItem(screen, 'item');
     expect(item.props.accessibilityRole).toBe('menuitem');
-    fireEvent.press(item);
+    act(() => {
+      item.props.onPress?.({} as never);
+    });
 
     expect(calls).toEqual(['press', 'select']);
     await waitFor(() =>
@@ -147,7 +149,9 @@ describe('BeeUI issue #36 DropdownMenu', () => {
 
     const item = await waitForMenuItem(screen, 'disabled-item');
     expect(item.props.accessibilityState.disabled).toBe(true);
-    fireEvent.press(item);
+    act(() => {
+      item.props.onPress?.({} as never);
+    });
     expect(onSelect).not.toHaveBeenCalled();
     expect(screen.getByTestId('content', { includeHiddenElements: true })).toBeTruthy();
   });
@@ -171,7 +175,9 @@ describe('BeeUI issue #36 DropdownMenu', () => {
 
     const item = await waitForMenuItem(screen, 'checkbox-item');
     expect(item.props.accessibilityState.checked).toBe(false);
-    fireEvent.press(item);
+    act(() => {
+      item.props.onPress?.({} as never);
+    });
     expect(onCheckedChange).toHaveBeenCalledWith(true);
     expect(screen.getByTestId('content', { includeHiddenElements: true })).toBeTruthy();
   });
@@ -199,7 +205,9 @@ describe('BeeUI issue #36 DropdownMenu', () => {
     expect(compact.props.accessibilityState.checked).toBe(true);
     expect(comfortable.props.accessibilityState.checked).toBe(false);
 
-    fireEvent.press(comfortable);
+    act(() => {
+      comfortable.props.onPress?.({} as never);
+    });
     expect(onValueChange).toHaveBeenCalledWith('comfortable');
     expect(screen.getByTestId('content', { includeHiddenElements: true })).toBeTruthy();
   });
@@ -223,12 +231,16 @@ describe('BeeUI issue #36 DropdownMenu', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('radio-a', { includeHiddenElements: true }).props.disabled).toBe(true);
-      expect(screen.getByTestId('radio-b', { includeHiddenElements: true }).props.disabled).toBe(true);
+      expect(
+        screen.getByTestId('radio-a', { includeHiddenElements: true }).props.accessibilityState
+          .disabled,
+      ).toBe(true);
+      expect(
+        screen.getByTestId('radio-b', { includeHiddenElements: true }).props.accessibilityState
+          .disabled,
+      ).toBe(true);
     });
-    expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining('duplicate radio value'),
-    );
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('duplicate radio value'));
   });
 
   it('keeps unresolved content invisibly offscreen and non-interactive', async () => {
@@ -272,11 +284,8 @@ describe('BeeUI issue #36 DropdownMenu', () => {
     expect(screen.getByTestId('disabled', { includeHiddenElements: true }).props.tabIndex).toBe(-1);
 
     act(() => {
-      fireEvent(
-        screen.getByTestId('content', { includeHiddenElements: true }),
-        'keyDown',
-        { key: 'ArrowDown', preventDefault: jest.fn() },
-      );
+      const content = screen.getByTestId('content', { includeHiddenElements: true });
+      content.props.onKeyDown?.({ key: 'ArrowDown', preventDefault: jest.fn() });
     });
 
     await waitFor(() =>
