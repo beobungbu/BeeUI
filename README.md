@@ -19,7 +19,7 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 - one shared anchored-overlay runtime under `BeeUIProvider` with portal ordering, window-coordinate measurement, safe-area/keyboard environment, and topmost-only dismiss handling
 - public non-modal `Popover` and `DropdownMenu` compositions layered on the shared anchored-overlay kernels
 - 104 exported foundation components/subcomponents documented in `docs/components.md`
-- 119 contract tests with `jest-expo` + React Native Testing Library
+- 120 contract tests with `jest-expo` + React Native Testing Library
 - reproducible `pnpm-lock.yaml` and frozen dependency installs
 - release-package verification with packed-manifest, export, dependency, and clean-consumer checks
 - CI release-verification JSON artifact for the exact commit under review
@@ -257,7 +257,13 @@ function WorkspaceMenu() {
 
 Normal menu items close after selection by default. Checkbox/radio items stay open by default, and `closeOnSelect` can opt them into closing. On Web, ArrowUp/ArrowDown, Home/End, and Enter/Space operate on a deterministic current enabled item; disabled items are skipped. `onSelect` is the cross-input semantic action, while pointer `onPress` remains available for pointer-specific handling.
 
-The current custom anchored-overlay portal re-parents content under the root overlay host. BeeUI re-provides the internal contexts its own overlay components require, but arbitrary React contexts declared between `BeeUIProvider` and the overlay source are not currently guaranteed inside portalled content. Put providers needed by overlay content at or above `BeeUIProvider`, or pass those values explicitly, until the context-preserving portal follow-up is resolved.
+### Pre-1.0 React Context limitation
+
+`PopoverContent` and `DropdownMenuContent` render through BeeUI's root `OverlayPortal`. The portal stores a `ReactNode` and renders it later under the provider-owned sibling host, so the content's React ancestry is different from the source declaration site. Arbitrary consumer contexts declared between `BeeUIProvider` and the overlay source — for example screen-local form, navigation, i18n, or custom theme contexts — can therefore resolve to their default value inside portalled content.
+
+BeeUI explicitly re-provides the contexts that BeeUI itself owns and needs for its overlay components, but it cannot enumerate or generically re-provide arbitrary application contexts. Until a context-preserving host strategy is accepted, applications should either place providers required by overlay content at or above `BeeUIProvider`, or pass the required values explicitly into the portalled content.
+
+This is a deliberate pre-1.0 limitation tracked by [#35](https://github.com/beobungbu/BeeUI/issues/35), not a guarantee that source ancestry is preserved. The migration path is to replace or evolve the host with a native/web-safe context-preserving portal strategy without silently switching anchored overlays to React Native `Modal` or weakening the accepted non-modal geometry, accessibility, and topmost-dismiss contracts. When that lands, the regression contract for #35 must flip from documenting context loss to proving context preservation before this limitation is removed.
 
 BeeUI does not yet claim automatic focus restoration, a browser-style focus trap, or complete VoiceOver/TalkBack keyboard/focus behavior for Popover or DropdownMenu. Those remain explicit web/simulator/device release gates. See `docs/anchored-overlays.md` for the full contract.
 
@@ -336,7 +342,7 @@ The current CI pipeline performs:
 1. clean `pnpm install --frozen-lockfile`
 2. an Expo-import boundary check for `packages/core/src` and `packages/ui/src`
 3. strict TypeScript checks across the workspace
-4. 119 React Native Testing Library contract tests
+4. 120 React Native Testing Library contract tests
 5. `pnpm release:verify`, including real tarball packing and clean-consumer installation plus packed anchored-overlay/runtime source assertions
 6. upload of `.artifacts/release-verification.json` for the PR commit
 7. Expo/Metro export for Web

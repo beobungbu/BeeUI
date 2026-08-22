@@ -50,7 +50,18 @@ The host:
 - preserves portal insertion order when existing entries update
 - removes portal entries on unmount
 
-The current custom host re-renders portal entries under the application-root overlay host. BeeUI-owned overlay contexts that are required by public components are explicitly re-provided there, but arbitrary consumer React contexts declared between `BeeUIProvider` and an anchored overlay source are not currently guaranteed to survive that re-parenting. Applications that need such values inside portalled content should place the relevant provider at or above `BeeUIProvider`, or pass the values explicitly, until the context-preserving host investigation is resolved. This is a documented pre-1.0 limitation rather than a claim that arbitrary source ancestry is preserved.
+#### Pre-1.0 React Context boundary
+
+The current custom host stores each portal child as a `ReactNode` and re-renders that node under the application-root overlay host. This changes React ancestry: arbitrary consumer contexts declared between `BeeUIProvider` and the anchored-overlay source are not guaranteed to survive the re-parenting and can resolve to their defaults inside `PopoverContent` or `DropdownMenuContent`.
+
+BeeUI explicitly re-provides BeeUI-owned contexts required by its public overlay components. It cannot enumerate or generically re-provide arbitrary consumer-owned contexts such as screen-local form, navigation, i18n, or custom theme providers.
+
+The supported pre-1.0 composition contract is therefore:
+
+- put providers required by portalled content at or above `BeeUIProvider`; or
+- pass required values explicitly into the overlay content instead of relying on a provider scoped below the root overlay host.
+
+This limitation is tracked by [#35](https://github.com/beobungbu/BeeUI/issues/35) and covered by an automated regression contract. The migration target is a native/web-safe context-preserving portal strategy that retains the accepted non-modal anchored-overlay semantics. BeeUI must not silently switch these components to React Native core `Modal`, weaken topmost-only dismissal, or change geometry/accessibility behavior merely to hide the context boundary. Once a safe preserving host is accepted, the #35 regression must change from proving the documented boundary to proving consumer-context preservation before this limitation is removed from public docs.
 
 ### Measurement contract
 
