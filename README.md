@@ -15,8 +15,8 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 - reusable `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` packages
 - engine-neutral stable behavior/variant contracts with optional `className` escape hatches
 - explicit safe-area foundation through `BeeUIProvider` + `SafeArea`, backed by `react-native-safe-area-context`
-- 80 exported foundation components/subcomponents documented in `docs/components.md`
-- 68 contract tests with `jest-expo` + React Native Testing Library
+- 89 exported foundation components/subcomponents documented in `docs/components.md`
+- 76 contract tests with `jest-expo` + React Native Testing Library
 - reproducible `pnpm-lock.yaml` and frozen dependency installs
 - release-package verification with packed-manifest, export, dependency, and clean-consumer checks
 - CI release-verification JSON artifact for the exact commit under review
@@ -25,13 +25,13 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 - CI guard preventing Expo runtime imports in `@beeui/core` and `@beeui/ui`
 - true bare React Native 0.86.2 consumer verification using installed BeeUI tarballs rather than copied workspace source
 - Android bare React Native debug APK compilation in CI
-- React Native core `Modal` behavior for `Dialog`; anchored overlays remain separately gated
+- React Native core `Modal` behavior for `Dialog` and `AlertDialog`; anchored overlays remain separately gated
 
 ## Component coverage
 
 Current foundation includes application-root integration, layout, accessibility, typography, actions, forms, selection, navigation, disclosure, modal overlay, application chrome, application patterns, data display, feedback, and state compositions:
 
-`BeeUIProvider`, `SafeArea`, `Screen`, `Box`, `Stack`, `HStack`, `VStack`, `Section`, `MetadataRow`, `VisuallyHidden`, `Text`, `Label`, `Button`, `ButtonLabel`, `IconButton`, `Link`, `Input`, `Textarea`, `Field`, `HelperText`, `FormMessage`, `SearchInput`, `PasswordInput`, `OTPInput`, `Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Chip`, `ChipGroup`, `SegmentedControl`, `SegmentedControlItem`, `Pagination`, `PaginationItem`, `Breadcrumb`, `BreadcrumbItem`, `Stepper`, `StepperItem`, `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`, `Dialog`, `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`, `AppHeader`, `BottomActionBar`, `ListGroup`, `ListGroupHeader`, `ListItem`, `SettingsItem`, `DescriptionList`, `DescriptionItem`, `Card`, `AlertBanner`, `Badge`, `Avatar`, `Stat`, `StatLabel`, `StatValue`, `StatHelpText`, `Timeline`, `TimelineItem`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `EmptyState`, and `ErrorState`.
+`BeeUIProvider`, `SafeArea`, `Screen`, `Box`, `Stack`, `HStack`, `VStack`, `Section`, `MetadataRow`, `VisuallyHidden`, `Text`, `Label`, `Button`, `ButtonLabel`, `IconButton`, `Link`, `Input`, `Textarea`, `Field`, `FormGroup`, `HelperText`, `FormMessage`, `SearchInput`, `PasswordInput`, `OTPInput`, `Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Chip`, `ChipGroup`, `SegmentedControl`, `SegmentedControlItem`, `Pagination`, `PaginationItem`, `Breadcrumb`, `BreadcrumbItem`, `Stepper`, `StepperItem`, `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`, `Dialog`, `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`, `AlertDialog`, `AlertDialogTrigger`, `AlertDialogContent`, `AlertDialogTitle`, `AlertDialogDescription`, `AlertDialogFooter`, `AlertDialogCancel`, `AlertDialogAction`, `AppHeader`, `BottomActionBar`, `ListGroup`, `ListGroupHeader`, `ListItem`, `SettingsItem`, `DescriptionList`, `DescriptionItem`, `Card`, `AlertBanner`, `Badge`, `Avatar`, `Stat`, `StatLabel`, `StatValue`, `StatHelpText`, `Timeline`, `TimelineItem`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `EmptyState`, and `ErrorState`.
 
 Anchored overlays such as `Popover`, `DropdownMenu`, `Tooltip`, `Toast`, and `Select` remain deferred until their positioning/focus/keyboard/accessibility behavior is verified across Expo, prebuild/bare React Native, and web.
 
@@ -106,7 +106,7 @@ function AppShell() {
 `Field` keeps the cross-platform explicit label fallback while also generating a stable label `nativeID` for React Native's Android `accessibilityLabelledBy` relationship. Required state is propagated to text-entry controls and explicit application accessibility props always win.
 
 ```tsx
-import { Field, Input, Label, VisuallyHidden } from '@beeui/ui';
+import { Field, FormGroup, Input, Label, Radio, RadioGroup, VisuallyHidden } from '@beeui/ui';
 
 function ProfileFields() {
   return (
@@ -114,6 +114,13 @@ function ProfileFields() {
       <Field label="Email" required>
         <Input keyboardType="email-address" />
       </Field>
+
+      <FormGroup description="Choose one plan." legend="Plan" required>
+        <RadioGroup onValueChange={() => undefined} value="starter">
+          <Radio label="Starter" value="starter" />
+          <Radio label="Pro" value="pro" />
+        </RadioGroup>
+      </FormGroup>
 
       <Label nativeID="nickname-label">Nickname</Label>
       <Input accessibilityLabelledBy="nickname-label" accessibilityLabel="Nickname" />
@@ -126,9 +133,46 @@ function ProfileFields() {
 }
 ```
 
-`Field` is deliberately scoped to text-entry composition. `Checkbox`, `Radio`/`RadioGroup`, and `Switch` keep explicit control/group labels and state instead of inheriting Field metadata. Enabled controlled primitives warn in development when their matching change callback is missing, avoiding controls that look interactive but silently ignore input.
+`Field` is deliberately scoped to text-entry composition. `FormGroup` provides structural legend/description/error metadata for related controls without becoming one accessibility element or cloning state into arbitrary descendants. React Native has a native `radiogroup` role but no generic cross-platform `fieldset/group` role, so `RadioGroup` consumes the FormGroup metadata directly while its radio descendants remain independently discoverable.
 
-`VisuallyHidden` must not be used to hide an interactive control. Buttons, links, inputs, and other interactive elements should expose their own accessible label/state.
+Enabled controlled primitives warn in development when their matching change callback is missing, avoiding controls that look interactive but silently ignore input. `VisuallyHidden` must not be used to hide an interactive control. Buttons, links, inputs, and other interactive elements should expose their own accessible label/state.
+
+## Alert dialog confirmation
+
+`AlertDialog` reuses the accepted React Native core `Modal`/Dialog behavior kernel. Backdrop presses never dismiss it. Android hardware-back and accessibility escape act like cancellation by default; set `cancelOnRequestClose={false}` when a critical flow should receive those requests without closing automatically.
+
+```tsx
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@beeui/ui';
+
+function DeleteProject() {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger variant="destructive">Delete project</AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogTitle>Delete project?</AlertDialogTitle>
+        <AlertDialogDescription>
+          This action permanently removes the project.
+        </AlertDialogDescription>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onPress={() => undefined}>Delete permanently</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+```
+
+BeeUI does not claim a browser-style focus trap or a dedicated native `alertdialog` accessibility role where React Native core does not expose that contract. Native simulator/device screen-reader behavior remains part of the release verification matrix.
 
 ## Application primitive example
 
@@ -205,7 +249,7 @@ The current CI pipeline performs:
 1. clean `pnpm install --frozen-lockfile`
 2. an Expo-import boundary check for `packages/core/src` and `packages/ui/src`
 3. strict TypeScript checks across the workspace
-4. 68 React Native Testing Library contract tests
+4. 76 React Native Testing Library contract tests
 5. `pnpm release:verify`, including real tarball packing and clean-consumer installation
 6. upload of `.artifacts/release-verification.json` for the PR commit
 7. Expo/Metro export for Web
@@ -216,7 +260,7 @@ The current CI pipeline performs:
 
 Every foundation tranche is accepted only after the complete pipeline passes on the exact PR head.
 
-Expo export proves the JavaScript/Metro bundles resolve on all three targets, Expo Prebuild proves the current configuration can generate Android and iOS native projects, and the bare-native gate proves installed-package portability plus Android native compilation outside Expo. Native iOS binary compilation on macOS and simulator/device interaction remain explicit release gates rather than claims made by Linux CI. Those gates include safe-area behavior, Dialog hardware-back/focus/keyboard/screen-reader behavior, VoiceOver/TalkBack behavior for visually hidden content, and representative light/dark visual review.
+Expo export proves the JavaScript/Metro bundles resolve on all three targets, Expo Prebuild proves the current configuration can generate Android and iOS native projects, and the bare-native gate proves installed-package portability plus Android native compilation outside Expo. Native iOS binary compilation on macOS and simulator/device interaction remain explicit release gates rather than claims made by Linux CI. Those gates include safe-area behavior, Dialog/AlertDialog hardware-back/focus/keyboard/screen-reader behavior, VoiceOver/TalkBack behavior for visually hidden content, and representative light/dark visual review.
 
 ## Workspace
 

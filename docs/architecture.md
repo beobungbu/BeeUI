@@ -94,6 +94,26 @@ Enabled controlled primitives must receive their matching change callback. In de
 
 `Field` is intentionally a text-entry composition primitive. It propagates label/required/disabled/invalid metadata to text controls; boolean and choice controls keep their own explicit label/group semantics rather than inheriting `Field` behavior implicitly.
 
+## Form-group accessibility contract
+
+React Native 0.86 exposes explicit semantics such as `radiogroup`, but it does not expose a generic cross-platform `fieldset`/`group` accessibility role. BeeUI must not invent one or set `accessible={true}` on a structural wrapper in a way that collapses independently interactive descendants into one accessibility element.
+
+`FormGroup` therefore owns visual/context composition only: legend, required wording, description/error guidance, invalid state, and disabled metadata. A compatible semantic descendant opts into that context intentionally. `RadioGroup` consumes it because React Native has a native `radiogroup` role; explicit `RadioGroup` accessibility props always override inferred group metadata.
+
+This contract deliberately avoids cloning arbitrary descendants or silently changing application state. Future group integrations must be justified by an unambiguous native accessibility contract rather than visual similarity.
+
+## Modal overlay contract
+
+Centered modal-class components use React Native core `Modal` as the accepted behavior kernel. `Dialog` owns the generic dismissable composition; `AlertDialog` reuses that kernel for confirmation/destructive flows instead of introducing a second overlay engine.
+
+`DialogContent` owns title/description registration, modal accessibility isolation, backdrop behavior, Android `onRequestClose`, and accessibility-escape handling. `dismissOnRequestClose={false}` changes native request-close paths into notification-only callbacks while preserving the mounted dialog. Higher-level modal contracts may narrow backdrop or request-close behavior through that mechanism.
+
+`AlertDialogContent` always disables backdrop dismissal. Android hardware-back and accessibility escape act like cancellation by default and may be made notification-only through `cancelOnRequestClose={false}`. `AlertDialogCancel` and `AlertDialogAction` are explicit close paths; the action defaults to the destructive semantic button variant.
+
+BeeUI does not claim browser-style focus trapping or a dedicated native `alertdialog` role when React Native core does not expose those semantics. Focus, keyboard, VoiceOver/TalkBack, hardware-back, and destructive-confirmation interaction remain simulator/device release gates.
+
+Anchored overlays are a separate behavior class. `Popover`, `DropdownMenu`, `Tooltip`, `Toast`, and `Select` must not be approximated by full-screen modal behavior because positioning, collision, nested overlay behavior, keyboard/focus semantics, and accessibility are part of their contract.
+
 ## Platform policy
 
 BeeUI targets React Native first. It must work with Expo, Expo prebuild/dev builds, and bare React Native. Expo-specific APIs belong in applications or optional adapters, never the UI core.

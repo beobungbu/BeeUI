@@ -133,6 +133,7 @@ export type DialogContentProps = Omit<
 > & {
   closeOnBackdropPress?: boolean;
   containerClassName?: string;
+  dismissOnRequestClose?: boolean;
   modalProps?: DialogModalProps;
   onRequestClose?: () => void;
   overlayClassName?: string;
@@ -150,6 +151,7 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
       className,
       closeOnBackdropPress = true,
       containerClassName,
+      dismissOnRequestClose = true,
       modalProps,
       onAccessibilityEscape,
       onRequestClose,
@@ -172,8 +174,8 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
 
     const requestClose = React.useCallback(() => {
       onRequestClose?.();
-      setOpen(false);
-    }, [onRequestClose, setOpen]);
+      if (dismissOnRequestClose) setOpen(false);
+    }, [dismissOnRequestClose, onRequestClose, setOpen]);
 
     const registerTitle = React.useCallback((nativeID?: string, text?: string) => {
       setTitleNativeID(nativeID);
