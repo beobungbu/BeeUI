@@ -183,9 +183,11 @@ export type PopoverContentProps = Omit<
 export const PopoverContent = React.forwardRef<React.ComponentRef<typeof View>, PopoverContentProps>(
   (
     {
+      accessibilityElementsHidden,
       accessibilityHint,
       accessibilityLabel,
       accessibilityLabelledBy,
+      'aria-hidden': ariaHidden,
       align = 'center',
       alignOffset = 0,
       avoidKeyboard = false,
@@ -196,6 +198,7 @@ export const PopoverContent = React.forwardRef<React.ComponentRef<typeof View>, 
       collisionPadding = 8,
       direction = I18nManager.isRTL ? 'rtl' : 'ltr',
       flip = true,
+      importantForAccessibility,
       nativeID,
       onAccessibilityEscape,
       onLayout,
@@ -280,13 +283,18 @@ export const PopoverContent = React.forwardRef<React.ComponentRef<typeof View>, 
           <View
             ref={ref}
             {...props}
+            accessibilityElementsHidden={position ? accessibilityElementsHidden : true}
             accessibilityHint={accessibilityHint ?? descriptionText}
             accessibilityLabel={accessibilityLabel ?? titleText}
             accessibilityLabelledBy={accessibilityLabelledBy ?? titleNativeID}
+            aria-hidden={position ? ariaHidden : true}
             className={cn(
               'min-w-48 max-w-sm gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm',
               className,
             )}
+            importantForAccessibility={
+              position ? importantForAccessibility : 'no-hide-descendants'
+            }
             nativeID={resolvedNativeID}
             onAccessibilityEscape={() => {
               onAccessibilityEscape?.();
