@@ -96,6 +96,30 @@ export {
   type DialogTitleProps,
   type DialogTriggerProps,
 } from './components/dialog';
+export {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  type DropdownMenuAlign,
+  type DropdownMenuCheckboxItemProps,
+  type DropdownMenuCollisionPadding,
+  type DropdownMenuContentProps,
+  type DropdownMenuDirection,
+  type DropdownMenuItemProps,
+  type DropdownMenuLabelProps,
+  type DropdownMenuPlacement,
+  type DropdownMenuProps,
+  type DropdownMenuRadioGroupProps,
+  type DropdownMenuRadioItemProps,
+  type DropdownMenuSeparatorProps,
+  type DropdownMenuTriggerProps,
+} from './components/dropdown-menu';
 export { Field, type FieldProps } from './components/field';
 export { FormGroup, type FormGroupProps } from './components/form-group';
 export {
