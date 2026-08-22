@@ -55,18 +55,22 @@ describe('BeeUI issue #7 high-confidence hardening', () => {
   it('hardens PasswordInput keyboard defaults even while password text is revealed', () => {
     const screen = render(<PasswordInput accessibilityLabel="Password" />);
     const password = screen.getByLabelText('Password');
+    const showToggle = screen.getByRole('button', { name: 'Show password' });
 
     expect(password.props.autoCapitalize).toBe('none');
     expect(password.props.autoComplete).toBe('current-password');
     expect(password.props.autoCorrect).toBe(false);
     expect(password.props.spellCheck).toBe(false);
+    expect(showToggle.props.className).toEqual(expect.stringContaining('w-16'));
 
-    fireEvent.press(screen.getByRole('button', { name: 'Show password' }));
+    fireEvent.press(showToggle);
     const revealed = screen.getByLabelText('Password');
+    const hideToggle = screen.getByRole('button', { name: 'Hide password' });
     expect(revealed.props.secureTextEntry).toBe(false);
     expect(revealed.props.autoCapitalize).toBe('none');
     expect(revealed.props.autoCorrect).toBe(false);
     expect(revealed.props.spellCheck).toBe(false);
+    expect(hideToggle.props.className).toEqual(expect.stringContaining('w-16'));
   });
 
   it('preserves explicit PasswordInput autofill and keyboard overrides', () => {
