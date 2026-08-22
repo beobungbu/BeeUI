@@ -307,6 +307,98 @@ describe('BeeUI issue #36 DropdownMenu', () => {
     );
   });
 
+  it('supports Home, End, Enter, and Space keyboard activation', async () => {
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
+    const selected: string[] = [];
+    const screen = renderMenu(
+      <DropdownMenu defaultOpen>
+        <DropdownMenuTrigger testID="trigger">Actions</DropdownMenuTrigger>
+        <DropdownMenuContent testID="content">
+          <DropdownMenuItem closeOnSelect={false} onSelect={() => selected.push('first')} testID="first">
+            First
+          </DropdownMenuItem>
+          <DropdownMenuItem disabled testID="disabled">Disabled</DropdownMenuItem>
+          <DropdownMenuItem closeOnSelect={false} onSelect={() => selected.push('third')} testID="third">
+            Third
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId('first', { includeHiddenElements: true }).props.tabIndex).toBe(0),
+    );
+
+    pressMenuKey(screen, 'End');
+    await waitFor(() =>
+      expect(screen.getByTestId('third', { includeHiddenElements: true }).props.tabIndex).toBe(0),
+    );
+    pressMenuKey(screen, 'Enter');
+    expect(selected).toEqual(['third']);
+
+    pressMenuKey(screen, 'Home');
+    await waitFor(() =>
+      expect(screen.getByTestId('first', { includeHiddenElements: true }).props.tabIndex).toBe(0),
+    );
+    pressMenuKey(screen, ' ');
+    expect(selected).toEqual(['third', 'first']);
+  });
+
+  it('closes an open menu when its anchor is unavailable', async () => {
+    const onOpenChange = jest.fn();
+    const screen = renderMenu(
+      <DropdownMenu defaultOpen onOpenChange={onOpenChange}>
+        <DropdownMenuContent testID="content">
+          <Text>Orphaned menu</Text>
+        </DropdownMenuContent>
+      </DropdownMenu>,
+      {},
+    );
+
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+    expect(screen.queryByTestId('content')).toBeNull();
+  });
+
+  it('lets accessibility escape dismiss nested menus child-first', async () => {
+    const screen = renderMenu(
+      <DropdownMenu defaultOpen>
+        <DropdownMenuTrigger testID="parent-trigger">Parent</DropdownMenuTrigger>
+        <DropdownMenuContent testID="parent-content">
+          <DropdownMenu defaultOpen>
+            <DropdownMenuTrigger testID="child-trigger">Child</DropdownMenuTrigger>
+            <DropdownMenuContent testID="child-content">
+              <Text>Child content</Text>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </DropdownMenuContent>
+      </DropdownMenu>,
+      {
+        'parent-trigger': { x: 40, y: 40, width: 60, height: 30 },
+        'child-trigger': { x: 100, y: 90, width: 60, height: 30 },
+      },
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId('child-content', { includeHiddenElements: true })).toBeTruthy(),
+    );
+
+    fireEvent(
+      screen.getByTestId('parent-content', { includeHiddenElements: true }),
+      'accessibilityEscape',
+    );
+    expect(screen.getByTestId('child-content', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByTestId('parent-content', { includeHiddenElements: true })).toBeTruthy();
+
+    fireEvent(
+      screen.getByTestId('child-content', { includeHiddenElements: true }),
+      'accessibilityEscape',
+    );
+    await waitFor(() =>
+      expect(screen.queryByTestId('child-content', { includeHiddenElements: true })).toBeNull(),
+    );
+    expect(screen.getByTestId('parent-content', { includeHiddenElements: true })).toBeTruthy();
+  });
+
   it('dismisses nested menus child-first for outside presses', async () => {
     const screen = renderMenu(
       <DropdownMenu defaultOpen>
