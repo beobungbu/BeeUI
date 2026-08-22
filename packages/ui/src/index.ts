@@ -130,6 +130,24 @@ export {
   type PaginationProps,
 } from './components/pagination';
 export { PasswordInput, type PasswordInputProps } from './components/password-input';
+export {
+  Popover,
+  PopoverClose,
+  PopoverContent,
+  PopoverDescription,
+  PopoverTitle,
+  PopoverTrigger,
+  type PopoverAlign,
+  type PopoverCloseProps,
+  type PopoverCollisionPadding,
+  type PopoverContentProps,
+  type PopoverDescriptionProps,
+  type PopoverDirection,
+  type PopoverPlacement,
+  type PopoverProps,
+  type PopoverTitleProps,
+  type PopoverTriggerProps,
+} from './components/popover';
 export { Progress, progressVariants, type ProgressProps } from './components/progress';
 export {
   Radio,

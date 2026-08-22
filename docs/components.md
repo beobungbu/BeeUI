@@ -6,7 +6,7 @@ This file is the canonical component inventory for BeeUI. A component is conside
 
 | Component | Category | Key contract |
 | --- | --- | --- |
-| `BeeUIProvider` | application root | Provides safe-area measurement and, by default, synchronizes measured insets to Uniwind safe-area utilities; applications may disable the bridge when they already own it. |
+| `BeeUIProvider` | application root | Provides safe-area measurement and the shared anchored-overlay runtime/host; by default synchronizes measured insets to Uniwind safe-area utilities. Nested providers reuse the outer overlay runtime. |
 | `SafeArea` | layout | Explicit `react-native-safe-area-context` surface with caller-owned edge selection; BeeUI never silently adds system insets to generic screen/chrome components. |
 | `Screen` | layout | Base application surface with semantic background and optional spacing; owns no safe-area or scroll behavior. |
 | `Box` | layout | Thin `View` primitive; no design assumptions. |
@@ -71,6 +71,12 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `AlertDialogFooter` | modal overlay | Confirmation action-row composition. |
 | `AlertDialogCancel` | modal overlay | Close action defaulting to the outline button variant while preserving caller handlers. |
 | `AlertDialogAction` | modal overlay | Close action defaulting to the destructive button variant while preserving caller handlers. |
+| `Popover` | anchored overlay | Controlled/uncontrolled non-modal anchored state. Controlled use requires `open` + `onOpenChange`; uncontrolled use supports `defaultOpen`. Reuses the shared BeeUIProvider overlay runtime rather than a private portal/Modal engine. |
+| `PopoverTrigger` | anchored overlay | Button-compatible anchor/toggle. Preserves caller accessibility state, adds `expanded`, and links to the content through React Native's typed `aria-controls` surface. |
+| `PopoverContent` | anchored overlay | Non-modal anchored surface using shared window-coordinate measurement, geometry flip/shift/collision, safe-area policy, optional keyboard avoidance, and topmost-only dismissal. Unresolved content measures invisibly offscreen rather than flashing at `(0,0)`. |
+| `PopoverTitle` | anchored overlay | Heading that registers stable native label metadata and primitive text with its Popover content. |
+| `PopoverDescription` | anchored overlay | Supporting text that registers a primitive-text accessibility hint with its Popover content. |
+| `PopoverClose` | anchored overlay | Button-compatible explicit close action. |
 | `AppHeader` | application chrome | Title/description/leading/trailing composition; owns no navigation. Primitive titles receive header semantics; complex title nodes own their own internal accessibility semantics. |
 | `BottomActionBar` | application chrome | Bottom action surface; safe-area ownership stays explicit with the application shell via `SafeArea` or safe-area utilities. |
 | `ListGroup` | application pattern | Bordered grouped-row surface with list container semantics without taking ownership of row actions. |
@@ -104,17 +110,14 @@ React Native exposes semantic roles such as `radiogroup`, but does not expose a 
 
 ## Next components
 
-The next safe tranche should remain dependency-light and avoid pretending complex native behavior is solved:
+The next safe tranche should remain dependency-light and avoid pretending complex native behavior is solved. `DropdownMenu` is the next anchored-overlay component because the shared host/measurement/dismiss kernel and public Popover composition are now established, but menu semantics must add keyboard navigation, roving/current-item behavior, disabled/item roles, and selection/close rules rather than simply aliasing Popover.
 
-- read-only data presentation only where it adds behavior beyond `MetadataRow`, `DescriptionList`, `Stat`, and `Timeline`
-- additional form-group integrations only where the target React Native control exposes unambiguous group semantics
-
-`VisuallyHidden` is intentionally restricted to non-interactive assistive content. Interactive controls must carry their own accessible name/state rather than relying on an off-screen control.
+Additional form-group integrations should only be added where the target React Native control exposes unambiguous group semantics. `VisuallyHidden` remains restricted to non-interactive assistive content. Interactive controls must carry their own accessible name/state rather than relying on an off-screen control.
 
 `Sheet` remains separately gated because gesture, keyboard, safe-area, and presentation behavior need stronger platform verification than a centered modal.
 
 ## Anchored overlay components
 
-`Popover`, `DropdownMenu`, `Tooltip`, `Toast`, and `Select` remain deferred until BeeUI locks an anchored behavior layer that works across Expo, Expo prebuild, bare React Native, and web.
+The shared anchored-overlay geometry and runtime kernels are accepted, and `Popover` is the first public component layered on them. `DropdownMenu`, `Select`, and `Tooltip` remain deferred until their component-specific keyboard/focus/accessibility contracts are implemented and verified. `Toast` is not anchor-positioned and follows a separate transient-notification contract.
 
-Do not approximate anchored overlays with full-screen modal behavior. Positioning, collision handling, nested overlays, focus, keyboard semantics, and accessibility are part of their contract.
+Do not approximate anchored overlays with full-screen modal behavior. Positioning, collision handling, nested overlays, focus, keyboard semantics, and accessibility remain part of each component's contract.

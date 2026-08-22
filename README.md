@@ -17,8 +17,9 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 - explicit safe-area foundation through `BeeUIProvider` + `SafeArea`, backed by `react-native-safe-area-context`
 - pure anchored-overlay geometry resolver with deterministic flip/shift/collision and RTL-aware alignment
 - one shared anchored-overlay runtime under `BeeUIProvider` with portal ordering, window-coordinate measurement, safe-area/keyboard environment, and topmost-only dismiss handling
-- 89 exported foundation components/subcomponents documented in `docs/components.md`
-- 97 contract tests with `jest-expo` + React Native Testing Library
+- public non-modal `Popover` composition layered on the shared anchored-overlay kernels
+- 95 exported foundation components/subcomponents documented in `docs/components.md`
+- 106 contract tests with `jest-expo` + React Native Testing Library
 - reproducible `pnpm-lock.yaml` and frozen dependency installs
 - release-package verification with packed-manifest, export, dependency, and clean-consumer checks
 - CI release-verification JSON artifact for the exact commit under review
@@ -31,11 +32,11 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 
 ## Component coverage
 
-Current foundation includes application-root integration, layout, accessibility, typography, actions, forms, selection, navigation, disclosure, modal overlay, application chrome, application patterns, data display, feedback, and state compositions:
+Current foundation includes application-root integration, layout, accessibility, typography, actions, forms, selection, navigation, disclosure, modal overlays, anchored overlays, application chrome, application patterns, data display, feedback, and state compositions:
 
-`BeeUIProvider`, `SafeArea`, `Screen`, `Box`, `Stack`, `HStack`, `VStack`, `Section`, `MetadataRow`, `VisuallyHidden`, `Text`, `Label`, `Button`, `ButtonLabel`, `IconButton`, `Link`, `Input`, `Textarea`, `Field`, `FormGroup`, `HelperText`, `FormMessage`, `SearchInput`, `PasswordInput`, `OTPInput`, `Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Chip`, `ChipGroup`, `SegmentedControl`, `SegmentedControlItem`, `Pagination`, `PaginationItem`, `Breadcrumb`, `BreadcrumbItem`, `Stepper`, `StepperItem`, `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`, `Dialog`, `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`, `AlertDialog`, `AlertDialogTrigger`, `AlertDialogContent`, `AlertDialogTitle`, `AlertDialogDescription`, `AlertDialogFooter`, `AlertDialogCancel`, `AlertDialogAction`, `AppHeader`, `BottomActionBar`, `ListGroup`, `ListGroupHeader`, `ListItem`, `SettingsItem`, `DescriptionList`, `DescriptionItem`, `Card`, `AlertBanner`, `Badge`, `Avatar`, `Stat`, `StatLabel`, `StatValue`, `StatHelpText`, `Timeline`, `TimelineItem`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `EmptyState`, and `ErrorState`.
+`BeeUIProvider`, `SafeArea`, `Screen`, `Box`, `Stack`, `HStack`, `VStack`, `Section`, `MetadataRow`, `VisuallyHidden`, `Text`, `Label`, `Button`, `ButtonLabel`, `IconButton`, `Link`, `Input`, `Textarea`, `Field`, `FormGroup`, `HelperText`, `FormMessage`, `SearchInput`, `PasswordInput`, `OTPInput`, `Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Chip`, `ChipGroup`, `SegmentedControl`, `SegmentedControlItem`, `Pagination`, `PaginationItem`, `Breadcrumb`, `BreadcrumbItem`, `Stepper`, `StepperItem`, `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`, `Dialog`, `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`, `AlertDialog`, `AlertDialogTrigger`, `AlertDialogContent`, `AlertDialogTitle`, `AlertDialogDescription`, `AlertDialogFooter`, `AlertDialogCancel`, `AlertDialogAction`, `Popover`, `PopoverTrigger`, `PopoverContent`, `PopoverTitle`, `PopoverDescription`, `PopoverClose`, `AppHeader`, `BottomActionBar`, `ListGroup`, `ListGroupHeader`, `ListItem`, `SettingsItem`, `DescriptionList`, `DescriptionItem`, `Card`, `AlertBanner`, `Badge`, `Avatar`, `Stat`, `StatLabel`, `StatValue`, `StatHelpText`, `Timeline`, `TimelineItem`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `EmptyState`, and `ErrorState`.
 
-Anchored overlays such as `Popover`, `DropdownMenu`, `Tooltip`, and `Select` are still deferred as public components, but their shared geometry and runtime kernels are now established. Public components still need their own trigger/open-state, focus restoration, keyboard navigation, screen-reader, and device-verification contracts. `Toast` will use a separate transient-notification contract because it is not anchor-positioned.
+`DropdownMenu`, `Select`, and `Tooltip` remain deferred as public anchored components because they still need component-specific keyboard/focus/accessibility contracts. `Toast` will use a separate transient-notification contract because it is not anchor-positioned.
 
 ## Quick start
 
@@ -176,16 +177,44 @@ function DeleteProject() {
 
 BeeUI does not claim a browser-style focus trap or a dedicated native `alertdialog` accessibility role where React Native core does not expose that contract. Native simulator/device screen-reader behavior remains part of the release verification matrix.
 
-## Anchored overlay foundation
+## Anchored overlay foundation and Popover
 
-BeeUI now has two accepted shared layers for future anchored components:
+BeeUI has two shared anchored-overlay layers:
 
 1. a pure `@beeui/core` geometry resolver for placement, RTL alignment, offsets, flip/shift, collision padding, overflow, and available-space metadata;
 2. an internal `@beeui/ui` runtime under `BeeUIProvider` for one shared host, portal lifecycle, window-coordinate anchor/host measurement, host-local translation, safe-area/keyboard environment, explicit remeasurement, and deterministic topmost dismissal.
 
-The runtime does not continuously poll anchors and does not use React Native core `Modal` as an anchored-positioning substitute. Android hardware back, Web Escape, and outside presses target only the current topmost dismissable overlay, so nested overlays close child-first.
+`Popover` is the first public component built on those kernels:
 
-These kernels intentionally are not a public `Popover` API. Public anchored components still own trigger semantics, open-state contracts, focus restoration, keyboard interaction, screen-reader behavior, and simulator/device release gates. See `docs/anchored-overlays.md` for the full contract.
+```tsx
+import {
+  Popover,
+  PopoverClose,
+  PopoverContent,
+  PopoverDescription,
+  PopoverTitle,
+  PopoverTrigger,
+} from '@beeui/ui';
+
+function ProfilePopover() {
+  return (
+    <Popover>
+      <PopoverTrigger variant="outline">Profile details</PopoverTrigger>
+      <PopoverContent align="start" placement="bottom">
+        <PopoverTitle>Profile</PopoverTitle>
+        <PopoverDescription>
+          Review the account details associated with this workspace.
+        </PopoverDescription>
+        <PopoverClose variant="ghost">Done</PopoverClose>
+      </PopoverContent>
+    </Popover>
+  );
+}
+```
+
+Popover is non-modal and does not use React Native core `Modal` for positioning. Its trigger is the measured anchor; unresolved content measures invisibly offscreen instead of flashing at `(0,0)`. Safe-area collision handling is enabled by default, keyboard avoidance is opt-in, and outside press / Android back / Web Escape affect only the topmost overlay so nested Popovers close child-first.
+
+BeeUI does not yet claim automatic focus restoration, a browser-style focus trap, or complete VoiceOver/TalkBack keyboard/focus behavior for Popover. Those remain explicit web/simulator/device release gates. See `docs/anchored-overlays.md` for the full contract.
 
 ## Application primitive example
 
@@ -262,8 +291,8 @@ The current CI pipeline performs:
 1. clean `pnpm install --frozen-lockfile`
 2. an Expo-import boundary check for `packages/core/src` and `packages/ui/src`
 3. strict TypeScript checks across the workspace
-4. 97 React Native Testing Library contract tests
-5. `pnpm release:verify`, including real tarball packing and clean-consumer installation
+4. 106 React Native Testing Library contract tests
+5. `pnpm release:verify`, including real tarball packing and clean-consumer installation plus packed Popover/runtime source assertions
 6. upload of `.artifacts/release-verification.json` for the PR commit
 7. Expo/Metro export for Web
 8. Expo/Metro export for Android
@@ -273,7 +302,7 @@ The current CI pipeline performs:
 
 Every foundation tranche is accepted only after the complete pipeline passes on the exact PR head.
 
-Expo export proves the JavaScript/Metro bundles resolve on all three targets, Expo Prebuild proves the current configuration can generate Android and iOS native projects, and the bare-native gate proves installed-package portability plus Android native compilation outside Expo. Native iOS binary compilation on macOS and simulator/device interaction remain explicit release gates rather than claims made by Linux CI. Those gates include safe-area behavior, Dialog/AlertDialog hardware-back/focus/keyboard/screen-reader behavior, anchored-overlay scrolling/focus/screen-reader behavior, VoiceOver/TalkBack behavior for visually hidden content, and representative light/dark visual review.
+Expo export proves the JavaScript/Metro bundles resolve on all three targets, Expo Prebuild proves the current configuration can generate Android and iOS native projects, and the bare-native gate proves installed-package portability plus Android native compilation outside Expo. Native iOS binary compilation on macOS and simulator/device interaction remain explicit release gates rather than claims made by Linux CI. Those gates include safe-area behavior, Dialog/AlertDialog hardware-back/focus/keyboard/screen-reader behavior, Popover scrolling/anchor movement/focus/screen-reader behavior, VoiceOver/TalkBack behavior for visually hidden content, and representative light/dark visual review.
 
 ## Workspace
 
@@ -285,7 +314,7 @@ packages/
   tokens/            semantic token contract + CSS theme
   ui/                React Native components
 docs/
-  anchored-overlays.md anchored overlay geometry/runtime/phase contract
+  anchored-overlays.md anchored overlay geometry/runtime/public-component contract
   architecture.md    architecture constraints
   components.md      canonical component inventory
   native-verification.md  bare React Native/native-build contract
@@ -306,6 +335,6 @@ CHANGELOG.md          consumer-facing release changes and migrations
 5. Native hot paths may use `StyleSheet` or Reanimated without changing stable component APIs.
 6. Components must work in Expo, Expo prebuild/dev builds, and bare React Native.
 7. Web support is additive; mobile correctness takes priority.
-8. Modal-class and anchored overlays may use different behavior primitives; neither class is considered production-ready until its platform-specific interaction contracts are verified.
+8. Modal-class and anchored overlays may use different behavior primitives; a public overlay component is accepted only after its component-specific platform interaction contract is defined and its automated gates pass.
 
 See [`docs/architecture.md`](docs/architecture.md), [`docs/anchored-overlays.md`](docs/anchored-overlays.md), [`docs/components.md`](docs/components.md), [`docs/native-verification.md`](docs/native-verification.md), [`docs/release.md`](docs/release.md), and the ADRs in [`docs/decisions`](docs/decisions) for the full contract.
