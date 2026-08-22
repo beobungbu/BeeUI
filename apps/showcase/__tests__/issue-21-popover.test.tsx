@@ -1,4 +1,5 @@
 import {
+  Button,
   Popover,
   PopoverClose,
   PopoverContent,
@@ -101,11 +102,14 @@ describe('BeeUI issue #21 Popover', () => {
       </Popover>,
     );
 
-    const close = screen.getByTestId('close', { includeHiddenElements: true });
-    expect(close).toBeTruthy();
+    expect(screen.getByTestId('close', { includeHiddenElements: true })).toBeTruthy();
+    const closeButton = screen
+      .UNSAFE_getAllByType(Button)
+      .find((node) => node.props.testID === 'close');
+    expect(closeButton).toBeTruthy();
 
     act(() => {
-      close.props.onPress?.({});
+      closeButton?.props.onPress?.({} as never);
     });
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
