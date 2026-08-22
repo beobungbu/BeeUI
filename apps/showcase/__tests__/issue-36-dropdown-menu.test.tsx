@@ -9,7 +9,7 @@ import {
 } from '@beeui/ui';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import { OverlayRuntimeProvider } from '../../../packages/ui/src/components/overlay-runtime';
 
 jest.mock('react-native-safe-area-context', () => {
@@ -70,10 +70,11 @@ async function waitForMenuItem(screen: ReturnType<typeof renderMenu>, testID: st
   return screen.getByTestId(testID, { includeHiddenElements: true });
 }
 
-function getMenuPressable(screen: ReturnType<typeof renderMenu>, testID: string) {
-  const node = screen.UNSAFE_getAllByType(Pressable).find((item) => item.props.testID === testID);
-  expect(node).toBeDefined();
-  return node!;
+function pressMenuKey(screen: ReturnType<typeof renderMenu>, key: string, testID = 'content') {
+  act(() => {
+    const content = screen.getByTestId(testID, { includeHiddenElements: true });
+    content.props.onKeyDown?.({ key, preventDefault: jest.fn() });
+  });
 }
 
 describe('BeeUI issue #36 DropdownMenu', () => {
@@ -111,17 +112,18 @@ describe('BeeUI issue #36 DropdownMenu', () => {
     expect(screen.getByTestId('trigger').props.accessibilityState.expanded).toBe(true);
   });
 
-  it('runs item handlers in caller-first order and closes a normal item by default', async () => {
-    const calls: string[] = [];
-    const screen = renderMenu(
+  it('runs selection before the default close request for a normal item', async () => {
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
+    let screen!: ReturnType<typeof renderMenu>;
+    const onSelect = jest.fn(() => {
+      expect(screen.getByTestId('content', { includeHiddenElements: true })).toBeTruthy();
+    });
+
+    screen = renderMenu(
       <DropdownMenu defaultOpen>
         <DropdownMenuTrigger testID="trigger">Actions</DropdownMenuTrigger>
         <DropdownMenuContent testID="content">
-          <DropdownMenuItem
-            onPress={() => calls.push('press')}
-            onSelect={() => calls.push('select')}
-            testID="item"
-          >
+          <DropdownMenuItem onSelect={onSelect} testID="item">
             Edit
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -130,18 +132,18 @@ describe('BeeUI issue #36 DropdownMenu', () => {
 
     const item = await waitForMenuItem(screen, 'item');
     expect(item.props.accessibilityRole).toBe('menuitem');
+    await waitFor(() => expect(item.props.tabIndex).toBe(0));
 
-    act(() => {
-      getMenuPressable(screen, 'item').props.onPress?.({} as never);
-    });
+    pressMenuKey(screen, 'Enter');
 
-    expect(calls).toEqual(['press', 'select']);
+    expect(onSelect).toHaveBeenCalledTimes(1);
     await waitFor(() =>
       expect(screen.queryByTestId('content', { includeHiddenElements: true })).toBeNull(),
     );
   });
 
   it('keeps disabled items inert and leaves the menu open', async () => {
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
     const onSelect = jest.fn();
     const screen = renderMenu(
       <DropdownMenu defaultOpen>
@@ -156,16 +158,16 @@ describe('BeeUI issue #36 DropdownMenu', () => {
 
     const item = await waitForMenuItem(screen, 'disabled-item');
     expect(item.props.accessibilityState.disabled).toBe(true);
+    expect(item.props.tabIndex).toBe(-1);
 
-    act(() => {
-      getMenuPressable(screen, 'disabled-item').props.onPress?.({} as never);
-    });
+    pressMenuKey(screen, 'Enter');
 
     expect(onSelect).not.toHaveBeenCalled();
     expect(screen.getByTestId('content', { includeHiddenElements: true })).toBeTruthy();
   });
 
   it('toggles checkbox state request without closing by default', async () => {
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
     const onCheckedChange = jest.fn();
     const screen = renderMenu(
       <DropdownMenu defaultOpen>
@@ -184,16 +186,16 @@ describe('BeeUI issue #36 DropdownMenu', () => {
 
     const item = await waitForMenuItem(screen, 'checkbox-item');
     expect(item.props.accessibilityState.checked).toBe(false);
+    await waitFor(() => expect(item.props.tabIndex).toBe(0));
 
-    act(() => {
-      getMenuPressable(screen, 'checkbox-item').props.onPress?.({} as never);
-    });
+    pressMenuKey(screen, ' ');
 
     expect(onCheckedChange).toHaveBeenCalledWith(true);
     expect(screen.getByTestId('content', { includeHiddenElements: true })).toBeTruthy();
   });
 
   it('coordinates radio selection and keeps the menu open by default', async () => {
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
     const onValueChange = jest.fn();
     const screen = renderMenu(
       <DropdownMenu defaultOpen>
@@ -215,10 +217,13 @@ describe('BeeUI issue #36 DropdownMenu', () => {
     const comfortable = await waitForMenuItem(screen, 'comfortable');
     expect(compact.props.accessibilityState.checked).toBe(true);
     expect(comfortable.props.accessibilityState.checked).toBe(false);
+    await waitFor(() => expect(compact.props.tabIndex).toBe(0));
 
-    act(() => {
-      getMenuPressable(screen, 'comfortable').props.onPress?.({} as never);
-    });
+    pressMenuKey(screen, 'ArrowDown');
+    await waitFor(() =>
+      expect(screen.getByTestId('comfortable', { includeHiddenElements: true }).props.tabIndex).toBe(0),
+    );
+    pressMenuKey(screen, 'Enter');
 
     expect(onValueChange).toHaveBeenCalledWith('comfortable');
     expect(screen.getByTestId('content', { includeHiddenElements: true })).toBeTruthy();
@@ -295,10 +300,7 @@ describe('BeeUI issue #36 DropdownMenu', () => {
     );
     expect(screen.getByTestId('disabled', { includeHiddenElements: true }).props.tabIndex).toBe(-1);
 
-    act(() => {
-      const content = screen.getByTestId('content', { includeHiddenElements: true });
-      content.props.onKeyDown?.({ key: 'ArrowDown', preventDefault: jest.fn() });
-    });
+    pressMenuKey(screen, 'ArrowDown');
 
     await waitFor(() =>
       expect(screen.getByTestId('third', { includeHiddenElements: true }).props.tabIndex).toBe(0),
