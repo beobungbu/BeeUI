@@ -77,6 +77,15 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `PopoverTitle` | anchored overlay | Heading that registers stable native label metadata and primitive text with its Popover content. |
 | `PopoverDescription` | anchored overlay | Supporting text that registers a primitive-text accessibility hint with its Popover content. |
 | `PopoverClose` | anchored overlay | Button-compatible explicit close action. |
+| `DropdownMenu` | anchored overlay | Controlled/uncontrolled non-modal menu state layered on the same shared anchored-overlay runtime as Popover. |
+| `DropdownMenuTrigger` | anchored overlay | Button-compatible measured anchor that preserves caller accessibility state, adds `expanded`, and links to menu content. |
+| `DropdownMenuContent` | anchored overlay | Menu surface defaulting to bottom/start placement with flip/shift, safe-area collision handling, unresolved-geometry gating, topmost-only dismissal, and deterministic web current-item keyboard navigation. |
+| `DropdownMenuItem` | anchored overlay | Menu-item semantics with disabled state. `onSelect` is the cross-input selection callback; normal items close the menu by default after caller handlers run. |
+| `DropdownMenuCheckboxItem` | anchored overlay | Checked menu-item semantics with controlled `checked`/`onCheckedChange`; remains open by default and can opt into close-on-select. |
+| `DropdownMenuRadioGroup` | anchored overlay | Controlled radio-value coordination for menu radio items. Duplicate values are detected and fail safe as disabled. |
+| `DropdownMenuRadioItem` | anchored overlay | Checked menu-item semantics within a radio group; selection requests the next group value and remains open by default. |
+| `DropdownMenuLabel` | anchored overlay | Non-interactive semantic label text for grouping menu content. |
+| `DropdownMenuSeparator` | anchored overlay | Decorative non-interactive separator hidden from accessibility. |
 | `AppHeader` | application chrome | Title/description/leading/trailing composition; owns no navigation. Primitive titles receive header semantics; complex title nodes own their own internal accessibility semantics. |
 | `BottomActionBar` | application chrome | Bottom action surface; safe-area ownership stays explicit with the application shell via `SafeArea` or safe-area utilities. |
 | `ListGroup` | application pattern | Bordered grouped-row surface with list container semantics without taking ownership of row actions. |
@@ -110,7 +119,7 @@ React Native exposes semantic roles such as `radiogroup`, but does not expose a 
 
 ## Next components
 
-The next safe tranche should remain dependency-light and avoid pretending complex native behavior is solved. `DropdownMenu` is the next anchored-overlay component because the shared host/measurement/dismiss kernel and public Popover composition are now established, but menu semantics must add keyboard navigation, roving/current-item behavior, disabled/item roles, and selection/close rules rather than simply aliasing Popover.
+The next anchored-overlay tranche should be `Select` or `Tooltip`. Both must reuse the accepted geometry/runtime kernels without aliasing DropdownMenu semantics: Select owns option/value/selection behavior, while Tooltip owns non-interactive hover/focus/touch disclosure policy.
 
 Additional form-group integrations should only be added where the target React Native control exposes unambiguous group semantics. `VisuallyHidden` remains restricted to non-interactive assistive content. Interactive controls must carry their own accessible name/state rather than relying on an off-screen control.
 
@@ -118,6 +127,6 @@ Additional form-group integrations should only be added where the target React N
 
 ## Anchored overlay components
 
-The shared anchored-overlay geometry and runtime kernels are accepted, and `Popover` is the first public component layered on them. `DropdownMenu`, `Select`, and `Tooltip` remain deferred until their component-specific keyboard/focus/accessibility contracts are implemented and verified. `Toast` is not anchor-positioned and follows a separate transient-notification contract.
+The shared anchored-overlay geometry/runtime kernels are accepted, with public `Popover` and `DropdownMenu` compositions layered on them. `Select` and `Tooltip` remain deferred until their component-specific keyboard/focus/accessibility contracts are implemented and verified. `Toast` is not anchor-positioned and follows a separate transient-notification contract.
 
 Do not approximate anchored overlays with full-screen modal behavior. Positioning, collision handling, nested overlays, focus, keyboard semantics, and accessibility remain part of each component's contract.

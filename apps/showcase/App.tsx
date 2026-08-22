@@ -39,6 +39,15 @@ import {
   DialogFooter,
   DialogTitle,
   DialogTrigger,
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   EmptyState,
   ErrorState,
   Field,
@@ -150,6 +159,9 @@ export default function App() {
   const [viewMode, setViewMode] = React.useState('list');
   const [page, setPage] = React.useState(2);
   const [step, setStep] = React.useState(3);
+  const [menuToolbar, setMenuToolbar] = React.useState(true);
+  const [menuDensity, setMenuDensity] = React.useState('comfortable');
+  const [menuAction, setMenuAction] = React.useState('No action yet');
 
   return (
     <BeeUIProvider>
@@ -157,7 +169,7 @@ export default function App() {
         <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} />
         <SafeArea className="bg-surface" edges={['top', 'left', 'right']}>
           <AppHeader
-            description="Interactive React Native component playground · 95 public components/subcomponents · 106 contract tests"
+            description="Interactive React Native component playground · 104 public components/subcomponents · 119 contract tests"
             leading={<Avatar accessibilityLabel="BeeUI" fallback="BU" />}
             title="BeeUI Showcase v2"
             trailing={<ThemeToggle />}
@@ -353,6 +365,47 @@ export default function App() {
                 <Separator />
 
                 <Section
+                  description="Menu items reuse the anchored runtime with normal, checkbox, radio, disabled, and keyboard-selection contracts."
+                  title="DropdownMenu"
+                >
+                  <VStack gap="sm">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger variant="outline">Workspace menu</DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuLabel>Workspace</DropdownMenuLabel>
+                        <DropdownMenuItem onSelect={() => setMenuAction('Edit project')}>
+                          Edit project
+                        </DropdownMenuItem>
+                        <DropdownMenuItem disabled>Archive unavailable</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuCheckboxItem
+                          checked={menuToolbar}
+                          onCheckedChange={setMenuToolbar}
+                        >
+                          Show toolbar
+                        </DropdownMenuCheckboxItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel>Density</DropdownMenuLabel>
+                        <DropdownMenuRadioGroup
+                          onValueChange={setMenuDensity}
+                          value={menuDensity}
+                        >
+                          <DropdownMenuRadioItem value="compact">Compact</DropdownMenuRadioItem>
+                          <DropdownMenuRadioItem value="comfortable">
+                            Comfortable
+                          </DropdownMenuRadioItem>
+                        </DropdownMenuRadioGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Text tone="muted">
+                      {`Last action: ${menuAction} · toolbar ${menuToolbar ? 'on' : 'off'} · ${menuDensity}`}
+                    </Text>
+                  </VStack>
+                </Section>
+
+                <Separator />
+
+                <Section
                   description="Open the parent, then the child. Outside press / Escape / accessibility escape dismisses child-first."
                   title="Nested Popover"
                 >
@@ -482,13 +535,13 @@ export default function App() {
                     <HStack gap="lg" wrap>
                       <Stat className="min-w-32 flex-1">
                         <StatLabel>Public pieces</StatLabel>
-                        <StatValue>95</StatValue>
+                        <StatValue>104</StatValue>
                         <StatHelpText>Components + subcomponents</StatHelpText>
                       </Stat>
                       <Stat className="min-w-32 flex-1">
                         <StatLabel>Contract tests</StatLabel>
-                        <StatValue>106</StatValue>
-                        <StatHelpText>13 test suites</StatHelpText>
+                        <StatValue>119</StatValue>
+                        <StatHelpText>14 test suites</StatHelpText>
                       </Stat>
                     </HStack>
 
@@ -524,7 +577,7 @@ export default function App() {
                         title="Native portability"
                       />
                       <TimelineItem
-                        description="Public Popover now exercises the anchored overlay geometry/runtime kernels."
+                        description="Public Popover and DropdownMenu exercise the shared anchored overlay geometry/runtime kernels."
                         meta="Current"
                         status="primary"
                         title="Anchored overlays"

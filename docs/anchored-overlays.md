@@ -50,6 +50,8 @@ The host:
 - preserves portal insertion order when existing entries update
 - removes portal entries on unmount
 
+The current custom host re-renders portal entries under the application-root overlay host. BeeUI-owned overlay contexts that are required by public components are explicitly re-provided there, but arbitrary consumer React contexts declared between `BeeUIProvider` and an anchored overlay source are not currently guaranteed to survive that re-parenting. Applications that need such values inside portalled content should place the relevant provider at or above `BeeUIProvider`, or pass the values explicitly, until the context-preserving host investigation is resolved. This is a documented pre-1.0 limitation rather than a claim that arbitrary source ancestry is preserved.
+
 ### Measurement contract
 
 Anchors and the host use `measureInWindow` as the native coordinate source. Geometry is resolved in window coordinates and translated to host-local coordinates only for rendering.
@@ -105,26 +107,49 @@ Its contract is:
 
 Automatic focus restoration, full keyboard focus management, and final VoiceOver/TalkBack behavior remain release/device gates rather than automated-Linux claims.
 
+### `DropdownMenu`
+
+`DropdownMenu` is the second public consumer of the same kernels. It does not create another portal, measurement path, or dismiss stack.
+
+Its contract is:
+
+- root state follows the same controlled `open` + `onOpenChange` and uncontrolled `defaultOpen` split as Popover
+- `DropdownMenuTrigger` is a BeeUI button-compatible measured anchor, preserves caller accessibility state, adds `expanded`, and links to content
+- content defaults to `bottom` / `start`, side offset `8`, collision padding `8`, safe-area avoidance on, keyboard avoidance off, and flip/shift on
+- unresolved content stays offscreen, hidden from accessibility, and non-interactive until real anchor/content geometry resolves
+- losing the anchor while open closes the menu rather than retaining stale coordinates
+- outside press, Android back, Web Escape, and accessibility escape only dismiss the current topmost menu
+- normal items expose menu-item semantics and close after selection by default; disabled items never activate
+- `onSelect` is the cross-input semantic selection callback. Pointer `onPress` runs first when supplied, then selection/default-close behavior runs
+- checkbox items expose checked state and request `onCheckedChange(!checked)`; radio groups/items coordinate one controlled value
+- checkbox and radio items remain open by default; callers may opt into `closeOnSelect`
+- duplicate radio values fail safe as disabled and warn in development rather than producing multiple active values
+- labels and separators are non-interactive composition primitives
+- on Web, ArrowDown/ArrowUp move the current enabled item, Home/End jump to the first/last enabled item, and Enter/Space activate the current item. Disabled items are skipped
+- the current-item registry is navigation state only; it does not become hidden application selection state
+
+DropdownMenu does not claim browser-grade focus restoration, a focus trap, or final native keyboard/screen-reader parity. Those remain explicit release/device gates.
+
 ### Remaining order
 
 The next public anchored components remain:
 
-1. `DropdownMenu`
-2. `Select`
-3. `Tooltip`
+1. `Select`
+2. `Tooltip`
 
-Each public component owns its semantic contract instead of treating Popover visuals as sufficient behavior. In particular, menu/select keyboard navigation and option semantics must be specified separately.
+Each public component owns its semantic contract instead of treating Popover or DropdownMenu visuals as sufficient behavior. In particular, Select owns option/value semantics and Tooltip owns non-interactive disclosure behavior.
 
 `Toast` is not anchor-positioned and should use its own transient-notification contract even though it also renders above application content.
 
 ## Remaining release/device gates
 
-The automated Linux suite proves deterministic geometry/runtime/Popover behavior, package inclusion, Expo exports/prebuild, bare React Native Metro bundling, and Android native compilation. It does not replace:
+The automated Linux suite proves deterministic geometry/runtime/Popover/DropdownMenu behavior, package inclusion, Expo exports/prebuild, bare React Native Metro bundling, and Android native compilation. It does not replace:
 
 - native iOS binary compilation on macOS
 - simulator/device interaction around scrolling and anchor movement
 - VoiceOver/TalkBack verification
 - Popover focus restoration and web/native keyboard focus behavior
+- DropdownMenu focus restoration plus final Web/native keyboard and screen-reader interaction
 - visual placement review across representative phone/tablet sizes
 
 Those gates attach to the public component that depends on them rather than reopening the accepted geometry/runtime kernels without new evidence.
