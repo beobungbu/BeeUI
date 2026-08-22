@@ -101,6 +101,17 @@ describe('BeeUI issue #21 Popover', () => {
     );
 
     expect(screen.getByTestId('trigger').props.accessibilityState.expanded).toBe(true);
+
+    const content = screen.getByTestId('content', { includeHiddenElements: true });
+    fireEvent(content, 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 120, height: 80 } },
+    });
+    await waitFor(() =>
+      expect(
+        screen.getByTestId('content', { includeHiddenElements: true }).props.pointerEvents,
+      ).toBe('auto'),
+    );
+
     fireEvent.press(screen.getByTestId('close', { includeHiddenElements: true }));
     await waitFor(() =>
       expect(screen.getByTestId('trigger').props.accessibilityState.expanded).toBe(false),
