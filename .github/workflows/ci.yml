@@ -13,6 +13,7 @@ concurrency:
 env:
   NODE_VERSION: 24.13.1
   PNPM_VERSION: 10.15.0
+  XCODE_MIN_VERSION: "26.4"
 
 jobs:
   verify:
@@ -25,6 +26,10 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
+          # pnpm store is managed explicitly; setup-node v5 auto-cache would
+          # target the default store path and fail the post step ("Path
+          # Validation Error") when it does not exist.
+          package-manager-cache: false
 
       - name: Enable pnpm via Corepack
         run: |
@@ -80,6 +85,16 @@ jobs:
         working-directory: apps/showcase
         run: pnpm exec expo prebuild --clean --no-install
 
+      - name: Upload generated iOS project source
+        uses: actions/upload-artifact@v6
+        with:
+          # run_id only (no run_attempt) so "Re-run failed jobs" on ios-native
+          # still resolves the artifact uploaded by an earlier verify attempt.
+          name: ios-prebuild-${{ github.run_id }}
+          path: apps/showcase/ios
+          if-no-files-found: error
+          retention-days: 1
+
   bare-native:
     runs-on: [self-hosted, beeui]
     timeout-minutes: 60
@@ -91,6 +106,10 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
+          # pnpm store is managed explicitly; setup-node v5 auto-cache would
+          # target the default store path and fail the post step ("Path
+          # Validation Error") when it does not exist.
+          package-manager-cache: false
 
       - name: Enable pnpm via Corepack
         run: |
@@ -133,3 +152,166 @@ jobs:
 
       - name: Compile bare Android debug APK
         run: ./scripts/verify-bare-consumer.sh android-build
+
+  ios-native:
+    needs: [verify, bare-native]
+    # Only run for pushes or same-repo PRs — the macOS runner is self-hosted,
+    # so fork PRs must not execute untrusted native build scripts on it.
+    if: >
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, beeui-macos]
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Add Homebrew to PATH
+        run: echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
+
+      - name: Select Xcode ${{ env.XCODE_MIN_VERSION }}+
+        run: |
+          set -euo pipefail
+
+          selected_developer_dir=""
+          selected_version=""
+
+          version_is_supported() {
+            local version="$1" min_version="$2"
+            local major minor min_major min_minor
+            IFS='.' read -r major minor _ <<< "$version"
+            IFS='.' read -r min_major min_minor _ <<< "$min_version"
+            (( ${major:-0} > ${min_major:-0} || \
+               (${major:-0} == ${min_major:-0} && ${minor:-0} >= ${min_minor:-0}) ))
+          }
+
+          # Prefer the highest installed Xcode so we track Expo's tested
+          # toolchain (SDK 57 targets Xcode 26.6), not merely the first >= min.
+          for app in $(ls -d /Applications/Xcode*.app 2>/dev/null | sort -rV); do
+            [ -d "$app/Contents/Developer" ] || continue
+            candidate="$app/Contents/Developer"
+            version="$(DEVELOPER_DIR="$candidate" /usr/bin/xcodebuild -version | awk 'NR == 1 { print $2 }')"
+            echo "Found $app -> Xcode $version"
+            if version_is_supported "$version" "$XCODE_MIN_VERSION"; then
+              selected_developer_dir="$candidate"
+              selected_version="$version"
+              break
+            fi
+          done
+
+          if [ -z "$selected_developer_dir" ]; then
+            active_version="$(/usr/bin/xcodebuild -version | awk 'NR == 1 { print $2 }')"
+            echo "::error::Expo SDK 57 native CI requires Xcode ${XCODE_MIN_VERSION}+. Active Xcode is ${active_version}. Downloading the iOS Simulator runtime does not upgrade Xcode."
+            exit 1
+          fi
+
+          echo "DEVELOPER_DIR=$selected_developer_dir" >> "$GITHUB_ENV"
+          export DEVELOPER_DIR="$selected_developer_dir"
+          echo "Using Xcode $selected_version at $DEVELOPER_DIR"
+          /usr/bin/xcodebuild -version
+          /usr/bin/xcrun --sdk iphonesimulator --show-sdk-version
+          /usr/bin/xcrun swift --version
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pnpm via Corepack
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+      - name: Verify JavaScript toolchain
+        run: |
+          test "$(node --version)" = "v${NODE_VERSION}"
+          test "$(pnpm --version)" = "${PNPM_VERSION}"
+
+      - name: Install darwin-arm64 workspace dependencies
+        run: >
+          pnpm install --frozen-lockfile --prefer-offline
+          --store-dir "$HOME/.pnpm-store/beeui-v10"
+
+      - name: Download generated iOS project source
+        uses: actions/download-artifact@v7
+        with:
+          name: ios-prebuild-${{ github.run_id }}
+          path: apps/showcase/ios
+
+      - name: Install iOS pods locally
+        working-directory: apps/showcase/ios
+        run: /opt/homebrew/bin/pod install
+
+      - name: Pin Node binary for Xcode build scripts
+        working-directory: apps/showcase/ios
+        run: |
+          set -euo pipefail
+          node_binary="$(command -v node)"
+          test "$(node --version)" = "v${NODE_VERSION}"
+          printf 'export NODE_BINARY="%s"\n' "$node_binary" > .xcode.env.local
+          echo "Pinned Xcode NODE_BINARY=$node_binary"
+
+      - name: Discover generated Xcode workspace and scheme
+        id: xcode
+        working-directory: apps/showcase/ios
+        run: |
+          set -euo pipefail
+
+          workspace="$(find . -maxdepth 1 -type d -name '*.xcworkspace' -print -quit)"
+          if [ -z "$workspace" ]; then
+            echo "No generated .xcworkspace found after pod install."
+            exit 1
+          fi
+
+          scheme="$({ xcodebuild -workspace "$workspace" -list -json; } | node -e '
+            let input = "";
+            process.stdin.on("data", chunk => input += chunk);
+            process.stdin.on("end", () => {
+              const data = JSON.parse(input);
+              const schemes = data.workspace?.schemes ?? [];
+              if (!schemes.length) process.exit(2);
+              process.stdout.write(schemes[0]);
+            });
+          ')"
+
+          if [ -z "$scheme" ]; then
+            echo "No shared Xcode scheme found in $workspace."
+            exit 1
+          fi
+
+          echo "workspace=$workspace" >> "$GITHUB_OUTPUT"
+          echo "scheme=$scheme" >> "$GITHUB_OUTPUT"
+          echo "Using workspace $workspace with scheme $scheme"
+
+      - name: Compile Showcase for iOS Simulator
+        id: ios-build
+        working-directory: apps/showcase/ios
+        env:
+          WORKSPACE: ${{ steps.xcode.outputs.workspace }}
+          SCHEME: ${{ steps.xcode.outputs.scheme }}
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/beeui-derived-data"
+          log="$RUNNER_TEMP/beeui-xcodebuild.log"
+          # 'generic/platform=iOS Simulator' builds without booting a specific
+          # runtime — we only compile, never run, so no simulator is needed.
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/beeui-derived-data" \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee "$log"
+
+      - name: Upload xcodebuild log
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ios-xcodebuild-log-${{ github.run_id }}
+          path: ${{ runner.temp }}/beeui-xcodebuild.log
+          if-no-files-found: warn
+          retention-days: 2
