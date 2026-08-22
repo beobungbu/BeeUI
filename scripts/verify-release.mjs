@@ -16,7 +16,11 @@ const packageSpecs = [
   {
     name: '@beeui/core',
     dir: 'packages/core',
-    requiredPackedFiles: ['package/src/index.ts', 'package/src/utils/anchored-overlay.ts'],
+    requiredPackedFiles: [
+      'package/src/index.ts',
+      'package/src/utils/anchored-overlay.ts',
+      'package/src/utils/overlay-runtime.ts',
+    ],
   },
   {
     name: '@beeui/tokens',
@@ -26,7 +30,12 @@ const packageSpecs = [
   {
     name: '@beeui/ui',
     dir: 'packages/ui',
-    requiredPackedFiles: ['package/src/index.ts'],
+    requiredPackedFiles: [
+      'package/src/index.ts',
+      'package/src/components/overlay-runtime.tsx',
+      'package/src/components/overlay-dismiss-events.ts',
+      'package/src/components/overlay-dismiss-events.web.ts',
+    ],
   },
 ];
 
