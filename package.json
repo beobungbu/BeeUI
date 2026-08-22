@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "packageManager": "pnpm@10.15.0",
   "engines": {
-    "node": ">=22.13.0"
+    "node": "24.13.1"
   },
   "scripts": {
     "showcase": "pnpm --filter @beeui/showcase start",
