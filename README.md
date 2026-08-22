@@ -17,9 +17,9 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 - explicit safe-area foundation through `BeeUIProvider` + `SafeArea`, backed by `react-native-safe-area-context`
 - pure anchored-overlay geometry resolver with deterministic flip/shift/collision and RTL-aware alignment
 - one shared anchored-overlay runtime under `BeeUIProvider` with portal ordering, window-coordinate measurement, safe-area/keyboard environment, and topmost-only dismiss handling
-- public non-modal `Popover` composition layered on the shared anchored-overlay kernels
-- 95 exported foundation components/subcomponents documented in `docs/components.md`
-- 106 contract tests with `jest-expo` + React Native Testing Library
+- public non-modal `Popover` and `DropdownMenu` compositions layered on the shared anchored-overlay kernels
+- 104 exported foundation components/subcomponents documented in `docs/components.md`
+- 119 contract tests with `jest-expo` + React Native Testing Library
 - reproducible `pnpm-lock.yaml` and frozen dependency installs
 - release-package verification with packed-manifest, export, dependency, and clean-consumer checks
 - CI release-verification JSON artifact for the exact commit under review
@@ -34,9 +34,9 @@ BeeUI also exposes optional `className` overrides for shadcn-style source owners
 
 Current foundation includes application-root integration, layout, accessibility, typography, actions, forms, selection, navigation, disclosure, modal overlays, anchored overlays, application chrome, application patterns, data display, feedback, and state compositions:
 
-`BeeUIProvider`, `SafeArea`, `Screen`, `Box`, `Stack`, `HStack`, `VStack`, `Section`, `MetadataRow`, `VisuallyHidden`, `Text`, `Label`, `Button`, `ButtonLabel`, `IconButton`, `Link`, `Input`, `Textarea`, `Field`, `FormGroup`, `HelperText`, `FormMessage`, `SearchInput`, `PasswordInput`, `OTPInput`, `Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Chip`, `ChipGroup`, `SegmentedControl`, `SegmentedControlItem`, `Pagination`, `PaginationItem`, `Breadcrumb`, `BreadcrumbItem`, `Stepper`, `StepperItem`, `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`, `Dialog`, `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`, `AlertDialog`, `AlertDialogTrigger`, `AlertDialogContent`, `AlertDialogTitle`, `AlertDialogDescription`, `AlertDialogFooter`, `AlertDialogCancel`, `AlertDialogAction`, `Popover`, `PopoverTrigger`, `PopoverContent`, `PopoverTitle`, `PopoverDescription`, `PopoverClose`, `AppHeader`, `BottomActionBar`, `ListGroup`, `ListGroupHeader`, `ListItem`, `SettingsItem`, `DescriptionList`, `DescriptionItem`, `Card`, `AlertBanner`, `Badge`, `Avatar`, `Stat`, `StatLabel`, `StatValue`, `StatHelpText`, `Timeline`, `TimelineItem`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `EmptyState`, and `ErrorState`.
+`BeeUIProvider`, `SafeArea`, `Screen`, `Box`, `Stack`, `HStack`, `VStack`, `Section`, `MetadataRow`, `VisuallyHidden`, `Text`, `Label`, `Button`, `ButtonLabel`, `IconButton`, `Link`, `Input`, `Textarea`, `Field`, `FormGroup`, `HelperText`, `FormMessage`, `SearchInput`, `PasswordInput`, `OTPInput`, `Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Chip`, `ChipGroup`, `SegmentedControl`, `SegmentedControlItem`, `Pagination`, `PaginationItem`, `Breadcrumb`, `BreadcrumbItem`, `Stepper`, `StepperItem`, `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent`, `Dialog`, `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`, `AlertDialog`, `AlertDialogTrigger`, `AlertDialogContent`, `AlertDialogTitle`, `AlertDialogDescription`, `AlertDialogFooter`, `AlertDialogCancel`, `AlertDialogAction`, `Popover`, `PopoverTrigger`, `PopoverContent`, `PopoverTitle`, `PopoverDescription`, `PopoverClose`, `DropdownMenu`, `DropdownMenuTrigger`, `DropdownMenuContent`, `DropdownMenuItem`, `DropdownMenuCheckboxItem`, `DropdownMenuRadioGroup`, `DropdownMenuRadioItem`, `DropdownMenuLabel`, `DropdownMenuSeparator`, `AppHeader`, `BottomActionBar`, `ListGroup`, `ListGroupHeader`, `ListItem`, `SettingsItem`, `DescriptionList`, `DescriptionItem`, `Card`, `AlertBanner`, `Badge`, `Avatar`, `Stat`, `StatLabel`, `StatValue`, `StatHelpText`, `Timeline`, `TimelineItem`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `EmptyState`, and `ErrorState`.
 
-`DropdownMenu`, `Select`, and `Tooltip` remain deferred as public anchored components because they still need component-specific keyboard/focus/accessibility contracts. `Toast` will use a separate transient-notification contract because it is not anchor-positioned.
+`Select` and `Tooltip` remain deferred as public anchored components because they still need component-specific keyboard/focus/accessibility contracts. `Toast` will use a separate transient-notification contract because it is not anchor-positioned.
 
 ## Quick start
 
@@ -177,7 +177,7 @@ function DeleteProject() {
 
 BeeUI does not claim a browser-style focus trap or a dedicated native `alertdialog` accessibility role where React Native core does not expose that contract. Native simulator/device screen-reader behavior remains part of the release verification matrix.
 
-## Anchored overlay foundation and Popover
+## Anchored overlay foundation, Popover, and DropdownMenu
 
 BeeUI has two shared anchored-overlay layers:
 
@@ -214,7 +214,52 @@ function ProfilePopover() {
 
 Popover is non-modal and does not use React Native core `Modal` for positioning. Its trigger is the measured anchor; unresolved content measures invisibly offscreen instead of flashing at `(0,0)`. Safe-area collision handling is enabled by default, keyboard avoidance is opt-in, and outside press / Android back / Web Escape affect only the topmost overlay so nested Popovers close child-first.
 
-BeeUI does not yet claim automatic focus restoration, a browser-style focus trap, or complete VoiceOver/TalkBack keyboard/focus behavior for Popover. Those remain explicit web/simulator/device release gates. See `docs/anchored-overlays.md` for the full contract.
+`DropdownMenu` adds menu-specific selection and keyboard contracts on the same runtime:
+
+```tsx
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@beeui/ui';
+
+function WorkspaceMenu() {
+  const [toolbar, setToolbar] = React.useState(true);
+  const [density, setDensity] = React.useState('comfortable');
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger variant="outline">Workspace</DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuItem onSelect={() => undefined}>Edit project</DropdownMenuItem>
+        <DropdownMenuItem disabled>Archive unavailable</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuCheckboxItem checked={toolbar} onCheckedChange={setToolbar}>
+          Show toolbar
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuRadioGroup onValueChange={setDensity} value={density}>
+          <DropdownMenuRadioItem value="compact">Compact</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="comfortable">Comfortable</DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+```
+
+Normal menu items close after selection by default. Checkbox/radio items stay open by default, and `closeOnSelect` can opt them into closing. On Web, ArrowUp/ArrowDown, Home/End, and Enter/Space operate on a deterministic current enabled item; disabled items are skipped. `onSelect` is the cross-input semantic action, while pointer `onPress` remains available for pointer-specific handling.
+
+The current custom anchored-overlay portal re-parents content under the root overlay host. BeeUI re-provides the internal contexts its own overlay components require, but arbitrary React contexts declared between `BeeUIProvider` and the overlay source are not currently guaranteed inside portalled content. Put providers needed by overlay content at or above `BeeUIProvider`, or pass those values explicitly, until the context-preserving portal follow-up is resolved.
+
+BeeUI does not yet claim automatic focus restoration, a browser-style focus trap, or complete VoiceOver/TalkBack keyboard/focus behavior for Popover or DropdownMenu. Those remain explicit web/simulator/device release gates. See `docs/anchored-overlays.md` for the full contract.
 
 ## Application primitive example
 
@@ -291,8 +336,8 @@ The current CI pipeline performs:
 1. clean `pnpm install --frozen-lockfile`
 2. an Expo-import boundary check for `packages/core/src` and `packages/ui/src`
 3. strict TypeScript checks across the workspace
-4. 106 React Native Testing Library contract tests
-5. `pnpm release:verify`, including real tarball packing and clean-consumer installation plus packed Popover/runtime source assertions
+4. 119 React Native Testing Library contract tests
+5. `pnpm release:verify`, including real tarball packing and clean-consumer installation plus packed anchored-overlay/runtime source assertions
 6. upload of `.artifacts/release-verification.json` for the PR commit
 7. Expo/Metro export for Web
 8. Expo/Metro export for Android
@@ -302,7 +347,7 @@ The current CI pipeline performs:
 
 Every foundation tranche is accepted only after the complete pipeline passes on the exact PR head.
 
-Expo export proves the JavaScript/Metro bundles resolve on all three targets, Expo Prebuild proves the current configuration can generate Android and iOS native projects, and the bare-native gate proves installed-package portability plus Android native compilation outside Expo. Native iOS binary compilation on macOS and simulator/device interaction remain explicit release gates rather than claims made by Linux CI. Those gates include safe-area behavior, Dialog/AlertDialog hardware-back/focus/keyboard/screen-reader behavior, Popover scrolling/anchor movement/focus/screen-reader behavior, VoiceOver/TalkBack behavior for visually hidden content, and representative light/dark visual review.
+Expo export proves the JavaScript/Metro bundles resolve on all three targets, Expo Prebuild proves the current configuration can generate Android and iOS native projects, and the bare-native gate proves installed-package portability plus Android native compilation outside Expo. Native iOS binary compilation on macOS and simulator/device interaction remain explicit release gates rather than claims made by Linux CI. Those gates include safe-area behavior, Dialog/AlertDialog hardware-back/focus/keyboard/screen-reader behavior, Popover and DropdownMenu scrolling/anchor movement/focus/keyboard/screen-reader behavior, VoiceOver/TalkBack behavior for visually hidden content, and representative light/dark visual review.
 
 ## Workspace
 
