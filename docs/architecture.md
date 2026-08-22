@@ -214,4 +214,4 @@ Before `1.0`, BeeUI should have:
 - registry/CLI distribution workflow
 - documented migration policy
 
-The release gates and the distinction between automated Linux proof and macOS/device-only verification are defined in `docs/release.md`.
+The release gates and the distinction between automated Linux cross-platform/Android proof, automated macOS ARM64 native iOS compile proof, and manual runtime/device interaction proof are defined in `docs/release.md`.
