@@ -253,7 +253,7 @@ function OverlayRuntimeProviderRoot({ children }: { children?: React.ReactNode }
         collapsable={false}
         onLayout={handleHostLayout}
         pointerEvents="box-none"
-        style={styles.host}
+        style={[StyleSheet.absoluteFill, styles.host]}
         testID="beeui-overlay-host"
       >
         {entries.map((entry) => (
@@ -361,7 +361,7 @@ export const OverlayDismissLayer = React.forwardRef<
         onPress?.(event);
         dismissIfTopmost(overlayId, 'outside-press');
       }}
-      style={[StyleSheet.absoluteFillObject, style]}
+      style={[StyleSheet.absoluteFill, style]}
     />
   );
 });
@@ -522,7 +522,6 @@ export function useOverlayEnvironment() {
 
 const styles = StyleSheet.create({
   host: {
-    ...StyleSheet.absoluteFillObject,
     zIndex: 1,
   },
 });
