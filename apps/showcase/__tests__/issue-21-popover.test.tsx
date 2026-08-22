@@ -118,7 +118,7 @@ describe('BeeUI issue #21 Popover', () => {
     expect(screen.queryByTestId('content')).toBeNull();
   });
 
-  it('keeps unresolved content invisibly offscreen instead of flashing at the host origin', () => {
+  it('keeps unresolved content invisibly offscreen and out of the accessibility tree', () => {
     const screen = renderPopover(
       <Popover defaultOpen>
         <PopoverTrigger testID="trigger">Open</PopoverTrigger>
@@ -140,6 +140,9 @@ describe('BeeUI issue #21 Popover', () => {
       top: -10000,
     });
     expect(content.props.pointerEvents).toBe('none');
+    expect(content.props.accessibilityElementsHidden).toBe(true);
+    expect(content.props['aria-hidden']).toBe(true);
+    expect(content.props.importantForAccessibility).toBe('no-hide-descendants');
   });
 
   it('derives non-modal title and description accessibility fallbacks', async () => {
