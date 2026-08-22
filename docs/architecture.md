@@ -146,6 +146,8 @@ The second anchored-overlay layer lives internally in `@beeui/ui` and is install
 - Android hardware back, Web Escape, and outside presses target only the topmost registered dismissable overlay. Nested overlays therefore dismiss child-first and one event never cascades through multiple levels.
 - Measurement overrides used by automated tests are internal seams only; production positioning continues to rely on real window-coordinate measurement.
 
+The current custom portal host changes React ancestry by rendering entries under the application-root host. BeeUI re-provides the internal contexts required by each public overlay, but arbitrary consumer React contexts scoped between `BeeUIProvider` and an anchored overlay source are not guaranteed to be preserved today. Until the context-preserving portal investigation is resolved, applications should place providers needed by portalled content at or above `BeeUIProvider`, or pass the required values explicitly. This limitation is tracked separately and must not be hidden by component-specific context copying.
+
 ## Public Popover contract
 
 `Popover` is the first public component layered on the accepted geometry/runtime kernels. It does not introduce another portal, positioning engine, or Modal path.
@@ -161,7 +163,26 @@ The second anchored-overlay layer lives internally in `@beeui/ui` and is install
 
 Automated Linux tests establish state, geometry integration, nesting/dismiss ordering, semantics, package inclusion, and cross-target bundling. They do not claim automatic focus restoration or final keyboard/VoiceOver/TalkBack interaction. Those remain web/simulator/device release gates.
 
-`DropdownMenu`, `Select`, and `Tooltip` must add their own component semantics on the same runtime. In particular, menu/select keyboard navigation and option/item semantics must not be inferred from Popover alone.
+## Public DropdownMenu contract
+
+`DropdownMenu` is the second public anchored component and reuses the exact same geometry/runtime/portal/dismiss kernels as Popover.
+
+- Root state supports controlled `open` + `onOpenChange` and uncontrolled `defaultOpen`.
+- `DropdownMenuTrigger` is a BeeUI `Button`-compatible measured anchor that preserves caller accessibility state, adds `expanded`, and links to content.
+- `DropdownMenuContent` defaults to bottom/start with finite offsets, safe-area collision handling, flip/shift enabled, and keyboard avoidance opt-in.
+- Until anchor geometry and content size resolve, content remains invisibly offscreen, hidden from accessibility, and non-interactive.
+- Losing the anchor while open closes the menu instead of reusing stale coordinates.
+- Outside press, Android hardware back, Web Escape, and accessibility escape only close the topmost registered menu.
+- Normal items expose menu-item semantics and close after selection by default. Disabled items neither activate nor become the keyboard current item.
+- `onSelect` is the cross-input semantic item action. Pointer `onPress`, when supplied, runs before selection/default close behavior.
+- Checkbox items expose checked state and request the next boolean value. Radio groups/items expose one controlled value; duplicate radio values fail safe as disabled.
+- Checkbox and radio items remain open by default unless `closeOnSelect` is explicitly requested.
+- Labels and separators are non-interactive.
+- On Web, ArrowDown/ArrowUp move through enabled items, Home/End select the first/last enabled item, and Enter/Space activate the current item. Current-item navigation is not application selection state.
+
+Automated Linux tests cover root state, menu semantics, disabled behavior, checkbox/radio requests, unresolved geometry, anchor loss, nested topmost dismissal, accessibility escape, and deterministic Web keyboard navigation. They do not claim browser-grade focus restoration or final native keyboard/VoiceOver/TalkBack parity.
+
+`Select` and `Tooltip` must add their own component semantics on the same runtime rather than inheriting DropdownMenu behavior by visual similarity.
 
 The detailed contract and phase split are documented in `docs/anchored-overlays.md`.
 
