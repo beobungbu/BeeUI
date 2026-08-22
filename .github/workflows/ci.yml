@@ -71,6 +71,14 @@ jobs:
         working-directory: apps/showcase
         run: pnpm exec expo prebuild --clean --no-install
 
+      - name: Upload generated iOS project
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-prebuild-${{ github.run_id }}-${{ github.run_attempt }}
+          path: apps/showcase/ios
+          if-no-files-found: error
+          retention-days: 1
+
   bare-native:
     runs-on: [self-hosted, beeui]
     timeout-minutes: 60
@@ -119,3 +127,92 @@ jobs:
 
       - name: Compile bare Android debug APK
         run: ./scripts/verify-bare-consumer.sh android-build
+
+  ios-native:
+    needs:
+      - verify
+      - bare-native
+    if: >-
+      ${{
+        needs.verify.result == 'success' &&
+        needs.bare-native.result == 'success' &&
+        (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+      }}
+    runs-on: [self-hosted, beeui-macos]
+    timeout-minutes: 60
+    env:
+      CI: 1
+      EXPO_NO_TELEMETRY: 1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Smoke check macOS runner
+        run: |
+          set -euo pipefail
+          echo "user=$(whoami)"
+          echo "arch=$(uname -m)"
+          sw_vers
+          xcodebuild -version
+          pod --version
+          test "$(whoami)" = "beeui-ci"
+          test "$(uname -m)" = "arm64"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+
+      - name: Enable pnpm via Corepack
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare pnpm@10.15.0 --activate
+          node --version
+          pnpm --version
+
+      - name: Install macOS ARM64 workspace dependencies
+        run: >-
+          pnpm install
+          --frozen-lockfile
+          --prefer-offline
+          --store-dir "$HOME/.pnpm-store/beeui-v10"
+
+      - name: Download generated iOS project
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-prebuild-${{ github.run_id }}-${{ github.run_attempt }}
+          path: apps/showcase/ios
+
+      - name: Install iOS Pods on macOS ARM64
+        working-directory: apps/showcase/ios
+        run: pod install
+
+      - name: Compile iOS Simulator app
+        working-directory: apps/showcase/ios
+        run: |
+          set -euo pipefail
+
+          WORKSPACE="$(find . -maxdepth 1 -type d -name '*.xcworkspace' -print -quit)"
+          if [ -z "$WORKSPACE" ]; then
+            echo "No generated .xcworkspace found after pod install."
+            exit 1
+          fi
+
+          SCHEME="$(xcodebuild -workspace "$WORKSPACE" -list -json | python3 -c 'import json, sys; data=json.load(sys.stdin); schemes=data.get("workspace", {}).get("schemes", []); print(schemes[0] if schemes else "")')"
+          if [ -z "$SCHEME" ]; then
+            echo "No Xcode scheme found in $WORKSPACE."
+            exit 1
+          fi
+
+          echo "workspace=$WORKSPACE"
+          echo "scheme=$SCHEME"
+
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build
