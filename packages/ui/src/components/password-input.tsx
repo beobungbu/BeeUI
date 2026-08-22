@@ -65,7 +65,7 @@ export const PasswordInput = React.forwardRef<
         />
         <Button
           accessibilityLabel={toggleLabel}
-          className={cn('shrink-0 px-3', toggleClassName)}
+          className={cn('w-16 shrink-0 px-3', toggleClassName)}
           onPress={toggle}
           size="md"
           variant="outline"

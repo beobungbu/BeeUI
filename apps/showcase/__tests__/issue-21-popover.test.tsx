@@ -1,4 +1,5 @@
 import {
+  Button,
   Popover,
   PopoverClose,
   PopoverContent,
@@ -6,7 +7,7 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from '@beeui/ui';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { OverlayRuntimeProvider } from '../../../packages/ui/src/components/overlay-runtime';
@@ -90,17 +91,32 @@ describe('BeeUI issue #21 Popover', () => {
     expect(screen.getByTestId('trigger').props.accessibilityState.expanded).toBe(true);
   });
 
-  it('supports an explicit close action', () => {
+  it('preserves Popover context for a close action inside portalled content', async () => {
+    const onOpenChange = jest.fn();
     const screen = renderPopover(
-      <Popover defaultOpen>
+      <Popover onOpenChange={onOpenChange} open>
         <PopoverTrigger testID="trigger">Toggle</PopoverTrigger>
-        <PopoverClose testID="close">Close</PopoverClose>
+        <PopoverContent testID="content">
+          <PopoverClose testID="close">Close</PopoverClose>
+        </PopoverContent>
       </Popover>,
     );
 
+    await waitFor(() =>
+      expect(screen.getByTestId('close', { includeHiddenElements: true })).toBeTruthy(),
+    );
+
+    const closeButton = screen
+      .UNSAFE_getAllByType(Button)
+      .find((node) => node.props.testID === 'close');
+    expect(closeButton).toBeDefined();
+
+    act(() => {
+      closeButton?.props.onPress?.({} as never);
+    });
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(screen.getByTestId('trigger').props.accessibilityState.expanded).toBe(true);
-    fireEvent.press(screen.getByTestId('close'));
-    expect(screen.getByTestId('trigger').props.accessibilityState.expanded).toBe(false);
   });
 
   it('closes an open Popover when its anchor is unavailable', async () => {
