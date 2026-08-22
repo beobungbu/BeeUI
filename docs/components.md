@@ -25,6 +25,7 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `Input` | form | Semantic focus/invalid/disabled states, themed native colors, and Field-provided label/required relationships while preserving explicit overrides. |
 | `Textarea` | form | Multiline input using the same `Input` contract. |
 | `Field` | form | Label/description/error composition for text-entry controls; generates stable label `nativeID` metadata and propagates state/accessibility metadata to text controls only. Checkbox/radio/switch labels and state remain explicit at the control/group level. |
+| `FormGroup` | form | Structural legend/description/error composition for related controls. It never becomes one accessible parent element; compatible semantic child groups such as `RadioGroup` inherit legend/hint/disabled metadata while explicit child accessibility props remain authoritative. |
 | `HelperText` | form | Muted supporting text for form affordances without hidden state. |
 | `FormMessage` | form | Destructive form feedback with polite live-region semantics by default. |
 | `SearchInput` | form | Search keyboard/submit semantics layered on `Input`; clearing a previously non-empty query emits one `onSearch('')` reset signal. |
@@ -32,7 +33,7 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `OTPInput` | form | Controlled/uncontrolled one-time-code input with numeric normalization, safe text-entry defaults, and completion callbacks deduplicated per completed value until the input becomes incomplete again. |
 | `Checkbox` | form | Controlled boolean/indeterminate state with checkbox semantics; enabled usage without `onCheckedChange` warns in development instead of failing silently. |
 | `Radio` | form | Controlled radio item; standalone radios may request both selection and deselection, while grouped radios remain mutually exclusive. Enabled standalone usage without `onCheckedChange` warns in development. |
-| `RadioGroup` | form | Controlled value coordination and radiogroup semantics; enabled usage without `onValueChange` warns in development. |
+| `RadioGroup` | form | Controlled value coordination and native `radiogroup` semantics; enabled usage without `onValueChange` warns in development. When nested in `FormGroup`, it inherits group legend, guidance/error hint, and disabled state without hiding radio descendants. |
 | `Switch` | form | Controlled native `Switch` with semantic track/thumb colors; enabled usage without `onValueChange` warns in development. |
 | `Chip` | selection | Standalone toggle or value-scoped group item with button/radio/checkbox semantics; grouped items without a value fail safe as disabled and warn in development. |
 | `ChipGroup` | selection | Controlled/uncontrolled single or multiple selection coordination. |
@@ -57,11 +58,19 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `AccordionContent` | disclosure | Active item content. |
 | `Dialog` | modal overlay | Controlled/uncontrolled modal state backed by React Native core `Modal`; controlled `open` requires `onOpenChange`, with dismissable runtime fallback for malformed JS usage. |
 | `DialogTrigger` | modal overlay | Button-compatible trigger that opens the modal without exposing disclosure-only `expanded` state. |
-| `DialogContent` | modal overlay | Modal surface with semantic backdrop/close paths plus registered title/description accessibility relationships while preserving explicit caller overrides. |
+| `DialogContent` | modal overlay | Modal surface with semantic backdrop/close paths plus registered title/description accessibility relationships while preserving explicit caller overrides. Native request-close paths may be notification-only through `dismissOnRequestClose={false}` for higher-level modal contracts. |
 | `DialogTitle` | modal overlay | Semantic dialog heading that registers stable label metadata with its containing `DialogContent`. |
 | `DialogDescription` | modal overlay | Muted supporting text that provides a primitive-text accessibility hint to its containing dialog. |
 | `DialogFooter` | modal overlay | Action-row composition. |
 | `DialogClose` | modal overlay | Button-compatible close control. |
+| `AlertDialog` | modal overlay | Confirmation/destructive modal state built on the accepted Dialog/core-Modal kernel; it shares Dialog's controlled/uncontrolled state contract without introducing another overlay engine. |
+| `AlertDialogTrigger` | modal overlay | Button-compatible confirmation trigger. |
+| `AlertDialogContent` | modal overlay | Alert-dialog surface that never closes from backdrop presses. Android hardware-back/accessibility escape behave like cancellation by default and can be made notification-only with `cancelOnRequestClose={false}`. |
+| `AlertDialogTitle` | modal overlay | Dialog-kernel title semantics for confirmation content. |
+| `AlertDialogDescription` | modal overlay | Dialog-kernel supporting description/accessibility hint. |
+| `AlertDialogFooter` | modal overlay | Confirmation action-row composition. |
+| `AlertDialogCancel` | modal overlay | Close action defaulting to the outline button variant while preserving caller handlers. |
+| `AlertDialogAction` | modal overlay | Close action defaulting to the destructive button variant while preserving caller handlers. |
 | `AppHeader` | application chrome | Title/description/leading/trailing composition; owns no navigation. Primitive titles receive header semantics; complex title nodes own their own internal accessibility semantics. |
 | `BottomActionBar` | application chrome | Bottom action surface; safe-area ownership stays explicit with the application shell via `SafeArea` or safe-area utilities. |
 | `ListGroup` | application pattern | Bordered grouped-row surface with list container semantics without taking ownership of row actions. |
@@ -87,13 +96,18 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `EmptyState` | state | Neutral empty-state composition with optional action. |
 | `ErrorState` | state | Destructive error-state specialization with optional retry action. |
 
+## Form grouping accessibility policy
+
+React Native exposes semantic roles such as `radiogroup`, but does not expose a generic cross-platform `fieldset`/`group` accessibility role. BeeUI therefore does not fake one. `FormGroup` remains `accessible={false}` so its children stay independently discoverable, while semantic descendants opt into the metadata they can represent correctly. `RadioGroup` currently consumes that context because React Native has an explicit `radiogroup` role.
+
+`Field` remains the text-entry composition primitive. `FormGroup` does not implicitly mutate checkbox/switch/radio application state and does not make arbitrary descendants disabled by cloning them; compatible group primitives consume the shared metadata intentionally.
+
 ## Next components
 
 The next safe tranche should remain dependency-light and avoid pretending complex native behavior is solved:
 
-- `AlertDialog` only after validating its semantic contract against the accepted core-Modal behavior kernel
-- stronger form grouping/legend composition where native accessibility semantics are unambiguous
 - read-only data presentation only where it adds behavior beyond `MetadataRow`, `DescriptionList`, `Stat`, and `Timeline`
+- additional form-group integrations only where the target React Native control exposes unambiguous group semantics
 
 `VisuallyHidden` is intentionally restricted to non-interactive assistive content. Interactive controls must carry their own accessible name/state rather than relying on an off-screen control.
 
