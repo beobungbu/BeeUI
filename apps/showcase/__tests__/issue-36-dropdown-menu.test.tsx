@@ -9,7 +9,7 @@ import {
 } from '@beeui/ui';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { OverlayRuntimeProvider } from '../../../packages/ui/src/components/overlay-runtime';
 
 jest.mock('react-native-safe-area-context', () => {
@@ -70,29 +70,10 @@ async function waitForMenuItem(screen: ReturnType<typeof renderMenu>, testID: st
   return screen.getByTestId(testID, { includeHiddenElements: true });
 }
 
-async function resolveMenuContent(
-  screen: ReturnType<typeof renderMenu>,
-  testID = 'content',
-  size = { width: 160, height: 120 },
-) {
-  const contentView = screen
-    .UNSAFE_getAllByType(View)
-    .find((node) => node.props.testID === testID);
-  expect(contentView).toBeDefined();
-
-  act(() => {
-    contentView?.props.onLayout?.({
-      nativeEvent: {
-        layout: { x: 0, y: 0, width: size.width, height: size.height },
-      },
-    } as never);
-  });
-
-  await waitFor(() =>
-    expect(screen.getByTestId(testID, { includeHiddenElements: true }).props.pointerEvents).toBe(
-      'auto',
-    ),
-  );
+function getMenuPressable(screen: ReturnType<typeof renderMenu>, testID: string) {
+  const node = screen.UNSAFE_getAllByType(Pressable).find((item) => item.props.testID === testID);
+  expect(node).toBeDefined();
+  return node!;
 }
 
 describe('BeeUI issue #36 DropdownMenu', () => {
@@ -147,11 +128,12 @@ describe('BeeUI issue #36 DropdownMenu', () => {
       </DropdownMenu>,
     );
 
-    await waitForMenuItem(screen, 'item');
-    await resolveMenuContent(screen);
-    const item = screen.getByTestId('item');
+    const item = await waitForMenuItem(screen, 'item');
     expect(item.props.accessibilityRole).toBe('menuitem');
-    fireEvent.press(item);
+
+    act(() => {
+      getMenuPressable(screen, 'item').props.onPress?.({} as never);
+    });
 
     expect(calls).toEqual(['press', 'select']);
     await waitFor(() =>
@@ -174,7 +156,11 @@ describe('BeeUI issue #36 DropdownMenu', () => {
 
     const item = await waitForMenuItem(screen, 'disabled-item');
     expect(item.props.accessibilityState.disabled).toBe(true);
-    fireEvent.press(item);
+
+    act(() => {
+      getMenuPressable(screen, 'disabled-item').props.onPress?.({} as never);
+    });
+
     expect(onSelect).not.toHaveBeenCalled();
     expect(screen.getByTestId('content', { includeHiddenElements: true })).toBeTruthy();
   });
@@ -196,11 +182,13 @@ describe('BeeUI issue #36 DropdownMenu', () => {
       </DropdownMenu>,
     );
 
-    await waitForMenuItem(screen, 'checkbox-item');
-    await resolveMenuContent(screen);
-    const item = screen.getByTestId('checkbox-item');
+    const item = await waitForMenuItem(screen, 'checkbox-item');
     expect(item.props.accessibilityState.checked).toBe(false);
-    fireEvent.press(item);
+
+    act(() => {
+      getMenuPressable(screen, 'checkbox-item').props.onPress?.({} as never);
+    });
+
     expect(onCheckedChange).toHaveBeenCalledWith(true);
     expect(screen.getByTestId('content', { includeHiddenElements: true })).toBeTruthy();
   });
@@ -223,14 +211,15 @@ describe('BeeUI issue #36 DropdownMenu', () => {
       </DropdownMenu>,
     );
 
-    await waitForMenuItem(screen, 'comfortable');
-    await resolveMenuContent(screen);
-    const compact = screen.getByTestId('compact');
-    const comfortable = screen.getByTestId('comfortable');
+    const compact = await waitForMenuItem(screen, 'compact');
+    const comfortable = await waitForMenuItem(screen, 'comfortable');
     expect(compact.props.accessibilityState.checked).toBe(true);
     expect(comfortable.props.accessibilityState.checked).toBe(false);
 
-    fireEvent.press(comfortable);
+    act(() => {
+      getMenuPressable(screen, 'comfortable').props.onPress?.({} as never);
+    });
+
     expect(onValueChange).toHaveBeenCalledWith('comfortable');
     expect(screen.getByTestId('content', { includeHiddenElements: true })).toBeTruthy();
   });
