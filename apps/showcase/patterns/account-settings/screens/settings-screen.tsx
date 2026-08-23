@@ -2,8 +2,16 @@ import { Badge, ListGroup, ListGroupHeader, Separator, SettingsItem, Switch } fr
 import * as React from 'react';
 import { SettingsScreenShell } from '../components/settings-screen-shell';
 import { SettingsSection } from '../components/settings-section';
+import type { AppearanceTheme } from './appearance-screen';
+
+const appearanceLabels: Record<AppearanceTheme, string> = {
+  system: 'System',
+  light: 'Light',
+  dark: 'Dark',
+};
 
 export type SettingsScreenProps = {
+  appearance: AppearanceTheme;
   notificationsEnabled: boolean;
   notificationCount?: number;
   onAboutPress: () => void;
@@ -16,6 +24,7 @@ export type SettingsScreenProps = {
 };
 
 export function SettingsScreen({
+  appearance,
   notificationsEnabled,
   notificationCount = 0,
   onAboutPress,
@@ -61,7 +70,7 @@ export function SettingsScreen({
             description="System, light, or dark"
             onPress={onAppearancePress}
             title="Appearance"
-            value="System"
+            value={appearanceLabels[appearance]}
           />
         </ListGroup>
       </SettingsSection>
