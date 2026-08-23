@@ -1,4 +1,11 @@
-import { Popover, PopoverContent, PopoverTrigger } from '@beeui/ui';
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@beeui/ui';
 import { act, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
 import { Text, UIManager } from 'react-native';
@@ -151,6 +158,32 @@ describe('native teleport transport preserves consumer context', () => {
         screen.getByTestId('probe', { includeHiddenElements: true }).props.children,
       ).toBe('screen-value'),
     );
+  });
+});
+
+describe('anchored overlays inside a modal-class surface', () => {
+  beforeEach(() => setTeleportAvailable(true));
+
+  it('preserves consumer context for a Popover declared inside DialogContent', async () => {
+    const screen = renderOverlay(
+      <Dialog defaultOpen>
+        <DialogTrigger testID="dialog-trigger">Open dialog</DialogTrigger>
+        <DialogContent>
+          <Popover defaultOpen>
+            <PopoverTrigger testID="trigger">Open</PopoverTrigger>
+            <PopoverContent avoidSafeArea={false} testID="content">
+              <ContextProbe />
+            </PopoverContent>
+          </Popover>
+        </DialogContent>
+      </Dialog>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('probe', { includeHiddenElements: true }).props.children,
+      ).toBe('screen-value');
+    });
   });
 });
 

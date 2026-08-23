@@ -322,6 +322,29 @@ export function useOverlayId(prefix = 'beeui-overlay') {
   return `${prefix}-${reactId}`;
 }
 
+export type ModalOverlayHostProps = { children?: React.ReactNode };
+
+/**
+ * Provisions a modal-local overlay host. React Native `Modal` renders in its own
+ * native window; without a host inside it, anchored overlays declared in modal
+ * content would target the root host and render behind the modal. Wrapping modal
+ * content in this makes nested Popover / DropdownMenu / future anchored overlays
+ * target a host in the same window. It no-ops outside `BeeUIProvider` (a modal
+ * with no anchored overlays), so it is safe to always render around modal content.
+ */
+export function ModalOverlayHost({ children }: ModalOverlayHostProps) {
+  const transport = React.useContext(OverlayTransportContext);
+  const hostName = useOverlayId('beeui-overlay-modal');
+  if (!transport) return <>{children}</>;
+  const { HostOutlet } = transport;
+  return (
+    <>
+      <OverlayHostScopeProvider hostName={hostName}>{children}</OverlayHostScopeProvider>
+      <HostOutlet name={hostName} style={styles.host} />
+    </>
+  );
+}
+
 export type UseOverlayDismissableOptions = {
   onDismiss: OverlayDismissHandler;
   open: boolean;

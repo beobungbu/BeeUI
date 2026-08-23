@@ -9,6 +9,7 @@ import {
   type ViewProps,
 } from 'react-native';
 import { Button, type ButtonProps } from './button';
+import { ModalOverlayHost } from './overlay-runtime';
 import { Text, type TextProps } from './text';
 
 type DialogContextValue = {
@@ -203,12 +204,13 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
         transparent
         visible={open}
       >
-        <View
-          className={cn(
-            'flex-1 items-center justify-center px-4 py-8',
-            containerClassName,
-          )}
-        >
+        <ModalOverlayHost>
+          <View
+            className={cn(
+              'flex-1 items-center justify-center px-4 py-8',
+              containerClassName,
+            )}
+          >
           <Pressable
             {...overlayProps}
             accessible={false}
@@ -241,7 +243,8 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
               {children}
             </View>
           </DialogContentAccessibilityContext.Provider>
-        </View>
+          </View>
+        </ModalOverlayHost>
       </Modal>
     );
   },
