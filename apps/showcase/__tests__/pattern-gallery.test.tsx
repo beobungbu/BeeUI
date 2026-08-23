@@ -4,6 +4,7 @@ import { fireEvent, render } from '@testing-library/react-native';
 import { BeeUIProvider } from '@beeui/ui';
 import * as React from 'react';
 import type * as ReactTypes from 'react';
+import { Dimensions } from 'react-native';
 import { Uniwind } from 'uniwind';
 import {
   PatternGallery,
@@ -12,15 +13,10 @@ import {
   patternScreens,
 } from '../pattern-gallery';
 
-let mockDimensions = { width: 390, height: 844, scale: 1, fontScale: 1 };
-
-jest.mock('react-native', () => {
-  const actual = jest.requireActual('react-native');
-  return {
-    ...actual,
-    useWindowDimensions: () => mockDimensions,
-  };
-});
+function setTestDimensions(width: number, height: number) {
+  const dimensions = { width, height, scale: 1, fontScale: 1 };
+  Dimensions.set({ window: dimensions, screen: dimensions });
+}
 
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react') as typeof import('react');
@@ -98,7 +94,7 @@ function productionScreenExport(file: string): React.ElementType {
 
 describe('Showcase Pattern Gallery', () => {
   beforeEach(() => {
-    mockDimensions = { width: 390, height: 844, scale: 1, fontScale: 1 };
+    setTestDimensions(390, 844);
   });
 
   it('registers exactly four domains and the current 37-screen inventory with unique IDs', () => {
@@ -183,7 +179,7 @@ describe('Showcase Pattern Gallery', () => {
   });
 
   it('exposes selected domain, screen, and state semantics on desktop', () => {
-    mockDimensions = { width: 1280, height: 800, scale: 1, fontScale: 1 };
+    setTestDimensions(1280, 800);
     const view = renderGallery();
     fireEvent.press(view.getByRole('button', { name: 'Open Authentication & Onboarding' }));
     fireEvent.press(view.getByRole('button', { name: 'Open Sign In pattern' }));
