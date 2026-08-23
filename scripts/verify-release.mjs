@@ -37,6 +37,15 @@ const packageSpecs = [
       'package/src/components/overlay-runtime.tsx',
       'package/src/components/overlay-dismiss-events.ts',
       'package/src/components/overlay-dismiss-events.web.ts',
+      // Portal transport layer — the platform-selected files that decide how
+      // overlay content travels to its host and whether consumer context
+      // survives. These are critical runtime behavior, so pin them explicitly
+      // instead of relying on files: ["src"] to sweep them in incidentally.
+      'package/src/components/overlay-host-mode.ts',
+      'package/src/components/overlay-transport-shared.tsx',
+      'package/src/components/overlay-transport.d.ts',
+      'package/src/components/overlay-transport.native.tsx',
+      'package/src/components/overlay-transport.web.tsx',
       'package/src/components/toast.tsx',
     ],
   },
@@ -177,8 +186,13 @@ try {
   for (const [peer, range] of Object.entries(expectedUiPeers)) {
     assert(uiManifest.peerDependencies?.[peer] === range, `@beeui/ui peer range is explicit for ${peer}`, range);
   }
-  // react-dom is only required for the web (createPortal) overlay transport, so it
-  // is an optional peer — assert the contract stays that way.
+  // @beeui/ui itself only reaches for react-dom in its web (createPortal)
+  // transport, so its own direct peer stays optional. Note this is not the whole
+  // package-manager story: react-native-teleport declares react-dom as one of its
+  // peers, so a strict resolver may still require a matching react-dom even in a
+  // native-only consumer (see docs/anchored-overlays.md and the bare-native smoke,
+  // which installs react-dom for exactly this reason). Assert the direct-peer
+  // contract stays optional here.
   assert(
     uiManifest.peerDependencies?.['react-dom'] === '>=19.0.0',
     '@beeui/ui declares the react-dom (web) peer range',
@@ -186,7 +200,7 @@ try {
   );
   assert(
     uiManifest.peerDependenciesMeta?.['react-dom']?.optional === true,
-    '@beeui/ui marks react-dom as an optional (web-only) peer',
+    '@beeui/ui marks its own react-dom peer optional (web-only for BeeUI)',
   );
 
   const forbiddenExpoImport = /(?:from\s+|require\s*\(\s*|import\s*\(\s*|import\s+)['"]expo(?:\/[^'"]*)?['"]/;
