@@ -181,17 +181,21 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
     }, [dismissOnRequestClose, onRequestClose, setOpen]);
 
     // Android routes hardware back through `Modal.onRequestClose` while the modal
-    // is open (the root BackHandler is suppressed). Child-first: dismiss the
-    // modal's topmost anchored overlay (Popover / DropdownMenu declared inside)
-    // with reason "back" and consume the event; only close the Dialog when no
+    // is open (the root BackHandler is suppressed). `onRequestClose` fires on
+    // every such request — including when a nested overlay consumes the back —
+    // preserving the callback contract (it is not a "the Dialog closed" signal).
+    // Child-first: after notifying, dismiss the modal's topmost anchored overlay
+    // (Popover / DropdownMenu declared inside) with reason "back" and consume the
+    // event, keeping the Dialog open; only apply the close policy when no
     // modal-local anchored child remains. A root overlay behind the Dialog is not
-    // in this scope, so it never consumes the Dialog's back event. Backdrop press
-    // and accessibility escape keep their own paths (outside-press already
-    // dismisses a nested overlay child-first via its dismiss layer).
+    // in this scope, so it never consumes the Dialog's back event. This path is
+    // disjoint from `requestClose` (backdrop / accessibility escape), so the
+    // callback is never double-called for one event.
     const handleModalRequestClose = React.useCallback(() => {
+      onRequestClose?.();
       if (modalDismissScopeRef.current?.dismissTopmostChild('back')) return;
-      requestClose();
-    }, [requestClose]);
+      if (dismissOnRequestClose) setOpen(false);
+    }, [dismissOnRequestClose, onRequestClose, setOpen]);
 
     const registerTitle = React.useCallback((nativeID?: string, text?: string) => {
       setTitleNativeID(nativeID);

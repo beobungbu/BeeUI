@@ -402,10 +402,11 @@ describe('modal request-close is child-first for anchored overlays (Android hard
     screen.UNSAFE_getAllByType(Modal)[index].props.visible;
 
   it('Dialog → DropdownMenu: back #1 closes the menu, back #2 closes the Dialog', async () => {
+    const onRequestClose = jest.fn();
     const screen = renderOverlay(
       <Dialog defaultOpen>
         <DialogTrigger testID="dialog-trigger">Open</DialogTrigger>
-        <DialogContent>
+        <DialogContent onRequestClose={onRequestClose}>
           <DialogTitle testID="dialog-title">Dialog</DialogTitle>
           <DropdownMenu defaultOpen>
             <DropdownMenuTrigger testID="menu-trigger">Menu</DropdownMenuTrigger>
@@ -420,23 +421,28 @@ describe('modal request-close is child-first for anchored overlays (Android hard
       expect(screen.getByTestId('menu-item', { includeHiddenElements: true })).toBeTruthy(),
     );
 
-    // Back #1: only the menu closes; the Dialog stays open.
+    // Back #1: onRequestClose fires exactly once even though the menu consumes the
+    // back; only the menu closes; the Dialog stays open.
     await fireModalBack(screen);
     await waitFor(() =>
       expect(screen.queryByTestId('menu-item', { includeHiddenElements: true })).toBeNull(),
     );
+    expect(onRequestClose).toHaveBeenCalledTimes(1);
     expect(dialogVisible(screen)).toBe(true);
 
-    // Back #2: no modal-local child remains, so the Dialog closes.
+    // Back #2: onRequestClose fires again (once), then the Dialog follows
+    // dismissOnRequestClose (default true) and closes.
     await fireModalBack(screen);
     await waitFor(() => expect(dialogVisible(screen)).toBe(false));
+    expect(onRequestClose).toHaveBeenCalledTimes(2);
   });
 
   it('Dialog → Popover: back #1 closes the Popover, back #2 closes the Dialog', async () => {
+    const onRequestClose = jest.fn();
     const screen = renderOverlay(
       <Dialog defaultOpen>
         <DialogTrigger testID="dialog-trigger">Open</DialogTrigger>
-        <DialogContent>
+        <DialogContent onRequestClose={onRequestClose}>
           <DialogTitle testID="dialog-title">Dialog</DialogTitle>
           <Popover defaultOpen>
             <PopoverTrigger testID="trigger">Open</PopoverTrigger>
@@ -451,14 +457,18 @@ describe('modal request-close is child-first for anchored overlays (Android hard
       expect(screen.getByTestId('popover-body', { includeHiddenElements: true })).toBeTruthy(),
     );
 
+    // Back #1: callback fires once; only the Popover closes; the Dialog stays.
     await fireModalBack(screen);
     await waitFor(() =>
       expect(screen.queryByTestId('popover-body', { includeHiddenElements: true })).toBeNull(),
     );
+    expect(onRequestClose).toHaveBeenCalledTimes(1);
     expect(dialogVisible(screen)).toBe(true);
 
+    // Back #2: callback fires again (once); the Dialog closes.
     await fireModalBack(screen);
     await waitFor(() => expect(dialogVisible(screen)).toBe(false));
+    expect(onRequestClose).toHaveBeenCalledTimes(2);
   });
 
   it('does not dismiss a root Popover behind the Dialog; the Dialog closes instead', async () => {
@@ -490,10 +500,11 @@ describe('modal request-close is child-first for anchored overlays (Android hard
   });
 
   it('AlertDialog → DropdownMenu: the child closes first; the alert stays open', async () => {
+    const onRequestClose = jest.fn();
     const screen = renderOverlay(
       <AlertDialog defaultOpen>
         <AlertDialogTrigger testID="alert-trigger">Open</AlertDialogTrigger>
-        <AlertDialogContent>
+        <AlertDialogContent onRequestClose={onRequestClose}>
           <AlertDialogTitle testID="alert-title">Alert</AlertDialogTitle>
           <DropdownMenu defaultOpen>
             <DropdownMenuTrigger testID="menu-trigger">Menu</DropdownMenuTrigger>
@@ -508,38 +519,88 @@ describe('modal request-close is child-first for anchored overlays (Android hard
       expect(screen.getByTestId('menu-item', { includeHiddenElements: true })).toBeTruthy(),
     );
 
-    // Back #1: child-first — the menu closes, the AlertDialog stays open.
+    // Back #1: onRequestClose fires once; child-first — the menu closes, the
+    // AlertDialog stays open.
     await fireModalBack(screen);
     await waitFor(() =>
       expect(screen.queryByTestId('menu-item', { includeHiddenElements: true })).toBeNull(),
     );
+    expect(onRequestClose).toHaveBeenCalledTimes(1);
     expect(dialogVisible(screen)).toBe(true);
 
-    // Back #2 (no child): AlertDialog's request-close policy applies — the default
-    // cancelOnRequestClose closes it.
+    // Back #2 (no child): onRequestClose fires again (once), then the default
+    // cancelOnRequestClose (true) closes it.
     await fireModalBack(screen);
     await waitFor(() => expect(dialogVisible(screen)).toBe(false));
+    expect(onRequestClose).toHaveBeenCalledTimes(2);
   });
 
-  it('AlertDialog cancelOnRequestClose={false}: back with no child keeps the alert open', async () => {
+  it('AlertDialog cancelOnRequestClose={false}: callback fires on every back; child-first; alert never auto-closes', async () => {
     const onRequestClose = jest.fn();
     const screen = renderOverlay(
       <AlertDialog defaultOpen>
         <AlertDialogTrigger testID="alert-trigger">Open</AlertDialogTrigger>
         <AlertDialogContent cancelOnRequestClose={false} onRequestClose={onRequestClose}>
           <AlertDialogTitle testID="alert-title">Alert</AlertDialogTitle>
+          <DropdownMenu defaultOpen>
+            <DropdownMenuTrigger testID="menu-trigger">Menu</DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem testID="menu-item">Select</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </AlertDialogContent>
       </AlertDialog>,
     );
     await waitFor(() =>
-      expect(screen.getByTestId('alert-title', { includeHiddenElements: true })).toBeTruthy(),
+      expect(screen.getByTestId('menu-item', { includeHiddenElements: true })).toBeTruthy(),
     );
 
-    // No modal-local child, so the request-close policy runs: it notifies but does
-    // not dismiss.
+    // Back #1 (child present): callback fires; the menu closes first; alert stays.
     await fireModalBack(screen);
+    await waitFor(() =>
+      expect(screen.queryByTestId('menu-item', { includeHiddenElements: true })).toBeNull(),
+    );
     expect(onRequestClose).toHaveBeenCalledTimes(1);
     expect(dialogVisible(screen)).toBe(true);
+
+    // Back #2 (no child): callback fires again, but cancelOnRequestClose={false}
+    // means it only notifies — the alert stays open.
+    await fireModalBack(screen);
+    expect(onRequestClose).toHaveBeenCalledTimes(2);
+    expect(dialogVisible(screen)).toBe(true);
+  });
+
+  it('backdrop press and accessibility escape each fire onRequestClose exactly once', async () => {
+    const onRequestClose = jest.fn();
+    const screen = renderOverlay(
+      <Dialog defaultOpen>
+        <DialogTrigger testID="dialog-trigger">Open</DialogTrigger>
+        <DialogContent
+          dismissOnRequestClose={false}
+          onRequestClose={onRequestClose}
+          overlayTestID="dialog-overlay"
+          testID="dialog-content"
+        >
+          <DialogTitle testID="dialog-title">Dialog</DialogTitle>
+        </DialogContent>
+      </Dialog>,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('dialog-title', { includeHiddenElements: true })).toBeTruthy(),
+    );
+
+    // Backdrop press routes through the dialog's own requestClose (not the modal
+    // back handler), so the callback fires exactly once — never double-called.
+    await act(async () =>
+      fireEvent.press(screen.getByTestId('dialog-overlay', { includeHiddenElements: true })),
+    );
+    expect(onRequestClose).toHaveBeenCalledTimes(1);
+
+    // Accessibility escape is likewise a single, distinct request path.
+    await act(async () =>
+      screen.getByTestId('dialog-content', { includeHiddenElements: true }).props.onAccessibilityEscape?.(),
+    );
+    expect(onRequestClose).toHaveBeenCalledTimes(2);
   });
 
   it('nested Dialog: only the active modal scope consumes its own onRequestClose', async () => {
