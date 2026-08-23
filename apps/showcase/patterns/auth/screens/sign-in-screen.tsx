@@ -95,7 +95,7 @@ export function SignInScreen({
         <Text tone="muted" variant="caption">
           New to BeeUI?
         </Text>
-        <Link disabled={blocked} onPress={onCreateAccount}>
+        <Link className="self-center" disabled={blocked} onPress={onCreateAccount}>
           Create an account
         </Link>
       </VStack>
