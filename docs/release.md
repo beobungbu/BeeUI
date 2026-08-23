@@ -60,6 +60,12 @@ An empty or unclassifiable diff also fails safe by running native verification. 
 
 The native-safe list is an optimization contract, not an architectural claim that those paths can never affect native behavior. If an isolated pattern becomes part of the executable Showcase/native bundle, or another currently safe path begins participating in native build inputs, the classifier must be tightened in the same change.
 
+### macOS native build cache policy
+
+The self-hosted macOS runner also reuses performance-only native build caches. Showcase and bare-RN DerivedData live under `~/Library/Caches/BeeUI` and are separated by selected Xcode version plus the SHA-256 of the resulting `Podfile.lock`. Xcode 26 compilation caching is enabled explicitly, and `xcodebuild` emits `-showBuildTimingSummary` so warm-build effectiveness can be measured from CI logs.
+
+The true bare React Native consumer remains fresh: its working directory is deleted and recreated on every verification run, its BeeUI packages are repacked and reinstalled, and CocoaPods still runs against the newly generated project. Only reusable compiler output and Ruby gems are persisted outside `RUNNER_TEMP`; the Bundler cache is separated by Ruby version, CPU architecture, and React Native version. A persistent cache hit is therefore an optimization, not evidence substituted for the current build.
+
 ## Runtime and device gates
 
 The following remain release gates because compile-only CI cannot prove runtime interaction or representative device behavior:
