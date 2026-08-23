@@ -290,3 +290,94 @@ describe('legacy defensive transport drops consumer context', () => {
     });
   });
 });
+
+function readEntryOrder(screen: ReturnType<typeof render>) {
+  return screen
+    .getAllByTestId('legacy-entry', { includeHiddenElements: true })
+    .map((node) => node.props.children as string);
+}
+
+describe('legacy transport preserves portal insertion order on independent updates', () => {
+  it('keeps an earlier portal ahead of a later one when only the earlier one updates', async () => {
+    const { RootBoundary, HostOutlet, PortalOutlet } = createLegacyStoreTransport();
+
+    let bumpA: () => void = () => undefined;
+    function PortalA() {
+      const [n, setN] = React.useState(0);
+      bumpA = () => setN((value) => value + 1);
+      return (
+        <PortalOutlet hostName="legacy-host">
+          <Text testID="legacy-entry">{`A${n}`}</Text>
+        </PortalOutlet>
+      );
+    }
+
+    const screen = render(
+      <RootBoundary>
+        <PortalA />
+        <PortalOutlet hostName="legacy-host">
+          <Text testID="legacy-entry">B</Text>
+        </PortalOutlet>
+        <HostOutlet name="legacy-host" />
+      </RootBoundary>,
+    );
+
+    // A mounts before B, so the destination renders A ahead of B (B paints last,
+    // i.e. visually topmost — matching the dismiss stack, which tracks B as the
+    // most-recently-registered overlay).
+    await waitFor(() => expect(readEntryOrder(screen)).toEqual(['A0', 'B']));
+
+    // Only A's content changes. Before the split-lifecycle fix this ran the
+    // registration cleanup+setup and moved A behind B (['B', 'A1']); now A keeps
+    // its insertion position while its content updates in place.
+    await act(async () => bumpA());
+    expect(readEntryOrder(screen)).toEqual(['A1', 'B']);
+  });
+});
+
+describe('legacy transport host lifecycle cleanup', () => {
+  it('creates a destination on host mount, drops it on unmount, and re-creates it for a new host id', async () => {
+    const { RootBoundary, HostOutlet, PortalOutlet } = createLegacyStoreTransport();
+
+    // A modal-class surface mounts its portal content and its own host together,
+    // and unmounts them together when it closes.
+    function ModalScope({ hostName }: { hostName: string }) {
+      return (
+        <>
+          <PortalOutlet hostName={hostName}>
+            <Text testID="modal-portal">content</Text>
+          </PortalOutlet>
+          <HostOutlet name={hostName} />
+        </>
+      );
+    }
+
+    function Harness({ hostName, open }: { hostName: string; open: boolean }) {
+      return <RootBoundary>{open ? <ModalScope hostName={hostName} /> : null}</RootBoundary>;
+    }
+
+    const screen = render(<Harness hostName="modal-host-1" open />);
+    await waitFor(() =>
+      expect(screen.queryByTestId('modal-portal', { includeHiddenElements: true })).toBeTruthy(),
+    );
+
+    // Closing the modal unmounts the host: the destination is gone and stale
+    // content no longer renders (dead host name bookkeeping is dropped).
+    screen.rerender(<Harness hostName="modal-host-1" open={false} />);
+    await waitFor(() =>
+      expect(screen.queryByTestId('modal-portal', { includeHiddenElements: true })).toBeNull(),
+    );
+
+    // A brand-new modal instance with a different host id mounts and receives its
+    // portal again — repeated mount/unmount keeps working without leaking state.
+    screen.rerender(<Harness hostName="modal-host-2" open />);
+    await waitFor(() =>
+      expect(screen.queryByTestId('modal-portal', { includeHiddenElements: true })).toBeTruthy(),
+    );
+
+    screen.rerender(<Harness hostName="modal-host-2" open={false} />);
+    await waitFor(() =>
+      expect(screen.queryByTestId('modal-portal', { includeHiddenElements: true })).toBeNull(),
+    );
+  });
+});

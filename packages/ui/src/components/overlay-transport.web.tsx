@@ -23,10 +23,23 @@ export function createWebDomTransport(): OverlayTransport {
   const emit = (name: string) => listeners.get(name)?.forEach((l) => l());
 
   const HostOutlet = ({ name, style }: OverlayHostOutletProps) => {
+    // Track the element this outlet instance owns so its unmount only clears the
+    // node it actually registered — a newer host with the same (dynamic) name
+    // must not be wiped by an older instance's late cleanup.
+    const owned = React.useRef<Element | null>(null);
     // On react-native-web a host View ref is the underlying DOM element.
     const setRef = React.useCallback(
       (node: unknown) => {
-        nodes.set(name, (node as Element | null) ?? null);
+        const element = (node as Element | null) ?? null;
+        if (element) {
+          owned.current = element;
+          nodes.set(name, element);
+        } else {
+          // Unmount: drop the key entirely (not name -> null) so a closed modal's
+          // dynamic host name does not leak forever. Only clear if we still own it.
+          if (nodes.get(name) === owned.current) nodes.delete(name);
+          owned.current = null;
+        }
         emit(name);
       },
       [name],
@@ -46,7 +59,12 @@ export function createWebDomTransport(): OverlayTransport {
         let set = listeners.get(hostName);
         if (!set) listeners.set(hostName, (set = new Set()));
         set.add(onChange);
-        return () => set?.delete(onChange);
+        return () => {
+          set.delete(onChange);
+          // Drop the listener bucket once its last portal unsubscribes so dead
+          // dynamic host names do not accumulate.
+          if (set.size === 0) listeners.delete(hostName);
+        };
       },
       [hostName],
     );

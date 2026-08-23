@@ -88,16 +88,33 @@ function createLegacyStore(): LegacyStore {
       let set = listeners.get(hostName);
       if (!set) listeners.set(hostName, (set = new Set()));
       set.add(listener);
-      return () => set?.delete(listener);
+      return () => {
+        set.delete(listener);
+        // Last subscriber (the host outlet) unmounted: a dynamic modal-host name
+        // is now dead, so drop its bookkeeping instead of leaking a key forever.
+        if (set.size === 0) {
+          listeners.delete(hostName);
+          hosts.delete(hostName);
+          snapshots.delete(hostName);
+        }
+      };
     },
     set(hostName, id, node) {
       let host = hosts.get(hostName);
       if (!host) hosts.set(hostName, (host = new Map()));
+      // Map.set on an existing key updates in place and preserves insertion
+      // order; only a first-time id appends. Callers never delete-then-re-add an
+      // id on content update, so portal z-order stays stable across updates.
       host.set(id, node);
       invalidate(hostName);
     },
     remove(hostName, id) {
-      hosts.get(hostName)?.delete(id);
+      const host = hosts.get(hostName);
+      if (!host) return;
+      host.delete(id);
+      // Drop the entry map once empty; the stable EMPTY_ENTRIES snapshot still
+      // serves any live host-outlet subscriber until it too unmounts.
+      if (host.size === 0) hosts.delete(hostName);
       invalidate(hostName);
     },
     read(hostName) {
@@ -141,9 +158,23 @@ export function createLegacyStoreTransport(): OverlayTransport {
     const id = React.useRef<string | undefined>(undefined);
     if (!id.current) id.current = `legacy-${(counter += 1)}`;
     const entryId = id.current;
+    const childrenRef = React.useRef(children);
+    childrenRef.current = children;
+
+    // Registration lifecycle: add the entry once and remove it only when the
+    // portal truly unmounts (or its host/id changes). It deliberately excludes
+    // `children` so a content update never runs cleanup+setup, which would
+    // delete-then-re-add the entry and move it to the end of insertion order —
+    // diverging visual z-order from the dismiss stack's topmost tracking.
+    React.useLayoutEffect(() => {
+      store?.set(hostName, entryId, childrenRef.current);
+      return () => store?.remove(hostName, entryId);
+    }, [entryId, hostName, store]);
+
+    // Content update: refresh the existing entry in place. Map.set on the same
+    // key preserves insertion position, so the portal keeps its z-order.
     React.useLayoutEffect(() => {
       store?.set(hostName, entryId, children);
-      return () => store?.remove(hostName, entryId);
     }, [children, entryId, hostName, store]);
     return null;
   };

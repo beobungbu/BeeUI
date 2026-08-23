@@ -164,9 +164,17 @@ function OverlayRuntimeProviderRoot({
   hostRectOverride,
   transport: transportOverride,
 }: OverlayRuntimeProviderProps) {
-  // Resolve the portal transport once per runtime (stable, not a module-level
-  // constant); tests inject a deterministic transport through the seam.
-  const transport = React.useRef(transportOverride ?? resolveOverlayTransport()).current;
+  // Resolve the portal transport once, lazily, on first render — creating a web
+  // transport builds Maps and components, so we must not re-run the initializer
+  // every render and discard the result. The transport is intentionally fixed
+  // for the lifetime of the runtime: a changed `transport` prop after mount is
+  // ignored (the seam is for injecting a transport before first render in tests,
+  // not for hot-swapping the portal implementation at runtime).
+  const transportRef = React.useRef<OverlayTransport | null>(null);
+  if (transportRef.current === null) {
+    transportRef.current = transportOverride ?? resolveOverlayTransport();
+  }
+  const transport = transportRef.current;
   const [hostRect, setHostRect] = React.useState<AnchoredOverlayRect | null>(null);
   const hostRef = React.useRef<React.ComponentRef<typeof View>>(null);
   const dismissStackRef = React.useRef(createOverlayDismissStack());
