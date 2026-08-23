@@ -13,18 +13,36 @@ export type ProductDetailScreenProps = {
   product?: Product;
 };
 
+type VariantSelection = {
+  productId: string;
+  variant?: string;
+};
+
 export function ProductDetailScreen({ onAddToCart, onFavorite, product = products[0]! }: ProductDetailScreenProps) {
-  const [variant, setVariant] = React.useState<string | undefined>(product.variants[0]);
-  const previousProductId = React.useRef(product.id);
+  const [selection, setSelection] = React.useState<VariantSelection>(() => ({
+    productId: product.id,
+    variant: product.variants[0],
+  }));
+  const variant =
+    selection.productId === product.id &&
+    selection.variant !== undefined &&
+    product.variants.includes(selection.variant)
+      ? selection.variant
+      : product.variants[0];
 
   React.useEffect(() => {
-    const productChanged = previousProductId.current !== product.id;
-    previousProductId.current = product.id;
+    setSelection((currentSelection) => {
+      const currentVariant = currentSelection.productId === product.id ? currentSelection.variant : undefined;
+      const nextVariant =
+        currentVariant !== undefined && product.variants.includes(currentVariant)
+          ? currentVariant
+          : product.variants[0];
 
-    setVariant((currentVariant) => {
-      if (productChanged) return product.variants[0];
-      if (currentVariant !== undefined && product.variants.includes(currentVariant)) return currentVariant;
-      return product.variants[0];
+      if (currentSelection.productId === product.id && currentSelection.variant === nextVariant) {
+        return currentSelection;
+      }
+
+      return { productId: product.id, variant: nextVariant };
     });
   }, [product.id, product.variants]);
 
@@ -41,7 +59,12 @@ export function ProductDetailScreen({ onAddToCart, onFavorite, product = product
         <VStack gap="sm">
           <Text variant="label">Choose an option</Text>
           {product.variants.length > 0 ? (
-            <ChipGroup onValueChange={(value) => typeof value === 'string' && setVariant(value)} value={variant}>
+            <ChipGroup
+              onValueChange={(value) =>
+                typeof value === 'string' && setSelection({ productId: product.id, variant: value })
+              }
+              value={variant}
+            >
               {product.variants.map((item) => <Chip key={item} value={item}>{item}</Chip>)}
             </ChipGroup>
           ) : (
