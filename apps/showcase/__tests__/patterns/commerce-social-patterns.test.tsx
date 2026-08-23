@@ -82,6 +82,18 @@ describe('commerce + social production patterns', () => {
     );
   });
 
+  it('runs the transient Chromium visual QA matrix', () => {
+    execFileSync(
+      process.execPath,
+      [path.resolve(__dirname, '../../patterns/commerce-social/visual-qa.mjs')],
+      {
+        cwd: path.resolve(__dirname, '../..'),
+        env: process.env,
+        stdio: 'inherit',
+      },
+    );
+  }, 240000);
+
   it('exports all 12 production screens', () => {
     expect(screens).toHaveLength(12);
     screens.forEach((screen) => expect(typeof screen).toBe('function'));
