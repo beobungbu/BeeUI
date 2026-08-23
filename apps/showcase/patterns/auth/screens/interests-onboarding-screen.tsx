@@ -56,7 +56,12 @@ export function InterestsOnboardingScreen({
             value={selectedValues}
           >
             {options.map((option) => (
-              <Chip key={option.id} value={option.id}>
+              <Chip
+                key={option.id}
+                className="max-w-full"
+                labelClassName="shrink text-center"
+                value={option.id}
+              >
                 {option.label}
               </Chip>
             ))}
