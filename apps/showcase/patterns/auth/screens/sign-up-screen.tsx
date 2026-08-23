@@ -174,7 +174,7 @@ export function SignUpScreen({
         <Text tone="muted" variant="caption">
           Already have an account?
         </Text>
-        <Link disabled={blocked} onPress={onSignIn}>
+        <Link className="self-center" disabled={blocked} onPress={onSignIn}>
           Sign in
         </Link>
       </VStack>
