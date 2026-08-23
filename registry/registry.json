@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "items": [
+    {
+      "name": "badge",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/badge.tsx",
+          "target": { "root": "components", "path": "badge.tsx" },
+          "transforms": ["rewrite-beeui-core-cn"]
+        }
+      ],
+      "registryDependencies": ["core-cn", "text", "theme"],
+      "dependencies": { "class-variance-authority": "0.7.1" },
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "button",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/button.tsx",
+          "target": { "root": "components", "path": "button.tsx" },
+          "transforms": ["rewrite-beeui-core-cn"]
+        }
+      ],
+      "registryDependencies": ["core-cn", "text", "theme"],
+      "dependencies": { "class-variance-authority": "0.7.1" },
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "card",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/card.tsx",
+          "target": { "root": "components", "path": "card.tsx" },
+          "transforms": ["rewrite-beeui-core-cn"]
+        }
+      ],
+      "registryDependencies": ["core-cn", "theme"],
+      "dependencies": { "class-variance-authority": "0.7.1" },
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "core-cn",
+      "type": "utility",
+      "public": false,
+      "files": [
+        {
+          "source": "packages/core/src/utils/cn.ts",
+          "target": { "root": "lib", "path": "cn.ts" },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": [],
+      "dependencies": {
+        "clsx": "2.1.1",
+        "tailwind-merge": "3.6.0"
+      },
+      "peerDependencies": {}
+    },
+    {
+      "name": "field-context",
+      "type": "utility",
+      "public": false,
+      "files": [
+        {
+          "source": "packages/ui/src/components/field-context.ts",
+          "target": { "root": "components", "path": "field-context.ts" },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": [],
+      "dependencies": {},
+      "peerDependencies": { "react": ">=19.0.0" }
+    },
+    {
+      "name": "input",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/input.tsx",
+          "target": { "root": "components", "path": "input.tsx" },
+          "transforms": ["rewrite-beeui-core-cn"]
+        }
+      ],
+      "registryDependencies": ["core-cn", "field-context", "theme"],
+      "dependencies": { "class-variance-authority": "0.7.1" },
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "separator",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/separator.tsx",
+          "target": { "root": "components", "path": "separator.tsx" },
+          "transforms": ["rewrite-beeui-core-cn"]
+        }
+      ],
+      "registryDependencies": ["core-cn", "theme"],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "text",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/text.tsx",
+          "target": { "root": "components", "path": "text.tsx" },
+          "transforms": ["rewrite-beeui-core-cn"]
+        }
+      ],
+      "registryDependencies": ["core-cn", "theme"],
+      "dependencies": { "class-variance-authority": "0.7.1" },
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "theme",
+      "type": "theme",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/tokens/src/theme.css",
+          "target": { "root": "theme", "path": "" },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": [],
+      "dependencies": {},
+      "peerDependencies": {
+        "tailwindcss": ">=4 <5",
+        "uniwind": ">=1.10.1 <2"
+      }
+    }
+  ]
+}
