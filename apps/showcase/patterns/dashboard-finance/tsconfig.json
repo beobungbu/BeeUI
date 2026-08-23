@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": [
+    "./**/*.ts",
+    "./**/*.tsx",
+    "../../uniwind-types.d.ts",
+    "../../../../packages/ui/src/types/react-native-classname.d.ts"
+  ]
+}
