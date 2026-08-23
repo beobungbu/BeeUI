@@ -2,6 +2,7 @@ name: ci
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches:
       - main
@@ -18,9 +19,16 @@ env:
 jobs:
   verify:
     runs-on: [self-hosted, beeui]
+    outputs:
+      ios-native-required: ${{ steps.native-changes.outputs.ios-native }}
+      ios-native-reason: ${{ steps.native-changes.outputs.reason }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          # The PR classifier diffs the actual base/head commits rather than
+          # guessing from the synthetic pull-request merge ref.
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v5
@@ -30,6 +38,34 @@ jobs:
           # target the default store path and fail the post step ("Path
           # Validation Error") when it does not exist.
           package-manager-cache: false
+
+      - name: Test native iOS CI policy
+        run: >
+          node --test
+          ./scripts/__tests__/classify-ci-changes.test.mjs
+          ./scripts/__tests__/ios-build-cache-contract.test.mjs
+
+      - name: Classify native iOS verification
+        id: native-changes
+        env:
+          BEEUI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BEEUI_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BEEUI_FORCE_NATIVE: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci:native')) }}
+        run: |
+          set -euo pipefail
+
+          # Pushes to main always retain the full native proof. A maintainer can
+          # also add the ci:native label to force the same proof on a PR; the
+          # labeled event starts a fresh run because pull_request includes it.
+          if [ "$BEEUI_FORCE_NATIVE" = "true" ]; then
+            printf '' | node ./scripts/classify-ci-changes.mjs
+            exit 0
+          fi
+
+          test -n "$BEEUI_BASE_SHA"
+          test -n "$BEEUI_HEAD_SHA"
+          git diff --name-only "$BEEUI_BASE_SHA" "$BEEUI_HEAD_SHA" \
+            | node ./scripts/classify-ci-changes.mjs
 
       - name: Enable pnpm via Corepack
         run: |
@@ -155,11 +191,15 @@ jobs:
 
   ios-native:
     needs: [verify, bare-native]
-    # Only run for pushes or same-repo PRs — the macOS runner is self-hosted,
-    # so fork PRs must not execute untrusted native build scripts on it.
+    # PRs skip this expensive macOS job only when every changed path is on the
+    # conservative native-safe list. Pushes to main and PRs labeled ci:native
+    # always run it. Fork PRs still cannot execute on the self-hosted Mac.
     if: >
-      github.event_name == 'push' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+      needs.verify.outputs.ios-native-required == 'true' &&
+      (
+        github.event_name == 'push' ||
+        github.event.pull_request.head.repo.full_name == github.repository
+      )
     runs-on: [self-hosted, beeui-macos]
     timeout-minutes: 90
     steps:
@@ -205,9 +245,14 @@ jobs:
             exit 1
           fi
 
+          cache_root="$HOME/Library/Caches/BeeUI"
+          mkdir -p "$cache_root"
           echo "DEVELOPER_DIR=$selected_developer_dir" >> "$GITHUB_ENV"
+          echo "BEEUI_XCODE_VERSION=$selected_version" >> "$GITHUB_ENV"
+          echo "BEEUI_IOS_CACHE_ROOT=$cache_root" >> "$GITHUB_ENV"
           export DEVELOPER_DIR="$selected_developer_dir"
           echo "Using Xcode $selected_version at $DEVELOPER_DIR"
+          echo "Using persistent iOS cache root $cache_root"
           /usr/bin/xcodebuild -version
           /usr/bin/xcrun --sdk iphonesimulator --show-sdk-version
           /usr/bin/xcrun swift --version
@@ -293,17 +338,28 @@ jobs:
           SCHEME: ${{ steps.xcode.outputs.scheme }}
         run: |
           set -euo pipefail
-          rm -rf "$RUNNER_TEMP/beeui-derived-data"
+          test -f Podfile.lock
+
+          safe_xcode_version="$(printf '%s' "$BEEUI_XCODE_VERSION" | tr -cs '[:alnum:].-' '_')"
+          pod_hash="$(shasum -a 256 Podfile.lock | awk '{ print $1 }')"
+          derived_data="$BEEUI_IOS_CACHE_ROOT/DerivedData/showcase/xcode-${safe_xcode_version}/pods-${pod_hash}"
+          mkdir -p "$derived_data"
+
           log="$RUNNER_TEMP/beeui-xcodebuild.log"
+          echo "Using persistent Showcase DerivedData: $derived_data"
           # 'generic/platform=iOS Simulator' builds without booting a specific
           # runtime — we only compile, never run, so no simulator is needed.
+          # Xcode 26 compilation caching is keyed by compiler inputs and
+          # complements incremental DerivedData reuse across PRs/branches.
           xcodebuild \
             -workspace "$WORKSPACE" \
             -scheme "$SCHEME" \
             -configuration Debug \
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath "$RUNNER_TEMP/beeui-derived-data" \
+            -derivedDataPath "$derived_data" \
+            -showBuildTimingSummary \
+            COMPILATION_CACHE_ENABLE_CACHING=YES \
             CODE_SIGNING_ALLOWED=NO \
             build 2>&1 | tee "$log"
 

@@ -52,6 +52,20 @@ CI is allowed to claim only what its Linux and macOS jobs actually prove.
 
 Linux owns the cross-platform, package, Metro, Expo generation, and Android native gates. The trusted macOS ARM64 runner owns native iOS compilation for both the Expo Showcase and a fresh true bare React Native consumer. These iOS gates are compile-only: `xcodebuild` targets `generic/platform=iOS Simulator` and does not boot or interact with a simulator.
 
+### Pull-request native iOS scheduling
+
+The expensive `ios-native` job is change-aware on pull requests. `scripts/classify-ci-changes.mjs` may skip the macOS job only when **every** changed path is on a conservative native-safe list, currently documentation/changelog files, isolated Showcase pattern sources/tests, the standalone visual-regression app, and registry/local-CLI-only files. Any package source, executable Showcase file, dependency/lock/workspace metadata, workflow file, native verification script, classifier change, or otherwise unknown path defaults to native verification.
+
+An empty or unclassifiable diff also fails safe by running native verification. A maintainer can add the `ci:native` label to force a fresh pull-request run with native iOS verification. Pushes to `main` always run the full `ios-native` gate regardless of changed paths, so merged main commits retain complete native compile proof.
+
+The native-safe list is an optimization contract, not an architectural claim that those paths can never affect native behavior. If an isolated pattern becomes part of the executable Showcase/native bundle, or another currently safe path begins participating in native build inputs, the classifier must be tightened in the same change.
+
+### macOS native build cache policy
+
+The self-hosted macOS runner also reuses performance-only native build caches. Showcase and bare-RN DerivedData live under `~/Library/Caches/BeeUI` and are separated by selected Xcode version plus the SHA-256 of the resulting `Podfile.lock`. Xcode 26 compilation caching is enabled explicitly, and `xcodebuild` emits `-showBuildTimingSummary` so warm-build effectiveness can be measured from CI logs.
+
+The true bare React Native consumer remains fresh: its working directory is deleted and recreated on every verification run, its BeeUI packages are repacked and reinstalled, and CocoaPods still runs against the newly generated project. Only reusable compiler output and Ruby gems are persisted outside `RUNNER_TEMP`; the Bundler cache is separated by Ruby version, CPU architecture, and React Native version. A persistent cache hit is therefore an optimization, not evidence substituted for the current build.
+
 ## Runtime and device gates
 
 The following remain release gates because compile-only CI cannot prove runtime interaction or representative device behavior:
