@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import type { Browser } from '@playwright/test';
 import {
   attachRuntimeErrors,
@@ -15,6 +14,15 @@ export const fullViewports = [
   { name: '768x1024', width: 768, height: 1024 },
   { name: '1280x800', width: 1280, height: 800 },
 ] as const;
+
+function screenshotFingerprint(bytes: Uint8Array) {
+  let hash = 2166136261;
+  for (const byte of bytes) {
+    hash ^= byte;
+    hash = Math.imul(hash, 16777619);
+  }
+  return `${bytes.length}:${(hash >>> 0).toString(16).padStart(8, '0')}`;
+}
 
 export async function runPatternFullMatrix(browser: Browser, baseUrl: string) {
   const themes = ['light', 'dark'] as const;
@@ -64,7 +72,7 @@ export async function runPatternFullMatrix(browser: Browser, baseUrl: string) {
 
           const screenshot = await page.screenshot({ type: 'jpeg', quality: 35, fullPage: false });
           if (screenshot.length < 3000) problems.push({ screen, problems: [`screenshot too small: ${screenshot.length}`] });
-          screenshotHashes.push(createHash('sha256').update(screenshot).digest('hex').slice(0, 16));
+          screenshotHashes.push(screenshotFingerprint(screenshot));
           rendered += 1;
 
           await page.getByRole('button', { name: 'Back to domain screen list' }).click();
