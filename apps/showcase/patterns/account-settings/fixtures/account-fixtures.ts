@@ -21,6 +21,12 @@ export const accountProfileFixture: AccountProfileFixture = {
   verified: true,
 };
 
+export const settingsSummaryFixture = {
+  appearance: 'system' as const,
+  notificationCount: 2,
+  notificationsEnabled: true,
+};
+
 export const profileStatsFixture = [
   { label: 'Projects', value: '12' },
   { label: 'Following', value: '248' },
