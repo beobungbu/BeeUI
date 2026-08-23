@@ -14,9 +14,19 @@ export type ProductDetailScreenProps = {
 };
 
 export function ProductDetailScreen({ onAddToCart, onFavorite, product = products[0]! }: ProductDetailScreenProps) {
-  const [variant, setVariant] = React.useState(product.variants[0] ?? 'Default');
+  const [variant, setVariant] = React.useState<string | undefined>(product.variants[0]);
+  const previousProductId = React.useRef(product.id);
 
-  React.useEffect(() => setVariant(product.variants[0] ?? 'Default'), [product]);
+  React.useEffect(() => {
+    const productChanged = previousProductId.current !== product.id;
+    previousProductId.current = product.id;
+
+    setVariant((currentVariant) => {
+      if (productChanged) return product.variants[0];
+      if (currentVariant !== undefined && product.variants.includes(currentVariant)) return currentVariant;
+      return product.variants[0];
+    });
+  }, [product.id, product.variants]);
 
   return (
     <PatternScreen description={product.subtitle} eyebrow={product.category} testID="product-detail-screen" title={product.name}>
@@ -30,9 +40,13 @@ export function ProductDetailScreen({ onAddToCart, onFavorite, product = product
         <Separator />
         <VStack gap="sm">
           <Text variant="label">Choose an option</Text>
-          <ChipGroup onValueChange={(value) => typeof value === 'string' && setVariant(value)} value={variant}>
-            {product.variants.map((item) => <Chip key={item} value={item}>{item}</Chip>)}
-          </ChipGroup>
+          {product.variants.length > 0 ? (
+            <ChipGroup onValueChange={(value) => typeof value === 'string' && setVariant(value)} value={variant}>
+              {product.variants.map((item) => <Chip key={item} value={item}>{item}</Chip>)}
+            </ChipGroup>
+          ) : (
+            <Text tone="muted" variant="caption">No options are currently available.</Text>
+          )}
         </VStack>
         <VStack gap="xs">
           <Text variant="heading">Why it works</Text>
@@ -51,7 +65,14 @@ export function ProductDetailScreen({ onAddToCart, onFavorite, product = product
         </Card>
         <HStack gap="sm" wrap>
           <Button className="flex-1" onPress={() => onFavorite?.(product)} testID="product-detail-favorite" variant="outline">♡ Save</Button>
-          <Button className="flex-[2]" onPress={() => onAddToCart?.(product, variant)} testID="product-detail-add">Add to cart · {variant}</Button>
+          <Button
+            className="flex-[2]"
+            disabled={variant === undefined}
+            onPress={() => variant !== undefined && onAddToCart?.(product, variant)}
+            testID="product-detail-add"
+          >
+            {variant === undefined ? 'Unavailable' : `Add to cart · ${variant}`}
+          </Button>
         </HStack>
       </VStack>
     </PatternScreen>
