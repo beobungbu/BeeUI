@@ -45,12 +45,20 @@ export default defineConfig({
     timezoneId: 'UTC',
     trace: 'retain-on-failure',
   },
-  webServer: {
-    command: 'pnpm serve:web',
-    url: 'http://127.0.0.1:4173',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  webServer: [
+    {
+      command: 'pnpm serve:web',
+      url: 'http://127.0.0.1:4173',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+    {
+      command: 'pnpm --filter @beeui/showcase exec expo export --platform web --output-dir dist-gallery-qa && node ./scripts/serve-showcase.mjs',
+      url: 'http://127.0.0.1:4174',
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+    },
+  ],
   projects: [
     ...canonicalProjects,
     {
