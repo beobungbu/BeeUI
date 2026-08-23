@@ -9,7 +9,7 @@ import {
   type ViewProps,
 } from 'react-native';
 import { Button, type ButtonProps } from './button';
-import { ModalOverlayHost } from './overlay-runtime';
+import { ModalOverlayHost, type ModalOverlayDismissScope } from './overlay-runtime';
 import { Text, type TextProps } from './text';
 
 type DialogContextValue = {
@@ -173,10 +173,25 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
     const { animationType = 'fade', presentationStyle = 'overFullScreen', ...restModalProps } =
       modalProps ?? {};
 
+    const modalDismissScopeRef = React.useRef<ModalOverlayDismissScope | null>(null);
+
     const requestClose = React.useCallback(() => {
       onRequestClose?.();
       if (dismissOnRequestClose) setOpen(false);
     }, [dismissOnRequestClose, onRequestClose, setOpen]);
+
+    // Android routes hardware back through `Modal.onRequestClose` while the modal
+    // is open (the root BackHandler is suppressed). Child-first: dismiss the
+    // modal's topmost anchored overlay (Popover / DropdownMenu declared inside)
+    // with reason "back" and consume the event; only close the Dialog when no
+    // modal-local anchored child remains. A root overlay behind the Dialog is not
+    // in this scope, so it never consumes the Dialog's back event. Backdrop press
+    // and accessibility escape keep their own paths (outside-press already
+    // dismisses a nested overlay child-first via its dismiss layer).
+    const handleModalRequestClose = React.useCallback(() => {
+      if (modalDismissScopeRef.current?.dismissTopmostChild('back')) return;
+      requestClose();
+    }, [requestClose]);
 
     const registerTitle = React.useCallback((nativeID?: string, text?: string) => {
       setTitleNativeID(nativeID);
@@ -199,12 +214,12 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
       <Modal
         {...restModalProps}
         animationType={animationType}
-        onRequestClose={requestClose}
+        onRequestClose={handleModalRequestClose}
         presentationStyle={presentationStyle}
         transparent
         visible={open}
       >
-        <ModalOverlayHost>
+        <ModalOverlayHost dismissScopeRef={modalDismissScopeRef}>
           <View
             className={cn(
               'flex-1 items-center justify-center px-4 py-8',

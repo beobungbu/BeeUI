@@ -1,4 +1,8 @@
 import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogTitle,
+  AlertDialogTrigger,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -14,7 +18,7 @@ import {
 } from '@beeui/ui';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
-import { Platform, Text, UIManager } from 'react-native';
+import { Modal, Platform, Text, UIManager } from 'react-native';
 import { OverlayRuntimeProvider } from '../../../packages/ui/src/components/overlay-runtime';
 import {
   createLegacyStoreTransport,
@@ -379,5 +383,202 @@ describe('legacy transport host lifecycle cleanup', () => {
     await waitFor(() =>
       expect(screen.queryByTestId('modal-portal', { includeHiddenElements: true })).toBeNull(),
     );
+  });
+});
+
+// Android `Modal` suppresses the root BackHandler while open, so hardware back
+// reaches BeeUI only through `Modal.onRequestClose`. These prove the modal-local
+// dismissal scope makes that path child-first without letting a root overlay
+// behind the Dialog consume the Dialog's back event. `onRequestClose` is fired
+// directly (it is the exact prop the OS invokes on hardware back).
+describe('modal request-close is child-first for anchored overlays (Android hardware back)', () => {
+  beforeEach(() => setTeleportAvailable(true));
+
+  const fireModalBack = async (screen: ReturnType<typeof render>, index = 0) => {
+    const modal = screen.UNSAFE_getAllByType(Modal)[index];
+    await act(async () => modal.props.onRequestClose?.());
+  };
+  const dialogVisible = (screen: ReturnType<typeof render>, index = 0) =>
+    screen.UNSAFE_getAllByType(Modal)[index].props.visible;
+
+  it('Dialog → DropdownMenu: back #1 closes the menu, back #2 closes the Dialog', async () => {
+    const screen = renderOverlay(
+      <Dialog defaultOpen>
+        <DialogTrigger testID="dialog-trigger">Open</DialogTrigger>
+        <DialogContent>
+          <DialogTitle testID="dialog-title">Dialog</DialogTitle>
+          <DropdownMenu defaultOpen>
+            <DropdownMenuTrigger testID="menu-trigger">Menu</DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem testID="menu-item">Select</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </DialogContent>
+      </Dialog>,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('menu-item', { includeHiddenElements: true })).toBeTruthy(),
+    );
+
+    // Back #1: only the menu closes; the Dialog stays open.
+    await fireModalBack(screen);
+    await waitFor(() =>
+      expect(screen.queryByTestId('menu-item', { includeHiddenElements: true })).toBeNull(),
+    );
+    expect(dialogVisible(screen)).toBe(true);
+
+    // Back #2: no modal-local child remains, so the Dialog closes.
+    await fireModalBack(screen);
+    await waitFor(() => expect(dialogVisible(screen)).toBe(false));
+  });
+
+  it('Dialog → Popover: back #1 closes the Popover, back #2 closes the Dialog', async () => {
+    const screen = renderOverlay(
+      <Dialog defaultOpen>
+        <DialogTrigger testID="dialog-trigger">Open</DialogTrigger>
+        <DialogContent>
+          <DialogTitle testID="dialog-title">Dialog</DialogTitle>
+          <Popover defaultOpen>
+            <PopoverTrigger testID="trigger">Open</PopoverTrigger>
+            <PopoverContent avoidSafeArea={false} testID="content">
+              <Text testID="popover-body">body</Text>
+            </PopoverContent>
+          </Popover>
+        </DialogContent>
+      </Dialog>,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('popover-body', { includeHiddenElements: true })).toBeTruthy(),
+    );
+
+    await fireModalBack(screen);
+    await waitFor(() =>
+      expect(screen.queryByTestId('popover-body', { includeHiddenElements: true })).toBeNull(),
+    );
+    expect(dialogVisible(screen)).toBe(true);
+
+    await fireModalBack(screen);
+    await waitFor(() => expect(dialogVisible(screen)).toBe(false));
+  });
+
+  it('does not dismiss a root Popover behind the Dialog; the Dialog closes instead', async () => {
+    const screen = renderOverlay(
+      <>
+        <Popover defaultOpen>
+          <PopoverTrigger testID="trigger">Open</PopoverTrigger>
+          <PopoverContent avoidSafeArea={false} testID="content">
+            <Text testID="root-popover-body">root</Text>
+          </PopoverContent>
+        </Popover>
+        <Dialog defaultOpen>
+          <DialogTrigger testID="dialog-trigger">Open</DialogTrigger>
+          <DialogContent>
+            <DialogTitle testID="dialog-title">Dialog</DialogTitle>
+          </DialogContent>
+        </Dialog>
+      </>,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('root-popover-body', { includeHiddenElements: true })).toBeTruthy(),
+    );
+
+    // The Dialog's modal scope has no child, so hardware back closes the Dialog —
+    // the root Popover behind it is a different scope and must not be consumed.
+    await fireModalBack(screen);
+    await waitFor(() => expect(dialogVisible(screen)).toBe(false));
+    expect(screen.getByTestId('root-popover-body', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('AlertDialog → DropdownMenu: the child closes first; the alert stays open', async () => {
+    const screen = renderOverlay(
+      <AlertDialog defaultOpen>
+        <AlertDialogTrigger testID="alert-trigger">Open</AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogTitle testID="alert-title">Alert</AlertDialogTitle>
+          <DropdownMenu defaultOpen>
+            <DropdownMenuTrigger testID="menu-trigger">Menu</DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem testID="menu-item">Select</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </AlertDialogContent>
+      </AlertDialog>,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('menu-item', { includeHiddenElements: true })).toBeTruthy(),
+    );
+
+    // Back #1: child-first — the menu closes, the AlertDialog stays open.
+    await fireModalBack(screen);
+    await waitFor(() =>
+      expect(screen.queryByTestId('menu-item', { includeHiddenElements: true })).toBeNull(),
+    );
+    expect(dialogVisible(screen)).toBe(true);
+
+    // Back #2 (no child): AlertDialog's request-close policy applies — the default
+    // cancelOnRequestClose closes it.
+    await fireModalBack(screen);
+    await waitFor(() => expect(dialogVisible(screen)).toBe(false));
+  });
+
+  it('AlertDialog cancelOnRequestClose={false}: back with no child keeps the alert open', async () => {
+    const onRequestClose = jest.fn();
+    const screen = renderOverlay(
+      <AlertDialog defaultOpen>
+        <AlertDialogTrigger testID="alert-trigger">Open</AlertDialogTrigger>
+        <AlertDialogContent cancelOnRequestClose={false} onRequestClose={onRequestClose}>
+          <AlertDialogTitle testID="alert-title">Alert</AlertDialogTitle>
+        </AlertDialogContent>
+      </AlertDialog>,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('alert-title', { includeHiddenElements: true })).toBeTruthy(),
+    );
+
+    // No modal-local child, so the request-close policy runs: it notifies but does
+    // not dismiss.
+    await fireModalBack(screen);
+    expect(onRequestClose).toHaveBeenCalledTimes(1);
+    expect(dialogVisible(screen)).toBe(true);
+  });
+
+  it('nested Dialog: only the active modal scope consumes its own onRequestClose', async () => {
+    const screen = renderOverlay(
+      <Dialog defaultOpen>
+        <DialogTrigger testID="outer-trigger">Open</DialogTrigger>
+        <DialogContent>
+          <DialogTitle testID="outer-title">Outer</DialogTitle>
+          <Dialog defaultOpen>
+            <DialogTrigger testID="inner-trigger">Open inner</DialogTrigger>
+            <DialogContent>
+              <DialogTitle testID="inner-title">Inner</DialogTitle>
+              <DropdownMenu defaultOpen>
+                <DropdownMenuTrigger testID="menu-trigger">Menu</DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem testID="menu-item">Select</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </DialogContent>
+          </Dialog>
+        </DialogContent>
+      </Dialog>,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('menu-item', { includeHiddenElements: true })).toBeTruthy(),
+    );
+
+    // The inner modal (index 1 in tree order) owns the menu in its own scope. Its
+    // back dismisses the menu and consumes the event; both Dialogs stay open.
+    await fireModalBack(screen, 1);
+    await waitFor(() =>
+      expect(screen.queryByTestId('menu-item', { includeHiddenElements: true })).toBeNull(),
+    );
+    expect(dialogVisible(screen, 0)).toBe(true);
+    expect(dialogVisible(screen, 1)).toBe(true);
+
+    // Next inner back (no child) closes the inner Dialog only; the outer stays.
+    await fireModalBack(screen, 1);
+    await waitFor(() => expect(dialogVisible(screen, 1)).toBe(false));
+    expect(dialogVisible(screen, 0)).toBe(true);
   });
 });

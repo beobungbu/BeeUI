@@ -330,26 +330,96 @@ export function useOverlayId(prefix = 'beeui-overlay') {
   return `${prefix}-${reactId}`;
 }
 
-export type ModalOverlayHostProps = { children?: React.ReactNode };
+/**
+ * Modal-local dismissal scope. Anchored overlays declared inside a modal-class
+ * surface register here (in addition to the global dismiss stack) so the modal
+ * boundary can dismiss its own topmost anchored child first on a request-close.
+ *
+ * This exists because Android `Modal` suppresses the root `BackHandler` while
+ * open, so hardware back reaches BeeUI only through `Modal.onRequestClose`. The
+ * boundary must dismiss the modal's topmost anchored child and consume the event
+ * without letting a root overlay *behind* the modal (which is not in this scope)
+ * consume the modal's back event.
+ */
+export type ModalOverlayDismissScope = {
+  register: (id: string, dismiss: OverlayDismissHandler) => void;
+  unregister: (id: string) => void;
+  /** Dismiss this scope's topmost anchored child; false if it has none. */
+  dismissTopmostChild: (reason: OverlayDismissReason) => boolean;
+  hasChild: () => boolean;
+};
+
+function createModalOverlayDismissScope(): ModalOverlayDismissScope {
+  // Ordered by open/registration order; the last entry is the topmost child.
+  const entries: Array<{ id: string; dismiss: OverlayDismissHandler }> = [];
+  return {
+    register(id, dismiss) {
+      const existing = entries.find((entry) => entry.id === id);
+      if (existing) existing.dismiss = dismiss;
+      else entries.push({ id, dismiss });
+    },
+    unregister(id) {
+      const index = entries.findIndex((entry) => entry.id === id);
+      if (index >= 0) entries.splice(index, 1);
+    },
+    dismissTopmostChild(reason) {
+      const top = entries.at(-1);
+      if (!top) return false;
+      top.dismiss(reason);
+      return true;
+    },
+    hasChild: () => entries.length > 0,
+  };
+}
+
+const ModalOverlayDismissScopeContext = React.createContext<ModalOverlayDismissScope | null>(null);
+
+export type ModalOverlayHostProps = {
+  children?: React.ReactNode;
+  /**
+   * Optional bridge so a modal boundary (e.g. `DialogContent`) can consult this
+   * scope from its `Modal.onRequestClose`, which runs *above* this provider. On
+   * Android the Modal suppresses the root back handler, so hardware back arrives
+   * only through `onRequestClose`; the boundary uses this to dismiss the modal's
+   * topmost anchored child first and consume the event.
+   */
+  dismissScopeRef?: React.MutableRefObject<ModalOverlayDismissScope | null>;
+};
 
 /**
  * Provisions a modal-local overlay host. React Native `Modal` renders in its own
  * native window; without a host inside it, anchored overlays declared in modal
  * content would target the root host and render behind the modal. Wrapping modal
  * content in this makes nested Popover / DropdownMenu / future anchored overlays
- * target a host in the same window. It no-ops outside `BeeUIProvider` (a modal
- * with no anchored overlays), so it is safe to always render around modal content.
+ * target a host in the same window, and scopes their hardware-back dismissal to
+ * the modal. It no-ops outside `BeeUIProvider` (a modal with no anchored
+ * overlays), so it is safe to always render around modal content.
  */
-export function ModalOverlayHost({ children }: ModalOverlayHostProps) {
+export function ModalOverlayHost({ children, dismissScopeRef }: ModalOverlayHostProps) {
   const transport = React.useContext(OverlayTransportContext);
   const hostName = useOverlayId('beeui-overlay-modal');
+  const scopeRef = React.useRef<ModalOverlayDismissScope | null>(null);
+  if (scopeRef.current === null) scopeRef.current = createModalOverlayDismissScope();
+  const scope = scopeRef.current;
+
+  // Bridge the scope to the modal boundary above this provider. Expose it only
+  // when a transport (BeeUIProvider) is present; otherwise the boundary falls
+  // back to closing directly.
+  React.useEffect(() => {
+    if (!dismissScopeRef) return undefined;
+    dismissScopeRef.current = transport ? scope : null;
+    return () => {
+      dismissScopeRef.current = null;
+    };
+  }, [dismissScopeRef, scope, transport]);
+
   if (!transport) return <>{children}</>;
   const { HostOutlet } = transport;
   return (
-    <>
+    <ModalOverlayDismissScopeContext.Provider value={scope}>
       <OverlayHostScopeProvider hostName={hostName}>{children}</OverlayHostScopeProvider>
       <HostOutlet name={hostName} style={styles.host} />
-    </>
+    </ModalOverlayDismissScopeContext.Provider>
   );
 }
 
@@ -366,14 +436,23 @@ export function useOverlayDismissable({
 }: UseOverlayDismissableOptions) {
   const { dismissIfTopmost, isTopmost, registerDismissable, unregisterDismissable } =
     useOverlayRuntime();
+  const modalScope = React.useContext(ModalOverlayDismissScopeContext);
   const onDismissRef = React.useRef(onDismiss);
   onDismissRef.current = onDismiss;
 
   React.useEffect(() => {
     if (!open) return undefined;
-    registerDismissable(overlayId, (reason) => onDismissRef.current(reason));
-    return () => unregisterDismissable(overlayId);
-  }, [open, overlayId, registerDismissable, unregisterDismissable]);
+    const handler: OverlayDismissHandler = (reason) => onDismissRef.current(reason);
+    registerDismissable(overlayId, handler);
+    // Also register with the nearest modal scope (if declared inside a modal), so
+    // the modal's request-close can dismiss this child first on Android hardware
+    // back. A root overlay outside any modal sees no scope and is unaffected.
+    modalScope?.register(overlayId, handler);
+    return () => {
+      unregisterDismissable(overlayId);
+      modalScope?.unregister(overlayId);
+    };
+  }, [modalScope, open, overlayId, registerDismissable, unregisterDismissable]);
 
   return React.useMemo(
     () => ({
