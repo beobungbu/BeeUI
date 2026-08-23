@@ -49,7 +49,6 @@ export function VerifyCodeScreen({
         <VStack gap="lg">
           <Field
             description="Codes expire for your security."
-            error={error}
             invalid={Boolean(error)}
             label="Verification code"
             required
