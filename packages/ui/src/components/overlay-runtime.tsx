@@ -29,25 +29,28 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Portal, PortalHost, PortalProvider } from 'react-native-teleport';
-import { resolveOverlayHostMode } from './overlay-host-mode';
 import { subscribeOverlayPlatformDismiss } from './overlay-dismiss-events';
-
-/** Name of the teleport destination that hosts anchored overlay content. */
-const OVERLAY_PORTAL_HOST = 'beeui-overlay';
+import {
+  OverlayHostScopeProvider,
+  ROOT_OVERLAY_HOST,
+  resolveOverlayTransport,
+  useNearestOverlayHost,
+  type OverlayTransport,
+} from './overlay-transport';
 
 /**
- * Backend for rendering portalled overlay content. Stable for the runtime, so it
- * is resolved once: `teleport` keeps content in the source fiber tree (native +
- * New Architecture), `legacy` stores the node and re-renders it at the host (web,
- * or native without Fabric).
+ * Exposes the active portal transport (web `createPortal`, native teleport, or the
+ * defensive legacy store host) to `OverlayPortal` and to modal-scoped hosts.
  */
-const overlayHostMode = resolveOverlayHostMode();
+const OverlayTransportContext = React.createContext<OverlayTransport | null>(null);
 
-type OverlayPortalEntry = {
-  id: string;
-  node: React.ReactNode;
-};
+function useOverlayTransport(): OverlayTransport {
+  const transport = React.useContext(OverlayTransportContext);
+  if (!transport) {
+    throw new Error('BeeUI anchored overlays require BeeUIProvider at the application root.');
+  }
+  return transport;
+}
 
 export type OverlayMeasurableNode = {
   measureInWindow?: (
@@ -61,13 +64,10 @@ type OverlayRuntimeContextValue = {
   hostRect: AnchoredOverlayRect | null;
   isTopmost: (id: string) => boolean;
   keyboardRect: AnchoredOverlayRect | null;
-  mountPortal: (id: string, node: React.ReactNode) => void;
   registerDismissable: (id: string, handler: OverlayDismissHandler) => void;
   remeasureHost: () => void;
   safeAreaInsets: { top: number; right: number; bottom: number; left: number };
-  unmountPortal: (id: string) => void;
   unregisterDismissable: (id: string) => void;
-  updatePortal: (id: string, node: React.ReactNode) => void;
   windowRect: AnchoredOverlayRect;
 };
 
@@ -155,13 +155,18 @@ export type OverlayRuntimeProviderProps = {
   children?: React.ReactNode;
   /** Internal deterministic measurement seam used by contract tests. */
   hostRectOverride?: AnchoredOverlayRect;
+  /** Internal deterministic transport seam used by contract tests. */
+  transport?: OverlayTransport;
 };
 
 function OverlayRuntimeProviderRoot({
   children,
   hostRectOverride,
+  transport: transportOverride,
 }: OverlayRuntimeProviderProps) {
-  const [entries, setEntries] = React.useState<OverlayPortalEntry[]>([]);
+  // Resolve the portal transport once per runtime (stable, not a module-level
+  // constant); tests inject a deterministic transport through the seam.
+  const transport = React.useRef(transportOverride ?? resolveOverlayTransport()).current;
   const [hostRect, setHostRect] = React.useState<AnchoredOverlayRect | null>(null);
   const hostRef = React.useRef<React.ComponentRef<typeof View>>(null);
   const dismissStackRef = React.useRef(createOverlayDismissStack());
@@ -182,28 +187,6 @@ function OverlayRuntimeProviderRoot({
     ],
   );
   const resolvedHostRect = overriddenHostRect ?? hostRect;
-
-  const mountPortal = React.useCallback((id: string, node: React.ReactNode) => {
-    setEntries((current) => {
-      const index = current.findIndex((entry) => entry.id === id);
-      if (index < 0) return [...current, { id, node }];
-      if (current[index]?.node === node) return current;
-      return current.map((entry) => (entry.id === id ? { id, node } : entry));
-    });
-  }, []);
-
-  const updatePortal = React.useCallback((id: string, node: React.ReactNode) => {
-    setEntries((current) => {
-      const index = current.findIndex((entry) => entry.id === id);
-      if (index < 0) return [...current, { id, node }];
-      if (current[index]?.node === node) return current;
-      return current.map((entry) => (entry.id === id ? { id, node } : entry));
-    });
-  }, []);
-
-  const unmountPortal = React.useCallback((id: string) => {
-    setEntries((current) => current.filter((entry) => entry.id !== id));
-  }, []);
 
   const registerDismissable = React.useCallback((id: string, handler: OverlayDismissHandler) => {
     dismissStackRef.current.register(id, handler);
@@ -252,13 +235,10 @@ function OverlayRuntimeProviderRoot({
       hostRect: resolvedHostRect,
       isTopmost,
       keyboardRect,
-      mountPortal,
       registerDismissable,
       remeasureHost,
       safeAreaInsets,
-      unmountPortal,
       unregisterDismissable,
-      updatePortal,
       windowRect,
     }),
     [
@@ -266,60 +246,49 @@ function OverlayRuntimeProviderRoot({
       dismissTop,
       isTopmost,
       keyboardRect,
-      mountPortal,
       registerDismissable,
       remeasureHost,
       resolvedHostRect,
       safeAreaInsets,
-      unmountPortal,
       unregisterDismissable,
-      updatePortal,
       windowRect,
     ],
   );
 
-  const runtimeTree = (
-    <OverlayRuntimeContext.Provider value={context}>
-      {children}
-      {/* Always rendered: measures the window-origin host rect that anchors
-          geometry. In legacy mode it also hosts the portalled content; in
-          teleport mode it stays empty and content lands in the PortalHost. */}
-      <View
-        ref={hostRef}
-        accessible={false}
-        collapsable={false}
-        onLayout={handleHostLayout}
-        pointerEvents="box-none"
-        style={[StyleSheet.absoluteFill, styles.host]}
-        testID="beeui-overlay-host"
-      >
-        {overlayHostMode === 'legacy'
-          ? entries.map((entry) => (
-              <React.Fragment key={entry.id}>{entry.node}</React.Fragment>
-            ))
-          : null}
-      </View>
-      {overlayHostMode === 'teleport' ? (
-        <PortalHost name={OVERLAY_PORTAL_HOST} style={StyleSheet.absoluteFill} />
-      ) : null}
-    </OverlayRuntimeContext.Provider>
-  );
+  const { RootBoundary, HostOutlet } = transport;
 
-  return overlayHostMode === 'teleport' ? (
-    <PortalProvider>{runtimeTree}</PortalProvider>
-  ) : (
-    runtimeTree
+  return (
+    <OverlayTransportContext.Provider value={transport}>
+      <RootBoundary>
+        <OverlayRuntimeContext.Provider value={context}>
+          <OverlayHostScopeProvider hostName={ROOT_OVERLAY_HOST}>{children}</OverlayHostScopeProvider>
+          {/* Measurement host: provides the window-origin rect that anchors
+              geometry. Overlay content itself lands in the transport HostOutlet. */}
+          <View
+            ref={hostRef}
+            accessible={false}
+            collapsable={false}
+            onLayout={handleHostLayout}
+            pointerEvents="box-none"
+            style={[StyleSheet.absoluteFill, styles.host]}
+            testID="beeui-overlay-host"
+          />
+          <HostOutlet name={ROOT_OVERLAY_HOST} style={styles.host} />
+        </OverlayRuntimeContext.Provider>
+      </RootBoundary>
+    </OverlayTransportContext.Provider>
   );
 }
 
 export function OverlayRuntimeProvider({
   children,
   hostRectOverride,
+  transport,
 }: OverlayRuntimeProviderProps) {
   const parent = React.useContext(OverlayRuntimeContext);
   if (parent) return <>{children}</>;
   return (
-    <OverlayRuntimeProviderRoot hostRectOverride={hostRectOverride}>
+    <OverlayRuntimeProviderRoot hostRectOverride={hostRectOverride} transport={transport}>
       {children}
     </OverlayRuntimeProviderRoot>
   );
@@ -338,36 +307,14 @@ export type OverlayPortalProps = {
   overlayId: string;
 };
 
-export function OverlayPortal(props: OverlayPortalProps) {
-  // `overlayHostMode` is constant for the runtime, so the branch is stable and
-  // does not violate the rules of hooks across renders.
-  return overlayHostMode === 'teleport' ? (
-    <TeleportOverlayPortal {...props} />
-  ) : (
-    <LegacyOverlayPortal {...props} />
-  );
-}
-
-function TeleportOverlayPortal({ children }: OverlayPortalProps) {
-  useOverlayRuntime(); // require BeeUIProvider, matching the legacy guard
-  // Rendered inline under the caller's context; teleport moves the native views
-  // to the root PortalHost while keeping them in the source fiber tree.
-  return <Portal hostName={OVERLAY_PORTAL_HOST}>{children}</Portal>;
-}
-
-function LegacyOverlayPortal({ children, overlayId }: OverlayPortalProps) {
-  const { mountPortal, unmountPortal, updatePortal } = useOverlayRuntime();
-
-  React.useLayoutEffect(() => {
-    mountPortal(overlayId, children);
-    return () => unmountPortal(overlayId);
-  }, [mountPortal, overlayId, unmountPortal]);
-
-  React.useLayoutEffect(() => {
-    updatePortal(overlayId, children);
-  }, [children, overlayId, updatePortal]);
-
-  return null;
+export function OverlayPortal({ children }: OverlayPortalProps) {
+  useOverlayRuntime(); // require BeeUIProvider
+  const transport = useOverlayTransport();
+  // Target the nearest host scope: the root host, or a modal-class surface's own
+  // local host when the overlay is declared inside one.
+  const hostName = useNearestOverlayHost();
+  const { PortalOutlet } = transport;
+  return <PortalOutlet hostName={hostName}>{children}</PortalOutlet>;
 }
 
 export function useOverlayId(prefix = 'beeui-overlay') {
