@@ -39,8 +39,11 @@ jobs:
           # Validation Error") when it does not exist.
           package-manager-cache: false
 
-      - name: Test native iOS change classifier
-        run: node --test ./scripts/__tests__/classify-ci-changes.test.mjs
+      - name: Test native iOS CI policy
+        run: >
+          node --test
+          ./scripts/__tests__/classify-ci-changes.test.mjs
+          ./scripts/__tests__/ios-build-cache-contract.test.mjs
 
       - name: Classify native iOS verification
         id: native-changes
@@ -242,9 +245,14 @@ jobs:
             exit 1
           fi
 
+          cache_root="$HOME/Library/Caches/BeeUI"
+          mkdir -p "$cache_root"
           echo "DEVELOPER_DIR=$selected_developer_dir" >> "$GITHUB_ENV"
+          echo "BEEUI_XCODE_VERSION=$selected_version" >> "$GITHUB_ENV"
+          echo "BEEUI_IOS_CACHE_ROOT=$cache_root" >> "$GITHUB_ENV"
           export DEVELOPER_DIR="$selected_developer_dir"
           echo "Using Xcode $selected_version at $DEVELOPER_DIR"
+          echo "Using persistent iOS cache root $cache_root"
           /usr/bin/xcodebuild -version
           /usr/bin/xcrun --sdk iphonesimulator --show-sdk-version
           /usr/bin/xcrun swift --version
@@ -330,17 +338,28 @@ jobs:
           SCHEME: ${{ steps.xcode.outputs.scheme }}
         run: |
           set -euo pipefail
-          rm -rf "$RUNNER_TEMP/beeui-derived-data"
+          test -f Podfile.lock
+
+          safe_xcode_version="$(printf '%s' "$BEEUI_XCODE_VERSION" | tr -cs '[:alnum:].-' '_')"
+          pod_hash="$(shasum -a 256 Podfile.lock | awk '{ print $1 }')"
+          derived_data="$BEEUI_IOS_CACHE_ROOT/DerivedData/showcase/xcode-${safe_xcode_version}/pods-${pod_hash}"
+          mkdir -p "$derived_data"
+
           log="$RUNNER_TEMP/beeui-xcodebuild.log"
+          echo "Using persistent Showcase DerivedData: $derived_data"
           # 'generic/platform=iOS Simulator' builds without booting a specific
           # runtime — we only compile, never run, so no simulator is needed.
+          # Xcode 26 compilation caching is keyed by compiler inputs and
+          # complements incremental DerivedData reuse across PRs/branches.
           xcodebuild \
             -workspace "$WORKSPACE" \
             -scheme "$SCHEME" \
             -configuration Debug \
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath "$RUNNER_TEMP/beeui-derived-data" \
+            -derivedDataPath "$derived_data" \
+            -showBuildTimingSummary \
+            COMPILATION_CACHE_ENABLE_CACHING=YES \
             CODE_SIGNING_ALLOWED=NO \
             build 2>&1 | tee "$log"
 
