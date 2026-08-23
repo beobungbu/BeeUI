@@ -15,7 +15,7 @@ const canonicalProjects = viewportNames.flatMap((viewportName) =>
       visualTheme: theme,
       visualViewport: viewportName,
     } satisfies VisualProjectMetadata,
-    testIgnore: /showcase\.spec\.ts/,
+    testIgnore: /(showcase|overlay-context)\.spec\.ts/,
     use: {
       colorScheme: theme,
       deviceScaleFactor: 1,
@@ -63,7 +63,7 @@ export default defineConfig({
     ...canonicalProjects,
     {
       name: 'showcase-integration',
-      testMatch: /showcase\.spec\.ts/,
+      testMatch: /(showcase|overlay-context)\.spec\.ts/,
       use: {
         colorScheme: 'light' as const,
         deviceScaleFactor: 1,

@@ -147,6 +147,57 @@ function PlacementPopover({ placement }: { placement: 'top' | 'right' | 'bottom'
   );
 }
 
+// Consumer React context declared below BeeUIProvider. Overlay content must
+// resolve the provided value, not the default — the web regression asserts this.
+const OverlayConsumerContext = React.createContext('overlay-context-default');
+
+function OverlayContextValue({ testID }: { testID: string }) {
+  return <Text testID={testID}>{`context: ${React.useContext(OverlayConsumerContext)}`}</Text>;
+}
+
+function ConsumerContextOverlays() {
+  return (
+    <OverlayConsumerContext.Provider value="preserved">
+      <VStack gap="sm">
+        <Popover>
+          <PopoverTrigger testID="overlay-context-popover-trigger" variant="outline">
+            Popover context
+          </PopoverTrigger>
+          <PopoverContent placement="bottom">
+            <PopoverTitle>Popover consumer context</PopoverTitle>
+            <OverlayContextValue testID="overlay-context-popover-value" />
+          </PopoverContent>
+        </Popover>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger testID="overlay-context-menu-trigger" variant="outline">
+            Menu context
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuLabel>Menu consumer context</DropdownMenuLabel>
+            <OverlayContextValue testID="overlay-context-menu-value" />
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Dialog>
+          <DialogTrigger testID="overlay-context-dialog-trigger">Dialog context</DialogTrigger>
+          <DialogContent>
+            <DialogTitle>Dialog with a nested overlay</DialogTitle>
+            <Popover>
+              <PopoverTrigger testID="overlay-context-dialog-popover-trigger" variant="outline">
+                Popover in dialog
+              </PopoverTrigger>
+              <PopoverContent placement="bottom">
+                <OverlayContextValue testID="overlay-context-dialog-popover-value" />
+              </PopoverContent>
+            </Popover>
+          </DialogContent>
+        </Dialog>
+      </VStack>
+    </OverlayConsumerContext.Provider>
+  );
+}
+
 function ToastPlayground() {
   const toast = useToast();
   const [lastAction, setLastAction] = React.useState('No Toast action yet');
@@ -542,6 +593,15 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
                     </PopoverContent>
                   </Popover>
                 </Box>
+              </Section>
+
+              <Separator />
+
+              <Section
+                description="Consumer React context declared below BeeUIProvider resolves inside overlay content on web, native, and inside a Dialog."
+                title="Consumer context"
+              >
+                <ConsumerContextOverlays />
               </Section>
             </Card>
 

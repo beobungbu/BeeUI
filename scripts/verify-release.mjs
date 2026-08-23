@@ -170,12 +170,24 @@ try {
     react: '>=19.0.0',
     'react-native': '>=0.85.0',
     'react-native-safe-area-context': '>=5 <6',
+    'react-native-teleport': '>=1.1 <2',
     tailwindcss: '>=4 <5',
     uniwind: '>=1.10.1 <2',
   };
   for (const [peer, range] of Object.entries(expectedUiPeers)) {
     assert(uiManifest.peerDependencies?.[peer] === range, `@beeui/ui peer range is explicit for ${peer}`, range);
   }
+  // react-dom is only required for the web (createPortal) overlay transport, so it
+  // is an optional peer — assert the contract stays that way.
+  assert(
+    uiManifest.peerDependencies?.['react-dom'] === '>=19.0.0',
+    '@beeui/ui declares the react-dom (web) peer range',
+    uiManifest.peerDependencies?.['react-dom'],
+  );
+  assert(
+    uiManifest.peerDependenciesMeta?.['react-dom']?.optional === true,
+    '@beeui/ui marks react-dom as an optional (web-only) peer',
+  );
 
   const forbiddenExpoImport = /(?:from\s+|require\s*\(\s*|import\s*\(\s*|import\s+)['"]expo(?:\/[^'"]*)?['"]/;
   for (const packageDir of ['packages/core/src', 'packages/ui/src']) {
