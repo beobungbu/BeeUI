@@ -34,8 +34,15 @@ function ConsumerUsingScreenLocalContext() {
   return <Text testID="consumer-context-value">{value}</Text>;
 }
 
-describe('BeeUI issue #35 anchored-overlay consumer context contract', () => {
-  it('documents that the root portal does not preserve consumer context scoped below the host', async () => {
+// The teleport host preserves consumer context and is verified on a real device
+// (see plans/.../reports/feat-impl-device-context-preserved.png). It cannot be
+// exercised faithfully here: jest is a JS-only runtime where teleport's native
+// PortalHostView is unregistered, so the runtime selects the legacy store host.
+// This test therefore pins the legacy host's behavior — the web and
+// New-Architecture-off backend — which renders overlay content under the
+// provider-owned host and does not preserve context scoped below it.
+describe('BeeUI anchored-overlay legacy host consumer context contract', () => {
+  it('legacy store host does not preserve consumer context scoped below the host', async () => {
     const screen = render(
       <OverlayRuntimeProvider hostRectOverride={HOST_RECT}>
         <ScreenLocalContext.Provider value="screen-value">
