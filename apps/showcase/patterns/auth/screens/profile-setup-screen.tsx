@@ -157,12 +157,12 @@ export function ProfileSetupScreen({
 
       <VStack align="center" gap="sm">
         {onBack ? (
-          <Link disabled={blocked} onPress={onBack}>
+          <Link className="self-center" disabled={blocked} onPress={onBack}>
             Back
           </Link>
         ) : null}
         {onSkip ? (
-          <Link disabled={blocked} onPress={onSkip}>
+          <Link className="self-center" disabled={blocked} onPress={onSkip}>
             Skip for now
           </Link>
         ) : null}
