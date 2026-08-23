@@ -48,15 +48,25 @@ Owns reusable React Native components. Components preserve native props, add typ
 
 ### `apps/showcase`
 
-A proving ground and product-quality integration surface, not a dependency of the UI library. It validates composition, theme switching, production patterns, controlled-state examples, responsive behavior, and real application stress cases.
+A proving ground and product-quality integration surface, not a dependency of the UI library. The executable root uses local React state and exposes two mutually exclusive inspection surfaces without a router:
 
-Four production pattern packs are currently merged under `apps/showcase/patterns/**`, containing 37 screens across Authentication/Onboarding, Dashboard/Finance, Commerce/Social, and Account/Settings.
+- **Components** mounts the preserved interactive component playground for foundation, form, feedback, overlay, selection, navigation, disclosure, data, and application-composition contracts;
+- **Patterns** mounts the production Pattern Gallery over four domains and 37 screens.
 
-The next Showcase integration step is a canonical Pattern Gallery over those 37 screens. It should remain application/demo infrastructure rather than becoming public BeeUI component architecture.
+The Pattern Gallery uses a declarative Showcase-local catalog plus local controlled demo adapters. It supports narrow mobile drill-down, wide master/detail browsing, representative state inspection, light/dark, a 960px desktop breakpoint, and a constrained 760px preview canvas without mounting all 37 screen trees simultaneously.
+
+Four production pattern packs live under `apps/showcase/patterns/**`: Authentication/Onboarding, Dashboard/Finance, Commerce/Social, and Account/Settings. Because the executable Showcase now reaches those implementations through the Pattern Gallery, production pattern implementation files are native Showcase inputs rather than CI-safe documentation/demo-only files. Pattern-specific test files remain outside the native bundle.
+
+Showcase navigation/adapters remain application/demo infrastructure rather than public BeeUI component architecture.
 
 ### `apps/visual-regression`
 
-Owns the deterministic Chromium pixel-comparison fixture. It intentionally samples representative public component states rather than mirroring the entire interactive Showcase.
+Owns both browser evidence layers:
+
+1. the deterministic Chromium pixel-comparison fixture with 28 committed canonical component screenshots;
+2. durable Playwright integration QA against an exported **real Showcase** for Components/Patterns navigation, representative Gallery scenarios, responsive layout/runtime checks, and the full no-baseline Gallery acceptance matrix.
+
+The Gallery layer uses structural assertions and in-memory screenshots. It does not create a 37 × viewport × theme baseline set, and Showcase does not pretend to own Playwright.
 
 ### `registry/` + repository-local CLI
 
@@ -246,7 +256,7 @@ Public npm package distribution is a separate roadmap item.
 
 ## Pattern architecture
 
-Production screens under `apps/showcase/patterns/**` are product-driven stress tests and examples, not part of the `@beeui/ui` package surface.
+Production screens under `apps/showcase/patterns/**` are product-driven stress tests and examples, not part of the `@beeui/ui` package surface. They are, however, executable inputs of `apps/showcase` because `ShowcaseRoot -> PatternGallery -> pattern catalog -> pattern packs` reaches them on Web, Android, and iOS.
 
 Patterns:
 
@@ -255,6 +265,8 @@ Patterns:
 - remain router/backend/SDK neutral where practical;
 - should not promote one-off domain components into the foundation;
 - provide evidence for reusable gaps.
+
+Pattern implementation changes are therefore native-sensitive for PR scheduling. Test-only paths such as `apps/showcase/__tests__/patterns/**` do not enter the native bundle and may remain native-safe.
 
 The Rule of Two and `gap:` issue policy are defined in `docs/roadmap.md`.
 
@@ -273,7 +285,8 @@ BeeUI intentionally separates evidence classes:
 - Expo Prebuild;
 - fresh bare React Native package install and Metro bundles;
 - bare Android native compilation;
-- deterministic Chromium visual regression.
+- deterministic Chromium component pixel regression;
+- durable Chromium integration QA against the exported real Showcase, including Components/Patterns navigation, representative Gallery scenarios, layout/runtime checks, and full 370-render acceptance when enabled by CI or the explicit full-mode flag.
 
 ### Automated native iOS compile evidence
 
@@ -282,17 +295,17 @@ The trusted macOS ARM64 `ios-native` gate compiles:
 - the Expo Showcase generated iOS workspace;
 - a fresh true bare React Native consumer.
 
-Pull requests use a conservative path-aware classifier; pushes to `main` always run the full native iOS gate. Persistent caches are performance optimizations only.
+Pull requests use a conservative path-aware classifier; production pattern implementations are now native-sensitive because they are executable Showcase dependencies. Pushes to `main` always run the full native iOS gate. Persistent caches are performance optimizations only.
 
 ### Runtime/device evidence
 
-Compilation does not prove:
+Compilation and browser integration QA do not prove:
 
-- non-zero safe-area behavior;
-- keyboard/focus interaction;
+- non-zero native safe-area behavior;
+- native keyboard/focus interaction;
 - VoiceOver/TalkBack;
 - Android hardware-back behavior;
-- runtime navigation/accessibility flows;
+- native runtime navigation/accessibility flows;
 - representative native visuals.
 
 These remain release gates until the roadmap's protected simulator/device runtime tier is implemented.
@@ -301,14 +314,14 @@ These remain release gates until the roadmap's protected simulator/device runtim
 
 `@beeui/core`, `@beeui/tokens`, `@beeui/ui`, and the workspace root use one lockstep version. `0.x` may evolve documented APIs; intentional breaking changes require changelog and migration notes.
 
-The old “25–30 primitives + a future CLI” threshold is obsolete: BeeUI already has broader component coverage, Toast, visual regression, a phase-1 CLI, and 37 production pattern screens.
+The old “25–30 primitives + a future CLI” threshold is obsolete: BeeUI already has broader component coverage, Toast, visual regression, a phase-1 CLI, a 37-screen Pattern Gallery, and the preserved component inspection surface.
 
 The current BeeUI 1.0 exit criteria are defined canonically in `docs/roadmap.md` and include, among other things:
 
 - stable expanded theming/token contracts;
 - context-preserving anchored-overlay strategy or an explicitly reviewed replacement of the current arbitrary-consumer-context limitation;
 - production-ready Select/Tooltip and Sheet if first-class modern mobile coverage is claimed;
-- integrated Pattern Gallery and representative pattern regression coverage;
+- retention of the integrated Pattern Gallery and representative pattern regression coverage;
 - protected runtime simulator/device verification;
 - accessibility/RTL/large-text coverage;
 - compatibility matrix;

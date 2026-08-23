@@ -120,15 +120,16 @@ React Native exposes semantic roles such as `radiogroup`, but does not expose a 
 
 ## Current roadmap ordering
 
-The component inventory is no longer the main production-readiness bottleneck. BeeUI already has broad foundation coverage plus 37 production pattern screens.
+The component inventory is no longer the main production-readiness bottleneck. BeeUI already has broad foundation coverage plus an executable Showcase with the preserved Component Gallery and all 37 production pattern screens integrated into the Pattern Gallery.
 
-The next major work is ordered by `docs/roadmap.md`:
+Wave 0 is implemented. The next major work is ordered by `docs/roadmap.md`:
 
-1. integrate the 37-screen Pattern Gallery and use product evidence to find real gaps;
-2. investigate/prove a context-preserving anchored-overlay transport before adding more major anchored components;
-3. implement `Select` and `Tooltip` with their own semantics on the accepted geometry/runtime contracts;
-4. implement `Sheet` as a separate gesture/keyboard/safe-area behavior class if BeeUI claims first-class modern mobile coverage;
-5. add `Slider` and later high-value components only when cross-domain evidence supports them.
+1. investigate/prove a context-preserving anchored-overlay transport before adding more major anchored components;
+2. establish protected iOS/Android runtime interaction smoke beyond the existing compile gates;
+3. deepen the semantic theme/token system;
+4. implement `Select` and `Tooltip` with their own semantics on the accepted geometry/runtime contracts;
+5. implement `Sheet` as a separate gesture/keyboard/safe-area behavior class if BeeUI claims first-class modern mobile coverage;
+6. add `Slider` and later high-value components only when cross-domain evidence supports them.
 
 Additional form-group integrations should be added only where React Native exposes an unambiguous group semantic. `VisuallyHidden` remains restricted to non-interactive assistive content.
 
@@ -154,6 +155,6 @@ Animation/swipe/custom-content additions remain future work and must preserve th
 
 ## Pattern-driven promotion
 
-Production patterns under `apps/showcase/patterns/**` are evidence sources, not automatic component requests.
+Production patterns under `apps/showcase/patterns/**` are executable Showcase evidence sources, not automatic component requests.
 
 Use the Rule of Two from `docs/roadmap.md`: compose existing primitives first, keep domain-specific composition local, and promote a public primitive only after repeated or behaviorally complex evidence justifies a stable contract.

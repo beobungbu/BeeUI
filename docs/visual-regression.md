@@ -1,10 +1,15 @@
 # Visual regression
 
-BeeUI visual regression is a release-safety layer for rendered component pixels. Phase 1 is intentionally limited to deterministic web screenshots in Chromium. Behavioral, accessibility, contract, native compile, and release-package verification remain separate gates.
+BeeUI browser verification has two deliberately different layers inside `apps/visual-regression`:
 
-## Phase 1 scope
+1. deterministic component pixel regression in Chromium;
+2. durable integration/layout/runtime QA against the exported real Showcase.
 
-The visual fixture lives in `apps/visual-regression` instead of the interactive Showcase. It imports BeeUI only through the public `@beeui/ui` and `@beeui/tokens` package surfaces.
+Behavioral, accessibility, contract, native compile, and release-package verification remain separate gates.
+
+## Phase 1 component pixel scope
+
+The deterministic visual fixture lives in `apps/visual-regression` instead of the interactive Showcase. It imports BeeUI only through the public `@beeui/ui` and `@beeui/tokens` package surfaces.
 
 Phase 1 covers representative states rather than every public component:
 
@@ -16,7 +21,7 @@ Phase 1 covers representative states rather than every public component:
 - `popover-open`: an open Popover with a fixed centered anchor
 - `dropdown-menu-open`: an open DropdownMenu with a fixed centered anchor
 
-Every scenario runs in this deliberately small matrix:
+Every canonical scenario runs in this deliberately small matrix:
 
 | Viewport | Pixels | Themes |
 | --- | --- | --- |
@@ -24,6 +29,51 @@ Every scenario runs in this deliberately small matrix:
 | desktop | 1280 × 800 | light, dark |
 
 That yields 28 canonical screenshots.
+
+## Showcase integration QA
+
+The same package owns Playwright integration QA for the executable `apps/showcase` application because this package, not Showcase, owns `@playwright/test` and browser provisioning.
+
+The integration harness:
+
+1. exports the **real Showcase Web app**;
+2. serves that export from a temporary local server;
+3. opens the Showcase root and navigates through **Components** and **Patterns**;
+4. records `pageerror` and `console.error`;
+5. validates Component Gallery preservation and representative interactions;
+6. validates representative Pattern Gallery screens/states on mobile/desktop in light/dark;
+7. inspects top and bottom scroll positions, page-level horizontal overflow, uncontrolled offscreen content, empty preview output, and desktop preview-canvas boundaries;
+8. keeps Gallery screenshots in memory for smoke/uniqueness checks rather than committing a 37 × viewport × theme baseline set.
+
+The durable representative Pattern Gallery matrix uses nine high-value scenarios:
+
+- Sign In — server error;
+- Profile Setup;
+- Dashboard Overview;
+- Transactions — error;
+- Product Detail;
+- Cart;
+- Checkout — problem;
+- Notification Settings — master off;
+- Change Password — invalid.
+
+Those run at 390×844 light/dark, 1280×800 light/dark, plus a 360×800 narrow/mobile stress group.
+
+Component Gallery integration QA runs at 390×844 light/dark and 1280×800 light/dark and confirms that the preserved playground still exposes its prior example groups, accepts form interaction, opens representative Dialog/Popover/DropdownMenu surfaces, emits Toast feedback, avoids horizontal page overflow, and returns to the Showcase section chooser.
+
+The full Pattern Gallery acceptance matrix uses:
+
+- 360×800;
+- 390×844;
+- 430×932;
+- 768×1024;
+- 1280×800;
+- light + dark;
+- all 37 production screens.
+
+That is 10 groups and 370 live screen renders. It is enabled explicitly with `BEEUI_FULL_PATTERN_GALLERY_QA=1`; current CI also runs it so final-head integration evidence is continuously protected while its measured runtime remains acceptable. If the permanent CI cost later becomes unreasonable, the representative matrix must remain in normal CI and the full mode may move to an explicit/manual acceptance invocation without branch-name coupling.
+
+No Gallery PNG baselines are committed.
 
 ## Why Chromium first
 
@@ -33,7 +83,7 @@ Firefox, WebKit, iOS Simulator screenshots, and Android emulator screenshots are
 
 ## Determinism contract
 
-The harness controls the common sources of screenshot drift:
+The canonical component screenshot harness controls the common sources of pixel drift:
 
 - Playwright 1.62.1 and Chromium 151.0.7922.34 are pinned.
 - Canonical comparison runs on the protected BeeUI Ubuntu 24.04 Noble Linux runner.
@@ -42,23 +92,25 @@ The harness controls the common sources of screenshot drift:
 - Locale is `en-US` and timezone is `UTC`.
 - Each page explicitly emulates `prefers-reduced-motion: reduce` before navigation.
 - Content, selections, progress values, and overlay state are fixed.
-- No external images or network data are loaded.
+- No external images or network data are loaded by the deterministic component fixture.
 - Global fixture CSS disables animations, transitions, and caret rendering.
 - Theme is selected from the URL and applied before readiness is published.
 - `document.fonts.ready` is awaited before capture.
 - The page publishes `data-visual-ready="true"` only after render frames have settled.
 - Anchored overlays additionally wait until their public rendered content has non-zero, in-viewport geometry.
-- There are no wall-clock `sleep(...)` calls.
+- There are no wall-clock `sleep(...)` calls in the canonical pixel fixture.
 
-The readiness attribute is part of the fixture contract. Tests must wait for it rather than adding arbitrary delays.
+The readiness attribute is part of the deterministic fixture contract. Tests must wait for it rather than adding arbitrary delays.
 
 The fixture also commits `uniwind-types.d.ts` so repository-wide TypeScript validation does not depend on Metro having generated the type augmentation first.
 
+The Showcase integration layer is intentionally structural/runtime-oriented rather than pixel-baseline-oriented. It may wait briefly after programmatic scroll changes for browser layout to settle, but it does not compare those pixels to committed Gallery baselines.
+
 ## Scenario authoring
 
-Scenario metadata, themes, viewport definitions, and screenshot naming live in `src/visual-contract.ts`. Add a focused scenario there and render it from `App.tsx`. Prefer one intentional state with fixed text over a large interactive gallery.
+Canonical component scenario metadata, themes, viewport definitions, and screenshot naming live in `src/visual-contract.ts`. Add a focused scenario there and render it from `App.tsx`. Prefer one intentional state with fixed text over a large interactive gallery.
 
-A scenario must:
+A canonical scenario must:
 
 1. use only public BeeUI package exports;
 2. avoid current dates, random pixel-visible values, external assets, and uncontrolled async work;
@@ -68,6 +120,8 @@ A scenario must:
 6. use a stable scenario ID because it is part of the baseline filename.
 
 Anchored overlay scenarios must not use private overlay-runtime imports or context workarounds. They exercise only the currently supported public Popover/DropdownMenu contracts.
+
+Showcase browser integration scenarios belong in the Showcase QA helpers/tests under `apps/visual-regression`; do not move Playwright ownership into `apps/showcase` and do not key durable execution to a feature-branch name.
 
 ## Local comparison
 
@@ -79,9 +133,15 @@ pnpm --dir apps/visual-regression exec playwright install --with-deps chromium
 pnpm --dir apps/visual-regression test
 ```
 
-The visual package exports the fixture for web, starts the local static server through Playwright's `webServer`, and compares all expected screenshots.
+The visual package exports the deterministic fixture for web, starts its local static server through Playwright's `webServer`, compares all expected component screenshots, and runs the durable real-Showcase integration layer.
 
-To iterate on one scenario, pass normal Playwright filters after building:
+Run/reproduce the full Pattern Gallery matrix explicitly with:
+
+```sh
+BEEUI_FULL_PATTERN_GALLERY_QA=1 pnpm --dir apps/visual-regression test
+```
+
+To iterate on one deterministic component scenario, pass normal Playwright filters after building:
 
 ```sh
 pnpm --dir apps/visual-regression build:web
@@ -106,9 +166,11 @@ A developer may use another Ubuntu 24.04 Noble machine to preview an intended up
 
 Review every changed PNG before committing it. A green update command only means "actual pixels now equal expected pixels"; it does not prove the visual change is desirable.
 
+Gallery integration QA never uses `test:update`; there are no Gallery baseline files to update.
+
 ## Snapshot tolerance
 
-The comparison uses `maxDiffPixelRatio: 0.0001` (0.01%). This is deliberately small: it permits a tiny anti-aliasing edge difference without masking component-scale layout, color, spacing, or typography changes.
+The canonical comparison uses `maxDiffPixelRatio: 0.0001` (0.01%). This is deliberately small: it permits a tiny anti-aliasing edge difference without masking component-scale layout, color, spacing, or typography changes.
 
 Do not increase the threshold merely to make a failing build green. First reproduce in the canonical Linux/Chromium environment and inspect the actual/expected/diff images. Any tolerance change is a release-policy change and should be reviewed as such.
 
@@ -123,13 +185,16 @@ The `visual-web` job is isolated from `verify`, `bare-native`, and `ios-native`.
 5. reports the exact Playwright and Chromium versions;
 6. exports the deterministic fixture and starts it locally;
 7. compares the 28 committed PNG baselines;
-8. uploads Playwright test results and the HTML report only on failure.
+8. exports the executable Showcase and runs the durable Component/Pattern browser integration layer;
+9. uploads Playwright test results and the HTML report only on failure.
 
 CI never executes `test:update` or `--update-snapshots`.
 
-Failure artifacts are retained for three days. `test-results` contains actual/expected/diff material produced by Playwright, while `playwright-report` provides the navigable report and retained failure traces where available. Successful jobs do not upload the visual report.
+Failure artifacts are retained for three days. `test-results` contains actual/expected/diff material produced by canonical Playwright comparisons and failure traces, while `playwright-report` provides the navigable report. Successful jobs do not upload the visual report.
 
 ## Debugging a failure
+
+For canonical pixel failures:
 
 1. Open the `visual-web` failure artifacts.
 2. Inspect expected, actual, and diff for the failing scenario/project.
@@ -139,19 +204,21 @@ Failure artifacts are retained for three days. `test-results` contains actual/ex
 6. Visually review the PNG diff before committing updated baselines.
 7. Re-run comparison-only CI and confirm the final head is green.
 
-A failure should never be "fixed" by adding sleeps, widening the pixel threshold, deleting the test, or updating all screenshots without review.
+For Showcase integration failures, inspect the named group/scenario plus reported layout/runtime errors; fix the Showcase/pattern/component integration rather than adding a baseline or branch-specific skip.
+
+A failure should never be "fixed" by widening the pixel threshold, deleting the test, branch-gating durable QA, or updating all screenshots without review.
 
 ## Known limitations
 
-Phase 1 does not prove native pixel parity. React Native Web, Chromium font rasterization, and Linux rendering can differ from iOS and Android. The suite also samples representative states rather than exhaustive component/property combinations.
+Chromium browser evidence does not prove native pixel parity. React Native Web, Chromium font rasterization, and Linux rendering can differ from iOS and Android. The canonical suite samples representative component states, while the Showcase layer focuses on integration/layout/runtime behavior rather than pixel identity.
 
-Visual regression does not replace accessibility assertions, behavioral tests, contract tests, native compilation, or release verification.
+Visual/browser QA does not replace accessibility assertions, behavioral tests, contract tests, native compilation, or protected native runtime/device verification.
 
 ## Phase 2: native visual expansion
 
-The next tranche should keep the same scenario IDs and visual intent while adding native capture adapters instead of redesigning the web harness. Recommended work:
+The next tranche should keep the same canonical scenario IDs and visual intent while adding native capture adapters instead of redesigning the Web harness. Recommended work:
 
-- define a platform-neutral scenario manifest shared by web/native capture;
+- define a platform-neutral scenario manifest shared by Web/native capture;
 - add iOS Simulator capture on the existing protected macOS ARM64 runner;
 - add deterministic Android emulator/device capture on an appropriate protected runner;
 - pin simulator/emulator OS, device model, display scale, locale, font scale, and animation settings;
@@ -159,4 +226,4 @@ The next tranche should keep the same scenario IDs and visual intent while addin
 - upload native actual/expected/diff diagnostics on failure;
 - keep native capture jobs isolated from the existing compile-only gates.
 
-Native screenshot automation should be introduced only after the phase-1 web gate has proven stable in normal pull-request use.
+Native screenshot automation should be introduced only after the current Web gates have proven stable in normal pull-request use.
