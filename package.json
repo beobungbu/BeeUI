@@ -12,9 +12,12 @@
     "android": "pnpm --filter @beeui/showcase android",
     "web": "pnpm --filter @beeui/showcase web",
     "typecheck": "pnpm -r --if-present typecheck",
-    "test": "pnpm --filter @beeui/showcase test",
+    "test": "pnpm --filter @beeui/showcase test && pnpm registry:verify && pnpm registry:test",
     "check": "pnpm typecheck && pnpm test",
-    "release:verify": "node ./scripts/verify-release.mjs"
+    "release:verify": "node ./scripts/verify-release.mjs",
+    "beeui": "node ./scripts/beeui.mjs",
+    "registry:verify": "node ./scripts/verify-registry.mjs",
+    "registry:test": "node --test ./scripts/__tests__/beeui.test.mjs"
   },
   "devDependencies": {
     "@types/react": "^19.2.0",
