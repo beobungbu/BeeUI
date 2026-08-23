@@ -1,0 +1,704 @@
+# BeeUI production roadmap
+
+This document is the canonical pre-1.0 roadmap for taking BeeUI from a strong React Native UI foundation to a production-ready public UI system comparable in practical utility and polish to mature ecosystems such as Gluestack and Tamagui, without copying their architecture, proprietary assets, or product surface.
+
+BeeUI is intentionally not trying to reproduce Tamagui's compiler/styling engine or Gluestack's exact component/template catalog. BeeUI keeps Uniwind + Tailwind CSS v4 as the current styling engine and focuses its own engineering effort on semantic design contracts, cross-platform behavior, accessibility, production patterns, distribution, verification, and developer experience.
+
+## Current baseline
+
+As of the current pre-1.0 baseline, BeeUI already has:
+
+- React Native + TypeScript foundation targeting Expo and bare React Native;
+- semantic light/dark tokens through `@beeui/tokens`;
+- reusable `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` packages;
+- safe-area integration through `BeeUIProvider` + `SafeArea`;
+- broad layout, typography, action, form, selection, navigation, disclosure, data-display, feedback, state, and application-pattern coverage;
+- React Native core `Modal`-based `Dialog` and `AlertDialog`;
+- a shared non-modal anchored-overlay geometry/runtime used by `Popover` and `DropdownMenu`;
+- provider-scoped descriptor-based Toast notifications with queueing, persistence, actions, safe-area-aware stacking, and accessibility announcements;
+- deterministic React Native Testing Library contract coverage;
+- deterministic Chromium visual regression with 28 canonical light/dark screenshots;
+- Expo Web/Android/iOS bundling and Expo Prebuild verification;
+- fresh package-installed bare React Native consumer verification;
+- bare Android native compilation;
+- Expo Showcase and fresh bare React Native native iOS Simulator compilation on a trusted macOS ARM64 runner;
+- change-aware native iOS scheduling on pull requests plus persistent Xcode/DerivedData build caches;
+- a phase-1 repository-local Registry + source-ownership CLI with deterministic validation, collision protection, dry-run, doctor/verify, and initial component coverage;
+- four merged production pattern packs containing 37 screens:
+  - Authentication + Onboarding: 9;
+  - Dashboard + Finance: 8;
+  - Commerce + Social: 12;
+  - Account + Settings: 8.
+
+The remaining gap is no longer primarily “more basic components.” The highest-value work is interaction infrastructure, runtime/device evidence, theming depth, distribution, compatibility, documentation, and integrated product-level stress testing.
+
+## Product direction
+
+BeeUI 1.0 should provide a coherent combination of:
+
+```text
+semantic design system
++ behavior/accessibility-first React Native components
++ Expo + bare React Native portability
++ production screen patterns
++ source-ownership CLI
++ package distribution
++ real runtime/device verification
++ visual regression
++ custom theming
++ consumer-grade documentation
+```
+
+The goal is not maximum component count. A component is promoted into the public foundation only when its behavior, accessibility, platform, and ownership boundaries are clear.
+
+## Promotion policy
+
+Use the existing Rule of Two:
+
+1. If existing BeeUI components can compose the requirement cleanly, compose it.
+2. If the requirement is domain-specific, keep it pattern-local.
+3. Promote a new public primitive/composition only when the same meaningful need appears in at least two screens/domains, or one use has sufficiently complex behavior/accessibility/platform requirements to justify a shared contract.
+4. Create or update a `gap:` issue before implementation when a reusable gap is discovered through product work.
+
+Do not add components solely to match another library's catalog.
+
+---
+
+# Wave 0 — Integrated Pattern Gallery
+
+**Priority:** P0  
+**Status:** next integration work
+
+Build a production-quality Showcase Pattern Gallery over the 37 already merged screens.
+
+Goals:
+
+- register all four domains and all 37 screens in a declarative Showcase-local catalog;
+- provide local controlled-state adapters without introducing router/backend/auth/payment ownership;
+- browse by domain and screen on narrow mobile and wide Web;
+- support light/dark and representative loading/empty/error/long-content states;
+- exercise Toast feedback in realistic screen interactions where appropriate;
+- avoid mounting all 37 heavy screen trees simultaneously;
+- use integration friction to identify real cross-domain gaps;
+- propose a small representative pattern visual-regression matrix instead of committing 37-screen baseline explosion.
+
+The gallery becomes the canonical manual product-quality surface for BeeUI patterns.
+
+---
+
+# Wave 1A — Context-preserving anchored-overlay transport
+
+**Priority:** P0  
+**Target:** before `Select`, `Tooltip`, or BeeUI 1.0
+
+The current `OverlayPortal` renders anchored-overlay entries under a provider-owned sibling host. BeeUI-owned overlay contexts are re-provided, but arbitrary consumer React contexts declared below `BeeUIProvider` are not guaranteed to survive that change in React ancestry.
+
+Issue #35 and PR #38 established and tested this pre-1.0 contract; they did not make source ancestry context-preserving.
+
+Before BeeUI 1.0, investigate and prove a context-preserving native/Web transport that retains the accepted anchored-overlay contracts:
+
+- non-modal positioning;
+- shared geometry and collision handling;
+- safe-area and keyboard policy;
+- deterministic topmost dismissal;
+- nested overlay behavior;
+- accessibility semantics;
+- no silent conversion to full-screen React Native `Modal` merely to hide the context boundary.
+
+Required regression evidence should include consumer contexts representative of:
+
+- forms;
+- navigation;
+- localization;
+- application theme/state;
+- arbitrary custom context;
+- nested anchored overlays;
+- anchored overlays inside modal-class surfaces where supported.
+
+When this work lands, the existing regression must flip from documenting context loss to proving consumer-context preservation.
+
+---
+
+# Wave 1B — Runtime iOS/Android verification foundation
+
+**Priority:** P0
+
+BeeUI CI already proves native compilation. Compilation is not runtime interaction proof.
+
+Add a protected runtime smoke tier using real iOS Simulator and Android Emulator/device execution.
+
+Representative flows should cover:
+
+- Showcase launch;
+- light/dark switching;
+- Pattern Gallery navigation;
+- non-zero safe areas;
+- Dialog and AlertDialog dismissal paths;
+- Popover and DropdownMenu open/close/positioning;
+- Toast delivery and dismissal;
+- input focus and keyboard appearance;
+- Android hardware back;
+- basic scrolling and reduced-height layouts.
+
+Recommended scheduling:
+
+```text
+pull request
+  -> contract tests + visual Web + native compile as classified
+
+main
+  -> full native compile
+
+nightly / release candidate
+  -> real iOS + Android runtime smoke
+```
+
+Runtime automation must not turn every ordinary pull request into an hour-long device matrix.
+
+---
+
+# Wave 1C — Theme/token system v2
+
+**Priority:** P0/P1
+
+The current token package establishes semantic colors, spacing, and radius. Production theming needs a broader stable vocabulary.
+
+Add or explicitly standardize:
+
+### Typography
+
+- font families;
+- font sizes;
+- line heights;
+- weights;
+- letter spacing.
+
+### Sizing
+
+- control heights;
+- icon sizes;
+- avatar sizes;
+- content-width contracts.
+
+### Elevation
+
+- semantic shadows;
+- native elevation mapping where applicable.
+
+### Motion
+
+- semantic durations;
+- easing;
+- reduced-motion policy.
+
+### Focus
+
+- ring width;
+- offset;
+- focus visibility policy.
+
+### Branding
+
+Support application branding by changing semantic theme values rather than editing component implementations.
+
+Prefer Uniwind/Tailwind CSS variables and scoped/runtime variable capabilities over creating another BeeUI styling engine.
+
+Do not build a Tamagui-style compiler or replace Uniwind without new evidence.
+
+---
+
+# Wave 1D — Documentation/release state synchronization
+
+**Priority:** P0  
+**Status:** ongoing maintenance rule
+
+Documentation must always distinguish current implementation from future roadmap.
+
+In particular:
+
+- Registry/CLI phase 1 exists today but public `npx beeui` does not;
+- native iOS compilation is automated today, while runtime/device interaction remains separate;
+- Toast v1 exists today;
+- visual regression phase 1 exists today;
+- 37 production pattern screens exist today;
+- issue #35 is closed as a documented contract, while context-preserving transport remains future pre-1.0 work;
+- packages remain private and are not publicly published to npm.
+
+Any implementation PR that invalidates a current-state statement must update the corresponding canonical documentation in the same change or an explicitly linked synchronization PR.
+
+---
+
+# Wave 2A — Select
+
+**Priority:** P0 after anchored-overlay transport decision
+
+`Select` must be a real selection component, not a visual alias of `DropdownMenu`.
+
+Minimum contract:
+
+- controlled and uncontrolled state where appropriate;
+- selected value and placeholder;
+- disabled state;
+- option/value semantics;
+- labels/groups if justified;
+- keyboard navigation;
+- typeahead where practical;
+- focus management/restoration policy;
+- accessibility semantics;
+- long option-list behavior;
+- Web/native presentation policy;
+- reuse of accepted anchored geometry/runtime infrastructure.
+
+Do not couple Select to routers, forms libraries, persistence, or domain data fetching.
+
+---
+
+# Wave 2B — Tooltip
+
+**Priority:** P0 after anchored-overlay transport decision
+
+Tooltip owns non-interactive disclosure semantics; it must not inherit menu selection semantics.
+
+Web contract should address:
+
+- hover;
+- keyboard focus;
+- delay;
+- Escape/dismiss behavior;
+- placement;
+- accessibility relationships.
+
+Native policy must not fake browser hover. A native visual tooltip should exist only if interaction and accessibility evidence justify it; accessibility-label/hint behavior may be the correct native path for some usages.
+
+---
+
+# Wave 2C — Sheet / Bottom Sheet
+
+**Priority:** P0 before 1.0 if BeeUI wants strong mobile-product coverage
+
+Sheet remains separate from the centered Dialog kernel because its contract is gesture- and layout-heavy.
+
+Minimum contract should address:
+
+- controlled/uncontrolled open state;
+- snap points/presentation sizes;
+- backdrop and dismissal policy;
+- drag handle;
+- gesture behavior;
+- keyboard interaction;
+- bottom safe area;
+- scrollable/nested content;
+- inputs inside Sheet;
+- Android hardware back;
+- accessibility;
+- reduced motion.
+
+Potential higher-level compositions such as action sheets or mobile Select presentation should reuse a proven Sheet contract rather than creating independent gesture runtimes.
+
+---
+
+# Wave 2D — Slider
+
+**Priority:** P1
+
+Add only with a clear cross-platform gesture and accessibility contract covering value normalization, min/max/step, disabled state, keyboard interaction on Web, native accessibility actions, and theming.
+
+---
+
+# Wave 3A — Registry/CLI v2
+
+**Priority:** P0/P1
+
+The phase-1 repository-local CLI is implemented. The next tranche is productization, not reinvention.
+
+Expand toward a publishable consumer workflow such as:
+
+```sh
+npx beeui init
+npx beeui add button
+npx beeui add dialog
+npx beeui add --all
+npx beeui doctor
+```
+
+Possible later capabilities:
+
+- publishable CLI package/binary naming;
+- expanded registry coverage for stable components;
+- semver-aware external dependency diagnostics;
+- optional package-manager mutation only behind an explicit safe contract;
+- component diff/update assistance for source-owned components;
+- version/integrity controls for any future remote registry.
+
+Preserve current strengths:
+
+- deterministic dependency resolution;
+- no silent overwrite;
+- dry-run parity with real add;
+- path/symlink/traversal protection;
+- no arbitrary executable registry payloads.
+
+---
+
+# Wave 3B — Public package distribution
+
+**Priority:** P0/P1
+
+Current packages remain `private: true` and packed tarballs are verification artifacts, not public distribution.
+
+Before public 1.0, decide and implement supported public consumption paths.
+
+Recommended direction:
+
+1. package consumption for consumers who prefer centralized upgrades;
+2. source ownership for consumers who prefer editable local component source.
+
+Public package publication needs:
+
+- final package names;
+- package metadata;
+- export maps;
+- provenance/signing policy where applicable;
+- public install documentation;
+- clean-consumer verification from the actual published artifact;
+- explicit compatibility ranges.
+
+---
+
+# Wave 3C — Release automation
+
+**Priority:** P0/P1
+
+Automate deterministic release preparation and publication:
+
+- version bump;
+- lockstep package versions;
+- changelog cut;
+- migration-note validation;
+- tag;
+- release candidate versions;
+- package publication when enabled;
+- GitHub Release;
+- package smoke from published artifacts;
+- release evidence retention.
+
+Example release flow:
+
+```text
+0.x.y-rc.1
+  -> exact-candidate CI/runtime gates
+  -> review
+  -> 0.x.y
+```
+
+---
+
+# Wave 3D — Compatibility matrix
+
+**Priority:** P0/P1
+
+Do not claim a broad peer range that CI does not exercise.
+
+At minimum, test:
+
+- minimum supported React Native version;
+- current supported React Native version;
+- minimum supported Expo SDK if a range is documented;
+- current supported Expo SDK;
+- supported Node/pnpm toolchain;
+- supported Uniwind/Tailwind major versions.
+
+Compatibility claims in package manifests and docs must match this matrix.
+
+---
+
+# Wave 4A — Accessibility, RTL, large-text, and localization gates
+
+**Priority:** P0/P1
+
+Add systematic coverage beyond per-component semantic tests.
+
+### Web
+
+- automated accessibility audit for representative pages/components;
+- target WCAG 2.2 AA where React Native Web exposes the relevant browser semantics;
+- automated semantic-token contrast checks where deterministic.
+
+### Native
+
+- RNTL semantic contracts;
+- VoiceOver release matrix;
+- TalkBack release matrix;
+- accessibility escape/back behavior;
+- focus-order checks for representative flows.
+
+### Layout stress
+
+Test:
+
+- RTL;
+- 1.3x/1.5x font scaling;
+- long English/German-like strings;
+- Vietnamese;
+- CJK;
+- Arabic/RTL content;
+- short-height/landscape layouts.
+
+Pay particular attention to logical start/end semantics in anchored overlays, breadcrumbs, pagination, stepper, settings rows, and application chrome.
+
+---
+
+# Wave 4B — Performance benchmark harness
+
+**Priority:** P1
+
+BeeUI needs a measurable performance story rather than generic claims.
+
+Benchmark the abstraction overhead BeeUI controls, for example:
+
+- large Button/Badge sets;
+- hundreds of ListItems/SettingsItems;
+- large settings screens;
+- theme switching;
+- Dialog open latency;
+- Popover/DropdownMenu open latency;
+- large menu item counts;
+- Toast queue activity;
+- Pattern Gallery bundle/runtime footprint.
+
+Track where useful:
+
+- render/commit time;
+- memory;
+- Web bundle size;
+- native bundle/startup delta;
+- regression thresholds.
+
+The benchmark question is “what overhead does BeeUI add over the underlying React Native + Uniwind stack?”, not “can BeeUI beat every other framework benchmark?”.
+
+---
+
+# Wave 4C — Motion system
+
+**Priority:** P1
+
+Create semantic motion contracts for common UI transitions:
+
+- Dialog/AlertDialog;
+- Popover/DropdownMenu;
+- Toast;
+- Tabs indicator;
+- Collapsible/Accordion;
+- Sheet;
+- pressed/loading transitions.
+
+The base component system should remain usable without requiring Reanimated everywhere. Use an optional enhanced-motion path where native-thread gestures/transitions materially justify it.
+
+Reduced-motion behavior is required.
+
+---
+
+# Wave 5A — Consumer documentation website
+
+**Priority:** P0/P1 for public launch
+
+Markdown engineering contracts are not enough for a public UI product.
+
+The public docs experience should include:
+
+- Getting Started;
+- Expo installation;
+- bare React Native installation;
+- provider setup;
+- theming/custom branding;
+- components;
+- patterns;
+- accessibility;
+- platform-specific behavior;
+- Registry/CLI;
+- migration/versioning;
+- troubleshooting;
+- compatibility/support matrix.
+
+Per component, document where relevant:
+
+- preview;
+- anatomy;
+- usage;
+- props;
+- controlled/uncontrolled behavior;
+- accessibility;
+- iOS behavior;
+- Android behavior;
+- Web behavior;
+- examples and limitations.
+
+---
+
+# Wave 5B — Public Showcase / Expo demo
+
+**Priority:** P0/P1 for public launch
+
+Publish the Showcase as a product surface:
+
+- browse components;
+- browse production patterns;
+- switch light/dark;
+- provide an Expo/native demo path where practical;
+- link install/docs/source.
+
+The public demo should be built from the same contracts consumers receive, not a separate marketing-only implementation.
+
+---
+
+# Wave 5C — Starter projects
+
+**Priority:** P1
+
+Provide small verified starter consumers, not another application framework:
+
+- Expo starter;
+- bare React Native starter;
+- optionally a Web-enabled React Native starter if the support contract is stable.
+
+Starters should demonstrate provider/theme setup, source-owned component setup where applicable, and the current compatibility matrix.
+
+---
+
+# Wave 6 — Additional high-value components
+
+**Priority:** P2, evidence-driven
+
+Candidate areas after the P0/P1 foundation is stable:
+
+### Table / DataTable foundation
+
+Useful for admin/CRM/finance/tablet/Web. Core Table should own layout/semantics, not fetching, sorting state, pagination state, or virtualization policy unless those behaviors are separately justified.
+
+### Calendar / Date / DateTime
+
+High value for booking, CRM, finance, events, and travel, but requires deliberate locale, timezone, range-selection, keyboard, accessibility, and Web/native presentation contracts.
+
+### Icon abstraction
+
+Prefer a small semantic `Icon`/`createIcon` integration surface over bundling a large proprietary icon set. Keep compatibility with consumer-selected icon libraries and custom SVG sources.
+
+Other components should be driven by Pattern Gallery/product evidence.
+
+---
+
+# Wave 7 — Expand production pattern library
+
+**Priority:** P2 after infrastructure stabilization
+
+The current 37 screens prove four product domains. A later target of roughly 60–80 high-quality production screens is reasonable only after the core/runtime/distribution work above is stable.
+
+Potential packs:
+
+- chat/messaging;
+- calendar/scheduling;
+- utility/offline/permissions/maintenance;
+- business CRUD/list/detail/create/edit/filter flows;
+- media/upload/gallery/player;
+- navigation shells including tabs/sidebar/master-detail.
+
+Patterns remain original BeeUI compositions. Do not copy proprietary Gluestack Pro, Tamagui Takeout, or other paid template source/assets.
+
+---
+
+# Explicit non-goals
+
+BeeUI should not:
+
+- build its own styling compiler merely to resemble Tamagui;
+- replace Uniwind without concrete technical evidence;
+- force Expo Router, React Navigation, or another router into public component contracts;
+- own backend/data fetching;
+- own auth SDKs;
+- own payment SDKs;
+- own React Hook Form/Zod or another validation library;
+- add a chart framework to the core UI system;
+- promote one-off domain components solely to increase component count;
+- copy proprietary commercial templates or assets.
+
+Router-neutral Expo + bare React Native support is an intentional product advantage, not a missing feature.
+
+---
+
+# BeeUI 1.0 exit criteria
+
+BeeUI should not declare 1.0 solely because the package has many components.
+
+A 1.0 candidate should have, at minimum:
+
+## Component/runtime
+
+- stable semantic token names;
+- broad stable component coverage already proven by product patterns;
+- context-preserving anchored-overlay strategy, or an explicitly reviewed alternative that removes the current arbitrary-consumer-context limitation;
+- production-ready Select;
+- production-ready Tooltip policy;
+- production-ready Sheet if BeeUI claims first-class modern mobile application coverage;
+- stable Toast v1 contract;
+- no known architecture blocker hidden by documentation wording.
+
+## Product proof
+
+- integrated Pattern Gallery;
+- at least the current 37 production screens retained and browsable;
+- representative integration visual-regression coverage;
+- no unresolved cross-domain P0 gap discovered by the gallery.
+
+## Quality
+
+- deterministic behavioral tests;
+- deterministic Web visual regression;
+- native iOS and Android compile evidence;
+- protected runtime simulator/device smoke;
+- documented VoiceOver/TalkBack release process;
+- RTL/large-text/long-content coverage;
+- accessibility/contrast checks appropriate to each platform;
+- performance benchmark baseline.
+
+## Theming
+
+- stable semantic colors;
+- typography/sizing/elevation/motion/focus contracts;
+- consumer branding/custom-theme path;
+- reduced-motion policy.
+
+## Distribution/DX
+
+- publishable Registry/CLI workflow;
+- substantial registry coverage for stable source-owned components;
+- public package distribution decision implemented;
+- release automation;
+- compatibility matrix enforced by CI;
+- consumer documentation website;
+- public Showcase/demo;
+- migration/versioning policy.
+
+## Release integrity
+
+- exact-candidate automated gates green;
+- applicable runtime/device gates recorded;
+- changelog complete;
+- migration notes present for intentional breaking changes;
+- public install artifacts proven in clean consumers.
+
+---
+
+# Roadmap maintenance
+
+This file describes direction, not proof that a future item already exists.
+
+When a roadmap item ships:
+
+1. update this file's status/wording;
+2. update `README.md` current-state summaries;
+3. update `docs/architecture.md` if architecture boundaries changed;
+4. update `docs/release.md` if verification/distribution changed;
+5. update the relevant component/runtime document;
+6. add a consumer-facing `CHANGELOG.md` entry when appropriate.
+
+Current-state documentation must never describe implemented work as future work or future work as already supported.
