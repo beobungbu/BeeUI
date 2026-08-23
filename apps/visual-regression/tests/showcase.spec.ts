@@ -5,22 +5,9 @@ import {
   representativeScenarios,
   runPatternSmokeMatrix,
 } from '../src/showcase-qa-pattern-smoke';
-import { buildAndServeShowcase, stopShowcaseServer } from '../src/showcase-qa-server';
 
 const runFullMatrix = process.env.CI === 'true' || process.env.BEEUI_FULL_PATTERN_GALLERY_QA === '1';
-let showcaseBaseUrl = '';
-let showcaseServer: Awaited<ReturnType<typeof buildAndServeShowcase>>['server'] | undefined;
-
-test.beforeAll(async () => {
-  test.setTimeout(4 * 60 * 1000);
-  const started = await buildAndServeShowcase();
-  showcaseBaseUrl = started.baseUrl;
-  showcaseServer = started.server;
-});
-
-test.afterAll(async () => {
-  await stopShowcaseServer(showcaseServer);
-});
+const showcaseBaseUrl = 'http://127.0.0.1:4174';
 
 test('preserves the Component Gallery across mobile/desktop and light/dark', async ({ browser }) => {
   test.setTimeout(3 * 60 * 1000);
