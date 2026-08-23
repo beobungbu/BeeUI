@@ -1,0 +1,30 @@
+@import 'tailwindcss';
+@import 'uniwind';
+@import '@beeui/tokens/theme.css';
+
+@source '../../packages/ui/src';
+@source '../../packages/core/src';
+@source './App.tsx';
+@source './src';
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+*,
+*::before,
+*::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+  caret-color: transparent !important;
+}
