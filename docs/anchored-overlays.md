@@ -116,6 +116,13 @@ Dismissable overlays register in one deterministic stack.
 - One event never cascades through several overlay levels.
 - Updating an existing dismiss handler does not reorder the stack.
 
+#### Child-first dismissal inside a Dialog: outside press vs Android hardware back
+
+"Child-first" for an anchored overlay declared inside a `Dialog` is delivered by two different mechanisms, because the input paths differ:
+
+- **Outside press** — the anchored overlay's own dismiss layer is topmost and consumes the press, so tapping outside the overlay (but still inside the dialog) dismisses the overlay first; the dialog stays open. Handled by the shared dismiss stack's topmost rule.
+- **Android hardware back** — React Native `Modal` **suppresses the root `BackHandler` while open**, so hardware back never reaches the root dismiss stack; it arrives only through `Modal.onRequestClose`. `DialogContent` therefore keeps a **modal-local dismissal scope** (provisioned with the modal-local host): anchored overlays declared inside the dialog register there too, and `onRequestClose` dismisses that scope's topmost anchored child with reason `back` and consumes the event, only closing the Dialog when no modal-local child remains. A root overlay *behind* the dialog is a different scope and never consumes the dialog's back event. `AlertDialog` inherits this (its `cancelOnRequestClose` policy applies only once no child remains). Web Escape and outside press are unchanged.
+
 ### Test-seam policy
 
 Measurement overrides used in tests are internal implementation seams, never public fallback API.
