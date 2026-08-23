@@ -184,15 +184,35 @@ build_android() {
 build_ios() {
   test -d "${APP_DIR}/ios" || { echo "Bare iOS project is missing; run prepare first."; exit 1; }
   cd "${APP_DIR}/ios"
-  bundle config set path ../vendor/bundle
+
+  local cache_root xcode_version safe_xcode_version ruby_version bundle_path pod_hash derived_data
+  cache_root="${BEEUI_IOS_CACHE_ROOT:-${HOME:-${RUNNER_TEMP:-/tmp}}/Library/Caches/BeeUI}"
+  xcode_version="${BEEUI_XCODE_VERSION:-$(xcodebuild -version | awk 'NR == 1 { print $2 }')}"
+  safe_xcode_version="$(printf '%s' "$xcode_version" | tr -cs '[:alnum:].-' '_')"
+  ruby_version="$(ruby -e 'print RUBY_VERSION')"
+  bundle_path="${cache_root}/bundle/ruby-${ruby_version}-$(uname -m)/rn-${RN_VERSION}"
+
+  mkdir -p "$bundle_path"
+  echo "Using persistent Bundler cache: $bundle_path"
+  bundle config set --local path "$bundle_path"
   bundle install
   bundle exec pod install
+
+  test -f Podfile.lock
+  pod_hash="$(shasum -a 256 Podfile.lock | awk '{ print $1 }')"
+  derived_data="${cache_root}/DerivedData/bare-rn-${RN_VERSION}/xcode-${safe_xcode_version}/pods-${pod_hash}"
+  mkdir -p "$derived_data"
+  echo "Using persistent bare RN DerivedData: $derived_data"
+
   xcodebuild \
     -workspace BeeUIBareSmoke.xcworkspace \
     -scheme BeeUIBareSmoke \
     -configuration Debug \
     -sdk iphonesimulator \
     -destination 'generic/platform=iOS Simulator' \
+    -derivedDataPath "$derived_data" \
+    -showBuildTimingSummary \
+    COMPILATION_CACHE_ENABLE_CACHING=YES \
     CODE_SIGNING_ALLOWED=NO \
     build
 }
