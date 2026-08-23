@@ -6,7 +6,7 @@ Production-oriented account chrome built only from the public `@beeui/ui` API. T
 
 1. `ProfileScreen` — profile identity, stats, metadata, and recent activity.
 2. `EditProfileScreen` — avatar affordance plus controlled display name, username, bio, and email fields.
-3. `SettingsScreen` — production settings home using grouped `SettingsItem` rows, switches, and status badges.
+3. `SettingsScreen` — production settings home using grouped `SettingsItem` rows, switches, status badges, and a caller-supplied appearance summary.
 4. `AccountScreen` — identity, contact data, devices, linked accounts, sign out, and a separated delete-account danger zone.
 5. `AppearanceScreen` — controlled System / Light / Dark preference with a semantic theme preview.
 6. `NotificationSettingsScreen` — master preference, delivery channels, activity, reminders, and product updates with dependent disabled states.
@@ -17,12 +17,14 @@ Production-oriented account chrome built only from the public `@beeui/ui` API. T
 
 Every navigation-like row exposes a callback rather than importing a router. Form values and preferences are controlled by the caller. `onChangeAvatar` deliberately stops at the visual affordance; camera/photo-library permissions, picking, cropping, upload, and persistence remain app-owned.
 
+`SettingsScreen` requires the caller's semantic `appearance: AppearanceTheme` selection and renders `system`, `light`, and `dark` as `System`, `Light`, and `Dark`. It does not infer the current selection from Uniwind, platform appearance APIs, storage, or other global theme state. `AppearanceScreen` uses the same `AppearanceTheme` type, so summary and editor cannot drift into inconsistent unions.
+
 Destructive actions (`onDeleteAccount`, `onRevokeOtherSessions`) expose intent only. Confirmation UI, authentication challenges, networking, retries, and recovery policy remain app-owned.
 
 ## State coverage
 
 - Edit Profile: populated, field validation/server error, saving.
-- Settings: normal plus notification badge/status state.
+- Settings: normal plus notification badge/status state and controlled System / Light / Dark appearance summaries.
 - Appearance: system, light, and dark controlled selection.
 - Notifications: enabled plus master-disabled dependent switches.
 - Privacy & Security: 2FA on/off representations.
