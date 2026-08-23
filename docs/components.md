@@ -6,7 +6,7 @@ This file is the canonical component inventory for BeeUI. A component is conside
 
 | Component | Category | Key contract |
 | --- | --- | --- |
-| `BeeUIProvider` | application root | Provides safe-area measurement and the shared anchored-overlay runtime/host; by default synchronizes measured insets to Uniwind safe-area utilities. Nested providers reuse the outer overlay runtime. |
+| `BeeUIProvider` | application root | Provides safe-area measurement, a provider-local Toast runtime/viewport, and the shared anchored-overlay runtime/host; by default synchronizes measured insets to Uniwind safe-area utilities. Nested providers reuse the outer anchored-overlay runtime while Toast state remains scoped to the nearest BeeUIProvider. |
 | `SafeArea` | layout | Explicit `react-native-safe-area-context` surface with caller-owned edge selection; BeeUI never silently adds system insets to generic screen/chrome components. |
 | `Screen` | layout | Base application surface with semantic background and optional spacing; owns no safe-area or scroll behavior. |
 | `Box` | layout | Thin `View` primitive; no design assumptions. |
@@ -67,7 +67,7 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `AlertDialogTrigger` | modal overlay | Button-compatible confirmation trigger. |
 | `AlertDialogContent` | modal overlay | Alert-dialog surface that never closes from backdrop presses. Android hardware-back/accessibility escape behave like cancellation by default and can be made notification-only with `cancelOnRequestClose={false}`. |
 | `AlertDialogTitle` | modal overlay | Dialog-kernel title semantics for confirmation content. |
-| `AlertDialogDescription` | modal overlay | Dialog-kernel supporting description/accessibility hint. |
+| `AlertDialogDescription` | modal overlay | Dialog-kernel supporting description/accessibility hint for confirmation content. |
 | `AlertDialogFooter` | modal overlay | Confirmation action-row composition. |
 | `AlertDialogCancel` | modal overlay | Close action defaulting to the outline button variant while preserving caller handlers. |
 | `AlertDialogAction` | modal overlay | Close action defaulting to the destructive button variant while preserving caller handlers. |
@@ -96,6 +96,7 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `DescriptionItem` | application pattern | Description-list row specialization composed from `MetadataRow`. |
 | `Card` | surface | Surface variants and spacing contract. |
 | `AlertBanner` | feedback | Semantic inline status callout with Android live-region behavior and iOS `AccessibilityInfo` announcement support; explicit announcement text is available for complex content. |
+| `useToast` / Toast viewport | feedback | Provider-scoped descriptor notifications with `show`/`dismiss`/`dismissAll`, three-visible FIFO queueing, explicit persistent mode, deterministic action dismissal, safe-area-aware stacking, live announcement semantics, and no Modal/anchored geometry/arbitrary ReactNode transport. |
 | `Badge` | data display | Semantic status variants with paired foreground tokens. |
 | `Avatar` | data display | Image/fallback behavior with size variants; failure reset is keyed to semantic image source content rather than source object identity. |
 | `Stat` | data display | Layout-only metric composition with no hidden state or formatting ownership. |
@@ -125,8 +126,10 @@ Additional form-group integrations should only be added where the target React N
 
 `Sheet` remains separately gated because gesture, keyboard, safe-area, and presentation behavior need stronger platform verification than a centered modal.
 
+Toast v1 is now implemented as a separate transient-notification runtime. Animation/swipe/custom-content additions remain future work and must not be folded into the anchored-overlay engine.
+
 ## Anchored overlay components
 
-The shared anchored-overlay geometry/runtime kernels are accepted, with public `Popover` and `DropdownMenu` compositions layered on them. `Select` and `Tooltip` remain deferred until their component-specific keyboard/focus/accessibility contracts are implemented and verified. `Toast` is not anchor-positioned and follows a separate transient-notification contract.
+The shared anchored-overlay geometry/runtime kernels are accepted, with public `Popover` and `DropdownMenu` compositions layered on them. `Select` and `Tooltip` remain deferred until their component-specific keyboard/focus/accessibility contracts are implemented and verified. Toast is intentionally separate: it is not anchor-positioned and does not use `OverlayPortal`.
 
 Do not approximate anchored overlays with full-screen modal behavior. Positioning, collision handling, nested overlays, focus, keyboard semantics, and accessibility remain part of each component's contract.

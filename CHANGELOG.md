@@ -6,6 +6,7 @@ All notable consumer-facing changes to BeeUI are recorded here.
 
 ### Added
 
+- Provider-scoped Toast / transient notifications through `useToast()`, with descriptor-only content, three-visible FIFO queueing, timed or explicit persistent dismissal, actions, safe-area-aware stacking, and accessibility announcements without reusing the anchored-overlay portal or React Native core `Modal`.
 - Release-package verification via `pnpm release:verify`, including package export checks, packed-manifest validation, clean-consumer installation, and a CI verification artifact.
 - A documented release/versioning contract that separates automated Linux verification from macOS/device-only gates.
 - `AlertDialog` composition for destructive/confirmation flows, including non-dismissible backdrops, explicit native request-close policy, cancel actions, and destructive actions.

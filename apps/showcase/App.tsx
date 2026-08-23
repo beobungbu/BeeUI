@@ -98,6 +98,7 @@ import {
   Textarea,
   Timeline,
   TimelineItem,
+  useToast,
   VStack,
 } from '@beeui/ui';
 import * as React from 'react';
@@ -148,6 +149,88 @@ function PlacementPopover({ placement }: { placement: 'top' | 'right' | 'bottom'
   );
 }
 
+function ToastPlayground() {
+  const toast = useToast();
+  const [lastAction, setLastAction] = React.useState('No Toast action yet');
+
+  return (
+    <Card className="gap-4" variant="raised">
+      <Section
+        description="Provider-scoped transient notifications. Up to three are visible; overflow waits FIFO. Close visible items to inspect queue promotion."
+        title="Toast notifications"
+      >
+        <HStack gap="sm" wrap>
+          <Button
+            onPress={() => toast.show({ title: 'Saved', description: 'Default toast with a 5 second timeout.' })}
+            size="sm"
+            variant="outline"
+          >
+            Default
+          </Button>
+          <Button
+            onPress={() => toast.show({ title: 'Published', description: 'Changes are live.', variant: 'success' })}
+            size="sm"
+            variant="outline"
+          >
+            Success
+          </Button>
+          <Button
+            onPress={() => toast.show({ title: 'Check settings', description: 'One option needs attention.', variant: 'warning' })}
+            size="sm"
+            variant="outline"
+          >
+            Warning
+          </Button>
+          <Button
+            onPress={() => toast.show({ title: 'Save failed', description: 'Try the operation again.', variant: 'destructive' })}
+            size="sm"
+            variant="outline"
+          >
+            Error
+          </Button>
+          <Button
+            onPress={() => toast.show({
+              title: 'Item archived',
+              description: 'You can undo this action.',
+              variant: 'info',
+              action: { label: 'Undo', onPress: () => setLastAction('Undo pressed') },
+            })}
+            size="sm"
+            variant="outline"
+          >
+            Action
+          </Button>
+          <Button
+            onPress={() => toast.show({ title: 'Persistent notice', description: 'Dismiss this explicitly.', duration: 'persistent', variant: 'info' })}
+            size="sm"
+            variant="outline"
+          >
+            Persistent
+          </Button>
+          <Button
+            onPress={() => {
+              for (let index = 1; index <= 6; index += 1) {
+                toast.show({
+                  title: `Queued toast ${index}`,
+                  description: index <= 3 ? 'Initially visible.' : 'Promotes FIFO after a visible toast closes.',
+                  duration: 'persistent',
+                  variant: index % 2 === 0 ? 'info' : 'neutral',
+                });
+              }
+            }}
+            size="sm"
+            variant="secondary"
+          >
+            Queue stress
+          </Button>
+          <Button onPress={toast.dismissAll} size="sm" variant="ghost">Dismiss all</Button>
+        </HStack>
+        <Text tone="muted" variant="caption">{lastAction}</Text>
+      </Section>
+    </Card>
+  );
+}
+
 export default function App() {
   const { theme } = useUniwind();
   const [accepted, setAccepted] = React.useState(false);
@@ -169,7 +252,7 @@ export default function App() {
         <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} />
         <SafeArea className="bg-surface" edges={['top', 'left', 'right']}>
           <AppHeader
-            description="Interactive React Native component playground · 104 public components/subcomponents · 119 contract tests"
+            description="Interactive React Native component playground · 105 public components/subcomponents · 147 contract tests"
             leading={<Avatar accessibilityLabel="BeeUI" fallback="BU" />}
             title="BeeUI Showcase v2"
             trailing={<ThemeToggle />}
@@ -226,6 +309,8 @@ export default function App() {
                 </Box>
                 <Progress accessibilityLabel="Profile completion" value={72} />
               </Card>
+
+              <ToastPlayground />
 
               <Card className="gap-4">
                 <Text variant="heading">Loading and state surfaces</Text>
@@ -535,13 +620,13 @@ export default function App() {
                     <HStack gap="lg" wrap>
                       <Stat className="min-w-32 flex-1">
                         <StatLabel>Public pieces</StatLabel>
-                        <StatValue>104</StatValue>
+                        <StatValue>105</StatValue>
                         <StatHelpText>Components + subcomponents</StatHelpText>
                       </Stat>
                       <Stat className="min-w-32 flex-1">
                         <StatLabel>Contract tests</StatLabel>
-                        <StatValue>119</StatValue>
-                        <StatHelpText>14 test suites</StatHelpText>
+                        <StatValue>147</StatValue>
+                        <StatHelpText>15 test suites</StatHelpText>
                       </Stat>
                     </HStack>
 
