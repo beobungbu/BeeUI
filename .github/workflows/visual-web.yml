@@ -1,0 +1,65 @@
+name: visual-web
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 24.13.1
+  PNPM_VERSION: 10.15.0
+
+jobs:
+  visual-web:
+    runs-on: [self-hosted, beeui]
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pnpm via Corepack
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+      - name: Verify JavaScript toolchain
+        run: |
+          test "$(node --version)" = "v${NODE_VERSION}"
+          test "$(pnpm --version)" = "${PNPM_VERSION}"
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Provision pinned Chromium and Linux dependencies
+        run: pnpm --dir apps/visual-regression exec playwright install --with-deps chromium
+
+      - name: Report visual browser versions
+        run: |
+          pnpm --dir apps/visual-regression exec playwright --version
+          pnpm --dir apps/visual-regression exec node -e "const { chromium } = require('@playwright/test'); (async () => { const browser = await chromium.launch(); console.log('Chromium ' + browser.version()); await browser.close(); })().catch(error => { console.error(error); process.exit(1); });"
+
+      - name: Compare canonical web screenshots
+        run: pnpm --dir apps/visual-regression test
+
+      - name: Upload visual regression diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: visual-regression-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            apps/visual-regression/test-results
+            apps/visual-regression/playwright-report
+          if-no-files-found: warn
+          retention-days: 3
