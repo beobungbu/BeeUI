@@ -79,7 +79,7 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `PopoverClose` | anchored overlay | Button-compatible explicit close action. |
 | `DropdownMenu` | anchored overlay | Controlled/uncontrolled non-modal menu state layered on the same shared anchored-overlay runtime as Popover. |
 | `DropdownMenuTrigger` | anchored overlay | Button-compatible measured anchor that preserves caller accessibility state, adds `expanded`, and links to menu content. |
-| `DropdownMenuContent` | anchored overlay | Menu surface defaulting to bottom/start placement with flip/shift, safe-area collision handling, unresolved-geometry gating, topmost-only dismissal, and deterministic web current-item keyboard navigation. |
+| `DropdownMenuContent` | anchored overlay | Menu surface defaulting to bottom/start placement with flip/shift, safe-area collision handling, unresolved-geometry gating, topmost-only dismissal, and deterministic Web current-item keyboard navigation. |
 | `DropdownMenuItem` | anchored overlay | Menu-item semantics with disabled state. `onSelect` is the cross-input selection callback; normal items close the menu by default after caller handlers run. |
 | `DropdownMenuCheckboxItem` | anchored overlay | Checked menu-item semantics with controlled `checked`/`onCheckedChange`; remains open by default and can opt into close-on-select. |
 | `DropdownMenuRadioGroup` | anchored overlay | Controlled radio-value coordination for menu radio items. Duplicate values are detected and fail safe as disabled. |
@@ -118,18 +118,42 @@ React Native exposes semantic roles such as `radiogroup`, but does not expose a 
 
 `Field` remains the text-entry composition primitive. `FormGroup` does not implicitly mutate checkbox/switch/radio application state and does not make arbitrary descendants disabled by cloning them; compatible group primitives consume the shared metadata intentionally.
 
-## Next components
+## Current roadmap ordering
 
-The next anchored-overlay tranche should be `Select` or `Tooltip`. Both must reuse the accepted geometry/runtime kernels without aliasing DropdownMenu semantics: Select owns option/value/selection behavior, while Tooltip owns non-interactive hover/focus/touch disclosure policy.
+The component inventory is no longer the main production-readiness bottleneck. BeeUI already has broad foundation coverage plus 37 production pattern screens.
 
-Additional form-group integrations should only be added where the target React Native control exposes unambiguous group semantics. `VisuallyHidden` remains restricted to non-interactive assistive content. Interactive controls must carry their own accessible name/state rather than relying on an off-screen control.
+The next major work is ordered by `docs/roadmap.md`:
 
-`Sheet` remains separately gated because gesture, keyboard, safe-area, and presentation behavior need stronger platform verification than a centered modal.
+1. integrate the 37-screen Pattern Gallery and use product evidence to find real gaps;
+2. investigate/prove a context-preserving anchored-overlay transport before adding more major anchored components;
+3. implement `Select` and `Tooltip` with their own semantics on the accepted geometry/runtime contracts;
+4. implement `Sheet` as a separate gesture/keyboard/safe-area behavior class if BeeUI claims first-class modern mobile coverage;
+5. add `Slider` and later high-value components only when cross-domain evidence supports them.
 
-Toast v1 is now implemented as a separate transient-notification runtime. Animation/swipe/custom-content additions remain future work and must not be folded into the anchored-overlay engine.
+Additional form-group integrations should be added only where React Native exposes an unambiguous group semantic. `VisuallyHidden` remains restricted to non-interactive assistive content.
 
 ## Anchored overlay components
 
-The shared anchored-overlay geometry/runtime kernels are accepted, with public `Popover` and `DropdownMenu` compositions layered on them. `Select` and `Tooltip` remain deferred until their component-specific keyboard/focus/accessibility contracts are implemented and verified. Toast is intentionally separate: it is not anchor-positioned and does not use `OverlayPortal`.
+The shared anchored-overlay geometry/runtime kernels are accepted, with public `Popover` and `DropdownMenu` layered on them.
 
-Do not approximate anchored overlays with full-screen modal behavior. Positioning, collision handling, nested overlays, focus, keyboard semantics, and accessibility remain part of each component's contract.
+The current portal transport has a documented pre-1.0 arbitrary-consumer-React-Context boundary. Issue #35/PR #38 made that limitation explicit and regression-tested; they did not make the transport context-preserving. See `docs/anchored-overlays.md`.
+
+Future `Select` and `Tooltip` must not alias DropdownMenu semantics, and they should not proceed ahead of the roadmap's context-preserving transport investigation.
+
+Do not approximate anchored overlays with full-screen modal behavior merely to avoid portal/context work. Positioning, collision handling, nested overlays, focus, keyboard semantics, and accessibility remain part of each component's contract.
+
+## Sheet boundary
+
+`Sheet` remains separately gated because gesture, snap-point, keyboard, safe-area, scrolling, hardware-back, and accessibility behavior need stronger native runtime verification than a centered modal.
+
+## Toast boundary
+
+Toast v1 is implemented as a separate transient-notification runtime. It is not anchor-positioned and does not use `OverlayPortal` or React Native core `Modal`.
+
+Animation/swipe/custom-content additions remain future work and must preserve the current ownership boundary unless new evidence justifies a different contract.
+
+## Pattern-driven promotion
+
+Production patterns under `apps/showcase/patterns/**` are evidence sources, not automatic component requests.
+
+Use the Rule of Two from `docs/roadmap.md`: compose existing primitives first, keep domain-specific composition local, and promote a public primitive only after repeated or behaviorally complex evidence justifies a stable contract.
