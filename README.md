@@ -164,13 +164,15 @@ BeeUI deliberately separates modal-class overlays from anchored overlays.
 
 ### Anchored-overlay React Context
 
-`PopoverContent` and `DropdownMenuContent` render through BeeUI's root `OverlayPortal`, which keeps their content in the source fiber tree so consumer contexts declared between `BeeUIProvider` and the overlay — form, navigation, localization, custom theme — resolve to the provided value inside the overlay. The host is selected at runtime:
+`PopoverContent` and `DropdownMenuContent` render through BeeUI's `OverlayPortal`, which keeps their content in the source fiber tree so consumer contexts declared between `BeeUIProvider` and the overlay — form, navigation, localization, custom theme — resolve to the provided value inside the overlay. The portal is a runtime-selected transport:
 
-- **Web** uses react-dom's portal, which preserves context.
-- **Native with the React Native New Architecture** uses a native context-preserving portal (`react-native-teleport`, a peer dependency). Verified on iOS and Android.
-- **Native without the New Architecture** (`newArchEnabled: false`), or any build where the native host view is unavailable, falls back to the legacy store host: content is re-parented, consumer context is **not** preserved (resolves to defaults), and a one-time development warning is logged. Enable the New Architecture, or place providers at/above `BeeUIProvider` (or pass values in explicitly).
+- **Web** (`web-dom`) uses `ReactDOM.createPortal`, which preserves context.
+- **Native with the React Native New Architecture** (`native-teleport`) uses a native context-preserving portal (`react-native-teleport`, a peer dependency). Verified on iOS and Android.
+- **Native without the New Architecture** (`newArchEnabled: false`), or any build where the native host view is unavailable, falls back to the `legacy` store transport: content is re-parented, consumer context is **not** preserved (resolves to defaults), and a one-time development warning is logged. Enable the New Architecture, or place providers at/above `BeeUIProvider` (or pass values in explicitly).
 
-Preserving context on native requires a native rebuild (not an over-the-air JS change); run `expo prebuild --clean` after adding the dependency so the native host view is registered. Automatic focus restoration and complete VoiceOver/TalkBack keyboard/focus behavior remain runtime/device release gates.
+Overlays target the **nearest host scope**: the root host, or a modal-local host that `DialogContent` provisions in its own window — so a `Popover` or `DropdownMenu` declared inside a `Dialog` renders in front of the modal with context intact (both proven on iOS and Android).
+
+Preserving context on native requires a native rebuild (not an over-the-air JS change); run `expo prebuild --clean` after adding the dependency so the native host view is registered. `react-dom` is optional as BeeUI's own peer (web transport only), but `react-native-teleport` peers on `react-dom`, so a strict package manager may still require a matching `react-dom` even in a native-only app. Automatic focus restoration and complete VoiceOver/TalkBack keyboard/focus behavior remain runtime/device release gates.
 
 See [`docs/anchored-overlays.md`](docs/anchored-overlays.md) for the complete current contract.
 

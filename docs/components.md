@@ -124,7 +124,7 @@ The component inventory is no longer the main production-readiness bottleneck. B
 
 Wave 0 is implemented. The next major work is ordered by `docs/roadmap.md`:
 
-1. investigate/prove a context-preserving anchored-overlay transport before adding more major anchored components;
+1. context-preserving anchored-overlay transport — **delivered** (Wave 1A): web `createPortal`, native teleport, generic modal-local scope, legacy fallback contract, all proven;
 2. establish protected iOS/Android runtime interaction smoke beyond the existing compile gates;
 3. deepen the semantic theme/token system;
 4. implement `Select` and `Tooltip` with their own semantics on the accepted geometry/runtime contracts;

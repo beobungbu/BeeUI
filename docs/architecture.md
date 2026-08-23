@@ -197,7 +197,7 @@ Consumer contexts scoped between `BeeUIProvider` and an overlay declaration ther
 
 Overlay content targets the **nearest host scope**. `DialogContent` renders through React Native `Modal` (its own native window) and provisions a modal-local host, so anchored overlays declared inside a dialog render in that window rather than behind it. The mechanism is generic (future Select/Tooltip inherit it).
 
-The accepted non-modal geometry, nested/topmost dismissal, safe-area, keyboard policy, and accessibility contracts are unchanged across transports, and BeeUI never silently converts anchored overlays to a full-screen `Modal`. When the legacy fallback is in effect, place required providers at or above `BeeUIProvider` or pass values explicitly. `react-native-teleport` is a peer dependency; `react-dom` is an optional web-only peer.
+The accepted non-modal geometry, nested/topmost dismissal, safe-area, keyboard policy, and accessibility contracts are unchanged across transports, and BeeUI never silently converts anchored overlays to a full-screen `Modal`. When the legacy fallback is in effect, place required providers at or above `BeeUIProvider` or pass values explicitly. `react-native-teleport` is a peer dependency. `react-dom` is optional as BeeUI's own direct peer (BeeUI reaches for it only in the web transport), but `react-native-teleport` itself peers on `react-dom`, so a strict package manager may still require a matching `react-dom` even in a native-only consumer — the bare-native smoke installs one for this reason. See `docs/anchored-overlays.md` for the full peer contract.
 
 ## Public Popover contract
 

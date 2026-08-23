@@ -110,9 +110,9 @@ The accepted contracts are retained across transports: non-modal positioning, sh
 
 Regression evidence:
 
-- jest transport contract suite: native teleport preserves context; legacy fallback drops it; capability selection; open/unmount lifecycle; Dialog → Popover.
-- Playwright on the real Showcase web app: consumer context resolves inside Popover, DropdownMenu, and a Dialog-nested Popover (`ReactDOM.createPortal`).
-- Device runtime evidence (iOS + Android): context preserved at the root host and inside a `Dialog` modal-local host, with correct placement and child-first dismissal.
+- jest transport contract suite: native teleport preserves context; legacy fallback drops it; capability selection; open/unmount lifecycle; Dialog → Popover; Dialog → DropdownMenu (opens, preserves context, selects, closes, dialog stays open, child-first dismissal); legacy insertion-order preserved on independent portal updates; legacy host-lifecycle cleanup (mount/unmount/remount, no leaked destinations).
+- Playwright on the real Showcase web app: consumer context resolves inside Popover, DropdownMenu, a Dialog-nested Popover, and a Dialog-nested DropdownMenu with selection closing the menu while the dialog stays visible (`ReactDOM.createPortal`).
+- Device runtime evidence (iOS + Android): context preserved at the root host and inside a `Dialog` modal-local host for both Popover and DropdownMenu, with correct anchored placement, menu selection, close-on-select, dialog staying visible, and child-first dismissal.
 
 The #35 regression now proves consumer-context preservation for the context-preserving transports and pins the legacy fallback's documented loss.
 
