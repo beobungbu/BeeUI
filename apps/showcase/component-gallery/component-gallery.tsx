@@ -156,6 +156,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
 }
 
 function ConsumerContextOverlays() {
+  const [dialogMenuAction, setDialogMenuAction] = React.useState('none');
   return (
     <OverlayConsumerContext.Provider value="preserved">
       <VStack gap="sm">
@@ -191,6 +192,23 @@ function ConsumerContextOverlays() {
                 <OverlayContextValue testID="overlay-context-dialog-popover-value" />
               </PopoverContent>
             </Popover>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger testID="overlay-context-dialog-menu-trigger" variant="outline">
+                Menu in dialog
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuLabel>Menu in dialog</DropdownMenuLabel>
+                <OverlayContextValue testID="overlay-context-dialog-menu-value" />
+                <DropdownMenuItem
+                  onSelect={() => setDialogMenuAction('selected')}
+                  testID="overlay-context-dialog-menu-item"
+                >
+                  Select in dialog
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Text testID="overlay-context-dialog-menu-action">{`menu action: ${dialogMenuAction}`}</Text>
           </DialogContent>
         </Dialog>
       </VStack>

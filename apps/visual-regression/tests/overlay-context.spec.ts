@@ -35,3 +35,20 @@ test('preserves consumer context inside a Popover nested in a Dialog', async ({ 
     'context: preserved',
   );
 });
+
+test('preserves context and selects in a DropdownMenu nested in a Dialog', async ({ page }) => {
+  test.setTimeout(90_000);
+  await openComponentGallery(page);
+  await page.getByTestId('overlay-context-dialog-trigger').click();
+  await page.getByTestId('overlay-context-dialog-menu-trigger').click();
+  // Opens inside the modal and preserves consumer context.
+  await expect(page.getByTestId('overlay-context-dialog-menu-value')).toHaveText(
+    'context: preserved',
+  );
+  // Selects and closes the menu (the item disappears), recording the action.
+  await page.getByTestId('overlay-context-dialog-menu-item').click();
+  await expect(page.getByTestId('overlay-context-dialog-menu-item')).toHaveCount(0);
+  await expect(page.getByTestId('overlay-context-dialog-menu-action')).toHaveText(
+    'menu action: selected',
+  );
+});

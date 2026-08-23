@@ -1,14 +1,20 @@
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
   DialogTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@beeui/ui';
-import { act, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
-import { Text, UIManager } from 'react-native';
+import { Platform, Text, UIManager } from 'react-native';
 import { OverlayRuntimeProvider } from '../../../packages/ui/src/components/overlay-runtime';
 import {
   createLegacyStoreTransport,
@@ -60,7 +66,7 @@ function renderOverlay(ui: React.ReactNode, transport?: OverlayTransport) {
     </OverlayRuntimeProvider>,
     {
       createNodeMock: (element) => {
-        if (element.props?.testID !== 'trigger') return null;
+        if (!/trigger$/.test(element.props?.testID ?? '')) return null;
         return {
           measureInWindow: (cb: (x: number, y: number, w: number, h: number) => void) =>
             cb(ANCHOR_RECT.x, ANCHOR_RECT.y, ANCHOR_RECT.width, ANCHOR_RECT.height),
@@ -71,6 +77,7 @@ function renderOverlay(ui: React.ReactNode, transport?: OverlayTransport) {
 }
 
 const originalFabric = (globalThis as { nativeFabricUIManager?: unknown }).nativeFabricUIManager;
+const originalPlatformOS = Platform.OS;
 
 function setTeleportAvailable(available: boolean) {
   (globalThis as { nativeFabricUIManager?: unknown }).nativeFabricUIManager = available ? {} : undefined;
@@ -79,6 +86,7 @@ function setTeleportAvailable(available: boolean) {
 
 afterEach(() => {
   (globalThis as { nativeFabricUIManager?: unknown }).nativeFabricUIManager = originalFabric;
+  Object.defineProperty(Platform, 'OS', { configurable: true, value: originalPlatformOS });
   jest.restoreAllMocks();
 });
 
@@ -184,6 +192,82 @@ describe('anchored overlays inside a modal-class surface', () => {
         screen.getByTestId('probe', { includeHiddenElements: true }).props.children,
       ).toBe('screen-value');
     });
+  });
+
+  it('opens, preserves context, selects, and closes a DropdownMenu inside DialogContent', async () => {
+    // Web selection uses the menu's deterministic keyboard contract; the transport
+    // is still teleport (resolved by capability, not platform).
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
+    const onSelect = jest.fn();
+    const screen = renderOverlay(
+      <Dialog defaultOpen>
+        <DialogTrigger testID="dialog-trigger">Open</DialogTrigger>
+        <DialogContent>
+          <DialogTitle testID="dialog-title">Dialog</DialogTitle>
+          <DropdownMenu defaultOpen>
+            <DropdownMenuTrigger testID="menu-trigger">Menu</DropdownMenuTrigger>
+            <DropdownMenuContent testID="menu-content">
+              <DropdownMenuLabel>Menu</DropdownMenuLabel>
+              <ContextProbe />
+              <DropdownMenuItem onSelect={onSelect} testID="menu-item">
+                Select
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </DialogContent>
+      </Dialog>,
+    );
+
+    // Targets the modal-local host and preserves consumer context.
+    await waitFor(() =>
+      expect(screen.getByTestId('probe', { includeHiddenElements: true }).props.children).toBe(
+        'screen-value',
+      ),
+    );
+    // Opens (item mounted).
+    expect(screen.getByTestId('menu-item', { includeHiddenElements: true })).toBeTruthy();
+    // Selects via the menu's deterministic keyboard contract; the menu closes and
+    // the dialog stays open (child-first).
+    await act(async () =>
+      screen
+        .getByTestId('menu-content', { includeHiddenElements: true })
+        .props.onKeyDown?.({ key: 'Enter', preventDefault: jest.fn() }),
+    );
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    await waitFor(() =>
+      expect(screen.queryByTestId('menu-item', { includeHiddenElements: true })).toBeNull(),
+    );
+    expect(screen.getByTestId('dialog-title', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('dismisses a dialog-nested DropdownMenu topmost-first on outside press', async () => {
+    const screen = renderOverlay(
+      <Dialog defaultOpen>
+        <DialogTrigger testID="dialog-trigger">Open</DialogTrigger>
+        <DialogContent>
+          <DialogTitle testID="dialog-title">Dialog</DialogTitle>
+          <DropdownMenu defaultOpen>
+            <DropdownMenuTrigger testID="menu-trigger">Menu</DropdownMenuTrigger>
+            <DropdownMenuContent outsidePressTestID="menu-outside">
+              <DropdownMenuItem testID="menu-item">Select</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </DialogContent>
+      </Dialog>,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId('menu-item', { includeHiddenElements: true })).toBeTruthy(),
+    );
+    // Outside press dismisses the topmost anchored overlay (the menu) first; the
+    // dialog stays open.
+    await act(async () =>
+      fireEvent.press(screen.getByTestId('menu-outside', { includeHiddenElements: true })),
+    );
+    await waitFor(() =>
+      expect(screen.queryByTestId('menu-item', { includeHiddenElements: true })).toBeNull(),
+    );
+    expect(screen.getByTestId('dialog-title', { includeHiddenElements: true })).toBeTruthy();
   });
 });
 
