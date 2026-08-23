@@ -29,7 +29,20 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Portal, PortalHost, PortalProvider } from 'react-native-teleport';
+import { resolveOverlayHostMode } from './overlay-host-mode';
 import { subscribeOverlayPlatformDismiss } from './overlay-dismiss-events';
+
+/** Name of the teleport destination that hosts anchored overlay content. */
+const OVERLAY_PORTAL_HOST = 'beeui-overlay';
+
+/**
+ * Backend for rendering portalled overlay content. Stable for the runtime, so it
+ * is resolved once: `teleport` keeps content in the source fiber tree (native +
+ * New Architecture), `legacy` stores the node and re-renders it at the host (web,
+ * or native without Fabric).
+ */
+const overlayHostMode = resolveOverlayHostMode();
 
 type OverlayPortalEntry = {
   id: string;
@@ -265,9 +278,12 @@ function OverlayRuntimeProviderRoot({
     ],
   );
 
-  return (
+  const runtimeTree = (
     <OverlayRuntimeContext.Provider value={context}>
       {children}
+      {/* Always rendered: measures the window-origin host rect that anchors
+          geometry. In legacy mode it also hosts the portalled content; in
+          teleport mode it stays empty and content lands in the PortalHost. */}
       <View
         ref={hostRef}
         accessible={false}
@@ -277,11 +293,22 @@ function OverlayRuntimeProviderRoot({
         style={[StyleSheet.absoluteFill, styles.host]}
         testID="beeui-overlay-host"
       >
-        {entries.map((entry) => (
-          <React.Fragment key={entry.id}>{entry.node}</React.Fragment>
-        ))}
+        {overlayHostMode === 'legacy'
+          ? entries.map((entry) => (
+              <React.Fragment key={entry.id}>{entry.node}</React.Fragment>
+            ))
+          : null}
       </View>
+      {overlayHostMode === 'teleport' ? (
+        <PortalHost name={OVERLAY_PORTAL_HOST} style={StyleSheet.absoluteFill} />
+      ) : null}
     </OverlayRuntimeContext.Provider>
+  );
+
+  return overlayHostMode === 'teleport' ? (
+    <PortalProvider>{runtimeTree}</PortalProvider>
+  ) : (
+    runtimeTree
   );
 }
 
@@ -311,7 +338,24 @@ export type OverlayPortalProps = {
   overlayId: string;
 };
 
-export function OverlayPortal({ children, overlayId }: OverlayPortalProps) {
+export function OverlayPortal(props: OverlayPortalProps) {
+  // `overlayHostMode` is constant for the runtime, so the branch is stable and
+  // does not violate the rules of hooks across renders.
+  return overlayHostMode === 'teleport' ? (
+    <TeleportOverlayPortal {...props} />
+  ) : (
+    <LegacyOverlayPortal {...props} />
+  );
+}
+
+function TeleportOverlayPortal({ children }: OverlayPortalProps) {
+  useOverlayRuntime(); // require BeeUIProvider, matching the legacy guard
+  // Rendered inline under the caller's context; teleport moves the native views
+  // to the root PortalHost while keeping them in the source fiber tree.
+  return <Portal hostName={OVERLAY_PORTAL_HOST}>{children}</Portal>;
+}
+
+function LegacyOverlayPortal({ children, overlayId }: OverlayPortalProps) {
   const { mountPortal, unmountPortal, updatePortal } = useOverlayRuntime();
 
   React.useLayoutEffect(() => {
