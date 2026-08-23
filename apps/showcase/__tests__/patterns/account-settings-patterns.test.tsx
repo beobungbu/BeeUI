@@ -10,6 +10,7 @@ import {
   ProfileScreen,
   SettingsScreen,
   accountProfileFixture,
+  settingsSummaryFixture,
 } from '../../patterns/account-settings';
 
 const noop = () => undefined;
@@ -43,6 +44,16 @@ const privacyProps = {
   twoFactorEnabled: true,
 };
 
+const settingsCallbacks = {
+  onAboutPress: noop,
+  onAccountPress: noop,
+  onAppearancePress: noop,
+  onNotificationsEnabledChange: noop,
+  onNotificationsPress: noop,
+  onPrivacyPress: noop,
+  onSupportPress: noop,
+};
+
 describe('account, profile, and settings pattern screens', () => {
   it('renders all eight screens without router context', () => {
     const renderings = [
@@ -61,19 +72,7 @@ describe('account, profile, and settings pattern screens', () => {
           username={accountProfileFixture.username}
         />,
       ),
-      render(
-        <SettingsScreen
-          notificationsEnabled
-          notificationCount={2}
-          onAboutPress={noop}
-          onAccountPress={noop}
-          onAppearancePress={noop}
-          onNotificationsEnabledChange={noop}
-          onNotificationsPress={noop}
-          onPrivacyPress={noop}
-          onSupportPress={noop}
-        />,
-      ),
+      render(<SettingsScreen {...settingsSummaryFixture} {...settingsCallbacks} />),
       render(
         <AccountScreen
           onDeleteAccount={noop}
@@ -146,6 +145,7 @@ describe('account, profile, and settings pattern screens', () => {
     const onNotificationsEnabledChange = jest.fn();
     const screen = render(
       <SettingsScreen
+        appearance="system"
         notificationsEnabled
         notificationCount={3}
         onAboutPress={noop}
@@ -165,6 +165,26 @@ describe('account, profile, and settings pattern screens', () => {
     expect(onNotificationsPress).toHaveBeenCalledTimes(1);
     expect(onNotificationsEnabledChange).toHaveBeenCalledWith(false);
     expect(screen.getByText('3')).toBeTruthy();
+  });
+
+  it('renders the caller-supplied appearance summary and preserves its callback', () => {
+    const onAppearancePress = jest.fn();
+    const props = {
+      ...settingsCallbacks,
+      notificationsEnabled: true,
+      onAppearancePress,
+    };
+    const screen = render(<SettingsScreen {...props} appearance="system" />);
+
+    expect(screen.getByText('System')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Appearance' }));
+    expect(onAppearancePress).toHaveBeenCalledTimes(1);
+
+    screen.rerender(<SettingsScreen {...props} appearance="light" />);
+    expect(screen.getByText('Light')).toBeTruthy();
+
+    screen.rerender(<SettingsScreen {...props} appearance="dark" />);
+    expect(screen.getByText('Dark')).toBeTruthy();
   });
 
   it('keeps appearance controlled for system, light, and dark', () => {
