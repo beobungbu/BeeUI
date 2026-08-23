@@ -13,7 +13,6 @@ const SAFE_PREFIXES = [
   'docs/',
   'registry/',
   'apps/visual-regression/',
-  'apps/showcase/patterns/',
   'apps/showcase/__tests__/patterns/',
 ];
 

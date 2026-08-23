@@ -13,11 +13,14 @@ A pull request may skip `ios-native` only when every changed path is classified 
 - `docs/**`
 - `registry/**`
 - `apps/visual-regression/**`
-- `apps/showcase/patterns/**`
 - `apps/showcase/__tests__/patterns/**`
 - repository-local registry/CLI implementation files explicitly listed by the classifier
 
-Everything else is native-sensitive by default. That includes package implementation, executable Showcase files, root dependency/workspace metadata, workflow changes, native verification scripts, and unknown/new paths.
+Production pattern implementation under `apps/showcase/patterns/**` is **not** native-safe. Pattern files became executable native Showcase inputs when the canonical Pattern Gallery was integrated into `App.tsx` through `ShowcaseRoot -> PatternGallery -> pattern catalog -> pattern packs`. A change to a production screen such as `apps/showcase/patterns/auth/screens/sign-in-screen.tsx` can therefore affect the Android/iOS Showcase bundle and must schedule `ios-native`.
+
+Pattern-specific test files under `apps/showcase/__tests__/patterns/**` remain safe because those tests are not bundled into the executable native Showcase. Gallery/component tests are also test-only, but executable implementation paths such as `apps/showcase/pattern-gallery/**`, `apps/showcase/component-gallery/**`, `apps/showcase/showcase-root.tsx`, and `apps/showcase/App.tsx` are native-sensitive by the classifier's default/fail-safe behavior.
+
+Everything not explicitly safe is native-sensitive by default. That includes package implementation, executable Showcase files, root dependency/workspace metadata, workflow changes, native verification scripts, and unknown/new paths.
 
 An empty changed-file list also runs native verification as a fail-safe.
 

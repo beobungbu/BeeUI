@@ -8,13 +8,14 @@ import {
 
 const viewportNames = Object.keys(visualViewports) as VisualViewportName[];
 
-const projects = viewportNames.flatMap((viewportName) =>
+const canonicalProjects = viewportNames.flatMap((viewportName) =>
   visualThemes.map((theme) => ({
     name: `${viewportName}-${theme}`,
     metadata: {
       visualTheme: theme,
       visualViewport: viewportName,
     } satisfies VisualProjectMetadata,
+    testIgnore: /showcase\.spec\.ts/,
     use: {
       colorScheme: theme,
       deviceScaleFactor: 1,
@@ -50,5 +51,16 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },
-  projects,
+  projects: [
+    ...canonicalProjects,
+    {
+      name: 'showcase-integration',
+      testMatch: /showcase\.spec\.ts/,
+      use: {
+        colorScheme: 'light' as const,
+        deviceScaleFactor: 1,
+        viewport: { width: 390, height: 844 },
+      },
+    },
+  ],
 });

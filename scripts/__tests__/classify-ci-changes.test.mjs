@@ -15,12 +15,42 @@ test('classifies documentation-only changes as native-safe', () => {
   assert.deepEqual(result.nativeSensitiveFiles, []);
 });
 
-test('classifies isolated pattern changes as native-safe', () => {
-  const result = classifyNativeIosChanges([
-    'apps/showcase/patterns/auth/screens/sign-in-screen.tsx',
-    'apps/showcase/__tests__/patterns/auth-patterns.test.tsx',
-  ]);
+test('classifies auth pattern implementation as native-sensitive executable Showcase input', () => {
+  const result = classifyNativeIosChanges(['apps/showcase/patterns/auth/screens/sign-in-screen.tsx']);
+  assert.equal(result.iosNative, true);
+});
+
+test('classifies dashboard-finance pattern implementation as native-sensitive', () => {
+  const result = classifyNativeIosChanges(['apps/showcase/patterns/dashboard-finance/screens/dashboard-overview-screen.tsx']);
+  assert.equal(result.iosNative, true);
+});
+
+test('classifies commerce-social pattern implementation as native-sensitive', () => {
+  const result = classifyNativeIosChanges(['apps/showcase/patterns/commerce-social/screens/product-detail-screen.tsx']);
+  assert.equal(result.iosNative, true);
+});
+
+test('classifies account-settings pattern implementation as native-sensitive', () => {
+  const result = classifyNativeIosChanges(['apps/showcase/patterns/account-settings/screens/settings-screen.tsx']);
+  assert.equal(result.iosNative, true);
+});
+
+test('keeps isolated pattern tests native-safe', () => {
+  const result = classifyNativeIosChanges(['apps/showcase/__tests__/patterns/auth-patterns.test.tsx']);
   assert.equal(result.iosNative, false);
+});
+
+test('classifies executable Pattern Gallery implementation as native-sensitive', () => {
+  const result = classifyNativeIosChanges(['apps/showcase/pattern-gallery/pattern-gallery.tsx']);
+  assert.equal(result.iosNative, true);
+});
+
+test('mixed documentation and pattern implementation changes require native verification', () => {
+  const result = classifyNativeIosChanges([
+    'docs/roadmap.md',
+    'apps/showcase/patterns/auth/screens/sign-in-screen.tsx',
+  ]);
+  assert.equal(result.iosNative, true);
 });
 
 test('classifies visual-regression-only changes as native-safe', () => {
@@ -85,7 +115,8 @@ test('forceNative always requires native verification', () => {
   assert.match(result.reason, /forced/);
 });
 
-test('normalizes ordinary git path spellings', () => {
+test('normalizes ordinary git path spellings under the new topology', () => {
   assert.equal(isNativeIosSafePath('./docs/release.md'), true);
-  assert.equal(isNativeIosSafePath('apps\\showcase\\patterns\\auth\\index.ts'), true);
+  assert.equal(isNativeIosSafePath('apps\\showcase\\__tests__\\patterns\\auth-patterns.test.tsx'), true);
+  assert.equal(isNativeIosSafePath('apps\\showcase\\patterns\\auth\\screens\\sign-in-screen.tsx'), false);
 });

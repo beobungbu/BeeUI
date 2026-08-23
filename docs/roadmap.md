@@ -17,18 +17,21 @@ As of the current pre-1.0 baseline, BeeUI already has:
 - a shared non-modal anchored-overlay geometry/runtime used by `Popover` and `DropdownMenu`;
 - provider-scoped descriptor-based Toast notifications with queueing, persistence, actions, safe-area-aware stacking, and accessibility announcements;
 - deterministic React Native Testing Library contract coverage;
-- deterministic Chromium visual regression with 28 canonical light/dark screenshots;
+- deterministic Chromium component visual regression with 28 canonical light/dark screenshots;
+- an executable Showcase root that preserves component inspection and integrates a production Pattern Gallery;
+- four production Pattern Gallery domains containing 37 screens:
+  - Authentication + Onboarding: 9;
+  - Dashboard + Finance: 8;
+  - Commerce + Social: 12;
+  - Account + Settings: 8;
+- a declarative Showcase-local pattern catalog with local controlled demo adapters, state inspection, responsive mobile/desktop browsing, and light/dark support;
+- durable Playwright integration QA owned by `apps/visual-regression`, including representative Component/Pattern smoke coverage and a full no-baseline 370-render Pattern Gallery acceptance matrix;
 - Expo Web/Android/iOS bundling and Expo Prebuild verification;
 - fresh package-installed bare React Native consumer verification;
 - bare Android native compilation;
 - Expo Showcase and fresh bare React Native native iOS Simulator compilation on a trusted macOS ARM64 runner;
 - change-aware native iOS scheduling on pull requests plus persistent Xcode/DerivedData build caches;
-- a phase-1 repository-local Registry + source-ownership CLI with deterministic validation, collision protection, dry-run, doctor/verify, and initial component coverage;
-- four merged production pattern packs containing 37 screens:
-  - Authentication + Onboarding: 9;
-  - Dashboard + Finance: 8;
-  - Commerce + Social: 12;
-  - Account + Settings: 8.
+- a phase-1 repository-local Registry + source-ownership CLI with deterministic validation, collision protection, dry-run, doctor/verify, and initial component coverage.
 
 The remaining gap is no longer primarily “more basic components.” The highest-value work is interaction infrastructure, runtime/device evidence, theming depth, distribution, compatibility, documentation, and integrated product-level stress testing.
 
@@ -67,22 +70,28 @@ Do not add components solely to match another library's catalog.
 # Wave 0 — Integrated Pattern Gallery
 
 **Priority:** P0  
-**Status:** next integration work
+**Status:** COMPLETE / IMPLEMENTED
 
-Build a production-quality Showcase Pattern Gallery over the 37 already merged screens.
+Wave 0 shipped the production-quality executable Showcase integration over all 37 production screens.
 
-Goals:
+Implemented behavior:
 
-- register all four domains and all 37 screens in a declarative Showcase-local catalog;
-- provide local controlled-state adapters without introducing router/backend/auth/payment ownership;
-- browse by domain and screen on narrow mobile and wide Web;
-- support light/dark and representative loading/empty/error/long-content states;
-- exercise Toast feedback in realistic screen interactions where appropriate;
-- avoid mounting all 37 heavy screen trees simultaneously;
-- use integration friction to identify real cross-domain gaps;
-- propose a small representative pattern visual-regression matrix instead of committing 37-screen baseline explosion.
+- four domains and 37 screens registered through a declarative Showcase-local catalog;
+- local controlled-state adapters without router/backend/auth/payment ownership;
+- Pattern Gallery home → domain → screen navigation on narrow mobile;
+- wide master/detail browsing at the 960px desktop breakpoint with a constrained 760px preview canvas;
+- representative loading/empty/error/processing/warning state inspection;
+- light/dark theme control through the existing Uniwind integration;
+- demo-only Toast feedback where appropriate;
+- controlled demo state reset when a screen is reopened;
+- an executable Showcase root that exposes **Components** and **Patterns** while mounting only the active heavy surface;
+- preservation/extraction of the pre-existing interactive component playground rather than replacing it;
+- durable Playwright browser QA owned by `apps/visual-regression`, with representative normal-CI coverage and a full 5-viewport × 2-theme × 37-screen acceptance matrix using structural checks/in-memory screenshots rather than 370 committed PNG baselines;
+- executable native Showcase integration, which makes production pattern implementation files native-sensitive CI inputs.
 
-The gallery becomes the canonical manual product-quality surface for BeeUI patterns.
+The Gallery is now the canonical product-quality inspection surface for BeeUI production patterns and an evidence source for future Rule-of-Two promotion decisions.
+
+Do not mark later waves complete merely because Gallery integration exercises their current primitives.
 
 ---
 
@@ -220,7 +229,9 @@ In particular:
 - native iOS compilation is automated today, while runtime/device interaction remains separate;
 - Toast v1 exists today;
 - visual regression phase 1 exists today;
-- 37 production pattern screens exist today;
+- the executable Showcase exposes both the preserved Component Gallery and the implemented 37-screen Pattern Gallery today;
+- durable Playwright Showcase integration QA is owned by `apps/visual-regression` today;
+- production pattern implementation is a native-sensitive Showcase input today;
 - issue #35 is closed as a documented contract, while context-preserving transport remains future pre-1.0 work;
 - packages remain private and are not publicly published to npm.
 
@@ -539,7 +550,7 @@ Per component, document where relevant:
 
 **Priority:** P0/P1 for public launch
 
-Publish the Showcase as a product surface:
+Publish the existing Showcase architecture as a product surface:
 
 - browse components;
 - browse production patterns;
@@ -644,9 +655,9 @@ A 1.0 candidate should have, at minimum:
 
 ## Product proof
 
-- integrated Pattern Gallery;
+- integrated Pattern Gallery retained as a supported executable Showcase surface;
 - at least the current 37 production screens retained and browsable;
-- representative integration visual-regression coverage;
+- representative integration visual-regression/browser coverage;
 - no unresolved cross-domain P0 gap discovered by the gallery.
 
 ## Quality

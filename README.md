@@ -22,6 +22,8 @@ BeeUI currently includes:
 - provider-scoped Toast notifications with queueing, persistence, actions, safe-area-aware stacking, and accessibility announcements;
 - deterministic unit/contract tests with `jest-expo` + React Native Testing Library;
 - deterministic Chromium visual regression with 28 canonical screenshots;
+- executable Showcase navigation between a preserved Component Gallery and a 37-screen production Pattern Gallery;
+- durable Chromium Showcase integration smoke owned by `apps/visual-regression`, plus a full 370-render Pattern Gallery acceptance mode without committed PNG baselines;
 - release-package verification through `pnpm release:verify`;
 - Expo Web/Android/iOS export and Expo Prebuild verification;
 - fresh package-installed bare React Native consumer verification;
@@ -36,7 +38,7 @@ The canonical component inventory lives in [`docs/components.md`](docs/component
 
 ## Production pattern coverage
 
-The Showcase repository now contains 37 production-oriented pattern screens:
+The executable Showcase contains a canonical Pattern Gallery over 37 production-oriented screens:
 
 | Pack | Screens |
 | --- | ---: |
@@ -46,7 +48,7 @@ The Showcase repository now contains 37 production-oriented pattern screens:
 | Account + Settings | 8 |
 | **Total** | **37** |
 
-The next integration step is a canonical Pattern Gallery that browses these packs through the executable Showcase and uses integrated usage to identify real cross-domain gaps before new primitives are promoted.
+Showcase starts at a local section chooser with two application-owned surfaces: **Components** opens the extracted interactive component playground, while **Patterns** opens the declarative Pattern Gallery. No router or global store is required. The Pattern Gallery supplies local controlled demo adapters, representative state inspection, responsive mobile/desktop browsing, light/dark support, and a constrained desktop preview canvas without mounting all 37 heavy screen trees at once.
 
 ## Quick start
 
@@ -70,11 +72,19 @@ Run package/release verification independently with:
 pnpm release:verify
 ```
 
-Run deterministic Web visual comparison with:
+Run deterministic Web visual comparison plus the durable Showcase browser smoke layer with:
 
 ```bash
 pnpm --dir apps/visual-regression test
 ```
+
+Run the full 5-viewport × 2-theme × 37-screen Pattern Gallery acceptance matrix explicitly with:
+
+```bash
+BEEUI_FULL_PATTERN_GALLERY_QA=1 pnpm --dir apps/visual-regression test
+```
+
+The full Gallery mode uses in-memory screenshots and structural/runtime assertions; it does not add 370 committed PNG baselines.
 
 ## Pre-1.0 distribution
 
@@ -193,11 +203,13 @@ The current release pipeline proves, as applicable to the exact commit under rev
 8. Expo Prebuild generation;
 9. fresh packed-package bare React Native Android/iOS Metro bundles;
 10. bare Android debug APK compilation;
-11. deterministic Chromium visual regression in the separate `visual-web` workflow;
-12. Expo Showcase native iOS Simulator compilation when the native classifier schedules it;
-13. fresh bare React Native native iOS Simulator compilation in the same macOS job.
+11. deterministic Chromium component pixel regression in the separate `visual-web` workflow;
+12. durable real-Showcase Chromium integration QA for component/pattern navigation, representative layouts, runtime errors, light/dark, and overflow;
+13. the full 370-render Pattern Gallery matrix in CI or through the explicit full-mode flag;
+14. Expo Showcase native iOS Simulator compilation when the native classifier schedules it;
+15. fresh bare React Native native iOS Simulator compilation in the same macOS job.
 
-On pull requests, the expensive `ios-native` job may be skipped only for conservative native-safe diffs. Pushes to `main` always run the full native iOS gate. Native build caches are performance-only; they do not replace current-source build evaluation.
+On pull requests, the expensive `ios-native` job may be skipped only for conservative native-safe diffs. Production pattern implementation under `apps/showcase/patterns/**` is native-sensitive because those modules are now reachable from the executable Showcase through the Pattern Gallery. Pattern-specific test files remain safe because they are not bundled into the native Showcase. Pushes to `main` always run the full native iOS gate. Native build caches are performance-only; they do not replace current-source build evaluation.
 
 Native compilation is not runtime interaction proof. Safe-area behavior, focus/keyboard behavior, VoiceOver/TalkBack, Android hardware-back interaction, runtime navigation/accessibility flows, and representative device visuals remain explicit runtime/device release gates until the roadmap's protected simulator/device tier is implemented.
 
@@ -205,8 +217,8 @@ Native compilation is not runtime interaction proof. Safe-area behavior, focus/k
 
 ```text
 apps/
-  showcase/              Expo application and production patterns
-  visual-regression/     deterministic Chromium visual fixture
+  showcase/              executable Component + Pattern inspection surface
+  visual-regression/     canonical pixels + durable Showcase browser QA
 packages/
   core/                  engine-neutral utilities
   tokens/                semantic token contract + CSS theme
@@ -222,7 +234,7 @@ docs/
   release.md             versioning, distribution, and release gates
   roadmap.md             canonical production-readiness roadmap
   toast.md               Toast runtime contract
-  visual-regression.md   deterministic visual regression contract
+  visual-regression.md   deterministic visual + Showcase browser QA contract
   decisions/             architecture decision records
 scripts/
   verify-release.mjs
