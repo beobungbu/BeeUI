@@ -162,13 +162,15 @@ BeeUI deliberately separates modal-class overlays from anchored overlays.
 - `Popover` and `DropdownMenu` use shared non-modal anchored geometry/runtime infrastructure.
 - Toast uses a separate transient-notification runtime; it does not use the anchored portal or React Native core `Modal`.
 
-### Pre-1.0 anchored-overlay React Context boundary
+### Anchored-overlay React Context
 
-`PopoverContent` and `DropdownMenuContent` currently render through BeeUI's root `OverlayPortal`. The portal stores a `ReactNode` and renders it under the provider-owned sibling host, so arbitrary consumer contexts declared between `BeeUIProvider` and the overlay declaration are not guaranteed to survive that changed React ancestry.
+`PopoverContent` and `DropdownMenuContent` render through BeeUI's root `OverlayPortal`, which keeps their content in the source fiber tree so consumer contexts declared between `BeeUIProvider` and the overlay — form, navigation, localization, custom theme — resolve to the provided value inside the overlay. The host is selected at runtime:
 
-BeeUI re-provides its own required overlay contexts, but cannot generically enumerate application-owned contexts. The currently supported workaround is to place providers needed by overlay content at or above `BeeUIProvider`, or pass required values explicitly.
+- **Web** uses react-dom's portal, which preserves context.
+- **Native with the React Native New Architecture** uses a native context-preserving portal (`react-native-teleport`, a peer dependency). Verified on iOS and Android.
+- **Native without the New Architecture** (`newArchEnabled: false`), or any build where the native host view is unavailable, falls back to the legacy store host: content is re-parented, consumer context is **not** preserved (resolves to defaults), and a one-time development warning is logged. Enable the New Architecture, or place providers at/above `BeeUIProvider` (or pass values in explicitly).
 
-Issue #35 was closed by PR #38 after this pre-1.0 limitation was explicitly documented and regression-tested. Closing that issue did **not** make the current transport context-preserving. A context-preserving native/Web overlay transport remains a pre-1.0 roadmap item; when it lands, the regression contract must change from proving the documented boundary to proving arbitrary consumer-context preservation.
+Preserving context on native requires a native rebuild (not an over-the-air JS change); run `expo prebuild --clean` after adding the dependency so the native host view is registered. Automatic focus restoration and complete VoiceOver/TalkBack keyboard/focus behavior remain runtime/device release gates.
 
 See [`docs/anchored-overlays.md`](docs/anchored-overlays.md) for the complete current contract.
 

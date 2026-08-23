@@ -50,33 +50,22 @@ The host:
 - removes entries on unmount;
 - supports topmost-only dismissal coordination.
 
-### Current pre-1.0 React Context boundary
+### Consumer React context
 
-The current custom host stores portal children as `ReactNode` values and renders those nodes under the application-root overlay host. That changes React ancestry.
+The overlay host is selected at runtime by `resolveOverlayHostMode()` so anchored content keeps its consumer context wherever the native portal is available:
 
-Arbitrary consumer contexts declared between `BeeUIProvider` and an anchored-overlay declaration are therefore not guaranteed to survive into `PopoverContent` / `DropdownMenuContent` and may resolve to defaults.
+- **Web** → the legacy store host. react-dom's portal already preserves context, and the native teleport host does not lay out anchored content on React Native Web.
+- **Native + New Architecture, teleport host view registered** → the teleport host (`react-native-teleport`). Content stays in its source fiber tree, so consumer contexts declared between `BeeUIProvider` and the overlay resolve to the provided value inside `PopoverContent` / `DropdownMenuContent`. Verified on iOS and Android.
+- **Native without the New Architecture, or when the native host view is not registered** → the legacy store host. It re-parents content under the application-root host, so consumer context is **not** preserved and resolves to defaults; a one-time development warning is logged. This is a graceful degradation, not a crash on a missing native view.
 
-BeeUI explicitly re-provides the BeeUI-owned contexts required by its public overlays. It cannot generically enumerate or recreate application-owned form, navigation, localization, custom-theme, or arbitrary context providers.
+`react-native-teleport` is a peer dependency of `@beeui/ui`. Preserving context on native requires a native rebuild (not an over-the-air JS change) and `expo prebuild --clean` after adding the dependency so the native `PortalHostView` codegen is registered.
 
-Current supported composition:
+When the legacy host is in effect (web is unaffected; the concern is native without Fabric), the supported composition is unchanged:
 
 - put providers required by portalled content at or above `BeeUIProvider`; or
 - pass required values explicitly into portalled content.
 
-Issue #35 was closed by PR #38 after this behavior became an explicit regression-tested pre-1.0 contract. That closure means the limitation is documented rather than ambiguous; it does **not** mean the portal became context-preserving.
-
-The pre-1.0 roadmap now requires investigation/proof of a context-preserving native/Web transport before building more major anchored components on top of the current transport.
-
-A replacement/evolution must retain:
-
-- non-modal anchored positioning;
-- accepted geometry behavior;
-- nested/topmost dismissal;
-- safe-area and keyboard policy;
-- accessibility contracts;
-- no silent fallback to a full-screen React Native `Modal` merely to hide context loss.
-
-When context preservation lands, the existing regression must flip from proving the documented boundary to proving arbitrary consumer-context preservation before this limitation is removed from public docs.
+Switching hosts preserves the accepted anchored-overlay semantics — non-modal positioning, geometry, nested/topmost dismissal, safe-area/keyboard policy, and accessibility contracts are unchanged, and BeeUI never silently falls back to a full-screen React Native `Modal`. The #35 regression contract covers host selection (`resolveOverlayHostMode`) and the legacy host's context boundary; teleport context preservation is verified on-device because JS-only test runtimes cannot exercise the native host.
 
 ### Measurement contract
 
