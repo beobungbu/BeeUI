@@ -46,13 +46,18 @@ prepare_consumer() {
   cd "${APP_DIR}"
 
   echo "::group::Install BeeUI tarballs and runtime styling dependencies"
+  # @beeui/ui peers on react-native-teleport for its native context-preserving
+  # overlay host; teleport in turn peers on react-dom, so pin react-dom to the
+  # app's react version to keep strict peer resolution clean.
   npm install --save-exact \
     "${CORE_TARBALL}" \
     "${TOKENS_TARBALL}" \
     "${UI_TARBALL}" \
     uniwind@1.10.1 \
     tailwindcss@4.3.3 \
-    react-native-safe-area-context@5.7.0
+    react-native-safe-area-context@5.7.0 \
+    react-native-teleport@1.1.13 \
+    react-dom@19.2.3
   echo "::endgroup::"
 
   if node -e "require.resolve('expo')" >/dev/null 2>&1; then
