@@ -4,11 +4,9 @@ Status: Accepted
 
 ## Context
 
-Production overlays are behavior-heavy. Dialogs, sheets, popovers, menus, tooltips, selects, and toasts need correct focus management, portal behavior, hardware-back handling, keyboard handling, screen-reader semantics, and web parity.
+Production overlays are behavior-heavy. Dialogs, sheets, popovers, menus, tooltips, selects, and transient notifications need correct focus/dismissal behavior, hardware-back handling, keyboard policy, screen-reader semantics, and Web/native parity.
 
-The original v0.1 plan deferred all overlays while BeeUI evaluated `@rn-primitives`. That library remains useful reference material, but adopting it as a runtime foundation would also adopt its portal layer and current compatibility surface. During the RN 0.86 review, BeeUI found open upstream reports for mobile-web Dialog overlay dismissal and Portal/Jest distribution behavior.
-
-Modal-class overlays and anchored overlays do not need the same primitive. React Native 0.86 already ships `Modal`; on Android its `onRequestClose` integrates with the hardware back button. React Native for Web's `Modal` provides modal ARIA behavior, contains focus, and routes Escape to the top-most modal's `onRequestClose`.
+BeeUI intentionally separates behavior classes instead of forcing every above-content surface through one portal mechanism.
 
 ## Decision
 
@@ -16,48 +14,83 @@ Modal-class overlays and anchored overlays do not need the same primitive. React
 
 BeeUI uses React Native core `Modal` as the behavior primitive for `Dialog`. `AlertDialog` reuses that accepted modal-class kernel while narrowing backdrop and request-close behavior for confirmation/destructive flows.
 
-The BeeUI layer owns:
+BeeUI owns:
 
-- controlled/uncontrolled open state
-- trigger and close controls
-- semantic backdrop and surface styling
-- component-specific dismissal policy
-- dialog accessibility role / modal isolation hints
-- accessibility escape mapped to the component's request-close policy
-- stable component composition API
+- controlled/uncontrolled open state;
+- trigger/close controls;
+- semantic backdrop/surface styling;
+- component-specific dismissal policy;
+- accessibility labeling/description relationships;
+- accessibility escape mapped to request-close policy;
+- stable composition APIs.
 
-The React Native / React Native Web layer owns the platform modal window, Android back integration, web focus containment, modal isolation, and web Escape routing.
+React Native / React Native Web owns the platform modal window and the platform behavior exposed by core `Modal`.
 
-This keeps `@beeui/core` / `@beeui/ui` Expo-free and avoids adding a portal dependency for a behavior that the current RN stack already provides.
+This keeps `@beeui/core` / `@beeui/ui` Expo-free and avoids adopting a separate portal dependency for centered modal behavior that React Native already provides.
 
 ### Anchored overlays
 
-BeeUI uses a separate non-Modal anchored-overlay stack for trigger-positioned components.
+BeeUI uses a separate non-Modal stack for trigger-positioned components.
 
 The accepted stack consists of:
 
-- a pure `@beeui/core` geometry resolver for placement, alignment, RTL behavior, offsets, flip/shift, collision padding, and overflow metadata
-- one internal `@beeui/ui` host/runtime under `BeeUIProvider` for portal lifecycle, window-coordinate measurement, safe-area/keyboard environment, anchor remeasurement, and deterministic topmost dismissal
-- public `Popover` composition on those kernels
-- public `DropdownMenu` composition on those kernels with menu-specific item, selection, and keyboard contracts
+- a pure `@beeui/core` geometry resolver for placement, alignment, RTL behavior, offsets, flip/shift, collision padding, and overflow metadata;
+- one internal `@beeui/ui` host/runtime under `BeeUIProvider` for portal lifecycle, window-coordinate measurement, safe-area/keyboard environment, anchor remeasurement, and deterministic topmost dismissal;
+- public `Popover` composition;
+- public `DropdownMenu` composition with menu-specific item/selection/keyboard contracts.
 
-`Select` and `Tooltip` remain deferred until their own component-level selection/focus/accessibility contracts are implemented and verified. They must reuse the accepted anchored kernels rather than approximating anchor positioning with a full-screen `Modal` or introducing a second positioning/dismiss engine without new evidence.
+`Select` and `Tooltip` remain future public anchored components and must reuse the accepted geometry/interaction contracts rather than approximating anchored UI with a full-screen `Modal` or inventing a second positioning/dismiss engine without evidence.
 
-The current custom anchored portal re-parents entries under the application-root overlay host. BeeUI explicitly re-provides the internal contexts its public overlay components require, but arbitrary consumer React contexts scoped below `BeeUIProvider` are not currently guaranteed to survive that re-parenting. This is a documented pre-1.0 limitation tracked separately; component-specific context copying must not be treated as a generic fix.
+#### Current React Context boundary
 
-`Sheet` remains separately gated because gesture, keyboard, safe-area, and presentation behavior need stronger native verification than the centered Dialog kernel alone provides.
+The current custom anchored portal re-parents entries under the application-root overlay host. BeeUI re-provides the internal contexts its own public overlays require, but arbitrary consumer React contexts scoped below `BeeUIProvider` are not guaranteed to survive that change in React ancestry.
+
+Issue #35 was closed by PR #38 after this became an explicit, regression-tested pre-1.0 contract. The closure documents the limitation; it does not make the current transport context-preserving.
+
+A context-preserving native/Web transport is now a pre-1.0 roadmap requirement before further major anchored-overlay expansion. Any replacement/evolution must retain the accepted non-modal geometry, nested/topmost dismissal, safe-area, keyboard-policy, and accessibility behavior. Component-specific context copying is not a generic solution.
+
+### Sheet
+
+`Sheet` remains separately gated because gesture, snap-point, keyboard, safe-area, scroll/presentation, hardware-back, and accessibility behavior require stronger native runtime evidence than the centered Dialog kernel alone provides.
+
+### Toast
+
+Toast v1 is implemented as a separate provider-scoped transient-notification runtime.
+
+It intentionally does not use:
+
+- React Native core `Modal`;
+- anchored positioning/geometry;
+- arbitrary `ReactNode` portal transport.
+
+Future Toast animation/swipe/custom-content work must preserve that separation unless new evidence warrants a different contract.
 
 ## Evidence / gates
 
-Public overlay components must pass BeeUI's normal automated gates applicable to their behavior class:
+Public overlay work must pass the automated gates applicable to its behavior class:
 
-1. strict TypeScript across the workspace
-2. React Native Testing Library state/interaction/accessibility contracts
-3. packed-package/release verification through `pnpm release:verify`
-4. Expo/Metro bundle for Web, Android, and iOS
-5. Expo Prebuild generation of Android and iOS native projects
-6. clean packed-tarball installation into a true bare React Native consumer
-7. bare React Native Android + iOS Metro bundles and Android debug APK compilation
-8. no Expo runtime import in `@beeui/core` / `@beeui/ui`
+1. strict workspace TypeScript;
+2. React Native Testing Library state/interaction/accessibility contracts;
+3. `pnpm release:verify` package/release verification;
+4. Expo/Metro bundles for Web, Android, and iOS;
+5. Expo Prebuild generation;
+6. clean packed-tarball installation into a true bare React Native consumer;
+7. bare RN Android + iOS Metro bundles;
+8. bare Android native compilation;
+9. deterministic Chromium visual regression where representative;
+10. native iOS Simulator compilation for the Expo Showcase and a fresh bare RN consumer when scheduled, and always on main pushes;
+11. no Expo runtime imports in `@beeui/core` / `@beeui/ui`.
 
-These automated gates do not replace native release interaction checks. Native iOS binary compilation, representative simulator/device positioning, keyboard/focus behavior, Android hardware back, VoiceOver/TalkBack behavior, and visual review remain explicit release gates for the public overlay component that depends on them.
+Native iOS compilation is now automated and must no longer be described as a manual release gate.
+
+Automated compile/contract/visual evidence still does not replace real runtime/device checks for:
+
+- safe areas with real non-zero insets;
+- focus/keyboard behavior;
+- Android hardware back during execution;
+- VoiceOver/TalkBack;
+- scrolling/anchor movement;
+- representative native visuals;
+- component-specific future Select/Tooltip/Sheet interaction contracts.
+
+`docs/release.md` defines current release evidence. `docs/roadmap.md` defines the pre-1.0 runtime/overlay work that remains.
