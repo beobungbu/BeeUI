@@ -95,36 +95,26 @@ Do not mark later waves complete merely because Gallery integration exercises th
 
 ---
 
-# Wave 1A — Context-preserving anchored-overlay transport
+# Wave 1A — Context-preserving anchored-overlay transport — COMPLETE
 
 **Priority:** P0  
-**Target:** before `Select`, `Tooltip`, or BeeUI 1.0
+**Status:** COMPLETE (#35)
 
-The current `OverlayPortal` renders anchored-overlay entries under a provider-owned sibling host. BeeUI-owned overlay contexts are re-provided, but arbitrary consumer React contexts declared below `BeeUIProvider` are not guaranteed to survive that change in React ancestry.
+`OverlayPortal` is now a runtime-selected transport separated from the shared overlay runtime, and consumer React context declared below `BeeUIProvider` is preserved inside anchored overlay content:
 
-Issue #35 and PR #38 established and tested this pre-1.0 contract; they did not make source ancestry context-preserving.
+- **web** → `ReactDOM.createPortal`;
+- **native + New Architecture** → `react-native-teleport` (native context-preserving portal);
+- **defensive fallback** (native without Fabric, or host view unregistered) → the legacy store host, which does not preserve context, with a one-time dev warning. This is a fallback, not an advertised production configuration — BeeUI peers React Native >= 0.85 where the New Architecture is the norm.
 
-Before BeeUI 1.0, investigate and prove a context-preserving native/Web transport that retains the accepted anchored-overlay contracts:
+The accepted contracts are retained across transports: non-modal positioning, shared geometry/collision handling, safe-area and keyboard policy, deterministic topmost dismissal, nested overlay behavior, accessibility semantics, and no silent conversion to a full-screen React Native `Modal`. `DialogContent` provisions a modal-local host so anchored overlays inside a dialog render in the modal window (generic — future `Select`/`Tooltip` inherit it).
 
-- non-modal positioning;
-- shared geometry and collision handling;
-- safe-area and keyboard policy;
-- deterministic topmost dismissal;
-- nested overlay behavior;
-- accessibility semantics;
-- no silent conversion to full-screen React Native `Modal` merely to hide the context boundary.
+Regression evidence:
 
-Required regression evidence should include consumer contexts representative of:
+- jest transport contract suite: native teleport preserves context; legacy fallback drops it; capability selection; open/unmount lifecycle; Dialog → Popover.
+- Playwright on the real Showcase web app: consumer context resolves inside Popover, DropdownMenu, and a Dialog-nested Popover (`ReactDOM.createPortal`).
+- Device runtime evidence (iOS + Android): context preserved at the root host and inside a `Dialog` modal-local host, with correct placement and child-first dismissal.
 
-- forms;
-- navigation;
-- localization;
-- application theme/state;
-- arbitrary custom context;
-- nested anchored overlays;
-- anchored overlays inside modal-class surfaces where supported.
-
-When this work lands, the existing regression must flip from documenting context loss to proving consumer-context preservation.
+The #35 regression now proves consumer-context preservation for the context-preserving transports and pins the legacy fallback's documented loss.
 
 ---
 
@@ -232,7 +222,7 @@ In particular:
 - the executable Showcase exposes both the preserved Component Gallery and the implemented 37-screen Pattern Gallery today;
 - durable Playwright Showcase integration QA is owned by `apps/visual-regression` today;
 - production pattern implementation is a native-sensitive Showcase input today;
-- issue #35 is closed as a documented contract, while context-preserving transport remains future pre-1.0 work;
+- issue #35 is resolved: the context-preserving overlay transport (Wave 1A) is complete and proven;
 - packages remain private and are not publicly published to npm.
 
 Any implementation PR that invalidates a current-state statement must update the corresponding canonical documentation in the same change or an explicitly linked synchronization PR.
@@ -646,7 +636,7 @@ A 1.0 candidate should have, at minimum:
 
 - stable semantic token names;
 - broad stable component coverage already proven by product patterns;
-- context-preserving anchored-overlay strategy, or an explicitly reviewed alternative that removes the current arbitrary-consumer-context limitation;
+- context-preserving anchored-overlay transport (Wave 1A, complete);
 - production-ready Select;
 - production-ready Tooltip policy;
 - production-ready Sheet if BeeUI claims first-class modern mobile application coverage;

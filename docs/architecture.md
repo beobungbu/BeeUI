@@ -185,17 +185,19 @@ The second layer lives internally in `@beeui/ui` and is installed by `BeeUIProvi
 - Android hardware back, Web Escape, and outside press target only the topmost registered dismissable overlay.
 - Test measurement overrides are internal seams, not public production fallbacks.
 
-### Current React Context boundary
+### Overlay portal transport
 
-The current custom anchored-overlay host renders portal entries under an application-root sibling host. That changes React ancestry.
+The anchored-overlay portal is a swappable transport, selected at runtime and separated from the shared runtime (geometry, dismissal, registration, measurement stay shared):
 
-BeeUI re-provides the internal contexts its public overlay components need, but arbitrary consumer contexts scoped between `BeeUIProvider` and the overlay declaration are not guaranteed to be preserved inside portalled content.
+- **web** → `ReactDOM.createPortal`, which preserves consumer React context;
+- **native + New Architecture** (teleport host registered) → a native context-preserving portal (`react-native-teleport`);
+- otherwise (native without Fabric, or the host view unregistered) → the legacy store host, a defensive fallback that re-parents content and does **not** preserve context, with a one-time dev warning.
 
-Issue #35 and PR #38 established this as an explicit, regression-tested pre-1.0 contract. The issue is closed because the behavior is now documented rather than ambiguous; the current transport is **not** thereby context-preserving.
+Consumer contexts scoped between `BeeUIProvider` and an overlay declaration therefore resolve to the provided value inside `PopoverContent` / `DropdownMenuContent` on web and on the native New Architecture. Transport selection resolves once inside the provider (not a module-level constant) with a deterministic test seam.
 
-Until a context-preserving transport is proven, consumers should place required providers at or above `BeeUIProvider` or pass required values explicitly.
+Overlay content targets the **nearest host scope**. `DialogContent` renders through React Native `Modal` (its own native window) and provisions a modal-local host, so anchored overlays declared inside a dialog render in that window rather than behind it. The mechanism is generic (future Select/Tooltip inherit it).
 
-A context-preserving native/Web transport is a pre-1.0 roadmap item and must retain the accepted non-modal geometry, nested-dismiss, safe-area, keyboard-policy, and accessibility contracts. Component-specific context copying is not a generic fix.
+The accepted non-modal geometry, nested/topmost dismissal, safe-area, keyboard policy, and accessibility contracts are unchanged across transports, and BeeUI never silently converts anchored overlays to a full-screen `Modal`. When the legacy fallback is in effect, place required providers at or above `BeeUIProvider` or pass values explicitly. `react-native-teleport` is a peer dependency; `react-dom` is an optional web-only peer.
 
 ## Public Popover contract
 
@@ -319,7 +321,7 @@ The old “25–30 primitives + a future CLI” threshold is obsolete: BeeUI alr
 The current BeeUI 1.0 exit criteria are defined canonically in `docs/roadmap.md` and include, among other things:
 
 - stable expanded theming/token contracts;
-- context-preserving anchored-overlay strategy or an explicitly reviewed replacement of the current arbitrary-consumer-context limitation;
+- context-preserving anchored-overlay transport (complete: web `createPortal`, native teleport, modal-local host);
 - production-ready Select/Tooltip and Sheet if first-class modern mobile coverage is claimed;
 - retention of the integrated Pattern Gallery and representative pattern regression coverage;
 - protected runtime simulator/device verification;

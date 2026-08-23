@@ -137,9 +137,9 @@ Additional form-group integrations should be added only where React Native expos
 
 The shared anchored-overlay geometry/runtime kernels are accepted, with public `Popover` and `DropdownMenu` layered on them.
 
-The current portal transport has a documented pre-1.0 arbitrary-consumer-React-Context boundary. Issue #35/PR #38 made that limitation explicit and regression-tested; they did not make the transport context-preserving. See `docs/anchored-overlays.md`.
+The portal transport preserves consumer React context declared below `BeeUIProvider` (web `ReactDOM.createPortal`, native `react-native-teleport`), with a defensive legacy fallback that does not preserve it. Overlays inside a `Dialog` target a modal-local host. See `docs/anchored-overlays.md`.
 
-Future `Select` and `Tooltip` must not alias DropdownMenu semantics, and they should not proceed ahead of the roadmap's context-preserving transport investigation.
+Future `Select` and `Tooltip` must not alias DropdownMenu semantics. They build on the shared context-preserving transport and the generic modal-local host scope rather than special-casing.
 
 Do not approximate anchored overlays with full-screen modal behavior merely to avoid portal/context work. Positioning, collision handling, nested overlays, focus, keyboard semantics, and accessibility remain part of each component's contract.
 
