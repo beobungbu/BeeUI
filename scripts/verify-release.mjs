@@ -37,6 +37,7 @@ const packageSpecs = [
       'package/src/components/overlay-runtime.tsx',
       'package/src/components/overlay-dismiss-events.ts',
       'package/src/components/overlay-dismiss-events.web.ts',
+      'package/src/components/toast.tsx',
     ],
   },
 ];
