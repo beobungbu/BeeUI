@@ -41,6 +41,34 @@ function sourceFiles(root: string): string[] {
   });
 }
 
+const productA = {
+  id: 'product-a',
+  name: 'Product A',
+  subtitle: 'Variant identity fixture',
+  category: 'Test',
+  price: 100,
+  rating: 4.8,
+  reviewCount: 12,
+  imageUri: 'https://example.com/product-a.jpg',
+  description: 'A deterministic product used to verify variant state.',
+  availability: 'In stock',
+  shipping: 'Ships today',
+  variants: ['S', 'M', 'L'],
+};
+
+const productB = {
+  ...productA,
+  id: 'product-b',
+  name: 'Product B',
+  variants: ['Blue', 'Green'],
+};
+
+function expectChecked(view: ReturnType<typeof render>, name: string) {
+  expect(view.getByRole('radio', { name }).props.accessibilityState).toEqual(
+    expect.objectContaining({ checked: true }),
+  );
+}
+
 describe('commerce + social production patterns', () => {
   it('typechecks the isolated pattern project', () => {
     execFileSync(
@@ -91,6 +119,40 @@ describe('commerce + social production patterns', () => {
 
     expect(onFavorite).toHaveBeenCalledWith(expect.objectContaining({ id: 'p-aurora-tote' }));
     expect(onAddToCart).toHaveBeenCalledWith(expect.objectContaining({ id: 'p-aurora-tote' }), 'Sand');
+  });
+
+  it('preserves variant selection for a newly allocated object with the same logical product id', () => {
+    const view = render(<ProductDetailScreen product={productA} />);
+
+    fireEvent.press(view.getByRole('radio', { name: 'M' }));
+    expectChecked(view, 'M');
+
+    view.rerender(<ProductDetailScreen product={{ ...productA, variants: [...productA.variants] }} />);
+    expectChecked(view, 'M');
+
+    view.rerender(<ProductDetailScreen product={productB} />);
+    expectChecked(view, 'Blue');
+  });
+
+  it('falls back to a valid variant when the current option disappears', () => {
+    const view = render(<ProductDetailScreen product={productA} />);
+
+    fireEvent.press(view.getByRole('radio', { name: 'M' }));
+    expectChecked(view, 'M');
+
+    view.rerender(<ProductDetailScreen product={{ ...productA, variants: ['S', 'L'] }} />);
+
+    expect(view.queryByRole('radio', { name: 'M' })).toBeNull();
+    expectChecked(view, 'S');
+  });
+
+  it('renders an unavailable CTA when a product has no variants', () => {
+    const view = render(<ProductDetailScreen product={{ ...productA, variants: [] }} />);
+
+    expect(view.getByText('No options are currently available.')).toBeTruthy();
+    expect(view.getByTestId('product-detail-add').props.accessibilityState).toEqual(
+      expect.objectContaining({ disabled: true }),
+    );
   });
 
   it('wires cart quantity and remove callbacks', () => {
