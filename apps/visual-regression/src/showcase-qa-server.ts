@@ -2,9 +2,8 @@ import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as http from 'node:http';
 import * as path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+const repoRoot = path.resolve(__dirname, '../../..');
 const showcaseDist = path.join(repoRoot, 'apps/showcase/dist-gallery-qa');
 
 function contentType(file: string) {
