@@ -1,83 +1,50 @@
 import './global.css';
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogTitle,
-  Badge,
-  BeeUIProvider,
-  Box,
-  Breadcrumb,
-  BreadcrumbItem,
-  Button,
-  Card,
-  Checkbox,
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  Field,
-  FormGroup,
-  Input,
-  ListGroup,
-  ListGroupHeader,
-  Progress,
-  PasswordInput,
-  Popover,
-  PopoverClose,
-  PopoverContent,
-  PopoverDescription,
-  PopoverTitle,
-  PopoverTrigger,
-  Radio,
-  RadioGroup,
-  Separator,
-  SettingsItem,
-  Stepper,
-  StepperItem,
-  Switch,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  Text,
-  Textarea,
-  Timeline,
-  TimelineItem,
-} from '@beeui/ui';
+import { BeeUIProvider } from '@beeui/ui';
 import * as React from 'react';
 import { Uniwind } from 'uniwind';
 import {
-  isVisualScenarioId,
-  isVisualTheme,
-  type VisualScenarioId,
-  type VisualTheme,
-} from './src/visual-contract';
+  ForgotPasswordScreen,
+  InterestsOnboardingScreen,
+  PasswordUpdatedScreen,
+  ProfileSetupScreen,
+  ResetPasswordScreen,
+  SignInScreen,
+  SignUpScreen,
+  VerifyCodeScreen,
+  WelcomeScreen,
+} from '../showcase/patterns/auth';
 
-function readVisualQuery(): { scenario: VisualScenarioId; theme: VisualTheme } {
+const noop = () => undefined;
+const noopValue = (_value: string) => undefined;
+const noopBool = (_value: boolean) => undefined;
+const noopValues = (_value: string[]) => undefined;
+
+const longError =
+  'We could not complete this request because the account service returned an unexpected response. Check your connection and try again. If the problem continues, contact support and include the time this happened.';
+
+const longTermsCopy =
+  'Please review and accept the Terms of Service and Privacy Policy before creating an account. This acknowledgement is required so we can continue safely and explain how your account data is handled.';
+
+const longInterestOptions = [
+  { id: 'design-systems', label: 'Design systems and cross-platform component architecture' },
+  { id: 'mobile-performance', label: 'Mobile performance, accessibility, and interaction design' },
+  { id: 'product-strategy', label: 'Product strategy for developer tools and technical platforms' },
+  { id: 'ai-workflows', label: 'Applied AI workflows, automation, and developer productivity' },
+] as const;
+
+const longBio =
+  'I build thoughtful product experiences across mobile and web, with a focus on accessibility, design systems, developer tooling, and reliable delivery for teams that care about small details.';
+
+function readQuery() {
   if (typeof window === 'undefined') {
-    return { scenario: 'foundation', theme: 'light' };
+    return { scenario: 'welcome-default', theme: 'light' as const };
   }
 
   const params = new URLSearchParams(window.location.search);
-  const requestedScenario = params.get('scenario');
-  const requestedTheme = params.get('theme');
-
   return {
-    scenario: isVisualScenarioId(requestedScenario) ? requestedScenario : 'foundation',
-    theme: isVisualTheme(requestedTheme) ? requestedTheme : 'light',
+    scenario: params.get('authScenario') ?? 'welcome-default',
+    theme: params.get('theme') === 'dark' ? ('dark' as const) : ('light' as const),
   };
 }
 
@@ -85,7 +52,7 @@ function nextFrame() {
   return new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 }
 
-function useVisualReadiness(scenario: VisualScenarioId, theme: VisualTheme) {
+function useVisualReadiness(scenario: string, theme: 'light' | 'dark') {
   React.useEffect(() => {
     if (typeof document === 'undefined') return;
 
@@ -95,389 +62,458 @@ function useVisualReadiness(scenario: VisualScenarioId, theme: VisualTheme) {
     document.documentElement.dataset.visualTheme = theme;
     Uniwind.setTheme(theme);
 
-    const anchoredTestId =
-      scenario === 'popover-open'
-        ? 'visual-popover-content'
-        : scenario === 'dropdown-menu-open'
-          ? 'visual-dropdown-content'
-          : undefined;
-
     async function settle() {
-      if ('fonts' in document) {
-        await document.fonts.ready;
-      }
-
-      // Layout/theme propagation is synchronized to render frames, never wall-clock sleeps.
+      if ('fonts' in document) await document.fonts.ready;
       await nextFrame();
       await nextFrame();
-
-      if (anchoredTestId) {
-        let positioned = false;
-
-        for (let attempt = 0; attempt < 30; attempt += 1) {
-          if (cancelled) return;
-
-          const node = document.querySelector(
-            `[data-testid="${anchoredTestId}"]`,
-          ) as HTMLElement | null;
-          const rect = node?.getBoundingClientRect();
-
-          if (
-            rect &&
-            rect.width > 0 &&
-            rect.height > 0 &&
-            rect.left > -1000 &&
-            rect.top > -1000
-          ) {
-            positioned = true;
-            break;
-          }
-
-          await nextFrame();
-        }
-
-        if (!positioned) return;
-      }
-
       await nextFrame();
       if (!cancelled) document.documentElement.dataset.visualReady = 'true';
     }
 
     void settle();
-
     return () => {
       cancelled = true;
     };
   }, [scenario, theme]);
 }
 
-function ScenarioShell({
-  children,
-  title,
-}: {
-  children: React.ReactNode;
-  title: string;
-}) {
-  return (
-    <Box className="min-h-screen bg-surface px-4 py-5">
-      <Box className="mx-auto w-full max-w-4xl gap-4">
-        <Box className="gap-1">
-          <Text variant="title">{title}</Text>
-          <Text tone="muted" variant="caption">
-            BeeUI deterministic visual fixture
-          </Text>
-        </Box>
-        {children}
-      </Box>
-    </Box>
-  );
-}
+function AuthScenario({ id }: { id: string }) {
+  switch (id) {
+    case 'welcome-default':
+      return <WelcomeScreen onGetStarted={noop} onSignIn={noop} />;
 
-function FoundationScenario() {
-  return (
-    <ScenarioShell title="Foundation">
-      <Card className="gap-3" variant="raised">
-        <Text variant="heading">Type scale</Text>
-        <Text variant="title">Title · BeeUI</Text>
-        <Text variant="heading">Heading · Visual regression</Text>
-        <Text variant="body">Body · Portable React Native primitives</Text>
-        <Text variant="label">Label · Deterministic fixture</Text>
-        <Text variant="caption">Caption · Chromium baseline</Text>
-      </Card>
-
-      <Card className="gap-3">
-        <Text variant="heading">Buttons</Text>
-        <Box className="flex-row flex-wrap gap-2">
-          <Button size="sm">Small</Button>
-          <Button size="md" variant="secondary">Medium</Button>
-          <Button size="lg" variant="outline">Large</Button>
-          <Button variant="ghost">Ghost</Button>
-          <Button variant="destructive">Destructive</Button>
-        </Box>
-      </Card>
-
-      <Card className="gap-3" variant="muted">
-        <Text variant="heading">Badges, card, separator</Text>
-        <Box className="flex-row flex-wrap gap-2">
-          <Badge>Primary</Badge>
-          <Badge variant="secondary">Secondary</Badge>
-          <Badge variant="success">Success</Badge>
-          <Badge variant="warning">Warning</Badge>
-          <Badge variant="destructive">Error</Badge>
-          <Badge variant="info">Info</Badge>
-          <Badge variant="outline">Outline</Badge>
-        </Box>
-        <Separator />
-        <Text tone="muted">Semantic surfaces stay theme-aware.</Text>
-      </Card>
-    </ScenarioShell>
-  );
-}
-
-function FormsScenario() {
-  return (
-    <ScenarioShell title="Forms">
-      <Card className="gap-4">
-        <Field description="Used only for release notifications." label="Email" required>
-          <Input defaultValue="visual@beeui.dev" />
-        </Field>
-
-        <Field description="Fixed multiline content." label="Notes">
-          <Textarea defaultValue="Stable content for screenshot comparison." />
-        </Field>
-
-        <Field label="Password">
-          <PasswordInput defaultValue="beeui-visual" />
-        </Field>
-
-        <Separator />
-
-        <Checkbox
-          checked
-          label="Accept release checklist"
-          onCheckedChange={() => undefined}
+    case 'sign-in-default':
+      return (
+        <SignInScreen
+          email=""
+          onAppleSignIn={noop}
+          onCreateAccount={noop}
+          onEmailChange={noopValue}
+          onForgotPassword={noop}
+          onGoogleSignIn={noop}
+          onPasswordChange={noopValue}
+          onSubmit={noop}
+          password=""
         />
+      );
+    case 'sign-in-invalid':
+      return (
+        <SignInScreen
+          email="not-an-email"
+          emailError="Enter a valid email address."
+          onCreateAccount={noop}
+          onEmailChange={noopValue}
+          onForgotPassword={noop}
+          onPasswordChange={noopValue}
+          onSubmit={noop}
+          password="short"
+          passwordError="Password must be at least 8 characters."
+        />
+      );
+    case 'sign-in-loading':
+      return (
+        <SignInScreen
+          email="hello@beeui.dev"
+          loading
+          onCreateAccount={noop}
+          onEmailChange={noopValue}
+          onForgotPassword={noop}
+          onPasswordChange={noopValue}
+          onSubmit={noop}
+          password="BeeUI123"
+        />
+      );
+    case 'sign-in-server-error':
+      return (
+        <SignInScreen
+          email="hello@beeui.dev"
+          error="The account could not be authenticated."
+          onCreateAccount={noop}
+          onEmailChange={noopValue}
+          onForgotPassword={noop}
+          onPasswordChange={noopValue}
+          onSubmit={noop}
+          password="BeeUI123"
+        />
+      );
+    case 'sign-in-long-error':
+      return (
+        <SignInScreen
+          email="hello@beeui.dev"
+          error={longError}
+          onCreateAccount={noop}
+          onEmailChange={noopValue}
+          onForgotPassword={noop}
+          onPasswordChange={noopValue}
+          onSubmit={noop}
+          password="BeeUI123"
+        />
+      );
 
-        <FormGroup description="One stable selected option." legend="Release channel" required>
-          <RadioGroup onValueChange={() => undefined} value="stable">
-            <Radio label="Preview" value="preview" />
-            <Radio label="Stable" value="stable" />
-          </RadioGroup>
-        </FormGroup>
+    case 'sign-up-default':
+      return (
+        <SignUpScreen
+          acceptedTerms={false}
+          confirmPassword=""
+          email=""
+          name=""
+          onAcceptedTermsChange={noopBool}
+          onAppleSignIn={noop}
+          onConfirmPasswordChange={noopValue}
+          onEmailChange={noopValue}
+          onGoogleSignIn={noop}
+          onNameChange={noopValue}
+          onPasswordChange={noopValue}
+          onSignIn={noop}
+          onSubmit={noop}
+          password=""
+        />
+      );
+    case 'sign-up-validation':
+      return (
+        <SignUpScreen
+          acceptedTerms={false}
+          confirmPassword="different"
+          email="bad-email"
+          fieldErrors={{
+            confirmPassword: 'Passwords do not match.',
+            email: 'Enter a valid email address.',
+            name: 'Enter your name.',
+            password: 'Choose a stronger password.',
+            terms: 'Accept the terms before continuing.',
+          }}
+          name=""
+          onAcceptedTermsChange={noopBool}
+          onConfirmPasswordChange={noopValue}
+          onEmailChange={noopValue}
+          onNameChange={noopValue}
+          onPasswordChange={noopValue}
+          onSignIn={noop}
+          onSubmit={noop}
+          password="weak"
+        />
+      );
+    case 'sign-up-loading':
+      return (
+        <SignUpScreen
+          acceptedTerms
+          confirmPassword="BeeUI123"
+          email="hello@beeui.dev"
+          loading
+          name="BeeUI Builder"
+          onAcceptedTermsChange={noopBool}
+          onConfirmPasswordChange={noopValue}
+          onEmailChange={noopValue}
+          onNameChange={noopValue}
+          onPasswordChange={noopValue}
+          onSignIn={noop}
+          onSubmit={noop}
+          password="BeeUI123"
+        />
+      );
+    case 'sign-up-long-copy':
+      return (
+        <SignUpScreen
+          acceptedTerms={false}
+          confirmPassword="BeeUI123"
+          email="hello@beeui.dev"
+          fieldErrors={{ terms: longTermsCopy }}
+          name="BeeUI Builder"
+          onAcceptedTermsChange={noopBool}
+          onConfirmPasswordChange={noopValue}
+          onEmailChange={noopValue}
+          onNameChange={noopValue}
+          onPasswordChange={noopValue}
+          onSignIn={noop}
+          onSubmit={noop}
+          password="BeeUI123"
+        />
+      );
 
-        <Box className="flex-row items-center justify-between gap-4">
-          <Text>Visual gate enabled</Text>
-          <Switch
-            accessibilityLabel="Visual gate enabled"
-            onValueChange={() => undefined}
-            value
-          />
-        </Box>
-      </Card>
-    </ScenarioShell>
-  );
-}
+    case 'forgot-default':
+      return (
+        <ForgotPasswordScreen
+          email=""
+          onBackToSignIn={noop}
+          onEmailChange={noopValue}
+          onSubmit={noop}
+        />
+      );
+    case 'forgot-error':
+      return (
+        <ForgotPasswordScreen
+          email="missing@beeui.dev"
+          emailError="Enter the email used for your BeeUI account."
+          error="We could not find an account for that email."
+          onBackToSignIn={noop}
+          onEmailChange={noopValue}
+          onSubmit={noop}
+        />
+      );
+    case 'forgot-submitting':
+      return (
+        <ForgotPasswordScreen
+          email="hello@beeui.dev"
+          loading
+          onBackToSignIn={noop}
+          onEmailChange={noopValue}
+          onSubmit={noop}
+        />
+      );
 
-function NavigationDataScenario() {
-  return (
-    <ScenarioShell title="Navigation and data">
-      <Card className="gap-4">
-        <Breadcrumb accessibilityLabel="Visual fixture breadcrumb">
-          <BreadcrumbItem onPress={() => undefined}>Components</BreadcrumbItem>
-          <BreadcrumbItem current>Visual regression</BreadcrumbItem>
-        </Breadcrumb>
+    case 'verify-empty':
+      return (
+        <VerifyCodeScreen
+          canResend={false}
+          code=""
+          countdownText="Resend in 0:42"
+          destination="hello@beeui.dev"
+          onChangeDestination={noop}
+          onCodeChange={noopValue}
+          onComplete={noopValue}
+          onResend={noop}
+          onSubmit={noop}
+        />
+      );
+    case 'verify-incomplete':
+      return (
+        <VerifyCodeScreen
+          canResend={false}
+          code="123"
+          countdownText="Resend in 0:18"
+          destination="hello@beeui.dev"
+          onChangeDestination={noop}
+          onCodeChange={noopValue}
+          onComplete={noopValue}
+          onResend={noop}
+          onSubmit={noop}
+        />
+      );
+    case 'verify-complete':
+      return (
+        <VerifyCodeScreen
+          canResend
+          code="123456"
+          countdownText="Resend available now"
+          destination="hello@beeui.dev"
+          onChangeDestination={noop}
+          onCodeChange={noopValue}
+          onComplete={noopValue}
+          onResend={noop}
+          onSubmit={noop}
+        />
+      );
+    case 'verify-error':
+      return (
+        <VerifyCodeScreen
+          canResend
+          code="123456"
+          error="That code has expired. Request a new code and try again."
+          destination="hello@beeui.dev"
+          onChangeDestination={noop}
+          onCodeChange={noopValue}
+          onComplete={noopValue}
+          onResend={noop}
+          onSubmit={noop}
+        />
+      );
+    case 'verify-verifying':
+      return (
+        <VerifyCodeScreen
+          canResend={false}
+          code="123456"
+          destination="hello@beeui.dev"
+          loading
+          onChangeDestination={noop}
+          onCodeChange={noopValue}
+          onComplete={noopValue}
+          onResend={noop}
+          onSubmit={noop}
+        />
+      );
 
-        <Tabs onValueChange={() => undefined} value="overview">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="details">Details</TabsTrigger>
-          </TabsList>
-          <TabsContent value="overview">
-            <Text tone="muted">The active tab is fixed for every run.</Text>
-          </TabsContent>
-        </Tabs>
+    case 'reset-default':
+      return (
+        <ResetPasswordScreen
+          confirmPassword=""
+          onConfirmPasswordChange={noopValue}
+          onPasswordChange={noopValue}
+          onSubmit={noop}
+          password=""
+        />
+      );
+    case 'reset-validation':
+      return (
+        <ResetPasswordScreen
+          confirmPassword="BeeUI124"
+          confirmPasswordError="Passwords do not match."
+          onConfirmPasswordChange={noopValue}
+          onPasswordChange={noopValue}
+          onSubmit={noop}
+          password="weak"
+          passwordError="Use at least 8 characters with an uppercase letter and a number."
+        />
+      );
+    case 'reset-loading':
+      return (
+        <ResetPasswordScreen
+          confirmPassword="BeeUI123"
+          loading
+          onConfirmPasswordChange={noopValue}
+          onPasswordChange={noopValue}
+          onSubmit={noop}
+          password="BeeUI123"
+        />
+      );
 
-        <Stepper currentStep={2} onStepChange={() => undefined}>
-          <StepperItem description="Tokens and primitives" step={1} title="Foundation" />
-          <StepperItem description="Screenshot harness" step={2} title="Visual gate" />
-          <StepperItem description="Future native work" step={3} title="Phase 2" />
-        </Stepper>
+    case 'password-updated-success':
+      return <PasswordUpdatedScreen onContinue={noop} />;
 
-        <ListGroup>
-          <ListGroupHeader
-            description="Stable application-composition rows"
-            title="Workspace"
-          />
-          <SettingsItem
-            description="Canonical browser"
-            title="Engine"
-            value="Chromium"
-          />
-          <SettingsItem
-            description="Canonical density"
-            title="Pixel ratio"
-            value="1"
-          />
-        </ListGroup>
+    case 'interests-none':
+      return (
+        <InterestsOnboardingScreen
+          onContinue={noop}
+          onSelectionChange={noopValues}
+          onSkip={noop}
+          selectedValues={[]}
+        />
+      );
+    case 'interests-one':
+      return (
+        <InterestsOnboardingScreen
+          onContinue={noop}
+          onSelectionChange={noopValues}
+          onSkip={noop}
+          selectedValues={['design']}
+        />
+      );
+    case 'interests-many':
+      return (
+        <InterestsOnboardingScreen
+          onContinue={noop}
+          onSelectionChange={noopValues}
+          onSkip={noop}
+          selectedValues={['design', 'engineering', 'startups', 'ai', 'writing', 'travel']}
+        />
+      );
+    case 'interests-long-labels':
+      return (
+        <InterestsOnboardingScreen
+          onContinue={noop}
+          onSelectionChange={noopValues}
+          onSkip={noop}
+          options={longInterestOptions}
+          selectedValues={['design-systems', 'ai-workflows']}
+        />
+      );
 
-        <Progress accessibilityLabel="Phase 1 coverage" value={72} />
+    case 'profile-empty':
+      return (
+        <ProfileSetupScreen
+          displayName=""
+          onBack={noop}
+          onBioChange={noopValue}
+          onChangePhoto={noop}
+          onDisplayNameChange={noopValue}
+          onSkip={noop}
+          onSubmit={noop}
+          onUsernameChange={noopValue}
+        />
+      );
+    case 'profile-populated':
+      return (
+        <ProfileSetupScreen
+          bio="Building useful things with BeeUI."
+          displayName="BeeUI Builder"
+          onBack={noop}
+          onBioChange={noopValue}
+          onChangePhoto={noop}
+          onDisplayNameChange={noopValue}
+          onSkip={noop}
+          onSubmit={noop}
+          onUsernameChange={noopValue}
+          username="beeui-builder"
+        />
+      );
+    case 'profile-long-name':
+      return (
+        <ProfileSetupScreen
+          bio="Building useful things with BeeUI."
+          displayName="Alexandra Catherine Montgomery-Wellington"
+          onBack={noop}
+          onBioChange={noopValue}
+          onChangePhoto={noop}
+          onDisplayNameChange={noopValue}
+          onSkip={noop}
+          onSubmit={noop}
+          onUsernameChange={noopValue}
+          username="alexandra-montgomery-wellington"
+        />
+      );
+    case 'profile-long-bio':
+      return (
+        <ProfileSetupScreen
+          bio={longBio}
+          displayName="BeeUI Builder"
+          onBack={noop}
+          onBioChange={noopValue}
+          onChangePhoto={noop}
+          onDisplayNameChange={noopValue}
+          onSkip={noop}
+          onSubmit={noop}
+          onUsernameChange={noopValue}
+          username="beeui-builder"
+        />
+      );
+    case 'profile-validation':
+      return (
+        <ProfileSetupScreen
+          bio={longBio}
+          displayName=""
+          fieldErrors={{
+            bio: 'Keep the bio concise and remove unsupported characters.',
+            displayName: 'Enter a display name.',
+            username: 'This username is already in use.',
+          }}
+          onBack={noop}
+          onBioChange={noopValue}
+          onChangePhoto={noop}
+          onDisplayNameChange={noopValue}
+          onSkip={noop}
+          onSubmit={noop}
+          onUsernameChange={noopValue}
+          username="beeui"
+        />
+      );
+    case 'profile-saving':
+      return (
+        <ProfileSetupScreen
+          bio="Building useful things with BeeUI."
+          displayName="BeeUI Builder"
+          loading
+          onBack={noop}
+          onBioChange={noopValue}
+          onChangePhoto={noop}
+          onDisplayNameChange={noopValue}
+          onSkip={noop}
+          onSubmit={noop}
+          onUsernameChange={noopValue}
+          username="beeui-builder"
+        />
+      );
 
-        <Timeline>
-          <TimelineItem
-            description="Public component API only."
-            meta="Complete"
-            status="success"
-            title="Fixture"
-          />
-          <TimelineItem
-            description="Linux + pinned Chromium baselines."
-            meta="Current"
-            status="primary"
-            title="Comparison"
-          />
-          <TimelineItem
-            description="iOS and Android screenshot automation."
-            meta="Phase 2"
-            title="Native expansion"
-          />
-        </Timeline>
-      </Card>
-    </ScenarioShell>
-  );
-}
-
-function DialogOpenScenario() {
-  return (
-    <ScenarioShell title="Dialog">
-      <Card className="gap-3">
-        <Text>Background fixture content remains stable beneath the modal.</Text>
-        <Button variant="outline">Background action</Button>
-      </Card>
-
-      <Dialog defaultOpen>
-        <DialogContent closeOnBackdropPress={false} modalProps={{ animationType: 'none' }}>
-          <DialogTitle>Release visual changes?</DialogTitle>
-          <DialogDescription>
-            Baseline updates must be visually reviewed before they are committed.
-          </DialogDescription>
-          <Field label="Baseline note">
-            <Input defaultValue="Intentional component update" />
-          </Field>
-          <DialogFooter>
-            <DialogClose variant="outline">Cancel</DialogClose>
-            <DialogClose>Approve</DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </ScenarioShell>
-  );
-}
-
-function AlertDialogOpenScenario() {
-  return (
-    <ScenarioShell title="AlertDialog">
-      <Card className="gap-3">
-        <Text>Representative destructive confirmation state.</Text>
-      </Card>
-
-      <AlertDialog defaultOpen>
-        <AlertDialogContent modalProps={{ animationType: 'none' }}>
-          <AlertDialogTitle>Replace canonical baseline?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Only intentional, reviewed visual changes should replace expected pixels.
-          </AlertDialogDescription>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep baseline</AlertDialogCancel>
-            <AlertDialogAction>Replace baseline</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </ScenarioShell>
-  );
-}
-
-function PopoverOpenScenario() {
-  const [open, setOpen] = React.useState(false);
-
-  React.useEffect(() => {
-    let active = true;
-    requestAnimationFrame(() => {
-      if (active) setOpen(true);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  return (
-    <ScenarioShell title="Popover">
-      <Card className="min-h-96 items-center justify-center gap-3" variant="raised">
-        <Text tone="muted">Fixed centered anchor</Text>
-        <Popover onOpenChange={setOpen} open={open}>
-          <PopoverTrigger variant="outline">Open details</PopoverTrigger>
-          <PopoverContent
-            align="center"
-            closeOnOutsidePress={false}
-            placement="bottom"
-            sideOffset={12}
-            testID="visual-popover-content"
-          >
-            <PopoverTitle>Deterministic geometry</PopoverTitle>
-            <PopoverDescription>
-              The anchor, viewport, content, and placement are fixed for this capture.
-            </PopoverDescription>
-            <PopoverClose size="sm" variant="ghost">Close</PopoverClose>
-          </PopoverContent>
-        </Popover>
-      </Card>
-    </ScenarioShell>
-  );
-}
-
-function DropdownMenuOpenScenario() {
-  const [open, setOpen] = React.useState(false);
-
-  React.useEffect(() => {
-    let active = true;
-    requestAnimationFrame(() => {
-      if (active) setOpen(true);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  return (
-    <ScenarioShell title="DropdownMenu">
-      <Card className="min-h-96 items-center justify-center gap-3" variant="raised">
-        <Text tone="muted">Fixed centered menu anchor</Text>
-        <DropdownMenu onOpenChange={setOpen} open={open}>
-          <DropdownMenuTrigger variant="outline">Release actions</DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            closeOnOutsidePress={false}
-            placement="bottom"
-            sideOffset={12}
-            testID="visual-dropdown-content"
-          >
-            <DropdownMenuLabel>Baseline</DropdownMenuLabel>
-            <DropdownMenuItem onSelect={() => undefined}>Review diff</DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => undefined}>Open report</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem disabled>Update in CI</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </Card>
-    </ScenarioShell>
-  );
-}
-
-function Scenario({ scenario }: { scenario: VisualScenarioId }) {
-  switch (scenario) {
-    case 'foundation':
-      return <FoundationScenario />;
-    case 'forms':
-      return <FormsScenario />;
-    case 'navigation-data':
-      return <NavigationDataScenario />;
-    case 'dialog-open':
-      return <DialogOpenScenario />;
-    case 'alert-dialog-open':
-      return <AlertDialogOpenScenario />;
-    case 'popover-open':
-      return <PopoverOpenScenario />;
-    case 'dropdown-menu-open':
-      return <DropdownMenuOpenScenario />;
+    default:
+      return <WelcomeScreen onGetStarted={noop} onSignIn={noop} />;
   }
 }
 
 export default function App() {
-  const [{ scenario, theme }] = React.useState(readVisualQuery);
+  const [{ scenario, theme }] = React.useState(readQuery);
   useVisualReadiness(scenario, theme);
 
   return (
     <BeeUIProvider>
-      <Scenario scenario={scenario} />
+      <AuthScenario id={scenario} />
     </BeeUIProvider>
   );
 }

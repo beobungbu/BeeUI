@@ -4,6 +4,7 @@
 
 @source '../../packages/ui/src';
 @source '../../packages/core/src';
+@source '../showcase/patterns/auth';
 @source './App.tsx';
 @source './src';
 

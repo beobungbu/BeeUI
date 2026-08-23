@@ -14,7 +14,9 @@ export const visualThemes = ['light', 'dark'] as const;
 export type VisualTheme = (typeof visualThemes)[number];
 
 export const visualViewports = {
-  mobile: { width: 390, height: 844 },
+  narrow360: { width: 360, height: 800 },
+  mobile390: { width: 390, height: 844 },
+  mobile430: { width: 430, height: 932 },
   desktop: { width: 1280, height: 800 },
 } as const;
 
