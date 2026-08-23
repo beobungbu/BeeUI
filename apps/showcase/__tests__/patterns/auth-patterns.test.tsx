@@ -273,7 +273,7 @@ describe('authentication and onboarding pattern screens', () => {
     expect(screen.getByText('Resend available now')).toBeTruthy();
 
     screen.rerender(<VerifyCodeScreen {...props} code="123456" error="Incorrect code" />);
-    expect(screen.getAllByText('Incorrect code').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Incorrect code')).toHaveLength(1);
 
     screen.rerender(<VerifyCodeScreen {...props} code="123456" loading />);
     const submit = screen.getByRole('button', { name: 'Verify code' });
