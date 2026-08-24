@@ -175,14 +175,14 @@ The geometry layer does not own open state, rendering, measurement, dismissal, f
 
 The second layer lives internally in `@beeui/ui` and is installed by `BeeUIProvider`.
 
-- One runtime owns one native overlay host.
-- Nested BeeUI providers reuse the outer anchored-overlay runtime.
+- One runtime owns one **root** overlay scope/host and coordinates zero or more **modal-local** scopes/hosts (each `DialogContent` provisions its own inside the RN `Modal` window). Each scope has its own host, measured geometry origin, and dismiss stack.
+- Nested BeeUI providers reuse the outer anchored-overlay runtime (no second host or platform listener). Independent runtimes (separate React roots) are isolated — active-scope coordination is per-runtime, not module-global.
 - Portal insertion order is deterministic.
-- Host/anchor measurement uses window coordinates; rendering is translated into host-local coordinates.
+- Host/anchor measurement uses window coordinates; rendering is translated into **nearest-host**-local coordinates. An open overlay remeasures its anchor when the nearest host geometry changes (host move/resize), not only on window/keyboard changes.
 - Safe-area collision padding is applied only where unsafe window edges still intersect the host.
 - Keyboard-constrained viewport behavior is explicit policy input.
-- Anchor remeasurement occurs on open/environment changes and may be requested explicitly.
-- Android hardware back, Web Escape, and outside press target only the topmost registered dismissable overlay.
+- Anchor remeasurement occurs on open, environment, and host-geometry changes, and may be requested explicitly.
+- Outside press and accessibility escape target only the topmost overlay of the nearest scope; Web Escape and Android root back route to the topmost active scope. Topmost follows open order and is unaffected by geometry updates.
 - Test measurement overrides are internal seams, not public production fallbacks.
 
 ### Overlay portal transport

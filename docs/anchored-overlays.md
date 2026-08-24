@@ -131,14 +131,15 @@ Keyboard avoidance is explicit. Public components opt into keyboard-constrained 
 
 ### Dismiss stack
 
-Dismissable overlays register in one deterministic stack.
+Each **overlay scope** owns one deterministic dismiss stack (via a stable dismiss controller). "Topmost" is evaluated within a scope; a per-runtime active-scope coordinator routes global events to the topmost active scope. There is no single flat global stack.
 
-- Android hardware back targets only the topmost dismissable overlay.
-- Web Escape targets only the topmost dismissable overlay.
-- Outside press may dismiss only the current stack owner.
-- Nested overlays dismiss child-first.
-- One event never cascades through several overlay levels.
+- Topmost within a scope follows overlay open/registration order — geometry (host move/resize) never reorders it.
+- Outside press and accessibility escape dismiss only the topmost overlay **of the nearest scope**.
+- Global events route to the topmost **active** scope: Android hardware back and Web Escape reach the active modal boundary before any root overlay behind it; a modal boundary blocks a global event from falling through to root overlays.
+- Nested overlays dismiss child-first; one event never cascades through several overlay levels.
+- A root overlay behind a modal can never become topmost over a modal-local child, regardless of open order.
 - Updating an existing dismiss handler does not reorder the stack.
+- The active-scope coordinator is owned **per runtime**, so independent runtimes never dismiss each other's overlays.
 
 #### Child-first dismissal inside a Dialog
 
