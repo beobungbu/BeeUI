@@ -111,6 +111,21 @@ describe('theme/token system v2', () => {
     expect(new Set(semanticColorTokens).size).toBe(semanticColorTokens.length);
   });
 
+  it('self-registers custom brand variants in distributable theme CSS', () => {
+    expect(themeCss).toContain(
+      '@custom-variant violet-light (&:where(.violet-light, .violet-light *));',
+    );
+    expect(themeCss).toContain(
+      '@custom-variant violet-dark (&:where(.violet-dark, .violet-dark *));',
+    );
+    expect(themeCss.indexOf('@custom-variant violet-light')).toBeLessThan(
+      themeCss.indexOf('@variant violet-light'),
+    );
+    expect(themeCss.indexOf('@custom-variant violet-dark')).toBeLessThan(
+      themeCss.indexOf('@variant violet-dark'),
+    );
+  });
+
   it('defines complete color counterparts for every runtime theme', () => {
     expect(beeThemeNames).toEqual(['light', 'dark']);
     expect(beeBrandNames).toEqual(['bee', 'violet']);
