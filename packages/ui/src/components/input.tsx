@@ -3,15 +3,16 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { TextInput, type TextInputProps } from 'react-native';
 import { useFieldContext } from './field-context';
+import { semanticTypographyClasses } from './text';
 
 const inputVariants = cva(
   'w-full rounded-md border bg-input text-foreground focus:border-focus-ring web:focus-visible:bee-focus-ring',
   {
     variants: {
       size: {
-        sm: 'h-control-compact px-3 text-label ios:min-h-touch-target android:min-h-touch-target',
-        md: 'h-control-default px-3 text-body',
-        lg: 'h-control-large px-4 text-body',
+        sm: `h-control-compact px-3 ${semanticTypographyClasses.label} ios:min-h-touch-target android:min-h-touch-target`,
+        md: `h-control-default px-3 ${semanticTypographyClasses.body}`,
+        lg: `h-control-large px-4 ${semanticTypographyClasses.body}`,
       },
       invalid: {
         true: 'border-destructive focus:border-destructive',
