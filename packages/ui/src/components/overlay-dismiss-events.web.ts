@@ -20,12 +20,12 @@ export function subscribeOverlayPlatformDismiss(handler: OverlayPlatformDismissH
 
   const listener = (event: KeyboardEventLike) => {
     if (event.key !== 'Escape') return;
-    // Each runtime dispatches only to its own active-scope coordinator, so this
-    // handler can only dismiss this runtime's overlays. When it actually handles
-    // the Escape, stop immediate propagation so a *sibling* runtime's keydown
-    // listener on the same target does not also process it (plain stopPropagation
-    // does not stop other listeners on the same target). If this runtime has
-    // nothing to dismiss, the event is left for another runtime to handle.
+    // BeeUI's supported application contract has one root overlay runtime; nested
+    // BeeUIProviders reuse it. Runtime state is isolated if independent roots are
+    // mounted for tests/embedded surfaces, but arbitration of one physical Escape
+    // across multiple unrelated application roots is intentionally not guaranteed.
+    // Once this runtime handles Escape, stop same-target listeners from also acting
+    // on that physical event.
     if (!handler('escape')) return;
     event.preventDefault?.();
     event.stopPropagation?.();
