@@ -16,6 +16,11 @@ for cmd in node pnpm xcodebuild xcrun pod maestro; do
 done
 
 HEAD_SHA="$(git -C "$ROOT" rev-parse HEAD)"
+EXPECTED_HEAD="${BEEUI_RUNTIME_HEAD_SHA:-}"
+if [ -n "$EXPECTED_HEAD" ] && [ "$HEAD_SHA" != "$EXPECTED_HEAD" ]; then
+  echo "Runtime checkout mismatch: expected head $EXPECTED_HEAD, got $HEAD_SHA" >&2
+  exit 1
+fi
 EXPECTED_BASE="${BEEUI_RUNTIME_EXPECTED_BASE:-}"
 if [ -n "$EXPECTED_BASE" ]; then
   merge_base="$(git -C "$ROOT" merge-base "$EXPECTED_BASE" HEAD)"
@@ -80,12 +85,15 @@ NODE
   IFS='|' read -r device_type_id device_name runtime_id runtime_name runtime_version <<< "$selection"
   local run_suffix="${GITHUB_RUN_ID:-$$}-${GITHUB_RUN_ATTEMPT:-1}"
   local sim_name="${SIMULATOR_NAME_PREFIX} ${run_suffix}"
-  SIM_UDID="$(xcrun simctl create "$sim_name" "$device_type_id" "$runtime_id")"
-  SIM_CREATED="1"
-  printf '%s|%s|%s\n' "$device_name" "$runtime_name" "$runtime_version"
+  local sim_udid
+  sim_udid="$(xcrun simctl create "$sim_name" "$device_type_id" "$runtime_id")"
+  test -n "$sim_udid"
+  printf '%s|%s|%s|%s\n' "$sim_udid" "$device_name" "$runtime_name" "$runtime_version"
 }
 
-IFS='|' read -r DEVICE_NAME RUNTIME_NAME IOS_VERSION <<< "$(select_simulator)"
+IFS='|' read -r SIM_UDID DEVICE_NAME RUNTIME_NAME IOS_VERSION <<< "$(select_simulator)"
+test -n "$SIM_UDID"
+SIM_CREATED="1"
 
 echo "Booting $DEVICE_NAME on $RUNTIME_NAME ($IOS_VERSION): $SIM_UDID"
 xcrun simctl boot "$SIM_UDID"
