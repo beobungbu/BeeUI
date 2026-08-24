@@ -10,9 +10,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@beeui/ui';
-import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
-import { BackHandler, Modal, Platform, Text, UIManager, type LayoutChangeEvent } from 'react-native';
+import { BackHandler, Modal, Platform, Text, UIManager } from 'react-native';
 import {
   OverlayRuntimeProvider,
   OverlayScopeContext,
@@ -205,6 +205,12 @@ describe('latest async measurement wins', () => {
 
   it('ignores an older host measureInWindow callback that resolves after a newer request', async () => {
     const callbacks: Array<(x: number, y: number, width: number, height: number) => void> = [];
+    // RNTL's render wrapper does not materialize the runtime host ref in this Jest
+    // environment. React Test Renderer owns the createNodeMock contract directly,
+    // so this test uses it for the host-ref race while the component still executes
+    // the production OverlayRuntimeProvider/useMeasuredOverlayHost path.
+    const TestRenderer = require('react-test-renderer') as any;
+    let renderer: any;
 
     function HostProbe() {
       const { hostRect } = useOverlayEnvironment();
@@ -215,42 +221,36 @@ describe('latest async measurement wins', () => {
       );
     }
 
-    const screen = render(
-      <OverlayRuntimeProvider>
-        <HostProbe />
-      </OverlayRuntimeProvider>,
-      {
-        // RNTL's host-component type can differ from the public React Native View,
-        // so matching this ref by testID is not reliable. Only nodes that actually
-        // receive a ref use the returned mock; giving every ref-capable host the
-        // async measurement seam keeps this test tied to the production host ref.
-        createNodeMock: () => ({
-          measureInWindow: (cb: (x: number, y: number, w: number, h: number) => void) => callbacks.push(cb),
-        }),
-      },
-    );
+    await TestRenderer.act(async () => {
+      renderer = TestRenderer.create(
+        <OverlayRuntimeProvider>
+          <HostProbe />
+        </OverlayRuntimeProvider>,
+        {
+          createNodeMock: () => ({
+            measureInWindow: (cb: (x: number, y: number, w: number, h: number) => void) => callbacks.push(cb),
+          }),
+        },
+      );
+    });
 
-    const host = screen.getByTestId('beeui-overlay-host', { includeHiddenElements: true });
-    await act(async () => {
-      fireEvent(host, 'layout', { nativeEvent: { layout: { x: 10, y: 10, width: 500, height: 500 } } });
-      fireEvent(host, 'layout', { nativeEvent: { layout: { x: 20, y: 20, width: 600, height: 600 } } });
+    const host = renderer.root.findByProps({ testID: 'beeui-overlay-host' });
+    await TestRenderer.act(async () => {
+      host.props.onLayout({ nativeEvent: { layout: { x: 10, y: 10, width: 500, height: 500 } } });
+      host.props.onLayout({ nativeEvent: { layout: { x: 20, y: 20, width: 600, height: 600 } } });
     });
 
     expect(callbacks.length).toBeGreaterThanOrEqual(2);
     const older = callbacks.at(-2)!;
     const newer = callbacks.at(-1)!;
 
-    await act(async () => newer(20, 20, 600, 600));
-    await waitFor(() =>
-      expect(screen.getByTestId('host-probe', { includeHiddenElements: true }).props.children).toBe(
-        '20,20,600,600',
-      ),
-    );
+    await TestRenderer.act(async () => newer(20, 20, 600, 600));
+    expect(renderer.root.findByProps({ testID: 'host-probe' }).props.children).toBe('20,20,600,600');
 
-    await act(async () => older(10, 10, 500, 500));
-    expect(screen.getByTestId('host-probe', { includeHiddenElements: true }).props.children).toBe(
-      '20,20,600,600',
-    );
+    await TestRenderer.act(async () => older(10, 10, 500, 500));
+    expect(renderer.root.findByProps({ testID: 'host-probe' }).props.children).toBe('20,20,600,600');
+
+    await TestRenderer.act(async () => renderer.unmount());
   });
 
   it('ignores an older anchor callback and stale unavailable result after a newer successful measure', async () => {
