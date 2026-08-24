@@ -101,6 +101,7 @@ import {
 import * as React from 'react';
 import { ScrollView, StatusBar } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
+import { SelectShowcase } from './select-showcase';
 
 function ThemeToggle() {
   const { hasAdaptiveThemes, theme } = useUniwind();
@@ -523,6 +524,12 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
                 />
               </Box>
             </Card>
+
+            <PlaygroundHeading description="Persistent value selection with anchored overlay transport, keyboard behavior on web, and modal-local nesting.">
+              Select
+            </PlaygroundHeading>
+
+            <SelectShowcase />
 
             <PlaygroundHeading description="Modal and anchored overlays now have real public APIs you can click through here.">
               Overlay playground
