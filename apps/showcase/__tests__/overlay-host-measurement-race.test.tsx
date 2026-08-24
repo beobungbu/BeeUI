@@ -5,6 +5,7 @@ const mockHostMeasureCallbacks: Array<
 jest.mock('react-native', () => {
   const React = require('react');
   const actual = jest.requireActual('react-native');
+  const OriginalView = actual.View;
   const MockView = React.forwardRef(
     ({ children, ...props }: { children?: React.ReactNode }, ref: React.Ref<unknown>) => {
       React.useImperativeHandle(ref, () => ({
@@ -12,11 +13,20 @@ jest.mock('react-native', () => {
           callback: (x: number, y: number, width: number, height: number) => void,
         ) => mockHostMeasureCallbacks.push(callback),
       }));
-      return React.createElement(actual.View, props, children);
+      return React.createElement(OriginalView, props, children);
     },
   );
   MockView.displayName = 'MockMeasuredView';
-  return { ...actual, View: MockView };
+
+  // React Native exposes several lazy getters. Spreading the module eagerly reads
+  // all of them and pulls native-only TurboModules such as DevMenu into Jest. Keep
+  // the real module lazy and override only View, which is the ref seam under test.
+  return new Proxy(actual, {
+    get(target: Record<PropertyKey, unknown>, property: PropertyKey, receiver: unknown) {
+      if (property === 'View') return MockView;
+      return Reflect.get(target, property, receiver as object);
+    },
+  });
 });
 
 jest.mock('react-native-teleport', () => {
