@@ -129,25 +129,29 @@ type SelectBaseProps = {
 
 export type SelectProps = SelectBaseProps;
 
-export function Select({
-  children,
-  defaultOpen = false,
-  defaultValue,
-  disabled = false,
-  onOpenChange,
-  onValueChange,
-  open,
-  value,
-}: SelectProps) {
-  const hasOpenProp = open !== undefined;
-  const openControlled = hasOpenProp && typeof onOpenChange === 'function';
-  const [internalOpen, setInternalOpen] = React.useState(open ?? defaultOpen);
+export function Select(props: SelectProps) {
+  const hasOpenProp = Object.prototype.hasOwnProperty.call(props, 'open');
+  const hasValueProp = Object.prototype.hasOwnProperty.call(props, 'value');
+  const {
+    children,
+    defaultOpen = false,
+    defaultValue,
+    disabled = false,
+    onOpenChange,
+    onValueChange,
+    open,
+    value,
+  } = props;
+
+  const openControlled = hasOpenProp && typeof onOpenChange === 'function' && open !== undefined;
+  const [internalOpen, setInternalOpen] = React.useState(
+    hasOpenProp && open !== undefined ? open : defaultOpen,
+  );
   const resolvedOpen = openControlled && open !== undefined ? open : internalOpen;
 
-  const hasValueProp = value !== undefined;
   const valueControlled = hasValueProp;
   const [internalValue, setInternalValue] = React.useState<SelectOptionValue | undefined>(
-    value ?? defaultValue,
+    hasValueProp ? value : defaultValue,
   );
   const resolvedValue = valueControlled ? value : internalValue;
 
@@ -225,14 +229,20 @@ export function Select({
     if (Platform.OS === 'web') anchorRef.current?.focus?.();
   }, []);
 
+  const previousOpenRef = React.useRef(resolvedOpen);
+  React.useEffect(() => {
+    const wasOpen = previousOpenRef.current;
+    previousOpenRef.current = resolvedOpen;
+    if (wasOpen && !resolvedOpen) focusTrigger();
+  }, [focusTrigger, resolvedOpen]);
+
   const setOpen = React.useCallback(
     (nextOpen: boolean) => {
       if (nextOpen && disabled) return;
       if (!openControlled) setInternalOpen(nextOpen);
       onOpenChange?.(nextOpen);
-      if (!nextOpen) focusTrigger();
     },
-    [disabled, focusTrigger, onOpenChange, openControlled],
+    [disabled, onOpenChange, openControlled],
   );
 
   const selectItem = React.useCallback(
@@ -845,14 +855,17 @@ export const SelectGroup = React.forwardRef<React.ComponentRef<typeof View>, Sel
   ({ children, ...props }, ref) => {
     const labelNativeID = useOverlayId('beeui-select-group-label');
     const context = React.useMemo(() => ({ labelNativeID }), [labelNativeID]);
+    const webGroupProps =
+      Platform.OS === 'web'
+        ? ({ 'aria-labelledby': labelNativeID, role: 'group' } as unknown as ViewProps)
+        : ({} as ViewProps);
     return (
       <SelectGroupContext.Provider value={context}>
         <View
           ref={ref}
           {...props}
-          aria-labelledby={labelNativeID}
+          {...webGroupProps}
           accessibilityLabelledBy={labelNativeID}
-          role="group"
         >
           {children}
         </View>
