@@ -351,7 +351,7 @@ describe('Wave 2A Select', () => {
   it('preserves consumer context through root Select portal content', async () => {
     const ConsumerContext = React.createContext('default');
     function Probe() {
-      return <Text testID="context-value">{ConsumerContext.use ? '' : React.useContext(ConsumerContext)}</Text>;
+      return <Text testID="context-value">{React.useContext(ConsumerContext)}</Text>;
     }
     const screen = renderSelect(
       <ConsumerContext.Provider value="preserved">
