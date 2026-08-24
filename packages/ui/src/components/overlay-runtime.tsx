@@ -68,12 +68,7 @@ export type OverlayMeasurableNode = {
   ) => void;
 };
 
-/**
- * A dismiss controller is the **stable** identity of a scope's dismissal stack.
- * Its identity never changes for the lifetime of a scope, so overlay registration
- * lifecycles keyed on it are unaffected by reactive geometry (`hostRect`) updates.
- * Topmost ordering therefore follows overlay open/registration order, not layout.
- */
+/** Stable dismissal identity for one overlay scope. */
 export type OverlayDismissController = {
   register: (id: string, handler: OverlayDismissHandler) => void;
   unregister: (id: string) => void;
@@ -93,31 +88,21 @@ function createDismissController(stack: OverlayDismissStack): OverlayDismissCont
 }
 
 /**
- * An overlay scope is the coherent unit an anchored overlay resolves against:
- * where its content is portaled (`hostName`), the window-space measurement origin
- * for geometry (`hostRect` / `remeasureHost`), and the dismissal `controller` that
- * decides "topmost" *within that scope*. The application root is one scope; each
- * modal-class surface (`DialogContent`) provisions its own. Overlays resolve the
- * **nearest** scope, so geometry stays in the modal's coordinate space and a root
- * overlay behind a modal can never become topmost over a modal-local child.
- *
- * Reactive geometry (`hostRect`) and the **stable** `controller` are deliberately
- * separated: the scope object changes identity when geometry changes so geometry
- * consumers re-render, but the `controller` identity is fixed, so dismissal
- * registration/ordering is never disturbed by a layout or host-move update.
+ * The coherent host/geometry/dismiss boundary an anchored overlay resolves against.
+ * `depth` is semantic hierarchy, not effect registration order: root=0, each modal
+ * boundary increments it. This keeps initial-open and nested-modal global dismissal
+ * correct even though React may run descendant layout effects before parent effects.
  */
 export type OverlayScope = {
   hostName: string;
   isModal: boolean;
+  depth: number;
   hostRect: AnchoredOverlayRect | null;
   remeasureHost: () => void;
   controller: OverlayDismissController;
 };
 
-// Exported for internal contract tests only (imported via the source path, never
-// re-exported from the package index — not public API). Lets a test drive a scope
-// whose geometry changes while its dismiss controller / remeasure identity stays
-// stable, which cannot be reproduced through the hostRectOverride seam.
+// Internal contract-test seam; not re-exported from the package index.
 export const OverlayScopeContext = React.createContext<OverlayScope | null>(null);
 
 function useNearestOverlayScope(): OverlayScope {
@@ -128,48 +113,47 @@ function useNearestOverlayScope(): OverlayScope {
   return scope;
 }
 
-/**
- * Coordinates the active-scope stack for GLOBAL dismiss events (web Escape,
- * Android root hardware back) **within a single runtime**. Owned per
- * `OverlayRuntimeProviderRoot` (not module-global), so independent runtimes —
- * separate React roots, micro-frontends, embedded surfaces, test harnesses —
- * cannot dismiss each other's overlays or double-fire. Per-overlay events
- * (outside press, accessibility escape) route through the nearest scope directly
- * and never consult this coordinator.
- */
 export type OverlayActiveScopeCoordinator = {
-  /** Mark a scope's dismiss stack as the active (topmost) boundary. */
-  activate: (stack: OverlayDismissStack) => void;
+  activate: (stack: OverlayDismissStack, depth: number) => void;
   deactivate: (stack: OverlayDismissStack) => void;
-  /** Dispatch a global event to this runtime's topmost active scope. */
   dispatchTop: (reason: OverlayDismissReason) => boolean;
 };
 
 function createActiveScopeCoordinator(): OverlayActiveScopeCoordinator {
-  // Ordered by activation; the last entry is the visible modal boundary. Stored
-  // identities are the stable per-scope dismiss stacks, so hostRect updates never
-  // reorder them.
-  const stacks: OverlayDismissStack[] = [];
+  let activationOrder = 0;
+  const entries = new Map<OverlayDismissStack, { depth: number; order: number }>();
+
   return {
-    activate(stack) {
-      if (!stacks.includes(stack)) stacks.push(stack);
+    activate(stack, depth) {
+      const existing = entries.get(stack);
+      if (existing) {
+        existing.depth = depth;
+        return;
+      }
+      activationOrder += 1;
+      entries.set(stack, { depth, order: activationOrder });
     },
     deactivate(stack) {
-      const index = stacks.indexOf(stack);
-      if (index >= 0) stacks.splice(index, 1);
+      entries.delete(stack);
     },
     dispatchTop(reason) {
-      const top = stacks.at(-1);
-      return top ? top.dismissTop(reason) : false;
+      let selected: { stack: OverlayDismissStack; depth: number; order: number } | null = null;
+      for (const [stack, entry] of entries) {
+        if (
+          !selected ||
+          entry.depth > selected.depth ||
+          (entry.depth === selected.depth && entry.order > selected.order)
+        ) {
+          selected = { stack, depth: entry.depth, order: entry.order };
+        }
+      }
+      return selected ? selected.stack.dismissTop(reason) : false;
     },
   };
 }
 
 const OverlayActiveScopeContext = React.createContext<OverlayActiveScopeCoordinator | null>(null);
 
-// Window-level shared state (not dismissal — that lives on the per-scope
-// controller, and geometry origin on the nearest scope). Keeping these separate
-// from the scope keeps geometry/dismissal identities independent.
 type OverlayRuntimeContextValue = {
   hostRect: AnchoredOverlayRect | null;
   keyboardRect: AnchoredOverlayRect | null;
@@ -259,36 +243,56 @@ export function measureOverlayNodeInWindow(
 }
 
 /**
- * Measures a full-screen overlay host View in window coordinates. Shared by the
- * root runtime and each modal-local host so both derive their geometry origin the
- * same way — the modal host measures its own window origin (e.g. a `pageSheet`
- * inset), never the root's. `hostRectOverride` is a deterministic test seam.
+ * Measures an overlay host in window coordinates. Native measurement callbacks are
+ * asynchronous, so only the newest request may commit. A stale callback from a
+ * previous layout/orientation must never overwrite a newer host rectangle.
  */
 function useMeasuredOverlayHost(hostRectOverride?: AnchoredOverlayRect) {
   const [hostRect, setHostRect] = React.useState<AnchoredOverlayRect | null>(null);
   const hostRef = React.useRef<React.ComponentRef<typeof View>>(null);
+  const measurementGenerationRef = React.useRef(0);
   const overridden = React.useMemo(
     () => (hostRectOverride ? finiteRect(hostRectOverride) : null),
     [hostRectOverride?.height, hostRectOverride?.width, hostRectOverride?.x, hostRectOverride?.y],
   );
 
+  useIsomorphicLayoutEffect(() => {
+    measurementGenerationRef.current += 1;
+    return () => {
+      measurementGenerationRef.current += 1;
+    };
+  }, [overridden?.height, overridden?.width, overridden?.x, overridden?.y]);
+
+  const measureLatest = React.useCallback(
+    (fallback?: AnchoredOverlayRect | null) => {
+      if (overridden) return false;
+      const generation = ++measurementGenerationRef.current;
+      let callbackInvoked = false;
+      const scheduled = measureOverlayNodeInWindow(hostRef.current, (nextRect) => {
+        callbackInvoked = true;
+        if (generation !== measurementGenerationRef.current) return;
+        const resolved = nextRect ?? fallback ?? null;
+        if (resolved) setRectIfChanged(setHostRect, resolved);
+      });
+      if (!scheduled && !callbackInvoked && generation === measurementGenerationRef.current && fallback) {
+        setRectIfChanged(setHostRect, fallback);
+      }
+      return scheduled;
+    },
+    [overridden],
+  );
+
   const remeasureHost = React.useCallback(() => {
-    if (overridden) return;
-    measureOverlayNodeInWindow(hostRef.current, (nextRect) => {
-      if (nextRect) setRectIfChanged(setHostRect, nextRect);
-    });
-  }, [overridden]);
+    measureLatest();
+  }, [measureLatest]);
 
   const handleHostLayout = React.useCallback(
     (event: LayoutChangeEvent) => {
       if (overridden) return;
       const fallback = finiteRect(event.nativeEvent.layout);
-      const scheduled = measureOverlayNodeInWindow(hostRef.current, (nextRect) => {
-        setRectIfChanged(setHostRect, nextRect ?? fallback);
-      });
-      if (!scheduled) setRectIfChanged(setHostRect, fallback);
+      measureLatest(fallback);
     },
-    [overridden],
+    [measureLatest, overridden],
   );
 
   return { handleHostLayout, hostRect: overridden ?? hostRect, hostRef, remeasureHost };
@@ -307,12 +311,6 @@ function OverlayRuntimeProviderRoot({
   hostRectOverride,
   transport: transportOverride,
 }: OverlayRuntimeProviderProps) {
-  // Resolve the portal transport once, lazily, on first render — creating a web
-  // transport builds Maps and components, so we must not re-run the initializer
-  // every render and discard the result. The transport is intentionally fixed
-  // for the lifetime of the runtime: a changed `transport` prop after mount is
-  // ignored (the seam is for injecting a transport before first render in tests,
-  // not for hot-swapping the portal implementation at runtime).
   const transportRef = React.useRef<OverlayTransport | null>(null);
   if (transportRef.current === null) {
     transportRef.current = transportOverride ?? resolveOverlayTransport();
@@ -333,10 +331,6 @@ function OverlayRuntimeProviderRoot({
     [windowHeight, windowWidth],
   );
 
-  // Stable per-runtime dismiss controller and active-scope coordinator. Both are
-  // created once (fixed identity) so geometry updates never disturb dismissal
-  // registration/ordering, and so this runtime's global-event routing is isolated
-  // from any other runtime.
   const controllerRef = React.useRef<OverlayDismissController | null>(null);
   if (controllerRef.current === null) {
     controllerRef.current = createDismissController(dismissStackRef.current);
@@ -351,21 +345,17 @@ function OverlayRuntimeProviderRoot({
 
   React.useEffect(() => remeasureHost(), [remeasureHost, windowHeight, windowWidth]);
 
-  // Global platform dismiss (web Escape, Android root back) is dispatched to THIS
-  // runtime's topmost active scope, so an open modal boundary handles it before
-  // any root overlay behind it, and a sibling runtime is never affected. On
-  // Android the root back handler is suppressed while a Modal is open, so this
-  // only fires for the root scope; the modal boundary routes hardware back through
-  // `Modal.onRequestClose` instead.
+  // Global event state is runtime-local. BeeUI still treats one application-root
+  // overlay runtime as the supported physical Escape/back arbitration boundary;
+  // nested BeeUIProviders reuse it rather than installing another listener.
   React.useEffect(
     () => subscribeOverlayPlatformDismiss((reason) => coordinator.dispatchTop(reason)),
     [coordinator],
   );
 
-  // The root scope is always active (bottom of this runtime's stack).
   useIsomorphicLayoutEffect(() => {
     const stack = dismissStackRef.current;
-    coordinator.activate(stack);
+    coordinator.activate(stack, 0);
     return () => coordinator.deactivate(stack);
   }, [coordinator]);
 
@@ -373,6 +363,7 @@ function OverlayRuntimeProviderRoot({
     () => ({
       hostName: ROOT_OVERLAY_HOST,
       isModal: false,
+      depth: 0,
       hostRect: resolvedHostRect,
       remeasureHost,
       controller: rootController,
@@ -397,25 +388,23 @@ function OverlayRuntimeProviderRoot({
     <OverlayTransportContext.Provider value={transport}>
       <RootBoundary>
         <OverlayRuntimeContext.Provider value={context}>
-         <OverlayActiveScopeContext.Provider value={coordinator}>
-          <OverlayScopeContext.Provider value={rootScope}>
-            <OverlayHostScopeProvider hostName={ROOT_OVERLAY_HOST}>
-              {children}
-            </OverlayHostScopeProvider>
-            {/* Measurement host: provides the window-origin rect that anchors
-                geometry. Overlay content itself lands in the transport HostOutlet. */}
-            <View
-              ref={hostRef}
-              accessible={false}
-              collapsable={false}
-              onLayout={handleHostLayout}
-              pointerEvents="box-none"
-              style={[StyleSheet.absoluteFill, styles.host]}
-              testID="beeui-overlay-host"
-            />
-            <HostOutlet name={ROOT_OVERLAY_HOST} style={styles.host} />
-          </OverlayScopeContext.Provider>
-         </OverlayActiveScopeContext.Provider>
+          <OverlayActiveScopeContext.Provider value={coordinator}>
+            <OverlayScopeContext.Provider value={rootScope}>
+              <OverlayHostScopeProvider hostName={ROOT_OVERLAY_HOST}>
+                {children}
+              </OverlayHostScopeProvider>
+              <View
+                ref={hostRef}
+                accessible={false}
+                collapsable={false}
+                onLayout={handleHostLayout}
+                pointerEvents="box-none"
+                style={[StyleSheet.absoluteFill, styles.host]}
+                testID="beeui-overlay-host"
+              />
+              <HostOutlet name={ROOT_OVERLAY_HOST} style={styles.host} />
+            </OverlayScopeContext.Provider>
+          </OverlayActiveScopeContext.Provider>
         </OverlayRuntimeContext.Provider>
       </RootBoundary>
     </OverlayTransportContext.Provider>
@@ -450,10 +439,8 @@ export type OverlayPortalProps = {
 };
 
 export function OverlayPortal({ children }: OverlayPortalProps) {
-  useOverlayRuntime(); // require BeeUIProvider
+  useOverlayRuntime();
   const transport = useOverlayTransport();
-  // Target the nearest host scope: the root host, or a modal-class surface's own
-  // local host when the overlay is declared inside one.
   const hostName = useNearestOverlayHost();
   const { PortalOutlet } = transport;
   return <PortalOutlet hostName={hostName}>{children}</PortalOutlet>;
@@ -464,43 +451,18 @@ export function useOverlayId(prefix = 'beeui-overlay') {
   return `${prefix}-${reactId}`;
 }
 
-/**
- * Minimal bridge a modal boundary (e.g. `DialogContent`) uses to reach its own
- * modal scope from `Modal.onRequestClose`, which runs *above* the scope provider.
- * On Android the Modal suppresses the root back handler, so hardware back arrives
- * only through `onRequestClose`; the boundary dismisses the modal's topmost
- * anchored child first and consumes the event.
- */
 export type ModalOverlayDismissScope = {
-  /** Dismiss the modal scope's topmost anchored child; false if it has none. */
   dismissTopmostChild: (reason: OverlayDismissReason) => boolean;
 };
 
 export type ModalOverlayHostProps = {
   children?: React.ReactNode;
-  /**
-   * Whether this modal surface is the visible/active boundary. While active its
-   * dismiss stack sits atop the global active-scope stack, so web Escape / root
-   * back reach it before any root overlay behind it. `DialogContent` passes its
-   * `open` state.
-   */
   active?: boolean;
-  /** Internal deterministic measurement seam used by geometry contract tests. */
   hostRectOverride?: AnchoredOverlayRect;
-  /** Bridge for the modal boundary to run child-first dismissal on request-close. */
   dismissScopeRef?: React.MutableRefObject<ModalOverlayDismissScope | null>;
 };
 
-/**
- * Provisions a modal-local overlay scope: its own portal host (React Native
- * `Modal` renders in a separate native window), its own measured geometry origin
- * (so anchored overlays inside a `pageSheet`/`formSheet` position relative to the
- * sheet, not the root window), and its own dismiss stack (so outside press,
- * accessibility escape, web Escape, and hardware back stay scoped to the modal and
- * a root overlay behind it can never become topmost over a modal-local child). It
- * no-ops outside `BeeUIProvider` (a modal with no anchored overlays), so it is
- * safe to always render around modal content.
- */
+/** Provisions the nearest modal-local host, geometry origin, and dismiss boundary. */
 export function ModalOverlayHost({
   active = true,
   children,
@@ -508,17 +470,15 @@ export function ModalOverlayHost({
   hostRectOverride,
 }: ModalOverlayHostProps) {
   const transport = React.useContext(OverlayTransportContext);
+  const parentScope = React.useContext(OverlayScopeContext);
+  const depth = (parentScope?.depth ?? 0) + 1;
   const hostName = useOverlayId('beeui-overlay-modal');
   const dismissStackRef = React.useRef<OverlayDismissStack | null>(null);
   if (dismissStackRef.current === null) dismissStackRef.current = createOverlayDismissStack();
   const dismissStack = dismissStackRef.current;
-  // Stable dismiss controller identity for this modal scope — geometry updates
-  // never disturb its registration/ordering.
   const controllerRef = React.useRef<OverlayDismissController | null>(null);
   if (controllerRef.current === null) controllerRef.current = createDismissController(dismissStack);
   const controller = controllerRef.current;
-  // The active-scope coordinator is owned by the nearest runtime (root provider),
-  // not module-global, so this modal only ever activates within its own runtime.
   const coordinator = React.useContext(OverlayActiveScopeContext);
   const {
     handleHostLayout,
@@ -534,16 +494,14 @@ export function ModalOverlayHost({
     () => ({
       hostName,
       isModal: true,
+      depth,
       hostRect,
       remeasureHost,
       controller,
     }),
-    [controller, hostName, hostRect, remeasureHost],
+    [controller, depth, hostName, hostRect, remeasureHost],
   );
 
-  // Bridge child-first dismissal to the modal boundary above this provider. Only
-  // expose it when a transport (BeeUIProvider) is present; otherwise the boundary
-  // falls back to closing directly.
   useIsomorphicLayoutEffect(() => {
     if (!dismissScopeRef) return undefined;
     dismissScopeRef.current = transport
@@ -554,23 +512,17 @@ export function ModalOverlayHost({
     };
   }, [dismissScopeRef, dismissStack, transport]);
 
-  // While active, this modal's dismiss stack is the topmost active scope for
-  // global events (web Escape / root back) within its runtime. Registered
-  // synchronously so a native request-close immediately after the modal opens
-  // still routes correctly.
   useIsomorphicLayoutEffect(() => {
     if (!transport || !active || !coordinator) return undefined;
-    coordinator.activate(dismissStack);
+    coordinator.activate(dismissStack, depth);
     return () => coordinator.deactivate(dismissStack);
-  }, [active, coordinator, dismissStack, transport]);
+  }, [active, coordinator, depth, dismissStack, transport]);
 
   if (!transport) return <>{children}</>;
   const { HostOutlet } = transport;
   return (
     <OverlayScopeContext.Provider value={scope}>
       <OverlayHostScopeProvider hostName={hostName}>{children}</OverlayHostScopeProvider>
-      {/* Modal-local measurement host: window origin of this modal's content
-          (e.g. a pageSheet inset), the geometry origin for overlays inside it. */}
       <View
         ref={hostRef}
         accessible={false}
@@ -595,13 +547,6 @@ export function useOverlayDismissable({
   open,
   overlayId,
 }: UseOverlayDismissableOptions) {
-  // Register with the NEAREST scope's **stable dismiss controller** — the root
-  // controller, or the modal controller when declared inside a modal. Topmost and
-  // dismissal are evaluated within that scope, so a root overlay behind a modal
-  // never affects a modal-local child's topmost state (and vice versa). Crucially,
-  // the controller identity is fixed across geometry (hostRect) updates, so the
-  // registration effect never re-runs on layout/host-move — dismiss ordering
-  // follows open order, not geometry.
   const { controller } = useNearestOverlayScope();
   const onDismissRef = React.useRef(onDismiss);
   onDismissRef.current = onDismiss;
@@ -698,18 +643,26 @@ export function useAnchoredOverlayPosition({
   shift = true,
   sideOffset = 0,
 }: UseAnchoredOverlayPositionOptions): UseAnchoredOverlayPositionResult {
-  // Geometry origin comes from the NEAREST scope's host: a modal-local overlay
-  // measures against its modal host window origin (e.g. a pageSheet inset), not
-  // the root window. Keyboard / safe-area / window rects are window-level and
-  // stay shared from the runtime.
   const { hostRect, remeasureHost } = useNearestOverlayScope();
   const { keyboardRect, safeAreaInsets, windowRect } = useOverlayRuntime();
   const [anchorRect, setAnchorRect] = React.useState<AnchoredOverlayRect | null>(null);
   const [overlaySize, setOverlaySize] = React.useState<AnchoredOverlaySize | null>(null);
+  const anchorMeasurementGenerationRef = React.useRef(0);
+
+  React.useEffect(
+    () => () => {
+      anchorMeasurementGenerationRef.current += 1;
+    },
+    [],
+  );
 
   const remeasure = React.useCallback(() => {
     remeasureHost();
+    const generation = ++anchorMeasurementGenerationRef.current;
+    let callbackInvoked = false;
     const scheduled = measureOverlayNodeInWindow(anchorRef.current, (nextRect) => {
+      callbackInvoked = true;
+      if (generation !== anchorMeasurementGenerationRef.current) return;
       if (!nextRect) {
         setRectIfChanged(setAnchorRect, null);
         onAnchorUnavailable?.();
@@ -717,21 +670,18 @@ export function useAnchoredOverlayPosition({
       }
       setRectIfChanged(setAnchorRect, nextRect);
     });
-    if (!scheduled) onAnchorUnavailable?.();
+    if (!scheduled && !callbackInvoked && generation === anchorMeasurementGenerationRef.current) {
+      onAnchorUnavailable?.();
+    }
   }, [anchorRef, onAnchorUnavailable, remeasureHost]);
 
-  // A stable revision key from the nearest host geometry: when the host moves or
-  // resizes (e.g. a sheet resize/orientation) while the root window dimensions are
-  // unchanged, the anchor must be remeasured so a new host origin is never paired
-  // with a stale anchor. Identical rect values produce the same key, so no
-  // remeasure loop occurs (measureInWindow → setRectIfChanged is a no-op on equal
-  // values, keeping the key stable).
   const hostRevision = hostRect
     ? `${hostRect.x},${hostRect.y},${hostRect.width},${hostRect.height}`
     : null;
 
   React.useEffect(() => {
     if (!open) {
+      anchorMeasurementGenerationRef.current += 1;
       setRectIfChanged(setAnchorRect, null);
       setOverlaySize(null);
       return;
