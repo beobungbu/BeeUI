@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   Card,
   Dialog,
   DialogClose,
@@ -33,6 +34,58 @@ const LONG_OPTIONS = Array.from({ length: 120 }, (_, index) => ({
   label: `Workspace ${String(index + 1).padStart(3, '0')}`,
   value: `workspace-${index + 1}`,
 }));
+
+function SelectDismissHierarchyProbe() {
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [dialogSelectOpen, setDialogSelectOpen] = React.useState(false);
+  const [rootSelectOpen, setRootSelectOpen] = React.useState(false);
+
+  return (
+    <VStack gap="sm">
+      <Button
+        onPress={() => {
+          setRootSelectOpen(true);
+          setDialogOpen(true);
+          setDialogSelectOpen(true);
+        }}
+        testID="select-showcase-scope-open"
+        variant="outline"
+      >
+        Open dismissal hierarchy
+      </Button>
+
+      <Select onOpenChange={setRootSelectOpen} open={rootSelectOpen}>
+        <SelectTrigger testID="select-showcase-scope-root-trigger">
+          <SelectValue placeholder="Root Select" />
+        </SelectTrigger>
+        <SelectContent testID="select-showcase-scope-root-content">
+          <SelectItem value="root">Root option</SelectItem>
+        </SelectContent>
+      </Select>
+
+      <Dialog onOpenChange={setDialogOpen} open={dialogOpen}>
+        <DialogTrigger testID="select-showcase-scope-dialog-trigger">Scope Dialog</DialogTrigger>
+        <DialogContent>
+          <DialogTitle testID="select-showcase-scope-dialog-title">Dismiss hierarchy</DialogTitle>
+          <DialogDescription>
+            Escape must dismiss this modal-local Select before a root Select behind the Dialog.
+          </DialogDescription>
+          <Select onOpenChange={setDialogSelectOpen} open={dialogSelectOpen}>
+            <SelectTrigger testID="select-showcase-scope-child-trigger">
+              <SelectValue placeholder="Dialog Select" />
+            </SelectTrigger>
+            <SelectContent testID="select-showcase-scope-child-content">
+              <SelectItem value="child">Dialog option</SelectItem>
+            </SelectContent>
+          </Select>
+          <DialogFooter>
+            <DialogClose variant="outline">Close Dialog</DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </VStack>
+  );
+}
 
 export function SelectShowcase() {
   const [controlledValue, setControlledValue] = React.useState('pro');
@@ -203,7 +256,7 @@ export function SelectShowcase() {
                   <SelectTrigger accessibilityLabel="Narrow Select" testID="select-showcase-narrow-trigger">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent testID="select-showcase-narrow-content">
                     <SelectItem value="short">Short option</SelectItem>
                     <SelectItem value="very-long-option">
                       A long option label that must truncate safely in a narrow layout
@@ -245,6 +298,9 @@ export function SelectShowcase() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+
+              <Separator />
+              <SelectDismissHierarchyProbe />
             </VStack>
           </Section>
         </Card>
