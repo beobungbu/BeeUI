@@ -44,11 +44,12 @@ function renderShowcase() {
 }
 
 describe('Showcase root', () => {
-  it('renders the section chooser with Components and Patterns', () => {
+  it('renders the section chooser with Components, Patterns, and Runtime Acceptance', () => {
     const view = renderShowcase();
     expect(view.getByTestId('showcase-home')).toBeTruthy();
     expect(view.getByRole('button', { name: 'Open Components' })).toBeTruthy();
     expect(view.getByRole('button', { name: 'Open Patterns' })).toBeTruthy();
+    expect(view.getByRole('button', { name: 'Open Runtime Acceptance' })).toBeTruthy();
   });
 
   it('opens Components without mounting Patterns and returns home', () => {
@@ -73,6 +74,21 @@ describe('Showcase root', () => {
     fireEvent.press(view.getByRole('button', { name: 'Back to Showcase home' }));
     expect(view.getByTestId('showcase-home')).toBeTruthy();
     expect(view.queryByTestId('pattern-gallery')).toBeNull();
+  });
+
+  it('opens the native runtime acceptance fixture with stable evidence markers', () => {
+    const view = renderShowcase();
+    fireEvent.press(view.getByRole('button', { name: 'Open Runtime Acceptance' }));
+
+    expect(view.getByTestId('runtime-smoke')).toBeTruthy();
+    expect(view.getByTestId('runtime-ready')).toBeTruthy();
+    expect(view.getByText('safe-area top: 47 bottom: 34')).toBeTruthy();
+    expect(view.getByText('pageSheet state: closed')).toBeTruthy();
+    expect(view.getByText('formSheet state: closed')).toBeTruthy();
+
+    fireEvent.press(view.getByTestId('runtime-back'));
+    expect(view.getByTestId('showcase-home')).toBeTruthy();
+    expect(view.queryByTestId('runtime-smoke')).toBeNull();
   });
 
   it('keeps root navigation router-free', () => {
