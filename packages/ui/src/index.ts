@@ -198,10 +198,10 @@ export {
   type SelectGroupProps,
   type SelectItemProps,
   type SelectLabelProps,
+  type SelectOptionValue,
   type SelectPlacement,
   type SelectProps,
   type SelectTriggerProps,
-  type SelectValue,
   type SelectValueProps,
 } from './components/select';
 export {
