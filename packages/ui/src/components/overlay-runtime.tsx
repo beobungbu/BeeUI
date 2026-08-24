@@ -628,6 +628,11 @@ export type UseAnchoredOverlayPositionResult = {
   windowPosition: AnchoredOverlayPosition | null;
 };
 
+type AnchoredOverlayMeasurement = {
+  hostRevision: string | null;
+  rect: AnchoredOverlayRect;
+};
+
 export function useAnchoredOverlayPosition({
   align = 'center',
   alignOffset = 0,
@@ -645,7 +650,17 @@ export function useAnchoredOverlayPosition({
 }: UseAnchoredOverlayPositionOptions): UseAnchoredOverlayPositionResult {
   const { hostRect, remeasureHost } = useNearestOverlayScope();
   const { keyboardRect, safeAreaInsets, windowRect } = useOverlayRuntime();
-  const [anchorRect, setAnchorRect] = React.useState<AnchoredOverlayRect | null>(null);
+  const hostRevision = hostRect
+    ? `${hostRect.x},${hostRect.y},${hostRect.width},${hostRect.height}`
+    : null;
+  const hostRevisionRef = React.useRef(hostRevision);
+  hostRevisionRef.current = hostRevision;
+  const openRef = React.useRef(open);
+  openRef.current = open;
+  const [anchorMeasurement, setAnchorMeasurement] =
+    React.useState<AnchoredOverlayMeasurement | null>(null);
+  const anchorRect =
+    anchorMeasurement?.hostRevision === hostRevision ? anchorMeasurement.rect : null;
   const [overlaySize, setOverlaySize] = React.useState<AnchoredOverlaySize | null>(null);
   const anchorMeasurementGenerationRef = React.useRef(0);
 
@@ -657,32 +672,46 @@ export function useAnchoredOverlayPosition({
   );
 
   const remeasure = React.useCallback(() => {
+    if (!openRef.current) return;
     remeasureHost();
     const generation = ++anchorMeasurementGenerationRef.current;
+    const requestedHostRevision = hostRevision;
     let callbackInvoked = false;
     const scheduled = measureOverlayNodeInWindow(anchorRef.current, (nextRect) => {
       callbackInvoked = true;
-      if (generation !== anchorMeasurementGenerationRef.current) return;
+      if (
+        generation !== anchorMeasurementGenerationRef.current ||
+        requestedHostRevision !== hostRevisionRef.current ||
+        !openRef.current
+      ) {
+        return;
+      }
       if (!nextRect) {
-        setRectIfChanged(setAnchorRect, null);
+        setAnchorMeasurement(null);
         onAnchorUnavailable?.();
         return;
       }
-      setRectIfChanged(setAnchorRect, nextRect);
+      setAnchorMeasurement((current) =>
+        current?.hostRevision === requestedHostRevision && sameRect(current.rect, nextRect)
+          ? current
+          : { hostRevision: requestedHostRevision, rect: nextRect },
+      );
     });
-    if (!scheduled && !callbackInvoked && generation === anchorMeasurementGenerationRef.current) {
+    if (
+      !scheduled &&
+      !callbackInvoked &&
+      generation === anchorMeasurementGenerationRef.current &&
+      requestedHostRevision === hostRevisionRef.current &&
+      openRef.current
+    ) {
       onAnchorUnavailable?.();
     }
-  }, [anchorRef, onAnchorUnavailable, remeasureHost]);
-
-  const hostRevision = hostRect
-    ? `${hostRect.x},${hostRect.y},${hostRect.width},${hostRect.height}`
-    : null;
+  }, [anchorRef, hostRevision, onAnchorUnavailable, remeasureHost]);
 
   React.useEffect(() => {
     if (!open) {
       anchorMeasurementGenerationRef.current += 1;
-      setRectIfChanged(setAnchorRect, null);
+      setAnchorMeasurement(null);
       setOverlaySize(null);
       return;
     }
