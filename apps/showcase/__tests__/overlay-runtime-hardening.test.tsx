@@ -17,7 +17,6 @@ import {
   OverlayRuntimeProvider,
   OverlayScopeContext,
   useAnchoredOverlayPosition,
-  useOverlayEnvironment,
   type OverlayDismissController,
 } from '../../../packages/ui/src/components/overlay-runtime';
 
@@ -203,56 +202,6 @@ describe('semantic scope depth is independent of React effect order', () => {
 describe('latest async measurement wins', () => {
   beforeEach(() => setTeleportAvailable());
 
-  it('ignores an older host measureInWindow callback that resolves after a newer request', async () => {
-    const callbacks: Array<(x: number, y: number, width: number, height: number) => void> = [];
-    // RNTL's render wrapper does not materialize the runtime host ref in this Jest
-    // environment. React Test Renderer owns the createNodeMock contract directly,
-    // so this test uses it for the host-ref race while the component still executes
-    // the production OverlayRuntimeProvider/useMeasuredOverlayHost path.
-    const TestRenderer = require('react-test-renderer') as any;
-    let renderer: any;
-
-    function HostProbe() {
-      const { hostRect } = useOverlayEnvironment();
-      return (
-        <Text testID="host-probe">
-          {hostRect ? `${hostRect.x},${hostRect.y},${hostRect.width},${hostRect.height}` : 'null'}
-        </Text>
-      );
-    }
-
-    await TestRenderer.act(async () => {
-      renderer = TestRenderer.create(
-        <OverlayRuntimeProvider>
-          <HostProbe />
-        </OverlayRuntimeProvider>,
-        {
-          createNodeMock: () => ({
-            measureInWindow: (cb: (x: number, y: number, w: number, h: number) => void) => callbacks.push(cb),
-          }),
-        },
-      );
-    });
-
-    const host = renderer.root.findByProps({ testID: 'beeui-overlay-host' });
-    await TestRenderer.act(async () => {
-      host.props.onLayout({ nativeEvent: { layout: { x: 10, y: 10, width: 500, height: 500 } } });
-      host.props.onLayout({ nativeEvent: { layout: { x: 20, y: 20, width: 600, height: 600 } } });
-    });
-
-    expect(callbacks.length).toBeGreaterThanOrEqual(2);
-    const older = callbacks.at(-2)!;
-    const newer = callbacks.at(-1)!;
-
-    await TestRenderer.act(async () => newer(20, 20, 600, 600));
-    expect(renderer.root.findByProps({ testID: 'host-probe' }).props.children).toBe('20,20,600,600');
-
-    await TestRenderer.act(async () => older(10, 10, 500, 500));
-    expect(renderer.root.findByProps({ testID: 'host-probe' }).props.children).toBe('20,20,600,600');
-
-    await TestRenderer.act(async () => renderer.unmount());
-  });
-
   it('ignores an older anchor callback and stale unavailable result after a newer successful measure', async () => {
     const callbacks: Array<(x: number, y: number, width: number, height: number) => void> = [];
     const onAnchorUnavailable = jest.fn();
@@ -320,5 +269,98 @@ describe('latest async measurement wins', () => {
       '300,240,40,20',
     );
     expect(onAnchorUnavailable).not.toHaveBeenCalled();
+  });
+
+  it('never exposes a new host revision with an anchor measured for the previous host', async () => {
+    const callbacks: Array<(x: number, y: number, width: number, height: number) => void> = [];
+    const onAnchorUnavailable = jest.fn();
+    let requestAnotherMeasure = () => undefined;
+    let reportOverlayLayout = (_event: unknown) => undefined;
+
+    const controller: OverlayDismissController = {
+      register: () => undefined,
+      unregister: () => undefined,
+      isTopmost: () => false,
+      dismissIfTopmost: () => false,
+      dismissTop: () => false,
+    };
+    const hostA = { x: 0, y: 0, width: 1000, height: 800 };
+    const hostB = { x: 50, y: 40, width: 800, height: 600 };
+    const makeScope = (hostRect: typeof hostA) => ({
+      hostName: 'revision-host',
+      isModal: true,
+      depth: 1,
+      hostRect,
+      remeasureHost: () => undefined,
+      controller,
+    });
+
+    function Probe() {
+      const anchorRef = React.useRef({
+        measureInWindow: (cb: (x: number, y: number, w: number, h: number) => void) => callbacks.push(cb),
+      });
+      const { anchorRect, onOverlayLayout, position, remeasure } = useAnchoredOverlayPosition({
+        anchorRef,
+        avoidSafeArea: false,
+        onAnchorUnavailable,
+        open: true,
+      });
+      requestAnotherMeasure = remeasure;
+      reportOverlayLayout = onOverlayLayout as unknown as (event: unknown) => void;
+      return (
+        <Text testID="revision-probe">
+          {`${anchorRect ? 'anchor' : 'no-anchor'}:${position ? 'positioned' : 'pending'}`}
+        </Text>
+      );
+    }
+
+    const renderTree = (hostRect: typeof hostA) => (
+      <OverlayRuntimeProvider hostRectOverride={ROOT_RECT}>
+        <OverlayScopeContext.Provider value={makeScope(hostRect)}>
+          <Probe />
+        </OverlayScopeContext.Provider>
+      </OverlayRuntimeProvider>
+    );
+
+    const screen = render(renderTree(hostA));
+    await waitFor(() => expect(callbacks.length).toBeGreaterThanOrEqual(1));
+
+    await act(async () => {
+      reportOverlayLayout({ nativeEvent: { layout: { width: 120, height: 80 } } });
+      callbacks[0](200, 160, 40, 20);
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId('revision-probe', { includeHiddenElements: true }).props.children).toBe(
+        'anchor:positioned',
+      ),
+    );
+
+    // Leave one host-A request pending, then change the host. The hook must become
+    // pending immediately instead of calculating one frame from host-B + anchor-A.
+    await act(async () => requestAnotherMeasure());
+    const staleHostARequest = callbacks.at(-1)!;
+    await act(async () => screen.rerender(renderTree(hostB)));
+    const hostBRequest = callbacks.at(-1)!;
+    expect(hostBRequest).not.toBe(staleHostARequest);
+    expect(screen.getByTestId('revision-probe', { includeHiddenElements: true }).props.children).toBe(
+      'no-anchor:pending',
+    );
+
+    // A stale unavailable result from the old host revision must also be ignored,
+    // even if it lands before the current host-B measurement resolves.
+    await act(async () =>
+      staleHostARequest(Number.NaN, Number.NaN, Number.NaN, Number.NaN),
+    );
+    expect(screen.getByTestId('revision-probe', { includeHiddenElements: true }).props.children).toBe(
+      'no-anchor:pending',
+    );
+    expect(onAnchorUnavailable).not.toHaveBeenCalled();
+
+    await act(async () => hostBRequest(260, 210, 40, 20));
+    await waitFor(() =>
+      expect(screen.getByTestId('revision-probe', { includeHiddenElements: true }).props.children).toBe(
+        'anchor:positioned',
+      ),
+    );
   });
 });
