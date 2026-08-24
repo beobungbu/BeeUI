@@ -11,6 +11,13 @@ import {
   Box,
   Button,
   Card,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+  DialogTrigger,
   HStack,
   Input,
   SafeArea,
@@ -27,18 +34,21 @@ type ThemeInspectorProps = {
 };
 
 const semanticColorSamples = [
-  { label: 'Background', className: 'bg-background' },
-  { label: 'Surface', className: 'bg-surface border border-border' },
-  { label: 'Surface muted', className: 'bg-surface-muted' },
-  { label: 'Surface raised', className: 'bg-surface-raised border border-border' },
-  { label: 'Primary', className: 'bg-primary' },
-  { label: 'Secondary', className: 'bg-secondary' },
-  { label: 'Destructive', className: 'bg-destructive' },
-  { label: 'Success', className: 'bg-success' },
-  { label: 'Warning', className: 'bg-warning' },
-  { label: 'Info', className: 'bg-info' },
-  { label: 'Disabled', className: 'bg-disabled' },
-  { label: 'Focus ring', className: 'bg-focus-ring' },
+  { label: 'Background', className: 'h-16 rounded-md bg-background' },
+  { label: 'Surface', className: 'h-16 rounded-md border border-border bg-surface' },
+  { label: 'Surface muted', className: 'h-16 rounded-md bg-surface-muted' },
+  {
+    label: 'Surface raised',
+    className: 'h-16 rounded-md border border-border bg-surface-raised',
+  },
+  { label: 'Primary', className: 'h-16 rounded-md bg-primary' },
+  { label: 'Secondary', className: 'h-16 rounded-md bg-secondary' },
+  { label: 'Destructive', className: 'h-16 rounded-md bg-destructive' },
+  { label: 'Success', className: 'h-16 rounded-md bg-success' },
+  { label: 'Warning', className: 'h-16 rounded-md bg-warning' },
+  { label: 'Info', className: 'h-16 rounded-md bg-info' },
+  { label: 'Disabled', className: 'h-16 rounded-md bg-disabled' },
+  { label: 'Focus ring', className: 'h-16 rounded-md bg-focus-ring' },
 ] as const;
 
 function InspectorSection({
@@ -72,6 +82,7 @@ export function ThemeInspector({ onBack }: ThemeInspectorProps) {
   const selection = getBeeThemeSelection(runtimeTheme);
   const activeBrand: BeeBrandName = selection?.brand ?? 'bee';
   const activeMode: BeeThemeName = selection?.theme ?? (runtimeTheme === 'dark' ? 'dark' : 'light');
+  const otherBrand: BeeBrandName = activeBrand === 'bee' ? 'violet' : 'bee';
 
   return (
     <Screen testID="theme-token-inspector">
@@ -141,6 +152,31 @@ export function ThemeInspector({ onBack }: ThemeInspectorProps) {
                     <Button variant="outline">Secondary action</Button>
                   </HStack>
                 </Card>
+
+                <Dialog>
+                  <DialogTrigger accessibilityLabel="Open theme-switch dialog" variant="outline">
+                    Open theme-switch dialog
+                  </DialogTrigger>
+                  <DialogContent className="shadow-overlay">
+                    <DialogTitle>Theme switch while overlay is open</DialogTitle>
+                    <DialogDescription>
+                      This acceptance fixture changes semantic brand variables without changing Dialog behavior or component branches.
+                    </DialogDescription>
+                    <Card className="gap-2" padding="sm" variant="muted">
+                      <Text variant="label">Current runtime theme</Text>
+                      <Text testID="overlay-runtime-theme">{runtimeTheme}</Text>
+                    </Card>
+                    <DialogFooter>
+                      <Button
+                        accessibilityLabel={`Switch open dialog to ${otherBrand === 'bee' ? 'Brand A Bee' : 'Brand B Violet'}`}
+                        onPress={() => applyRuntimeTheme(otherBrand, activeMode)}
+                      >
+                        Switch brand in dialog
+                      </Button>
+                      <DialogClose variant="outline">Close</DialogClose>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </VStack>
             </InspectorSection>
 
@@ -151,7 +187,7 @@ export function ThemeInspector({ onBack }: ThemeInspectorProps) {
               <Box className="flex-row flex-wrap gap-4">
                 {semanticColorSamples.map((sample) => (
                   <VStack key={sample.label} className="min-w-[132px] flex-1" gap="xs">
-                    <Box className={`h-16 rounded-md ${sample.className}`} />
+                    <Box className={sample.className} />
                     <Text variant="caption">{sample.label}</Text>
                   </VStack>
                 ))}
