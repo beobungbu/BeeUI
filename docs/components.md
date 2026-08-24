@@ -86,6 +86,13 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `DropdownMenuRadioItem` | anchored overlay | Checked menu-item semantics within a radio group; selection requests the next group value and remains open by default. |
 | `DropdownMenuLabel` | anchored overlay | Non-interactive semantic label text for grouping menu content. |
 | `DropdownMenuSeparator` | anchored overlay | Decorative non-interactive separator hidden from accessibility. |
+| `Select` | anchored selection | Persistent string-value selection with controlled/uncontrolled value and open state. It reuses the shared anchored-overlay runtime while owning option/value semantics independently from `DropdownMenu`. |
+| `SelectTrigger` | anchored selection | Measured combobox-style trigger that conveys expanded/disabled/current-value state and links to Select content. Web ArrowUp/ArrowDown can open it. |
+| `SelectValue` | anchored selection | Displays the registered text for the selected option or caller-provided placeholder. |
+| `SelectContent` | anchored selection | Anchored scrollable option surface with collision/safe-area/keyboard policy, topmost dismissal, Web listbox keyboard/typeahead behavior, and viewport-constrained max height. |
+| `SelectItem` | anchored selection | String-valued option with persistent selected state, disabled state, duplicate-value fail-safe behavior, and optional `textValue` for composed children. |
+| `SelectGroup` | anchored selection | Structural option grouping; Web exposes group/label association while native keeps visible label structure without inventing unsupported listbox-container semantics. |
+| `SelectLabel` | anchored selection | Visible group label with a stable native ID used by its group association. |
 | `AppHeader` | application chrome | Title/description/leading/trailing composition; owns no navigation. Primitive titles receive header semantics; complex title nodes own their own internal accessibility semantics. |
 | `BottomActionBar` | application chrome | Bottom action surface; safe-area ownership stays explicit with the application shell via `SafeArea` or safe-area utilities. |
 | `ListGroup` | application pattern | Bordered grouped-row surface with list container semantics without taking ownership of row actions. |
@@ -127,7 +134,7 @@ Wave 0 is implemented. The next major work is ordered by `docs/roadmap.md`:
 1. context-preserving anchored-overlay transport — **delivered** (Wave 1A) at the deterministic/compile contract level: web `createPortal`, native teleport, generic modal-local scope, legacy fallback contract; exact runtime/device interaction remains separately gated;
 2. establish protected iOS/Android runtime interaction smoke beyond the existing compile gates;
 3. deepen the semantic theme/token system;
-4. implement `Select` and `Tooltip` with their own semantics on the accepted geometry/runtime contracts;
+4. production `Select` — **implemented in Wave 2A** on the accepted overlay runtime; `Tooltip` remains separate work with its own hover/focus/accessibility contract;
 5. implement `Sheet` as a separate gesture/keyboard/safe-area behavior class if BeeUI claims first-class modern mobile coverage;
 6. add `Slider` and later high-value components only when cross-domain evidence supports them.
 
@@ -135,13 +142,63 @@ Additional form-group integrations should be added only where React Native expos
 
 ## Anchored overlay components
 
-The shared anchored-overlay geometry/runtime kernels are accepted, with public `Popover` and `DropdownMenu` layered on them.
+The shared anchored-overlay geometry/runtime kernels are accepted, with public `Popover`, `DropdownMenu`, and `Select` layered on them.
 
 The portal transport preserves consumer React context declared below `BeeUIProvider` (web `ReactDOM.createPortal`, native `react-native-teleport`), with a defensive legacy fallback that does not preserve it. Overlays inside a `Dialog` target a modal-local host. See `docs/anchored-overlays.md`.
 
-Future `Select` and `Tooltip` must not alias DropdownMenu semantics. They build on the shared context-preserving transport and the generic modal-local host scope rather than special-casing.
+`Select` does not alias `DropdownMenu`: menu items activate commands, while Select options represent one persistent current value. Future `Tooltip` work must likewise keep its own semantics while reusing the transport/runtime instead of cloning it.
 
 Do not approximate anchored overlays with full-screen modal behavior merely to avoid portal/context work. Positioning, collision handling, nested overlays, focus, keyboard semantics, and accessibility remain part of each component's contract.
+
+## Select contract
+
+The public value type is `SelectOptionValue = string`. `Select` supports `value`/`onValueChange` for controlled selection and `defaultValue` for uncontrolled selection. Supplying an explicit `value={undefined}` is treated as a controlled empty selection; a selection request calls `onValueChange`, but BeeUI does not invent an optimistic local value while the parent is delayed. `open`/`onOpenChange` and `defaultOpen` independently control presentation state.
+
+Uncontrolled usage:
+
+```tsx
+<Select defaultValue="pro">
+  <SelectTrigger accessibilityLabel="Plan">
+    <SelectValue placeholder="Choose a plan" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="starter">Starter</SelectItem>
+    <SelectItem value="pro">Pro</SelectItem>
+  </SelectContent>
+</Select>
+```
+
+Controlled usage:
+
+```tsx
+const [plan, setPlan] = React.useState('starter');
+
+<Select value={plan} onValueChange={setPlan}>
+  <SelectTrigger accessibilityLabel="Plan">
+    <SelectValue />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectGroup>
+      <SelectLabel>Plans</SelectLabel>
+      <SelectItem value="starter">Starter</SelectItem>
+      <SelectItem value="pro">Pro</SelectItem>
+      <SelectItem disabled value="enterprise">Enterprise</SelectItem>
+    </SelectGroup>
+  </SelectContent>
+</Select>
+```
+
+`SelectItem` infers its selected-value display/typeahead text from primitive string/number children. Composed children should supply `textValue`. Duplicate values fail safe: every item sharing the duplicate value is disabled until the duplicate is removed, and development builds warn. An option removed while selected does not emit a synthetic value change; the underlying value remains application state and `SelectValue` falls back to its placeholder until a matching item returns. If a selected item becomes disabled, the selected value remains persistent but the item cannot be activated or navigated to.
+
+On Web, the trigger exposes combobox-style semantics, content exposes a listbox role, and items expose option + selected/disabled state. ArrowUp/ArrowDown open/navigate, Home/End move to boundaries, Enter/Space select, and short prefix typeahead is supported. Disabled and duplicate options are skipped. Closing restores focus to the trigger only after the open state actually transitions closed, so a delayed controlled parent does not move focus prematurely. Escape and outside press use the shared scope-aware dismiss runtime.
+
+On native, v1 deliberately keeps the same anchored presentation rather than pretending browser hover/keyboard behavior or adding a Bottom Sheet dependency. Trigger/item accessibility state and labels are supplied through React Native semantics; the listbox container role is Web-only because React Native's typed role surface does not expose that container role. Android `Modal` request-close remains child-first for a Dialog-local Select through the existing modal dismiss scope. iOS/other modal request-close follows the Dialog close policy rather than being intercepted as a Select-only close. This documentation does **not** claim VoiceOver/TalkBack runtime proof until simulator/device evidence exists.
+
+`SelectContent` uses a `ScrollView`, defaults to a 320px maximum content height, constrains that maximum to the current overlay viewport, and scrolls the current option toward visibility when opened. 0, 1, 20, and 100+ option fixtures are part of the deterministic contract. v1 does not add virtualization: measured evidence is required before taking that dependency/complexity. Placement, flip/shift, collision padding, safe-area/keyboard avoidance, viewport changes, async anchor measurement, modal-local geometry, context preservation, and dismissal all come from the accepted shared overlay runtime.
+
+A Select inside `Dialog` targets the Dialog's modal-local host and preserves consumer React context on the context-preserving portal transports. Closing the Dialog while Select is open unmounts the child with the modal. The legacy overlay fallback remains exactly the shared runtime's documented fallback and therefore cannot promise consumer-context preservation.
+
+Unsupported v1 presentation behavior is intentionally narrow: there is no Sheet mode, no virtualization API, and no browser-style hover/keyboard emulation on native. A future Sheet presentation may be added behind a presentation policy without changing `value`, `defaultValue`, `onValueChange`, item values, selected state, or group semantics.
 
 ## Sheet boundary
 
