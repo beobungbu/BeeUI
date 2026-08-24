@@ -6,11 +6,12 @@ import { Text as RNText, type TextProps as RNTextProps } from 'react-native';
 const textVariants = cva('text-foreground', {
   variants: {
     variant: {
-      body: 'text-base leading-6',
-      label: 'text-sm font-semibold leading-5',
-      caption: 'text-xs leading-4 text-muted-foreground',
-      title: 'text-2xl font-bold leading-8',
-      heading: 'text-lg font-semibold leading-6',
+      display: 'text-display font-bold tracking-tight',
+      title: 'text-title font-bold tracking-tight',
+      heading: 'text-heading font-semibold',
+      body: 'text-body',
+      label: 'text-label font-semibold',
+      caption: 'text-caption text-muted-foreground',
     },
     tone: {
       default: '',
