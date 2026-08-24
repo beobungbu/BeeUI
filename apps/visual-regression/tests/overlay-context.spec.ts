@@ -52,3 +52,22 @@ test('preserves context and selects in a DropdownMenu nested in a Dialog', async
     'menu action: selected',
   );
 });
+
+test('Web Escape is scope-aware: closes the dialog-nested menu, Dialog stays open', async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await openComponentGallery(page);
+  await page.getByTestId('overlay-context-dialog-trigger').click();
+  await page.getByTestId('overlay-context-dialog-menu-trigger').click();
+  await expect(page.getByTestId('overlay-context-dialog-menu-value')).toHaveText(
+    'context: preserved',
+  );
+
+  // Escape is dispatched to the topmost active scope (the open modal), so it closes
+  // the modal-local menu — the visible Dialog child — first. The Dialog stays open
+  // and the modal boundary blocks Escape from reaching any root overlay behind it.
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('overlay-context-dialog-menu-value')).toHaveCount(0);
+  await expect(page.getByTestId('overlay-context-dialog-menu-trigger')).toBeVisible();
+});

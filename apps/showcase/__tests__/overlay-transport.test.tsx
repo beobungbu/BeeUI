@@ -384,6 +384,42 @@ describe('legacy transport host lifecycle cleanup', () => {
       expect(screen.queryByTestId('modal-portal', { includeHiddenElements: true })).toBeNull(),
     );
   });
+
+  it('regains portal content when the host outlet remounts while the portal stays mounted', async () => {
+    const { RootBoundary, HostOutlet, PortalOutlet } = createLegacyStoreTransport();
+    // Stable content identity: the portal's content-update effect runs once, so it
+    // does NOT re-add the entry on later renders. Only the host outlet unmounts and
+    // remounts (e.g. a host View that re-parents). The store must keep the
+    // entry (owned by the mounted portal) so the remounted host regains it.
+    const content = <Text testID="remount-content">content</Text>;
+
+    function Harness({ showHost }: { showHost: boolean }) {
+      return (
+        <RootBoundary>
+          <PortalOutlet hostName="remount-host">{content}</PortalOutlet>
+          {showHost ? <HostOutlet name="remount-host" /> : null}
+        </RootBoundary>
+      );
+    }
+
+    const screen = render(<Harness showHost />);
+    await waitFor(() =>
+      expect(screen.queryByTestId('remount-content', { includeHiddenElements: true })).toBeTruthy(),
+    );
+
+    // Host outlet unmounts (portal unchanged): the destination is gone.
+    screen.rerender(<Harness showHost={false} />);
+    await waitFor(() =>
+      expect(screen.queryByTestId('remount-content', { includeHiddenElements: true })).toBeNull(),
+    );
+
+    // Host outlet remounts: content is regained with no data loss (the pre-fix
+    // store dropped the entry on host unmount and left this blank).
+    screen.rerender(<Harness showHost />);
+    await waitFor(() =>
+      expect(screen.queryByTestId('remount-content', { includeHiddenElements: true })).toBeTruthy(),
+    );
+  });
 });
 
 // Android `Modal` suppresses the root BackHandler while open, so hardware back
@@ -392,7 +428,12 @@ describe('legacy transport host lifecycle cleanup', () => {
 // behind the Dialog consume the Dialog's back event. `onRequestClose` is fired
 // directly (it is the exact prop the OS invokes on hardware back).
 describe('modal request-close is child-first for anchored overlays (Android hardware back)', () => {
-  beforeEach(() => setTeleportAvailable(true));
+  beforeEach(() => {
+    setTeleportAvailable(true);
+    // Child-first interception through the modal registry is Android-only (see the
+    // iOS request-close test below for why); these cases exercise that path.
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'android' });
+  });
 
   const fireModalBack = async (screen: ReturnType<typeof render>, index = 0) => {
     const modal = screen.UNSAFE_getAllByType(Modal)[index];

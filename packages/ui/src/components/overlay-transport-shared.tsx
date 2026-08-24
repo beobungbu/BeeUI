@@ -90,13 +90,14 @@ function createLegacyStore(): LegacyStore {
       set.add(listener);
       return () => {
         set.delete(listener);
-        // Last subscriber (the host outlet) unmounted: a dynamic modal-host name
-        // is now dead, so drop its bookkeeping instead of leaking a key forever.
-        if (set.size === 0) {
-          listeners.delete(hostName);
-          hosts.delete(hostName);
-          snapshots.delete(hostName);
-        }
+        // Last subscriber (the host outlet) unmounted: drop only the listener set.
+        // Host entries and snapshots are owned by the mounted PortalOutlets, not
+        // the outlet — keeping them lets a HostOutlet that unmounts and remounts
+        // independently (while its portals stay mounted) regain the existing
+        // content with no data loss. The entries/snapshot are cleaned in `remove`
+        // when the last portal for the host actually unmounts, so a closed modal's
+        // dynamic host name is still fully reclaimed.
+        if (set.size === 0) listeners.delete(hostName);
       };
     },
     set(hostName, id, node) {
@@ -112,10 +113,15 @@ function createLegacyStore(): LegacyStore {
       const host = hosts.get(hostName);
       if (!host) return;
       host.delete(id);
-      // Drop the entry map once empty; the stable EMPTY_ENTRIES snapshot still
-      // serves any live host-outlet subscriber until it too unmounts.
-      if (host.size === 0) hosts.delete(hostName);
+      // The portal that owned this entry unmounted. Once no portals remain for the
+      // host, reclaim the host map and snapshot (bounded growth for dynamic modal
+      // host names).
+      const empty = host.size === 0;
+      if (empty) hosts.delete(hostName);
+      // Notify live subscribers with the (now empty) snapshot first, then reclaim
+      // the snapshot key — a live host-outlet then reads the stable EMPTY_ENTRIES.
       invalidate(hostName);
+      if (empty) snapshots.delete(hostName);
     },
     read(hostName) {
       return snapshots.get(hostName) ?? EMPTY_ENTRIES;

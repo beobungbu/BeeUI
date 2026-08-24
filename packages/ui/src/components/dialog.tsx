@@ -2,6 +2,7 @@ import { cn } from '@beeui/core';
 import * as React from 'react';
 import {
   Modal,
+  Platform,
   Pressable,
   View,
   type ModalProps,
@@ -180,20 +181,25 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
       if (dismissOnRequestClose) setOpen(false);
     }, [dismissOnRequestClose, onRequestClose, setOpen]);
 
-    // Android routes hardware back through `Modal.onRequestClose` while the modal
-    // is open (the root BackHandler is suppressed). `onRequestClose` fires on
-    // every such request — including when a nested overlay consumes the back —
-    // preserving the callback contract (it is not a "the Dialog closed" signal).
-    // Child-first: after notifying, dismiss the modal's topmost anchored overlay
-    // (Popover / DropdownMenu declared inside) with reason "back" and consume the
-    // event, keeping the Dialog open; only apply the close policy when no
-    // modal-local anchored child remains. A root overlay behind the Dialog is not
-    // in this scope, so it never consumes the Dialog's back event. This path is
-    // disjoint from `requestClose` (backdrop / accessibility escape), so the
-    // callback is never double-called for one event.
+    // `onRequestClose` fires on EVERY native request-close — including when a
+    // nested overlay consumes it — preserving the callback contract (it is a
+    // request signal, not a "the Dialog closed" signal), and never double-called
+    // because this path is disjoint from `requestClose` (backdrop / accessibility).
+    //
+    // Child-first interception is **Android-only**: there RN `Modal` suppresses
+    // the root BackHandler, so hardware back arrives here and must dismiss the
+    // modal's topmost anchored child (Popover / DropdownMenu) and keep the Dialog
+    // open. On iOS/other platforms `onRequestClose` can represent native modal
+    // dismissal itself (e.g. a `pageSheet`/`formSheet` swipe via
+    // `allowSwipeDismissal`) — intercepting it merely to close a nested overlay
+    // would leave React Dialog state open while the native Modal is already gone.
+    // So elsewhere we apply the close policy directly. A root overlay behind the
+    // Dialog is a different scope and never consumes the Dialog's request-close.
     const handleModalRequestClose = React.useCallback(() => {
       onRequestClose?.();
-      if (modalDismissScopeRef.current?.dismissTopmostChild('back')) return;
+      if (Platform.OS === 'android' && modalDismissScopeRef.current?.dismissTopmostChild('back')) {
+        return;
+      }
       if (dismissOnRequestClose) setOpen(false);
     }, [dismissOnRequestClose, onRequestClose, setOpen]);
 
@@ -223,7 +229,7 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
         transparent
         visible={open}
       >
-        <ModalOverlayHost dismissScopeRef={modalDismissScopeRef}>
+        <ModalOverlayHost active={open} dismissScopeRef={modalDismissScopeRef}>
           <View
             className={cn(
               'flex-1 items-center justify-center px-4 py-8',
