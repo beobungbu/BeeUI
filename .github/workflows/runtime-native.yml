@@ -1,0 +1,161 @@
+name: native-runtime-smoke
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: native-runtime-smoke-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 24.13.1
+  PNPM_VERSION: 10.15.0
+  MAESTRO_VERSION: 2.7.0
+  XCODE_MIN_VERSION: '26.4'
+  BEEUI_RUNTIME_EXPECTED_BASE: 292b850bf7402bdf2fa3878cc80c4551f8ffd843
+
+jobs:
+  ios-runtime:
+    if: >-
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+        (github.head_ref == 'test/runtime-device-smoke' || contains(github.event.pull_request.labels.*.name, 'ci:runtime')))
+    runs-on: [self-hosted, beeui-macos]
+    timeout-minutes: 90
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Add Homebrew to PATH
+        run: echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
+
+      - name: Select Xcode ${{ env.XCODE_MIN_VERSION }}+
+        run: |
+          set -euo pipefail
+          selected=""
+          version_is_supported() {
+            local version="$1" min_version="$2"
+            local major minor min_major min_minor
+            IFS='.' read -r major minor _ <<< "$version"
+            IFS='.' read -r min_major min_minor _ <<< "$min_version"
+            (( ${major:-0} > ${min_major:-0} || (${major:-0} == ${min_major:-0} && ${minor:-0} >= ${min_minor:-0}) ))
+          }
+          for app in $(ls -d /Applications/Xcode*.app 2>/dev/null | sort -rV); do
+            candidate="$app/Contents/Developer"
+            [ -d "$candidate" ] || continue
+            version="$(DEVELOPER_DIR="$candidate" /usr/bin/xcodebuild -version | awk 'NR == 1 { print $2 }')"
+            if version_is_supported "$version" "$XCODE_MIN_VERSION"; then
+              selected="$candidate"
+              break
+            fi
+          done
+          test -n "$selected"
+          echo "DEVELOPER_DIR=$selected" >> "$GITHUB_ENV"
+          export DEVELOPER_DIR="$selected"
+          xcodebuild -version
+          xcrun simctl list runtimes
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Setup Java for Maestro
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Enable pnpm via Corepack
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+          test "$(node --version)" = "v${NODE_VERSION}"
+          test "$(pnpm --version)" = "${PNPM_VERSION}"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline --store-dir "$HOME/.pnpm-store/beeui-v10"
+
+      - name: Install pinned Maestro CLI
+        run: bash ./scripts/runtime-smoke/install-maestro.sh
+
+      - name: Run iOS Simulator smoke
+        run: bash ./scripts/runtime-smoke/ios.sh
+
+      - name: Upload iOS runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: runtime-smoke-ios-${{ github.sha }}
+          path: .artifacts/runtime-smoke/ios
+          if-no-files-found: warn
+          retention-days: 7
+
+  android-runtime:
+    if: >-
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+        (github.head_ref == 'test/runtime-device-smoke' || contains(github.event.pull_request.labels.*.name, 'ci:runtime')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Enable KVM
+        run: |
+          test -e /dev/kvm
+          sudo chmod 666 /dev/kvm
+
+      - name: Enable pnpm via Corepack
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+          test "$(node --version)" = "v${NODE_VERSION}"
+          test "$(pnpm --version)" = "${PNPM_VERSION}"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install pinned Maestro CLI
+        run: bash ./scripts/runtime-smoke/install-maestro.sh
+
+      - name: Run Android Emulator smoke
+        run: bash ./scripts/runtime-smoke/android.sh
+
+      - name: Upload Android runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: runtime-smoke-android-${{ github.sha }}
+          path: .artifacts/runtime-smoke/android
+          if-no-files-found: warn
+          retention-days: 7
