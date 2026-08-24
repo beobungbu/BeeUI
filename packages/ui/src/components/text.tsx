@@ -7,7 +7,7 @@ const textVariants = cva('text-foreground', {
   variants: {
     variant: {
       display: 'text-display font-bold tracking-tight',
-      title: 'text-title font-bold tracking-tight',
+      title: 'text-title font-bold',
       heading: 'text-heading font-semibold',
       body: 'text-body',
       label: 'text-label font-semibold',
