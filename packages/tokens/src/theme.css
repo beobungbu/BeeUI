@@ -1,3 +1,6 @@
+@custom-variant violet-light (&:where(.violet-light, .violet-light *));
+@custom-variant violet-dark (&:where(.violet-dark, .violet-dark *));
+
 @theme {
   --radius-xs: 4px;
   --radius-sm: 6px;
