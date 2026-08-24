@@ -36,7 +36,8 @@ describe('representative theme/token v2 consumers', () => {
 
     const defaultInput = cn(inputVariants({ size: 'md', invalid: false }));
     expect(defaultInput).toContain('text-[length:var(--text-body)]');
-    expect(defaultInput).toContain('leading-[var(--text-body--line-height)]');
+    expect(defaultInput).toContain('leading-6');
+    expect(defaultInput).not.toContain('leading-[var(--text-body--line-height)]');
     expect(defaultInput).toContain('text-foreground');
   });
 
