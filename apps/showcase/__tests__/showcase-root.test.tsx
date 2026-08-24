@@ -44,10 +44,11 @@ function renderShowcase() {
 }
 
 describe('Showcase root', () => {
-  it('renders the section chooser with Components and Patterns', () => {
+  it('renders the section chooser with Components, Theme & tokens, and Patterns', () => {
     const view = renderShowcase();
     expect(view.getByTestId('showcase-home')).toBeTruthy();
     expect(view.getByRole('button', { name: 'Open Components' })).toBeTruthy();
+    expect(view.getByRole('button', { name: 'Open Theme and tokens' })).toBeTruthy();
     expect(view.getByRole('button', { name: 'Open Patterns' })).toBeTruthy();
   });
 
@@ -56,6 +57,7 @@ describe('Showcase root', () => {
     fireEvent.press(view.getByRole('button', { name: 'Open Components' }));
     expect(view.getByTestId('component-gallery')).toBeTruthy();
     expect(view.queryByTestId('pattern-gallery')).toBeNull();
+    expect(view.queryByTestId('theme-token-inspector')).toBeNull();
     expect(view.getByText('Hands-on playground')).toBeTruthy();
 
     fireEvent.press(view.getByRole('button', { name: 'Back to Showcase home' }));
@@ -63,11 +65,26 @@ describe('Showcase root', () => {
     expect(view.queryByTestId('component-gallery')).toBeNull();
   });
 
+  it('opens Theme & tokens as a design-system inspection surface and returns home', () => {
+    const view = renderShowcase();
+    fireEvent.press(view.getByRole('button', { name: 'Open Theme and tokens' }));
+    expect(view.getByTestId('theme-token-inspector')).toBeTruthy();
+    expect(view.queryByTestId('component-gallery')).toBeNull();
+    expect(view.queryByTestId('pattern-gallery')).toBeNull();
+    expect(view.getByText('Runtime branding')).toBeTruthy();
+    expect(view.getByText('Motion & reduced motion')).toBeTruthy();
+
+    fireEvent.press(view.getByRole('button', { name: 'Back to Showcase home' }));
+    expect(view.getByTestId('showcase-home')).toBeTruthy();
+    expect(view.queryByTestId('theme-token-inspector')).toBeNull();
+  });
+
   it('opens Patterns without mounting Components and returns home', () => {
     const view = renderShowcase();
     fireEvent.press(view.getByRole('button', { name: 'Open Patterns' }));
     expect(view.getByTestId('pattern-gallery')).toBeTruthy();
     expect(view.queryByTestId('component-gallery')).toBeNull();
+    expect(view.queryByTestId('theme-token-inspector')).toBeNull();
     expect(view.getByText('Production patterns')).toBeTruthy();
 
     fireEvent.press(view.getByRole('button', { name: 'Back to Showcase home' }));
