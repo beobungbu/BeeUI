@@ -11,7 +11,7 @@ import {
 import { Text } from './text';
 
 const buttonVariants = cva(
-  'flex-row items-center justify-center gap-2 rounded-md border active:opacity-90',
+  'flex-row items-center justify-center gap-2 rounded-md border active:opacity-90 web:focus-visible:bee-focus-ring',
   {
     variants: {
       variant: {
@@ -26,10 +26,10 @@ const buttonVariants = cva(
           'border-destructive bg-destructive active:opacity-80 web:hover:opacity-90',
       },
       size: {
-        sm: 'h-9 px-3',
-        md: 'h-11 px-4',
-        lg: 'h-12 px-5',
-        icon: 'h-11 w-11 px-0',
+        sm: 'h-control-compact px-3 ios:min-h-touch-target android:min-h-touch-target',
+        md: 'h-control-default px-4',
+        lg: 'h-control-large px-5',
+        icon: 'h-control-icon w-control-icon px-0',
       },
     },
     defaultVariants: {
@@ -49,10 +49,10 @@ const buttonLabelVariants = cva('font-semibold', {
       destructive: 'text-destructive-foreground',
     },
     size: {
-      sm: 'text-sm',
-      md: 'text-sm',
-      lg: 'text-base',
-      icon: 'text-sm',
+      sm: 'text-label',
+      md: 'text-label',
+      lg: 'text-body',
+      icon: 'text-label',
     },
   },
   defaultVariants: {
