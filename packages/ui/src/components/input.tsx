@@ -10,9 +10,12 @@ const inputVariants = cva(
   {
     variants: {
       size: {
-        sm: `h-control-compact px-3 ${semanticTypographyClasses.label} ios:min-h-touch-target android:min-h-touch-target`,
-        md: `h-control-default px-3 ${semanticTypographyClasses.body}`,
-        lg: `h-control-large px-4 ${semanticTypographyClasses.body}`,
+        // Keep concrete leading utilities for React Native TextInput/textarea row measurement.
+        // The font size still comes from the semantic typography token; leading-5/6 are
+        // value-equivalent to the v2 label/body contracts and preserve pre-v2 numberOfLines sizing.
+        sm: `h-control-compact px-3 ${semanticTypographyClasses.label} leading-5 ios:min-h-touch-target android:min-h-touch-target`,
+        md: `h-control-default px-3 ${semanticTypographyClasses.body} leading-6`,
+        lg: `h-control-large px-4 ${semanticTypographyClasses.body} leading-6`,
       },
       invalid: {
         true: 'border-destructive focus:border-destructive',
