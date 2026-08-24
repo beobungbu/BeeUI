@@ -29,7 +29,7 @@ import {
 } from './overlay-runtime';
 import { Text } from './text';
 
-export type SelectValue = string;
+export type SelectOptionValue = string;
 export type SelectPlacement = AnchoredOverlayPlacement;
 export type SelectAlign = AnchoredOverlayAlign;
 export type SelectDirection = AnchoredOverlayDirection;
@@ -45,14 +45,14 @@ type SelectItemRegistration = {
   focus: () => void;
   id: string;
   textValue: string;
-  value: SelectValue;
+  value: SelectOptionValue;
 };
 
 type SelectRootContextValue = {
   anchorRef: React.RefObject<SelectFocusableNode | null>;
   contentNativeID: string;
   disabled: boolean;
-  duplicateValues: ReadonlySet<SelectValue>;
+  duplicateValues: ReadonlySet<SelectOptionValue>;
   items: SelectItemRegistration[];
   open: boolean;
   overlayId: string;
@@ -61,7 +61,7 @@ type SelectRootContextValue = {
   selectedItem: SelectItemRegistration | undefined;
   setOpen: (open: boolean) => void;
   unregisterItem: (id: string) => void;
-  value: SelectValue | undefined;
+  value: SelectOptionValue | undefined;
 };
 
 const SelectRootContext = React.createContext<SelectRootContextValue | null>(null);
@@ -119,12 +119,12 @@ function renderItemChildren(children: React.ReactNode, textClassName?: string) {
 type SelectBaseProps = {
   children?: React.ReactNode;
   defaultOpen?: boolean;
-  defaultValue?: SelectValue;
+  defaultValue?: SelectOptionValue;
   disabled?: boolean;
   onOpenChange?: (open: boolean) => void;
-  onValueChange?: (value: SelectValue) => void;
+  onValueChange?: (value: SelectOptionValue) => void;
   open?: boolean;
-  value?: SelectValue;
+  value?: SelectOptionValue;
 };
 
 export type SelectProps = SelectBaseProps;
@@ -146,7 +146,7 @@ export function Select({
 
   const hasValueProp = value !== undefined;
   const valueControlled = hasValueProp;
-  const [internalValue, setInternalValue] = React.useState<SelectValue | undefined>(
+  const [internalValue, setInternalValue] = React.useState<SelectOptionValue | undefined>(
     value ?? defaultValue,
   );
   const resolvedValue = valueControlled ? value : internalValue;
@@ -155,7 +155,7 @@ export function Select({
   const anchorRef = React.useRef<SelectFocusableNode | null>(null);
   const overlayId = useOverlayId('beeui-select');
   const contentNativeID = `${overlayId}-content`;
-  const warnedDuplicatesRef = React.useRef(new Set<SelectValue>());
+  const warnedDuplicatesRef = React.useRef(new Set<SelectOptionValue>());
 
   React.useEffect(() => {
     if (typeof __DEV__ === 'undefined' || !__DEV__) return;
@@ -174,7 +174,7 @@ export function Select({
   }, [hasOpenProp, open, openControlled]);
 
   const valueCounts = React.useMemo(() => {
-    const counts = new Map<SelectValue, number>();
+    const counts = new Map<SelectOptionValue, number>();
     for (const item of items) counts.set(item.value, (counts.get(item.value) ?? 0) + 1);
     return counts;
   }, [items]);
@@ -593,10 +593,8 @@ export const SelectContent = React.forwardRef<
         const enabled = items.filter(isEnabled);
         if (!enabled.length) return;
         const currentIndex = enabled.findIndex((item) => item.id === currentItemId);
-        const ordered = [
-          ...enabled.slice(Math.max(0, currentIndex + 1)),
-          ...enabled.slice(0, Math.max(0, currentIndex + 1)),
-        ];
+        const startIndex = currentIndex >= 0 ? currentIndex + 1 : 0;
+        const ordered = [...enabled.slice(startIndex), ...enabled.slice(0, startIndex)];
         focusItem(ordered.find((item) => item.textValue.toLocaleLowerCase().startsWith(query)));
       },
       [currentItemId, focusItem, isEnabled, items],
@@ -658,7 +656,7 @@ export const SelectContent = React.forwardRef<
         : [styles.content, styles.measuring, { maxHeight: resolvedMaxHeight }, style];
     const webKeyboardProps =
       Platform.OS === 'web'
-        ? ({ onKeyDown: handleWebKeyDown } as unknown as ViewProps)
+        ? ({ onKeyDown: handleWebKeyDown, role: 'listbox' } as unknown as ViewProps)
         : ({} as ViewProps);
 
     return (
@@ -695,14 +693,10 @@ export const SelectContent = React.forwardRef<
                 onLayout?.(event);
               }}
               pointerEvents={open && position ? 'auto' : 'none'}
-              role="listbox"
               style={resolvedStyle}
             >
               <ScrollView
-                ref={(node) => {
-                  scrollRef.current = node;
-                  assignRef(scrollViewProps?.ref as React.ForwardedRef<React.ComponentRef<typeof ScrollView>>, node);
-                }}
+                ref={scrollRef}
                 keyboardShouldPersistTaps="handled"
                 {...scrollViewProps}
                 style={[{ maxHeight: resolvedMaxHeight }, scrollViewProps?.style]}
@@ -728,7 +722,7 @@ export type SelectItemProps = Omit<
   onPress?: PressableProps['onPress'];
   textClassName?: string;
   textValue?: string;
-  value: SelectValue;
+  value: SelectOptionValue;
 };
 
 export const SelectItem = React.forwardRef<React.ComponentRef<typeof Pressable>, SelectItemProps>(
