@@ -18,6 +18,12 @@ Packed tarballs remain verification artifacts, not a claim that a public npm cha
 
 Before public 1.0, BeeUI still needs to productize distribution: publishable CLI/package naming, broader stable registry coverage, explicit compatibility guarantees, release automation, and the chosen public npm/source-ownership support model. See `docs/roadmap.md`.
 
+### Web transport resolution scope
+
+The anchored-overlay transport ships as platform files (`overlay-transport.web.tsx` / `.native.tsx` / `.d.ts`). Resolving the `.web` file needs the bundler to treat `web` as a platform extension. The Showcase Metro config adds `web` to `resolver.platforms`, and the automated Web regression (`visual-web`, over the exported Showcase) proves the `web-dom` (`ReactDOM.createPortal`) transport **under Expo Web / that Metro configuration**.
+
+This is **not** yet a guarantee that arbitrary React Native Web bundlers or generic consumer bundlers resolve the `.web` platform file the same way. A portable web-resolution contract (e.g. conditional package `exports`) is part of the public-distribution hardening above and is not a pre-1.0 guarantee. Docs must not claim arbitrary-bundler web support beyond the tested Expo/Metro environment.
+
 ## Versioning policy
 
 All BeeUI packages use one lockstep version matching the workspace root.

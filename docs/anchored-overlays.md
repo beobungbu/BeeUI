@@ -67,14 +67,32 @@ When the legacy fallback is in effect (web and native-Fabric are unaffected; the
 
 Every transport preserves the accepted anchored-overlay semantics — non-modal positioning, geometry, nested/topmost dismissal, safe-area/keyboard policy, and accessibility contracts are unchanged, and BeeUI never silently falls back to a full-screen React Native `Modal`. The #35 regression contract covers transport selection (`resolveOverlayTransport`), web `createPortal` context preservation (real-browser Playwright), the native teleport context path, and the legacy fallback's context boundary; native teleport context preservation is additionally verified on-device because JS-only test runtimes cannot exercise the native host.
 
-#### Nearest-host scoping (root vs modal-local)
+#### Overlay scope model (host · geometry · dismissal)
 
-`OverlayPortal` targets the **nearest overlay host scope**, not always the application-root host:
+An anchored overlay resolves against the **nearest overlay scope**, a single coherent unit (`OverlayScope`) with three aligned responsibilities. `BeeUIProvider` provisions the **root scope**; each modal-class surface (`DialogContent`, and therefore `AlertDialog`) provisions its own **modal-local scope** via `ModalOverlayHost`. The mechanism is generic — no component special-cases another; future `Select`/`Tooltip` inherit it.
 
-- `BeeUIProvider` provisions the **root overlay host** (`beeui-overlay-root`) and scopes the whole app to it.
-- A modal-class surface renders in its own native window, so `DialogContent` (and therefore `AlertDialog`) provisions a **modal-local host** via `ModalOverlayHost` and scopes its content to that host. Anchored overlays declared inside a Dialog — `Popover`, `DropdownMenu`, future anchored components — land in the modal-local host in the same window and render in front of the modal instead of behind it. This mechanism is generic: no component special-cases another. Dialog → Popover and Dialog → DropdownMenu are both proven (jest, Playwright, iOS, Android).
+1. **Host scope** — where content is portaled. React Native `Modal` renders in a separate native window, so a modal scope hosts nested overlays in the *same* window; they render in front of the modal, not behind it.
+2. **Measurement (geometry) scope** — the window-space origin geometry resolves against. Each scope measures **its own** host node, so an overlay inside a `pageSheet`/`formSheet` positions relative to the sheet's window origin, not the root window. Window-space anchor/solution minus the *nearest* host origin. Safe-area/collision use the same nearest host rectangle. No presentation offsets are hardcoded — the actual host is measured, updating on layout/orientation change.
+3. **Dismissal scope** — each scope has its own dismiss stack. "Topmost" is evaluated **within** the scope, so outside press, accessibility escape, web Escape, and hardware back stay scoped to the modal, and a root overlay behind a modal can never become topmost over a modal-local child (regardless of the order they opened in). Root-only behavior is unchanged.
 
-The legacy fallback preserves portal **insertion order** across independent content updates: updating one mounted portal never re-registers it, so it keeps its z-order and stays aligned with the dismiss stack's topmost tracking.
+Global dismiss events (web Escape, Android root hardware back) dispatch to the **topmost active scope**, so an open modal boundary handles them before any root overlay behind it; per-overlay events (outside press, accessibility escape) route through the nearest scope directly.
+
+Dialog → Popover and Dialog → DropdownMenu are proven across jest, Playwright, iOS, and Android.
+
+#### Platform request-close semantics
+
+Hardware/native modal dismissal is platform-specific and BeeUI routes it deliberately:
+
+- **Android hardware back** — RN `Modal` suppresses the root `BackHandler` while open, so back reaches BeeUI only through `Modal.onRequestClose`. `DialogContent` intercepts it **on Android only**: it dismisses the modal scope's topmost anchored child (reason `back`) and keeps the Dialog open, closing the Dialog only when no child remains.
+- **iOS / other platforms** — `onRequestClose` can represent native modal dismissal itself (e.g. a `pageSheet`/`formSheet` swipe via `allowSwipeDismissal`). BeeUI does **not** run child-first interception there — intercepting merely to close a nested overlay would leave React `Dialog` state open while the native modal is already gone. It applies the close policy directly.
+
+`onRequestClose` fires exactly once on every native request-close (a request signal, not a "closed" signal), on all platforms, and is never double-called with the backdrop/accessibility path. `AlertDialog`'s `cancelOnRequestClose` policy applies only once no child remains.
+
+#### Modal presentation geometry
+
+`overFullScreen` (the default) and non-fullscreen sheet presentations (`pageSheet`, `formSheet`) all position anchored overlays relative to the measured modal host, so geometry is correct on non-fullscreen sheets by construction rather than by coincidence of a near-identity coordinate space. The non-zero-origin geometry contract is proven deterministically; live sheet interaction across devices remains release-gate runtime evidence.
+
+The legacy fallback preserves portal **insertion order** across independent content updates: updating one mounted portal never re-registers it, so it keeps its z-order and stays aligned with the dismiss stack's topmost tracking. Its host bookkeeping is also robust to an independent host-outlet remount (content is regained, not lost) while staying bounded for dynamic modal host names.
 
 #### `react-native-teleport` and the `react-dom` peer
 
@@ -88,6 +106,12 @@ The `react-dom` peer needs a precise reading:
 - This dependency shape should be re-evaluated before public npm distribution.
 
 So `react-dom` is not a BeeUI **native runtime** dependency (BeeUI's native code never imports it), but it is not simply "web-only" from a package-resolution standpoint while teleport peers on it.
+
+#### Web platform-file resolution and distribution scope
+
+The transport ships as platform files — `overlay-transport.web.tsx`, `overlay-transport.native.tsx`, and a types-only `overlay-transport.d.ts`. Selecting the web file requires the bundler to treat `web` as a platform extension. The Showcase's Metro config adds `web` to `resolver.platforms`, which is what the automated Web regression (Playwright over the exported Showcase) actually proves.
+
+What is **proven**: the `web-dom` transport under **Expo Web / the current Metro configuration**. What is **not yet guaranteed**: automatic resolution of the `.web` platform file under arbitrary React Native Web bundlers or generic consumer bundlers, and public npm distribution. BeeUI packages remain private (`files: ["src"]`, consumed as source in the monorepo); conditional package `exports` and a portable web-resolution contract are part of distribution hardening and are **not** a 1.0 guarantee yet. Documentation must not imply arbitrary-bundler web support beyond the Expo/Metro environment that is tested.
 
 ### Measurement contract
 
@@ -116,12 +140,15 @@ Dismissable overlays register in one deterministic stack.
 - One event never cascades through several overlay levels.
 - Updating an existing dismiss handler does not reorder the stack.
 
-#### Child-first dismissal inside a Dialog: outside press vs Android hardware back
+#### Child-first dismissal inside a Dialog
 
-"Child-first" for an anchored overlay declared inside a `Dialog` is delivered by two different mechanisms, because the input paths differ:
+Every dismissal path for an anchored overlay declared inside a `Dialog` is scope-aware (see the [overlay scope model](#overlay-scope-model-host--geometry--dismissal) above) — the child is topmost *within the modal scope*, so a root overlay behind the dialog never steals its dismissal, whatever order they opened in:
 
-- **Outside press** — the anchored overlay's own dismiss layer is topmost and consumes the press, so tapping outside the overlay (but still inside the dialog) dismisses the overlay first; the dialog stays open. Handled by the shared dismiss stack's topmost rule.
-- **Android hardware back** — React Native `Modal` **suppresses the root `BackHandler` while open**, so hardware back never reaches the root dismiss stack; it arrives only through `Modal.onRequestClose`. `DialogContent` therefore keeps a **modal-local dismissal scope** (provisioned with the modal-local host): anchored overlays declared inside the dialog register there too, and `onRequestClose` dismisses that scope's topmost anchored child with reason `back` and consumes the event, only closing the Dialog when no modal-local child remains. A root overlay *behind* the dialog is a different scope and never consumes the dialog's back event. `AlertDialog` inherits this (its `cancelOnRequestClose` policy applies only once no child remains). Web Escape and outside press are unchanged.
+- **Outside press** and **accessibility escape** — route through the nearest (modal) scope's topmost rule, so they dismiss the modal-local child first; the dialog stays open.
+- **Web Escape** — dispatched to the topmost active scope (the open modal boundary), so the visible modal-local child closes before any root overlay behind it; the modal boundary blocks the event from falling through to the root.
+- **Android hardware back** — arrives only via `Modal.onRequestClose` (the root `BackHandler` is suppressed under a Modal); `DialogContent` dismisses the modal scope's topmost anchored child (reason `back`) and keeps the Dialog open, closing it only when no child remains. This interception is **Android-only** — see [platform request-close semantics](#platform-request-close-semantics) for why iOS sheet dismissal is not intercepted.
+
+`AlertDialog` inherits all of this (its `cancelOnRequestClose` policy applies only once no child remains). Root-only dismissal behavior is unchanged.
 
 ### Test-seam policy
 
