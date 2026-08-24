@@ -1,0 +1,109 @@
+appId: com.beeui.showcase
+---
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: "showcase-home"
+
+- tapOn:
+    id: "showcase-open-components"
+- assertVisible:
+    id: "component-gallery"
+- tapOn:
+    text: "Back"
+- assertVisible:
+    id: "showcase-home"
+
+- tapOn:
+    id: "showcase-open-patterns"
+- assertVisible:
+    id: "pattern-gallery"
+- tapOn:
+    text: "Back"
+- assertVisible:
+    id: "showcase-home"
+
+- scrollUntilVisible:
+    element:
+      id: "showcase-open-runtime"
+    direction: DOWN
+- tapOn:
+    id: "showcase-open-runtime"
+- assertVisible:
+    id: "runtime-ready"
+
+- tapOn:
+    id: "runtime-theme-light"
+- assertVisible:
+    text: "theme: light"
+- tapOn:
+    id: "runtime-theme-dark"
+- assertVisible:
+    text: "theme: dark"
+- tapOn:
+    id: "runtime-theme-light"
+- assertVisible:
+    text: "theme: light"
+
+- tapOn:
+    id: "runtime-dialog-trigger"
+- assertVisible:
+    id: "runtime-dialog-content"
+- tapOn:
+    id: "runtime-dialog-close"
+- assertNotVisible:
+    id: "runtime-dialog-content"
+
+- tapOn:
+    id: "runtime-alert-trigger"
+- assertVisible:
+    id: "runtime-alert-content"
+- tapOn:
+    id: "runtime-alert-cancel"
+- assertNotVisible:
+    id: "runtime-alert-content"
+
+- tapOn:
+    id: "runtime-popover-trigger"
+- assertVisible:
+    id: "runtime-popover-content"
+- assertVisible:
+    text: "Root Popover content is visible."
+- tapOn:
+    id: "runtime-popover-close"
+- assertNotVisible:
+    id: "runtime-popover-content"
+
+- tapOn:
+    id: "runtime-menu-trigger"
+- assertVisible:
+    id: "runtime-menu-content"
+- tapOn:
+    id: "runtime-menu-item"
+- assertNotVisible:
+    id: "runtime-menu-content"
+- assertVisible:
+    text: "selection: alpha"
+
+- tapOn:
+    id: "runtime-toast-show"
+- assertVisible:
+    text: "Runtime toast"
+- tapOn:
+    id: "runtime-toast-dismiss"
+- assertNotVisible:
+    text: "Runtime toast"
+
+- tapOn:
+    id: "runtime-input"
+- inputText: "runtime-keyboard"
+- assertVisible:
+    text: "runtime-keyboard"
+- hideKeyboard
+
+- scrollUntilVisible:
+    element:
+      id: "runtime-scroll-end"
+    direction: DOWN
+- assertVisible:
+    id: "runtime-scroll-end"
