@@ -220,10 +220,13 @@ describe('latest async measurement wins', () => {
         <HostProbe />
       </OverlayRuntimeProvider>,
       {
-        createNodeMock: (element: { props?: { testID?: string } }) =>
-          element.props?.testID === 'beeui-overlay-host'
-            ? { measureInWindow: (cb: (x: number, y: number, w: number, h: number) => void) => callbacks.push(cb) }
-            : null,
+        // RNTL's host-component type can differ from the public React Native View,
+        // so matching this ref by testID is not reliable. Only nodes that actually
+        // receive a ref use the returned mock; giving every ref-capable host the
+        // async measurement seam keeps this test tied to the production host ref.
+        createNodeMock: () => ({
+          measureInWindow: (cb: (x: number, y: number, w: number, h: number) => void) => callbacks.push(cb),
+        }),
       },
     );
 
