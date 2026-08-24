@@ -66,7 +66,7 @@ select_simulator() {
   selection="$(node - <<'NODE'
 const { execFileSync } = require('node:child_process');
 const runtimes = JSON.parse(execFileSync('xcrun', ['simctl','list','runtimes','-j'], {encoding:'utf8'})).runtimes
-  .filter((r) => r.isAvailable !== false && r.platform === 'iOS')
+  .filter((r) => r.isAvailable !== false && (r.platform === 'iOS' || String(r.identifier).includes('.iOS-') || /^iOS\b/.test(String(r.name))))
   .sort((a,b) => String(b.version).localeCompare(String(a.version), undefined, {numeric:true}));
 if (!runtimes.length) process.exit(2);
 const types = JSON.parse(execFileSync('xcrun', ['simctl','list','devicetypes','-j'], {encoding:'utf8'})).devicetypes;
