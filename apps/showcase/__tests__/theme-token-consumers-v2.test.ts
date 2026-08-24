@@ -1,5 +1,5 @@
 import { cn } from '@beeui/core';
-import { buttonLabelVariants, textVariants } from '@beeui/ui';
+import { buttonLabelVariants, inputVariants, textVariants } from '@beeui/ui';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
@@ -33,6 +33,11 @@ describe('representative theme/token v2 consumers', () => {
     expect(destructiveLabel).toContain('text-[length:var(--text-label)]');
     expect(destructiveLabel).toContain('leading-[var(--text-label--line-height)]');
     expect(destructiveLabel).toContain('text-destructive-foreground');
+
+    const defaultInput = cn(inputVariants({ size: 'md', invalid: false }));
+    expect(defaultInput).toContain('text-[length:var(--text-body)]');
+    expect(defaultInput).toContain('leading-[var(--text-body--line-height)]');
+    expect(defaultInput).toContain('text-foreground');
   });
 
   it('consumes control sizing, touch-target, and focus contracts in Button/Input', () => {
