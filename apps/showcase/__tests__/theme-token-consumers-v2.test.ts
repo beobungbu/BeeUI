@@ -1,3 +1,5 @@
+import { cn } from '@beeui/core';
+import { buttonLabelVariants, textVariants } from '@beeui/ui';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
@@ -13,18 +15,24 @@ describe('representative theme/token v2 consumers', () => {
   const cardSource = source('../../../packages/ui/src/components/card.tsx');
   const inspectorSource = source('../theme-inspector/theme-inspector.tsx');
 
-  it('consumes semantic typography roles instead of the previous numeric Text scale', () => {
-    for (const utility of [
-      'text-display',
-      'text-title',
-      'text-heading',
-      'text-body',
-      'text-label',
-      'text-caption',
-    ]) {
-      expect(textSource).toContain(utility);
+  it('consumes semantic typography variables instead of the previous numeric Text scale', () => {
+    for (const role of ['display', 'title', 'heading', 'body', 'label', 'caption']) {
+      expect(textSource).toContain(`text-[length:var(--text-${role})]`);
+      expect(textSource).toContain(`leading-[var(--text-${role}--line-height)]`);
     }
     expect(textSource).not.toMatch(/text-(xs|sm|base|lg|2xl)\b/);
+  });
+
+  it('keeps semantic typography and semantic colors in separate tailwind-merge groups', () => {
+    const titleWithTone = cn(textVariants({ variant: 'title' }), 'text-success');
+    expect(titleWithTone).toContain('text-[length:var(--text-title)]');
+    expect(titleWithTone).toContain('leading-[var(--text-title--line-height)]');
+    expect(titleWithTone).toContain('text-success');
+
+    const destructiveLabel = cn(buttonLabelVariants({ variant: 'destructive', size: 'md' }));
+    expect(destructiveLabel).toContain('text-[length:var(--text-label)]');
+    expect(destructiveLabel).toContain('leading-[var(--text-label--line-height)]');
+    expect(destructiveLabel).toContain('text-destructive-foreground');
   });
 
   it('consumes control sizing, touch-target, and focus contracts in Button/Input', () => {
