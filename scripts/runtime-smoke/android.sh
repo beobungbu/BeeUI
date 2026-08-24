@@ -8,14 +8,20 @@ MAESTRO_FLOW="$SHOWCASE/runtime-smoke/maestro"
 APP_ID="com.beeui.showcase"
 AVD_NAME="${BEEUI_ANDROID_AVD_NAME:-beeui-runtime-api36}"
 SYSTEM_IMAGE="${BEEUI_ANDROID_SYSTEM_IMAGE:-system-images;android-36;google_apis;x86_64}"
+ANDROID_ACCEL="${BEEUI_ANDROID_ACCEL:-auto}"
 
 mkdir -p "$ARTIFACT_DIR"
 
-for cmd in node pnpm adb sdkmanager avdmanager emulator maestro; do
+for cmd in node pnpm adb sdkmanager avdmanager maestro; do
   command -v "$cmd" >/dev/null 2>&1 || { echo "Missing required command: $cmd" >&2; exit 1; }
 done
 
 HEAD_SHA="$(git -C "$ROOT" rev-parse HEAD)"
+EXPECTED_HEAD="${BEEUI_RUNTIME_HEAD_SHA:-}"
+if [ -n "$EXPECTED_HEAD" ] && [ "$HEAD_SHA" != "$EXPECTED_HEAD" ]; then
+  echo "Runtime checkout mismatch: expected head $EXPECTED_HEAD, got $HEAD_SHA" >&2
+  exit 1
+fi
 EXPECTED_BASE="${BEEUI_RUNTIME_EXPECTED_BASE:-}"
 if [ -n "$EXPECTED_BASE" ]; then
   merge_base="$(git -C "$ROOT" merge-base "$EXPECTED_BASE" HEAD)"
@@ -72,12 +78,22 @@ sdkmanager "platform-tools" "emulator" \
   "ndk;27.1.12297006" "cmake;3.22.1" \
   "$SYSTEM_IMAGE"
 
+command -v emulator >/dev/null 2>&1 || { echo "Android emulator was not installed by sdkmanager" >&2; exit 1; }
+
 if ! avdmanager list avd | grep -q "Name: $AVD_NAME"; then
   echo no | avdmanager create avd --force --name "$AVD_NAME" --package "$SYSTEM_IMAGE" --device "pixel_7"
 fi
 
 adb kill-server >/dev/null 2>&1 || true
 adb start-server >/dev/null
+
+if [ "$ANDROID_ACCEL" = "off" ]; then
+  BOOT_ATTEMPTS=450
+  echo "Starting Android emulator with software CPU emulation (-accel off)."
+else
+  BOOT_ATTEMPTS=120
+  echo "Starting Android emulator with acceleration mode: $ANDROID_ACCEL"
+fi
 
 emulator "@$AVD_NAME" \
   -no-window \
@@ -86,17 +102,19 @@ emulator "@$AVD_NAME" \
   -gpu swiftshader_indirect \
   -camera-back none \
   -camera-front none \
+  -accel "$ANDROID_ACCEL" \
   -wipe-data \
   > "$ARTIFACT_DIR/emulator.log" 2>&1 &
 EMULATOR_PID=$!
 
-for _ in $(seq 1 120); do
+for _ in $(seq 1 "$BOOT_ATTEMPTS"); do
   SERIAL="$(adb devices | awk 'NR>1 && $2=="device" && $1 ~ /^emulator-/ {print $1; exit}')"
   if [ -n "$SERIAL" ] && [ "$(adb_for_device shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; then
     break
   fi
   if ! kill -0 "$EMULATOR_PID" >/dev/null 2>&1; then
     echo "Android emulator exited before boot completed" >&2
+    tail -n 100 "$ARTIFACT_DIR/emulator.log" >&2 || true
     exit 1
   fi
   sleep 2
@@ -104,6 +122,7 @@ done
 
 if [ -z "$SERIAL" ] || [ "$(adb_for_device shell getprop sys.boot_completed | tr -d '\r')" != "1" ]; then
   echo "Android emulator did not boot before timeout" >&2
+  tail -n 100 "$ARTIFACT_DIR/emulator.log" >&2 || true
   exit 1
 fi
 
@@ -124,6 +143,8 @@ orientation=portrait
 app_id=$APP_ID
 maestro=$(maestro --version)
 wm_size=$ORIGINAL_WM_SIZE
+acceleration=$ANDROID_ACCEL
+system_image=$SYSTEM_IMAGE
 EOF_META
 
 (
