@@ -81,6 +81,11 @@ function readVisualQuery(): { scenario: VisualScenarioId; theme: VisualTheme } {
   };
 }
 
+function readHardeningQuery() {
+  if (typeof window === 'undefined') return null;
+  return new URLSearchParams(window.location.search).get('hardening');
+}
+
 function nextFrame() {
   return new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 }
@@ -107,7 +112,6 @@ function useVisualReadiness(scenario: VisualScenarioId, theme: VisualTheme) {
         await document.fonts.ready;
       }
 
-      // Layout/theme propagation is synchronized to render frames, never wall-clock sleeps.
       await nextFrame();
       await nextFrame();
 
@@ -232,11 +236,7 @@ function FormsScenario() {
 
         <Separator />
 
-        <Checkbox
-          checked
-          label="Accept release checklist"
-          onCheckedChange={() => undefined}
-        />
+        <Checkbox checked label="Accept release checklist" onCheckedChange={() => undefined} />
 
         <FormGroup description="One stable selected option." legend="Release channel" required>
           <RadioGroup onValueChange={() => undefined} value="stable">
@@ -247,11 +247,7 @@ function FormsScenario() {
 
         <Box className="flex-row items-center justify-between gap-4">
           <Text>Visual gate enabled</Text>
-          <Switch
-            accessibilityLabel="Visual gate enabled"
-            onValueChange={() => undefined}
-            value
-          />
+          <Switch accessibilityLabel="Visual gate enabled" onValueChange={() => undefined} value />
         </Box>
       </Card>
     </ScenarioShell>
@@ -284,42 +280,17 @@ function NavigationDataScenario() {
         </Stepper>
 
         <ListGroup>
-          <ListGroupHeader
-            description="Stable application-composition rows"
-            title="Workspace"
-          />
-          <SettingsItem
-            description="Canonical browser"
-            title="Engine"
-            value="Chromium"
-          />
-          <SettingsItem
-            description="Canonical density"
-            title="Pixel ratio"
-            value="1"
-          />
+          <ListGroupHeader description="Stable application-composition rows" title="Workspace" />
+          <SettingsItem description="Canonical browser" title="Engine" value="Chromium" />
+          <SettingsItem description="Canonical density" title="Pixel ratio" value="1" />
         </ListGroup>
 
         <Progress accessibilityLabel="Phase 1 coverage" value={72} />
 
         <Timeline>
-          <TimelineItem
-            description="Public component API only."
-            meta="Complete"
-            status="success"
-            title="Fixture"
-          />
-          <TimelineItem
-            description="Linux + pinned Chromium baselines."
-            meta="Current"
-            status="primary"
-            title="Comparison"
-          />
-          <TimelineItem
-            description="iOS and Android screenshot automation."
-            meta="Phase 2"
-            title="Native expansion"
-          />
+          <TimelineItem description="Public component API only." meta="Complete" status="success" title="Fixture" />
+          <TimelineItem description="Linux + pinned Chromium baselines." meta="Current" status="primary" title="Comparison" />
+          <TimelineItem description="iOS and Android screenshot automation." meta="Phase 2" title="Native expansion" />
         </Timeline>
       </Card>
     </ScenarioShell>
@@ -452,6 +423,43 @@ function DropdownMenuOpenScenario() {
   );
 }
 
+/**
+ * Browser-only hardening fixture for the exact registration-order regression:
+ * Dialog + nested menu commit first. Only after that commit (passive effect) does
+ * the root Popover open, so the root overlay is guaranteed to register later.
+ */
+function CaseCHardeningFixture() {
+  const [menuOpen, setMenuOpen] = React.useState(true);
+  const [rootOpen, setRootOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (menuOpen && !rootOpen) setRootOpen(true);
+  }, [menuOpen, rootOpen]);
+
+  return (
+    <Box className="min-h-screen bg-surface p-6" testID="hardening-case-c">
+      <Popover onOpenChange={setRootOpen} open={rootOpen}>
+        <PopoverTrigger testID="hardening-casec-root-trigger">Root overlay</PopoverTrigger>
+        <PopoverContent avoidSafeArea={false} testID="hardening-casec-root-content">
+          <Text testID="hardening-casec-root-value">root-opened-after-menu</Text>
+        </PopoverContent>
+      </Popover>
+
+      <Dialog open onOpenChange={() => undefined}>
+        <DialogContent>
+          <DialogTitle testID="hardening-casec-dialog-title">CASE C Dialog</DialogTitle>
+          <DropdownMenu onOpenChange={setMenuOpen} open={menuOpen}>
+            <DropdownMenuTrigger testID="hardening-casec-menu-trigger">Menu</DropdownMenuTrigger>
+            <DropdownMenuContent testID="hardening-casec-menu-content">
+              <DropdownMenuItem testID="hardening-casec-menu-item">Item</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </DialogContent>
+      </Dialog>
+    </Box>
+  );
+}
+
 function Scenario({ scenario }: { scenario: VisualScenarioId }) {
   switch (scenario) {
     case 'foundation':
@@ -473,11 +481,12 @@ function Scenario({ scenario }: { scenario: VisualScenarioId }) {
 
 export default function App() {
   const [{ scenario, theme }] = React.useState(readVisualQuery);
+  const [hardening] = React.useState(readHardeningQuery);
   useVisualReadiness(scenario, theme);
 
   return (
     <BeeUIProvider>
-      <Scenario scenario={scenario} />
+      {hardening === 'case-c' ? <CaseCHardeningFixture /> : <Scenario scenario={scenario} />}
     </BeeUIProvider>
   );
 }
