@@ -6,6 +6,67 @@
   --radius-xl: 18px;
   --radius-2xl: 24px;
   --radius-full: 9999px;
+
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+  --text-label: 0.875rem;
+  --text-label--line-height: 1.25rem;
+  --text-body: 1rem;
+  --text-body--line-height: 1.5rem;
+  --text-heading: 1.125rem;
+  --text-heading--line-height: 1.5rem;
+  --text-title: 1.5rem;
+  --text-title--line-height: 2rem;
+  --text-display: 2rem;
+  --text-display--line-height: 2.5rem;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --tracking-normal: 0em;
+  --tracking-tight: -0.0125em;
+
+  --spacing-control-compact: 2.25rem;
+  --spacing-control-default: 2.75rem;
+  --spacing-control-large: 3rem;
+  --spacing-control-icon: 2.75rem;
+  --spacing-touch-target: 2.75rem;
+  --spacing-icon-xs: 0.75rem;
+  --spacing-icon-sm: 1rem;
+  --spacing-icon-md: 1.25rem;
+  --spacing-icon-lg: 1.5rem;
+  --spacing-avatar-sm: 2rem;
+  --spacing-avatar-md: 2.5rem;
+  --spacing-avatar-lg: 3rem;
+  --spacing-avatar-xl: 4rem;
+
+  --container-form: 32rem;
+  --container-reading: 44rem;
+  --container-page: 72rem;
+  --container-dialog: 32rem;
+
+  --shadow-flat: 0 0 #0000;
+  --shadow-raised: 0 2px 8px rgb(16 24 40 / 0.1);
+  --shadow-overlay: 0 16px 40px rgb(16 24 40 / 0.18);
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1.2);
+}
+
+@theme static {
+  --motion-duration-fast: 120ms;
+  --motion-duration-normal: 200ms;
+  --motion-duration-slow: 320ms;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+}
+
+@utility bee-focus-ring {
+  outline-color: var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
+  outline-style: solid;
+  outline-width: var(--focus-ring-width);
 }
 
 @layer theme {
@@ -74,6 +135,72 @@
       --color-disabled: #202936;
       --color-disabled-foreground: #667085;
       --color-overlay: #00000099;
+    }
+
+    @variant violet-light {
+      --color-background: #ffffff;
+      --color-foreground: #171328;
+      --color-surface: #ffffff;
+      --color-surface-muted: #faf8ff;
+      --color-surface-raised: #ffffff;
+      --color-muted: #f3f0ff;
+      --color-muted-foreground: #625b71;
+      --color-subtle-foreground: #7d748d;
+      --color-primary: #7c3aed;
+      --color-primary-foreground: #ffffff;
+      --color-primary-hover: #6d28d9;
+      --color-primary-pressed: #5b21b6;
+      --color-secondary: #2e1065;
+      --color-secondary-foreground: #ffffff;
+      --color-secondary-hover: #3b0764;
+      --color-destructive: #dc2626;
+      --color-destructive-foreground: #ffffff;
+      --color-success: #15803d;
+      --color-success-foreground: #ffffff;
+      --color-warning: #b45309;
+      --color-warning-foreground: #ffffff;
+      --color-info: #1d4ed8;
+      --color-info-foreground: #ffffff;
+      --color-border: #e8e1f5;
+      --color-border-strong: #cec4df;
+      --color-input: #ffffff;
+      --color-focus-ring: #7c3aed;
+      --color-disabled: #f3f0f5;
+      --color-disabled-foreground: #8b8199;
+      --color-overlay: #100c1c80;
+    }
+
+    @variant violet-dark {
+      --color-background: #100c1c;
+      --color-foreground: #f6f2ff;
+      --color-surface: #171126;
+      --color-surface-muted: #1e1631;
+      --color-surface-raised: #261b3d;
+      --color-muted: #2d2147;
+      --color-muted-foreground: #b8abc9;
+      --color-subtle-foreground: #998ba9;
+      --color-primary: #a78bfa;
+      --color-primary-foreground: #180b2d;
+      --color-primary-hover: #c4b5fd;
+      --color-primary-pressed: #8b5cf6;
+      --color-secondary: #ede9fe;
+      --color-secondary-foreground: #1f1235;
+      --color-secondary-hover: #ddd6fe;
+      --color-destructive: #f87171;
+      --color-destructive-foreground: #1f0a0a;
+      --color-success: #4ade80;
+      --color-success-foreground: #052e16;
+      --color-warning: #fbbf24;
+      --color-warning-foreground: #1f2937;
+      --color-info: #60a5fa;
+      --color-info-foreground: #0b1f3a;
+      --color-border: #382b50;
+      --color-border-strong: #514066;
+      --color-input: #171126;
+      --color-focus-ring: #c4b5fd;
+      --color-disabled: #2d2147;
+      --color-disabled-foreground: #786d87;
+      --color-overlay: #000000a3;
     }
   }
 }
