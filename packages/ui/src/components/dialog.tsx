@@ -181,20 +181,10 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
       if (dismissOnRequestClose) setOpen(false);
     }, [dismissOnRequestClose, onRequestClose, setOpen]);
 
-    // `onRequestClose` fires on EVERY native request-close — including when a
-    // nested overlay consumes it — preserving the callback contract (it is a
-    // request signal, not a "the Dialog closed" signal), and never double-called
-    // because this path is disjoint from `requestClose` (backdrop / accessibility).
-    //
-    // Child-first interception is **Android-only**: there RN `Modal` suppresses
-    // the root BackHandler, so hardware back arrives here and must dismiss the
-    // modal's topmost anchored child (Popover / DropdownMenu) and keep the Dialog
-    // open. On iOS/other platforms `onRequestClose` can represent native modal
-    // dismissal itself (e.g. a `pageSheet`/`formSheet` swipe via
-    // `allowSwipeDismissal`) — intercepting it merely to close a nested overlay
-    // would leave React Dialog state open while the native Modal is already gone.
-    // So elsewhere we apply the close policy directly. A root overlay behind the
-    // Dialog is a different scope and never consumes the Dialog's request-close.
+    // Native request-close notification is preserved exactly once. Android Modal
+    // suppresses the root BackHandler, so hardware back is child-first inside this
+    // modal scope. iOS/other request-close (including sheet swipe dismissal) applies
+    // the Dialog close policy directly and is never intercepted by an anchored child.
     const handleModalRequestClose = React.useCallback(() => {
       onRequestClose?.();
       if (Platform.OS === 'android' && modalDismissScopeRef.current?.dismissTopmostChild('back')) {
@@ -220,13 +210,19 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
       [defaultDescriptionNativeID, defaultTitleNativeID, registerDescription, registerTitle],
     );
 
+    // React Native's Fabric Modal maps `transparent=true` directly to
+    // UIModalPresentationOverFullScreen on iOS and therefore ignores pageSheet /
+    // formSheet. Only overFullScreen is transparent; native non-fullscreen/fullScreen
+    // presentations must be non-transparent so the requested presentationStyle is real.
+    const transparent = presentationStyle === 'overFullScreen';
+
     return (
       <Modal
         {...restModalProps}
         animationType={animationType}
         onRequestClose={handleModalRequestClose}
         presentationStyle={presentationStyle}
-        transparent
+        transparent={transparent}
         visible={open}
       >
         <ModalOverlayHost active={open} dismissScopeRef={modalDismissScopeRef}>
@@ -236,38 +232,38 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
               containerClassName,
             )}
           >
-          <Pressable
-            {...overlayProps}
-            accessible={false}
-            aria-hidden
-            className={cn('absolute inset-0 bg-overlay', overlayClassName)}
-            onPress={() => {
-              if (closeOnBackdropPress) requestClose();
-            }}
-            testID={overlayTestID}
-          />
-          <DialogContentAccessibilityContext.Provider value={accessibilityContext}>
-            <View
-              ref={ref}
-              {...props}
-              accessibilityHint={accessibilityHint ?? descriptionText}
-              accessibilityLabel={accessibilityLabel ?? titleText}
-              accessibilityLabelledBy={accessibilityLabelledBy ?? titleNativeID}
-              accessibilityViewIsModal
-              aria-modal
-              className={cn(
-                'w-full max-w-lg gap-4 rounded-xl border border-border bg-surface p-5',
-                className,
-              )}
-              onAccessibilityEscape={() => {
-                onAccessibilityEscape?.();
-                requestClose();
+            <Pressable
+              {...overlayProps}
+              accessible={false}
+              aria-hidden
+              className={cn('absolute inset-0 bg-overlay', overlayClassName)}
+              onPress={() => {
+                if (closeOnBackdropPress) requestClose();
               }}
-              role="dialog"
-            >
-              {children}
-            </View>
-          </DialogContentAccessibilityContext.Provider>
+              testID={overlayTestID}
+            />
+            <DialogContentAccessibilityContext.Provider value={accessibilityContext}>
+              <View
+                ref={ref}
+                {...props}
+                accessibilityHint={accessibilityHint ?? descriptionText}
+                accessibilityLabel={accessibilityLabel ?? titleText}
+                accessibilityLabelledBy={accessibilityLabelledBy ?? titleNativeID}
+                accessibilityViewIsModal
+                aria-modal
+                className={cn(
+                  'w-full max-w-lg gap-4 rounded-xl border border-border bg-surface p-5',
+                  className,
+                )}
+                onAccessibilityEscape={() => {
+                  onAccessibilityEscape?.();
+                  requestClose();
+                }}
+                role="dialog"
+              >
+                {children}
+              </View>
+            </DialogContentAccessibilityContext.Provider>
           </View>
         </ModalOverlayHost>
       </Modal>
