@@ -4,19 +4,19 @@ This document defines what a BeeUI `0.x` release candidate means and separates a
 
 ## Current distribution model
 
-BeeUI is not publicly published to npm yet. `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` intentionally remain `private: true` while the pre-1.0 distribution workflow is productized.
+BeeUI is not publicly published to npm. `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` remain `private: true` while pre-1.0 distribution is productized.
 
-The repository currently supports three consumption/verification modes:
+Current consumption/verification modes:
 
-1. workspace consumption inside the BeeUI monorepo;
+1. workspace consumption inside the monorepo;
 2. packed tarballs for package-boundary verification and controlled/internal consumer testing;
 3. the implemented phase-1 repository-local Registry + source-ownership CLI.
 
-The Registry/CLI is real and documented in `docs/registry-cli.md`; it is no longer a merely hypothetical future workflow. However, it is intentionally not yet a public `npx beeui` product, and its public registry coverage is still limited to the phase-1 component set.
+Packed tarballs are verification artifacts, not a public npm claim. Public CLI/package naming, broader registry coverage, compatibility guarantees, release automation, and the final public package/source-ownership support model remain roadmap work.
 
-Packed tarballs remain verification artifacts, not a claim that a public npm channel exists.
+### Web transport resolution scope
 
-Before public 1.0, BeeUI still needs to productize distribution: publishable CLI/package naming, broader stable registry coverage, explicit compatibility guarantees, release automation, and the chosen public npm/source-ownership support model. See `docs/roadmap.md`.
+The anchored-overlay transport ships as platform files (`overlay-transport.web.tsx`, `.native.tsx`, `.d.ts`). The current proven Web environment is **Expo Web / current Metro**, whose resolver includes `web` platform files. Arbitrary React Native Web/generic bundlers and public npm conditional exports are not yet guaranteed.
 
 ## Versioning policy
 
@@ -25,12 +25,10 @@ All BeeUI packages use one lockstep version matching the workspace root.
 During `0.x`:
 
 - patch releases must not intentionally break documented public behavior;
-- minor releases may change documented APIs while the foundation is being stabilized;
-- intentional breaking changes must be called out under `CHANGELOG.md` with migration notes;
-- package versions must never drift from one another;
+- minor releases may change documented APIs while the foundation stabilizes;
+- intentional breaking changes require changelog/migration notes;
+- package versions must not drift;
 - packed manifests must not expose unresolved `workspace:*` dependency ranges.
-
-The current BeeUI 1.0 exit criteria are maintained in `docs/roadmap.md` rather than being inferred from component count alone.
 
 ## Automated release gates
 
@@ -38,119 +36,118 @@ CI may claim only what its jobs actually prove.
 
 | Gate | Command/job | Environment | Evidence | Blocking |
 | --- | --- | --- | --- | --- |
-| frozen dependency graph | `pnpm install --frozen-lockfile` | Linux `beeui`; macOS ARM64 `beeui-macos` where native iOS is scheduled | successful install | yes |
-| TypeScript contract | `pnpm typecheck` | Linux `beeui` | CI step | yes |
-| behavioral contract tests | `pnpm test` | Linux `beeui` | Jest / React Native Testing Library / Registry tests | yes |
-| package/release contract | `pnpm release:verify` | Linux `beeui` | `.artifacts/release-verification.json` | yes |
-| Expo Web bundle | `verify` | Linux `beeui` | Expo export | yes |
-| Expo Android bundle | `verify` | Linux `beeui` | Expo export | yes |
-| Expo iOS bundle | `verify` | Linux `beeui` | Expo export | yes |
-| Expo native generation | `verify` | Linux `beeui` | clean prebuild | yes |
-| bare RN package install | `bare-native` | Linux `beeui` | packed BeeUI tarballs installed into a fresh RN app | yes |
-| bare Android + iOS Metro | `bare-native` | Linux `beeui` | production bundles | yes |
-| bare Android native compile | `bare-native` | Linux `beeui` | debug APK | yes |
-| deterministic Web visual regression | `visual-web` workflow | Linux `beeui` | comparison against committed Chromium baselines | yes |
-| Expo Showcase native iOS Simulator compile | `ios-native` | macOS ARM64 `beeui-macos` | CocoaPods + `xcodebuild` for `generic/platform=iOS Simulator` | when scheduled / always on main |
-| true bare RN native iOS Simulator compile | `ios-native` | macOS ARM64 `beeui-macos` | fresh RN 0.86.2 consumer + CocoaPods + `xcodebuild` | when scheduled / always on main |
+| frozen dependency graph | `pnpm install --frozen-lockfile` | Linux/macOS as scheduled | successful install | yes |
+| TypeScript contract | `pnpm typecheck` | Linux | CI step | yes |
+| behavioral contract tests | `pnpm test` | Linux | Jest / RNTL / Registry tests | yes |
+| package/release contract | `pnpm release:verify` | Linux | release verification artifact | yes |
+| Expo Web/Android/iOS exports | `verify` | Linux | Expo export | yes |
+| Expo native generation | `verify` | Linux | clean prebuild | yes |
+| bare RN package install | `bare-native` | Linux | packed BeeUI tarballs in fresh RN app | yes |
+| bare Android + iOS Metro | `bare-native` | Linux | production bundles | yes |
+| bare Android native compile | `bare-native` | Linux | debug APK | yes |
+| deterministic Web visual/browser QA | `visual-web` | Linux | canonical pixels + integration tests | yes |
+| Expo Showcase native iOS Simulator compile | `ios-native` | macOS ARM64 | CocoaPods + `xcodebuild` generic simulator | when scheduled / always on main |
+| true bare RN native iOS Simulator compile | `ios-native` | macOS ARM64 | fresh RN consumer + CocoaPods + `xcodebuild` | when scheduled / always on main |
 
-`pnpm release:verify` checks package names/versions, explicit packed files, export targets, peer dependency expectations, the Expo import boundary, packed-manifest workspace-protocol rewriting, clean package installation, and the absence of Expo in the clean package smoke.
+`pnpm release:verify` checks package names/versions, explicit packed files, exports, peers, Expo import boundaries, packed-manifest workspace rewriting, clean installation, and clean-consumer behavior.
 
-The `visual-web` workflow is intentionally independent from native compile jobs and compares 28 deterministic Chromium baselines. Visual comparison does not replace behavior/accessibility/native evidence.
+The `visual-web` gate owns both deterministic component pixels and browser integration. It does not substitute for native runtime interaction.
+
+### Anchored-overlay deterministic contracts
+
+For the current anchored-overlay runtime, automated tests may prove source-level contracts including:
+
+- context preservation on web-dom and native-teleport test seams;
+- defensive legacy context loss/insertion/remount behavior;
+- per-scope topmost dismissal and semantic scope depth;
+- initial-open and nested-modal global-dismiss ordering independent of React effect order;
+- staged root-behind-modal Web Escape where the root overlay registers in a later commit;
+- modal-local non-zero geometry and host-move remeasurement;
+- latest-request-wins async host/anchor measurement;
+- Android Modal request-close child-first policy;
+- iOS request-close non-interception;
+- RN Modal presentation props: `overFullScreen` transparent; `fullScreen` / `pageSheet` / `formSheet` non-transparent so native presentation is not coerced.
+
+These tests do **not** prove live native sheet presentation or swipe interaction.
 
 ## Pull-request native iOS scheduling
 
-The expensive `ios-native` job is change-aware on pull requests.
+The expensive `ios-native` job is change-aware on pull requests. `scripts/classify-ci-changes.mjs` may skip macOS only when every changed path is on a conservative native-safe list. Package source, executable Showcase files, dependencies/lock/workspace metadata, workflow/native-verification files, classifier changes, and unknown paths default to native verification. Empty/unclassifiable diffs fail safe. The `ci:native` label may force a run. Pushes to `main` always run native iOS verification.
 
-`scripts/classify-ci-changes.mjs` may skip macOS only when **every** changed path is on a conservative native-safe list. Current safe classes include documentation/changelog changes, isolated Showcase pattern source/tests, the standalone visual-regression app, and explicitly enumerated repository-local Registry/CLI files.
+If a path later becomes executable native input, tighten the classifier in the same change.
 
-Package source, executable Showcase files, dependencies/lock/workspace metadata, workflow files, native verification scripts, classifier changes, and unknown paths default to native verification.
+## Native build cache policy
 
-An empty/unclassifiable diff fails safe by running native verification.
-
-A maintainer may add `ci:native` to force a fresh PR run with native iOS verification.
-
-Pushes to `main` always run the full `ios-native` gate, regardless of PR classification. This retains complete native compile proof on integrated main commits.
-
-If a currently native-safe path later becomes executable native input, the classifier must be tightened in the same change.
-
-## macOS native build cache policy
-
-The trusted self-hosted macOS runner reuses performance-only native caches.
-
-- Showcase and bare-RN DerivedData live under `~/Library/Caches/BeeUI`.
-- Cache separation includes selected Xcode version and resulting `Podfile.lock` hash.
-- Xcode 26 compilation caching is explicitly enabled.
-- Both native builds emit `-showBuildTimingSummary`.
-- Bare-RN Bundler gems use a persistent cache separated by Ruby version, CPU architecture, and React Native version.
-
-The true bare RN consumer itself remains fresh: its working directory is deleted/recreated, BeeUI tarballs are repacked/reinstalled, and CocoaPods runs against the newly generated project on every verification.
-
-Cache hits are performance hints, never substitute evidence for the current source/build graph.
+Trusted macOS native caches are performance-only. The fresh bare RN consumer is still recreated, BeeUI tarballs are repacked/reinstalled, and CocoaPods/build evaluation runs against current source. Cache hits never replace evidence.
 
 ## Native verification ownership
 
-Linux owns:
+Linux owns TypeScript/tests/release verification, Expo exports/Prebuild, packed bare-consumer installation, Metro bundles, and Android native compilation.
 
-- TypeScript/tests/release verification;
-- Expo exports and Prebuild;
-- bare package installation;
-- bare Android/iOS Metro bundles;
-- Android native compilation.
-
-The trusted macOS ARM64 runner owns native iOS compilation for both:
-
-- the generated Expo Showcase workspace;
-- a fresh true bare React Native consumer.
-
-The iOS gate is compile-only: it targets `generic/platform=iOS Simulator` and does not boot or interact with a simulator.
+The trusted macOS ARM64 runner owns compile-only iOS verification for the Expo Showcase and a fresh true bare React Native consumer. It targets `generic/platform=iOS Simulator`; it does **not** boot or interact with Simulator.
 
 See `docs/native-verification.md` for the package-installed/native-build contract.
 
 ## Runtime and device gates
 
-The following remain release gates because compile-only CI and Chromium screenshot comparison cannot prove real device interaction:
+Compile-only CI and browser QA cannot prove real native interaction.
 
-| Gate | Required environment | Record before release candidate |
+| Gate | Required environment | Record |
 | --- | --- | --- |
-| non-zero safe-area behavior | iOS/Android simulator or device with system insets | device + orientation + result |
-| VoiceOver behavior | iOS simulator/device with VoiceOver | representative interactive flows + result |
-| TalkBack behavior | Android emulator/device with TalkBack | representative interactive flows + result |
-| focus behavior requiring runtime interaction | supported simulator/device/browser | component/flow + result |
-| keyboard interaction requiring runtime interaction | supported simulator/device/browser | component/flow + result |
-| runtime navigation/accessibility interaction | supported simulator/device/browser | representative flow + result |
-| Android hardware-back interaction | Android emulator/device | affected overlay/dialog flow + result |
-| representative native visual verification | supported light/dark form factors | screenshots or review note |
+| iOS `pageSheet` / `formSheet` actual presentation, anchored placement, swipe request-close | iOS Simulator/device | exact SHA, device/OS, presentationStyle, steps, screenshot/video, result |
+| non-zero safe-area behavior | iOS/Android simulator/device | device + orientation + result |
+| VoiceOver behavior | iOS simulator/device | representative flows + result |
+| TalkBack behavior | Android emulator/device | representative flows + result |
+| focus/keyboard runtime interaction | supported simulator/device/browser | flow + result |
+| Android hardware-back interaction | Android emulator/device | exact overlay/Dialog flow + result |
+| representative native visuals | supported light/dark form factors | screenshots/review note |
 | RTL / large-text stress where release-relevant | supported simulator/device/browser | scenario + result |
 
-Native iOS compilation is already CI-proven. Do not list “compile iOS on macOS” as a manual gate anymore.
+Native iOS compilation is already CI-proven and must not be listed as a manual compile gate.
 
-A release note must not turn compile proof into a claim that safe areas, focus, keyboard, VoiceOver/TalkBack, runtime navigation/accessibility behavior, or native visual correctness passed at runtime.
+### Evidence classification
 
-The roadmap targets a protected iOS/Android simulator/device smoke tier so part of this evidence can move from manual release review into automation without making every PR prohibitively expensive.
+For runtime-sensitive PRs, record evidence as one of:
+
+- **exact-head automated** — CI/test output tied to the current head;
+- **exact-head device/simulator** — runtime interaction performed on the exact head;
+- **deterministic-only** — source/Jest/browser contract that intentionally does not claim native interaction;
+- **prior-head supporting evidence** — useful history, never represented as exact-current proof.
+
+A release note must not convert compile/deterministic proof into a claim that safe areas, focus, keyboard, VoiceOver/TalkBack, native sheet behavior, hardware-back runtime behavior, or native visuals passed.
+
+## Simulator/device finding evidence
+
+When a simulator/device acceptance pass finds an issue, use one finding per PR comment and include:
+
+- exact tested SHA;
+- platform/device/OS;
+- scenario and reproduction steps;
+- expected vs actual;
+- screenshot/video/log/accessibility-tree evidence where applicable;
+- reproducibility rate;
+- severity;
+- whether code was modified (test-first passes should say `NO`).
+
+A final summary comment should link every finding and list PASS / FINDINGS / NOT TESTED. This preserves an auditable separation between discovery evidence and later fixes.
 
 ## Release candidate checklist
 
 A release candidate may be cut only when:
 
-1. all automated gates applicable to the exact candidate commit are green;
-2. `.artifacts/release-verification.json` reports `status: pass`;
-3. deterministic visual comparison is green;
-4. `CHANGELOG.md` contains the candidate changes;
+1. all automated gates applicable to the exact candidate are green;
+2. release verification reports pass;
+3. deterministic visual/browser QA is green;
+4. `CHANGELOG.md` contains candidate changes;
 5. migration notes exist for intentional breaking changes;
-6. required runtime/device gates have been recorded or the candidate is explicitly labeled as not fully device-verified.
+6. required runtime/device gates are recorded, or the candidate is explicitly labeled as not fully device-verified.
 
-For public-package releases, the future public distribution pipeline must additionally prove the actual published artifacts in clean consumers rather than relying only on internal tarball packing.
+Public-package releases will additionally need proof of actual published artifacts in clean consumers.
 
 ## Changelog convention
 
-`CHANGELOG.md` keeps an `Unreleased` section.
-
-Entries describe user-visible package behavior, dependency/compatibility changes, distribution behavior, release infrastructure that affects consumers, and migrations. Pure refactors without consumer impact do not need an entry.
-
-When a version is cut, move the applicable `Unreleased` entries under a dated version heading and create a fresh empty `Unreleased` section.
+`CHANGELOG.md` keeps an `Unreleased` section. Entries describe user-visible behavior, dependency/compatibility changes, distribution behavior, release infrastructure affecting consumers, and migrations. Pure refactors without consumer impact need no entry.
 
 ## Roadmap boundary
 
-This file documents **current release evidence**. Future readiness work belongs in `docs/roadmap.md`.
-
-Do not document roadmap work here as if it already ships, and do not leave implemented gates described as future/manual work.
+This file documents **current release evidence**. Future readiness work belongs in `docs/roadmap.md`. Do not describe future work as shipped or shipped automated evidence as a manual future gate.

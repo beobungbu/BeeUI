@@ -1,8 +1,8 @@
 # Anchored overlay contract
 
-BeeUI treats anchored overlays as a different behavior class from centered modal overlays.
+BeeUI treats anchored overlays as a different behavior class from modal surfaces.
 
-`Dialog` and `AlertDialog` may use React Native core `Modal` because they intentionally isolate a full-screen modal interaction. `Popover`, `DropdownMenu`, future `Select`, and future `Tooltip` require geometry tied to a trigger/anchor, collision behavior, nested-dismiss ordering, keyboard policy, focus/accessibility semantics, and a platform host strategy.
+`Dialog` and `AlertDialog` may use React Native core `Modal` because they intentionally isolate modal interaction. `Popover`, `DropdownMenu`, future `Select`, and future `Tooltip` require geometry tied to a trigger/anchor, collision behavior, nested-dismiss ordering, keyboard policy, focus/accessibility semantics, and a platform host strategy.
 
 ## Layer 1 — geometry kernel
 
@@ -50,167 +50,159 @@ The host:
 - removes entries on unmount;
 - supports topmost-only dismissal coordination.
 
-### Current pre-1.0 React Context boundary
+### Consumer React context (portal transport)
 
-The current custom host stores portal children as `ReactNode` values and renders those nodes under the application-root overlay host. That changes React ancestry.
+Overlay content is delivered to its host by a **portal transport** — the portal layer only. The runtime keeps geometry, dismissal, registration, and measurement; a transport decides *how* content travels from its declaration site to a host and whether the source React ancestry (consumer context) survives. `resolveOverlayTransport()` picks one `OverlayTransport` once per runtime, by platform and capability:
 
-Arbitrary consumer contexts declared between `BeeUIProvider` and an anchored-overlay declaration are therefore not guaranteed to survive into `PopoverContent` / `DropdownMenuContent` and may resolve to defaults.
+- **`web-dom`** — the web transport, backed by `ReactDOM.createPortal`. Content keeps its source fiber tree and consumer context while its DOM is portaled into the host element. Consumer context **is** preserved.
+- **`native-teleport`** — native New Architecture with the `react-native-teleport` host view registered. Consumer context **is** preserved. This path has on-device context evidence on iOS and Android.
+- **`legacy`** — defensive store-and-reparent fallback when the native teleport capability is unavailable/stale or in JS-only test environments. It changes React ancestry, so arbitrary consumer context is **not** preserved. It is graceful degradation, not a recommended deployment mode.
 
-BeeUI explicitly re-provides the BeeUI-owned contexts required by its public overlays. It cannot generically enumerate or recreate application-owned form, navigation, localization, custom-theme, or arbitrary context providers.
+The transport is chosen once and fixed for the lifetime of the runtime. The `transport` provider prop is an internal deterministic seam for tests, not a runtime hot-swap.
 
-Current supported composition:
+When the legacy fallback is in effect:
 
 - put providers required by portalled content at or above `BeeUIProvider`; or
 - pass required values explicitly into portalled content.
 
-Issue #35 was closed by PR #38 after this behavior became an explicit regression-tested pre-1.0 contract. That closure means the limitation is documented rather than ambiguous; it does **not** mean the portal became context-preserving.
+Every transport preserves the accepted non-modal geometry/dismissal contract; BeeUI never silently converts an anchored overlay into React Native core `Modal`.
 
-The pre-1.0 roadmap now requires investigation/proof of a context-preserving native/Web transport before building more major anchored components on top of the current transport.
+#### Overlay scope model (host · geometry · dismissal)
 
-A replacement/evolution must retain:
+An anchored overlay resolves against the **nearest `OverlayScope`**. `BeeUIProvider` provisions the root scope; each modal-class surface (`DialogContent`, and therefore `AlertDialog`) provisions a modal-local scope via `ModalOverlayHost`. The mechanism is generic for future anchored components.
 
-- non-modal anchored positioning;
-- accepted geometry behavior;
-- nested/topmost dismissal;
-- safe-area and keyboard policy;
-- accessibility contracts;
-- no silent fallback to a full-screen React Native `Modal` merely to hide context loss.
+Each scope owns:
 
-When context preservation lands, the existing regression must flip from proving the documented boundary to proving arbitrary consumer-context preservation before this limitation is removed from public docs.
+1. **Host** — the portal destination. A modal-local host sits in the same native Modal window as its Dialog, so nested anchored content renders in front of that modal.
+2. **Geometry** — the measured destination-host rectangle in window coordinates. Window-space anchor/solution is translated by the nearest host origin; safe-area/collision policy uses that same host rectangle.
+3. **Dismissal** — a stable per-scope dismiss controller/stack. Geometry updates do not change controller identity or reorder open overlays.
+4. **Semantic depth** — root is depth `0`; every modal boundary increments the nearest parent scope depth. Global dismissal selects the deepest active scope first, so correctness does not depend on React layout-effect execution order. Same-depth siblings use activation order only as a tie-breaker.
+
+This depth rule is important for initial-render `defaultOpen` and nested-modal composition: descendants may run layout effects before ancestors, but the visual/modal hierarchy still wins.
+
+Global dismiss events (Web Escape and Android root back when no RN Modal suppresses it) dispatch within the application runtime to the deepest active scope. Per-overlay outside press/accessibility escape routes directly through the nearest scope.
+
+#### Platform request-close semantics
+
+Hardware/native modal dismissal is platform-specific:
+
+- **Android hardware back** — RN `Modal` suppresses the root `BackHandler`, so back reaches BeeUI through `Modal.onRequestClose`. `DialogContent` intercepts it on Android only: modal-local anchored child first, Dialog second.
+- **iOS / other platforms** — `onRequestClose` can represent native dismissal itself, including sheet swipe dismissal. BeeUI does not child-intercept that request; the Dialog close policy applies directly.
+
+`onRequestClose` fires exactly once per native request and remains disjoint from backdrop/accessibility-close paths. `AlertDialog` keeps its request-close policy once no child remains.
+
+#### Modal presentation geometry
+
+`DialogContent` defaults to `presentationStyle="overFullScreen"`. BeeUI sets RN `Modal.transparent=true` **only** for `overFullScreen`; `fullScreen`, `pageSheet`, and `formSheet` use `transparent=false` so React Native can honor the requested native presentation instead of coercing it back to `overFullScreen`.
+
+Anchored children still resolve against the measured modal-local host. Non-zero-origin sheet geometry, host-move remeasurement, and iOS request-close policy are covered deterministically. Live `pageSheet`/`formSheet` interaction/placement/swipe acceptance on iOS Simulator/device remains a Wave 1B runtime gate and must not be inferred from Jest alone.
+
+The legacy fallback preserves portal insertion order across independent content updates and regains content across an independent host-outlet remount while keeping dynamic host bookkeeping bounded.
+
+#### `react-native-teleport` and the `react-dom` peer
+
+`react-native-teleport` is a peer dependency of `@beeui/ui`. Preserving context on native requires a native rebuild and `expo prebuild --clean` after adding the dependency so the native host codegen is registered.
+
+BeeUI's own runtime imports `react-dom` only in the web transport, so BeeUI marks its direct `react-dom` peer optional. `react-native-teleport` itself peers on `react-dom`, however, so strict package managers may still require a matching installation even in a native-only consumer; the bare-native smoke installs one for that reason.
+
+#### Web platform-file resolution and distribution scope
+
+The transport ships as `overlay-transport.web.tsx`, `overlay-transport.native.tsx`, and a types-only `overlay-transport.d.ts`. The current proven Web environment is **Expo Web / current Metro**, whose resolver includes `web` platform files.
+
+Arbitrary React Native Web/generic bundlers and public npm conditional exports remain distribution-hardening work. BeeUI packages are still private/source-consumed; docs must not imply a wider resolver guarantee.
 
 ### Measurement contract
 
-Anchors and host use `measureInWindow` as the native coordinate source. Geometry resolves in window coordinates and translates to host-local coordinates only for rendering.
+Anchors and hosts use `measureInWindow` as the native coordinate source. Geometry resolves in window coordinates and translates to host-local coordinates only for rendering. The runtime never assumes host origin `(0,0)`.
 
-The runtime never assumes host origin `(0,0)`.
+Native `measureInWindow` callbacks are asynchronous. Host and anchor measurement therefore use a **latest-request-wins generation guard**:
 
-Remeasurement occurs on open and relevant window/keyboard environment changes. An explicit `remeasure()` seam exists for scroll/layout integrations. BeeUI does not continuously poll anchors at 60fps.
+- starting a newer measurement invalidates older in-flight callbacks;
+- an older callback resolving later cannot overwrite a newer rectangle;
+- a stale invalid/unavailable anchor result cannot spuriously close an overlay after a newer successful measurement;
+- close/unmount invalidates outstanding anchor measurements.
 
-If an anchor becomes unavailable, the public component owns the product-specific response; current Popover/DropdownMenu close rather than keeping stale geometry.
+Remeasurement occurs on open, relevant window/keyboard changes, and nearest-host geometry revision. An explicit `remeasure()` seam exists for scroll/layout integrations. BeeUI does not poll at 60fps.
 
 ### Safe-area / keyboard policy
 
-The runtime reuses safe-area data already owned by `BeeUIProvider`. Collision padding is applied only for unsafe window edges that still intersect the overlay host, avoiding double insets.
-
-Keyboard avoidance is explicit. Public components opt into keyboard-constrained viewport behavior only when their contract requires it.
+The runtime reuses safe-area data already owned by `BeeUIProvider`. Collision padding is applied only where unsafe window edges intersect the overlay host. Keyboard avoidance is explicit policy input.
 
 ### Dismiss stack
 
-Dismissable overlays register in one deterministic stack.
+Each overlay scope owns one deterministic dismiss stack through a stable controller.
 
-- Android hardware back targets only the topmost dismissable overlay.
-- Web Escape targets only the topmost dismissable overlay.
-- Outside press may dismiss only the current stack owner.
-- Nested overlays dismiss child-first.
-- One event never cascades through several overlay levels.
-- Updating an existing dismiss handler does not reorder the stack.
+- Topmost within a scope follows overlay open/registration order; host movement never reorders it.
+- Outside press and accessibility escape operate only on the nearest scope.
+- Global events target the deepest active scope, so initial-open/nested modal order does not depend on effect ordering.
+- A root overlay behind a modal cannot steal dismissal from a modal-local child, even when the root overlay opens later.
+- Existing handler updates do not reorder the stack.
+
+The active-scope coordinator state is runtime-local, but BeeUI's supported **physical global-event arbitration boundary is one application-root overlay runtime**. Nested `BeeUIProvider`s reuse that runtime. Separate unrelated React application roots may each own isolated runtime state, but BeeUI does not guarantee which root owns one physical Web Escape/Android global event when several independent application roots are simultaneously active.
+
+#### Child-first dismissal inside a Dialog
+
+For anchored overlays declared inside a Dialog:
+
+- **outside press / accessibility escape** — nearest modal scope handles the child first;
+- **Web Escape** — application runtime chooses the deepest active modal scope, including when a root overlay registered later;
+- **Android hardware back** — RN Modal request-close dismisses the modal scope's top anchored child first;
+- **iOS/native sheet request-close** — no child interception; native dismissal policy remains authoritative.
+
+`AlertDialog` inherits the same scope mechanics while preserving its cancel policy.
 
 ### Test-seam policy
 
-Measurement overrides used in tests are internal implementation seams, never public fallback API.
+Measurement overrides and internal contexts used by deterministic tests are not public fallback APIs.
 
 ## Public Popover
 
-`Popover` uses the accepted shared geometry/runtime.
-
-Contract:
-
-- controlled `open` + `onOpenChange` or uncontrolled `defaultOpen`;
-- button-compatible measured trigger;
-- default bottom/center placement;
-- finite offsets/collision padding;
-- safe-area avoidance on by default;
-- keyboard avoidance opt-in;
-- flip/shift enabled;
-- unresolved content stays offscreen/non-interactive until geometry resolves;
-- anchor loss closes an open Popover;
-- outside press / Android back / Web Escape / accessibility escape apply only to the topmost Popover;
-- nested Popovers dismiss child-first;
-- explicit `PopoverClose`;
-- stable title/description accessibility metadata;
-- non-modal behavior: no application-sibling hiding or focus-trap claim.
+`Popover` contract includes controlled/uncontrolled state, measured trigger, default bottom/center placement, collision/safe-area handling, optional keyboard avoidance, flip/shift, anchor-loss close, topmost-only outside/back/Escape/accessibility dismissal, nested child-first behavior, explicit close, stable accessibility metadata, and non-modal semantics.
 
 Automatic focus restoration and complete VoiceOver/TalkBack/keyboard behavior remain runtime/device gates.
 
 ## Public DropdownMenu
 
-`DropdownMenu` reuses the same geometry/runtime/host/dismiss stack.
-
-Contract:
-
-- controlled and uncontrolled root state;
-- measured button-compatible trigger;
-- default bottom/start placement;
-- safe-area collision handling and optional keyboard avoidance;
-- unresolved geometry remains hidden/non-interactive;
-- anchor loss closes the menu;
-- topmost-only outside/back/Escape/accessibility dismissal;
-- normal menu items close on selection by default;
-- disabled items never activate;
-- `onSelect` is the cross-input semantic selection callback;
-- checkbox items expose controlled checked state;
-- radio group/items coordinate one controlled value;
-- checkbox/radio items remain open by default unless `closeOnSelect` is requested;
-- duplicate radio values fail safe;
-- labels/separators remain non-interactive;
-- on Web, ArrowUp/ArrowDown/Home/End/Enter/Space use deterministic enabled-item navigation.
-
-The current-item registry is navigation state only, not hidden application selection state.
+`DropdownMenu` reuses the same geometry/runtime/host/dismiss kernels. It adds controlled/uncontrolled state, measured trigger, bottom/start placement, close-on-select normal items, controlled checkbox/radio semantics, deterministic enabled-item keyboard navigation on Web, and topmost-only dismissal.
 
 Browser-grade focus restoration and final native keyboard/screen-reader parity remain runtime/device gates.
 
 ## Future anchored components
 
-The next public anchored components remain `Select` and `Tooltip`, but the production roadmap now places context-preserving overlay transport investigation ahead of those components.
-
-Each component must own its own semantics:
-
-- Select owns option/value/selection behavior;
-- Tooltip owns non-interactive hover/focus/touch/accessibility disclosure policy.
-
-Do not implement either as a visual alias of DropdownMenu.
+`Select` and `Tooltip` must add their own semantic contracts rather than becoming visual aliases of DropdownMenu. The context-preserving transport blocker from #35 is removed for the proven web-dom/native-teleport paths; remaining component work is semantic/runtime acceptance, not manual context copying.
 
 ## Sheet boundary
 
-`Sheet` remains a separate behavior class because gestures, snap points, keyboard interaction, safe-area behavior, scrolling, presentation, hardware back, and accessibility need stronger native runtime evidence than the centered Dialog kernel alone provides.
-
-Sheet is a pre-1.0 roadmap item if BeeUI claims first-class modern mobile product coverage.
+A future first-class `Sheet` component remains a separate behavior class (gestures, snap points, scrolling, keyboard, accessibility). This is distinct from using RN Modal's `pageSheet`/`formSheet` presentation for `DialogContent`.
 
 ## Toast boundary
 
-Toast v1 is already implemented through its own provider-scoped transient-notification runtime.
-
-Toast is not anchor-positioned, does not use `OverlayPortal`, and does not use React Native core `Modal`. Future animation/swipe/custom-content work must preserve that separation unless new evidence justifies a different contract.
-
-See `docs/toast.md`.
+Toast remains a separate provider-scoped transient notification runtime and does not use anchored geometry or RN Modal.
 
 ## Automated evidence
 
-Current automated gates prove:
+Automated gates cover:
 
-- strict TypeScript and behavioral contracts;
+- TypeScript and behavioral contracts;
 - geometry/runtime/Popover/DropdownMenu tests;
-- package/release inclusion;
+- context-preserving web browser cases;
+- strict staged CASE C: Dialog/menu commit first, root Popover opens in a later commit, Escape still dismisses the modal child;
+- initial-open and nested-modal scope-depth regressions;
+- latest-request-wins async host/anchor measurement regressions;
+- RN Modal presentation-prop contract (`overFullScreen` transparent, native full/sheet presentations non-transparent);
+- package/release verification;
 - Expo Web/Android/iOS bundling;
-- Expo Prebuild;
-- fresh package-installed bare RN Android/iOS Metro bundles;
-- bare Android native compilation;
-- deterministic Chromium visual regression for representative anchored states;
-- native iOS Simulator compilation for both Expo Showcase and a fresh true bare RN consumer when the native gate is scheduled, and always on main pushes.
-
-Native iOS compilation is **not** a remaining manual gate.
+- bare Android and iOS native compilation gates;
+- deterministic Chromium visual regression / Pattern Gallery acceptance.
 
 ## Remaining runtime/device evidence
 
-Automated compilation/pixel comparison still does not replace:
+Automated proof does not replace:
 
-- simulator/device interaction around scrolling and anchor movement;
-- non-zero safe areas during actual execution;
-- VoiceOver/TalkBack;
-- Popover focus restoration and keyboard-focus behavior;
-- DropdownMenu focus restoration and final Web/native keyboard/screen-reader interaction;
-- Android hardware-back interaction during real runtime flows;
-- representative native visual placement across phone/tablet/reduced-height cases;
+- live iOS `pageSheet`/`formSheet` presentation, anchored placement, and swipe dismissal;
+- VoiceOver/TalkBack and focus restoration;
+- real scrolling/anchor movement and representative safe-area cases;
+- representative phone/tablet/reduced-height native placement;
 - future Select/Tooltip/Sheet component-specific runtime contracts.
 
-The protected runtime simulator/device tier is tracked in `docs/roadmap.md`.
+Exact final-head device evidence must be labeled separately from deterministic or prior-head evidence. The protected runtime simulator/device tier is tracked in `docs/roadmap.md`.

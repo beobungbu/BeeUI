@@ -95,36 +95,30 @@ Do not mark later waves complete merely because Gallery integration exercises th
 
 ---
 
-# Wave 1A — Context-preserving anchored-overlay transport
+# Wave 1A — Context-preserving anchored-overlay transport — COMPLETE
 
 **Priority:** P0  
-**Target:** before `Select`, `Tooltip`, or BeeUI 1.0
+**Status:** COMPLETE (#35)
 
-The current `OverlayPortal` renders anchored-overlay entries under a provider-owned sibling host. BeeUI-owned overlay contexts are re-provided, but arbitrary consumer React contexts declared below `BeeUIProvider` are not guaranteed to survive that change in React ancestry.
+`OverlayPortal` is now a runtime-selected transport separated from the shared overlay runtime, and consumer React context declared below `BeeUIProvider` is preserved inside anchored overlay content:
 
-Issue #35 and PR #38 established and tested this pre-1.0 contract; they did not make source ancestry context-preserving.
+- **web** → `ReactDOM.createPortal`;
+- **native + New Architecture** → `react-native-teleport` (native context-preserving portal);
+- **defensive fallback** (native without Fabric, or host view unregistered) → the legacy store host, which does not preserve context, with a one-time dev warning. This is a fallback, not an advertised production configuration — BeeUI peers React Native >= 0.85 where the New Architecture is the norm.
 
-Before BeeUI 1.0, investigate and prove a context-preserving native/Web transport that retains the accepted anchored-overlay contracts:
+The accepted contracts are retained across transports: non-modal positioning, shared geometry/collision handling, safe-area and keyboard policy, deterministic topmost dismissal, nested overlay behavior, accessibility semantics, and no silent conversion to a full-screen React Native `Modal`. Each modal-class surface provisions a coherent **overlay scope** (generic — future `Select`/`Tooltip` inherit it): its own portal host, its own **measured geometry origin**, and its own **dismiss stack**. Scope depth is semantic (`root=0`, each modal boundary increments depth), so initial-open and nested modal ordering never depends on React effect execution order. Dismiss-controller identity is stable across geometry changes, and native host/anchor measurements are latest-request-wins so stale asynchronous `measureInWindow` callbacks cannot overwrite newer geometry.
 
-- non-modal positioning;
-- shared geometry and collision handling;
-- safe-area and keyboard policy;
-- deterministic topmost dismissal;
-- nested overlay behavior;
-- accessibility semantics;
-- no silent conversion to full-screen React Native `Modal` merely to hide the context boundary.
+`DialogContent` preserves real React Native presentation semantics: the default `overFullScreen` presentation remains transparent, while `pageSheet`, `formSheet`, and `fullScreen` are rendered non-transparent so React Native can honor the requested presentation. Anchored overlays in modal-local scopes resolve against the measured modal host origin rather than assuming the application root origin. Platform request-close is routed by platform: **Android** hardware back (reaching BeeUI only via `Modal.onRequestClose`) is intercepted child-first; **iOS/other** request-close (which can be a native sheet-swipe dismissal) is not intercepted, so React `Dialog` state never desyncs from the native modal.
 
-Required regression evidence should include consumer contexts representative of:
+Global dismissal is coordinated **per BeeUI runtime** rather than through module-global mutable scope state. BeeUI's supported physical Escape/back arbitration boundary remains one application-root runtime; nested `BeeUIProvider`s reuse it. Separate independent React roots keep their overlay state isolated, but cross-root arbitration of one physical global Escape/back event is not a supported guarantee.
 
-- forms;
-- navigation;
-- localization;
-- application theme/state;
-- arbitrary custom context;
-- nested anchored overlays;
-- anchored overlays inside modal-class surfaces where supported.
+Regression evidence:
 
-When this work lands, the existing regression must flip from documenting context loss to proving consumer-context preservation.
+- **Deterministic (jest)** transport + scope contract suite: native teleport preserves context; legacy fallback drops it; capability selection; open/unmount lifecycle; Dialog → Popover; Dialog → DropdownMenu; Android Modal request-close child-first; AlertDialog policy; nested Dialog isolation; root-behind-modal outside/accessibility ordering; iOS `pageSheet`/`formSheet` request-close non-interception; modal presentation transparency mapping; modal-local non-zero-origin geometry; host-move anchor remeasurement; dismiss ordering stable across host geometry changes; initial-open root/Dialog and nested-Dialog scope-depth ordering; latest-request-wins async host and anchor measurement; rapid request-close registration; controlled delayed parent updates without duplicate registration; runtime-local coordinator state isolation; legacy insertion-order and independent host-outlet remount cleanup.
+- **Deterministic (Playwright, real Showcase web browser):** consumer context resolves inside Popover, DropdownMenu, a Dialog-nested Popover, and a Dialog-nested DropdownMenu; web Escape is scope-aware; and **CASE C** is staged across separate commits — the Dialog menu is opened first, a root Popover behind it is opened later, and one Escape closes the modal-local menu while leaving both Dialog and root Popover open.
+- **Runtime/device evidence is a separate class from deterministic/compile proof.** Native compilation is automated. Exact runtime interaction evidence for a candidate head is recorded in PR/release acceptance and does not get generalized in this roadmap. Live `pageSheet`/`formSheet` interaction, representative native placement across form factors, and VoiceOver/TalkBack remain Wave 1B runtime/device gates.
+
+The #35 regression proves consumer-context preservation for the context-preserving transports and pins the legacy fallback's documented loss without overstating simulator/device coverage.
 
 ---
 
@@ -144,6 +138,7 @@ Representative flows should cover:
 - non-zero safe areas;
 - Dialog and AlertDialog dismissal paths;
 - Popover and DropdownMenu open/close/positioning;
+- native `overFullScreen` plus representative `pageSheet`/`formSheet` Dialog interaction where supported;
 - Toast delivery and dismissal;
 - input focus and keyboard appearance;
 - Android hardware back;
@@ -232,7 +227,7 @@ In particular:
 - the executable Showcase exposes both the preserved Component Gallery and the implemented 37-screen Pattern Gallery today;
 - durable Playwright Showcase integration QA is owned by `apps/visual-regression` today;
 - production pattern implementation is a native-sensitive Showcase input today;
-- issue #35 is closed as a documented contract, while context-preserving transport remains future pre-1.0 work;
+- issue #35 is resolved: the context-preserving overlay transport (Wave 1A) is complete and proven at the deterministic/compile contract level, while exact runtime/device interaction remains separately evidenced;
 - packages remain private and are not publicly published to npm.
 
 Any implementation PR that invalidates a current-state statement must update the corresponding canonical documentation in the same change or an explicitly linked synchronization PR.
@@ -326,10 +321,10 @@ Expand toward a publishable consumer workflow such as:
 
 ```sh
 npx beeui init
-npx beeui add button
-npx beeui add dialog
-npx beeui add --all
-npx beeui doctor
+pnpm beeui -- add button
+pnpm beeui -- add dialog
+pnpm beeui -- add --all
+pnpm beeui -- doctor
 ```
 
 Possible later capabilities:
@@ -646,7 +641,7 @@ A 1.0 candidate should have, at minimum:
 
 - stable semantic token names;
 - broad stable component coverage already proven by product patterns;
-- context-preserving anchored-overlay strategy, or an explicitly reviewed alternative that removes the current arbitrary-consumer-context limitation;
+- context-preserving anchored-overlay transport (Wave 1A, complete);
 - production-ready Select;
 - production-ready Tooltip policy;
 - production-ready Sheet if BeeUI claims first-class modern mobile application coverage;

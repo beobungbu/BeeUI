@@ -55,7 +55,7 @@ A proving ground and product-quality integration surface, not a dependency of th
 
 The Pattern Gallery uses a declarative Showcase-local catalog plus local controlled demo adapters. It supports narrow mobile drill-down, wide master/detail browsing, representative state inspection, light/dark, a 960px desktop breakpoint, and a constrained 760px preview canvas without mounting all 37 screen trees simultaneously.
 
-Four production pattern packs live under `apps/showcase/patterns/**`: Authentication/Onboarding, Dashboard/Finance, Commerce/Social, and Account/Settings. Because the executable Showcase now reaches those implementations through the Pattern Gallery, production pattern implementation files are native Showcase inputs rather than CI-safe documentation/demo-only files. Pattern-specific test files remain outside the native bundle.
+Four production pattern packs live under `apps/showcase/patterns/**`: Authentication/Onboarding, Dashboard/Finance, Commerce/Social, and Account/Settings. Because the executable Showcase reaches those implementations through the Pattern Gallery, production pattern implementation files are native Showcase inputs rather than CI-safe documentation/demo-only files. Pattern-specific test files remain outside the native bundle.
 
 Showcase navigation/adapters remain application/demo infrastructure rather than public BeeUI component architecture.
 
@@ -63,14 +63,14 @@ Showcase navigation/adapters remain application/demo infrastructure rather than 
 
 Owns both browser evidence layers:
 
-1. the deterministic Chromium pixel-comparison fixture with 28 committed canonical component screenshots;
-2. durable Playwright integration QA against an exported **real Showcase** for Components/Patterns navigation, representative Gallery scenarios, responsive layout/runtime checks, and the full no-baseline Gallery acceptance matrix.
+1. deterministic Chromium pixel comparison with 28 canonical component screenshots;
+2. durable Playwright integration QA against exported Web fixtures / real Showcase, including Components/Patterns navigation, representative Gallery scenarios, anchored-overlay browser contracts, and the full no-baseline Gallery acceptance matrix.
 
-The Gallery layer uses structural assertions and in-memory screenshots. It does not create a 37 × viewport × theme baseline set, and Showcase does not pretend to own Playwright.
+The Gallery layer uses structural assertions and in-memory screenshots. It does not create a 37 × viewport × theme baseline set.
 
 ### `registry/` + repository-local CLI
 
-Own the current phase-1 source-ownership distribution path. This is implemented and tested, but it is not yet a public `npx beeui` product or remote registry.
+Own the current phase-1 source-ownership distribution path. It is implemented and tested, but not yet a public `npx beeui` or remote registry product.
 
 ## Theme contract
 
@@ -97,15 +97,7 @@ Uniwind/Tailwind CSS variables are the preferred current mechanism. BeeUI should
 
 Uniwind is selected for normal UI because it provides Tailwind v4 semantics, theme variables, responsive/mobile/Web support, and a small application-facing styling surface. It is not part of BeeUI's stable public API.
 
-Hot-path UI may bypass it when evidence warrants:
-
-- gesture-driven interactions;
-- high-frequency animations;
-- large realtime canvases/charts;
-- camera/video overlays;
-- measured list cells where styling becomes material.
-
-Those paths may use `StyleSheet.create` and Reanimated while preserving BeeUI semantic contracts and component APIs.
+Hot-path UI may bypass it when evidence warrants: gesture-driven interactions, high-frequency animations, large realtime canvases/charts, camera/video overlays, or measured list cells where styling becomes material. Those paths may use `StyleSheet.create` and Reanimated while preserving BeeUI contracts.
 
 ## Safe-area contract
 
@@ -114,165 +106,127 @@ Safe-area measurement is an application-root concern, while safe-area **edge own
 - `BeeUIProvider` installs `react-native-safe-area-context` measurement and synchronizes measured insets to Uniwind safe-area utilities by default.
 - `SafeArea` assigns explicit `top`, `bottom`, `left`, and/or `right` ownership.
 - `Screen`, `AppHeader`, and `BottomActionBar` do not silently add insets.
-- Applications that already synchronize Uniwind insets may set `syncUniwindInsets={false}` on `BeeUIProvider`.
-
-This avoids double insets when applications use native navigation headers, tab bars, maps, media surfaces, nested shells, or custom safe-area composition.
+- Applications that already synchronize Uniwind insets may set `syncUniwindInsets={false}`.
 
 ## Controlled interaction contract
 
-Some BeeUI primitives are deliberately controlled (`Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Tabs`, and `SegmentedControl`). BeeUI does not invent hidden uncontrolled state for these APIs.
-
-Enabled controlled primitives must receive their matching change callback. Development warnings surface malformed interactive usage instead of allowing controls that appear actionable but discard input.
-
-`Field` remains a text-entry composition primitive. Boolean/choice controls keep explicit label/group semantics rather than inheriting `Field` behavior implicitly.
+Some BeeUI primitives are deliberately controlled (`Checkbox`, `Radio`, `RadioGroup`, `Switch`, `Tabs`, and `SegmentedControl`). BeeUI does not invent hidden uncontrolled state for these APIs. Enabled controlled primitives must receive their matching change callback; development warnings surface malformed interactive usage.
 
 ## Form-group accessibility contract
 
-React Native exposes explicit semantics such as `radiogroup`, but no generic cross-platform `fieldset`/`group` role. BeeUI must not fake a group role or collapse independently interactive descendants into one accessibility element.
-
-`FormGroup` therefore owns structural legend/description/error metadata. Compatible semantic descendants opt into that context intentionally; `RadioGroup` currently does so because React Native exposes an explicit `radiogroup` role.
-
-Future integrations require an unambiguous native accessibility contract, not merely visual similarity.
+React Native exposes explicit semantics such as `radiogroup`, but no generic cross-platform `fieldset`/`group` role. `FormGroup` therefore owns structural legend/description/error metadata; compatible descendants opt into that context intentionally.
 
 ## Modal overlay contract
 
-Centered modal-class components use React Native core `Modal` as the accepted behavior kernel.
+Modal-class components use React Native core `Modal` as the accepted behavior kernel.
 
 - `Dialog` owns generic dismissable modal composition.
-- `AlertDialog` reuses the same kernel while narrowing backdrop/request-close behavior for confirmation/destructive flows.
+- `AlertDialog` reuses the kernel while narrowing backdrop/request-close behavior.
+- `DialogContent` defaults to `overFullScreen`, with `transparent=true` only for that presentation. `fullScreen`, `pageSheet`, and `formSheet` are non-transparent so RN can honor the requested native presentation rather than coercing it to `overFullScreen`.
 - Higher-level modal components must not create independent overlay engines unless their platform contract requires it.
 
-BeeUI does not claim browser-style focus trapping or unsupported native roles where React Native does not expose those contracts. Focus, keyboard, VoiceOver/TalkBack, hardware-back, and destructive-confirmation interaction remain runtime/device release concerns.
+BeeUI does not claim browser-style focus trapping or unsupported native roles. Focus, keyboard, VoiceOver/TalkBack, native sheet interaction, and destructive-confirmation interaction remain runtime/device release concerns where not automated.
 
 ## Transient notification contract
 
-Toast v1 is implemented separately from both modal and anchored overlays.
-
-The provider-local Toast runtime owns descriptor notifications, queueing, timers, actions, safe-area-aware stacking, announcement behavior, and provider isolation. It does not use React Native core `Modal`, anchored geometry, or arbitrary `ReactNode` transport.
-
-Animation/swipe/custom-content work, if added later, must preserve this separation.
+Toast v1 is separate from modal and anchored overlays. The provider-local Toast runtime owns descriptor notifications, queueing, timers, actions, safe-area-aware stacking, announcements, and provider isolation.
 
 ## Anchored overlay geometry contract
 
-The first anchored-overlay layer is a pure geometry resolver in `@beeui/core`. It has no React, React Native, Expo, DOM, portal, gesture, or keyboard dependency.
+The first anchored-overlay layer is pure `@beeui/core` geometry. It has no React, RN, Expo, DOM, portal, gesture, or keyboard dependency.
 
-`resolveAnchoredOverlayPosition()` accepts measured anchor/overlay/viewport geometry plus preferred placement, alignment, direction, offsets, and collision padding. It supports `top`/`right`/`bottom`/`left` placement and `start`/`center`/`end` alignment.
-
-Key rules:
-
-- preferred placement is evaluated first;
-- the exact opposite side is considered only when preferred placement overflows;
-- the opposite side wins only when total overflow is lower;
-- optional shifting clamps the chosen candidate into the padded viewport without changing the resolved placement label;
-- top/bottom `start` and `end` are logical and reverse under RTL;
-- left/right vertical alignment does not reverse under RTL;
-- non-finite geometry normalizes to finite safe values;
-- negative sizes/padding normalize to zero.
-
-The geometry layer does not own open state, rendering, measurement, dismissal, focus, keyboard handling, portal behavior, nested overlays, or z-order.
+`resolveAnchoredOverlayPosition()` accepts measured anchor/overlay/viewport geometry plus preferred placement, alignment, direction, offsets, and collision padding. It supports four sides and logical alignment with deterministic flip/shift, finite normalization, and RTL rules. The geometry layer does not own rendering, measurement, dismissal, focus, portal behavior, or state.
 
 ## Anchored overlay runtime contract
 
 The second layer lives internally in `@beeui/ui` and is installed by `BeeUIProvider`.
 
-- One runtime owns one native overlay host.
-- Nested BeeUI providers reuse the outer anchored-overlay runtime.
-- Portal insertion order is deterministic.
-- Host/anchor measurement uses window coordinates; rendering is translated into host-local coordinates.
-- Safe-area collision padding is applied only where unsafe window edges still intersect the host.
-- Keyboard-constrained viewport behavior is explicit policy input.
-- Anchor remeasurement occurs on open/environment changes and may be requested explicitly.
-- Android hardware back, Web Escape, and outside press target only the topmost registered dismissable overlay.
-- Test measurement overrides are internal seams, not public production fallbacks.
+One application runtime owns:
 
-### Current React Context boundary
+- one root overlay scope/host;
+- zero or more modal-local scopes/hosts;
+- one portal transport selected for the runtime lifetime;
+- one runtime-local active-scope coordinator;
+- one platform-dismiss subscription.
 
-The current custom anchored-overlay host renders portal entries under an application-root sibling host. That changes React ancestry.
+Nested BeeUI providers reuse the outer runtime and do not add another host/listener.
 
-BeeUI re-provides the internal contexts its public overlay components need, but arbitrary consumer contexts scoped between `BeeUIProvider` and the overlay declaration are not guaranteed to be preserved inside portalled content.
+Each `OverlayScope` aligns four concerns:
 
-Issue #35 and PR #38 established this as an explicit, regression-tested pre-1.0 contract. The issue is closed because the behavior is now documented rather than ambiguous; the current transport is **not** thereby context-preserving.
+1. **host destination**;
+2. **reactive measured host geometry**;
+3. **stable dismiss controller/stack**;
+4. **semantic depth** (root `0`, each modal boundary parent depth + `1`).
 
-Until a context-preserving transport is proven, consumers should place required providers at or above `BeeUIProvider` or pass required values explicitly.
+Semantic depth makes global dismissal independent of React effect execution order. Initial-render `defaultOpen` and nested Dialog scopes therefore remain correct even when descendant layout effects run before ancestor layout effects. Same-depth siblings use activation order only as a tie-breaker.
 
-A context-preserving native/Web transport is a pre-1.0 roadmap item and must retain the accepted non-modal geometry, nested-dismiss, safe-area, keyboard-policy, and accessibility contracts. Component-specific context copying is not a generic fix.
+Portal insertion order is deterministic. Host/anchor measurement uses window coordinates; rendering is translated into nearest-host local coordinates. Open overlays remeasure anchors when the nearest host geometry changes.
+
+`measureInWindow` is asynchronous on native. Both host and anchor measurement use latest-request-wins generations: older callbacks cannot overwrite a newer measurement, stale invalid anchor callbacks cannot close an overlay after a newer successful measurement, and close/unmount invalidates outstanding anchor requests.
+
+Safe-area collision applies only where unsafe edges intersect the nearest host. Keyboard-constrained viewport behavior is explicit policy input. Test measurement overrides are internal seams.
+
+Outside press and accessibility escape target the topmost overlay of the nearest scope. Global Web Escape / Android root back targets the deepest active scope in the application runtime.
+
+### Application runtime boundary
+
+Active-scope state is runtime-local, not module-global. This prevents one runtime's coordinator from directly mutating another runtime's stack.
+
+The supported **physical global-event arbitration** contract, however, is one application-root overlay runtime. Nested `BeeUIProvider`s reuse it. If several unrelated React application roots are mounted simultaneously, their runtime state remains separate, but BeeUI does not guarantee which application root owns one physical global Escape/back event while several roots are active.
+
+### Overlay portal transport
+
+Transport is runtime-selected and separated from geometry/dismissal/measurement:
+
+- Web → `ReactDOM.createPortal`, consumer context preserved;
+- native New Architecture with registered host → `react-native-teleport`, consumer context preserved;
+- otherwise → defensive legacy store/reparent fallback, arbitrary consumer context not preserved.
+
+Consumer contexts below `BeeUIProvider` therefore survive on web-dom and native-teleport. Legacy fallback remains an explicit capability/stale-build safety net.
+
+Overlay content resolves to the nearest modal/root scope. In a Dialog this means portal host, geometry origin, dismissal stack, and semantic depth all follow that modal boundary.
+
+### Platform request-close routing
+
+- Android RN Modal hardware back arrives through `Modal.onRequestClose`; modal-local anchored child dismisses first, then Dialog when no child remains.
+- iOS/other request-close may be the native sheet dismissal itself and is not child-intercepted.
+- `onRequestClose` fires exactly once per native request and is disjoint from backdrop/accessibility-close paths.
+
+### Modal-local anchored geometry
+
+For `overFullScreen` and native `fullScreen`/`pageSheet`/`formSheet`, nested anchored overlays resolve against the measured modal host, not the application root. No hardcoded presentation offsets are used. Static non-zero-origin and host-movement behavior are deterministic-test contracts; live sheet placement/swipe remains final runtime evidence.
+
+### Distribution boundary
+
+The web transport is currently proven under Expo Web/current Metro platform resolution. Arbitrary generic Web bundlers and public npm conditional exports remain pre-1.0 distribution hardening. `react-native-teleport` is a peer dependency; its own `react-dom` peer can cause strict native-only consumers to require a matching installation even though BeeUI's native runtime does not import `react-dom`.
 
 ## Public Popover contract
 
-`Popover` is a public consumer of the accepted geometry/runtime kernels.
-
-- Controlled mode uses `open` + `onOpenChange`; uncontrolled mode supports `defaultOpen`.
-- `PopoverTrigger` is a BeeUI button-compatible measured anchor.
-- `PopoverContent` defaults to bottom/center with finite offsets, safe-area collision handling, flip/shift, and opt-in keyboard avoidance.
-- Content is non-modal and does not claim focus trapping.
-- Unresolved content measures invisibly/offscreen and remains non-interactive.
-- Losing the anchor while open closes the Popover rather than reusing stale geometry.
-- Outside press, Android back, Web Escape, and accessibility escape may close only the topmost registered Popover.
-- Title/description registration provides stable accessibility metadata while explicit caller props remain authoritative.
+`Popover` owns controlled/uncontrolled state, measured trigger, bottom/center default placement, safe-area/collision/flip/shift behavior, optional keyboard avoidance, anchor-loss close, topmost dismissal, explicit close, accessibility metadata, and non-modal behavior.
 
 ## Public DropdownMenu contract
 
-`DropdownMenu` reuses the same geometry/runtime/portal/dismiss kernels as Popover.
-
-- Root state supports controlled and uncontrolled modes.
-- Content defaults to bottom/start with collision handling and opt-in keyboard avoidance.
-- Normal items close after selection by default.
-- Disabled items do not activate or become the keyboard current item.
-- Checkbox/radio items expose controlled selection requests and remain open by default unless `closeOnSelect` is requested.
-- Web ArrowUp/ArrowDown, Home/End, and Enter/Space use a deterministic enabled-item navigation model.
+`DropdownMenu` reuses the same runtime/geometry/portal/dismiss kernels and adds menu item/selection/checkbox/radio and deterministic Web keyboard navigation semantics.
 
 `Select` and `Tooltip` must add their own semantic contracts rather than inheriting DropdownMenu behavior by visual similarity.
 
-The detailed current anchored-overlay contract lives in `docs/anchored-overlays.md`.
-
 ## Platform policy
 
-BeeUI targets React Native first and must work with:
-
-- Expo;
-- Expo prebuild/dev builds;
-- bare React Native;
-- React Native Web where the documented public contract applies.
-
-Expo-specific APIs belong in applications or optional adapters, never core UI packages.
-
-Native ergonomics/correctness and Web support are both first-class, but BeeUI does not force 100% implementation reuse when platform behavior differs materially.
+BeeUI targets React Native first and must work with Expo, Expo prebuild/dev builds, bare RN, and documented RN Web environments. Expo-specific APIs belong in applications or optional adapters, never core UI packages.
 
 ## Distribution contract
 
 BeeUI packages remain private during `0.x`; no public npm availability is implied.
 
-Current distribution/verification paths are:
-
-1. workspace links inside the monorepo;
-2. `pnpm pack` tarballs for package-boundary verification and controlled external smoke tests;
-3. the implemented phase-1 repository-local Registry + source-ownership CLI.
-
-`pnpm release:verify` remains the canonical package verification gate. It validates explicit packed surfaces, exports, rewritten workspace dependency ranges, package installation, and clean consumer behavior.
-
-The Registry/CLI engine already exists and is documented in `docs/registry-cli.md`. Before public 1.0, it still needs productization: publishable CLI naming/distribution, expanded stable-component coverage, compatibility policy, and any future remote-registry integrity contract.
-
-Public npm package distribution is a separate roadmap item.
+Current paths are workspace links, `pnpm pack` tarballs for boundary verification/controlled external smoke, and the repository-local Registry + source-ownership CLI. `pnpm release:verify` remains the canonical package gate. Public CLI/package distribution is roadmap work.
 
 ## Pattern architecture
 
-Production screens under `apps/showcase/patterns/**` are product-driven stress tests and examples, not part of the `@beeui/ui` package surface. They are, however, executable inputs of `apps/showcase` because `ShowcaseRoot -> PatternGallery -> pattern catalog -> pattern packs` reaches them on Web, Android, and iOS.
-
-Patterns:
-
-- import public BeeUI APIs only;
-- own local domain-specific composition;
-- remain router/backend/SDK neutral where practical;
-- should not promote one-off domain components into the foundation;
-- provide evidence for reusable gaps.
-
-Pattern implementation changes are therefore native-sensitive for PR scheduling. Test-only paths such as `apps/showcase/__tests__/patterns/**` do not enter the native bundle and may remain native-safe.
-
-The Rule of Two and `gap:` issue policy are defined in `docs/roadmap.md`.
+Production screens under `apps/showcase/patterns/**` are product-driven stress tests/examples, not `@beeui/ui` exports. They import public BeeUI APIs, own local domain composition, remain backend/router neutral where practical, and provide evidence for reusable gaps. Because the executable Showcase reaches them, pattern implementation files are native-sensitive; test-only pattern files remain outside native bundles.
 
 ## Verification architecture
 
-BeeUI intentionally separates evidence classes:
+BeeUI separates evidence classes.
 
 ### Automated cross-platform/package evidence
 
@@ -281,51 +235,25 @@ BeeUI intentionally separates evidence classes:
 - behavioral/contract tests;
 - Registry/CLI tests;
 - `pnpm release:verify`;
-- Expo Web/Android/iOS export;
-- Expo Prebuild;
-- fresh bare React Native package install and Metro bundles;
-- bare Android native compilation;
-- deterministic Chromium component pixel regression;
-- durable Chromium integration QA against the exported real Showcase, including Components/Patterns navigation, representative Gallery scenarios, layout/runtime checks, and full 370-render acceptance when enabled by CI or the explicit full-mode flag.
+- Expo Web/Android/iOS export and Expo Prebuild;
+- fresh packed-package bare RN install + Metro bundles;
+- bare Android native compile;
+- Chromium component pixel regression;
+- real-browser anchored-overlay and Showcase integration QA;
+- full 370-render Pattern Gallery acceptance when enabled.
 
 ### Automated native iOS compile evidence
 
-The trusted macOS ARM64 `ios-native` gate compiles:
-
-- the Expo Showcase generated iOS workspace;
-- a fresh true bare React Native consumer.
-
-Pull requests use a conservative path-aware classifier; production pattern implementations are now native-sensitive because they are executable Showcase dependencies. Pushes to `main` always run the full native iOS gate. Persistent caches are performance optimizations only.
+The trusted macOS ARM64 `ios-native` gate compiles the Expo Showcase generated iOS workspace and a fresh true bare RN consumer. PRs use a conservative path-aware classifier; pushes to main always run the native gate. Caches are performance-only.
 
 ### Runtime/device evidence
 
-Compilation and browser integration QA do not prove:
-
-- non-zero native safe-area behavior;
-- native keyboard/focus interaction;
-- VoiceOver/TalkBack;
-- Android hardware-back behavior;
-- native runtime navigation/accessibility flows;
-- representative native visuals.
-
-These remain release gates until the roadmap's protected simulator/device runtime tier is implemented.
+Compilation/browser/deterministic contracts do not prove all native runtime behavior. Remaining runtime gates include live iOS `pageSheet`/`formSheet` placement/swipe, representative non-zero safe areas/scrolling, focus/keyboard behavior, VoiceOver/TalkBack, and representative native visuals. Exact final-head device evidence must be distinguished from deterministic or prior-head evidence.
 
 ## Versioning direction
 
-`@beeui/core`, `@beeui/tokens`, `@beeui/ui`, and the workspace root use one lockstep version. `0.x` may evolve documented APIs; intentional breaking changes require changelog and migration notes.
+`@beeui/core`, `@beeui/tokens`, `@beeui/ui`, and the workspace root use one lockstep version. `0.x` may evolve documented APIs; intentional breaking changes require changelog/migration notes.
 
-The old “25–30 primitives + a future CLI” threshold is obsolete: BeeUI already has broader component coverage, Toast, visual regression, a phase-1 CLI, a 37-screen Pattern Gallery, and the preserved component inspection surface.
+Current 1.0 exit criteria are canonical in `docs/roadmap.md` and include expanded theming/tokens, context-preserving anchored transport, production-ready remaining components, integrated pattern regression, protected runtime simulator/device verification, accessibility/RTL/large-text coverage, compatibility policy, public distribution/release automation, and consumer-grade docs/demo.
 
-The current BeeUI 1.0 exit criteria are defined canonically in `docs/roadmap.md` and include, among other things:
-
-- stable expanded theming/token contracts;
-- context-preserving anchored-overlay strategy or an explicitly reviewed replacement of the current arbitrary-consumer-context limitation;
-- production-ready Select/Tooltip and Sheet if first-class modern mobile coverage is claimed;
-- retention of the integrated Pattern Gallery and representative pattern regression coverage;
-- protected runtime simulator/device verification;
-- accessibility/RTL/large-text coverage;
-- compatibility matrix;
-- public distribution/release automation;
-- consumer-grade documentation and demo.
-
-`docs/release.md` defines the current release gates; `docs/roadmap.md` defines future readiness work.
+`docs/release.md` defines current release gates; `docs/roadmap.md` defines future readiness work.

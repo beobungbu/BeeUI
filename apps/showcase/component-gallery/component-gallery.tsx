@@ -147,6 +147,131 @@ function PlacementPopover({ placement }: { placement: 'top' | 'right' | 'bottom'
   );
 }
 
+// Consumer React context declared below BeeUIProvider. Overlay content must
+// resolve the provided value, not the default — the web regression asserts this.
+const OverlayConsumerContext = React.createContext('overlay-context-default');
+
+function OverlayContextValue({ testID }: { testID: string }) {
+  return <Text testID={testID}>{`context: ${React.useContext(OverlayConsumerContext)}`}</Text>;
+}
+
+// CASE C — scope-ordering proof for real-browser Escape. A single control opens,
+// with independent open states, a root-scope Popover AND a Dialog whose nested
+// DropdownMenu is also open. They live in different overlay scopes, so their
+// registration order is irrelevant by construction — Escape routes to the active
+// modal scope (the menu), never the root Popover behind it. (Strict "root opened
+// after menu" ordering with real timing is covered deterministically in the jest
+// CASE B/D contract tests; a click inside the modal cannot be used here because
+// the open menu's dismiss layer intercepts pointer events.)
+function CaseCScopeOrdering() {
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const [rootOpen, setRootOpen] = React.useState(false);
+  return (
+    <>
+      <Button
+        onPress={() => {
+          setDialogOpen(true);
+          setMenuOpen(true);
+          setRootOpen(true);
+        }}
+        testID="overlay-context-casec-open"
+        variant="outline"
+      >
+        Open CASE C
+      </Button>
+
+      <Popover onOpenChange={setRootOpen} open={rootOpen}>
+        <PopoverTrigger testID="overlay-context-casec-root-trigger" variant="outline">
+          CASE C root
+        </PopoverTrigger>
+        <PopoverContent placement="bottom">
+          <OverlayContextValue testID="overlay-context-casec-root-value" />
+        </PopoverContent>
+      </Popover>
+
+      <Dialog onOpenChange={setDialogOpen} open={dialogOpen}>
+        <DialogTrigger testID="overlay-context-casec-dialog-trigger">CASE C dialog</DialogTrigger>
+        <DialogContent>
+          <DialogTitle>CASE C dialog</DialogTitle>
+          <DropdownMenu onOpenChange={setMenuOpen} open={menuOpen}>
+            <DropdownMenuTrigger testID="overlay-context-casec-menu-trigger" variant="outline">
+              CASE C menu
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>CASE C menu</DropdownMenuLabel>
+              <OverlayContextValue testID="overlay-context-casec-menu-value" />
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function ConsumerContextOverlays() {
+  const [dialogMenuAction, setDialogMenuAction] = React.useState('none');
+  return (
+    <OverlayConsumerContext.Provider value="preserved">
+      <VStack gap="sm">
+        <Popover>
+          <PopoverTrigger testID="overlay-context-popover-trigger" variant="outline">
+            Popover context
+          </PopoverTrigger>
+          <PopoverContent placement="bottom">
+            <PopoverTitle>Popover consumer context</PopoverTitle>
+            <OverlayContextValue testID="overlay-context-popover-value" />
+          </PopoverContent>
+        </Popover>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger testID="overlay-context-menu-trigger" variant="outline">
+            Menu context
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuLabel>Menu consumer context</DropdownMenuLabel>
+            <OverlayContextValue testID="overlay-context-menu-value" />
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Dialog>
+          <DialogTrigger testID="overlay-context-dialog-trigger">Dialog context</DialogTrigger>
+          <DialogContent>
+            <DialogTitle>Dialog with a nested overlay</DialogTitle>
+            <Popover>
+              <PopoverTrigger testID="overlay-context-dialog-popover-trigger" variant="outline">
+                Popover in dialog
+              </PopoverTrigger>
+              <PopoverContent placement="bottom">
+                <OverlayContextValue testID="overlay-context-dialog-popover-value" />
+              </PopoverContent>
+            </Popover>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger testID="overlay-context-dialog-menu-trigger" variant="outline">
+                Menu in dialog
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuLabel>Menu in dialog</DropdownMenuLabel>
+                <OverlayContextValue testID="overlay-context-dialog-menu-value" />
+                <DropdownMenuItem
+                  onSelect={() => setDialogMenuAction('selected')}
+                  testID="overlay-context-dialog-menu-item"
+                >
+                  Select in dialog
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Text testID="overlay-context-dialog-menu-action">{`menu action: ${dialogMenuAction}`}</Text>
+          </DialogContent>
+        </Dialog>
+
+        <CaseCScopeOrdering />
+      </VStack>
+    </OverlayConsumerContext.Provider>
+  );
+}
+
 function ToastPlayground() {
   const toast = useToast();
   const [lastAction, setLastAction] = React.useState('No Toast action yet');
@@ -542,6 +667,15 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
                     </PopoverContent>
                   </Popover>
                 </Box>
+              </Section>
+
+              <Separator />
+
+              <Section
+                description="Consumer React context declared below BeeUIProvider resolves inside overlay content on web, native, and inside a Dialog."
+                title="Consumer context"
+              >
+                <ConsumerContextOverlays />
               </Section>
             </Card>
 

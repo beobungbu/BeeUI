@@ -58,14 +58,14 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `AccordionContent` | disclosure | Active item content. |
 | `Dialog` | modal overlay | Controlled/uncontrolled modal state backed by React Native core `Modal`; controlled `open` requires `onOpenChange`, with dismissable runtime fallback for malformed JS usage. |
 | `DialogTrigger` | modal overlay | Button-compatible trigger that opens the modal without exposing disclosure-only `expanded` state. |
-| `DialogContent` | modal overlay | Modal surface with semantic backdrop/close paths plus registered title/description accessibility relationships while preserving explicit caller overrides. Native request-close paths may be notification-only through `dismissOnRequestClose={false}` for higher-level modal contracts. |
+| `DialogContent` | modal overlay | Modal surface with semantic backdrop/close paths plus registered title/description accessibility relationships while preserving explicit caller overrides. `overFullScreen` is transparent; native `fullScreen`/`pageSheet`/`formSheet` remain non-transparent so RN can honor the requested presentation. `onRequestClose` fires exactly once per native request; Android Modal back is child-first for a nested anchored overlay, while iOS/other native request-close applies the Dialog close policy directly. `dismissOnRequestClose={false}` makes that request notification-only. |
 | `DialogTitle` | modal overlay | Semantic dialog heading that registers stable label metadata with its containing `DialogContent`. |
 | `DialogDescription` | modal overlay | Muted supporting text that provides a primitive-text accessibility hint to its containing dialog. |
 | `DialogFooter` | modal overlay | Action-row composition. |
 | `DialogClose` | modal overlay | Button-compatible close control. |
 | `AlertDialog` | modal overlay | Confirmation/destructive modal state built on the accepted Dialog/core-Modal kernel; it shares Dialog's controlled/uncontrolled state contract without introducing another overlay engine. |
 | `AlertDialogTrigger` | modal overlay | Button-compatible confirmation trigger. |
-| `AlertDialogContent` | modal overlay | Alert-dialog surface that never closes from backdrop presses. Android hardware-back/accessibility escape behave like cancellation by default and can be made notification-only with `cancelOnRequestClose={false}`. |
+| `AlertDialogContent` | modal overlay | Alert-dialog surface that never closes from backdrop presses. Android Modal hardware back dismisses a nested anchored child first, then follows the alert cancellation policy; iOS/other native request-close is not child-intercepted. `cancelOnRequestClose={false}` makes the no-child native request notification-only. Accessibility escape remains a separate cancellation path. |
 | `AlertDialogTitle` | modal overlay | Dialog-kernel title semantics for confirmation content. |
 | `AlertDialogDescription` | modal overlay | Dialog-kernel supporting description/accessibility hint for confirmation content. |
 | `AlertDialogFooter` | modal overlay | Confirmation action-row composition. |
@@ -124,7 +124,7 @@ The component inventory is no longer the main production-readiness bottleneck. B
 
 Wave 0 is implemented. The next major work is ordered by `docs/roadmap.md`:
 
-1. investigate/prove a context-preserving anchored-overlay transport before adding more major anchored components;
+1. context-preserving anchored-overlay transport — **delivered** (Wave 1A) at the deterministic/compile contract level: web `createPortal`, native teleport, generic modal-local scope, legacy fallback contract; exact runtime/device interaction remains separately gated;
 2. establish protected iOS/Android runtime interaction smoke beyond the existing compile gates;
 3. deepen the semantic theme/token system;
 4. implement `Select` and `Tooltip` with their own semantics on the accepted geometry/runtime contracts;
@@ -137,9 +137,9 @@ Additional form-group integrations should be added only where React Native expos
 
 The shared anchored-overlay geometry/runtime kernels are accepted, with public `Popover` and `DropdownMenu` layered on them.
 
-The current portal transport has a documented pre-1.0 arbitrary-consumer-React-Context boundary. Issue #35/PR #38 made that limitation explicit and regression-tested; they did not make the transport context-preserving. See `docs/anchored-overlays.md`.
+The portal transport preserves consumer React context declared below `BeeUIProvider` (web `ReactDOM.createPortal`, native `react-native-teleport`), with a defensive legacy fallback that does not preserve it. Overlays inside a `Dialog` target a modal-local host. See `docs/anchored-overlays.md`.
 
-Future `Select` and `Tooltip` must not alias DropdownMenu semantics, and they should not proceed ahead of the roadmap's context-preserving transport investigation.
+Future `Select` and `Tooltip` must not alias DropdownMenu semantics. They build on the shared context-preserving transport and the generic modal-local host scope rather than special-casing.
 
 Do not approximate anchored overlays with full-screen modal behavior merely to avoid portal/context work. Positioning, collision handling, nested overlays, focus, keyboard semantics, and accessibility remain part of each component's contract.
 
