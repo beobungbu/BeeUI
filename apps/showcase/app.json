@@ -7,9 +7,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.beeui.showcase",
       "supportsTablet": true
     },
     "android": {
+      "package": "com.beeui.showcase",
       "edgeToEdgeEnabled": true
     },
     "web": {
