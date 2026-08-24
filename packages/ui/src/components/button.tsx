@@ -8,7 +8,7 @@ import {
   type PressableProps,
   type TextProps as RNTextProps,
 } from 'react-native';
-import { Text } from './text';
+import { semanticTypographyClasses, Text } from './text';
 
 const buttonVariants = cva(
   'flex-row items-center justify-center gap-2 rounded-md border active:opacity-90 web:focus-visible:bee-focus-ring',
@@ -49,10 +49,10 @@ const buttonLabelVariants = cva('font-semibold', {
       destructive: 'text-destructive-foreground',
     },
     size: {
-      sm: 'text-label',
-      md: 'text-label',
-      lg: 'text-body',
-      icon: 'text-label',
+      sm: semanticTypographyClasses.label,
+      md: semanticTypographyClasses.label,
+      lg: semanticTypographyClasses.body,
+      icon: semanticTypographyClasses.label,
     },
   },
   defaultVariants: {
