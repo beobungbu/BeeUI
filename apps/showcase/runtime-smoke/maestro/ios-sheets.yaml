@@ -1,0 +1,111 @@
+appId: com.beeui.showcase
+---
+- launchApp:
+    clearState: true
+- scrollUntilVisible:
+    element:
+      id: "showcase-open-runtime"
+    direction: DOWN
+- tapOn:
+    id: "showcase-open-runtime"
+- assertVisible:
+    id: "runtime-ready"
+- assertVisible:
+    id: "runtime-safe-area-nonzero"
+
+- scrollUntilVisible:
+    element:
+      id: "runtime-over-full-screen-trigger"
+    direction: DOWN
+- tapOn:
+    id: "runtime-over-full-screen-trigger"
+- assertVisible:
+    id: "runtime-over-full-screen-content"
+- tapOn:
+    id: "runtime-over-full-screen-popover-trigger"
+- assertVisible:
+    id: "runtime-over-full-screen-popover-content"
+- takeScreenshot: ".artifacts/runtime-smoke/ios/over-full-screen-popover"
+- tapOn:
+    id: "runtime-over-full-screen-popover-close"
+- tapOn:
+    id: "runtime-over-full-screen-close"
+- assertVisible:
+    text: "overFullScreen state: closed"
+
+- scrollUntilVisible:
+    element:
+      id: "runtime-page-sheet-trigger"
+    direction: DOWN
+- tapOn:
+    id: "runtime-page-sheet-trigger"
+- assertVisible:
+    id: "runtime-page-sheet-content"
+- assertVisible:
+    text: "pageSheet"
+- tapOn:
+    id: "runtime-page-sheet-popover-trigger"
+- assertVisible:
+    id: "runtime-page-sheet-popover-content"
+- takeScreenshot: ".artifacts/runtime-smoke/ios/page-sheet-popover"
+- tapOn:
+    id: "runtime-page-sheet-popover-close"
+- tapOn:
+    id: "runtime-page-sheet-menu-trigger"
+- assertVisible:
+    id: "runtime-page-sheet-menu-content"
+- tapOn:
+    id: "runtime-page-sheet-menu-item"
+- assertVisible:
+    text: "menu selection: selected"
+- tapOn:
+    id: "runtime-page-sheet-input"
+- inputText: "page-sheet-keyboard"
+- assertVisible:
+    text: "page-sheet-keyboard"
+- takeScreenshot: ".artifacts/runtime-smoke/ios/page-sheet-keyboard"
+- hideKeyboard
+- swipe:
+    start: "50%, 14%"
+    end: "50%, 94%"
+    duration: 700
+- assertNotVisible:
+    id: "runtime-page-sheet-content"
+- assertVisible:
+    text: "pageSheet state: closed"
+- assertVisible:
+    text: "pageSheet requestClose: 1"
+
+- scrollUntilVisible:
+    element:
+      id: "runtime-form-sheet-trigger"
+    direction: DOWN
+- tapOn:
+    id: "runtime-form-sheet-trigger"
+- assertVisible:
+    id: "runtime-form-sheet-content"
+- tapOn:
+    id: "runtime-form-sheet-popover-trigger"
+- assertVisible:
+    id: "runtime-form-sheet-popover-content"
+- takeScreenshot: ".artifacts/runtime-smoke/ios/form-sheet-popover"
+- tapOn:
+    id: "runtime-form-sheet-popover-close"
+- tapOn:
+    id: "runtime-form-sheet-menu-trigger"
+- assertVisible:
+    id: "runtime-form-sheet-menu-content"
+- tapOn:
+    id: "runtime-form-sheet-menu-item"
+- assertVisible:
+    text: "menu selection: selected"
+- swipe:
+    start: "50%, 14%"
+    end: "50%, 94%"
+    duration: 700
+- assertNotVisible:
+    id: "runtime-form-sheet-content"
+- assertVisible:
+    text: "formSheet state: closed"
+- assertVisible:
+    text: "formSheet requestClose: 1"
