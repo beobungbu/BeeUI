@@ -17,11 +17,22 @@ import {
 } from '@beeui/ui';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
-import { Modal, Platform, Text, UIManager, View, type LayoutChangeEvent } from 'react-native';
+import {
+  BackHandler,
+  Modal,
+  Platform,
+  Text,
+  UIManager,
+  View,
+  type LayoutChangeEvent,
+} from 'react-native';
 import {
   ModalOverlayHost,
   OverlayRuntimeProvider,
+  OverlayScopeContext,
   useAnchoredOverlayPosition,
+  type ModalOverlayDismissScope,
+  type OverlayDismissController,
 } from '../../../packages/ui/src/components/overlay-runtime';
 
 // Native portal is mocked to render children inline so the scope/fiber behavior is
@@ -476,5 +487,347 @@ describe('modal registration timing (Blocker 5)', () => {
     await act(async () => screen.UNSAFE_getAllByType(Modal)[0].props.onRequestClose?.());
     expect(screen.queryByTestId('menu-item', { includeHiddenElements: true })).toBeNull();
     expect(screen.UNSAFE_getAllByType(Modal)[0].props.visible).toBe(true); // dialog stays
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Finding 1 — dismiss ordering must survive a hostRect (geometry) change.
+// Topmost follows open order, never re-registration triggered by layout.
+// ---------------------------------------------------------------------------
+describe('dismiss ordering is stable across geometry changes (Finding 1)', () => {
+  beforeEach(() => setTeleportAvailable(true));
+
+  const MODAL_A = { x: 180, y: 120, width: 640, height: 560 };
+  const MODAL_B = { x: 220, y: 150, width: 600, height: 520 };
+
+  it('keeps the later-opened overlay topmost after the modal host moves', async () => {
+    const scopeRef = React.createRef<ModalOverlayDismissScope>();
+    const onAChange = jest.fn();
+    const onBChange = jest.fn();
+    let openA: () => void = () => undefined;
+    let openB: () => void = () => undefined;
+
+    // A is declared BEFORE B in the tree; a re-registration triggered by geometry
+    // would re-add them in tree order [A, B] and wrongly make B topmost.
+    function Harness({ hostRect }: { hostRect: typeof MODAL_A }) {
+      const [aOpen, setAOpen] = React.useState(false);
+      const [bOpen, setBOpen] = React.useState(false);
+      openA = () => setAOpen(true);
+      openB = () => setBOpen(true);
+      return (
+        <OverlayRuntimeProvider hostRectOverride={ROOT_RECT}>
+          <ModalOverlayHost dismissScopeRef={scopeRef} hostRectOverride={hostRect}>
+            <Popover
+              onOpenChange={(next) => {
+                onAChange(next);
+                setAOpen(next);
+              }}
+              open={aOpen}
+            >
+              <PopoverTrigger testID="a-trigger">A</PopoverTrigger>
+              <PopoverContent avoidSafeArea={false} testID="a-content">
+                <Text testID="a-body">A</Text>
+              </PopoverContent>
+            </Popover>
+            <Popover
+              onOpenChange={(next) => {
+                onBChange(next);
+                setBOpen(next);
+              }}
+              open={bOpen}
+            >
+              <PopoverTrigger testID="b-trigger">B</PopoverTrigger>
+              <PopoverContent avoidSafeArea={false} testID="b-content">
+                <Text testID="b-body">B</Text>
+              </PopoverContent>
+            </Popover>
+          </ModalOverlayHost>
+        </OverlayRuntimeProvider>
+      );
+    }
+
+    const screen = render(<Harness hostRect={MODAL_A} />, { createNodeMock: anchorNodeMock });
+
+    // Open B first, then A → dismiss stack [B, A], A is topmost.
+    await act(async () => openB());
+    await act(async () => openA());
+    await waitFor(() =>
+      expect(screen.getByTestId('a-body', { includeHiddenElements: true })).toBeTruthy(),
+    );
+    expect(screen.getByTestId('b-body', { includeHiddenElements: true })).toBeTruthy();
+
+    onAChange.mockClear();
+    onBChange.mockClear();
+
+    // Move/resize the modal host WITHOUT closing either overlay.
+    screen.rerender(<Harness hostRect={MODAL_B} />);
+
+    // A geometry change must not fire spurious open-change callbacks.
+    expect(onAChange).not.toHaveBeenCalled();
+    expect(onBChange).not.toHaveBeenCalled();
+
+    // dismissTop (the modal boundary's back path) must still dismiss the topmost
+    // overlay = A. Pre-fix, re-registration in tree order made B topmost here.
+    await act(async () => scopeRef.current?.dismissTopmostChild('back'));
+    await waitFor(() =>
+      expect(screen.queryByTestId('a-body', { includeHiddenElements: true })).toBeNull(),
+    );
+    expect(screen.getByTestId('b-body', { includeHiddenElements: true })).toBeTruthy();
+    expect(onAChange).toHaveBeenCalledTimes(1);
+    expect(onAChange).toHaveBeenCalledWith(false);
+    expect(onBChange).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Finding 2 — an open overlay remeasures its anchor when the host geometry
+// changes, so a new host origin is never paired with a stale anchor.
+// ---------------------------------------------------------------------------
+describe('anchor remeasures on host geometry change (Finding 2)', () => {
+  beforeEach(() => setTeleportAvailable(true));
+
+  // Host geometry is driven through REAL measurement (onLayout → measureInWindow),
+  // so `remeasureHost` keeps a stable identity while `hostRect` state changes. That
+  // is the exact scenario the fix targets: a host move that is not a window/keyboard
+  // change and does not swap the measurement callback identity. (Using
+  // hostRectOverride would not reproduce it — changing the override also changes
+  // remeasureHost identity, which re-triggers measurement even pre-fix.)
+  const HOST_A = { x: 180, y: 120, width: 640, height: 560 };
+  const HOST_B = { x: 220, y: 150, width: 600, height: 520 };
+  const ANCHOR_A = { x: 300, y: 220, width: 40, height: 20 };
+  const ANCHOR_B = { x: 340, y: 250, width: 40, height: 20 };
+
+  // A stable no-op dismiss controller (dismissal is irrelevant to this geometry
+  // test); its identity never changes so the scope's dismiss identity is fixed.
+  const stableController: OverlayDismissController = {
+    register: () => undefined,
+    unregister: () => undefined,
+    isTopmost: () => false,
+    dismissIfTopmost: () => false,
+    dismissTop: () => false,
+  };
+
+  it('remeasures the anchor and repositions when the host moves (stable remeasureHost)', async () => {
+    const anchorState = { rect: ANCHOR_A, calls: 0 };
+    // Stable remeasureHost identity — exactly like a real measured host, where the
+    // callback does not change when hostRect state updates.
+    const stableRemeasure = () => undefined;
+
+    function PositionProbe() {
+      const anchorRef = React.useRef<{
+        measureInWindow: (cb: (x: number, y: number, w: number, h: number) => void) => void;
+      } | null>(null);
+      if (anchorRef.current === null) {
+        anchorRef.current = {
+          measureInWindow: (cb) => {
+            anchorState.calls += 1;
+            cb(anchorState.rect.x, anchorState.rect.y, anchorState.rect.width, anchorState.rect.height);
+          },
+        };
+      }
+      const { onOverlayLayout, position, windowPosition } = useAnchoredOverlayPosition({
+        align: 'start',
+        anchorRef,
+        avoidSafeArea: false,
+        flip: false,
+        open: true,
+        placement: 'bottom',
+        shift: false,
+      });
+      React.useEffect(() => {
+        onOverlayLayout({
+          nativeEvent: { layout: { width: 100, height: 50, x: 0, y: 0 } },
+        } as LayoutChangeEvent);
+      }, [onOverlayLayout]);
+      return (
+        <>
+          <Text testID="pos">
+            {position ? `${Math.round(position.x)},${Math.round(position.y)}` : 'null'}
+          </Text>
+          <Text testID="win">
+            {windowPosition ? `${Math.round(windowPosition.x)},${Math.round(windowPosition.y)}` : 'null'}
+          </Text>
+        </>
+      );
+    }
+
+    // Provide a scope whose hostRect changes via `hostRect` prop while the
+    // remeasureHost and controller identities stay fixed — the production
+    // measured-host scenario the fix targets (a hostRectOverride change would also
+    // swap remeasureHost identity and mask the bug).
+    function Harness({ hostRect }: { hostRect: typeof HOST_A }) {
+      const scope = React.useMemo(
+        () => ({
+          hostName: 'test-modal-host',
+          isModal: true,
+          hostRect,
+          remeasureHost: stableRemeasure,
+          controller: stableController,
+        }),
+        [hostRect],
+      );
+      return (
+        <OverlayRuntimeProvider hostRectOverride={ROOT_RECT}>
+          <OverlayScopeContext.Provider value={scope}>
+            <PositionProbe />
+          </OverlayScopeContext.Provider>
+        </OverlayRuntimeProvider>
+      );
+    }
+
+    const screen = render(<Harness hostRect={HOST_A} />);
+    await waitFor(() =>
+      expect(screen.getByTestId('pos', { includeHiddenElements: true }).props.children).not.toBe('null'),
+    );
+    expect(screen.getByTestId('win', { includeHiddenElements: true }).props.children).toBe('300,240');
+    expect(screen.getByTestId('pos', { includeHiddenElements: true }).props.children).toBe('120,120');
+    const callsAfterA = anchorState.calls;
+
+    // Host moves; anchor moves with it. Only hostRect changes (remeasureHost fixed).
+    anchorState.rect = ANCHOR_B;
+    await act(async () => {
+      screen.rerender(<Harness hostRect={HOST_B} />);
+    });
+
+    // The window solution is the discriminator: it must move to ANCHOR_B's window
+    // rect (bottom/start → x=340, y=250+20=270). Pre-fix the stale ANCHOR_A left it
+    // at 300,240. The local position (window − HOST_B origin) is 120,120 in both
+    // states because the anchor moved by the same delta as the host, so `win`
+    // proves the remeasurement while `pos` proves the correct host-origin subtract.
+    await waitFor(() =>
+      expect(screen.getByTestId('win', { includeHiddenElements: true }).props.children).toBe('340,270'),
+    );
+    expect(anchorState.calls).toBeGreaterThan(callsAfterA);
+    expect(screen.getByTestId('pos', { includeHiddenElements: true }).props.children).toBe('120,120');
+
+    // Re-rendering with the SAME host rect does not loop (equal values → stable key).
+    const callsBeforeStable = anchorState.calls;
+    await act(async () => {
+      screen.rerender(<Harness hostRect={HOST_B} />);
+    });
+    expect(anchorState.calls - callsBeforeStable).toBeLessThanOrEqual(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Finding 3 — active-scope coordination is runtime-owned. Two independent
+// runtimes cannot dismiss each other's overlays and one's unmount cannot
+// corrupt the other.
+// ---------------------------------------------------------------------------
+describe('independent runtime isolation (Finding 3)', () => {
+  beforeEach(() => {
+    setTeleportAvailable(true);
+    setPlatform('android'); // native back path exercises the per-runtime coordinator
+  });
+
+  it('routes a global dismiss only to its own runtime; sibling stays isolated', async () => {
+    // Capture each runtime's platform back handler (one BackHandler listener per
+    // runtime — proving each runtime installs its own subscription).
+    const handlers: Array<() => boolean> = [];
+    jest.spyOn(BackHandler, 'addEventListener').mockImplementation(((_type: string, cb: () => boolean) => {
+      handlers.push(cb);
+      return { remove: () => undefined };
+    }) as typeof BackHandler.addEventListener);
+
+    function RootOverlay({ bodyTestID, triggerTestID }: { bodyTestID: string; triggerTestID: string }) {
+      return (
+        <Popover defaultOpen>
+          <PopoverTrigger testID={triggerTestID}>open</PopoverTrigger>
+          <PopoverContent avoidSafeArea={false} testID={`${triggerTestID}-content`}>
+            <Text testID={bodyTestID}>body</Text>
+          </PopoverContent>
+        </Popover>
+      );
+    }
+
+    // Two SIBLING runtimes (separate roots, not nested).
+    const screen = render(
+      <>
+        <OverlayRuntimeProvider hostRectOverride={ROOT_RECT}>
+          <RootOverlay bodyTestID="a-body" triggerTestID="a-trigger" />
+        </OverlayRuntimeProvider>
+        <OverlayRuntimeProvider hostRectOverride={ROOT_RECT}>
+          <RootOverlay bodyTestID="b-body" triggerTestID="b-trigger" />
+        </OverlayRuntimeProvider>
+      </>,
+      { createNodeMock: anchorNodeMock },
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('a-body', { includeHiddenElements: true })).toBeTruthy();
+      expect(screen.getByTestId('b-body', { includeHiddenElements: true })).toBeTruthy();
+    });
+    expect(handlers.length).toBe(2); // one per runtime, not module-global
+
+    // Fire runtime A's back handler → only A's overlay is dismissed; B is isolated.
+    await act(async () => {
+      handlers[0]();
+    });
+    await waitFor(() =>
+      expect(screen.queryByTestId('a-body', { includeHiddenElements: true })).toBeNull(),
+    );
+    expect(screen.getByTestId('b-body', { includeHiddenElements: true })).toBeTruthy();
+
+    // Fire runtime B's back handler → dismisses B (its own runtime still works).
+    await act(async () => {
+      handlers[1]();
+    });
+    await waitFor(() =>
+      expect(screen.queryByTestId('b-body', { includeHiddenElements: true })).toBeNull(),
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Controlled overlay whose parent delays applying the requested state change:
+// dismissal must not duplicate registration, and geometry updates must not fire
+// spurious onOpenChange.
+// ---------------------------------------------------------------------------
+describe('controlled overlay with delayed parent update', () => {
+  beforeEach(() => setTeleportAvailable(true));
+
+  const MODAL_A = { x: 180, y: 120, width: 640, height: 560 };
+  const MODAL_B = { x: 220, y: 150, width: 600, height: 520 };
+
+  it('does not duplicate registration or emit spurious callbacks when open stays true', async () => {
+    const scopeRef = React.createRef<ModalOverlayDismissScope>();
+    const onOpenChange = jest.fn(); // parent intentionally never applies open=false
+
+    function Harness({ hostRect }: { hostRect: typeof MODAL_A }) {
+      return (
+        <OverlayRuntimeProvider hostRectOverride={ROOT_RECT}>
+          <ModalOverlayHost dismissScopeRef={scopeRef} hostRectOverride={hostRect}>
+            <Popover onOpenChange={onOpenChange} open>
+              <PopoverTrigger testID="c-trigger">open</PopoverTrigger>
+              <PopoverContent avoidSafeArea={false} testID="c-content">
+                <Text testID="c-body">controlled</Text>
+              </PopoverContent>
+            </Popover>
+          </ModalOverlayHost>
+        </OverlayRuntimeProvider>
+      );
+    }
+
+    const screen = render(<Harness hostRect={MODAL_A} />, { createNodeMock: anchorNodeMock });
+    await waitFor(() =>
+      expect(screen.getByTestId('c-body', { includeHiddenElements: true })).toBeTruthy(),
+    );
+
+    // Repeated geometry updates must not fire onOpenChange.
+    screen.rerender(<Harness hostRect={MODAL_B} />);
+    screen.rerender(<Harness hostRect={MODAL_A} />);
+    expect(onOpenChange).not.toHaveBeenCalled();
+
+    // A dismiss request calls onOpenChange(false) exactly once; the controlled
+    // parent ignores it, so the overlay stays open and registered.
+    await act(async () => scopeRef.current?.dismissTopmostChild('back'));
+    expect(onOpenChange).toHaveBeenCalledTimes(1);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(screen.getByTestId('c-body', { includeHiddenElements: true })).toBeTruthy();
+
+    // Still registered exactly once: a second dismiss request fires the callback
+    // again (once), not twice, proving no duplicate registration accumulated.
+    onOpenChange.mockClear();
+    await act(async () => scopeRef.current?.dismissTopmostChild('back'));
+    expect(onOpenChange).toHaveBeenCalledTimes(1);
   });
 });
