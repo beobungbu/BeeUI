@@ -2,6 +2,50 @@ export const beeThemeNames = ['light', 'dark'] as const;
 
 export type BeeThemeName = (typeof beeThemeNames)[number];
 
+export const beeBrandNames = ['bee', 'violet'] as const;
+
+export type BeeBrandName = (typeof beeBrandNames)[number];
+
+export const beeRuntimeThemeNames = ['light', 'dark', 'violet-light', 'violet-dark'] as const;
+
+export type BeeRuntimeThemeName = (typeof beeRuntimeThemeNames)[number];
+
+export const beeRuntimeThemeByBrand = {
+  bee: {
+    light: 'light',
+    dark: 'dark',
+  },
+  violet: {
+    light: 'violet-light',
+    dark: 'violet-dark',
+  },
+} as const satisfies Record<BeeBrandName, Record<BeeThemeName, BeeRuntimeThemeName>>;
+
+export function resolveBeeRuntimeTheme(
+  brand: BeeBrandName,
+  theme: BeeThemeName,
+): BeeRuntimeThemeName {
+  return beeRuntimeThemeByBrand[brand][theme];
+}
+
+export function getBeeThemeSelection(runtimeTheme: string):
+  | { brand: BeeBrandName; theme: BeeThemeName }
+  | undefined {
+  for (const brand of beeBrandNames) {
+    for (const theme of beeThemeNames) {
+      if (beeRuntimeThemeByBrand[brand][theme] === runtimeTheme) {
+        return { brand, theme };
+      }
+    }
+  }
+
+  return undefined;
+}
+
+export function isBeeDarkRuntimeTheme(runtimeTheme: string) {
+  return getBeeThemeSelection(runtimeTheme)?.theme === 'dark';
+}
+
 export const semanticColorTokens = [
   'background',
   'foreground',
@@ -36,6 +80,18 @@ export const semanticColorTokens = [
 ] as const;
 
 export type SemanticColorToken = (typeof semanticColorTokens)[number];
+export type SemanticColorVariableName = `--color-${SemanticColorToken}`;
+export type SemanticColorOverrides = Partial<Record<SemanticColorVariableName, string>>;
+
+export function semanticColorVariable(token: SemanticColorToken): SemanticColorVariableName {
+  return `--color-${token}`;
+}
+
+export function defineSemanticColorOverrides<const T extends SemanticColorOverrides>(
+  overrides: T,
+): Readonly<T> {
+  return Object.freeze({ ...overrides });
+}
 
 export const spacing = {
   0: 0,
@@ -61,3 +117,114 @@ export const radius = {
   '2xl': 24,
   full: 9999,
 } as const;
+
+/**
+ * `system` means the platform default font. BeeUI deliberately does not force a
+ * font-family utility until the consuming app loads and names a cross-platform font.
+ */
+export const fontFamily = {
+  sans: 'system',
+} as const;
+
+export const fontSize = {
+  caption: 12,
+  label: 14,
+  body: 16,
+  heading: 18,
+  title: 24,
+  display: 32,
+} as const;
+
+export const lineHeight = {
+  caption: 16,
+  label: 20,
+  body: 24,
+  heading: 24,
+  title: 32,
+  display: 40,
+} as const;
+
+export const fontWeight = {
+  regular: 400,
+  medium: 500,
+  semibold: 600,
+  bold: 700,
+} as const;
+
+export const letterSpacing = {
+  normal: 0,
+  tight: -0.2,
+} as const;
+
+export type TypographyRole = keyof typeof fontSize;
+
+export const controlSize = {
+  compact: 36,
+  default: 44,
+  large: 48,
+  icon: 44,
+  touchTarget: 44,
+} as const;
+
+export const iconSize = {
+  xs: 12,
+  sm: 16,
+  md: 20,
+  lg: 24,
+} as const;
+
+export const avatarSize = {
+  sm: 32,
+  md: 40,
+  lg: 48,
+  xl: 64,
+} as const;
+
+export const contentWidth = {
+  form: 512,
+  reading: 704,
+  page: 1152,
+  dialog: 512,
+} as const;
+
+export const elevation = {
+  flat: {
+    web: 'none',
+    nativeElevation: 0,
+  },
+  raised: {
+    web: '0 2px 8px rgb(16 24 40 / 0.10)',
+    nativeElevation: 2,
+  },
+  overlay: {
+    web: '0 16px 40px rgb(16 24 40 / 0.18)',
+    nativeElevation: 8,
+  },
+} as const;
+
+export type ElevationLevel = keyof typeof elevation;
+
+export const motionDuration = {
+  fast: 120,
+  normal: 200,
+  slow: 320,
+} as const;
+
+export const motionEasing = {
+  standard: 'cubic-bezier(0.2, 0, 0, 1)',
+  emphasized: 'cubic-bezier(0.2, 0, 0, 1.2)',
+} as const;
+
+export const focusRing = {
+  width: 2,
+  offset: 2,
+  colorToken: 'focus-ring',
+  webVisibility: 'focus-visible',
+  nativeVisibility: 'platform-focus',
+} as const satisfies {
+  width: number;
+  offset: number;
+  colorToken: SemanticColorToken;
+  webVisibility: 'focus-visible';
+  nativeVisibility: 'platform-focus';
+};
