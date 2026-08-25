@@ -61,8 +61,8 @@ function setTeleportAvailable(available: boolean) {
   jest.spyOn(UIManager, 'hasViewManagerConfig').mockReturnValue(available);
 }
 
-function layoutSelectContents(screen: ReturnType<typeof render>) {
-  const contents = screen.UNSAFE_getAllByType(View).filter((node) => {
+function getSelectContents(screen: ReturnType<typeof render>) {
+  return screen.UNSAFE_getAllByType(View).filter((node) => {
     const nativeID = node.props.nativeID;
     return (
       typeof nativeID === 'string' &&
@@ -70,18 +70,33 @@ function layoutSelectContents(screen: ReturnType<typeof render>) {
       nativeID.endsWith('-content')
     );
   });
+}
 
-  for (const content of contents) {
+function layoutSelectContents(screen: ReturnType<typeof render>) {
+  for (const content of getSelectContents(screen)) {
     fireEvent(content, 'layout', {
       nativeEvent: { layout: { x: 0, y: 0, width: 220, height: 120 } },
     });
   }
 }
 
-function renderSelect(
+async function settleOpenSelectContents(screen: ReturnType<typeof render>) {
+  await waitFor(() => {
+    layoutSelectContents(screen);
+    const openContents = getSelectContents(screen).filter(
+      (content) => StyleSheet.flatten(content.props.style)?.display !== 'none',
+    );
+    for (const content of openContents) {
+      expect(content.props.pointerEvents).toBe('auto');
+      expect(content.props['aria-hidden']).not.toBe(true);
+    }
+  });
+}
+
+async function renderSelect(
   children: React.ReactNode,
   anchorRects: Record<string, Rect> = { trigger: DEFAULT_ANCHOR },
-): RenderResult {
+): Promise<RenderResult> {
   const focusMocks: Record<string, jest.Mock> = {};
   const screen = render(
     <OverlayRuntimeProvider hostRectOverride={HOST_RECT}>{children}</OverlayRuntimeProvider>,
@@ -103,7 +118,7 @@ function renderSelect(
       },
     },
   );
-  layoutSelectContents(screen);
+  await settleOpenSelectContents(screen);
   return Object.assign(screen, { focusMocks });
 }
 
@@ -154,7 +169,7 @@ describe('Wave 2A Select', () => {
   });
 
   it('selects an uncontrolled option, updates the displayed value, and closes', async () => {
-    const screen = renderSelect(<BasicSelect />);
+    const screen = await renderSelect(<BasicSelect />);
 
     await waitFor(() => expect(screen.getByTestId('apple').props.accessibilityState.disabled).toBe(false));
     fireEvent.press(screen.getByTestId('banana'));
@@ -167,7 +182,7 @@ describe('Wave 2A Select', () => {
   it('requests controlled selection without inventing a local controlled value', async () => {
     const onValueChange = jest.fn();
     const onOpenChange = jest.fn();
-    const screen = renderSelect(
+    const screen = await renderSelect(
       <Select open value="apple" onOpenChange={onOpenChange} onValueChange={onValueChange}>
         <SelectTrigger testID="trigger"><SelectValue testID="value" /></SelectTrigger>
         <SelectContent testID="content">
@@ -187,13 +202,13 @@ describe('Wave 2A Select', () => {
   });
 
   it('renders a placeholder when there is no matching selection', async () => {
-    const screen = renderSelect(<BasicSelect defaultOpen={false} />);
+    const screen = await renderSelect(<BasicSelect defaultOpen={false} />);
     await waitFor(() => expect(screen.getByTestId('value').props.children).toBe('Choose fruit'));
   });
 
   it('keeps a disabled Select inert and conveys disabled state', async () => {
     const onOpenChange = jest.fn();
-    const screen = renderSelect(
+    const screen = await renderSelect(
       <Select disabled onOpenChange={onOpenChange}>
         <SelectTrigger testID="trigger"><SelectValue /></SelectTrigger>
         <SelectContent testID="content">
@@ -210,7 +225,7 @@ describe('Wave 2A Select', () => {
 
   it('skips a disabled item and leaves value/open state unchanged', async () => {
     const onValueChange = jest.fn();
-    const screen = renderSelect(
+    const screen = await renderSelect(
       <Select defaultOpen onValueChange={onValueChange}>
         <SelectTrigger testID="trigger"><SelectValue testID="value" /></SelectTrigger>
         <SelectContent testID="content">
@@ -226,7 +241,7 @@ describe('Wave 2A Select', () => {
   });
 
   it('exposes persistent selected option state', async () => {
-    const screen = renderSelect(<BasicSelect defaultValue="apple" />);
+    const screen = await renderSelect(<BasicSelect defaultValue="apple" />);
     await waitFor(() => expect(screen.getByTestId('apple').props.accessibilityState.selected).toBe(true));
     expect(screen.getByTestId('banana').props.accessibilityState.selected).toBe(false);
   });
@@ -234,7 +249,7 @@ describe('Wave 2A Select', () => {
   it('fails duplicate values safe by disabling every duplicate', async () => {
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     const onValueChange = jest.fn();
-    const screen = renderSelect(
+    const screen = await renderSelect(
       <Select defaultOpen onValueChange={onValueChange}>
         <SelectTrigger testID="trigger"><SelectValue /></SelectTrigger>
         <SelectContent testID="content">
@@ -269,7 +284,7 @@ describe('Wave 2A Select', () => {
         </>
       );
     }
-    const screen = renderSelect(<Fixture />);
+    const screen = await renderSelect(<Fixture />);
 
     await waitFor(() => expect(screen.getByTestId('value').props.children).toBe('Apple'));
     fireEvent.press(screen.getByTestId('remove'));
@@ -278,7 +293,7 @@ describe('Wave 2A Select', () => {
   });
 
   it('opens and closes from the trigger without changing value', async () => {
-    const screen = renderSelect(<BasicSelect defaultOpen={false} defaultValue="apple" />);
+    const screen = await renderSelect(<BasicSelect defaultOpen={false} defaultValue="apple" />);
     await waitFor(() => expect(screen.getByTestId('value').props.children).toBe('Apple'));
     fireEvent.press(screen.getByTestId('trigger'));
     expect(screen.getByTestId('trigger').props.accessibilityState.expanded).toBe(true);
@@ -288,7 +303,7 @@ describe('Wave 2A Select', () => {
   });
 
   it('dismisses on outside press without changing selection', async () => {
-    const screen = renderSelect(<BasicSelect defaultValue="apple" />);
+    const screen = await renderSelect(<BasicSelect defaultValue="apple" />);
     await waitFor(() => expect(screen.getByTestId('outside', { includeHiddenElements: true })).toBeTruthy());
     fireEvent.press(screen.getByTestId('outside', { includeHiddenElements: true }));
     expect(screen.getByTestId('trigger').props.accessibilityState.expanded).toBe(false);
@@ -296,14 +311,14 @@ describe('Wave 2A Select', () => {
   });
 
   it('dismisses topmost Select through accessibility escape', async () => {
-    const screen = renderSelect(<BasicSelect />);
+    const screen = await renderSelect(<BasicSelect />);
     fireEvent(screen.getByTestId('content', { includeHiddenElements: true }), 'accessibilityEscape');
     await waitFor(() => expect(screen.getByTestId('trigger').props.accessibilityState.expanded).toBe(false));
   });
 
   it('navigates with Arrow keys and skips disabled options on web', async () => {
     Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
-    const screen = renderSelect(
+    const screen = await renderSelect(
       <Select defaultOpen>
         <SelectTrigger testID="trigger"><SelectValue /></SelectTrigger>
         <SelectContent testID="content">
@@ -324,7 +339,7 @@ describe('Wave 2A Select', () => {
   it('supports Home, End, Enter, and Space selection on web', async () => {
     Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
     const onValueChange = jest.fn();
-    const screen = renderSelect(
+    const screen = await renderSelect(
       <Select defaultOpen onValueChange={onValueChange}>
         <SelectTrigger testID="trigger"><SelectValue /></SelectTrigger>
         <SelectContent testID="content">
@@ -343,7 +358,7 @@ describe('Wave 2A Select', () => {
 
   it('supports practical prefix typeahead on web', async () => {
     Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
-    const screen = renderSelect(
+    const screen = await renderSelect(
       <Select defaultOpen>
         <SelectTrigger testID="trigger"><SelectValue /></SelectTrigger>
         <SelectContent testID="content">
@@ -363,7 +378,7 @@ describe('Wave 2A Select', () => {
 
   it('restores web focus to the trigger after selection', async () => {
     Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
-    const screen = renderSelect(<BasicSelect />);
+    const screen = await renderSelect(<BasicSelect />);
     await waitFor(() => expect(screen.focusMocks.trigger).toBeDefined());
     fireEvent.press(screen.getByTestId('banana'));
     expect(screen.focusMocks.trigger).toHaveBeenCalled();
@@ -372,7 +387,7 @@ describe('Wave 2A Select', () => {
   it('keeps a 101-option list selectable without virtualization-specific behavior', async () => {
     const onValueChange = jest.fn();
     const options = Array.from({ length: 101 }, (_, index) => `option-${index}`);
-    const screen = renderSelect(
+    const screen = await renderSelect(
       <Select defaultOpen onValueChange={onValueChange}>
         <SelectTrigger testID="trigger"><SelectValue /></SelectTrigger>
         <SelectContent maxHeight={180} testID="content">
@@ -392,7 +407,7 @@ describe('Wave 2A Select', () => {
     function Probe() {
       return <Text testID="context-value">{React.useContext(ConsumerContext)}</Text>;
     }
-    const screen = renderSelect(
+    const screen = await renderSelect(
       <ConsumerContext.Provider value="preserved">
         <Select defaultOpen>
           <SelectTrigger testID="trigger"><SelectValue /></SelectTrigger>
@@ -411,7 +426,7 @@ describe('Wave 2A Select', () => {
     function Probe() {
       return <Text testID="dialog-context-value">{React.useContext(ConsumerContext)}</Text>;
     }
-    const screen = renderSelect(
+    const screen = await renderSelect(
       <ConsumerContext.Provider value="preserved">
         <Dialog defaultOpen>
           <DialogContent>
@@ -462,7 +477,7 @@ describe('Wave 2A Select', () => {
   it('keeps a controlled old value visible while a parent delays its update', async () => {
     const onValueChange = jest.fn();
     const onOpenChange = jest.fn();
-    const screen = renderSelect(
+    const screen = await renderSelect(
       <Select open value="apple" onOpenChange={onOpenChange} onValueChange={onValueChange}>
         <SelectTrigger testID="trigger"><SelectValue testID="value" /></SelectTrigger>
         <SelectContent testID="content">
@@ -479,9 +494,9 @@ describe('Wave 2A Select', () => {
     expect(screen.getByTestId('value').props.children).toBe('Apple');
   });
 
-  it('cleans overlay registrations on unmount without emitting selection changes', () => {
+  it('cleans overlay registrations on unmount without emitting selection changes', async () => {
     const onValueChange = jest.fn();
-    const screen = renderSelect(
+    const screen = await renderSelect(
       <Select defaultOpen onValueChange={onValueChange}>
         <SelectTrigger testID="trigger"><SelectValue /></SelectTrigger>
         <SelectContent testID="content">
@@ -495,7 +510,7 @@ describe('Wave 2A Select', () => {
 
   it('provides group and label semantics without changing option selection', async () => {
     Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
-    const screen = renderSelect(
+    const screen = await renderSelect(
       <Select defaultOpen defaultValue="apple">
         <SelectTrigger testID="trigger"><SelectValue testID="value" /></SelectTrigger>
         <SelectContent testID="content">
@@ -514,7 +529,7 @@ describe('Wave 2A Select', () => {
   });
 
   it('keeps closed content mounted but hidden so selected metadata remains deterministic', async () => {
-    const screen = renderSelect(<BasicSelect defaultOpen={false} defaultValue="apple" />);
+    const screen = await renderSelect(<BasicSelect defaultOpen={false} defaultValue="apple" />);
     await waitFor(() => expect(screen.getByTestId('value').props.children).toBe('Apple'));
     const content = screen.getByTestId('content', { includeHiddenElements: true });
     expect(StyleSheet.flatten(content.props.style)).toMatchObject({ display: 'none' });
