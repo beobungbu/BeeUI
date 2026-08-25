@@ -31,15 +31,23 @@ if [ -n "$EXPECTED_BASE" ]; then
   fi
 fi
 
-# The Android emulator binds its modem chardev to [::1]; on runners without
-# IPv6 loopback resolution qemu dies before boot ("Unable to connect character
-# device modem: address resolution failed for ::1:<port>"). Fail fast with an
-# actionable message instead of burning the boot timeout.
-if ! getent hosts ::1 >/dev/null 2>&1 \
-  && ! { command -v ip >/dev/null 2>&1 && ip -6 addr show dev lo 2>/dev/null | grep -q 'inet6 ::1'; }; then
-  echo "IPv6 loopback is unavailable on this runner." >&2
-  echo "The Android emulator requires it: qemu binds its modem chardev to [::1] and exits before boot otherwise." >&2
-  echo "Fix the host (e.g. sysctl -w net.ipv6.conf.lo.disable_ipv6=0 and '::1 localhost' in /etc/hosts), then re-run." >&2
+# The Android emulator binds its modem chardev to [::1]; on runners with IPv6
+# disabled at the kernel level qemu dies before boot ("Unable to connect
+# character device modem: address resolution failed for ::1:<port>: Name or
+# service not known"). /etc/hosts or `ip` can still claim ::1 exists, so test
+# the actual socket capability through node (already a hard requirement).
+if ! node -e '
+const net = require("node:net");
+const socket = net.createConnection({ host: "::1", port: 1 });
+socket.on("connect", () => { socket.destroy(); process.exit(0); });
+socket.on("error", (error) => {
+  // ECONNREFUSED means the IPv6 loopback stack works and nothing listens.
+  process.exit(error.code === "ECONNREFUSED" || error.code === "ETIMEDOUT" ? 0 : 1);
+});
+'; then
+  echo "IPv6 loopback sockets are unavailable on this runner." >&2
+  echo "The Android emulator requires them: qemu binds its modem chardev to [::1] and exits before boot otherwise." >&2
+  echo "Fix the host, e.g.: sysctl -w net.ipv6.conf.all.disable_ipv6=0 net.ipv6.conf.default.disable_ipv6=0 net.ipv6.conf.lo.disable_ipv6=0" >&2
   exit 1
 fi
 
