@@ -66,11 +66,30 @@ function anchorNodeMock(element: { props?: { testID?: string } }) {
   };
 }
 
+function layoutSelectContents(screen: ReturnType<typeof render>) {
+  const contents = screen.UNSAFE_getAllByType(View).filter((node) => {
+    const nativeID = node.props.nativeID;
+    return (
+      typeof nativeID === 'string' &&
+      nativeID.startsWith('beeui-select-') &&
+      nativeID.endsWith('-content')
+    );
+  });
+
+  for (const content of contents) {
+    fireEvent(content, 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 260, height: 180 } },
+    });
+  }
+}
+
 function renderRoot(ui: React.ReactNode) {
-  return render(
+  const screen = render(
     <OverlayRuntimeProvider hostRectOverride={ROOT_RECT}>{ui}</OverlayRuntimeProvider>,
     { createNodeMock: anchorNodeMock },
   );
+  layoutSelectContents(screen);
+  return screen;
 }
 
 beforeEach(() => {
@@ -169,6 +188,7 @@ describe('Wave 2A Select adversarial contracts', () => {
       );
     }
     const screen = render(<Fixture hostX={0} />, { createNodeMock: anchorNodeMock });
+    layoutSelectContents(screen);
     await waitFor(() => expect(screen.getByTestId('move-value').props.children).toBe('Apple'));
 
     screen.rerender(<Fixture hostX={18} />);
@@ -225,6 +245,7 @@ describe('Wave 2A Select adversarial contracts', () => {
       );
     }
     const screen = render(<Fixture open />, { createNodeMock });
+    layoutSelectContents(screen);
     await waitFor(() => expect(screen.getByTestId('delayed-trigger').props.accessibilityState.expanded).toBe(true));
 
     fireEvent.press(screen.getByTestId('delayed-banana'));
