@@ -12,8 +12,18 @@ import {
 } from '@beeui/ui';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, UIManager, View } from 'react-native';
 import { OverlayRuntimeProvider } from '../../../packages/ui/src/components/overlay-runtime';
+
+// Exercise the context-preserving native transport deterministically in Jest.
+jest.mock('react-native-teleport', () => {
+  const React = require('react');
+  return {
+    PortalProvider: ({ children }: { children?: React.ReactNode }) => children,
+    PortalHost: () => null,
+    Portal: ({ children }: { children?: React.ReactNode }) => children,
+  };
+});
 
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');
@@ -38,12 +48,18 @@ jest.mock('react-native-safe-area-context', () => {
 
 const HOST_RECT = { x: 0, y: 0, width: 320, height: 240 };
 const DEFAULT_ANCHOR = { x: 80, y: 40, width: 120, height: 44 };
+const originalFabric = (globalThis as { nativeFabricUIManager?: unknown }).nativeFabricUIManager;
 
 type Rect = typeof DEFAULT_ANCHOR;
 
 type RenderResult = ReturnType<typeof render> & {
   focusMocks: Record<string, jest.Mock>;
 };
+
+function setTeleportAvailable(available: boolean) {
+  (globalThis as { nativeFabricUIManager?: unknown }).nativeFabricUIManager = available ? {} : undefined;
+  jest.spyOn(UIManager, 'hasViewManagerConfig').mockReturnValue(available);
+}
 
 function renderSelect(
   children: React.ReactNode,
@@ -109,7 +125,12 @@ function BasicSelect({
 describe('Wave 2A Select', () => {
   const originalPlatformOS = Platform.OS;
 
+  beforeEach(() => {
+    setTeleportAvailable(true);
+  });
+
   afterEach(() => {
+    (globalThis as { nativeFabricUIManager?: unknown }).nativeFabricUIManager = originalFabric;
     Object.defineProperty(Platform, 'OS', { configurable: true, value: originalPlatformOS });
     jest.restoreAllMocks();
   });
@@ -455,6 +476,7 @@ describe('Wave 2A Select', () => {
   });
 
   it('provides group and label semantics without changing option selection', async () => {
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
     const screen = renderSelect(
       <Select defaultOpen defaultValue="apple">
         <SelectTrigger testID="trigger"><SelectValue testID="value" /></SelectTrigger>
