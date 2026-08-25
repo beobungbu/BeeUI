@@ -44,6 +44,7 @@ type SelectItemRegistration = {
   disabled: boolean;
   focus: () => void;
   id: string;
+  order: number;
   textValue: string;
   value: SelectOptionValue;
 };
@@ -73,6 +74,7 @@ function useSelectRootContext() {
 }
 
 type SelectItemsContextValue = {
+  claimOrder: () => number;
   currentItemId: string | null;
   registerLayout: (id: string, y: number, height: number) => void;
   setCurrentItem: (id: string) => void;
@@ -210,6 +212,7 @@ export function Select(props: SelectProps) {
       if (
         existing.disabled === item.disabled &&
         existing.focus === item.focus &&
+        existing.order === item.order &&
         existing.textValue === item.textValue &&
         existing.value === item.value
       ) {
@@ -438,7 +441,7 @@ SelectValue.displayName = 'SelectValue';
 
 type ItemLayout = { height: number; y: number };
 
-export type SelectContentProps = Omit<ViewProps, 'role'> & {
+export type SelectContentProps = Omit<ViewProps, 'nativeID' | 'role'> & {
   align?: SelectAlign;
   alignOffset?: number;
   avoidKeyboard?: boolean;
@@ -476,7 +479,6 @@ export const SelectContent = React.forwardRef<
       flip = true,
       importantForAccessibility,
       maxHeight,
-      nativeID,
       onAccessibilityEscape,
       onLayout,
       outsidePressProps,
@@ -497,6 +499,13 @@ export const SelectContent = React.forwardRef<
     const [itemLayouts, setItemLayouts] = React.useState<Record<string, ItemLayout>>({});
     const scrollRef = React.useRef<React.ComponentRef<typeof ScrollView> | null>(null);
     const typeaheadRef = React.useRef({ query: '', timestamp: 0 });
+    const renderOrderRef = React.useRef(0);
+    renderOrderRef.current = 0;
+    const claimOrder = React.useCallback(() => renderOrderRef.current++, []);
+    const orderedItems = React.useMemo(
+      () => [...items].sort((a, b) => a.order - b.order),
+      [items],
+    );
     const { isTopmost } = useOverlayDismissable({
       onDismiss: () => setOpen(false),
       open,
@@ -536,18 +545,18 @@ export const SelectContent = React.forwardRef<
       }
       setCurrentItemId((current) => {
         if (current) {
-          const currentItem = items.find((item) => item.id === current);
+          const currentItem = orderedItems.find((item) => item.id === current);
           if (currentItem && isEnabled(currentItem)) return current;
         }
         if (selectedItem && isEnabled(selectedItem)) return selectedItem.id;
-        return items.find(isEnabled)?.id ?? null;
+        return orderedItems.find(isEnabled)?.id ?? null;
       });
-    }, [isEnabled, items, open, selectedItem]);
+    }, [isEnabled, open, orderedItems, selectedItem]);
 
     React.useEffect(() => {
       if (!open || Platform.OS !== 'web' || !currentItemId) return;
-      items.find((item) => item.id === currentItemId)?.focus();
-    }, [currentItemId, items, open]);
+      orderedItems.find((item) => item.id === currentItemId)?.focus();
+    }, [currentItemId, open, orderedItems]);
 
     React.useEffect(() => {
       if (!open || !currentItemId) return;
@@ -561,11 +570,11 @@ export const SelectContent = React.forwardRef<
 
     const setCurrentItem = React.useCallback(
       (id: string) => {
-        const target = items.find((item) => item.id === id);
+        const target = orderedItems.find((item) => item.id === id);
         if (!target || !isEnabled(target)) return;
         setCurrentItemId(id);
       },
-      [isEnabled, items],
+      [isEnabled, orderedItems],
     );
 
     const focusItem = React.useCallback(
@@ -579,14 +588,14 @@ export const SelectContent = React.forwardRef<
 
     const moveCurrent = React.useCallback(
       (delta: 1 | -1) => {
-        const enabled = items.filter(isEnabled);
+        const enabled = orderedItems.filter(isEnabled);
         if (!enabled.length) return;
         const currentIndex = enabled.findIndex((item) => item.id === currentItemId);
         const baseIndex = currentIndex >= 0 ? currentIndex : delta > 0 ? -1 : 0;
         const nextIndex = (baseIndex + delta + enabled.length) % enabled.length;
         focusItem(enabled[nextIndex]);
       },
-      [currentItemId, focusItem, isEnabled, items],
+      [currentItemId, focusItem, isEnabled, orderedItems],
     );
 
     const activateCurrent = React.useCallback(() => {
@@ -600,14 +609,14 @@ export const SelectContent = React.forwardRef<
         const previous = typeaheadRef.current;
         const query = `${now - previous.timestamp > 700 ? '' : previous.query}${key}`.toLocaleLowerCase();
         typeaheadRef.current = { query, timestamp: now };
-        const enabled = items.filter(isEnabled);
+        const enabled = orderedItems.filter(isEnabled);
         if (!enabled.length) return;
         const currentIndex = enabled.findIndex((item) => item.id === currentItemId);
         const startIndex = currentIndex >= 0 ? currentIndex + 1 : 0;
         const ordered = [...enabled.slice(startIndex), ...enabled.slice(0, startIndex)];
         focusItem(ordered.find((item) => item.textValue.toLocaleLowerCase().startsWith(query)));
       },
-      [currentItemId, focusItem, isEnabled, items],
+      [currentItemId, focusItem, isEnabled, orderedItems],
     );
 
     const handleWebKeyDown = React.useCallback(
@@ -623,11 +632,11 @@ export const SelectContent = React.forwardRef<
             break;
           case 'Home':
             event.preventDefault?.();
-            focusItem(items.find(isEnabled));
+            focusItem(orderedItems.find(isEnabled));
             break;
           case 'End':
             event.preventDefault?.();
-            focusItem([...items].reverse().find(isEnabled));
+            focusItem([...orderedItems].reverse().find(isEnabled));
             break;
           case 'Enter':
           case ' ':
@@ -641,7 +650,7 @@ export const SelectContent = React.forwardRef<
             break;
         }
       },
-      [activateCurrent, focusItem, handleTypeahead, isEnabled, items, moveCurrent],
+      [activateCurrent, focusItem, handleTypeahead, isEnabled, moveCurrent, orderedItems],
     );
 
     const registerLayout = React.useCallback((id: string, y: number, height: number) => {
@@ -653,8 +662,8 @@ export const SelectContent = React.forwardRef<
     }, []);
 
     const itemsContext = React.useMemo<SelectItemsContextValue>(
-      () => ({ currentItemId, registerLayout, setCurrentItem }),
-      [currentItemId, registerLayout, setCurrentItem],
+      () => ({ claimOrder, currentItemId, registerLayout, setCurrentItem }),
+      [claimOrder, currentItemId, registerLayout, setCurrentItem],
     );
 
     const viewportMaxHeight = viewportRect ? Math.max(96, viewportRect.height - 16) : 320;
@@ -693,7 +702,7 @@ export const SelectContent = React.forwardRef<
               importantForAccessibility={
                 open && position ? importantForAccessibility : 'no-hide-descendants'
               }
-              nativeID={nativeID ?? contentNativeID}
+              nativeID={contentNativeID}
               onAccessibilityEscape={() => {
                 onAccessibilityEscape?.();
                 if (isTopmost()) setOpen(false);
@@ -758,6 +767,7 @@ export const SelectItem = React.forwardRef<React.ComponentRef<typeof Pressable>,
     const itemsContext = React.useContext(SelectItemsContext);
     if (!itemsContext) throw new Error('SelectItem must be used inside SelectContent.');
     const id = useOverlayId('beeui-select-item');
+    const order = itemsContext.claimOrder();
     const internalRef = React.useRef<SelectFocusableNode | null>(null);
     const inferredText = primitiveText(children);
     const resolvedTextValue = (textValue ?? inferredText ?? value).trim();
@@ -792,11 +802,12 @@ export const SelectItem = React.forwardRef<React.ComponentRef<typeof Pressable>,
         disabled: disabled === true,
         focus: () => internalRef.current?.focus?.(),
         id,
+        order,
         textValue: resolvedTextValue,
         value,
       });
       return () => root.unregisterItem(id);
-    }, [disabled, id, resolvedTextValue, root.registerItem, root.unregisterItem, value]);
+    }, [disabled, id, order, resolvedTextValue, root.registerItem, root.unregisterItem, value]);
 
     return (
       <Pressable
@@ -876,19 +887,19 @@ export const SelectGroup = React.forwardRef<React.ComponentRef<typeof View>, Sel
 
 SelectGroup.displayName = 'SelectGroup';
 
-export type SelectLabelProps = Omit<RNTextProps, 'role'> & {
+export type SelectLabelProps = Omit<RNTextProps, 'nativeID' | 'role'> & {
   className?: string;
 };
 
 export const SelectLabel = React.forwardRef<React.ComponentRef<typeof Text>, SelectLabelProps>(
-  ({ className, nativeID, ...props }, ref) => {
+  ({ className, ...props }, ref) => {
     const group = React.useContext(SelectGroupContext);
     return (
       <Text
         ref={ref}
         {...props}
         className={cn('px-3 py-2 font-semibold text-muted-foreground', className)}
-        nativeID={nativeID ?? group?.labelNativeID}
+        nativeID={group?.labelNativeID}
         variant="label"
       />
     );
