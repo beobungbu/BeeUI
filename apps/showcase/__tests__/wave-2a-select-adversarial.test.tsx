@@ -11,7 +11,7 @@ import {
 } from '@beeui/ui';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
-import { Modal, Platform, Text, UIManager, View } from 'react-native';
+import { Modal, Platform, StyleSheet, Text, UIManager, View } from 'react-native';
 import { OverlayRuntimeProvider } from '../../../packages/ui/src/components/overlay-runtime';
 
 jest.mock('react-native-teleport', () => {
@@ -66,8 +66,8 @@ function anchorNodeMock(element: { props?: { testID?: string } }) {
   };
 }
 
-function layoutSelectContents(screen: ReturnType<typeof render>) {
-  const contents = screen.UNSAFE_getAllByType(View).filter((node) => {
+function getSelectContents(screen: ReturnType<typeof render>) {
+  return screen.UNSAFE_getAllByType(View).filter((node) => {
     const nativeID = node.props.nativeID;
     return (
       typeof nativeID === 'string' &&
@@ -75,20 +75,35 @@ function layoutSelectContents(screen: ReturnType<typeof render>) {
       nativeID.endsWith('-content')
     );
   });
+}
 
-  for (const content of contents) {
+function layoutSelectContents(screen: ReturnType<typeof render>) {
+  for (const content of getSelectContents(screen)) {
     fireEvent(content, 'layout', {
       nativeEvent: { layout: { x: 0, y: 0, width: 260, height: 180 } },
     });
   }
 }
 
-function renderRoot(ui: React.ReactNode) {
+async function settleOpenSelectContents(screen: ReturnType<typeof render>) {
+  await waitFor(() => {
+    layoutSelectContents(screen);
+    const openContents = getSelectContents(screen).filter(
+      (content) => StyleSheet.flatten(content.props.style)?.display !== 'none',
+    );
+    for (const content of openContents) {
+      expect(content.props.pointerEvents).toBe('auto');
+      expect(content.props['aria-hidden']).not.toBe(true);
+    }
+  });
+}
+
+async function renderRoot(ui: React.ReactNode) {
   const screen = render(
     <OverlayRuntimeProvider hostRectOverride={ROOT_RECT}>{ui}</OverlayRuntimeProvider>,
     { createNodeMock: anchorNodeMock },
   );
-  layoutSelectContents(screen);
+  await settleOpenSelectContents(screen);
   return screen;
 }
 
@@ -105,7 +120,7 @@ afterEach(() => {
 describe('Wave 2A Select adversarial contracts', () => {
   it.each([0, 1, 20, 101])('keeps a %i-option list structurally usable', async (count) => {
     const options = Array.from({ length: count }, (_, index) => `option-${index}`);
-    const screen = renderRoot(
+    const screen = await renderRoot(
       <Select defaultOpen>
         <SelectTrigger testID="list-trigger"><SelectValue placeholder="Empty" /></SelectTrigger>
         <SelectContent maxHeight={180} testID="list-content">
@@ -120,8 +135,8 @@ describe('Wave 2A Select adversarial contracts', () => {
     if (count === 0) {
       expect(screen.queryByText('option-0')).toBeNull();
     } else {
-      expect(screen.getByTestId('option-0', { includeHiddenElements: true })).toBeTruthy();
-      expect(screen.getByTestId(`option-${count - 1}`, { includeHiddenElements: true })).toBeTruthy();
+      expect(screen.getByTestId('option-0')).toBeTruthy();
+      expect(screen.getByTestId(`option-${count - 1}`)).toBeTruthy();
     }
   });
 
@@ -142,7 +157,7 @@ describe('Wave 2A Select adversarial contracts', () => {
         </>
       );
     }
-    const screen = renderRoot(<Fixture />);
+    const screen = await renderRoot(<Fixture />);
 
     await waitFor(() => expect(screen.getByTestId('selected-value').props.children).toBe('Apple'));
     fireEvent.press(screen.getByTestId('disable-selected'));
@@ -156,7 +171,7 @@ describe('Wave 2A Select adversarial contracts', () => {
   });
 
   it('survives rapid trigger open/close without mutating selection', async () => {
-    const screen = renderRoot(
+    const screen = await renderRoot(
       <Select defaultValue="apple">
         <SelectTrigger testID="rapid-trigger"><SelectValue testID="rapid-value" /></SelectTrigger>
         <SelectContent>
@@ -188,10 +203,11 @@ describe('Wave 2A Select adversarial contracts', () => {
       );
     }
     const screen = render(<Fixture hostX={0} />, { createNodeMock: anchorNodeMock });
-    layoutSelectContents(screen);
+    await settleOpenSelectContents(screen);
     await waitFor(() => expect(screen.getByTestId('move-value').props.children).toBe('Apple'));
 
     screen.rerender(<Fixture hostX={18} />);
+    await settleOpenSelectContents(screen);
     fireEvent.press(screen.getByTestId('move-banana'));
 
     expect(onValueChange).toHaveBeenCalledWith('banana');
@@ -200,7 +216,7 @@ describe('Wave 2A Select adversarial contracts', () => {
 
   it('treats an explicit controlled value={undefined} as controlled empty selection', async () => {
     const onValueChange = jest.fn();
-    const screen = renderRoot(
+    const screen = await renderRoot(
       <Select defaultOpen value={undefined} onValueChange={onValueChange}>
         <SelectTrigger testID="empty-controlled-trigger">
           <SelectValue placeholder="Nothing selected" testID="empty-controlled-value" />
@@ -245,7 +261,7 @@ describe('Wave 2A Select adversarial contracts', () => {
       );
     }
     const screen = render(<Fixture open />, { createNodeMock });
-    layoutSelectContents(screen);
+    await settleOpenSelectContents(screen);
     await waitFor(() => expect(screen.getByTestId('delayed-trigger').props.accessibilityState.expanded).toBe(true));
 
     fireEvent.press(screen.getByTestId('delayed-banana'));
@@ -260,7 +276,7 @@ describe('Wave 2A Select adversarial contracts', () => {
   it('Android Modal request-close dismisses a dialog-local Select before the Dialog', async () => {
     setPlatform('android');
     setTeleportAvailable(true);
-    const screen = renderRoot(
+    const screen = await renderRoot(
       <Dialog defaultOpen>
         <DialogTrigger testID="dialog-trigger">Open</DialogTrigger>
         <DialogContent>
@@ -285,7 +301,7 @@ describe('Wave 2A Select adversarial contracts', () => {
   it('iOS Dialog request-close closes the Dialog while its Select is open', async () => {
     setPlatform('ios');
     setTeleportAvailable(true);
-    const screen = renderRoot(
+    const screen = await renderRoot(
       <Dialog defaultOpen>
         <DialogTrigger testID="dialog-trigger">Open</DialogTrigger>
         <DialogContent modalProps={{ presentationStyle: 'pageSheet', allowSwipeDismissal: true }}>
