@@ -10,7 +10,12 @@ export const Textarea = React.forwardRef<React.ComponentRef<typeof TextInput>, T
     <Input
       ref={ref}
       {...props}
-      className={cn('h-auto min-h-24 py-3', className)}
+      className={cn(
+        // RN Web no longer derives the previous 4-row intrinsic height from the semantic font utility.
+        // Preserve the canonical 4 x 24px line box + 24px vertical padding + 2px border on web only.
+        'h-auto min-h-24 web:min-h-[122px] py-3',
+        className,
+      )}
       multiline
       numberOfLines={numberOfLines}
       size="md"
