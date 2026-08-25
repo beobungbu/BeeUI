@@ -169,8 +169,21 @@ xcrun simctl install "$SIM_UDID" "$app_path"
 ) &
 METRO_PID=$!
 
+metro_ready() {
+  local host base
+  for host in 127.0.0.1 '[::1]'; do
+    base="http://${host}:8081"
+    if curl -fsS "$base/status" 2>/dev/null | grep -q 'packager-status:running'; then
+      printf '%s' "$base"
+      return 0
+    fi
+  done
+  return 1
+}
+
+METRO_BASE_URL=""
 for _ in $(seq 1 60); do
-  if curl -fsS http://127.0.0.1:8081/status 2>/dev/null | grep -q 'packager-status:running'; then
+  if METRO_BASE_URL="$(metro_ready)"; then
     break
   fi
   if ! kill -0 "$METRO_PID" >/dev/null 2>&1; then
@@ -179,7 +192,13 @@ for _ in $(seq 1 60); do
   fi
   sleep 1
 done
-curl -fsS http://127.0.0.1:8081/status | tee "$ARTIFACT_DIR/metro-status.txt"
+
+if [ -z "$METRO_BASE_URL" ]; then
+  echo "Metro never reported packager-status:running on 127.0.0.1 or [::1]:8081" >&2
+  lsof -nP -iTCP:8081 -sTCP:LISTEN > "$ARTIFACT_DIR/metro-port.txt" 2>&1 || true
+  exit 1
+fi
+curl -fsS "$METRO_BASE_URL/status" | tee "$ARTIFACT_DIR/metro-status.txt"
 
 xcrun simctl io "$SIM_UDID" recordVideo "$ARTIFACT_DIR/sheet-cases.mp4" > "$ARTIFACT_DIR/record-video.log" 2>&1 &
 VIDEO_PID=$!
