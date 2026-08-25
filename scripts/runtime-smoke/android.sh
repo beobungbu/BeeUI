@@ -142,6 +142,11 @@ done
 
 if [ -z "$SERIAL" ] || [ "$(adb_for_device shell getprop sys.boot_completed | tr -d '\r')" != "1" ]; then
   echo "Android emulator did not boot before timeout" >&2
+  if [ "$ANDROID_ACCEL" = "off" ]; then
+    echo "Acceleration is OFF: TCG software emulation of an API 36 image is impractically slow." >&2
+    echo "Enable KVM so the workflow picks hardware acceleration: load kvm_intel/kvm_amd on the host" >&2
+    echo "and, if this runner is containerized, map the device with --device /dev/kvm." >&2
+  fi
   tail -n 100 "$ARTIFACT_DIR/emulator.log" >&2 || true
   exit 1
 fi

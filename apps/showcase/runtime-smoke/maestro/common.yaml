@@ -87,6 +87,10 @@ appId: com.beeui.showcase
 - assertVisible:
     text: "selection: alpha"
 
+- scrollUntilVisible:
+    element:
+      id: "runtime-toast-show"
+    direction: DOWN
 - tapOn:
     id: "runtime-toast-show"
 - assertVisible:
@@ -96,6 +100,10 @@ appId: com.beeui.showcase
 - assertNotVisible:
     text: "Runtime toast"
 
+- scrollUntilVisible:
+    element:
+      id: "runtime-input"
+    direction: DOWN
 - tapOn:
     id: "runtime-input"
 - inputText: "runtime-keyboard"
