@@ -77,8 +77,20 @@ function getSelectContents(screen: ReturnType<typeof render>) {
   });
 }
 
-function layoutSelectContents(screen: ReturnType<typeof render>) {
-  for (const content of getSelectContents(screen)) {
+function getOpenSelectContents(screen: ReturnType<typeof render>) {
+  return getSelectContents(screen).filter(
+    (content) => StyleSheet.flatten(content.props.style)?.display !== 'none',
+  );
+}
+
+function getOpenSelectTriggerCount(screen: ReturnType<typeof render>) {
+  return screen.UNSAFE_getAllByType(View).filter(
+    (node) => node.props.role === 'combobox' && node.props.accessibilityState?.expanded === true,
+  ).length;
+}
+
+function layoutOpenSelectContents(screen: ReturnType<typeof render>) {
+  for (const content of getOpenSelectContents(screen)) {
     fireEvent(content, 'layout', {
       nativeEvent: { layout: { x: 0, y: 0, width: 260, height: 180 } },
     });
@@ -86,11 +98,18 @@ function layoutSelectContents(screen: ReturnType<typeof render>) {
 }
 
 async function settleOpenSelectContents(screen: ReturnType<typeof render>) {
+  const openTriggerCount = getOpenSelectTriggerCount(screen);
+  if (openTriggerCount === 0) return;
+
   await waitFor(() => {
-    layoutSelectContents(screen);
-    const openContents = getSelectContents(screen).filter(
-      (content) => StyleSheet.flatten(content.props.style)?.display !== 'none',
-    );
+    expect(getOpenSelectContents(screen).length).toBeGreaterThanOrEqual(openTriggerCount);
+  });
+
+  layoutOpenSelectContents(screen);
+
+  await waitFor(() => {
+    const openContents = getOpenSelectContents(screen);
+    expect(openContents.length).toBeGreaterThanOrEqual(openTriggerCount);
     for (const content of openContents) {
       expect(content.props.pointerEvents).toBe('auto');
       expect(content.props['aria-hidden']).not.toBe(true);
