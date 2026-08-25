@@ -73,6 +73,10 @@ function renderRoot(ui: React.ReactNode) {
   );
 }
 
+beforeEach(() => {
+  setTeleportAvailable(true);
+});
+
 afterEach(() => {
   (globalThis as { nativeFabricUIManager?: unknown }).nativeFabricUIManager = originalFabric;
   Object.defineProperty(Platform, 'OS', { configurable: true, value: originalPlatformOS });
