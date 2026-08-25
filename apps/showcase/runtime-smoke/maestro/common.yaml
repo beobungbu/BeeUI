@@ -2,8 +2,10 @@ appId: com.beeui.showcase
 ---
 - launchApp:
     clearState: true
-- assertVisible:
-    id: "showcase-home"
+- extendedWaitUntil:
+    timeout: 180000
+    visible:
+      id: "showcase-home"
 
 - tapOn:
     id: "showcase-open-components"

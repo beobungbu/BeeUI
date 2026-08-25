@@ -200,6 +200,12 @@ if [ -z "$METRO_BASE_URL" ]; then
 fi
 curl -fsS "$METRO_BASE_URL/status" | tee "$ARTIFACT_DIR/metro-status.txt"
 
+# Warm the RN bundle so the first launch renders immediately; otherwise the
+# app shows the "Bundling N%..." screen while Maestro's first assertion runs.
+if ! curl -fsS "$METRO_BASE_URL/index.bundle?platform=ios&dev=true" -o /dev/null; then
+  echo "::warning::Bundle warm-up request failed; the first Maestro assertion must absorb cold bundling." >&2
+fi
+
 xcrun simctl io "$SIM_UDID" recordVideo "$ARTIFACT_DIR/sheet-cases.mp4" > "$ARTIFACT_DIR/record-video.log" 2>&1 &
 VIDEO_PID=$!
 
