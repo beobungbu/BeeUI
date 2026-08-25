@@ -31,6 +31,18 @@ if [ -n "$EXPECTED_BASE" ]; then
   fi
 fi
 
+# The Android emulator binds its modem chardev to [::1]; on runners without
+# IPv6 loopback resolution qemu dies before boot ("Unable to connect character
+# device modem: address resolution failed for ::1:<port>"). Fail fast with an
+# actionable message instead of burning the boot timeout.
+if ! getent hosts ::1 >/dev/null 2>&1 \
+  && ! { command -v ip >/dev/null 2>&1 && ip -6 addr show dev lo 2>/dev/null | grep -q 'inet6 ::1'; }; then
+  echo "IPv6 loopback is unavailable on this runner." >&2
+  echo "The Android emulator requires it: qemu binds its modem chardev to [::1] and exits before boot otherwise." >&2
+  echo "Fix the host (e.g. sysctl -w net.ipv6.conf.lo.disable_ipv6=0 and '::1 localhost' in /etc/hosts), then re-run." >&2
+  exit 1
+fi
+
 EMULATOR_PID=""
 METRO_PID=""
 SERIAL=""
@@ -177,8 +189,21 @@ adb_for_device reverse tcp:8081 tcp:8081
 ) &
 METRO_PID=$!
 
+metro_ready() {
+  local host base
+  for host in 127.0.0.1 '[::1]'; do
+    base="http://${host}:8081"
+    if curl -fsS "$base/status" 2>/dev/null | grep -q 'packager-status:running'; then
+      printf '%s' "$base"
+      return 0
+    fi
+  done
+  return 1
+}
+
+METRO_BASE_URL=""
 for _ in $(seq 1 60); do
-  if curl -fsS http://127.0.0.1:8081/status 2>/dev/null | grep -q 'packager-status:running'; then
+  if METRO_BASE_URL="$(metro_ready)"; then
     break
   fi
   if ! kill -0 "$METRO_PID" >/dev/null 2>&1; then
@@ -187,7 +212,13 @@ for _ in $(seq 1 60); do
   fi
   sleep 1 # infrastructure-startup polling only
 done
-curl -fsS http://127.0.0.1:8081/status | tee "$ARTIFACT_DIR/metro-status.txt"
+
+if [ -z "$METRO_BASE_URL" ]; then
+  echo "Metro never reported packager-status:running on 127.0.0.1 or [::1]:8081" >&2
+  ss -ltnp '( sport = :8081 )' > "$ARTIFACT_DIR/metro-port.txt" 2>&1 || true
+  exit 1
+fi
+curl -fsS "$METRO_BASE_URL/status" | tee "$ARTIFACT_DIR/metro-status.txt"
 
 run_maestro() {
   local name="$1" flow="$2"
