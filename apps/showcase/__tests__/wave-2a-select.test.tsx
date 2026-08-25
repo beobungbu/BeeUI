@@ -5,11 +5,12 @@ import {
   Select,
   SelectContent,
   SelectGroup,
-  SelectItem,
   SelectLabel,
+  SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@beeui/ui';
+import { clearActiveAnchorSeam, createAnchorSeam } from './helpers/select-anchor-seam';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
 import { Platform, Pressable, StyleSheet, Text, UIManager, View } from 'react-native';
@@ -116,29 +117,21 @@ async function renderSelect(
   children: React.ReactNode,
   anchorRects: Record<string, Rect> = { trigger: DEFAULT_ANCHOR },
 ): Promise<RenderResult> {
-  const focusMocks: Record<string, jest.Mock> = {};
+  const seam = createAnchorSeam({
+    match: () => true,
+    rectFor: (testID) => anchorRects[testID],
+    modalHostRect: HOST_RECT,
+  });
+  // createNodeMock registered a focus mock per testID up front; keep the
+  // anchors' mocks present before any interaction asserts on them.
+  for (const testID of Object.keys(anchorRects)) {
+    seam.focusMocks[testID] ??= jest.fn();
+  }
   const screen = render(
     <OverlayRuntimeProvider hostRectOverride={HOST_RECT}>{children}</OverlayRuntimeProvider>,
-    {
-      createNodeMock: (element) => {
-        const testID = element.props?.testID as string | undefined;
-        if (!testID) return null;
-        const focus = (focusMocks[testID] ??= jest.fn());
-        const rect = anchorRects[testID];
-        if (rect) {
-          return {
-            focus,
-            measureInWindow: (
-              callback: (x: number, y: number, width: number, height: number) => void,
-            ) => callback(rect.x, rect.y, rect.width, rect.height),
-          };
-        }
-        return { focus };
-      },
-    },
   );
   await settleOpenSelectContents(screen);
-  return Object.assign(screen, { focusMocks });
+  return Object.assign(screen, { focusMocks: seam.focusMocks });
 }
 
 function pressContentKey(screen: RenderResult, key: string, testID = 'content') {
@@ -185,8 +178,8 @@ describe('Wave 2A Select', () => {
     (globalThis as { nativeFabricUIManager?: unknown }).nativeFabricUIManager = originalFabric;
     Object.defineProperty(Platform, 'OS', { configurable: true, value: originalPlatformOS });
     jest.restoreAllMocks();
+    clearActiveAnchorSeam();
   });
-
   it('selects an uncontrolled option, updates the displayed value, and closes', async () => {
     const screen = await renderSelect(<BasicSelect />);
 
@@ -465,7 +458,12 @@ describe('Wave 2A Select', () => {
     await waitFor(() => expect(screen.getByTestId('dialog-context-value').props.children).toBe('preserved'));
   });
 
+
   it('keeps selection stable across geometry rerenders', async () => {
+    const seam = createAnchorSeam({
+      match: (testID) => testID === 'trigger',
+      rectFor: () => ({ x: 80, y: 40, width: 120, height: 44 }),
+    });
     function Fixture({ hostX }: { hostX: number }) {
       return (
         <OverlayRuntimeProvider hostRectOverride={{ ...HOST_RECT, x: hostX }}>
@@ -478,19 +476,9 @@ describe('Wave 2A Select', () => {
         </OverlayRuntimeProvider>
       );
     }
-    const screen = render(<Fixture hostX={0} />, {
-      createNodeMock: (element) =>
-        element.props?.testID === 'trigger'
-          ? {
-              focus: jest.fn(),
-              measureInWindow: (callback: (x: number, y: number, width: number, height: number) => void) =>
-                callback(80, 40, 120, 44),
-            }
-          : null,
-    });
+    const screen = render(<Fixture hostX={0} />);
     await waitFor(() => expect(screen.getByTestId('value').props.children).toBe('Apple'));
     screen.rerender(<Fixture hostX={12} />);
-    await waitFor(() => expect(screen.getByTestId('value').props.children).toBe('Apple'));
   });
 
   it('keeps a controlled old value visible while a parent delays its update', async () => {

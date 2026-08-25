@@ -13,6 +13,7 @@ import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
 import { Modal, Platform, StyleSheet, Text, UIManager, View } from 'react-native';
 import { OverlayRuntimeProvider } from '../../../packages/ui/src/components/overlay-runtime';
+import { clearActiveAnchorSeam, createAnchorSeam } from './helpers/select-anchor-seam';
 
 jest.mock('react-native-teleport', () => {
   const React = require('react');
@@ -57,14 +58,6 @@ function setTeleportAvailable(available: boolean) {
   jest.spyOn(UIManager, 'hasViewManagerConfig').mockReturnValue(available);
 }
 
-function anchorNodeMock(element: { props?: { testID?: string } }) {
-  if (!element.props?.testID?.includes('trigger')) return null;
-  return {
-    focus: jest.fn(),
-    measureInWindow: (callback: (x: number, y: number, width: number, height: number) => void) =>
-      callback(ANCHOR_RECT.x, ANCHOR_RECT.y, ANCHOR_RECT.width, ANCHOR_RECT.height),
-  };
-}
 
 function getSelectContents(screen: ReturnType<typeof render>) {
   return screen.UNSAFE_getAllByType(View).filter((node) => {
@@ -118,9 +111,13 @@ async function settleOpenSelectContents(screen: ReturnType<typeof render>) {
 }
 
 async function renderRoot(ui: React.ReactNode) {
+  const seam = createAnchorSeam({
+    match: (testID) => testID.includes('trigger'),
+    rectFor: () => ANCHOR_RECT,
+    modalHostRect: ROOT_RECT,
+  });
   const screen = render(
     <OverlayRuntimeProvider hostRectOverride={ROOT_RECT}>{ui}</OverlayRuntimeProvider>,
-    { createNodeMock: anchorNodeMock },
   );
   await settleOpenSelectContents(screen);
   return screen;
@@ -134,6 +131,7 @@ afterEach(() => {
   (globalThis as { nativeFabricUIManager?: unknown }).nativeFabricUIManager = originalFabric;
   Object.defineProperty(Platform, 'OS', { configurable: true, value: originalPlatformOS });
   jest.restoreAllMocks();
+  clearActiveAnchorSeam();
 });
 
 describe('Wave 2A Select adversarial contracts', () => {
@@ -221,7 +219,11 @@ describe('Wave 2A Select adversarial contracts', () => {
         </OverlayRuntimeProvider>
       );
     }
-    const screen = render(<Fixture hostX={0} />, { createNodeMock: anchorNodeMock });
+    const seam = createAnchorSeam({
+      match: (testID) => testID.includes('trigger'),
+      rectFor: () => ANCHOR_RECT,
+    });
+    const screen = render(<Fixture hostX={0} />);
     await settleOpenSelectContents(screen);
     await waitFor(() => expect(screen.getByTestId('move-value').props.children).toBe('Apple'));
 
@@ -256,17 +258,11 @@ describe('Wave 2A Select adversarial contracts', () => {
     setPlatform('web');
     const onOpenChange = jest.fn();
     const focus = jest.fn();
-    const createNodeMock = (element: { props?: { testID?: string } }) => {
-      if (element.props?.testID === 'delayed-trigger') {
-        return {
-          focus,
-          measureInWindow: (callback: (x: number, y: number, width: number, height: number) => void) =>
-            callback(ANCHOR_RECT.x, ANCHOR_RECT.y, ANCHOR_RECT.width, ANCHOR_RECT.height),
-        };
-      }
-      if (element.props?.testID) return { focus: jest.fn() };
-      return null;
-    };
+    const seam = createAnchorSeam({
+      match: () => true,
+      rectFor: (testID) => (testID === 'delayed-trigger' ? ANCHOR_RECT : undefined),
+      explicitFocus: { 'delayed-trigger': focus },
+    });
     function Fixture({ open }: { open: boolean }) {
       return (
         <OverlayRuntimeProvider hostRectOverride={ROOT_RECT}>
@@ -279,7 +275,7 @@ describe('Wave 2A Select adversarial contracts', () => {
         </OverlayRuntimeProvider>
       );
     }
-    const screen = render(<Fixture open />, { createNodeMock });
+    const screen = render(<Fixture open />);
     await settleOpenSelectContents(screen);
     await waitFor(() => expect(screen.getByTestId('delayed-trigger').props.accessibilityState.expanded).toBe(true));
 
