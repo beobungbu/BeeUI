@@ -61,6 +61,23 @@ function setTeleportAvailable(available: boolean) {
   jest.spyOn(UIManager, 'hasViewManagerConfig').mockReturnValue(available);
 }
 
+function layoutSelectContents(screen: ReturnType<typeof render>) {
+  const contents = screen.UNSAFE_getAllByType(View).filter((node) => {
+    const nativeID = node.props.nativeID;
+    return (
+      typeof nativeID === 'string' &&
+      nativeID.startsWith('beeui-select-') &&
+      nativeID.endsWith('-content')
+    );
+  });
+
+  for (const content of contents) {
+    fireEvent(content, 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 220, height: 120 } },
+    });
+  }
+}
+
 function renderSelect(
   children: React.ReactNode,
   anchorRects: Record<string, Rect> = { trigger: DEFAULT_ANCHOR },
@@ -86,6 +103,7 @@ function renderSelect(
       },
     },
   );
+  layoutSelectContents(screen);
   return Object.assign(screen, { focusMocks });
 }
 
@@ -271,8 +289,8 @@ describe('Wave 2A Select', () => {
 
   it('dismisses on outside press without changing selection', async () => {
     const screen = renderSelect(<BasicSelect defaultValue="apple" />);
-    await waitFor(() => expect(screen.getByTestId('outside')).toBeTruthy());
-    fireEvent.press(screen.getByTestId('outside'));
+    await waitFor(() => expect(screen.getByTestId('outside', { includeHiddenElements: true })).toBeTruthy());
+    fireEvent.press(screen.getByTestId('outside', { includeHiddenElements: true }));
     expect(screen.getByTestId('trigger').props.accessibilityState.expanded).toBe(false);
     expect(screen.getByTestId('apple', { includeHiddenElements: true }).props.accessibilityState.selected).toBe(true);
   });
