@@ -312,6 +312,7 @@ export function PatternGallery({ onBackToShowcase }: { onBackToShowcase?: () => 
   ) : onBackToShowcase ? (
     <Button
       accessibilityLabel="Back to Showcase home"
+      testID="pattern-gallery-back"
       onPress={onBackToShowcase}
       size="sm"
       variant="ghost"

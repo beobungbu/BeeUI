@@ -379,6 +379,7 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
             <HStack gap="sm">
               <Button
                 accessibilityLabel="Back to Showcase home"
+                testID="component-gallery-back"
                 onPress={onBack}
                 size="sm"
                 variant="ghost"

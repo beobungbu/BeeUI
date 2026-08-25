@@ -12,7 +12,7 @@ appId: com.beeui.showcase
 - assertVisible:
     id: "component-gallery"
 - tapOn:
-    text: "Back"
+    id: "component-gallery-back"
 - assertVisible:
     id: "showcase-home"
 
@@ -21,7 +21,7 @@ appId: com.beeui.showcase
 - assertVisible:
     id: "pattern-gallery"
 - tapOn:
-    text: "Back"
+    id: "pattern-gallery-back"
 - assertVisible:
     id: "showcase-home"
 
