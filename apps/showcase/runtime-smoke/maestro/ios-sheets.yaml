@@ -6,6 +6,7 @@ appId: com.beeui.showcase
     element:
       id: "showcase-open-runtime"
     direction: DOWN
+- waitForAnimationToEnd
 - tapOn:
     id: "showcase-open-runtime"
 - assertVisible:
@@ -19,6 +20,7 @@ appId: com.beeui.showcase
     element:
       id: "runtime-dialog-menu-trigger"
     direction: DOWN
+- waitForAnimationToEnd
 - tapOn:
     id: "runtime-dialog-menu-trigger"
 - assertVisible:
@@ -42,6 +44,7 @@ appId: com.beeui.showcase
     element:
       id: "runtime-over-full-screen-trigger"
     direction: DOWN
+- waitForAnimationToEnd
 - tapOn:
     id: "runtime-over-full-screen-trigger"
 - assertVisible:
@@ -62,6 +65,7 @@ appId: com.beeui.showcase
     element:
       id: "runtime-page-sheet-trigger"
     direction: DOWN
+- waitForAnimationToEnd
 - tapOn:
     id: "runtime-page-sheet-trigger"
 - assertVisible:
@@ -105,6 +109,7 @@ appId: com.beeui.showcase
     element:
       id: "runtime-form-sheet-trigger"
     direction: DOWN
+- waitForAnimationToEnd
 - tapOn:
     id: "runtime-form-sheet-trigger"
 - assertVisible:

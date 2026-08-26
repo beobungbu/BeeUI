@@ -278,6 +278,7 @@ run_inline_maestro reset <<'EOF_FLOW'
     element:
       id: "showcase-open-runtime"
     direction: DOWN
+- waitForAnimationToEnd
 - tapOn:
     id: "showcase-open-runtime"
 - assertVisible:
@@ -317,6 +318,7 @@ run_inline_maestro a3-open <<'EOF_FLOW'
     element:
       id: "runtime-dialog-menu-trigger"
     direction: DOWN
+- waitForAnimationToEnd
 - tapOn:
     id: "runtime-dialog-menu-trigger"
 - assertVisible:
@@ -346,6 +348,7 @@ run_inline_maestro reset-before-a4 <<'EOF_FLOW'
     element:
       id: "showcase-open-runtime"
     direction: DOWN
+- waitForAnimationToEnd
 - tapOn:
     id: "showcase-open-runtime"
 - assertVisible:
@@ -356,6 +359,7 @@ run_inline_maestro a4-open <<'EOF_FLOW'
     element:
       id: "runtime-dialog-popover-trigger"
     direction: DOWN
+- waitForAnimationToEnd
 - tapOn:
     id: "runtime-dialog-popover-trigger"
 - assertVisible:
@@ -385,6 +389,7 @@ run_inline_maestro reset-before-a5 <<'EOF_FLOW'
     element:
       id: "showcase-open-runtime"
     direction: DOWN
+- waitForAnimationToEnd
 - tapOn:
     id: "showcase-open-runtime"
 - assertVisible:
@@ -395,6 +400,7 @@ run_inline_maestro a5-open <<'EOF_FLOW'
     element:
       id: "runtime-alert-trigger"
     direction: DOWN
+- waitForAnimationToEnd
 - tapOn:
     id: "runtime-alert-trigger"
 - assertVisible:
@@ -419,6 +425,7 @@ run_inline_maestro reduced-height <<'EOF_FLOW'
     element:
       id: "showcase-open-runtime"
     direction: DOWN
+- waitForAnimationToEnd
 - tapOn:
     id: "showcase-open-runtime"
 - assertVisible:
@@ -433,6 +440,7 @@ run_inline_maestro reduced-height <<'EOF_FLOW'
     element:
       id: "runtime-scroll-end"
     direction: DOWN
+- waitForAnimationToEnd
 - assertVisible:
     id: "runtime-scroll-end"
 EOF_FLOW
