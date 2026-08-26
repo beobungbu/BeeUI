@@ -198,7 +198,7 @@ adb_for_device reverse tcp:8081 tcp:8081
 
 (
   cd "$SHOWCASE"
-  CI=1 pnpm exec expo start --localhost --port 8081 > "$ARTIFACT_DIR/metro.log" 2>&1
+  NODE_OPTIONS=--dns-result-order=ipv4first CI=1 pnpm exec expo start --localhost --port 8081 > "$ARTIFACT_DIR/metro.log" 2>&1
 ) &
 METRO_PID=$!
 
