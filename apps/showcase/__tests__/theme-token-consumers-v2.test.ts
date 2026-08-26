@@ -1,5 +1,7 @@
 import { cn } from '@beeui/core';
+import { lineHeight } from '@beeui/tokens';
 import { buttonLabelVariants, inputVariants, textVariants } from '@beeui/ui';
+import { getTextareaWebMinHeight } from '../../../packages/ui/src/components/textarea';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
@@ -39,6 +41,13 @@ describe('representative theme/token v2 consumers', () => {
     expect(defaultInput).toContain('leading-6');
     expect(defaultInput).not.toContain('leading-[var(--text-body--line-height)]');
     expect(defaultInput).toContain('text-foreground');
+  });
+
+  it('preserves Textarea numberOfLines geometry on web', () => {
+    expect(getTextareaWebMinHeight(2)).toBe(96);
+    expect(getTextareaWebMinHeight(4)).toBe(lineHeight.body * 4 + 26);
+    expect(getTextareaWebMinHeight(6)).toBe(lineHeight.body * 6 + 26);
+    expect(getTextareaWebMinHeight(6)).toBeGreaterThan(getTextareaWebMinHeight(4));
   });
 
   it('consumes control sizing, touch-target, and focus contracts in Button/Input', () => {
