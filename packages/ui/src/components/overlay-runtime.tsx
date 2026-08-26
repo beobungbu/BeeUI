@@ -518,22 +518,39 @@ export function ModalOverlayHost({
     return () => coordinator.deactivate(dismissStack);
   }, [active, coordinator, depth, dismissStack, transport]);
 
-  if (!transport) return <>{children}</>;
-  const { HostOutlet } = transport;
-  return (
-    <OverlayScopeContext.Provider value={scope}>
+  const HostOutlet = transport?.HostOutlet;
+  const boundary = (
+    <View
+      accessibilityViewIsModal
+      collapsable={false}
+      pointerEvents="box-none"
+      style={StyleSheet.absoluteFill}
+    >
       <OverlayHostScopeProvider hostName={hostName}>{children}</OverlayHostScopeProvider>
-      <View
-        ref={hostRef}
-        accessible={false}
-        collapsable={false}
-        onLayout={handleHostLayout}
-        pointerEvents="box-none"
-        style={[StyleSheet.absoluteFill, styles.host]}
-      />
-      <HostOutlet name={hostName} style={styles.host} />
-    </OverlayScopeContext.Provider>
+    {HostOutlet ? (
+        <>
+          <View
+            ref={hostRef}
+            accessible={false}
+            collapsable={false}
+            onLayout={handleHostLayout}
+            pointerEvents="box-none"
+            style={[StyleSheet.absoluteFill, styles.host]}
+          />
+          <HostOutlet name={hostName} style={styles.host} />
+        </>
+      ) : null}
+    </View>
   );
+
+  // The iOS accessibility modal boundary must contain BOTH the dialog content
+  // and the portal destination: accessibilityViewIsModal prunes sibling
+  // subtrees from the a11y tree, so a boundary drawn around the dialog alone
+  // would hide every anchored overlay opened inside it (#60). The boundary's
+  // own siblings are only the Modal scaffolding. It renders with or without a
+  // transport so the legacy fallback keeps a boundary too.
+  if (!transport) return boundary;
+  return <OverlayScopeContext.Provider value={scope}>{boundary}</OverlayScopeContext.Provider>;
 }
 
 export type UseOverlayDismissableOptions = {

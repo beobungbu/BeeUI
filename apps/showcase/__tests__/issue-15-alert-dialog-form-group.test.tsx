@@ -92,7 +92,7 @@ describe('BeeUI issue #15 alert dialog and form grouping', () => {
 
     const content = screen.getByTestId('alert-content');
     expect(content.props.role).toBe('dialog');
-    expect(content.props.accessibilityViewIsModal).toBe(true);
+    expect(content.props.accessibilityViewIsModal).toBeUndefined(); let a11yBoundary = content.parent; while (a11yBoundary && a11yBoundary.props.accessibilityViewIsModal !== true) { a11yBoundary = a11yBoundary.parent; } expect(a11yBoundary).toBeTruthy();
     expect(content.props.accessibilityLabel).toBe('Delete project');
     expect(content.props.accessibilityHint).toBe('This action cannot be undone.');
     expect(content.props.accessibilityLabelledBy).toMatch(/^beeui-dialog-title-/);
