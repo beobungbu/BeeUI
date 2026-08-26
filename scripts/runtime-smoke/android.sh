@@ -430,6 +430,11 @@ run_inline_maestro reduced-height <<'EOF_FLOW'
     id: "showcase-open-runtime"
 - assertVisible:
     id: "runtime-ready"
+- scrollUntilVisible:
+    element:
+      id: "runtime-input"
+    direction: DOWN
+- waitForAnimationToEnd
 - tapOn:
     id: "runtime-input"
 - inputText: "reduced-height"
