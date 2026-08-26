@@ -29,6 +29,7 @@ appId: com.beeui.showcase
     element:
       id: "showcase-open-runtime"
     direction: DOWN
+- waitForAnimationToEnd
 - tapOn:
     id: "showcase-open-runtime"
 - assertVisible:
@@ -91,6 +92,7 @@ appId: com.beeui.showcase
     element:
       id: "runtime-toast-show"
     direction: DOWN
+- waitForAnimationToEnd
 - tapOn:
     id: "runtime-toast-show"
 - assertVisible:
@@ -104,6 +106,7 @@ appId: com.beeui.showcase
     element:
       id: "runtime-input"
     direction: DOWN
+- waitForAnimationToEnd
 - tapOn:
     id: "runtime-input"
 - inputText: "runtime-keyboard"
@@ -115,5 +118,6 @@ appId: com.beeui.showcase
     element:
       id: "runtime-scroll-end"
     direction: DOWN
+- waitForAnimationToEnd
 - assertVisible:
     id: "runtime-scroll-end"
