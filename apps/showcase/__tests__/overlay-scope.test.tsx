@@ -34,6 +34,7 @@ import {
   type ModalOverlayDismissScope,
   type OverlayDismissController,
 } from '../../../packages/ui/src/components/overlay-runtime';
+import { clearActiveAnchorSeam, createAnchorSeam } from './helpers/anchor-measurement-seam';
 
 // Native portal is mocked to render children inline so the scope/fiber behavior is
 // exercised deterministically (never to bypass scope routing).
@@ -82,6 +83,7 @@ afterEach(() => {
   (globalThis as { nativeFabricUIManager?: unknown }).nativeFabricUIManager = originalFabric;
   Object.defineProperty(Platform, 'OS', { configurable: true, value: originalPlatformOS });
   jest.restoreAllMocks();
+  clearActiveAnchorSeam();
 });
 
 // createNodeMock that returns a fixed window rect for any anchor trigger, so the
@@ -379,19 +381,10 @@ describe('modal-local geometry origin (Blocker 3)', () => {
   const PROBE_ANCHOR = { x: 300, y: 220, width: 40, height: 20 };
 
   function PositionProbe() {
-    // Inject a deterministic measurable anchor — exactly the window rect a real
-    // trigger's measureInWindow provides — so the geometry kernel resolves without
-    // a native measurement pass. This exercises the real scope hostRect wiring, not
-    // a mocked position.
-    const anchorRef = React.useRef<{
-      measureInWindow: (cb: (x: number, y: number, w: number, h: number) => void) => void;
-    } | null>(null);
-    if (anchorRef.current === null) {
-      anchorRef.current = {
-        measureInWindow: (cb) =>
-          cb(PROBE_ANCHOR.x, PROBE_ANCHOR.y, PROBE_ANCHOR.width, PROBE_ANCHOR.height),
-      };
-    }
+    // A real, rendered anchor node (not a hand-rolled ref object) whose
+    // `measureInWindow` is resolved by the shared anchor-measurement seam — this
+    // exercises the real scope hostRect wiring against a real ref, not a mocked one.
+    const anchorRef = React.useRef<React.ComponentRef<typeof View>>(null);
     const { onOverlayLayout, position, windowPosition } = useAnchoredOverlayPosition({
       align: 'start',
       anchorRef,
@@ -408,6 +401,7 @@ describe('modal-local geometry origin (Blocker 3)', () => {
     }, [onOverlayLayout]);
     return (
       <>
+        <View ref={anchorRef} testID="probe-anchor" />
         <Text testID="probe-position">
           {position ? `${Math.round(position.x)},${Math.round(position.y)}` : 'null'}
         </Text>
@@ -419,21 +413,16 @@ describe('modal-local geometry origin (Blocker 3)', () => {
   }
 
   it('positions a modal-local overlay relative to the modal host origin, not the root', async () => {
+    createAnchorSeam({
+      match: (testID) => testID === 'probe-anchor',
+      rectFor: () => PROBE_ANCHOR,
+    });
     const screen = render(
       <OverlayRuntimeProvider hostRectOverride={ROOT_RECT}>
         <ModalOverlayHost hostRectOverride={MODAL_RECT}>
           <PositionProbe />
         </ModalOverlayHost>
       </OverlayRuntimeProvider>,
-      {
-        createNodeMock: (element: { props?: { testID?: string } }) => {
-          if (element.props?.testID !== 'probe-anchor') return null;
-          return {
-            measureInWindow: (cb: (x: number, y: number, w: number, h: number) => void) =>
-              cb(PROBE_ANCHOR.x, PROBE_ANCHOR.y, PROBE_ANCHOR.width, PROBE_ANCHOR.height),
-          };
-        },
-      },
     );
 
     await waitFor(() =>
