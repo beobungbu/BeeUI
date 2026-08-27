@@ -75,6 +75,7 @@ export const semanticColorTokens = [
   'info-foreground',
   'border',
   'border-strong',
+  'control-border',
   'input',
   'focus-ring',
   'disabled',

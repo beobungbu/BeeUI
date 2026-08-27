@@ -19,7 +19,7 @@ const inputVariants = cva(
       },
       invalid: {
         true: 'border-destructive focus:border-destructive',
-        false: 'border-border-strong',
+        false: 'border-control-border',
       },
     },
     defaultVariants: {
@@ -87,7 +87,8 @@ export const Input = React.forwardRef<React.ComponentRef<typeof TextInput>, Inpu
         accessibilityState={{ ...accessibilityState, disabled: resolvedDisabled }}
         className={cn(
           inputVariants({ invalid: resolvedInvalid, size }),
-          resolvedDisabled && 'border-disabled bg-disabled text-disabled-foreground opacity-70',
+          resolvedDisabled &&
+            'border-control-border bg-disabled text-disabled-foreground opacity-70',
           className,
         )}
         cursorColorClassName="accent-primary"

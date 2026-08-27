@@ -50,7 +50,7 @@ describe('representative theme/token v2 consumers', () => {
     expect(getTextareaWebMinHeight(6)).toBeGreaterThan(getTextareaWebMinHeight(4));
   });
 
-  it('consumes control sizing, touch-target, and focus contracts in Button/Input', () => {
+  it('consumes control sizing, touch-target, focus, and boundary contracts in Button/Input', () => {
     for (const utility of [
       'h-control-compact',
       'h-control-default',
@@ -62,6 +62,19 @@ describe('representative theme/token v2 consumers', () => {
       expect(`${buttonSource}\n${inputSource}`).toContain(utility);
     }
     expect(buttonSource).toContain('h-control-icon w-control-icon');
+
+    const defaultInput = inputVariants({ size: 'md', invalid: false });
+    expect(defaultInput).toContain('border-control-border');
+    expect(defaultInput).not.toContain('border-border-strong');
+    expect(defaultInput).toContain('focus:border-focus-ring');
+
+    const invalidInput = inputVariants({ size: 'md', invalid: true });
+    expect(invalidInput).toContain('border-destructive');
+    expect(invalidInput).toContain('focus:border-destructive');
+
+    expect(inputSource).toContain(
+      "'border-control-border bg-disabled text-disabled-foreground opacity-70'",
+    );
   });
 
   it('uses explicit semantic filled Button interaction states instead of active opacity', () => {
