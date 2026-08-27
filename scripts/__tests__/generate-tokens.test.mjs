@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import {
   generateTokenArtifacts,
   loadCanonicalTokens,
+  parseCanonicalJson,
   validateCanonicalTokens,
 } from '../generate-tokens.mjs';
 
@@ -33,6 +34,13 @@ test('generation is deterministic and contains no environment-specific data', ()
   }
 });
 
+test('raw canonical JSON rejects duplicate object keys before JSON overwrite', () => {
+  assert.throws(
+    () => parseCanonicalJson('{"tokens":{"body":1,"body":2}}', 'duplicate-key-fixture'),
+    /duplicate JSON key "body"/,
+  );
+});
+
 test('one canonical mutation propagates to both TypeScript and CSS outputs', () => {
   const mutated = structuredClone(source);
   mutated.tokens.fontSize.body.$value.value = 17;
@@ -40,6 +48,16 @@ test('one canonical mutation propagates to both TypeScript and CSS outputs', () 
 
   assert.match(artifacts.get('packages/tokens/src/index.ts'), /"body": 17/);
   assert.match(artifacts.get('packages/tokens/src/theme.css'), /--text-body: 1\.0625rem;/);
+});
+
+test('font-size and line-height roles must stay exactly aligned', () => {
+  const missing = structuredClone(source);
+  delete missing.tokens.lineHeight.body;
+  assert.throws(() => validateCanonicalTokens(missing), /lineHeight roles/);
+
+  const extra = structuredClone(source);
+  extra.tokens.lineHeight.extra = { $value: { value: 48, unit: 'px' } };
+  assert.throws(() => validateCanonicalTokens(extra), /lineHeight roles/);
 });
 
 test('every runtime theme implements the exact unique semantic vocabulary', () => {
