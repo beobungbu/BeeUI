@@ -58,10 +58,12 @@ appId: com.beeui.showcase
     id: "runtime-over-full-screen-popover-close"
 - tapOn:
     id: "runtime-over-full-screen-close"
-# Let the modal's native dismiss (and its accessibility hit-test rebuild)
-# settle before the next tap, as a real user would; tapping mid-dismiss
-# lands on the closing view and is swallowed.
+# Wait for the dialog's native presentation to actually finish dismissing -
+# not just the JS state flip - before proceeding, as a real user would;
+# tapping mid-dismiss lands on the closing view and is swallowed.
 - waitForAnimationToEnd
+- assertNotVisible:
+    id: "runtime-over-full-screen-content"
 - assertVisible:
     text: "overFullScreen state: closed"
 
@@ -70,8 +72,12 @@ appId: com.beeui.showcase
       id: "runtime-page-sheet-trigger"
     direction: DOWN
 - waitForAnimationToEnd
+# A real user who taps right as the previous sheet is still settling and
+# sees nothing happen simply taps again; mirror that instead of masking a
+# residual swallowed-tap race with a blind sleep.
 - tapOn:
     id: "runtime-page-sheet-trigger"
+    retryTapIfNoChange: true
 - assertVisible:
     id: "runtime-page-sheet-content"
 - assertVisible:
@@ -109,7 +115,9 @@ appId: com.beeui.showcase
 - assertVisible:
     text: "pageSheet requestClose: 1"
 
-# Same settle after the swipe-dismiss before opening the next sheet.
+# Same settle after the swipe-dismiss before opening the next sheet; the
+# preceding assertNotVisible on runtime-page-sheet-content above already
+# waited for the real native dismiss, so mirror the same resilient tap.
 - waitForAnimationToEnd
 - scrollUntilVisible:
     element:
@@ -118,6 +126,7 @@ appId: com.beeui.showcase
 - waitForAnimationToEnd
 - tapOn:
     id: "runtime-form-sheet-trigger"
+    retryTapIfNoChange: true
 - assertVisible:
     id: "runtime-form-sheet-content"
 - tapOn:
