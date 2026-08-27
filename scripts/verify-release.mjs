@@ -25,7 +25,11 @@ const packageSpecs = [
   {
     name: '@beeui/tokens',
     dir: 'packages/tokens',
-    requiredPackedFiles: ['package/src/index.ts', 'package/src/theme.css'],
+    requiredPackedFiles: [
+      'package/src/index.ts',
+      'package/src/theme.css',
+      'package/src/tokens.json',
+    ],
   },
   {
     name: '@beeui/ui',
@@ -146,6 +150,9 @@ function writeReport(status, error = null) {
 try {
   const rootPackage = readJson(path.join(ROOT_DIR, 'package.json'));
   rootVersion = rootPackage.version;
+
+  run('node', ['./scripts/generate-tokens.mjs', '--check']);
+  record('generated token artifacts are current');
 
   assert(rootPackage.private === true, 'workspace root remains private');
   assert(typeof rootVersion === 'string' && /^0\.\d+\.\d+$/.test(rootVersion), 'workspace uses a pre-1.0 semver version', rootVersion);

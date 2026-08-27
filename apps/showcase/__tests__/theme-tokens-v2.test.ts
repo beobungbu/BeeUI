@@ -10,14 +10,20 @@ import {
   defineSemanticColorOverrides,
   elevation,
   focusRing,
+  fontFamily,
   fontSize,
+  fontWeight,
   getBeeThemeSelection,
   iconSize,
+  letterSpacing,
   lineHeight,
   motionDuration,
+  motionEasing,
+  radius,
   resolveBeeRuntimeTheme,
   semanticColorTokens,
   semanticColorVariable,
+  spacing,
   type BeeRuntimeThemeName,
   type SemanticColorOverrides,
   type SemanticColorToken,
@@ -27,6 +33,26 @@ const themeCss = fs.readFileSync(
   path.resolve(__dirname, '../../../packages/tokens/src/theme.css'),
   'utf8',
 );
+const canonicalTokens = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, '../../../packages/tokens/tokens.json'), 'utf8'),
+);
+
+function canonicalValues(group: Record<string, { $value: unknown }>) {
+  return Object.fromEntries(
+    Object.entries(group)
+      .filter(([name]) => !name.startsWith('$'))
+      .map(([name, token]) => [name, token.$value]),
+  );
+}
+
+function canonicalDimensionValues(group: Record<string, { $value: { value: number } }>) {
+  return Object.fromEntries(
+    Object.entries(canonicalValues(group)).map(([name, value]) => [
+      name,
+      (value as { value: number }).value,
+    ]),
+  );
+}
 
 const legacySemanticColorContract = [
   'background',
@@ -165,9 +191,17 @@ describe('theme/token system v2', () => {
     expect(beeRuntimeThemeNames).toEqual(['light', 'dark', 'violet-light', 'violet-dark']);
 
     for (const theme of beeRuntimeThemeNames) {
-      const { entries } = colorVariables(extractVariant(themeCss, theme));
+      const { entries, values } = colorVariables(extractVariant(themeCss, theme));
       expect(entries.map(([name]) => name).sort()).toEqual([...semanticColorTokens].sort());
       expect(new Set(entries.map(([name]) => name)).size).toBe(semanticColorTokens.length);
+      expect(Object.fromEntries(values)).toEqual(
+        Object.fromEntries(
+          Object.entries(canonicalTokens.themes[theme].colors).map(([name, token]) => [
+            name,
+            (token as { $value: string }).$value,
+          ]),
+        ),
+      );
     }
   });
 
@@ -191,15 +225,22 @@ describe('theme/token system v2', () => {
   });
 
   it('exports the intentional v2 sizing, type, elevation, motion, and focus contracts', () => {
+    expect(spacing).toEqual(canonicalDimensionValues(canonicalTokens.tokens.spacing));
+    expect(radius).toEqual(canonicalDimensionValues(canonicalTokens.tokens.radius));
+    expect(fontFamily).toEqual(canonicalValues(canonicalTokens.tokens.fontFamily));
     expect(fontSize).toEqual({ caption: 12, label: 14, body: 16, heading: 18, title: 24, display: 32 });
     expect(lineHeight).toEqual({ caption: 16, label: 20, body: 24, heading: 24, title: 32, display: 40 });
+    expect(fontWeight).toEqual(canonicalValues(canonicalTokens.tokens.fontWeight));
+    expect(letterSpacing).toEqual(canonicalDimensionValues(canonicalTokens.tokens.letterSpacing));
     expect(controlSize).toEqual({ compact: 36, default: 44, large: 48, icon: 44, touchTarget: 44 });
     expect(iconSize).toEqual({ xs: 12, sm: 16, md: 20, lg: 24 });
     expect(avatarSize).toEqual({ sm: 32, md: 40, lg: 48, xl: 64 });
     expect(contentWidth).toEqual({ form: 512, reading: 704, page: 1152, dialog: 512 });
+    expect(elevation).toEqual(canonicalValues(canonicalTokens.tokens.elevation));
     expect(elevation.raised.nativeElevation).toBe(2);
     expect(elevation.overlay.nativeElevation).toBe(8);
     expect(motionDuration).toEqual({ fast: 120, normal: 200, slow: 320 });
+    expect(motionEasing).toEqual(canonicalValues(canonicalTokens.tokens.motionEasing));
     expect(focusRing).toMatchObject({ width: 2, offset: 2, colorToken: 'focus-ring' });
     expect(controlSize.touchTarget).toBeGreaterThanOrEqual(44);
   });

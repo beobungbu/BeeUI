@@ -1,3 +1,8 @@
+/* AUTO-GENERATED — DO NOT EDIT DIRECTLY.
+ * Canonical source: packages/tokens/tokens.json
+ * Generator: scripts/generate-tokens.mjs
+ */
+
 @custom-variant violet-light (&:where(.violet-light, .violet-light *));
 @custom-variant violet-dark (&:where(.violet-dark, .violet-dark *));
 

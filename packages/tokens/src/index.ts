@@ -1,24 +1,39 @@
-export const beeThemeNames = ['light', 'dark'] as const;
+// AUTO-GENERATED — DO NOT EDIT DIRECTLY.
+// Canonical source: packages/tokens/tokens.json
+// Generator: scripts/generate-tokens.mjs
+
+export const beeThemeNames = [
+  "light",
+  "dark"
+] as const;
 
 export type BeeThemeName = (typeof beeThemeNames)[number];
 
-export const beeBrandNames = ['bee', 'violet'] as const;
+export const beeBrandNames = [
+  "bee",
+  "violet"
+] as const;
 
 export type BeeBrandName = (typeof beeBrandNames)[number];
 
-export const beeRuntimeThemeNames = ['light', 'dark', 'violet-light', 'violet-dark'] as const;
+export const beeRuntimeThemeNames = [
+  "light",
+  "dark",
+  "violet-light",
+  "violet-dark"
+] as const;
 
 export type BeeRuntimeThemeName = (typeof beeRuntimeThemeNames)[number];
 
 export const beeRuntimeThemeByBrand = {
-  bee: {
-    light: 'light',
-    dark: 'dark',
+  "bee": {
+    "light": "light",
+    "dark": "dark"
   },
-  violet: {
-    light: 'violet-light',
-    dark: 'violet-dark',
-  },
+  "violet": {
+    "light": "violet-light",
+    "dark": "violet-dark"
+  }
 } as const satisfies Record<BeeBrandName, Record<BeeThemeName, BeeRuntimeThemeName>>;
 
 export function resolveBeeRuntimeTheme(
@@ -47,40 +62,40 @@ export function isBeeDarkRuntimeTheme(runtimeTheme: string) {
 }
 
 export const semanticColorTokens = [
-  'background',
-  'foreground',
-  'surface',
-  'surface-muted',
-  'surface-raised',
-  'muted',
-  'muted-foreground',
-  'subtle-foreground',
-  'primary',
-  'primary-foreground',
-  'primary-hover',
-  'primary-pressed',
-  'secondary',
-  'secondary-foreground',
-  'secondary-hover',
-  'secondary-pressed',
-  'destructive',
-  'destructive-foreground',
-  'destructive-hover',
-  'destructive-pressed',
-  'success',
-  'success-foreground',
-  'warning',
-  'warning-foreground',
-  'info',
-  'info-foreground',
-  'border',
-  'border-strong',
-  'control-border',
-  'input',
-  'focus-ring',
-  'disabled',
-  'disabled-foreground',
-  'overlay',
+  "background",
+  "foreground",
+  "surface",
+  "surface-muted",
+  "surface-raised",
+  "muted",
+  "muted-foreground",
+  "subtle-foreground",
+  "primary",
+  "primary-foreground",
+  "primary-hover",
+  "primary-pressed",
+  "secondary",
+  "secondary-foreground",
+  "secondary-hover",
+  "secondary-pressed",
+  "destructive",
+  "destructive-foreground",
+  "destructive-hover",
+  "destructive-pressed",
+  "success",
+  "success-foreground",
+  "warning",
+  "warning-foreground",
+  "info",
+  "info-foreground",
+  "border",
+  "border-strong",
+  "control-border",
+  "input",
+  "focus-ring",
+  "disabled",
+  "disabled-foreground",
+  "overlay"
 ] as const;
 
 export type SemanticColorToken = (typeof semanticColorTokens)[number];
@@ -98,28 +113,28 @@ export function defineSemanticColorOverrides<const T extends SemanticColorOverri
 }
 
 export const spacing = {
-  0: 0,
-  1: 4,
-  2: 8,
-  '2.5': 10,
-  3: 12,
-  4: 16,
-  5: 20,
-  6: 24,
-  8: 32,
-  10: 40,
-  12: 48,
-  16: 64,
+  "0": 0,
+  "1": 4,
+  "2": 8,
+  "3": 12,
+  "4": 16,
+  "5": 20,
+  "6": 24,
+  "8": 32,
+  "10": 40,
+  "12": 48,
+  "16": 64,
+  "2.5": 10
 } as const;
 
 export const radius = {
-  xs: 4,
-  sm: 6,
-  md: 10,
-  lg: 14,
-  xl: 18,
-  '2xl': 24,
-  full: 9999,
+  "xs": 4,
+  "sm": 6,
+  "md": 10,
+  "lg": 14,
+  "xl": 18,
+  "2xl": 24,
+  "full": 9999
 } as const;
 
 /**
@@ -127,104 +142,104 @@ export const radius = {
  * font-family utility until the consuming app loads and names a cross-platform font.
  */
 export const fontFamily = {
-  sans: 'system',
+  "sans": "system"
 } as const;
 
 export const fontSize = {
-  caption: 12,
-  label: 14,
-  body: 16,
-  heading: 18,
-  title: 24,
-  display: 32,
+  "caption": 12,
+  "label": 14,
+  "body": 16,
+  "heading": 18,
+  "title": 24,
+  "display": 32
 } as const;
 
 export const lineHeight = {
-  caption: 16,
-  label: 20,
-  body: 24,
-  heading: 24,
-  title: 32,
-  display: 40,
+  "caption": 16,
+  "label": 20,
+  "body": 24,
+  "heading": 24,
+  "title": 32,
+  "display": 40
 } as const;
 
 export const fontWeight = {
-  regular: 400,
-  medium: 500,
-  semibold: 600,
-  bold: 700,
+  "regular": 400,
+  "medium": 500,
+  "semibold": 600,
+  "bold": 700
 } as const;
 
 export const letterSpacing = {
-  normal: 0,
-  tight: -0.2,
+  "normal": 0,
+  "tight": -0.2
 } as const;
 
 export type TypographyRole = keyof typeof fontSize;
 
 export const controlSize = {
-  compact: 36,
-  default: 44,
-  large: 48,
-  icon: 44,
-  touchTarget: 44,
+  "compact": 36,
+  "default": 44,
+  "large": 48,
+  "icon": 44,
+  "touchTarget": 44
 } as const;
 
 export const iconSize = {
-  xs: 12,
-  sm: 16,
-  md: 20,
-  lg: 24,
+  "xs": 12,
+  "sm": 16,
+  "md": 20,
+  "lg": 24
 } as const;
 
 export const avatarSize = {
-  sm: 32,
-  md: 40,
-  lg: 48,
-  xl: 64,
+  "sm": 32,
+  "md": 40,
+  "lg": 48,
+  "xl": 64
 } as const;
 
 export const contentWidth = {
-  form: 512,
-  reading: 704,
-  page: 1152,
-  dialog: 512,
+  "form": 512,
+  "reading": 704,
+  "page": 1152,
+  "dialog": 512
 } as const;
 
 export const elevation = {
-  flat: {
-    web: 'none',
-    nativeElevation: 0,
+  "flat": {
+    "web": "none",
+    "nativeElevation": 0
   },
-  raised: {
-    web: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
-    nativeElevation: 2,
+  "raised": {
+    "web": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+    "nativeElevation": 2
   },
-  overlay: {
-    web: '0 16px 40px rgb(16 24 40 / 0.18)',
-    nativeElevation: 8,
-  },
+  "overlay": {
+    "web": "0 16px 40px rgb(16 24 40 / 0.18)",
+    "nativeElevation": 8
+  }
 } as const;
 
 export type ElevationLevel = keyof typeof elevation;
 
 export const motionDuration = {
-  fast: 120,
-  normal: 200,
-  slow: 320,
+  "fast": 120,
+  "normal": 200,
+  "slow": 320
 } as const;
 
 export const motionEasing = {
-  standard: 'cubic-bezier(0.2, 0, 0, 1)',
-  emphasized: 'cubic-bezier(0.2, 0, 0, 1.2)',
+  "standard": "cubic-bezier(0.2, 0, 0, 1)",
+  "emphasized": "cubic-bezier(0.2, 0, 0, 1.2)"
 } as const;
 
 export const focusRing = {
-  width: 2,
-  offset: 2,
-  colorToken: 'focus-ring',
-  webVisibility: 'focus-visible',
-  nativeVisibility: 'platform-focus',
+  "width": 2,
+  "offset": 2,
+  "colorToken": "focus-ring",
+  "webVisibility": "focus-visible",
+  "nativeVisibility": "platform-focus"
 } as const satisfies {
   width: number;
   offset: number;

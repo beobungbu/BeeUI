@@ -4,6 +4,27 @@ BeeUI's theme contract is semantic. Components ask for intent such as `surface`,
 
 The implementation remains **Uniwind + Tailwind CSS v4**. `@beeui/tokens` defines the vocabulary and the CSS theme variables; it is not a second styling engine, runtime CSS-in-JS layer, compiler, or component-theme object system.
 
+## Canonical source and generated artifacts
+
+`packages/tokens/tokens.json` is the only authored source for token values. Its DTCG-shaped `$type`, `$value`, and `$description` fields keep the current schema small while leaving room for later tooling interoperability. This PR does not introduce the primitive-to-semantic alias architecture tracked by #70.
+
+The deterministic build-time generator is `scripts/generate-tokens.mjs`. It commits three consumer-ready outputs:
+
+- `packages/tokens/src/index.ts`: the existing public TypeScript API;
+- `packages/tokens/src/theme.css`: Tailwind v4 variables and Uniwind runtime themes;
+- `packages/tokens/src/tokens.json`: a distributable machine-readable artifact.
+
+All three files begin with generated ownership metadata and must never be edited manually. To add or change a token:
+
+1. edit only `packages/tokens/tokens.json`;
+2. run `pnpm tokens:generate`;
+3. review all generated changes and run `pnpm tokens:check` plus the normal test/visual gates;
+4. commit the canonical source and generated artifacts together.
+
+`pnpm tokens:check` performs a read-only byte comparison. CI runs it explicitly, typecheck also guards it, and release verification refuses to package stale artifacts. Generation uses no network, timestamp, absolute path, or platform-specific shell behavior, so a clean checkout produces byte-identical output.
+
+Uniwind remains the runtime theme engine. Code generation changes build-time authoring ownership only; it does not add a runtime theme store, runtime reader, scoped theme system, or non-color override layer. Work tracked by #67, #68, and #70+ must extend the canonical schema and generator deliberately instead of hand-editing generated files or creating another runtime authority.
+
 ## Current inventory and v1 gaps
 
 The pre-v2 token package already exposed 30 public semantic color names plus spacing and radius scales. The light and dark CSS themes implemented those color names directly. Raw palette colors were CSS implementation values rather than public palette exports.
@@ -30,11 +51,11 @@ This inventory intentionally does **not** produce an exhaustive scale. A mono fo
 The existing semantic color token names remain the public color contract:
 
 - foundations: `background`, `foreground`, `surface`, `surface-muted`, `surface-raised`, `muted`, `muted-foreground`, `subtle-foreground`;
-- actions: `primary`, `primary-foreground`, `primary-hover`, `primary-pressed`, `secondary`, `secondary-foreground`, `secondary-hover`;
-- feedback: `destructive`, `success`, `warning`, `info` and their `*-foreground` counterparts;
-- structure/input: `border`, `border-strong`, `input`, `focus-ring`, `disabled`, `disabled-foreground`, `overlay`.
+- actions: `primary`, `primary-foreground`, `primary-hover`, `primary-pressed`, `secondary`, `secondary-foreground`, `secondary-hover`, `secondary-pressed`;
+- feedback: `destructive`, `destructive-hover`, `destructive-pressed`, `success`, `warning`, `info` and their `*-foreground` counterparts;
+- structure/input: `border`, `border-strong`, `control-border`, `input`, `focus-ring`, `disabled`, `disabled-foreground`, `overlay`.
 
-Raw hex values may exist inside `theme.css`, but component APIs and reusable component source should not expose or depend on palette names such as `blue500` or `gray200`.
+Raw hex values are authored only in the canonical source and emitted into `theme.css`; component APIs and reusable component source should not expose or depend on palette names such as `blue500` or `gray200`.
 
 ## Typography
 
@@ -215,10 +236,10 @@ Do **not** mechanically replace every occurrence of `h-11`, `max-w-lg`, or `shad
 
 ## Extending a theme
 
-1. Start from the complete `semanticColorTokens` set.
-2. Define all semantic values for both light and dark appearances.
-3. Register custom runtime names with Uniwind `extraThemes`.
-4. Add the names to the application mapping; keep components brand-blind.
+1. Edit `packages/tokens/tokens.json` and start from its complete `semanticColors` vocabulary.
+2. Define all semantic values for both light and dark appearances in the canonical source.
+3. Add the runtime/brand mapping there, regenerate, and register custom runtime names with Uniwind `extraThemes`.
+4. Keep components brand-blind; never edit generated `index.ts`, `theme.css`, or `tokens.json` directly.
 5. Run token completeness and representative contrast tests.
 6. Run Component Gallery and the complete 5 viewport × 2 appearance × 37 screen Pattern Gallery acceptance matrix.
 7. Validate native export/runtime behavior for any platform-sensitive styling change.
