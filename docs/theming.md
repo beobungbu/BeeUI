@@ -6,13 +6,13 @@ The implementation remains **Uniwind + Tailwind CSS v4**. `@beeui/tokens` define
 
 ## Canonical source and generated artifacts
 
-`packages/tokens/tokens.json` is the only authored source for token values. Its DTCG-shaped `$type`, `$value`, and `$description` fields keep the current schema small while leaving room for later tooling interoperability. This PR does not introduce the primitive-to-semantic alias architecture tracked by #70.
+`packages/tokens/tokens.json` is the only authored source for token values. Its `$type`, `$value`, and `$description` fields are intentionally DTCG-shaped, but the current BeeUI schema is **not claimed to be fully DTCG 2025.10 interoperable**: BeeUI still carries cross-platform representations such as web/native elevation and CSS easing strings that do not use every normative DTCG value shape. Full primitive-to-semantic aliasing and stricter interchange-format evolution remain tracked by #70.
 
 The deterministic build-time generator is `scripts/generate-tokens.mjs`. It commits three consumer-ready outputs:
 
 - `packages/tokens/src/index.ts`: the existing public TypeScript API;
 - `packages/tokens/src/theme.css`: Tailwind v4 variables and Uniwind runtime themes;
-- `packages/tokens/src/tokens.json`: a distributable machine-readable artifact.
+- `packages/tokens/src/tokens.json`: a distributable machine-readable BeeUI artifact.
 
 All three files begin with generated ownership metadata and must never be edited manually. To add or change a token:
 
@@ -21,7 +21,7 @@ All three files begin with generated ownership metadata and must never be edited
 3. review all generated changes and run `pnpm tokens:check` plus the normal test/visual gates;
 4. commit the canonical source and generated artifacts together.
 
-`pnpm tokens:check` performs a read-only byte comparison. CI runs it explicitly, typecheck also guards it, and release verification refuses to package stale artifacts. Generation uses no network, timestamp, absolute path, or platform-specific shell behavior, so a clean checkout produces byte-identical output.
+`pnpm tokens:check` performs a read-only byte comparison. CI runs it explicitly, typecheck also guards it, and release verification refuses to package stale artifacts. Canonical JSON is parsed with duplicate-key detection before values can be overwritten, and typography generation requires exact `fontSize`/`lineHeight` role parity. Generation uses no network, timestamp, absolute path, or platform-specific shell behavior, so a clean checkout produces byte-identical output.
 
 Uniwind remains the runtime theme engine. Code generation changes build-time authoring ownership only; it does not add a runtime theme store, runtime reader, scoped theme system, or non-color override layer. Work tracked by #67, #68, and #70+ must extend the canonical schema and generator deliberately instead of hand-editing generated files or creating another runtime authority.
 
