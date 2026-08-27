@@ -61,6 +61,30 @@ const legacySemanticColorContract = [
   'overlay',
 ] as const satisfies readonly SemanticColorToken[];
 
+const addedFilledActionStateTokens = [
+  'secondary-pressed',
+  'destructive-hover',
+  'destructive-pressed',
+] as const satisfies readonly SemanticColorToken[];
+
+const filledActionContrastContract = [
+  {
+    foreground: 'primary-foreground',
+    backgrounds: ['primary', 'primary-hover', 'primary-pressed'],
+  },
+  {
+    foreground: 'secondary-foreground',
+    backgrounds: ['secondary', 'secondary-hover', 'secondary-pressed'],
+  },
+  {
+    foreground: 'destructive-foreground',
+    backgrounds: ['destructive', 'destructive-hover', 'destructive-pressed'],
+  },
+] as const satisfies readonly {
+  foreground: SemanticColorToken;
+  backgrounds: readonly SemanticColorToken[];
+}[];
+
 function extractVariant(css: string, name: string) {
   const marker = `@variant ${name} {`;
   const markerIndex = css.indexOf(marker);
@@ -106,8 +130,12 @@ function contrastRatio(left: string, right: string) {
 }
 
 describe('theme/token system v2', () => {
-  it('preserves the existing public semantic color vocabulary', () => {
-    expect(semanticColorTokens).toEqual(legacySemanticColorContract);
+  it('preserves every legacy semantic color while adding the minimum filled-action states', () => {
+    expect(semanticColorTokens).toEqual(expect.arrayContaining(legacySemanticColorContract));
+    expect(semanticColorTokens).toEqual(expect.arrayContaining(addedFilledActionStateTokens));
+    expect(semanticColorTokens).toHaveLength(
+      legacySemanticColorContract.length + addedFilledActionStateTokens.length,
+    );
     expect(new Set(semanticColorTokens).size).toBe(semanticColorTokens.length);
   });
 
@@ -201,7 +229,7 @@ describe('theme/token system v2', () => {
     }
   });
 
-  it.each(beeRuntimeThemeNames)('%s meets representative text, status, and focus contrast targets', (theme) => {
+  it.each(beeRuntimeThemeNames)('%s meets representative text, status, focus, and filled-action contrast targets', (theme) => {
     const { values } = colorVariables(extractVariant(themeCss, theme));
     const color = (name: SemanticColorToken) => {
       const value = values.get(name);
@@ -213,7 +241,13 @@ describe('theme/token system v2', () => {
     expect(contrastRatio(color('muted-foreground'), color('background'))).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio(color('focus-ring'), color('background'))).toBeGreaterThanOrEqual(3);
 
-    for (const role of ['primary', 'destructive', 'success', 'warning', 'info'] as const) {
+    for (const { foreground, backgrounds } of filledActionContrastContract) {
+      for (const background of backgrounds) {
+        expect(contrastRatio(color(background), color(foreground))).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+
+    for (const role of ['success', 'warning', 'info'] as const) {
       expect(contrastRatio(color(role), color(`${role}-foreground`))).toBeGreaterThanOrEqual(4.5);
     }
   });

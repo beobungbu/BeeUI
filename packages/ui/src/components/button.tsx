@@ -11,19 +11,19 @@ import {
 import { semanticTypographyClasses, Text } from './text';
 
 const buttonVariants = cva(
-  'flex-row items-center justify-center gap-2 rounded-md border active:opacity-90 web:focus-visible:bee-focus-ring',
+  'flex-row items-center justify-center gap-2 rounded-md border web:focus-visible:bee-focus-ring',
   {
     variants: {
       variant: {
         primary:
           'border-primary bg-primary active:bg-primary-pressed web:hover:bg-primary-hover',
         secondary:
-          'border-secondary bg-secondary active:opacity-80 web:hover:bg-secondary-hover',
+          'border-secondary bg-secondary active:bg-secondary-pressed web:hover:bg-secondary-hover',
         outline:
           'border-border-strong bg-surface active:bg-muted web:hover:bg-surface-muted',
         ghost: 'border-transparent bg-transparent active:bg-muted web:hover:bg-surface-muted',
         destructive:
-          'border-destructive bg-destructive active:opacity-80 web:hover:opacity-90',
+          'border-destructive bg-destructive active:bg-destructive-pressed web:hover:bg-destructive-hover',
       },
       size: {
         sm: 'h-control-compact px-3 ios:min-h-touch-target android:min-h-touch-target',
