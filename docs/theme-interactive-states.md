@@ -60,7 +60,7 @@ Reusable Button source must not branch on Bee/Violet identity and must not intro
 
 This is an additive semantic-token change. Existing public token names and Button props are preserved.
 
-Two existing state values change intentionally to satisfy the contract while preserving default Button appearance:
+Three existing state values change intentionally to satisfy the contract while preserving default Button appearance:
 
 - Bee-light primary hover becomes `#e58a05` and primary pressed becomes the previous hover value `#d97706`; the old pressed `#b45309` could not reach 4.5:1 with the current dark foreground.
 - Violet-dark primary pressed becomes `#9066f4`; the previous `#8b5cf6` measured below 4.5:1 against `primary-foreground`.
