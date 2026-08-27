@@ -23,7 +23,7 @@ All three files begin with generated ownership metadata and must never be edited
 
 `pnpm tokens:check` performs a read-only byte comparison. CI runs it explicitly, typecheck also guards it, and release verification refuses to package stale artifacts. Canonical JSON is parsed with duplicate-key detection before values can be overwritten, and typography generation requires exact `fontSize`/`lineHeight` role parity. Generation uses no network, timestamp, absolute path, or platform-specific shell behavior, so a clean checkout produces byte-identical output.
 
-Raw JSON object-key uniqueness is part of the source contract: duplicate authored keys are rejected before parsing can silently overwrite an earlier value. This applies to token names and any future alias/object vocabulary expressed as JSON keys.
+Raw JSON object-key uniqueness is part of the source contract: duplicate authored keys are rejected before parsing can silently overwrite an earlier value. This applies to token names and any future alias/object vocabulary expressed as JSON keys. Typography roles are also structural: `fontSize` and `lineHeight` must expose the exact same role set, so generation cannot emit missing/`NaN` CSS line heights or TS-only extras.
 
 Uniwind remains the runtime theme engine. Code generation changes build-time authoring ownership only; it does not add a runtime theme store, runtime reader, scoped theme system, or non-color override layer. Work tracked by #67, #68, and #70+ must extend the canonical schema and generator deliberately instead of hand-editing generated files or creating another runtime authority.
 
