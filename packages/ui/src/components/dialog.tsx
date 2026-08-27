@@ -249,7 +249,10 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
                 accessibilityHint={accessibilityHint ?? descriptionText}
                 accessibilityLabel={accessibilityLabel ?? titleText}
                 accessibilityLabelledBy={accessibilityLabelledBy ?? titleNativeID}
-                accessibilityViewIsModal
+                // The iOS accessibility modal boundary lives on the
+                // ModalOverlayHost wrapper so portalled overlays stay inside
+                // it (#60). Do not re-add the flag here: it would prune the
+                // portal outlet subtree from the accessibility tree.
                 aria-modal
                 className={cn(
                   'w-full max-w-lg gap-4 rounded-xl border border-border bg-surface p-5',

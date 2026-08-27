@@ -15,8 +15,9 @@ import { ScrollView, StatusBar } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
 import { ComponentGallery } from './component-gallery';
 import { PatternGallery } from './pattern-gallery';
+import { RuntimeAcceptance } from './runtime-smoke';
 
-type ShowcaseSection = 'home' | 'components' | 'patterns';
+type ShowcaseSection = 'home' | 'components' | 'patterns' | 'runtime';
 
 function ShowcaseThemeControl() {
   const { hasAdaptiveThemes, theme } = useUniwind();
@@ -45,6 +46,10 @@ export function ShowcaseRoot() {
 
   if (section === 'patterns') {
     return <PatternGallery onBackToShowcase={() => setSection('home')} />;
+  }
+
+  if (section === 'runtime') {
+    return <RuntimeAcceptance onBack={() => setSection('home')} />;
   }
 
   return (
@@ -82,6 +87,7 @@ export function ShowcaseRoot() {
                 <Button
                   accessibilityLabel="Open Components"
                   onPress={() => setSection('components')}
+                  testID="showcase-open-components"
                   variant="outline"
                 >
                   Browse components
@@ -101,9 +107,30 @@ export function ShowcaseRoot() {
                 <Button
                   accessibilityLabel="Open Patterns"
                   onPress={() => setSection('patterns')}
+                  testID="showcase-open-patterns"
                   variant="outline"
                 >
                   Browse patterns
+                </Button>
+              </Card>
+
+              <Card className="min-w-[260px] flex-1 gap-5" padding="lg" variant="raised">
+                <VStack gap="sm">
+                  <HStack align="start" justify="between" wrap>
+                    <Text variant="heading">Runtime acceptance</Text>
+                    <Badge variant="info">QA</Badge>
+                  </HStack>
+                  <Text tone="muted">
+                    Stable native-only fixtures for simulator/emulator smoke, sheet presentation, hardware Back, keyboard, safe area, and evidence capture.
+                  </Text>
+                </VStack>
+                <Button
+                  accessibilityLabel="Open Runtime Acceptance"
+                  onPress={() => setSection('runtime')}
+                  testID="showcase-open-runtime"
+                  variant="outline"
+                >
+                  Open runtime acceptance
                 </Button>
               </Card>
             </Box>

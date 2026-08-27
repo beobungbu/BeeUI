@@ -1,0 +1,166 @@
+appId: com.beeui.showcase
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    timeout: 180000
+    visible:
+      id: "showcase-home"
+
+- tapOn:
+    id: "showcase-open-components"
+- assertVisible:
+    id: "component-gallery"
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "component-gallery-back"
+      - assertVisible:
+          id: "showcase-home"
+
+- tapOn:
+    id: "showcase-open-patterns"
+- assertVisible:
+    id: "pattern-gallery"
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "pattern-gallery-back"
+      - assertVisible:
+          id: "showcase-home"
+
+- scrollUntilVisible:
+    element:
+      id: "showcase-open-runtime"
+    direction: DOWN
+- waitForAnimationToEnd
+- tapOn:
+    id: "showcase-open-runtime"
+- assertVisible:
+    id: "runtime-ready"
+
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-theme-light"
+      - assertVisible:
+          text: "theme: light"
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-theme-dark"
+      - assertVisible:
+          text: "theme: dark"
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-theme-light"
+      - assertVisible:
+          text: "theme: light"
+
+- tapOn:
+    id: "runtime-dialog-trigger"
+- assertVisible:
+    id: "runtime-dialog-content"
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-dialog-close"
+      - assertNotVisible:
+          id: "runtime-dialog-content"
+
+- tapOn:
+    id: "runtime-alert-trigger"
+- assertVisible:
+    id: "runtime-alert-content"
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-alert-cancel"
+      - assertNotVisible:
+          id: "runtime-alert-content"
+
+- tapOn:
+    id: "runtime-popover-trigger"
+- assertVisible:
+    id: "runtime-popover-content"
+- assertVisible:
+    text: "Root Popover content is visible."
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-popover-close"
+      - assertNotVisible:
+          id: "runtime-popover-content"
+
+- tapOn:
+    id: "runtime-menu-trigger"
+- assertVisible:
+    id: "runtime-menu-content"
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-menu-item"
+      - assertNotVisible:
+          id: "runtime-menu-content"
+      - assertVisible:
+          text: "selection: alpha"
+
+- scrollUntilVisible:
+    element:
+      id: "runtime-toast-show"
+    direction: DOWN
+- waitForAnimationToEnd
+- tapOn:
+    id: "runtime-toast-show"
+- assertVisible:
+    text: "Runtime toast"
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 4
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-toast-dismiss"
+          timeout: 15000
+      - tapOn:
+          id: "runtime-toast-dismiss"
+      - assertNotVisible:
+          text: "Runtime toast"
+
+- scrollUntilVisible:
+    element:
+      id: "runtime-input"
+    direction: DOWN
+- waitForAnimationToEnd
+- tapOn:
+    id: "runtime-input"
+- inputText: "runtime-keyboard"
+- assertVisible:
+    text: "runtime-keyboard"
+- hideKeyboard
+
+- scrollUntilVisible:
+    element:
+      id: "runtime-scroll-end"
+    direction: DOWN
+- waitForAnimationToEnd
+- assertVisible:
+    id: "runtime-scroll-end"

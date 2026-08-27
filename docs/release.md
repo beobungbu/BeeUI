@@ -48,10 +48,14 @@ CI may claim only what its jobs actually prove.
 | deterministic Web visual/browser QA | `visual-web` | Linux | canonical pixels + integration tests | yes |
 | Expo Showcase native iOS Simulator compile | `ios-native` | macOS ARM64 | CocoaPods + `xcodebuild` generic simulator | when scheduled / always on main |
 | true bare RN native iOS Simulator compile | `ios-native` | macOS ARM64 | fresh RN consumer + CocoaPods + `xcodebuild` | when scheduled / always on main |
+| real iOS Simulator runtime smoke | `native-runtime-smoke / ios-runtime` | booted modern iPhone Simulator | exact-head metadata + Maestro log + screenshots/video + native logs | nightly / manual / `ci:runtime` |
+| real Android Emulator runtime smoke | `native-runtime-smoke / android-runtime` | Pixel-class API 36 emulator | exact-head metadata + Maestro log + real ADB Back log + screenshots/logcat | nightly / manual / `ci:runtime` |
 
 `pnpm release:verify` checks package names/versions, explicit packed files, exports, peers, Expo import boundaries, packed-manifest workspace rewriting, clean installation, and clean-consumer behavior.
 
 The `visual-web` gate owns both deterministic component pixels and browser integration. It does not substitute for native runtime interaction.
+
+The native runtime smoke jobs are not ordinary PR gates. They run nightly, by manual dispatch, when a PR is labeled `ci:runtime`, and on the runtime-foundation workstream itself so that the framework can obtain exact-head proof before review. See `docs/native-runtime-smoke.md`.
 
 ### Anchored-overlay deterministic contracts
 
@@ -68,7 +72,7 @@ For the current anchored-overlay runtime, automated tests may prove source-level
 - iOS request-close non-interception;
 - RN Modal presentation props: `overFullScreen` transparent; `fullScreen` / `pageSheet` / `formSheet` non-transparent so native presentation is not coerced.
 
-These tests do **not** prove live native sheet presentation or swipe interaction.
+These tests do **not** prove live native sheet presentation or swipe interaction. Exact-head Simulator/Emulator runtime evidence is recorded separately by the native runtime smoke layer.
 
 ## Pull-request native iOS scheduling
 
@@ -80,13 +84,17 @@ If a path later becomes executable native input, tighten the classifier in the s
 
 Trusted macOS native caches are performance-only. The fresh bare RN consumer is still recreated, BeeUI tarballs are repacked/reinstalled, and CocoaPods/build evaluation runs against current source. Cache hits never replace evidence.
 
+Runtime-smoke DerivedData reuse is also performance-only. Each runtime run still performs clean Expo Prebuild, CocoaPods evaluation, exact-head app build/install, fresh app state, and a real booted Simulator/Emulator interaction pass.
+
 ## Native verification ownership
 
 Linux owns TypeScript/tests/release verification, Expo exports/Prebuild, packed bare-consumer installation, Metro bundles, and Android native compilation.
 
 The trusted macOS ARM64 runner owns compile-only iOS verification for the Expo Showcase and a fresh true bare React Native consumer. It targets `generic/platform=iOS Simulator`; it does **not** boot or interact with Simulator.
 
-See `docs/native-verification.md` for the package-installed/native-build contract.
+The separate `native-runtime-smoke` workflow owns booted Simulator/Emulator interaction. It does not replace compile proof and must not be generalized into physical-device proof.
+
+See `docs/native-verification.md` for the package-installed/native-build contract and `docs/native-runtime-smoke.md` for live native runtime automation.
 
 ## Runtime and device gates
 
@@ -104,6 +112,8 @@ Compile-only CI and browser QA cannot prove real native interaction.
 | RTL / large-text stress where release-relevant | supported simulator/device/browser | scenario + result |
 
 Native iOS compilation is already CI-proven and must not be listed as a manual compile gate.
+
+The runtime smoke suite now automates a representative subset of these rows on real virtual devices: iOS sheets/swipe/child overlays/keyboard/safe-area plus Android real `KEYCODE_BACK`, nested child-first dismissal, AlertDialog policy, keyboard, reduced height, and scrolling. VoiceOver, TalkBack, RTL/large-text stress, and physical-device behavior remain separate evidence unless explicitly run and recorded.
 
 ### Evidence classification
 
