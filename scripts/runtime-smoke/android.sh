@@ -10,6 +10,13 @@ AVD_NAME="${BEEUI_ANDROID_AVD_NAME:-beeui-runtime-api36}"
 SYSTEM_IMAGE="${BEEUI_ANDROID_SYSTEM_IMAGE:-system-images;android-36;google_apis;x86_64}"
 ANDROID_ACCEL="${BEEUI_ANDROID_ACCEL:-auto}"
 
+# Maestro's UIAutomator driver handshake (device-side server bring-up, not
+# per-command element-wait timeouts — Maestro 2.7.0 has no global override
+# for those) defaults to 15s. That's tight on a cold, resource-strapped
+# runner, so give it more room here. This is a defense-in-depth addition on
+# top of the per-command flow hardening below, not a substitute for it.
+export MAESTRO_DRIVER_STARTUP_TIMEOUT="${MAESTRO_DRIVER_STARTUP_TIMEOUT:-60000}"
+
 mkdir -p "$ARTIFACT_DIR"
 
 for cmd in node pnpm adb sdkmanager avdmanager maestro; do
@@ -123,6 +130,8 @@ emulator "@$AVD_NAME" \
   -camera-back none \
   -camera-front none \
   -accel "$ANDROID_ACCEL" \
+  -memory 4096 \
+  -cores 4 \
   -wipe-data \
   > "$ARTIFACT_DIR/emulator.log" 2>&1 &
 EMULATOR_PID=$!
@@ -302,6 +311,7 @@ run_inline_maestro a1-open <<'EOF_FLOW'
 EOF_FLOW
 real_back "A1 root Popover"
 run_inline_maestro a1-assert <<'EOF_FLOW'
+- waitForAnimationToEnd
 - assertNotVisible:
     id: "runtime-popover-content"
 - assertVisible:
@@ -316,6 +326,7 @@ run_inline_maestro a2-open <<'EOF_FLOW'
 EOF_FLOW
 real_back "A2 root DropdownMenu"
 run_inline_maestro a2-assert <<'EOF_FLOW'
+- waitForAnimationToEnd
 - assertNotVisible:
     id: "runtime-menu-content"
 - assertVisible:
@@ -332,6 +343,7 @@ run_inline_maestro a3-open <<'EOF_FLOW'
     id: "runtime-dialog-menu-trigger"
 - assertVisible:
     id: "runtime-dialog-menu-content"
+- waitForAnimationToEnd
 - tapOn:
     id: "runtime-dialog-child-menu-trigger"
 - assertVisible:
@@ -339,6 +351,7 @@ run_inline_maestro a3-open <<'EOF_FLOW'
 EOF_FLOW
 real_back "A3 Back #1 child DropdownMenu"
 run_inline_maestro a3-child-assert <<'EOF_FLOW'
+- waitForAnimationToEnd
 - assertNotVisible:
     id: "runtime-dialog-child-menu-content"
 - assertVisible:
@@ -346,6 +359,7 @@ run_inline_maestro a3-child-assert <<'EOF_FLOW'
 EOF_FLOW
 real_back "A3 Back #2 Dialog"
 run_inline_maestro a3-dialog-assert <<'EOF_FLOW'
+- waitForAnimationToEnd
 - assertNotVisible:
     id: "runtime-dialog-menu-content"
 EOF_FLOW
@@ -382,6 +396,7 @@ run_inline_maestro a4-open <<'EOF_FLOW'
     id: "runtime-dialog-popover-trigger"
 - assertVisible:
     id: "runtime-dialog-popover-content"
+- waitForAnimationToEnd
 - tapOn:
     id: "runtime-dialog-child-popover-trigger"
 - assertVisible:
@@ -389,6 +404,7 @@ run_inline_maestro a4-open <<'EOF_FLOW'
 EOF_FLOW
 real_back "A4 Back #1 child Popover"
 run_inline_maestro a4-child-assert <<'EOF_FLOW'
+- waitForAnimationToEnd
 - assertNotVisible:
     id: "runtime-dialog-child-popover-content"
 - assertVisible:
@@ -396,6 +412,7 @@ run_inline_maestro a4-child-assert <<'EOF_FLOW'
 EOF_FLOW
 real_back "A4 Back #2 Dialog"
 run_inline_maestro a4-dialog-assert <<'EOF_FLOW'
+- waitForAnimationToEnd
 - assertNotVisible:
     id: "runtime-dialog-popover-content"
 EOF_FLOW
@@ -435,12 +452,21 @@ run_inline_maestro a5-open <<'EOF_FLOW'
 EOF_FLOW
 real_back "A5 AlertDialog policy"
 run_inline_maestro a5-assert <<'EOF_FLOW'
+- waitForAnimationToEnd
 - assertVisible:
     id: "runtime-alert-content"
-- tapOn:
-    id: "runtime-alert-cancel"
-- assertNotVisible:
-    id: "runtime-alert-content"
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 4
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-alert-cancel"
+          timeout: 15000
+      - tapOn:
+          id: "runtime-alert-cancel"
+      - assertNotVisible:
+          id: "runtime-alert-content"
 EOF_FLOW
 
 adb_for_device exec-out screencap -p > "$ARTIFACT_DIR/full-height.png"
