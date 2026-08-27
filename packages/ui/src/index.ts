@@ -184,6 +184,27 @@ export { BeeUIProvider, SafeArea, type BeeUIProviderProps, type SafeAreaProps } 
 export { Screen, type ScreenProps } from './components/screen';
 export { SearchInput, type SearchInputProps } from './components/search-input';
 export {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+  type SelectAlign,
+  type SelectCollisionPadding,
+  type SelectContentProps,
+  type SelectDirection,
+  type SelectGroupProps,
+  type SelectItemProps,
+  type SelectLabelProps,
+  type SelectOptionValue,
+  type SelectPlacement,
+  type SelectProps,
+  type SelectTriggerProps,
+  type SelectValueProps,
+} from './components/select';
+export {
   SegmentedControl,
   SegmentedControlItem,
   type SegmentedControlItemProps,
