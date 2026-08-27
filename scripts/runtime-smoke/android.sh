@@ -279,10 +279,17 @@ run_inline_maestro reset <<'EOF_FLOW'
       id: "showcase-open-runtime"
     direction: DOWN
 - waitForAnimationToEnd
-- tapOn:
-    id: "showcase-open-runtime"
-- assertVisible:
-    id: "runtime-ready"
+# Cold relaunch (clearState) can leave the first tap racing app boot/bundling;
+# retry the open-runtime tap until the runtime screen is actually ready.
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "showcase-open-runtime"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-ready"
+          timeout: 8000
 EOF_FLOW
 
 run_inline_maestro a1-open <<'EOF_FLOW'
@@ -349,10 +356,17 @@ run_inline_maestro reset-before-a4 <<'EOF_FLOW'
       id: "showcase-open-runtime"
     direction: DOWN
 - waitForAnimationToEnd
-- tapOn:
-    id: "showcase-open-runtime"
-- assertVisible:
-    id: "runtime-ready"
+# Cold relaunch (clearState) can leave the first tap racing app boot/bundling;
+# retry the open-runtime tap until the runtime screen is actually ready.
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "showcase-open-runtime"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-ready"
+          timeout: 8000
 EOF_FLOW
 run_inline_maestro a4-open <<'EOF_FLOW'
 - scrollUntilVisible:
@@ -390,10 +404,17 @@ run_inline_maestro reset-before-a5 <<'EOF_FLOW'
       id: "showcase-open-runtime"
     direction: DOWN
 - waitForAnimationToEnd
-- tapOn:
-    id: "showcase-open-runtime"
-- assertVisible:
-    id: "runtime-ready"
+# Cold relaunch (clearState) can leave the first tap racing app boot/bundling;
+# retry the open-runtime tap until the runtime screen is actually ready.
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "showcase-open-runtime"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-ready"
+          timeout: 8000
 EOF_FLOW
 run_inline_maestro a5-open <<'EOF_FLOW'
 - scrollUntilVisible:
@@ -426,10 +447,17 @@ run_inline_maestro reduced-height <<'EOF_FLOW'
       id: "showcase-open-runtime"
     direction: DOWN
 - waitForAnimationToEnd
-- tapOn:
-    id: "showcase-open-runtime"
-- assertVisible:
-    id: "runtime-ready"
+# Cold relaunch (clearState) can leave the first tap racing app boot/bundling;
+# retry the open-runtime tap until the runtime screen is actually ready.
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "showcase-open-runtime"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-ready"
+          timeout: 8000
 - scrollUntilVisible:
     element:
       id: "runtime-input"
