@@ -274,22 +274,24 @@ run_maestro common "$MAESTRO_FLOW/common.yaml"
 run_inline_maestro reset <<'EOF_FLOW'
 - launchApp:
     clearState: true
-- scrollUntilVisible:
-    element:
-      id: "showcase-open-runtime"
-    direction: DOWN
-- waitForAnimationToEnd
-# Cold relaunch (clearState) can leave the first tap racing app boot/bundling;
-# retry the open-runtime tap until the runtime screen is actually ready.
+# Cold relaunch (clearState) leaves the app cold-bundling; retry the whole
+# open-runtime navigation (scroll + tap) with a generous scroll timeout until
+# the runtime screen is ready, so a slow first bundle on a fresh/cold runner
+# does not flake the smoke.
 - retry:
-    maxRetries: 3
+    maxRetries: 4
     commands:
+      - scrollUntilVisible:
+          element:
+            id: "showcase-open-runtime"
+          direction: DOWN
+          timeout: 40000
       - tapOn:
           id: "showcase-open-runtime"
       - extendedWaitUntil:
           visible:
             id: "runtime-ready"
-          timeout: 8000
+          timeout: 12000
 EOF_FLOW
 
 run_inline_maestro a1-open <<'EOF_FLOW'
@@ -351,22 +353,24 @@ EOF_FLOW
 run_inline_maestro reset-before-a4 <<'EOF_FLOW'
 - launchApp:
     clearState: true
-- scrollUntilVisible:
-    element:
-      id: "showcase-open-runtime"
-    direction: DOWN
-- waitForAnimationToEnd
-# Cold relaunch (clearState) can leave the first tap racing app boot/bundling;
-# retry the open-runtime tap until the runtime screen is actually ready.
+# Cold relaunch (clearState) leaves the app cold-bundling; retry the whole
+# open-runtime navigation (scroll + tap) with a generous scroll timeout until
+# the runtime screen is ready, so a slow first bundle on a fresh/cold runner
+# does not flake the smoke.
 - retry:
-    maxRetries: 3
+    maxRetries: 4
     commands:
+      - scrollUntilVisible:
+          element:
+            id: "showcase-open-runtime"
+          direction: DOWN
+          timeout: 40000
       - tapOn:
           id: "showcase-open-runtime"
       - extendedWaitUntil:
           visible:
             id: "runtime-ready"
-          timeout: 8000
+          timeout: 12000
 EOF_FLOW
 run_inline_maestro a4-open <<'EOF_FLOW'
 - scrollUntilVisible:
@@ -399,22 +403,24 @@ EOF_FLOW
 run_inline_maestro reset-before-a5 <<'EOF_FLOW'
 - launchApp:
     clearState: true
-- scrollUntilVisible:
-    element:
-      id: "showcase-open-runtime"
-    direction: DOWN
-- waitForAnimationToEnd
-# Cold relaunch (clearState) can leave the first tap racing app boot/bundling;
-# retry the open-runtime tap until the runtime screen is actually ready.
+# Cold relaunch (clearState) leaves the app cold-bundling; retry the whole
+# open-runtime navigation (scroll + tap) with a generous scroll timeout until
+# the runtime screen is ready, so a slow first bundle on a fresh/cold runner
+# does not flake the smoke.
 - retry:
-    maxRetries: 3
+    maxRetries: 4
     commands:
+      - scrollUntilVisible:
+          element:
+            id: "showcase-open-runtime"
+          direction: DOWN
+          timeout: 40000
       - tapOn:
           id: "showcase-open-runtime"
       - extendedWaitUntil:
           visible:
             id: "runtime-ready"
-          timeout: 8000
+          timeout: 12000
 EOF_FLOW
 run_inline_maestro a5-open <<'EOF_FLOW'
 - scrollUntilVisible:
@@ -442,22 +448,24 @@ adb_for_device shell wm size 1080x1400
 run_inline_maestro reduced-height <<'EOF_FLOW'
 - launchApp:
     clearState: true
-- scrollUntilVisible:
-    element:
-      id: "showcase-open-runtime"
-    direction: DOWN
-- waitForAnimationToEnd
-# Cold relaunch (clearState) can leave the first tap racing app boot/bundling;
-# retry the open-runtime tap until the runtime screen is actually ready.
+# Cold relaunch (clearState) leaves the app cold-bundling; retry the whole
+# open-runtime navigation (scroll + tap) with a generous scroll timeout until
+# the runtime screen is ready, so a slow first bundle on a fresh/cold runner
+# does not flake the smoke.
 - retry:
-    maxRetries: 3
+    maxRetries: 4
     commands:
+      - scrollUntilVisible:
+          element:
+            id: "showcase-open-runtime"
+          direction: DOWN
+          timeout: 40000
       - tapOn:
           id: "showcase-open-runtime"
       - extendedWaitUntil:
           visible:
             id: "runtime-ready"
-          timeout: 8000
+          timeout: 12000
 - scrollUntilVisible:
     element:
       id: "runtime-input"
