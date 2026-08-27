@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import {
   screenshotName,
@@ -12,6 +11,29 @@ const beeLightFoundationStatusContract = {
 } as const;
 
 const beeLightFoundationExpectedDiffPixels = 723;
+
+type NodeFsModule = {
+  readFileSync(path: string): Uint8Array;
+};
+
+type NodeProcessWithBuiltinModules = {
+  getBuiltinModule(name: 'fs'): NodeFsModule;
+};
+
+function readSnapshotBytes(path: string) {
+  const nodeProcess = (
+    globalThis as typeof globalThis & { process: NodeProcessWithBuiltinModules }
+  ).process;
+  return nodeProcess.getBuiltinModule('fs').readFileSync(path);
+}
+
+function bytesToBase64(bytes: Uint8Array) {
+  let binary = '';
+  for (let index = 0; index < bytes.length; index += 1) {
+    binary += String.fromCharCode(bytes[index]);
+  }
+  return btoa(binary);
+}
 
 async function assertBeeLightFoundationMigration(
   page: Page,
@@ -44,7 +66,7 @@ async function assertBeeLightFoundationMigration(
     fullPage: true,
     scale: 'css',
   });
-  const expected = readFileSync(testInfo.snapshotPath(snapshot));
+  const expected = readSnapshotBytes(testInfo.snapshotPath(snapshot));
 
   const comparison = await page.evaluate(
     async ({ actualBase64, expectedBase64, rects }) => {
@@ -114,8 +136,8 @@ async function assertBeeLightFoundationMigration(
       return { dimensionsMatch: true, diffPixels, outsideDiffPixels };
     },
     {
-      actualBase64: actual.toString('base64'),
-      expectedBase64: expected.toString('base64'),
+      actualBase64: bytesToBase64(actual),
+      expectedBase64: bytesToBase64(expected),
       rects: statusRects,
     },
   );
