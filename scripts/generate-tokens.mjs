@@ -54,6 +54,128 @@ function assertExactNames(actual, expected, label) {
   );
 }
 
+export function parseCanonicalJson(text, sourceLabel = CANONICAL_PATH) {
+  let index = 0;
+
+  function fail(message) {
+    throw new Error(`Invalid canonical tokens: ${sourceLabel}: ${message}`);
+  }
+
+  function skipWhitespace() {
+    while (index < text.length && /\s/.test(text[index])) index += 1;
+  }
+
+  function parseString() {
+    skipWhitespace();
+    if (text[index] !== '"') fail(`expected string at offset ${index}`);
+    const start = index;
+    index += 1;
+    while (index < text.length) {
+      const char = text[index];
+      if (char === '\\') {
+        index += 2;
+        continue;
+      }
+      index += 1;
+      if (char === '"') {
+        try {
+          return JSON.parse(text.slice(start, index));
+        } catch (error) {
+          fail(`invalid string at offset ${start}: ${error.message}`);
+        }
+      }
+    }
+    fail(`unterminated string at offset ${start}`);
+  }
+
+  function parseNumber() {
+    skipWhitespace();
+    const match = text.slice(index).match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);
+    if (!match) fail(`expected value at offset ${index}`);
+    index += match[0].length;
+    return Number(match[0]);
+  }
+
+  function parseLiteral(literal, value) {
+    if (!text.startsWith(literal, index)) fail(`expected ${literal} at offset ${index}`);
+    index += literal.length;
+    return value;
+  }
+
+  function parseArray(pathLabel) {
+    const result = [];
+    index += 1;
+    skipWhitespace();
+    if (text[index] === ']') {
+      index += 1;
+      return result;
+    }
+    while (index < text.length) {
+      result.push(parseValue(`${pathLabel}[${result.length}]`));
+      skipWhitespace();
+      if (text[index] === ',') {
+        index += 1;
+        continue;
+      }
+      if (text[index] === ']') {
+        index += 1;
+        return result;
+      }
+      fail(`expected ',' or ']' at offset ${index}`);
+    }
+    fail(`unterminated array ${pathLabel}`);
+  }
+
+  function parseObject(pathLabel) {
+    const result = {};
+    const keys = new Set();
+    index += 1;
+    skipWhitespace();
+    if (text[index] === '}') {
+      index += 1;
+      return result;
+    }
+    while (index < text.length) {
+      const key = parseString();
+      if (keys.has(key)) fail(`duplicate JSON key "${key}" in ${pathLabel}`);
+      keys.add(key);
+      skipWhitespace();
+      if (text[index] !== ':') fail(`expected ':' after "${key}" at offset ${index}`);
+      index += 1;
+      const childPath = pathLabel === '<root>' ? key : `${pathLabel}.${key}`;
+      result[key] = parseValue(childPath);
+      skipWhitespace();
+      if (text[index] === ',') {
+        index += 1;
+        continue;
+      }
+      if (text[index] === '}') {
+        index += 1;
+        return result;
+      }
+      fail(`expected ',' or '}' at offset ${index}`);
+    }
+    fail(`unterminated object ${pathLabel}`);
+  }
+
+  function parseValue(pathLabel) {
+    skipWhitespace();
+    const char = text[index];
+    if (char === '{') return parseObject(pathLabel);
+    if (char === '[') return parseArray(pathLabel);
+    if (char === '"') return parseString();
+    if (char === 't') return parseLiteral('true', true);
+    if (char === 'f') return parseLiteral('false', false);
+    if (char === 'n') return parseLiteral('null', null);
+    return parseNumber();
+  }
+
+  const parsed = parseValue('<root>');
+  skipWhitespace();
+  if (index !== text.length) fail(`unexpected trailing content at offset ${index}`);
+  return parsed;
+}
+
 export function validateCanonicalTokens(source) {
   const { metadata, semanticColors, themes, tokens } = source;
   invariant(source.$schema && source.$description, '$schema and $description are required');
@@ -103,6 +225,11 @@ export function validateCanonicalTokens(source) {
   ]) {
     dimensionValues(tokens[groupName]);
   }
+
+  const fontSizeNames = publicEntries(tokens.fontSize).map(([name]) => name);
+  const lineHeightNames = publicEntries(tokens.lineHeight).map(([name]) => name);
+  assertExactNames(lineHeightNames, fontSizeNames, 'lineHeight roles');
+
   dimensionValues(tokens.motionDuration, 'ms');
   tokenValues(tokens.fontFamily);
   tokenValues(tokens.fontWeight);
@@ -247,7 +374,7 @@ export function generateTokenArtifacts(source) {
 }
 
 export function loadCanonicalTokens(sourcePath = path.join(ROOT_DIR, CANONICAL_PATH)) {
-  return JSON.parse(fs.readFileSync(sourcePath, 'utf8'));
+  return parseCanonicalJson(fs.readFileSync(sourcePath, 'utf8'), sourcePath);
 }
 
 export function writeOrCheckTokenArtifacts({ check = false, rootDir = ROOT_DIR } = {}) {
