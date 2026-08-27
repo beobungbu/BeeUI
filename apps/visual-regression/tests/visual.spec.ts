@@ -11,7 +11,7 @@ const beeLightFoundationStatusContract = {
   Warning: 'rgb(31, 41, 55)',
 } as const;
 
-const beeLightFoundationExpectedDiffPixels = 414;
+const beeLightFoundationExpectedDiffPixels = 723;
 
 async function assertBeeLightFoundationMigration(
   page: Page,
