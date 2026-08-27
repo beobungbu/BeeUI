@@ -1,6 +1,6 @@
 import { cn } from '@beeui/core';
 import { lineHeight } from '@beeui/tokens';
-import { buttonLabelVariants, inputVariants, textVariants } from '@beeui/ui';
+import { buttonLabelVariants, buttonVariants, inputVariants, textVariants } from '@beeui/ui';
 import { getTextareaWebMinHeight } from '../../../packages/ui/src/components/textarea';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -62,6 +62,31 @@ describe('representative theme/token v2 consumers', () => {
       expect(`${buttonSource}\n${inputSource}`).toContain(utility);
     }
     expect(buttonSource).toContain('h-control-icon w-control-icon');
+  });
+
+  it('uses explicit semantic filled Button interaction states instead of active opacity', () => {
+    const primary = buttonVariants({ variant: 'primary', size: 'md' });
+    expect(primary).toContain('bg-primary');
+    expect(primary).toContain('web:hover:bg-primary-hover');
+    expect(primary).toContain('active:bg-primary-pressed');
+
+    const secondary = buttonVariants({ variant: 'secondary', size: 'md' });
+    expect(secondary).toContain('bg-secondary');
+    expect(secondary).toContain('web:hover:bg-secondary-hover');
+    expect(secondary).toContain('active:bg-secondary-pressed');
+
+    const destructive = buttonVariants({ variant: 'destructive', size: 'md' });
+    expect(destructive).toContain('bg-destructive');
+    expect(destructive).toContain('web:hover:bg-destructive-hover');
+    expect(destructive).toContain('active:bg-destructive-pressed');
+
+    for (const filledVariant of [primary, secondary, destructive]) {
+      expect(filledVariant).not.toMatch(/active:opacity-/);
+    }
+
+    expect(buttonVariants({ variant: 'outline', size: 'md' })).toContain('active:bg-muted');
+    expect(buttonVariants({ variant: 'ghost', size: 'md' })).toContain('active:bg-muted');
+    expect(buttonSource).toContain("isDisabled && 'border-disabled bg-disabled opacity-60'");
   });
 
   it('consumes semantic avatar and elevation contracts', () => {
