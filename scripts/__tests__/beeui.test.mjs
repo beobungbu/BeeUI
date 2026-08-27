@@ -83,7 +83,16 @@ test('list output is stable and sorted', async (t) => {
   assert.equal(first.code, 0, first.stderr);
   assert.equal(first.stdout, second.stdout);
   const names = first.stdout.trim().split('\n');
-  assert.deepEqual(names, ['badge', 'button', 'card', 'input', 'separator', 'text', 'theme']);
+  assert.deepEqual(names, [
+    'accordion', 'alert-banner', 'alert-dialog', 'app-header', 'avatar', 'badge',
+    'bottom-action-bar', 'box', 'breadcrumb', 'button', 'card', 'checkbox', 'collapsible',
+    'description-list', 'dialog', 'dropdown-menu', 'field', 'form-group', 'form-message',
+    'icon-button', 'input', 'label', 'link', 'list-group', 'list-item', 'metadata-row',
+    'otp-input', 'pagination', 'password-input', 'popover', 'progress', 'radio', 'safe-area',
+    'screen', 'search-input', 'section', 'segmented-control', 'select', 'separator', 'skeleton',
+    'spinner', 'stack', 'stat', 'state-message', 'stepper', 'switch', 'tabs', 'text', 'textarea',
+    'theme', 'timeline', 'toast', 'visually-hidden',
+  ]);
 });
 
 test('add theme explicitly copies canonical token CSS', async (t) => {
@@ -339,6 +348,23 @@ test('preflight collision prevents all partial writes', async (t) => {
     'src/lib/beeui/cn.ts',
     'src/beeui/theme.css',
   ]) assert.equal(await exists(path.join(root, relative)), false, `${relative} should not be partially written`);
+});
+
+test('popover resolves the core-overlay module rewrite and anchored overlay runtime', async (t) => {
+  const root = await init(t);
+  const result = await run(root, ['add', 'popover']);
+  assert.equal(result.code, 0, result.stderr);
+  const popover = await readFile(path.join(root, 'src/components/beeui/popover.tsx'), 'utf8');
+  assert.doesNotMatch(popover, /@beeui\/core/);
+  assert.match(popover, /from '\.\.\/\.\.\/lib\/beeui\/core\/index';/);
+  for (const relative of [
+    'src/components/beeui/overlay-runtime.tsx',
+    'src/components/beeui/overlay-transport.web.tsx',
+    'src/components/beeui/overlay-transport.native.tsx',
+    'src/lib/beeui/core/index.ts',
+    'src/lib/beeui/core/utils/anchored-overlay.ts',
+    'src/lib/beeui/core/utils/overlay-runtime.ts',
+  ]) assert.equal(await exists(path.join(root, relative)), true, relative);
 });
 
 test('doctor validates config and registry without mutating the project', async (t) => {

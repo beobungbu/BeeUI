@@ -14,7 +14,7 @@ export const DEFAULT_CONFIG = Object.freeze({
 
 const KNOWN_ITEM_TYPES = new Set(['component', 'utility', 'theme']);
 const KNOWN_TARGET_ROOTS = new Set(['components', 'lib', 'theme']);
-const KNOWN_TRANSFORMS = new Set(['rewrite-beeui-core-cn']);
+const KNOWN_TRANSFORMS = new Set(['rewrite-beeui-core-cn', 'rewrite-beeui-core-module']);
 const ITEM_NAME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const PACKAGE_NAME_RE = /^(?:@[a-z0-9._-]+\/)?[a-z0-9._-]+$/;
 
@@ -299,6 +299,16 @@ function coreCnDestination(projectRoot, config, registry) {
   return resolveInside(projectRoot, configuredTarget(config, core.files[0].target), 'core-cn destination');
 }
 
+function coreOverlayDestination(projectRoot, config, registry) {
+  const core = registry.items.find((item) => item.name === 'core-overlay');
+  invariant(core, "registry requires internal 'core-overlay' item for @beeui/core module rewriting");
+  const indexFile = core.files.find(
+    (file) => file.target.root === 'lib' && file.target.path === 'core/index.ts',
+  );
+  invariant(indexFile, "internal 'core-overlay' item must contain a 'core/index.ts' barrel file");
+  return resolveInside(projectRoot, configuredTarget(config, indexFile.target), 'core-overlay destination');
+}
+
 export function applyTransforms(source, transforms, { destination, projectRoot, config, registry }) {
   let output = source;
   for (const transform of transforms) {
@@ -308,6 +318,14 @@ export function applyTransforms(source, transforms, { destination, projectRoot, 
       invariant(count === 1, `transform '${transform}' expected exactly one @beeui/core cn import in ${path.relative(projectRoot, destination)}`);
       const importPath = toImportSpecifier(destination, coreCnDestination(projectRoot, config, registry));
       output = output.replace(needle, `import { cn } from '${importPath}';`);
+      continue;
+    }
+    if (transform === 'rewrite-beeui-core-module') {
+      const needle = "from '@beeui/core'";
+      const count = output.split(needle).length - 1;
+      invariant(count === 1, `transform '${transform}' expected exactly one @beeui/core module specifier in ${path.relative(projectRoot, destination)}`);
+      const importPath = toImportSpecifier(destination, coreOverlayDestination(projectRoot, config, registry));
+      output = output.replace(needle, `from '${importPath}'`);
       continue;
     }
     throw new Error(`unsupported transform '${transform}'`);
