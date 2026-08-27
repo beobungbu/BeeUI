@@ -17,7 +17,6 @@ import {
 } from '@beeui/core';
 import * as React from 'react';
 import {
-  AccessibilityInfo,
   Keyboard,
   Pressable,
   StyleSheet,
@@ -463,27 +462,6 @@ export type ModalOverlayHostProps = {
   dismissScopeRef?: React.MutableRefObject<ModalOverlayDismissScope | null>;
 };
 
-/**
- * Whether an assistive screen reader is currently running. `false` until the
- * first native response resolves (matches `AccessibilityInfo`'s own
- * fire-once-then-update contract) and stays live via `screenReaderChanged`.
- */
-function useScreenReaderEnabled(): boolean {
-  const [enabled, setEnabled] = React.useState(false);
-  React.useEffect(() => {
-    let mounted = true;
-    AccessibilityInfo.isScreenReaderEnabled().then((value) => {
-      if (mounted) setEnabled(value);
-    });
-    const subscription = AccessibilityInfo.addEventListener('screenReaderChanged', setEnabled);
-    return () => {
-      mounted = false;
-      subscription.remove();
-    };
-  }, []);
-  return enabled;
-}
-
 /** Provisions the nearest modal-local host, geometry origin, and dismiss boundary. */
 export function ModalOverlayHost({
   active = true,
@@ -511,21 +489,6 @@ export function ModalOverlayHost({
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
 
   React.useEffect(() => remeasureHost(), [remeasureHost, windowHeight, windowWidth]);
-
-  // Toggling `accessibilityViewIsModal` — in either direction — makes iOS
-  // synchronously rebuild this view's accessibility hit-test region, and
-  // that work was still in flight long enough to swallow the very next tap
-  // right after a dialog closes (#62): neither dropping pointerEvents,
-  // unmounting the HostOutlet, deferring the flag by a task, nor deferring
-  // it to the native <Modal>'s own onDismiss closed the race. #60 only
-  // needs this flag for screen-reader users — sighted/touch users get no
-  // benefit from it, and they are exactly who this race hits. Only ever
-  // setting the flag while a screen reader is actually running keeps #60's
-  // guarantee for the users it exists for, while sighted/touch users (the
-  // overwhelming majority, and the entire reported failure population)
-  // never trigger the transition at all.
-  const screenReaderEnabled = useScreenReaderEnabled();
-  const accessibilityModal = active && screenReaderEnabled;
 
   const scope = React.useMemo<OverlayScope>(
     () => ({
@@ -558,15 +521,13 @@ export function ModalOverlayHost({
   const HostOutlet = transport?.HostOutlet;
   const boundary = (
     <View
-      // See `accessibilityModal` above (#60 vs #62): only screen-reader
-      // sessions ever set this flag, so touch users never pay for it.
-      accessibilityViewIsModal={accessibilityModal}
+      accessibilityViewIsModal
       collapsable={false}
       pointerEvents="box-none"
       style={StyleSheet.absoluteFill}
     >
       <OverlayHostScopeProvider hostName={hostName}>{children}</OverlayHostScopeProvider>
-      {HostOutlet ? (
+    {HostOutlet ? (
         <>
           <View
             ref={hostRef}
