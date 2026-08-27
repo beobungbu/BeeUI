@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { runComponentGalleryMatrix } from '../src/showcase-qa-component';
 import { runPatternFullMatrix } from '../src/showcase-qa-pattern-full';
 import {
@@ -8,6 +8,31 @@ import {
 
 const runFullMatrix = process.env.CI === 'true' || process.env.BEEUI_FULL_PATTERN_GALLERY_QA === '1';
 const showcaseBaseUrl = 'http://127.0.0.1:4174';
+
+function hexToRgbCss(hex: string) {
+  const channels = hex
+    .slice(1)
+    .match(/.{2}/g)
+    ?.map((channel) => Number.parseInt(channel, 16));
+  if (!channels || channels.length !== 3) throw new Error(`Unsupported color: ${hex}`);
+  return `rgb(${channels.join(', ')})`;
+}
+
+async function expectControlBoundary(
+  page: Page,
+  control: Locator,
+  expectedControlBorder: string,
+) {
+  await expect(control).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        getComputedStyle(document.documentElement).getPropertyValue('--color-control-border').trim(),
+      ),
+    )
+    .toBe(expectedControlBorder);
+  await expect(control).toHaveCSS('border-top-color', hexToRgbCss(expectedControlBorder));
+}
 
 test('preserves the Component Gallery across mobile/desktop and light/dark', async ({ browser }) => {
   test.setTimeout(3 * 60 * 1000);
@@ -42,7 +67,11 @@ test('switches Brand A/B across light/dark without resetting an open Dialog', as
     await page.getByRole('button', { name: 'Open Theme and tokens' }).click();
     await page.getByTestId('theme-token-inspector').waitFor({ state: 'visible' });
 
-    const expectTheme = async (runtimeTheme: string, primary: string) => {
+    const expectTheme = async (
+      runtimeTheme: string,
+      primary: string,
+      controlBorder: string,
+    ) => {
       await expect(page.getByText(runtimeTheme, { exact: true })).toBeVisible();
       await expect
         .poll(() =>
@@ -51,22 +80,38 @@ test('switches Brand A/B across light/dark without resetting an open Dialog', as
           ),
         )
         .toBe(primary);
+      await expectControlBoundary(page, page.getByLabel('Brand-aware input'), controlBorder);
+
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       if (overflow > 1) problems.push(`${runtimeTheme}: horizontal overflow ${overflow}px`);
     };
 
+    const expectTextareaBoundary = async (controlBorder: string) => {
+      await page.getByRole('button', { name: 'Back to Showcase home' }).click();
+      await page.getByRole('button', { name: 'Open Components' }).click();
+      await expect(page.getByTestId('component-gallery')).toBeVisible();
+      await expectControlBoundary(page, page.getByLabel('Notes'), controlBorder);
+      await page.getByRole('button', { name: 'Back to Showcase home' }).click();
+      await page.getByRole('button', { name: 'Open Theme and tokens' }).click();
+      await page.getByTestId('theme-token-inspector').waitFor({ state: 'visible' });
+    };
+
     await page.getByRole('button', { name: 'Use Brand A Bee' }).click();
     await page.getByRole('button', { name: 'Use light theme' }).click();
-    await expectTheme('light', '#f59e0b');
+    await expectTheme('light', '#f59e0b', '#8590a2');
+    await expectTextareaBoundary('#8590a2');
 
     await page.getByRole('button', { name: 'Use dark theme' }).click();
-    await expectTheme('dark', '#fbbf24');
+    await expectTheme('dark', '#fbbf24', '#667085');
+    await expectTextareaBoundary('#667085');
 
     await page.getByRole('button', { name: 'Use Brand B Violet' }).click();
-    await expectTheme('violet-dark', '#a78bfa');
+    await expectTheme('violet-dark', '#a78bfa', '#786d87');
+    await expectTextareaBoundary('#786d87');
 
     await page.getByRole('button', { name: 'Use light theme' }).click();
-    await expectTheme('violet-light', '#7c3aed');
+    await expectTheme('violet-light', '#7c3aed', '#9488a4');
+    await expectTextareaBoundary('#9488a4');
 
     await page.getByRole('button', { name: 'Open theme-switch dialog' }).click();
     const dialogTitle = page.getByText('Theme switch while overlay is open', { exact: true });
@@ -83,6 +128,7 @@ test('switches Brand A/B across light/dark without resetting an open Dialog', as
         ),
       )
       .toBe('#f59e0b');
+    await expectControlBoundary(page, page.getByLabel('Brand-aware input'), '#8590a2');
 
     await page.getByRole('button', { name: 'Close' }).click();
     await expect(dialogTitle).toBeHidden();

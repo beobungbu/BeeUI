@@ -67,6 +67,8 @@ const addedFilledActionStateTokens = [
   'destructive-pressed',
 ] as const satisfies readonly SemanticColorToken[];
 
+const addedControlBoundaryTokens = ['control-border'] as const satisfies readonly SemanticColorToken[];
+
 const filledActionContrastContract = [
   {
     foreground: 'primary-foreground',
@@ -130,11 +132,14 @@ function contrastRatio(left: string, right: string) {
 }
 
 describe('theme/token system v2', () => {
-  it('preserves every legacy semantic color while adding the minimum filled-action states', () => {
+  it('preserves every legacy semantic color while adding filled-action states and the control-boundary role', () => {
     expect(semanticColorTokens).toEqual(expect.arrayContaining(legacySemanticColorContract));
     expect(semanticColorTokens).toEqual(expect.arrayContaining(addedFilledActionStateTokens));
+    expect(semanticColorTokens).toEqual(expect.arrayContaining(addedControlBoundaryTokens));
     expect(semanticColorTokens).toHaveLength(
-      legacySemanticColorContract.length + addedFilledActionStateTokens.length,
+      legacySemanticColorContract.length +
+        addedFilledActionStateTokens.length +
+        addedControlBoundaryTokens.length,
     );
     expect(new Set(semanticColorTokens).size).toBe(semanticColorTokens.length);
   });
@@ -229,26 +234,35 @@ describe('theme/token system v2', () => {
     }
   });
 
-  it.each(beeRuntimeThemeNames)('%s meets representative text, status, focus, and filled-action contrast targets', (theme) => {
-    const { values } = colorVariables(extractVariant(themeCss, theme));
-    const color = (name: SemanticColorToken) => {
-      const value = values.get(name);
-      if (!value) throw new Error(`Missing ${name} in ${theme}`);
-      return value;
-    };
+  it.each(beeRuntimeThemeNames)(
+    '%s meets representative text, status, focus, filled-action, and control-boundary contrast targets',
+    (theme) => {
+      const { values } = colorVariables(extractVariant(themeCss, theme));
+      const color = (name: SemanticColorToken) => {
+        const value = values.get(name);
+        if (!value) throw new Error(`Missing ${name} in ${theme}`);
+        return value;
+      };
 
-    expect(contrastRatio(color('foreground'), color('background'))).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(color('muted-foreground'), color('background'))).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(color('focus-ring'), color('background'))).toBeGreaterThanOrEqual(3);
+      expect(contrastRatio(color('foreground'), color('background'))).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(color('muted-foreground'), color('background'))).toBeGreaterThanOrEqual(4.5);
 
-    for (const { foreground, backgrounds } of filledActionContrastContract) {
-      for (const background of backgrounds) {
-        expect(contrastRatio(color(background), color(foreground))).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(color('control-border'), color('input'))).toBeGreaterThanOrEqual(3);
+      expect(contrastRatio(color('focus-ring'), color('background'))).toBeGreaterThanOrEqual(3);
+      expect(contrastRatio(color('focus-ring'), color('input'))).toBeGreaterThanOrEqual(3);
+      expect(contrastRatio(color('focus-ring'), color('surface'))).toBeGreaterThanOrEqual(3);
+      expect(contrastRatio(color('focus-ring'), color('surface-muted'))).toBeGreaterThanOrEqual(3);
+      expect(contrastRatio(color('destructive'), color('input'))).toBeGreaterThanOrEqual(3);
+
+      for (const { foreground, backgrounds } of filledActionContrastContract) {
+        for (const background of backgrounds) {
+          expect(contrastRatio(color(background), color(foreground))).toBeGreaterThanOrEqual(4.5);
+        }
       }
-    }
 
-    for (const role of ['success', 'warning', 'info'] as const) {
-      expect(contrastRatio(color(role), color(`${role}-foreground`))).toBeGreaterThanOrEqual(4.5);
-    }
-  });
+      for (const role of ['success', 'warning', 'info'] as const) {
+        expect(contrastRatio(color(role), color(`${role}-foreground`))).toBeGreaterThanOrEqual(4.5);
+      }
+    },
+  );
 });
