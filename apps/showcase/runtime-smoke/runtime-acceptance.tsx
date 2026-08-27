@@ -39,9 +39,13 @@ import {
   VStack,
 } from '@beeui/ui';
 import * as React from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StatusBar } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Uniwind, useUniwind } from 'uniwind';
+
+// Extra space kept between the focused input's bottom edge and the top of
+// the keyboard once scrolled into view.
+const KEYBOARD_SCROLL_MARGIN = 24;
 
 function ControlledPresentationDialog({
   presentationStyle,
@@ -130,6 +134,66 @@ export function RuntimeAcceptance({ onBack }: { onBack: () => void }) {
   const toast = useToast();
   const [rootMenuSelection, setRootMenuSelection] = React.useState('none');
 
+  const scrollRef = React.useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const scrollOffsetRef = React.useRef(0);
+  const runtimeInputRef = React.useRef<React.ComponentRef<typeof Input>>(null);
+  // Guards against re-applying the correction: `keyboardDidShow` can fire
+  // more than once while the keyboard settles (e.g. once the suggestion
+  // strip finishes loading), and an animated `scrollTo` does not update the
+  // ScrollView's real (not just reported) offset synchronously — reacting to
+  // a second event before the first correction has landed would stack both
+  // adjustments and overshoot well past the keyboard.
+  const hasAdjustedForKeyboardRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (Platform.OS !== 'android') {
+      return undefined;
+    }
+
+    // Expo's `edgeToEdgeEnabled` config (and, as of Android 16, the platform
+    // itself) disables the native `adjustResize` window behavior, so the
+    // window never shrinks for the soft keyboard. Android's own "scroll the
+    // focused view into sight" only runs once, at focus time, before the
+    // keyboard exists to account for — a `KeyboardAvoidingView` resize after
+    // the fact does not retrigger it. Re-scroll explicitly once the
+    // keyboard's real on-screen position is known.
+    const showSubscription = Keyboard.addListener('keyboardDidShow', (event) => {
+      if (hasAdjustedForKeyboardRef.current) {
+        return;
+      }
+
+      const input = runtimeInputRef.current;
+      const scrollNode = scrollRef.current;
+      if (!input || !scrollNode) {
+        return;
+      }
+
+      input.measureInWindow((_x, y, _width, height) => {
+        const inputBottom = y + height;
+        const keyboardTop = event.endCoordinates.screenY;
+        const overlap = inputBottom - keyboardTop;
+        if (overlap > 0) {
+          hasAdjustedForKeyboardRef.current = true;
+          // Instant, not animated: an in-flight animation's visual position
+          // lags its logical target, so a second read of `measureInWindow`
+          // before it settles would double-count the already-queued delta.
+          scrollNode.scrollTo({
+            animated: false,
+            y: scrollOffsetRef.current + overlap + KEYBOARD_SCROLL_MARGIN,
+          });
+        }
+      });
+    });
+    const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
+      hasAdjustedForKeyboardRef.current = false;
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
   return (
     <Screen testID="runtime-smoke">
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} />
@@ -153,21 +217,24 @@ export function RuntimeAcceptance({ onBack }: { onBack: () => void }) {
 
       <SafeArea className="flex-1" edges={['left', 'right', 'bottom']}>
         {/*
-          Expo's `edgeToEdgeEnabled` config disables Android's native
-          `adjustResize` window behavior, so the OS no longer shrinks this
-          screen when the soft keyboard opens (https://docs.expo.dev/guides/edge-to-edge/).
-          Without this, a focused input near the bottom of the scroll body
-          stays laid out behind the keyboard instead of being pushed above
-          it. `behavior="height"` restores that resize in JS on Android;
-          iOS keeps its existing `padding` behavior.
+          iOS keeps its native keyboard-avoidance via `padding`. Android gets
+          its scroll-to-focused-input handled explicitly above (see the
+          `keyboardDidShow` effect) because edge-to-edge disables the native
+          window resize that `KeyboardAvoidingView`'s Android "height" mode
+          depends on to reveal a re-scrolled input.
         */}
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={{ flex: 1 }}
         >
           <ScrollView
             contentContainerStyle={{ paddingBottom: 160 }}
             keyboardShouldPersistTaps="handled"
+            onScroll={(event) => {
+              scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+            }}
+            ref={scrollRef}
+            scrollEventThrottle={16}
             testID="runtime-scroll"
           >
             <Box className="mx-auto w-full max-w-3xl gap-6 px-5 py-8">
@@ -335,6 +402,7 @@ export function RuntimeAcceptance({ onBack }: { onBack: () => void }) {
                     <Input
                       autoCapitalize="none"
                       placeholder="runtime input"
+                      ref={runtimeInputRef}
                       testID="runtime-input"
                     />
                   </Field>
