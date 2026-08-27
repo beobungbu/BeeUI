@@ -39,7 +39,7 @@ import {
   VStack,
 } from '@beeui/ui';
 import * as React from 'react';
-import { ScrollView, StatusBar } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Uniwind, useUniwind } from 'uniwind';
 
@@ -152,216 +152,230 @@ export function RuntimeAcceptance({ onBack }: { onBack: () => void }) {
       </SafeArea>
 
       <SafeArea className="flex-1" edges={['left', 'right', 'bottom']}>
-        <ScrollView
-          contentContainerStyle={{ paddingBottom: 160 }}
-          keyboardShouldPersistTaps="handled"
-          testID="runtime-scroll"
+        {/*
+          Expo's `edgeToEdgeEnabled` config disables Android's native
+          `adjustResize` window behavior, so the OS no longer shrinks this
+          screen when the soft keyboard opens (https://docs.expo.dev/guides/edge-to-edge/).
+          Without this, a focused input near the bottom of the scroll body
+          stays laid out behind the keyboard instead of being pushed above
+          it. `behavior="height"` restores that resize in JS on Android;
+          iOS keeps its existing `padding` behavior.
+        */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
         >
-          <Box className="mx-auto w-full max-w-3xl gap-6 px-5 py-8">
-            <Text testID="runtime-ready" variant="heading">Runtime fixture ready</Text>
-            <Text
-              testID={insets.top > 0 ? 'runtime-safe-area-nonzero' : 'runtime-safe-area-zero'}
-            >
-              {`safe-area top: ${insets.top} bottom: ${insets.bottom}`}
-            </Text>
-
-            <Card className="gap-4" variant="raised">
-              <Section
-                description="Explicit light/dark controls avoid system-theme ambiguity in runtime automation."
-                title="Theme"
+          <ScrollView
+            contentContainerStyle={{ paddingBottom: 160 }}
+            keyboardShouldPersistTaps="handled"
+            testID="runtime-scroll"
+          >
+            <Box className="mx-auto w-full max-w-3xl gap-6 px-5 py-8">
+              <Text testID="runtime-ready" variant="heading">Runtime fixture ready</Text>
+              <Text
+                testID={insets.top > 0 ? 'runtime-safe-area-nonzero' : 'runtime-safe-area-zero'}
               >
-                <VStack gap="sm">
-                  <Text testID="runtime-theme-state">{`theme: ${theme}`}</Text>
-                  <Button
-                    onPress={() => Uniwind.setTheme('light')}
-                    testID="runtime-theme-light"
-                    variant="outline"
-                  >
-                    Force light
-                  </Button>
-                  <Button
-                    onPress={() => Uniwind.setTheme('dark')}
-                    testID="runtime-theme-dark"
-                    variant="outline"
-                  >
-                    Force dark
-                  </Button>
-                </VStack>
-              </Section>
-            </Card>
+                {`safe-area top: ${insets.top} bottom: ${insets.bottom}`}
+              </Text>
 
-            <Card className="gap-4" variant="raised">
-              <Section description="Root-scope modal and anchored overlays." title="Root overlays">
-                <VStack gap="sm">
-                  <Dialog>
-                    <DialogTrigger testID="runtime-dialog-trigger">Open root Dialog</DialogTrigger>
-                    <DialogContent testID="runtime-dialog-content">
-                      <DialogTitle>Runtime root Dialog</DialogTitle>
-                      <DialogDescription>Simple open/close contract.</DialogDescription>
-                      <DialogClose testID="runtime-dialog-close">Close root Dialog</DialogClose>
-                    </DialogContent>
-                  </Dialog>
+              <Card className="gap-4" variant="raised">
+                <Section
+                  description="Explicit light/dark controls avoid system-theme ambiguity in runtime automation."
+                  title="Theme"
+                >
+                  <VStack gap="sm">
+                    <Text testID="runtime-theme-state">{`theme: ${theme}`}</Text>
+                    <Button
+                      onPress={() => Uniwind.setTheme('light')}
+                      testID="runtime-theme-light"
+                      variant="outline"
+                    >
+                      Force light
+                    </Button>
+                    <Button
+                      onPress={() => Uniwind.setTheme('dark')}
+                      testID="runtime-theme-dark"
+                      variant="outline"
+                    >
+                      Force dark
+                    </Button>
+                  </VStack>
+                </Section>
+              </Card>
 
-                  <AlertDialog>
-                    <AlertDialogTrigger testID="runtime-alert-trigger" variant="destructive">
-                      Open AlertDialog
-                    </AlertDialogTrigger>
-                    <AlertDialogContent cancelOnRequestClose={false} testID="runtime-alert-content">
-                      <AlertDialogTitle>Runtime AlertDialog</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Hardware back must not bypass the explicit confirmation policy.
-                      </AlertDialogDescription>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel testID="runtime-alert-cancel">Cancel</AlertDialogCancel>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+              <Card className="gap-4" variant="raised">
+                <Section description="Root-scope modal and anchored overlays." title="Root overlays">
+                  <VStack gap="sm">
+                    <Dialog>
+                      <DialogTrigger testID="runtime-dialog-trigger">Open root Dialog</DialogTrigger>
+                      <DialogContent testID="runtime-dialog-content">
+                        <DialogTitle>Runtime root Dialog</DialogTitle>
+                        <DialogDescription>Simple open/close contract.</DialogDescription>
+                        <DialogClose testID="runtime-dialog-close">Close root Dialog</DialogClose>
+                      </DialogContent>
+                    </Dialog>
 
-                  <Popover>
-                    <PopoverTrigger testID="runtime-popover-trigger" variant="outline">
-                      Open root Popover
-                    </PopoverTrigger>
-                    <PopoverContent placement="bottom" testID="runtime-popover-content">
-                      <PopoverTitle>Runtime root Popover</PopoverTitle>
-                      <PopoverDescription testID="runtime-popover-copy">
-                        Root Popover content is visible.
-                      </PopoverDescription>
-                      <PopoverClose testID="runtime-popover-close">Close root Popover</PopoverClose>
-                    </PopoverContent>
-                  </Popover>
+                    <AlertDialog>
+                      <AlertDialogTrigger testID="runtime-alert-trigger" variant="destructive">
+                        Open AlertDialog
+                      </AlertDialogTrigger>
+                      <AlertDialogContent cancelOnRequestClose={false} testID="runtime-alert-content">
+                        <AlertDialogTitle>Runtime AlertDialog</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Hardware back must not bypass the explicit confirmation policy.
+                        </AlertDialogDescription>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel testID="runtime-alert-cancel">Cancel</AlertDialogCancel>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger testID="runtime-menu-trigger" variant="outline">
-                      Open root Menu
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent testID="runtime-menu-content">
-                      <DropdownMenuLabel>Runtime menu</DropdownMenuLabel>
-                      <DropdownMenuItem
-                        onSelect={() => setRootMenuSelection('alpha')}
-                        testID="runtime-menu-item"
-                      >
-                        Select alpha
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <Text testID="runtime-menu-selection">{`selection: ${rootMenuSelection}`}</Text>
-                </VStack>
-              </Section>
-            </Card>
+                    <Popover>
+                      <PopoverTrigger testID="runtime-popover-trigger" variant="outline">
+                        Open root Popover
+                      </PopoverTrigger>
+                      <PopoverContent placement="bottom" testID="runtime-popover-content">
+                        <PopoverTitle>Runtime root Popover</PopoverTitle>
+                        <PopoverDescription testID="runtime-popover-copy">
+                          Root Popover content is visible.
+                        </PopoverDescription>
+                        <PopoverClose testID="runtime-popover-close">Close root Popover</PopoverClose>
+                      </PopoverContent>
+                    </Popover>
 
-            <Card className="gap-4" variant="raised">
-              <Section description="Child-first dismiss behavior inside a Dialog scope." title="Nested overlays">
-                <VStack gap="sm">
-                  <Dialog>
-                    <DialogTrigger testID="runtime-dialog-menu-trigger">Dialog → Menu</DialogTrigger>
-                    <DialogContent testID="runtime-dialog-menu-content">
-                      <DialogTitle>Dialog with child Menu</DialogTitle>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger testID="runtime-dialog-child-menu-trigger" variant="outline">
-                          Open child Menu
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent testID="runtime-dialog-child-menu-content">
-                          <DropdownMenuLabel>Child menu</DropdownMenuLabel>
-                          <DropdownMenuItem testID="runtime-dialog-child-menu-item">
-                            Child action
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      <DialogClose testID="runtime-dialog-menu-close">Close Dialog</DialogClose>
-                    </DialogContent>
-                  </Dialog>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger testID="runtime-menu-trigger" variant="outline">
+                        Open root Menu
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent testID="runtime-menu-content">
+                        <DropdownMenuLabel>Runtime menu</DropdownMenuLabel>
+                        <DropdownMenuItem
+                          onSelect={() => setRootMenuSelection('alpha')}
+                          testID="runtime-menu-item"
+                        >
+                          Select alpha
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Text testID="runtime-menu-selection">{`selection: ${rootMenuSelection}`}</Text>
+                  </VStack>
+                </Section>
+              </Card>
 
-                  <Dialog>
-                    <DialogTrigger testID="runtime-dialog-popover-trigger">Dialog → Popover</DialogTrigger>
-                    <DialogContent testID="runtime-dialog-popover-content">
-                      <DialogTitle>Dialog with child Popover</DialogTitle>
-                      <Popover>
-                        <PopoverTrigger testID="runtime-dialog-child-popover-trigger" variant="outline">
-                          Open child Popover
-                        </PopoverTrigger>
-                        <PopoverContent testID="runtime-dialog-child-popover-content">
-                          <PopoverTitle>Child Popover</PopoverTitle>
-                          <PopoverClose testID="runtime-dialog-child-popover-close">
-                            Close child Popover
-                          </PopoverClose>
-                        </PopoverContent>
-                      </Popover>
-                      <DialogClose testID="runtime-dialog-popover-close">Close Dialog</DialogClose>
-                    </DialogContent>
-                  </Dialog>
-                </VStack>
-              </Section>
-            </Card>
+              <Card className="gap-4" variant="raised">
+                <Section description="Child-first dismiss behavior inside a Dialog scope." title="Nested overlays">
+                  <VStack gap="sm">
+                    <Dialog>
+                      <DialogTrigger testID="runtime-dialog-menu-trigger">Dialog → Menu</DialogTrigger>
+                      <DialogContent testID="runtime-dialog-menu-content">
+                        <DialogTitle>Dialog with child Menu</DialogTitle>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger testID="runtime-dialog-child-menu-trigger" variant="outline">
+                            Open child Menu
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent testID="runtime-dialog-child-menu-content">
+                            <DropdownMenuLabel>Child menu</DropdownMenuLabel>
+                            <DropdownMenuItem testID="runtime-dialog-child-menu-item">
+                              Child action
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <DialogClose testID="runtime-dialog-menu-close">Close Dialog</DialogClose>
+                      </DialogContent>
+                    </Dialog>
 
-            <Card className="gap-4" variant="raised">
-              <Section description="Persistent notification with explicit dismissal." title="Toast">
-                <VStack gap="sm">
-                  <Button
-                    onPress={() =>
-                      toast.show({
-                        title: 'Runtime toast',
-                        description: 'Persistent runtime acceptance toast.',
-                        duration: 'persistent',
-                      })
-                    }
-                    testID="runtime-toast-show"
-                    variant="outline"
-                  >
-                    Show runtime Toast
-                  </Button>
-                  <Button onPress={toast.dismissAll} testID="runtime-toast-dismiss" variant="ghost">
-                    Dismiss runtime Toast
-                  </Button>
-                </VStack>
-              </Section>
-            </Card>
+                    <Dialog>
+                      <DialogTrigger testID="runtime-dialog-popover-trigger">Dialog → Popover</DialogTrigger>
+                      <DialogContent testID="runtime-dialog-popover-content">
+                        <DialogTitle>Dialog with child Popover</DialogTitle>
+                        <Popover>
+                          <PopoverTrigger testID="runtime-dialog-child-popover-trigger" variant="outline">
+                            Open child Popover
+                          </PopoverTrigger>
+                          <PopoverContent testID="runtime-dialog-child-popover-content">
+                            <PopoverTitle>Child Popover</PopoverTitle>
+                            <PopoverClose testID="runtime-dialog-child-popover-close">
+                              Close child Popover
+                            </PopoverClose>
+                          </PopoverContent>
+                        </Popover>
+                        <DialogClose testID="runtime-dialog-popover-close">Close Dialog</DialogClose>
+                      </DialogContent>
+                    </Dialog>
+                  </VStack>
+                </Section>
+              </Card>
 
-            <Card className="gap-4" variant="raised">
-              <Section description="Keyboard/focus and reduced-height scroll target." title="Focus and scrolling">
-                <Field label="Runtime input">
-                  <Input
-                    autoCapitalize="none"
-                    placeholder="runtime input"
-                    testID="runtime-input"
-                  />
-                </Field>
-                <Text testID="runtime-keyboard-usable">
-                  This content must remain reachable while the keyboard reduces usable height.
-                </Text>
-              </Section>
-            </Card>
+              <Card className="gap-4" variant="raised">
+                <Section description="Persistent notification with explicit dismissal." title="Toast">
+                  <VStack gap="sm">
+                    <Button
+                      onPress={() =>
+                        toast.show({
+                          title: 'Runtime toast',
+                          description: 'Persistent runtime acceptance toast.',
+                          duration: 'persistent',
+                        })
+                      }
+                      testID="runtime-toast-show"
+                      variant="outline"
+                    >
+                      Show runtime Toast
+                    </Button>
+                    <Button onPress={toast.dismissAll} testID="runtime-toast-dismiss" variant="ghost">
+                      Dismiss runtime Toast
+                    </Button>
+                  </VStack>
+                </Section>
+              </Card>
 
-            <Card className="gap-5" variant="raised">
-              <Section
-                description="Controlled native presentation styles with child anchored overlays and request-close counters."
-                title="iOS presentations"
-              >
-                <VStack gap="lg">
-                  <ControlledPresentationDialog
-                    presentationStyle="overFullScreen"
-                    testPrefix="runtime-over-full-screen"
-                    title="overFullScreen"
-                  />
-                  <Separator />
-                  <ControlledPresentationDialog
-                    presentationStyle="pageSheet"
-                    testPrefix="runtime-page-sheet"
-                    title="pageSheet"
-                  />
-                  <Separator />
-                  <ControlledPresentationDialog
-                    presentationStyle="formSheet"
-                    testPrefix="runtime-form-sheet"
-                    title="formSheet"
-                  />
-                </VStack>
-              </Section>
-            </Card>
+              <Card className="gap-4" variant="raised">
+                <Section description="Keyboard/focus and reduced-height scroll target." title="Focus and scrolling">
+                  <Field label="Runtime input">
+                    <Input
+                      autoCapitalize="none"
+                      placeholder="runtime input"
+                      testID="runtime-input"
+                    />
+                  </Field>
+                  <Text testID="runtime-keyboard-usable">
+                    This content must remain reachable while the keyboard reduces usable height.
+                  </Text>
+                </Section>
+              </Card>
 
-            <Box className="h-48" />
-            <Text testID="runtime-scroll-end" variant="heading">Runtime scroll end</Text>
-          </Box>
-        </ScrollView>
+              <Card className="gap-5" variant="raised">
+                <Section
+                  description="Controlled native presentation styles with child anchored overlays and request-close counters."
+                  title="iOS presentations"
+                >
+                  <VStack gap="lg">
+                    <ControlledPresentationDialog
+                      presentationStyle="overFullScreen"
+                      testPrefix="runtime-over-full-screen"
+                      title="overFullScreen"
+                    />
+                    <Separator />
+                    <ControlledPresentationDialog
+                      presentationStyle="pageSheet"
+                      testPrefix="runtime-page-sheet"
+                      title="pageSheet"
+                    />
+                    <Separator />
+                    <ControlledPresentationDialog
+                      presentationStyle="formSheet"
+                      testPrefix="runtime-form-sheet"
+                      title="formSheet"
+                    />
+                  </VStack>
+                </Section>
+              </Card>
+
+              <Box className="h-48" />
+              <Text testID="runtime-scroll-end" variant="heading">Runtime scroll end</Text>
+            </Box>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeArea>
     </Screen>
   );
