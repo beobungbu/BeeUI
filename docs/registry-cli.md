@@ -19,29 +19,22 @@ pnpm registry:test
 
 The workflow copies supported BeeUI source into a consumer project. The consumer then owns those copied files. It does not create a dependency from the consumer back to this monorepo, does not install packages automatically, and does not fetch executable remote code.
 
-## Phase-1 supported registry entries
+## Supported registry entries
 
-Public component entries:
+Registry coverage has expanded from the initial 6-component slice to the full stable public component surface described in `docs/components.md` (52 public components as of this writing). Run `pnpm beeui -- list` for the canonical, sorted, up-to-date list — it is generated from `registry/registry.json`, so it never drifts from this doc.
 
-- `badge`
-- `button`
-- `card`
-- `input`
-- `separator`
-- `text`
+Internal transitive entries (not directly addable, but resolved automatically):
 
-Public support entry:
+- `core-cn` — the `cn` helper required by most components (single-symbol `@beeui/core` import)
+- `field-context` — the field context required by `input`/`field`
+- `form-group-context` — the form-group context required by `form-group`/`radio`
+- `use-required-callback-warning` — the dev-mode controlled-usage warning shared by `checkbox`, `radio`, `segmented-control`, `switch`, `tabs`
+- `core-overlay` — a copy of `@beeui/core`'s cn/anchored-overlay/overlay-runtime utilities, used by components whose `@beeui/core` import mixes `cn` with anchored-overlay types/functions (`popover`, `dropdown-menu`, `select`, and the `overlay-runtime` utility itself)
+- `overlay-runtime` — the shared anchored-overlay runtime/transport kernel (`overlay-runtime.tsx` plus its platform transport/dismiss-event files), required by `dialog`, `popover`, `dropdown-menu`, `select`, and `safe-area`
 
-- `theme` — canonical BeeUI semantic token/theme CSS
+`button` remains a representative vertical slice. Adding it resolves and copies `core-cn`, `theme`, `text`, and `button` in deterministic dependency order. The resulting Button source imports the copied consumer-local `cn` helper rather than `@beeui/core`.
 
-Internal transitive entries:
-
-- `core-cn` — the `cn` helper required by supported components
-- `field-context` — the field context required by `input`
-
-`button` is the representative vertical slice. Adding it resolves and copies `core-cn`, `theme`, `text`, and `button` in deterministic dependency order. The resulting Button source imports the copied consumer-local `cn` helper rather than `@beeui/core`.
-
-Phase 1 does not claim source ownership support for any BeeUI component not listed above.
+`popover` (or `dropdown-menu`/`select`) is the representative anchored-overlay slice: it resolves `core-cn -> theme -> text -> button -> core-overlay -> overlay-runtime -> popover`, and its `@beeui/core` import is rewritten to point at the copied `core-overlay` barrel (`lib/core/index`) via the `rewrite-beeui-core-module` transform (see below).
 
 ## Configuration
 
@@ -134,33 +127,38 @@ For multiple requests, BeeUI resolves the union once. Shared dependencies are co
 
 External packages are not mutated automatically. The CLI reports required package names/ranges and whether each package name is already declared in the consumer's `package.json`. It does not currently perform semver satisfaction analysis and does not run npm, pnpm, yarn, bun, or another package manager.
 
-For the phase-1 slice, reported requirements can include:
+Depending on the requested items, reported requirements can include:
 
 - `class-variance-authority@0.7.1`
 - `clsx@2.1.1`
 - `tailwind-merge@3.6.0`
 - `react@>=19.0.0`
+- `react-dom@>=19.0.0`
 - `react-native@>=0.85.0`
+- `react-native-safe-area-context@>=5 <6`
+- `react-native-teleport@>=1.1 <2`
 - `tailwindcss@>=4 <5`
 - `uniwind@>=1.10.1 <2`
 
-A successful source copy therefore does not mean external packages are fully installed.
+`react-dom`, `react-native-safe-area-context`, and `react-native-teleport` are only reported for items that resolve the `overlay-runtime`/`safe-area`/`toast` utilities (anchored overlays and the app-root provider); plain components never pull them in. A successful source copy therefore does not mean external packages are fully installed.
 
 ## Import transforms
 
-Phase 1 intentionally supports one narrow source transform: `rewrite-beeui-core-cn`.
+Two narrow source transforms are supported: `rewrite-beeui-core-cn` and `rewrite-beeui-core-module`.
 
-Supported component source currently contains the exact import:
+Most component source contains the exact single-symbol import:
 
 ```ts
 import { cn } from '@beeui/core';
 ```
 
-The transform rewrites that exact import to the relative path of the copied `core-cn` destination in the consumer project. The transform fails if the expected import appears zero times or more than once, which makes upstream source drift visible instead of applying a broad regex heuristic.
+`rewrite-beeui-core-cn` rewrites that exact import to the relative path of the copied `core-cn` destination in the consumer project. The transform fails if the expected import appears zero times or more than once, which makes upstream source drift visible instead of applying a broad regex heuristic.
+
+A smaller set of files (`popover`, `dropdown-menu`, `select`, and the internal `overlay-runtime` utility) import multiple symbols from `@beeui/core` in one statement — `cn` alongside anchored-overlay types/functions, or anchored-overlay types/functions alone. `rewrite-beeui-core-module` rewrites only the `'@beeui/core'` module specifier itself (not the imported symbol list) to the relative path of the copied `core-overlay` barrel (`lib/core/index`), which re-exports the same `cn`/anchored-overlay/overlay-runtime surface from mirrored, self-contained copied source. The transform fails the same way if the specifier appears zero times or more than once in the file.
 
 Other imports are copied unchanged. Relative component imports such as `./text` and `./field-context` remain valid because those dependencies are explicitly represented in the registry and copied into the same configured components directory.
 
-The phase-1 output is tested to contain no `workspace:*` references, no `@beeui/*` runtime imports, and no references back into monorepo `packages/` paths.
+Copied output is tested to contain no `workspace:*` references, no `@beeui/*` runtime imports, and no references back into monorepo `packages/` paths.
 
 ## Theme/token contract
 

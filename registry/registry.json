@@ -2,18 +2,243 @@
   "schemaVersion": 1,
   "items": [
     {
+      "name": "accordion",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/accordion.tsx",
+          "target": {
+            "root": "components",
+            "path": "accordion.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "alert-banner",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/alert-banner.tsx",
+          "target": {
+            "root": "components",
+            "path": "alert-banner.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "box",
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {
+        "class-variance-authority": "0.7.1"
+      },
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "alert-dialog",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/alert-dialog.tsx",
+          "target": {
+            "root": "components",
+            "path": "alert-dialog.tsx"
+          },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": [
+        "dialog",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "app-header",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/app-header.tsx",
+          "target": {
+            "root": "components",
+            "path": "app-header.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "box",
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "avatar",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/avatar.tsx",
+          "target": {
+            "root": "components",
+            "path": "avatar.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {
+        "class-variance-authority": "0.7.1"
+      },
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
       "name": "badge",
       "type": "component",
       "public": true,
       "files": [
         {
           "source": "packages/ui/src/components/badge.tsx",
-          "target": { "root": "components", "path": "badge.tsx" },
-          "transforms": ["rewrite-beeui-core-cn"]
+          "target": {
+            "root": "components",
+            "path": "badge.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
         }
       ],
-      "registryDependencies": ["core-cn", "text", "theme"],
-      "dependencies": { "class-variance-authority": "0.7.1" },
+      "registryDependencies": [
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {
+        "class-variance-authority": "0.7.1"
+      },
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "bottom-action-bar",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/bottom-action-bar.tsx",
+          "target": {
+            "root": "components",
+            "path": "bottom-action-bar.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "box",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/box.tsx",
+          "target": {
+            "root": "components",
+            "path": "box.tsx"
+          },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": [
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "breadcrumb",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/breadcrumb.tsx",
+          "target": {
+            "root": "components",
+            "path": "breadcrumb.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
       "peerDependencies": {
         "react": ">=19.0.0",
         "react-native": ">=0.85.0"
@@ -26,12 +251,23 @@
       "files": [
         {
           "source": "packages/ui/src/components/button.tsx",
-          "target": { "root": "components", "path": "button.tsx" },
-          "transforms": ["rewrite-beeui-core-cn"]
+          "target": {
+            "root": "components",
+            "path": "button.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
         }
       ],
-      "registryDependencies": ["core-cn", "text", "theme"],
-      "dependencies": { "class-variance-authority": "0.7.1" },
+      "registryDependencies": [
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {
+        "class-variance-authority": "0.7.1"
+      },
       "peerDependencies": {
         "react": ">=19.0.0",
         "react-native": ">=0.85.0"
@@ -44,12 +280,79 @@
       "files": [
         {
           "source": "packages/ui/src/components/card.tsx",
-          "target": { "root": "components", "path": "card.tsx" },
-          "transforms": ["rewrite-beeui-core-cn"]
+          "target": {
+            "root": "components",
+            "path": "card.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
         }
       ],
-      "registryDependencies": ["core-cn", "theme"],
-      "dependencies": { "class-variance-authority": "0.7.1" },
+      "registryDependencies": [
+        "core-cn",
+        "theme"
+      ],
+      "dependencies": {
+        "class-variance-authority": "0.7.1"
+      },
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "checkbox",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/checkbox.tsx",
+          "target": {
+            "root": "components",
+            "path": "checkbox.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "text",
+        "theme",
+        "use-required-callback-warning"
+      ],
+      "dependencies": {
+        "class-variance-authority": "0.7.1"
+      },
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "collapsible",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/collapsible.tsx",
+          "target": {
+            "root": "components",
+            "path": "collapsible.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
       "peerDependencies": {
         "react": ">=19.0.0",
         "react-native": ">=0.85.0"
@@ -62,7 +365,10 @@
       "files": [
         {
           "source": "packages/core/src/utils/cn.ts",
-          "target": { "root": "lib", "path": "cn.ts" },
+          "target": {
+            "root": "lib",
+            "path": "cn.ts"
+          },
           "transforms": []
         }
       ],
@@ -74,19 +380,283 @@
       "peerDependencies": {}
     },
     {
+      "name": "core-overlay",
+      "type": "utility",
+      "public": false,
+      "files": [
+        {
+          "source": "packages/core/src/utils/cn.ts",
+          "target": {
+            "root": "lib",
+            "path": "core/utils/cn.ts"
+          },
+          "transforms": []
+        },
+        {
+          "source": "packages/core/src/utils/anchored-overlay.ts",
+          "target": {
+            "root": "lib",
+            "path": "core/utils/anchored-overlay.ts"
+          },
+          "transforms": []
+        },
+        {
+          "source": "packages/core/src/utils/overlay-runtime.ts",
+          "target": {
+            "root": "lib",
+            "path": "core/utils/overlay-runtime.ts"
+          },
+          "transforms": []
+        },
+        {
+          "source": "packages/core/src/index.ts",
+          "target": {
+            "root": "lib",
+            "path": "core/index.ts"
+          },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": [],
+      "dependencies": {
+        "clsx": "2.1.1",
+        "tailwind-merge": "3.6.0"
+      },
+      "peerDependencies": {}
+    },
+    {
+      "name": "description-list",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/description-list.tsx",
+          "target": {
+            "root": "components",
+            "path": "description-list.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "metadata-row",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "dialog",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/dialog.tsx",
+          "target": {
+            "root": "components",
+            "path": "dialog.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "button",
+        "core-cn",
+        "overlay-runtime",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "dropdown-menu",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/dropdown-menu.tsx",
+          "target": {
+            "root": "components",
+            "path": "dropdown-menu.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-module"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "button",
+        "core-overlay",
+        "overlay-runtime",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "field",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/field.tsx",
+          "target": {
+            "root": "components",
+            "path": "field.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "field-context",
+        "label",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
       "name": "field-context",
       "type": "utility",
       "public": false,
       "files": [
         {
           "source": "packages/ui/src/components/field-context.ts",
-          "target": { "root": "components", "path": "field-context.ts" },
+          "target": {
+            "root": "components",
+            "path": "field-context.ts"
+          },
           "transforms": []
         }
       ],
       "registryDependencies": [],
       "dependencies": {},
-      "peerDependencies": { "react": ">=19.0.0" }
+      "peerDependencies": {
+        "react": ">=19.0.0"
+      }
+    },
+    {
+      "name": "form-group",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/form-group.tsx",
+          "target": {
+            "root": "components",
+            "path": "form-group.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "form-group-context",
+        "label",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "form-group-context",
+      "type": "utility",
+      "public": false,
+      "files": [
+        {
+          "source": "packages/ui/src/components/form-group-context.ts",
+          "target": {
+            "root": "components",
+            "path": "form-group-context.ts"
+          },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": [],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0"
+      }
+    },
+    {
+      "name": "form-message",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/form-message.tsx",
+          "target": {
+            "root": "components",
+            "path": "form-message.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "icon-button",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/icon-button.tsx",
+          "target": {
+            "root": "components",
+            "path": "icon-button.tsx"
+          },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": [
+        "button",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
     },
     {
       "name": "input",
@@ -95,12 +665,579 @@
       "files": [
         {
           "source": "packages/ui/src/components/input.tsx",
-          "target": { "root": "components", "path": "input.tsx" },
-          "transforms": ["rewrite-beeui-core-cn"]
+          "target": {
+            "root": "components",
+            "path": "input.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
         }
       ],
-      "registryDependencies": ["core-cn", "field-context", "theme"],
-      "dependencies": { "class-variance-authority": "0.7.1" },
+      "registryDependencies": [
+        "core-cn",
+        "field-context",
+        "theme"
+      ],
+      "dependencies": {
+        "class-variance-authority": "0.7.1"
+      },
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "label",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/label.tsx",
+          "target": {
+            "root": "components",
+            "path": "label.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "link",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/link.tsx",
+          "target": {
+            "root": "components",
+            "path": "link.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "list-group",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/list-group.tsx",
+          "target": {
+            "root": "components",
+            "path": "list-group.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "box",
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "list-item",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/list-item.tsx",
+          "target": {
+            "root": "components",
+            "path": "list-item.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "box",
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "metadata-row",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/metadata-row.tsx",
+          "target": {
+            "root": "components",
+            "path": "metadata-row.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "box",
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "otp-input",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/otp-input.tsx",
+          "target": {
+            "root": "components",
+            "path": "otp-input.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "input",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "overlay-runtime",
+      "type": "utility",
+      "public": false,
+      "files": [
+        {
+          "source": "packages/ui/src/components/overlay-runtime.tsx",
+          "target": {
+            "root": "components",
+            "path": "overlay-runtime.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-module"
+          ]
+        },
+        {
+          "source": "packages/ui/src/components/overlay-transport.d.ts",
+          "target": {
+            "root": "components",
+            "path": "overlay-transport.d.ts"
+          },
+          "transforms": []
+        },
+        {
+          "source": "packages/ui/src/components/overlay-transport.native.tsx",
+          "target": {
+            "root": "components",
+            "path": "overlay-transport.native.tsx"
+          },
+          "transforms": []
+        },
+        {
+          "source": "packages/ui/src/components/overlay-transport.web.tsx",
+          "target": {
+            "root": "components",
+            "path": "overlay-transport.web.tsx"
+          },
+          "transforms": []
+        },
+        {
+          "source": "packages/ui/src/components/overlay-transport-shared.tsx",
+          "target": {
+            "root": "components",
+            "path": "overlay-transport-shared.tsx"
+          },
+          "transforms": []
+        },
+        {
+          "source": "packages/ui/src/components/overlay-host-mode.ts",
+          "target": {
+            "root": "components",
+            "path": "overlay-host-mode.ts"
+          },
+          "transforms": []
+        },
+        {
+          "source": "packages/ui/src/components/overlay-dismiss-events.ts",
+          "target": {
+            "root": "components",
+            "path": "overlay-dismiss-events.ts"
+          },
+          "transforms": [
+            "rewrite-beeui-core-module"
+          ]
+        },
+        {
+          "source": "packages/ui/src/components/overlay-dismiss-events.web.ts",
+          "target": {
+            "root": "components",
+            "path": "overlay-dismiss-events.web.ts"
+          },
+          "transforms": [
+            "rewrite-beeui-core-module"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-overlay"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react-dom": ">=19.0.0",
+        "react-native-safe-area-context": ">=5 <6",
+        "react-native-teleport": ">=1.1 <2"
+      }
+    },
+    {
+      "name": "pagination",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/pagination.tsx",
+          "target": {
+            "root": "components",
+            "path": "pagination.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "password-input",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/password-input.tsx",
+          "target": {
+            "root": "components",
+            "path": "password-input.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "box",
+        "button",
+        "core-cn",
+        "input",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "popover",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/popover.tsx",
+          "target": {
+            "root": "components",
+            "path": "popover.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-module"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "button",
+        "core-overlay",
+        "overlay-runtime",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "progress",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/progress.tsx",
+          "target": {
+            "root": "components",
+            "path": "progress.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "theme"
+      ],
+      "dependencies": {
+        "class-variance-authority": "0.7.1"
+      },
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "radio",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/radio.tsx",
+          "target": {
+            "root": "components",
+            "path": "radio.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "form-group-context",
+        "text",
+        "theme",
+        "use-required-callback-warning"
+      ],
+      "dependencies": {
+        "class-variance-authority": "0.7.1"
+      },
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "safe-area",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/safe-area.tsx",
+          "target": {
+            "root": "components",
+            "path": "safe-area.tsx"
+          },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": [
+        "overlay-runtime",
+        "theme",
+        "toast"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0",
+        "react-native-safe-area-context": ">=5 <6",
+        "uniwind": ">=1.10.1 <2"
+      }
+    },
+    {
+      "name": "screen",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/screen.tsx",
+          "target": {
+            "root": "components",
+            "path": "screen.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "search-input",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/search-input.tsx",
+          "target": {
+            "root": "components",
+            "path": "search-input.tsx"
+          },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": [
+        "input",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "section",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/section.tsx",
+          "target": {
+            "root": "components",
+            "path": "section.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "box",
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "segmented-control",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/segmented-control.tsx",
+          "target": {
+            "root": "components",
+            "path": "segmented-control.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "text",
+        "theme",
+        "use-required-callback-warning"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "select",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/select.tsx",
+          "target": {
+            "root": "components",
+            "path": "select.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-module"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-overlay",
+        "overlay-runtime",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
       "peerDependencies": {
         "react": ">=19.0.0",
         "react-native": ">=0.85.0"
@@ -113,11 +1250,232 @@
       "files": [
         {
           "source": "packages/ui/src/components/separator.tsx",
-          "target": { "root": "components", "path": "separator.tsx" },
-          "transforms": ["rewrite-beeui-core-cn"]
+          "target": {
+            "root": "components",
+            "path": "separator.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
         }
       ],
-      "registryDependencies": ["core-cn", "theme"],
+      "registryDependencies": [
+        "core-cn",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "skeleton",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/skeleton.tsx",
+          "target": {
+            "root": "components",
+            "path": "skeleton.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "theme"
+      ],
+      "dependencies": {
+        "class-variance-authority": "0.7.1"
+      },
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "spinner",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/spinner.tsx",
+          "target": {
+            "root": "components",
+            "path": "spinner.tsx"
+          },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": [
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "stack",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/stack.tsx",
+          "target": {
+            "root": "components",
+            "path": "stack.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "theme"
+      ],
+      "dependencies": {
+        "class-variance-authority": "0.7.1"
+      },
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "stat",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/stat.tsx",
+          "target": {
+            "root": "components",
+            "path": "stat.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "state-message",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/state-message.tsx",
+          "target": {
+            "root": "components",
+            "path": "state-message.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "stepper",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/stepper.tsx",
+          "target": {
+            "root": "components",
+            "path": "stepper.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "box",
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "switch",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/switch.tsx",
+          "target": {
+            "root": "components",
+            "path": "switch.tsx"
+          },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": [
+        "theme",
+        "use-required-callback-warning"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "tabs",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/tabs.tsx",
+          "target": {
+            "root": "components",
+            "path": "tabs.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "text",
+        "theme",
+        "use-required-callback-warning"
+      ],
       "dependencies": {},
       "peerDependencies": {
         "react": ">=19.0.0",
@@ -131,12 +1489,49 @@
       "files": [
         {
           "source": "packages/ui/src/components/text.tsx",
-          "target": { "root": "components", "path": "text.tsx" },
-          "transforms": ["rewrite-beeui-core-cn"]
+          "target": {
+            "root": "components",
+            "path": "text.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
         }
       ],
-      "registryDependencies": ["core-cn", "theme"],
-      "dependencies": { "class-variance-authority": "0.7.1" },
+      "registryDependencies": [
+        "core-cn",
+        "theme"
+      ],
+      "dependencies": {
+        "class-variance-authority": "0.7.1"
+      },
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "textarea",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/textarea.tsx",
+          "target": {
+            "root": "components",
+            "path": "textarea.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "input",
+        "theme"
+      ],
+      "dependencies": {},
       "peerDependencies": {
         "react": ">=19.0.0",
         "react-native": ">=0.85.0"
@@ -149,7 +1544,10 @@
       "files": [
         {
           "source": "packages/tokens/src/theme.css",
-          "target": { "root": "theme", "path": "" },
+          "target": {
+            "root": "theme",
+            "path": ""
+          },
           "transforms": []
         }
       ],
@@ -158,6 +1556,101 @@
       "peerDependencies": {
         "tailwindcss": ">=4 <5",
         "uniwind": ">=1.10.1 <2"
+      }
+    },
+    {
+      "name": "timeline",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/timeline.tsx",
+          "target": {
+            "root": "components",
+            "path": "timeline.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "box",
+        "core-cn",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
+      "name": "toast",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/toast.tsx",
+          "target": {
+            "root": "components",
+            "path": "toast.tsx"
+          },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": [
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0",
+        "react-native-safe-area-context": ">=5 <6"
+      }
+    },
+    {
+      "name": "use-required-callback-warning",
+      "type": "utility",
+      "public": false,
+      "files": [
+        {
+          "source": "packages/ui/src/components/use-required-callback-warning.ts",
+          "target": {
+            "root": "components",
+            "path": "use-required-callback-warning.ts"
+          },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": [],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0"
+      }
+    },
+    {
+      "name": "visually-hidden",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/visually-hidden.tsx",
+          "target": {
+            "root": "components",
+            "path": "visually-hidden.tsx"
+          },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": [
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
       }
     }
   ]
