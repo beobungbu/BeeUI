@@ -4,49 +4,57 @@ import type { VisualProjectMetadata } from '../src/visual-contract';
 // BeeUI issue #77 — active keyboard-focus visual acceptance for the
 // high-contrast themes. A static page-load screenshot never exercises
 // `:focus-visible`, so this spec drives real keyboard interaction: it Tabs
-// through a Button (on the plain background), an Input (inside a raised
-// Card), and a Link (on a muted surface) — the `high-contrast-focus` fixture
-// from `apps/visual-regression/App.tsx` — and captures the DOM mid-focus
-// after every Tab press, plus asserts the resolved `outline` geometry.
+// to a Button (on the plain background), an Input (inside a raised Card), or a
+// Link (on a muted surface) — the `high-contrast-focus` fixture from
+// `apps/visual-regression/App.tsx` — and captures the DOM mid-focus, plus
+// asserts the resolved `outline` geometry.
 //
 // Deliberately NOT part of `visualScenarios`/`visual.spec.ts`'s canonical
-// matrix (interactive, multi-step specs live in their own file the same way
+// matrix (interactive specs live in their own file the same way
 // `motion-reduced.spec.ts` and `data-typography.spec.ts` already do), and
 // restricted to `desktop` only — the focus-ring proof does not need a second
 // viewport crossing.
+//
+// One test PER (target, theme): each test takes exactly one screenshot, so a
+// baseline mismatch on one target never prevents the others from rendering
+// (which matters for regenerating platform-correct baselines on the CI runner).
 const focusTargets = [
-  { testId: 'focus-target-button', label: 'button', assertBrandedRing: true },
-  { testId: 'focus-target-input', label: 'input', assertBrandedRing: true },
+  // `tabIndex` = how many Tab presses from page load reach this element, in
+  // document order (button → input → link).
+  { testId: 'focus-target-button', label: 'button', tabPresses: 1, assertBrandedRing: true },
+  { testId: 'focus-target-input', label: 'input', tabPresses: 2, assertBrandedRing: true },
   // Link carries no explicit `bee-focus-ring` utility class today, so it is
   // only asserted against the weaker "some visible focus indicator exists"
   // contract, not the exact #77 focus-ring geometry Button/Input opt into.
-  { testId: 'focus-target-link', label: 'link', assertBrandedRing: false },
+  { testId: 'focus-target-link', label: 'link', tabPresses: 3, assertBrandedRing: false },
 ] as const;
 
 for (const theme of ['high-contrast-light', 'high-contrast-dark'] as const) {
-  test(`Tab-driven keyboard focus is visible on ${theme}`, async ({ page }, testInfo: TestInfo) => {
-    const metadata = testInfo.project.metadata as VisualProjectMetadata;
-    test.skip(metadata.visualTheme !== theme, `Scoped to the ${theme} project only.`);
-    test.skip(
-      metadata.visualViewport !== 'desktop',
-      'Keyboard-focus geometry does not need a second viewport crossing.',
-    );
+  for (const target of focusTargets) {
+    test(`Tab-driven keyboard focus is visible on ${target.label} (${theme})`, async ({ page }, testInfo: TestInfo) => {
+      const metadata = testInfo.project.metadata as VisualProjectMetadata;
+      test.skip(metadata.visualTheme !== theme, `Scoped to the ${theme} project only.`);
+      test.skip(
+        metadata.visualViewport !== 'desktop',
+        'Keyboard-focus geometry does not need a second viewport crossing.',
+      );
 
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto(`/?fixture=high-contrast-focus&theme=${metadata.visualTheme}`, {
-      waitUntil: 'domcontentloaded',
-    });
-    await expect(page.locator('html')).toHaveAttribute('data-visual-ready', 'true');
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto(`/?fixture=high-contrast-focus&theme=${metadata.visualTheme}`, {
+        waitUntil: 'domcontentloaded',
+      });
+      await expect(page.locator('html')).toHaveAttribute('data-visual-ready', 'true');
 
-    for (const target of focusTargets) {
-      // Real keyboard interaction — not `.focus()` — so this exercises the
-      // same `:focus-visible` path a keyboard user actually triggers.
-      await page.keyboard.press('Tab');
+      // Real keyboard interaction — not `.focus()` — so this exercises the same
+      // `:focus-visible` path a keyboard user actually triggers.
+      for (let press = 0; press < target.tabPresses; press += 1) {
+        await page.keyboard.press('Tab');
+      }
 
       const focusedTestId = await page.evaluate(
         () => (document.activeElement as HTMLElement | null)?.getAttribute('data-testid') ?? null,
       );
-      expect(focusedTestId, `Tab should land on ${target.testId} next`).toBe(target.testId);
+      expect(focusedTestId, `Tab x${target.tabPresses} should land on ${target.testId}`).toBe(target.testId);
 
       const outline = await page.evaluate((testId) => {
         const element = document.querySelector(`[data-testid="${testId}"]`);
@@ -83,6 +91,6 @@ for (const theme of ['high-contrast-light', 'high-contrast-dark'] as const) {
           maxDiffPixelRatio: 0.0001,
         },
       );
-    }
-  });
+    });
+  }
 }
