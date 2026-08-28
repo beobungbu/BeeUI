@@ -240,7 +240,7 @@ bundle_consumer() {
 build_android() {
   test -d "${APP_DIR}/android" || { echo "Bare Android project is missing; run prepare first."; exit 1; }
   cd "${APP_DIR}/android"
-  ./gradlew assembleDebug --no-daemon --stacktrace
+  ./gradlew assembleDebug --no-daemon --build-cache --stacktrace
   test -f app/build/outputs/apk/debug/app-debug.apk
 }
 

@@ -141,6 +141,7 @@ jobs:
           retention-days: 1
 
   bare-native:
+    needs: [verify]
     runs-on: [self-hosted, beeui]
     timeout-minutes: 60
     steps:
@@ -171,15 +172,18 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Setup Java
+        if: needs.verify.outputs.bare-consumer-required == 'true'
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Setup Android SDK
+        if: needs.verify.outputs.bare-consumer-required == 'true'
         uses: android-actions/setup-android@v4
 
       - name: Install Android build dependencies
+        if: needs.verify.outputs.bare-consumer-required == 'true'
         run: |
           sdkmanager "platform-tools" \
             "platforms;android-35" \
@@ -190,12 +194,15 @@ jobs:
             "cmake;3.22.1"
 
       - name: Prepare true bare React Native consumer
+        if: needs.verify.outputs.bare-consumer-required == 'true'
         run: ./scripts/verify-bare-consumer.sh prepare
 
       - name: Bundle bare consumer for Android and iOS
+        if: needs.verify.outputs.bare-consumer-required == 'true'
         run: ./scripts/verify-bare-consumer.sh bundle
 
       - name: Compile bare Android debug APK
+        if: needs.verify.outputs.bare-consumer-required == 'true'
         run: ./scripts/verify-bare-consumer.sh android-build
 
   ios-native:
