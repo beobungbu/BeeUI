@@ -57,6 +57,16 @@ test('private primitive consumption fails — numeric-shade family', () => {
   assert.deepEqual(ruleIds(violations), ['private-primitive-utility']);
 });
 
+test('private primitive violation reports the full identifier, not a truncated prefix', () => {
+  // "neutral" is itself a private family name and a prefix of "neutral-500". Regex
+  // alternation is first-match-wins, so the identifier list must be sorted longest-first —
+  // otherwise this reports match text "bg-neutral" instead of the real "bg-neutral-500".
+  const violations = scan('const cls = "bg-neutral-500";\n');
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].match, 'bg-neutral-500');
+  assert.match(violations[0].message, /"bg-neutral-500"/);
+});
+
 test('private primitive consumption fails — named leaf', () => {
   const violations = scan('const cls = "bg-danger-emphasis text-feedback-success";\n');
   assert.deepEqual(ruleIds(violations), ['private-primitive-utility', 'private-primitive-utility']);
@@ -82,6 +92,23 @@ test('unsupported raw CSS-variable access fails when a typed path already exists
 test('brand-specific styling branch fails', () => {
   const violations = scan("if (brand === 'violet') { doSomething(); }\n");
   assert.deepEqual(ruleIds(violations), ['brand-literal-branch']);
+});
+
+test('a switch/case brand-name branch fails', () => {
+  const violations = scan(
+    ["switch (brand) {", "  case 'violet':", '    return violetIcon;', '  default:', '    return icon;', '}'].join(
+      '\n',
+    ),
+  );
+  assert.deepEqual(ruleIds(violations), ['brand-literal-branch']);
+  assert.equal(violations[0].line, 2);
+});
+
+test('an unrelated switch/case literal that is not a brand name passes', () => {
+  const violations = scan(
+    ["switch (status) {", "  case 'foo':", '    return 1;', '  default:', '    return 0;', '}'].join('\n'),
+  );
+  assert.deepEqual(violations, []);
 });
 
 test('normal semantic class/token consumption passes', () => {

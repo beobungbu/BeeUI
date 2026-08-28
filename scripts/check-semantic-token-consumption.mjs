@@ -97,7 +97,15 @@ export function buildGuardRules(source) {
   ];
 
   if (privateIdentifiers.length > 0) {
-    const alternation = privateIdentifiers.map(escapeRegExp).join('|');
+    // Sort longest-first: JS regex alternation is first-match-wins, and with `\b` following
+    // the group, a shorter identifier that is a prefix of a longer one (e.g. `neutral`
+    // before `neutral-500`) would win the match and truncate the reported text to
+    // "bg-neutral" instead of the full "bg-neutral-500". Detection is unaffected either way
+    // (both are private), but the reported match/message must show the real identifier.
+    const alternation = [...privateIdentifiers]
+      .sort((a, b) => b.length - a.length)
+      .map(escapeRegExp)
+      .join('|');
     rules.push({
       id: 'private-primitive-utility',
       regex: new RegExp(`\\b${UTILITY_COLOR_PREFIXES}-(?:${alternation})\\b`, 'g'),
@@ -132,12 +140,16 @@ export function buildGuardRules(source) {
   if (brands.length > 0) {
     const brandAlternation = brands.map(escapeRegExp).join('|');
     const quote = `['"\`]`;
+    const equalityBranch =
+      `(?:===|!==|==|!=)\\s*${quote}(?:${brandAlternation})${quote}` +
+      `|${quote}(?:${brandAlternation})${quote}\\s*(?:===|!==|==|!=)`;
+    // `switch (brand) { case 'violet': ... }` bypasses semantic mapping the same way an
+    // equality comparison does, but no `===`/`==` token appears on the `case` line itself —
+    // catch it as its own alternative, keyed on the `case` keyword plus a brand-name literal.
+    const switchCaseBranch = `\\bcase\\s+${quote}(?:${brandAlternation})${quote}\\s*:`;
     rules.push({
       id: 'brand-literal-branch',
-      regex: new RegExp(
-        `(?:===|!==|==|!=)\\s*${quote}(?:${brandAlternation})${quote}|${quote}(?:${brandAlternation})${quote}\\s*(?:===|!==|==|!=)`,
-        'g',
-      ),
+      regex: new RegExp(`${equalityBranch}|${switchCaseBranch}`, 'g'),
       message: (match) =>
         `"${match}" branches on a brand-name literal. Reusable components stay brand-blind ` +
         '(docs/theming.md) — consume semantic tokens/props instead of comparing against a ' +
