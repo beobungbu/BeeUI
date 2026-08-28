@@ -3,7 +3,6 @@ import {
   screenshotName,
   visualScenarios,
   type VisualProjectMetadata,
-  type VisualTheme,
 } from '../src/visual-contract';
 
 const beeLightFoundationStatusContract = {
@@ -13,6 +12,12 @@ const beeLightFoundationStatusContract = {
 
 const beeLightFoundationExpectedDiffPixels = 723;
 
+// Scoped to `light`/`dark` only, deliberately narrower than `VisualTheme`: this
+// contract (and `assertControlBoundaryMigration` below) certifies a specific
+// historical control-border migration, which only ever had a "before" state for
+// the themes that existed at the time. #77's high-contrast themes have no such
+// migration to prove — they use the generic `toHaveScreenshot` baseline path
+// instead (see the scenario gating below).
 const controlBoundaryContract = {
   light: {
     border: 'rgb(133, 144, 162)',
@@ -22,7 +27,7 @@ const controlBoundaryContract = {
     border: 'rgb(102, 112, 133)',
     input: 'rgb(18, 24, 32)',
   },
-} as const satisfies Record<VisualTheme, { border: string; input: string }>;
+} as const satisfies Record<'light' | 'dark', { border: string; input: string }>;
 
 type NodeFsModule = {
   readFileSync(path: string): Uint8Array;
@@ -165,7 +170,7 @@ async function assertControlBoundaryMigration(
   page: Page,
   testInfo: TestInfo,
   snapshot: string,
-  theme: VisualTheme,
+  theme: 'light' | 'dark',
   controls: readonly Locator[],
 ) {
   const contract = controlBoundaryContract[theme];
@@ -321,7 +326,10 @@ for (const scenario of visualScenarios) {
       return;
     }
 
-    if (scenario.id === 'forms') {
+    if (
+      scenario.id === 'forms' &&
+      (metadata.visualTheme === 'light' || metadata.visualTheme === 'dark')
+    ) {
       await assertControlBoundaryMigration(page, testInfo, snapshot, metadata.visualTheme, [
         page.locator('input[aria-label="Email, required"]'),
         page.locator('textarea[aria-label="Notes"]'),
@@ -330,7 +338,10 @@ for (const scenario of visualScenarios) {
       return;
     }
 
-    if (scenario.id === 'dialog-open') {
+    if (
+      scenario.id === 'dialog-open' &&
+      (metadata.visualTheme === 'light' || metadata.visualTheme === 'dark')
+    ) {
       await assertControlBoundaryMigration(page, testInfo, snapshot, metadata.visualTheme, [
         page.locator('input[aria-label="Baseline note"]'),
       ]);

@@ -29,10 +29,10 @@ The deterministic build-time generator is `scripts/generate-tokens.mjs`. It comm
 
 - `packages/tokens/src/index.ts` — the existing public TypeScript API;
 - `packages/tokens/src/theme.css` — Tailwind CSS v4 variables and Uniwind runtime themes;
-- `packages/tokens/src/tokens.resolver.json` — a DTCG 2025.10 Resolver document describing the foundation set plus the four registered runtime-theme contexts.
+- `packages/tokens/src/tokens.resolver.json` — a DTCG 2025.10 Resolver document describing the foundation set plus every registered runtime-theme context (the four primary Bee/Violet themes and the two Bee accessibility high-contrast themes, see [#77](#accessibility-high-contrast-theme-path--77)).
 - `packages/tokens/src/lifecycle.json` — a machine-readable lifecycle manifest (status, deprecations, replacements) derived from canonical lifecycle metadata. See [`docs/token-lifecycle.md`](./token-lifecycle.md).
 
-The Resolver artifact uses the official 2025.10 resolver schema and references the packaged canonical document via URI + JSON Pointer sources instead of duplicating the token payload. It models `light`, `dark`, `violet-light`, and `violet-dark` as contexts of one `runtimeTheme` modifier.
+The Resolver artifact uses the official 2025.10 resolver schema and references the packaged canonical document via URI + JSON Pointer sources instead of duplicating the token payload. It models `light`, `dark`, `violet-light`, `violet-dark`, `high-contrast-light`, and `high-contrast-dark` as contexts of one `runtimeTheme` modifier.
 
 To add or change a token:
 
@@ -74,6 +74,7 @@ The v2 token package preserves the existing public semantic color vocabulary whi
 | Density | compact/comfortable/spacious application-level intent coordinating list-row and form-field metrics, applied via #71 overrides (see `docs/density.md`) |
 | Focus | 2 px ring, 2 px offset, semantic color, web/native visibility policy |
 | Branding | Bee + Violet, both light/dark |
+| Accessibility appearances | Bee high-contrast, both light/dark (see [#77](#accessibility-high-contrast-theme-path--77)) |
 
 The canonical DTCG representation is allowed to differ structurally from the generated public API. The generator is the compatibility boundary: current TypeScript exports, CSS variable names, runtime-theme names, and accepted CSS values remain stable unless an explicit migration is documented.
 
@@ -273,7 +274,7 @@ Unknown brands and unknown appearances passed to `resolve` are compile-time erro
 
 **The registry is metadata, not a store.** It holds no mutable state, exposes only frozen data and pure functions, and does not own or observe the active theme. Uniwind stays the single runtime theme authority.
 
-**Layering scoped themes (#68).** Issue #68's scoped-theme wrapper will consume this registry as read-only metadata to resolve a scope's `brand + appearance` to a Uniwind runtime-theme name; it will not change where theme authority lives, add a second registry, or make the registry mutable. This issue intentionally does not implement scoped themes, runtime overrides (#71), token readers (#72), or the high-contrast appearance contract (#77) — the registry only stays extensible enough not to block them (for example, a brand may declare additional appearances beyond `light`/`dark`).
+**Layering scoped themes (#68).** Issue #68's scoped-theme wrapper will consume this registry as read-only metadata to resolve a scope's `brand + appearance` to a Uniwind runtime-theme name; it will not change where theme authority lives, add a second registry, or make the registry mutable. This issue intentionally does not implement scoped themes, runtime overrides (#71), or token readers (#72) — the registry only stays extensible enough not to block them. #77 (below) is the high-contrast appearance contract this section anticipated: a brand may declare additional appearances beyond `light`/`dark` through a second, narrower registry rather than by extending `beeThemeRegistry` itself.
 
 ### Runtime semantic overrides
 
@@ -362,11 +363,100 @@ See `packages/tokens/src/token-reader.ts` and `packages/ui/src/components/use-be
 
 ## Completeness and accessibility gates
 
-Every registered runtime theme must implement the exact same semantic-color vocabulary. Adding or removing a role is rejected unless all runtime themes move together.
+Every registered runtime theme — the primary Bee/Violet themes and the accessibility high-contrast themes below — must implement the exact same semantic-color vocabulary. Adding or removing a role is rejected unless all runtime themes move together.
 
-Deterministic tests require representative normal-text pairs to reach at least 4.5:1 and focus/control boundaries to reach the accepted 3:1 target. Filled primary/secondary/destructive states and status colors keep their existing contrast regressions. The 44 px native touch-target minimum and web keyboard-focus policy remain part of the accessibility contract.
+Contrast relationships are no longer a small, ad-hoc list of assertions in test code: they are centralized, machine-tested metadata exported as `contrastContract` from `@beeui/tokens` (canonical source: `$extensions["com.beeui"].contrastContract` in `packages/tokens/tokens.json`). See [Accessibility (high-contrast) theme path](#accessibility-high-contrast-theme-path--77) for the full contract and how it is validated. The 44 px native touch-target minimum and web keyboard-focus policy remain part of the accessibility contract.
 
 These deterministic checks do not replace VoiceOver/TalkBack or physical-device acceptance testing.
+
+## Accessibility (high-contrast) theme path — #77
+
+BeeUI ships a documented, machine-tested **Bee high-contrast** accessibility appearance, in both light and dark, alongside the default Bee and Violet themes. It is reached through the exact same mechanism as every other runtime theme — `Uniwind.setTheme(<runtime-theme-name>)` — with no second theme store, no React context, and no `if (highContrast)` branch anywhere in reusable component source.
+
+### Modeling decision: a second, narrower registry
+
+High contrast is **not** an additional appearance on `beeThemeRegistry`. `defineThemeRegistry` requires every brand in one registry to define exactly the same appearance set (its completeness rule) — adding `high-contrast-light`/`high-contrast-dark` as appearances there would force Violet to define a high-contrast pair too, immediately, which the accepted scope explicitly rejects ("Bee high-contrast light/dark is the required first implementation... do not automatically add Violet high-contrast without evidence").
+
+Instead, `@beeui/tokens` exports a **second registry built from the identical `defineThemeRegistry` primitive**, scoped only to the brands that have shipped a certified accessibility appearance:
+
+```ts
+import {
+  beeAccessibilityThemeRegistry, // defineThemeRegistry({ bee: { light: 'high-contrast-light', dark: 'high-contrast-dark' } })
+  resolveBeeAccessibilityRuntimeTheme,
+  getBeeAccessibilityThemeSelection,
+} from '@beeui/tokens';
+import { Uniwind } from 'uniwind';
+
+Uniwind.setTheme(resolveBeeAccessibilityRuntimeTheme('bee', 'dark')); // 'high-contrast-dark'
+getBeeAccessibilityThemeSelection('high-contrast-dark'); // { brand: 'bee', theme: 'dark' }
+```
+
+This satisfies every criterion the registry docs above set out for the eventual high-contrast contract:
+
+- **type inference stays clean** — `beeAccessibilityThemeRegistry` infers its own brand (`'bee'`) and runtime-theme (`'high-contrast-light' | 'high-contrast-dark'`) unions from `defineThemeRegistry`, the same as any consumer-defined registry;
+- **runtime-theme names stay unique and deterministic** — codegen validates `accessibilityRuntimeThemeNames` never collides with the primary `runtimeThemeNames`, since Uniwind resolves every runtime theme from one flat class-name namespace;
+- **global + scoped selection needs no second store** — a resolved accessibility runtime-theme name is applied with the ordinary `Uniwind.setTheme` call (or, once #68 lands, the ordinary scoped-theme selection path), because it is just another registered Uniwind runtime theme;
+- **future brands opt in, they are never forced in** — `beeAccessibilityBrandNames` (currently `['bee']`) is independent of `beeBrandNames` (`['bee', 'violet']`). Violet can adopt a high-contrast pair later by adding one entry to the accessibility mapping; nothing about adding it required touching Violet today;
+- **default Bee/Violet compatibility is exact, not just "close"** — `beeRuntimeThemeNames`, `beeRuntimeThemeByBrand`, and `beeThemeRegistry` are byte-identical to before #77. The `apps/showcase/__tests__/theme-tokens-v2.test.ts` suite (#65/#66's baseline invariants) is unmodified and still passes against the same values it certified before this change.
+
+### Applying it
+
+```tsx
+import { resolveBeeAccessibilityRuntimeTheme } from '@beeui/tokens';
+import { Uniwind } from 'uniwind';
+
+function useBeeHighContrast(mode: 'light' | 'dark') {
+  Uniwind.setTheme(resolveBeeAccessibilityRuntimeTheme('bee', mode));
+}
+```
+
+The Theme & tokens inspector in the showcase app (`apps/showcase/theme-inspector`) exposes a "High contrast" toggle that calls exactly this. Because Uniwind is the single global runtime theme authority, switching it there changes every other screen — Component Gallery, Pattern Gallery, forms, buttons — with no per-screen code, proving the "no second store" claim in practice.
+
+### The contrast-relationship contract
+
+`contrastContract` (generated from `$extensions["com.beeui"].contrastContract` in `tokens.json`) replaces the small representative pair list #65/#66 originally shipped with a complete, centralized description of which semantic-token relationships BeeUI certifies, and at what minimum ratio:
+
+| Group | Relationship | Minimum |
+| --- | --- | --- |
+| `textPairs` | `foreground`/`muted-foreground` against every realistic canvas (`background`, `surface`, `surface-muted`, `surface-raised`, `muted`) | 4.5:1 |
+| `filledActionPairs` | `primary`/`secondary`/`destructive` `-foreground` against default/hover/pressed fills (#65) | 4.5:1 |
+| `feedbackFillPairs` | `success`/`warning`/`info` fill against its own `-foreground` | 4.5:1 |
+| `controlBoundaryPairs` | `control-border` against `input` (#66) | 3:1 |
+| `focusRingPairs` | `focus-ring` against every realistic adjacent surface (`background`, `input`, `surface`, `surface-muted`, `surface-raised`) | 3:1 |
+| `invalidBoundaryPairs` | `destructive` (invalid/destructive control boundary) against realistic surfaces | 3:1 |
+| `essentialIndicatorPairs` | `success`/`warning`/`info`/`destructive` as a non-text status indicator against `surface` | 3:1 |
+| `accessibilityOnlyPairs` | `border-strong` (the Checkbox/Radio unchecked boundary) against `input` — **certified only for `beeAccessibilityRuntimeThemeNames`** | 3:1 |
+| `accessibilityMinTextRatio` | every `textPairs` relationship, re-asserted at AAA level — **certified only for `beeAccessibilityRuntimeThemeNames`** | 7:1 |
+
+Every semantic color token is covered by `contrastContract`: it appears in `canvasTokens` (a backdrop, not content — `background`, `surface`, `surface-muted`, `surface-raised`, `muted`, `input`), in one of the required-relationship groups above, or in `contrastContract.exceptions` with a `category` and a `reason`. `scripts/generate-tokens.mjs` rejects a canonical change that leaves any semantic token uncovered, references an unknown token, or declares a relationship that does not actually hold against the resolved colors of every runtime theme it applies to (`textPairs`/`filledActionPairs`/… against every runtime theme; `accessibilityOnlyPairs`/`accessibilityMinTextRatio` against the accessibility runtime themes only).
+
+### Disabled and decorative exceptions
+
+`contrastContract.exceptions` documents, per token, exactly why it carries no required relationship:
+
+- `subtle-foreground` — low-emphasis role, intentionally below the 4.5:1 body-text threshold, not approved for normal body copy;
+- `disabled`, `disabled-foreground` — inactive-component contrast exemption; disabled state is also signalled by reduced opacity, never by color alone;
+- `border` — a subtle structural divider, decorative, never the sole means of conveying a required boundary or state;
+- `overlay` — a decorative scrim, not content;
+- `border-strong` — a **known limitation**, not a decorative exception: it is the real Checkbox/Radio unchecked boundary against `input`, and the default light/dark/violet-light/violet-dark themes do not yet certify 3:1 for that pair. #77 does not silently widen the default contract to paper over this or redesign Checkbox/Radio; `accessibilityOnlyPairs` certifies the relationship for the high-contrast themes, where it does hold, and the gap in the default themes is tracked as a separate, out-of-scope follow-up.
+
+### How future brands opt in
+
+A brand adopts a high-contrast appearance by adding one entry to the accessibility axis in `tokens.json` — `$extensions["com.beeui"].accessibilityBrandNames` (must be a subset of `brandNames`), `accessibilityRuntimeThemeByBrand.<brand>` (mapping `light`/`dark` to two new, globally-unique runtime-theme names), and two new `themes.<runtime-theme>.colors` entries defining every semantic color token — then `pnpm tokens:generate`. Nothing about another brand's existing themes needs to change, and no component source changes at all: the moment the runtime theme is registered, every reusable component already renders correctly against it because components only ever consume semantic tokens.
+
+### Manual assistive-technology acceptance checklist
+
+Automated checks certify the exact relationships in `contrastContract`, keyboard focus visibility, and 44 px touch targets. They do not certify screen-reader behavior, platform high-contrast/forced-colors interop, or real-device perception. Before treating a high-contrast release as accessibility-reviewed, manually verify on a physical device or simulator with an assistive technology enabled:
+
+- **VoiceOver (iOS)** — rotor navigation through Component Gallery reads every control's role/state/label correctly in `high-contrast-light` and `high-contrast-dark`; focus order matches visual order; no control is reachable but unlabeled.
+- **TalkBack (Android)** — same pass as VoiceOver; additionally confirm switch/checkbox state announcements match the (now higher-contrast) visual boundary.
+- **Keyboard-only (web)** — tab through Component Gallery and a representative Pattern Gallery screen; the focus ring must be visible against every surface it lands on (page background, card, input, muted card) without zooming in.
+- **OS-level forced-colors / high-contrast mode (web)** — confirm BeeUI's own `high-contrast-light`/`high-contrast-dark` theme is not fighting the browser's own forced-colors mode when both are active.
+- **Physical-device color perception spot check** — compare a filled button, an invalid input boundary, and a status badge in the default theme versus `high-contrast-light`/`high-contrast-dark` side by side.
+
+### What this does not claim
+
+BeeUI does **not** claim complete WCAG conformance or certification from this work. The only accessibility claims BeeUI makes are the exact, machine-tested relationships enumerated in `contrastContract` (plus the pre-existing 44 px touch-target and `focus-visible` policy). Everything else — including full WCAG 2.x Level AA/AAA conformance across every criterion, screen-reader UX quality, and assistive-technology compatibility beyond the manual checklist above — is out of scope for #77 and is not implied by shipping a "high-contrast" theme name.
 
 ## Representative migration
 

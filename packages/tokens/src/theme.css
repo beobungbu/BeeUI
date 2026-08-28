@@ -5,6 +5,8 @@
 
 @custom-variant violet-light (&:where(.violet-light, .violet-light *));
 @custom-variant violet-dark (&:where(.violet-dark, .violet-dark *));
+@custom-variant high-contrast-light (&:where(.high-contrast-light, .high-contrast-light *));
+@custom-variant high-contrast-dark (&:where(.high-contrast-dark, .high-contrast-dark *));
 
 @theme {
   --radius-xs: 4px;
@@ -263,6 +265,80 @@
       --color-disabled: #2d2147;
       --color-disabled-foreground: #786d87;
       --color-overlay: #000000a3;
+    }
+
+    @variant high-contrast-light {
+      --color-background: #ffffff;
+      --color-foreground: #000000;
+      --color-surface: #ffffff;
+      --color-surface-muted: #eeeeee;
+      --color-surface-raised: #ffffff;
+      --color-muted: #dddddd;
+      --color-muted-foreground: #1a1a1a;
+      --color-subtle-foreground: #4d4d4d;
+      --color-primary: #6b3410;
+      --color-primary-foreground: #ffffff;
+      --color-primary-hover: #5a2c0d;
+      --color-primary-pressed: #48230a;
+      --color-secondary: #000000;
+      --color-secondary-foreground: #ffffff;
+      --color-secondary-hover: #1a1a1a;
+      --color-secondary-pressed: #262626;
+      --color-destructive: #8c1414;
+      --color-destructive-foreground: #ffffff;
+      --color-destructive-hover: #731010;
+      --color-destructive-pressed: #5c0d0d;
+      --color-success: #0f5c28;
+      --color-success-foreground: #ffffff;
+      --color-warning: #6b4400;
+      --color-warning-foreground: #ffffff;
+      --color-info: #123e8f;
+      --color-info-foreground: #ffffff;
+      --color-border: #4d4d4d;
+      --color-border-strong: #1a1a1a;
+      --color-control-border: #1a1a1a;
+      --color-input: #ffffff;
+      --color-focus-ring: #0033cc;
+      --color-disabled: #dddddd;
+      --color-disabled-foreground: #595959;
+      --color-overlay: #00000099;
+    }
+
+    @variant high-contrast-dark {
+      --color-background: #000000;
+      --color-foreground: #ffffff;
+      --color-surface: #0a0a0a;
+      --color-surface-muted: #141414;
+      --color-surface-raised: #1c1c1c;
+      --color-muted: #242424;
+      --color-muted-foreground: #e6e6e6;
+      --color-subtle-foreground: #b3b3b3;
+      --color-primary: #ffb84d;
+      --color-primary-foreground: #000000;
+      --color-primary-hover: #ffc670;
+      --color-primary-pressed: #ffd699;
+      --color-secondary: #ffffff;
+      --color-secondary-foreground: #000000;
+      --color-secondary-hover: #e6e6e6;
+      --color-secondary-pressed: #cccccc;
+      --color-destructive: #ff8080;
+      --color-destructive-foreground: #000000;
+      --color-destructive-hover: #ff9999;
+      --color-destructive-pressed: #ffb3b3;
+      --color-success: #5ce187;
+      --color-success-foreground: #000000;
+      --color-warning: #ffd24d;
+      --color-warning-foreground: #000000;
+      --color-info: #7fb2ff;
+      --color-info-foreground: #000000;
+      --color-border: #b3b3b3;
+      --color-border-strong: #e6e6e6;
+      --color-control-border: #e6e6e6;
+      --color-input: #0a0a0a;
+      --color-focus-ring: #66b3ff;
+      --color-disabled: #242424;
+      --color-disabled-foreground: #a6a6a6;
+      --color-overlay: #00000099;
     }
   }
 }

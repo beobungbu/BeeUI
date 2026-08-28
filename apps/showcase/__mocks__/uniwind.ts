@@ -73,6 +73,25 @@ const DEFAULT_VARIABLES: Record<string, Record<string, string | number>> = {
     '--radius-md': 10,
     '--motion-duration-normal': 200,
   },
+  // #77 — Bee accessibility (high-contrast) runtime themes. Values match the
+  // real generated packages/tokens/src/theme.css exactly (see
+  // __tests__/theme-tokens-v3-high-contrast.test.tsx, which re-derives these
+  // from the generated CSS rather than hardcoding them), so a test resolving
+  // through this mock proves the same thing the #72/#68 fixtures above prove
+  // for the primary brand registry: real production values, not arbitrary
+  // fixture data.
+  'high-contrast-light': {
+    '--color-primary': '#6b3410',
+    '--color-background': '#ffffff',
+    '--radius-md': 10,
+    '--motion-duration-normal': 200,
+  },
+  'high-contrast-dark': {
+    '--color-primary': '#ffb84d',
+    '--color-background': '#000000',
+    '--radius-md': 10,
+    '--motion-duration-normal': 200,
+  },
 };
 
 let variables: Record<string, Record<string, string | number>> = structuredClone(DEFAULT_VARIABLES);

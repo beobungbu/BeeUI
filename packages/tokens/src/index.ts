@@ -77,6 +77,59 @@ export function isBeeDarkRuntimeTheme(runtimeTheme: string) {
   return getBeeThemeSelection(runtimeTheme)?.theme === 'dark';
 }
 
+export const beeAccessibilityBrandNames = [
+  "bee"
+] as const satisfies readonly BeeBrandName[];
+
+export type BeeAccessibilityBrandName = (typeof beeAccessibilityBrandNames)[number];
+
+export const beeAccessibilityRuntimeThemeNames = [
+  "high-contrast-light",
+  "high-contrast-dark"
+] as const;
+
+export type BeeAccessibilityRuntimeThemeName = (typeof beeAccessibilityRuntimeThemeNames)[number];
+
+export const beeAccessibilityRuntimeThemeByBrand = {
+  "bee": {
+    "light": "high-contrast-light",
+    "dark": "high-contrast-dark"
+  }
+} as const satisfies Record<BeeAccessibilityBrandName, Record<BeeThemeName, BeeAccessibilityRuntimeThemeName>>;
+
+/**
+ * Accessibility (high-contrast) variant registry (#77): a second, optional
+ * `brand -> appearance -> runtime-theme` mapping built from the exact same
+ * `defineThemeRegistry` primitive as `beeThemeRegistry`. Only brands that ship a
+ * certified accessibility appearance appear here — currently just `bee` — so this
+ * never forces every brand in `beeThemeRegistry` to define a high-contrast variant.
+ * A resolved runtime theme is still applied with the ordinary `Uniwind.setTheme`
+ * call; there is no second theme store or context, only a second, narrower registry
+ * over the same runtime-theme-name namespace.
+ */
+export const beeAccessibilityThemeRegistry = defineThemeRegistry(beeAccessibilityRuntimeThemeByBrand);
+
+export function resolveBeeAccessibilityRuntimeTheme(
+  brand: BeeAccessibilityBrandName,
+  theme: BeeThemeName,
+): BeeAccessibilityRuntimeThemeName {
+  return beeAccessibilityRuntimeThemeByBrand[brand][theme];
+}
+
+export function getBeeAccessibilityThemeSelection(runtimeTheme: string):
+  | { brand: BeeAccessibilityBrandName; theme: BeeThemeName }
+  | undefined {
+  for (const brand of beeAccessibilityBrandNames) {
+    for (const theme of beeThemeNames) {
+      if (beeAccessibilityRuntimeThemeByBrand[brand][theme] === runtimeTheme) {
+        return { brand, theme };
+      }
+    }
+  }
+
+  return undefined;
+}
+
 export const semanticColorTokens = [
   "background",
   "foreground",
@@ -867,3 +920,268 @@ export type BeeTokenPath = TokenPath<typeof beeTokenReaderCategories>;
 
 /** The normalized TypeScript return type for one specific `BeeTokenPath`. */
 export type BeeTokenValue<Path extends BeeTokenPath> = TokenValueForPath<typeof beeTokenReaderCategories, Path>;
+
+export type ContrastTextPair = {
+  readonly foreground: SemanticColorToken;
+  readonly backgrounds: readonly SemanticColorToken[];
+  readonly minRatio: number;
+  readonly usage: string;
+};
+
+export type ContrastFeedbackFillPair = {
+  readonly fill: SemanticColorToken;
+  readonly foreground: SemanticColorToken;
+  readonly minRatio: number;
+  readonly usage: string;
+};
+
+export type ContrastBoundaryPair = {
+  readonly boundary: SemanticColorToken;
+  readonly adjacent: readonly SemanticColorToken[];
+  readonly minRatio: number;
+  readonly usage: string;
+};
+
+export type ContrastIndicatorPair = {
+  readonly indicator: SemanticColorToken;
+  readonly adjacent: readonly SemanticColorToken[];
+  readonly minRatio: number;
+  readonly usage: string;
+};
+
+export type ContrastException = {
+  readonly token: SemanticColorToken;
+  readonly category: string;
+  readonly reason: string;
+};
+
+/**
+ * Centralized, deterministic semantic contrast-relationship metadata (#77).
+ *
+ * This is the canonical, machine-tested description of which semantic-token
+ * relationships BeeUI certifies for contrast, and at what minimum ratio — moving
+ * the contract from ad-hoc test code into data every runtime theme (built-in
+ * brand themes and accessibility high-contrast themes alike) is validated
+ * against at codegen time. `canvasTokens` lists tokens that are backdrops, not
+ * content, so they carry no contrast requirement of their own. Every other
+ * semantic color token is covered by at least one required relationship below or
+ * by a documented entry in `exceptions` — nothing is silently uncertified.
+ * `accessibilityOnlyPairs` and `accessibilityMinTextRatio` are certified only for
+ * `beeAccessibilityRuntimeThemeNames`, not the default brand themes.
+ */
+export type ContrastContract = {
+  readonly description: string;
+  readonly canvasTokens: readonly SemanticColorToken[];
+  readonly textPairs: readonly ContrastTextPair[];
+  readonly filledActionPairs: readonly ContrastTextPair[];
+  readonly feedbackFillPairs: readonly ContrastFeedbackFillPair[];
+  readonly controlBoundaryPairs: readonly ContrastBoundaryPair[];
+  readonly focusRingPairs: readonly ContrastBoundaryPair[];
+  readonly invalidBoundaryPairs: readonly ContrastBoundaryPair[];
+  readonly essentialIndicatorPairs: readonly ContrastIndicatorPair[];
+  readonly accessibilityOnlyPairs: readonly ContrastBoundaryPair[];
+  readonly accessibilityMinTextRatio: number;
+  readonly exceptions: readonly ContrastException[];
+};
+
+export const contrastContract = {
+  "description": "Deterministic, machine-tested semantic contrast relationships that mirror actual component surface/state adjacency. Canvas tokens and documented exceptions are intentionally excluded so the matrix never claims a relationship BeeUI does not certify. All runtime themes (built-in brand themes and accessibility high-contrast themes) must satisfy every entry below; accessibilityOnlyPairs and accessibilityMinTextRatio apply only to accessibilityRuntimeThemeNames.",
+  "canvasTokens": [
+    "background",
+    "surface",
+    "surface-muted",
+    "surface-raised",
+    "muted",
+    "input"
+  ],
+  "textPairs": [
+    {
+      "foreground": "foreground",
+      "backgrounds": [
+        "background",
+        "surface",
+        "surface-muted",
+        "surface-raised",
+        "muted"
+      ],
+      "minRatio": 4.5,
+      "usage": "Primary body/heading text on every realistic canvas."
+    },
+    {
+      "foreground": "muted-foreground",
+      "backgrounds": [
+        "background",
+        "surface-muted",
+        "surface-raised"
+      ],
+      "minRatio": 4.5,
+      "usage": "Secondary/muted text on the page, muted-card, and raised-card canvases."
+    }
+  ],
+  "filledActionPairs": [
+    {
+      "foreground": "primary-foreground",
+      "backgrounds": [
+        "primary",
+        "primary-hover",
+        "primary-pressed"
+      ],
+      "minRatio": 4.5,
+      "usage": "Primary filled action label across default/hover/pressed (#65)."
+    },
+    {
+      "foreground": "secondary-foreground",
+      "backgrounds": [
+        "secondary",
+        "secondary-hover",
+        "secondary-pressed"
+      ],
+      "minRatio": 4.5,
+      "usage": "Secondary filled action label across default/hover/pressed (#65)."
+    },
+    {
+      "foreground": "destructive-foreground",
+      "backgrounds": [
+        "destructive",
+        "destructive-hover",
+        "destructive-pressed"
+      ],
+      "minRatio": 4.5,
+      "usage": "Destructive filled action label across default/hover/pressed (#65)."
+    }
+  ],
+  "feedbackFillPairs": [
+    {
+      "fill": "success",
+      "foreground": "success-foreground",
+      "minRatio": 4.5,
+      "usage": "Success badge/banner fill with its foreground text."
+    },
+    {
+      "fill": "warning",
+      "foreground": "warning-foreground",
+      "minRatio": 4.5,
+      "usage": "Warning badge/banner fill with its foreground text."
+    },
+    {
+      "fill": "info",
+      "foreground": "info-foreground",
+      "minRatio": 4.5,
+      "usage": "Info badge/banner fill with its foreground text."
+    }
+  ],
+  "controlBoundaryPairs": [
+    {
+      "boundary": "control-border",
+      "adjacent": [
+        "input"
+      ],
+      "minRatio": 3,
+      "usage": "Text input boundary against the input surface (#66)."
+    }
+  ],
+  "focusRingPairs": [
+    {
+      "boundary": "focus-ring",
+      "adjacent": [
+        "background",
+        "input",
+        "surface",
+        "surface-muted",
+        "surface-raised"
+      ],
+      "minRatio": 3,
+      "usage": "Focus ring against every realistic adjacent surface it can appear on (#66, expanded by #77 to include surface-raised)."
+    }
+  ],
+  "invalidBoundaryPairs": [
+    {
+      "boundary": "destructive",
+      "adjacent": [
+        "input",
+        "surface",
+        "surface-raised",
+        "surface-muted"
+      ],
+      "minRatio": 3,
+      "usage": "Invalid/destructive control boundary against realistic surfaces (#66)."
+    }
+  ],
+  "essentialIndicatorPairs": [
+    {
+      "indicator": "success",
+      "adjacent": [
+        "surface"
+      ],
+      "minRatio": 3,
+      "usage": "Essential non-text status indicator (icon/dot) legibility."
+    },
+    {
+      "indicator": "warning",
+      "adjacent": [
+        "surface"
+      ],
+      "minRatio": 3,
+      "usage": "Essential non-text status indicator (icon/dot) legibility."
+    },
+    {
+      "indicator": "info",
+      "adjacent": [
+        "surface"
+      ],
+      "minRatio": 3,
+      "usage": "Essential non-text status indicator (icon/dot) legibility."
+    },
+    {
+      "indicator": "destructive",
+      "adjacent": [
+        "surface"
+      ],
+      "minRatio": 3,
+      "usage": "Essential non-text status indicator (icon/dot) legibility."
+    }
+  ],
+  "accessibilityOnlyPairs": [
+    {
+      "boundary": "border-strong",
+      "adjacent": [
+        "input"
+      ],
+      "minRatio": 3,
+      "usage": "Checkbox/Radio unchecked boundary. Certified only for accessibilityRuntimeThemeNames; default light/dark/violet-light/violet-dark are not yet certified for this relationship (tracked separately, out of #77 scope)."
+    }
+  ],
+  "accessibilityMinTextRatio": 7,
+  "exceptions": [
+    {
+      "token": "subtle-foreground",
+      "category": "decorative-low-emphasis",
+      "reason": "Low-emphasis role; intentionally below the 4.5:1 body-text threshold and not approved for normal body copy."
+    },
+    {
+      "token": "disabled",
+      "category": "disabled",
+      "reason": "Disabled surface fill; inactive-component contrast exemption. Disabled state is also signalled by reduced opacity, not color alone."
+    },
+    {
+      "token": "disabled-foreground",
+      "category": "disabled",
+      "reason": "Disabled text/icon foreground; same inactive-component exemption as disabled."
+    },
+    {
+      "token": "border",
+      "category": "decorative",
+      "reason": "Subtle structural divider; decorative and never the sole means of conveying a required boundary or state."
+    },
+    {
+      "token": "border-strong",
+      "category": "known-limitation",
+      "reason": "Used as the Checkbox/Radio unchecked boundary against input. Default light/dark/violet-light/violet-dark do not yet certify 3:1 for this pair; accessibilityOnlyPairs certifies it for the high-contrast runtime themes. Fixing the default themes is tracked separately and out of #77 scope."
+    },
+    {
+      "token": "overlay",
+      "category": "decorative",
+      "reason": "Scrim overlay; decorative background dimming, not content."
+    }
+  ]
+} as const satisfies ContrastContract;

@@ -365,6 +365,24 @@ export function dtcgColorToHex(value) {
   return `${base}${Math.round(value.alpha * 255).toString(16).padStart(2, '0')}`;
 }
 
+// WCAG relative luminance / contrast ratio, computed from the first 6 hex digits (alpha, if
+// any, is ignored — no contrastContract relationship references a token with alpha). Mirrors
+// the reader-side implementation in apps/showcase/__tests__/theme-tokens-v2.test.ts so codegen
+// validation and the deterministic test suite can never silently disagree.
+function relativeLuminanceFromHex(hex) {
+  const channels = hex
+    .slice(1, 7)
+    .match(/.{2}/g)
+    .map((part) => Number.parseInt(part, 16) / 255);
+  const linear = channels.map((channel) => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+}
+
+function contrastRatioFromHex(left, right) {
+  const [lighter, darker] = [relativeLuminanceFromHex(left), relativeLuminanceFromHex(right)].sort((a, b) => b - a);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 function formatNumber(value) {
   return Number(value.toFixed(6)).toString();
 }
@@ -546,6 +564,138 @@ export function kebabCase(name) {
 
 export function densityVariableName(groupName) {
   return `--spacing-density-${kebabCase(groupName)}`;
+}
+
+// Every runtime theme name BeeUI generates CSS/resolver contexts for: the primary
+// brand/appearance registry (`runtimeThemeNames`, e.g. light/dark/violet-light/violet-dark)
+// plus any accessibility-variant runtime themes (e.g. high-contrast-light/dark, #77).
+// The accessibility axis is a second, optional registry layered through the same
+// runtime-theme-name mechanism rather than a slot inside the primary brand mapping, so a
+// brand can adopt an accessibility variant without every other brand being forced to define
+// one, and `beeRuntimeThemeNames`/`beeThemeRegistry` (the primary registry) stay untouched.
+function allRuntimeThemeNames(meta) {
+  return [...meta.runtimeThemeNames, ...(meta.accessibilityRuntimeThemeNames ?? [])];
+}
+
+// Validates com.beeui.contrastContract (#77): the centralized, deterministic metadata that
+// describes exactly which semantic-token relationships BeeUI certifies for contrast, and at
+// what minimum ratio. Two things are checked, both deterministically:
+//  1. structure — every referenced token is real, every relationship documents its usage and
+//     minimum ratio, and every semantic color token is either a canvas token, covered by a
+//     required relationship, or a documented exception (no silent gaps, no undocumented
+//     "trust me" tokens);
+//  2. substance — every declared relationship actually holds against the *resolved* colors of
+//     every runtime theme it applies to. accessibilityOnlyPairs and accessibilityMinTextRatio
+//     apply only to accessibility (high-contrast) runtime themes, since default brand themes
+//     are not certified for them (see contrastContract.exceptions "known-limitation" entries).
+function validateContrastContract(source, combinedRuntimeThemeNames) {
+  const meta = metadata(source);
+  const contract = meta.contrastContract;
+  invariant(isPlainObject(contract), 'com.beeui.contrastContract must be an object');
+  invariant(
+    typeof contract.description === 'string' && contract.description.length > 0,
+    'contrastContract.description must document the contract',
+  );
+
+  const semantics = new Set(semanticNames(source));
+  const canvasTokens = contract.canvasTokens ?? [];
+  invariant(Array.isArray(canvasTokens), 'contrastContract.canvasTokens must be an array');
+  for (const token of canvasTokens) {
+    invariant(semantics.has(token), `contrastContract.canvasTokens references unknown token "${token}"`);
+  }
+  const covered = new Set(canvasTokens);
+
+  function validatePairList(listName, roleFields) {
+    const list = contract[listName] ?? [];
+    invariant(Array.isArray(list), `contrastContract.${listName} must be an array`);
+    for (const [index, entry] of list.entries()) {
+      const label = `contrastContract.${listName}[${index}]`;
+      invariant(isPlainObject(entry), `${label} must be an object`);
+      invariant(typeof entry.minRatio === 'number' && entry.minRatio > 0, `${label}.minRatio must be a positive number`);
+      invariant(typeof entry.usage === 'string' && entry.usage.length > 0, `${label}.usage must document the relationship`);
+      for (const field of roleFields.single) {
+        const value = entry[field];
+        invariant(typeof value === 'string' && semantics.has(value), `${label}.${field} must reference a known semantic color token`);
+        covered.add(value);
+      }
+      for (const field of roleFields.list) {
+        const values = entry[field];
+        invariant(Array.isArray(values) && values.length > 0, `${label}.${field} must be a non-empty array`);
+        for (const value of values) {
+          invariant(semantics.has(value), `${label}.${field} references unknown token "${value}"`);
+          covered.add(value);
+        }
+      }
+    }
+    return list;
+  }
+
+  const textPairs = validatePairList('textPairs', { single: ['foreground'], list: ['backgrounds'] });
+  const filledActionPairs = validatePairList('filledActionPairs', { single: ['foreground'], list: ['backgrounds'] });
+  const feedbackFillPairs = validatePairList('feedbackFillPairs', { single: ['fill', 'foreground'], list: [] });
+  const controlBoundaryPairs = validatePairList('controlBoundaryPairs', { single: ['boundary'], list: ['adjacent'] });
+  const focusRingPairs = validatePairList('focusRingPairs', { single: ['boundary'], list: ['adjacent'] });
+  const invalidBoundaryPairs = validatePairList('invalidBoundaryPairs', { single: ['boundary'], list: ['adjacent'] });
+  const essentialIndicatorPairs = validatePairList('essentialIndicatorPairs', { single: ['indicator'], list: ['adjacent'] });
+  const accessibilityOnlyPairs = validatePairList('accessibilityOnlyPairs', { single: ['boundary'], list: ['adjacent'] });
+
+  invariant(
+    contract.accessibilityMinTextRatio === undefined ||
+      (typeof contract.accessibilityMinTextRatio === 'number' && contract.accessibilityMinTextRatio > 0),
+    'contrastContract.accessibilityMinTextRatio must be a positive number when declared',
+  );
+
+  const exceptions = contract.exceptions ?? [];
+  invariant(Array.isArray(exceptions), 'contrastContract.exceptions must be an array');
+  for (const [index, entry] of exceptions.entries()) {
+    const label = `contrastContract.exceptions[${index}]`;
+    invariant(isPlainObject(entry), `${label} must be an object`);
+    invariant(typeof entry.token === 'string' && semantics.has(entry.token), `${label}.token must reference a known semantic color token`);
+    invariant(typeof entry.category === 'string' && entry.category.length > 0, `${label}.category must be a non-empty string`);
+    invariant(typeof entry.reason === 'string' && entry.reason.length > 0, `${label}.reason must document why the token is excepted`);
+    covered.add(entry.token);
+  }
+
+  const uncovered = [...semantics].filter((token) => !covered.has(token));
+  invariant(
+    uncovered.length === 0,
+    `contrastContract does not cover every semantic color token; add a required relationship or a documented exception for: ${uncovered.join(', ')}`,
+  );
+
+  function hexOf(themeName, token) {
+    const value = source.themes[themeName]?.colors?.[token]?.$value;
+    invariant(value, `theme "${themeName}" is missing resolved color "${token}"`);
+    return dtcgColorToHex(value);
+  }
+
+  function checkRatio(themeName, listName, a, b, minRatio) {
+    const ratio = contrastRatioFromHex(hexOf(themeName, a), hexOf(themeName, b));
+    invariant(
+      ratio >= minRatio,
+      `contrastContract.${listName} fails in runtime theme "${themeName}": ${a} vs ${b} = ${ratio.toFixed(2)}:1, requires >= ${minRatio}:1`,
+    );
+  }
+
+  for (const themeName of combinedRuntimeThemeNames) {
+    for (const entry of textPairs) for (const bg of entry.backgrounds) checkRatio(themeName, 'textPairs', entry.foreground, bg, entry.minRatio);
+    for (const entry of filledActionPairs) for (const bg of entry.backgrounds) checkRatio(themeName, 'filledActionPairs', entry.foreground, bg, entry.minRatio);
+    for (const entry of feedbackFillPairs) checkRatio(themeName, 'feedbackFillPairs', entry.fill, entry.foreground, entry.minRatio);
+    for (const entry of controlBoundaryPairs) for (const adjacent of entry.adjacent) checkRatio(themeName, 'controlBoundaryPairs', entry.boundary, adjacent, entry.minRatio);
+    for (const entry of focusRingPairs) for (const adjacent of entry.adjacent) checkRatio(themeName, 'focusRingPairs', entry.boundary, adjacent, entry.minRatio);
+    for (const entry of invalidBoundaryPairs) for (const adjacent of entry.adjacent) checkRatio(themeName, 'invalidBoundaryPairs', entry.boundary, adjacent, entry.minRatio);
+    for (const entry of essentialIndicatorPairs) for (const adjacent of entry.adjacent) checkRatio(themeName, 'essentialIndicatorPairs', entry.indicator, adjacent, entry.minRatio);
+  }
+
+  for (const themeName of meta.accessibilityRuntimeThemeNames ?? []) {
+    for (const entry of accessibilityOnlyPairs) {
+      for (const adjacent of entry.adjacent) checkRatio(themeName, 'accessibilityOnlyPairs', entry.boundary, adjacent, entry.minRatio);
+    }
+    if (contract.accessibilityMinTextRatio) {
+      for (const entry of textPairs) {
+        for (const bg of entry.backgrounds) checkRatio(themeName, 'accessibilityMinTextRatio', entry.foreground, bg, contract.accessibilityMinTextRatio);
+      }
+    }
+  }
 }
 
 function groupClassification(group) {
@@ -943,7 +1093,7 @@ function validatePrivateClassification(source) {
       `private token group "${groupName}" must declare com.beeui.visibility "private"`,
     );
   }
-  for (const themeName of meta.runtimeThemeNames ?? []) {
+  for (const themeName of allRuntimeThemeNames(meta)) {
     const colors = source.themes?.[themeName]?.colors;
     if (!isPlainObject(colors)) continue;
     for (const [name, token] of publicEntries(colors)) {
@@ -1000,8 +1150,45 @@ export function validateCanonicalTokens(rawSource) {
   invariant(semantics.length > 0, 'semanticColorDescriptions must define at least one token');
   assertUnique(semantics, 'semantic colors');
 
-  assertExactNames(publicEntries(themes).map(([name]) => name), meta.runtimeThemeNames, 'themes');
-  for (const themeName of meta.runtimeThemeNames) {
+  // Accessibility-variant metadata (#77) is optional structurally (a document with no
+  // accessibility variants is still valid), but once declared it must be well-formed and its
+  // runtime-theme names must never collide with the primary registry's, since Uniwind resolves
+  // every runtime theme from one flat, global class-name namespace.
+  const accessibilityBrandNames = meta.accessibilityBrandNames ?? [];
+  const accessibilityRuntimeThemeNames = meta.accessibilityRuntimeThemeNames ?? [];
+  invariant(Array.isArray(accessibilityBrandNames), 'com.beeui.accessibilityBrandNames must be an array');
+  invariant(Array.isArray(accessibilityRuntimeThemeNames), 'com.beeui.accessibilityRuntimeThemeNames must be an array');
+  if (accessibilityBrandNames.length > 0 || accessibilityRuntimeThemeNames.length > 0) {
+    assertUnique(accessibilityBrandNames, 'accessibilityBrandNames');
+    invariant(
+      accessibilityBrandNames.every((brand) => meta.brandNames.includes(brand)),
+      'accessibilityBrandNames must be a subset of brandNames; an accessibility variant opts a brand in, it does not define a new brand',
+    );
+    assertUnique(accessibilityRuntimeThemeNames, 'accessibilityRuntimeThemeNames');
+    invariant(
+      accessibilityRuntimeThemeNames.every((name) => !meta.runtimeThemeNames.includes(name)),
+      'accessibilityRuntimeThemeNames must not collide with runtimeThemeNames (Uniwind runtime-theme names are one flat namespace)',
+    );
+
+    for (const brandName of accessibilityBrandNames) {
+      const mapping = meta.accessibilityRuntimeThemeByBrand?.[brandName];
+      assertExactNames(Object.keys(mapping ?? {}), meta.themeNames, `accessibility "${brandName}" appearance mapping`);
+      for (const runtimeName of Object.values(mapping)) {
+        invariant(
+          accessibilityRuntimeThemeNames.includes(runtimeName),
+          `accessibility "${brandName}" maps to unknown accessibility runtime theme ${runtimeName}`,
+        );
+      }
+    }
+    invariant(
+      Object.keys(meta.accessibilityRuntimeThemeByBrand ?? {}).every((brand) => accessibilityBrandNames.includes(brand)),
+      'accessibilityRuntimeThemeByBrand must declare exactly accessibilityBrandNames',
+    );
+  }
+
+  const combinedRuntimeThemeNames = allRuntimeThemeNames(meta);
+  assertExactNames(publicEntries(themes).map(([name]) => name), combinedRuntimeThemeNames, 'themes');
+  for (const themeName of combinedRuntimeThemeNames) {
     const colors = themes[themeName]?.colors;
     const names = publicEntries(colors).map(([name]) => name);
     assertExactNames(names, semantics, `${themeName} semantic colors`);
@@ -1017,6 +1204,8 @@ export function validateCanonicalTokens(rawSource) {
       invariant(meta.runtimeThemeNames.includes(runtimeName), `${brandName} maps to unknown runtime theme ${runtimeName}`);
     }
   }
+
+  validateContrastContract(source, combinedRuntimeThemeNames);
 
   for (const groupName of [
     'spacing',
@@ -1309,7 +1498,7 @@ function renderIndex(source) {
   const deprecated = deprecatedByCategory(source);
   const dep = (category) => deprecated.get(category) ?? emptyMap();
 
-  return `// AUTO-GENERATED — DO NOT EDIT DIRECTLY.\n// Canonical source: ${CANONICAL_PATH}\n// Generator: ${GENERATOR_PATH}\n\nimport { defineThemeRegistry } from './registry';\nimport { applyThemeOverrides, createThemeOverridesDefiner, type CompiledThemeOverrides, type OverrideCategoryMap, type ThemeOverridesInput, type UniwindCSSVariableClient } from './theme-overrides';\nimport { defineTokenReader, type TokenCategoryMap, type TokenPath, type TokenValueForPath } from './token-reader';\n\nexport * from './registry';\nexport * from './theme-overrides';\nexport * from './token-reader';\n\nexport const beeThemeNames = ${ts(meta.themeNames)} as const;\n\nexport type BeeThemeName = (typeof beeThemeNames)[number];\n\nexport const beeBrandNames = ${ts(meta.brandNames)} as const;\n\nexport type BeeBrandName = (typeof beeBrandNames)[number];\n\nexport const beeRuntimeThemeNames = ${ts(meta.runtimeThemeNames)} as const;\n\nexport type BeeRuntimeThemeName = (typeof beeRuntimeThemeNames)[number];\n\nexport const beeRuntimeThemeByBrand = ${ts(meta.runtimeThemeByBrand)} as const satisfies Record<BeeBrandName, Record<BeeThemeName, BeeRuntimeThemeName>>;\n\n/**\n * The default BeeUI theme registry (Bee + Violet). Built from the same canonical\n * mapping as the standalone helpers, so its \`resolve\`/\`selectionFor\` results match\n * \`resolveBeeRuntimeTheme\`/\`getBeeThemeSelection\` exactly. Applications may define\n * their own registry with \`defineThemeRegistry\` without editing BeeUI source.\n */\nexport const beeThemeRegistry = defineThemeRegistry(beeRuntimeThemeByBrand);\n\nexport function resolveBeeRuntimeTheme(\n  brand: BeeBrandName,\n  theme: BeeThemeName,\n): BeeRuntimeThemeName {\n  return beeRuntimeThemeByBrand[brand][theme];\n}\n\nexport function getBeeThemeSelection(runtimeTheme: string):\n  | { brand: BeeBrandName; theme: BeeThemeName }\n  | undefined {\n  for (const brand of beeBrandNames) {\n    for (const theme of beeThemeNames) {\n      if (beeRuntimeThemeByBrand[brand][theme] === runtimeTheme) {\n        return { brand, theme };\n      }\n    }\n  }\n\n  return undefined;\n}\n\nexport function isBeeDarkRuntimeTheme(runtimeTheme: string) {\n  return getBeeThemeSelection(runtimeTheme)?.theme === 'dark';\n}\n\nexport const semanticColorTokens = ${ts(semantics)} as const;\n\nexport type SemanticColorToken = (typeof semanticColorTokens)[number];\nexport type SemanticColorVariableName = \`--color-\${SemanticColorToken}\`;\nexport type SemanticColorOverrides = Partial<Record<SemanticColorVariableName, string>>;\n\nexport function semanticColorVariable(token: SemanticColorToken): SemanticColorVariableName {\n  return \`--color-\${token}\`;\n}\n\nexport function defineSemanticColorOverrides<const T extends SemanticColorOverrides>(\n  overrides: T,\n): Readonly<T> {\n  return Object.freeze({ ...overrides });\n}\n\nexport const spacing = ${renderRecord(dimensionValues(tokens.spacing), dep('spacing'))} as const;\n\nexport const radius = ${renderRecord(dimensionValues(tokens.radius), dep('radius'))} as const;\n\nexport type RadiusName = keyof typeof radius;\n\nexport type RadiusVariableName = \`--radius-\${RadiusName}\`;\n\nexport function radiusVariable(name: RadiusName): RadiusVariableName {\n  return \`--radius-\${name}\`;\n}\n\n/**\n * \`system\` means the platform default font. BeeUI deliberately does not force a\n * font-family utility until the consuming app loads and names a cross-platform font.\n */\nexport const fontFamily = ${renderRecord(tokenValues(tokens.fontFamily), dep('fontFamily'))} as const;\n\nexport const fontSize = ${renderRecord(dimensionValues(tokens.fontSize), dep('fontSize'))} as const;\n\nexport const lineHeight = ${renderRecord(dimensionValues(tokens.lineHeight), dep('lineHeight'))} as const;\n\nexport const fontWeight = ${renderRecord(tokenValues(tokens.fontWeight), dep('fontWeight'))} as const;\n\nexport const letterSpacing = ${renderRecord(dimensionValues(tokens.letterSpacing), dep('letterSpacing'))} as const;\n\nexport type TypographyRole = keyof typeof fontSize;\n\nexport type FontFamilyToken = keyof typeof fontFamily;\n\n/**\n * Composable numeric typography features. These compose with any of the six\n * semantic size roles (they are never size roles themselves). \`webUtilityClass\`\n * drives the CSS \`font-variant-numeric\` utility; \`nativeFontVariant\` maps to the\n * React Native \`fontVariant\` style so equal-width figures render on iOS/Android.\n */\nexport const numericVariants = ${ts(numericVariants)} as const;\n\nexport type NumericVariant = keyof typeof numericVariants;\n\n/**\n * System-monospace family for reference codes, IDs, and technical values. BeeUI\n * bundles no proprietary font: \`stack\`/\`webUtilityClass\` drive the web fallback\n * stack and \`native\` supplies the per-platform monospace family for React Native.\n * A consuming app may map these to a licensed monospace font it loads itself.\n */\nexport const monoFontFamily = ${ts(monoFontFamily)} as const;\n\nexport const controlSize = ${renderRecord(dimensionValues(tokens.controlSize), dep('controlSize'))} as const;\n\nexport const iconSize = ${renderRecord(dimensionValues(tokens.iconSize), dep('iconSize'))} as const;\n\nexport const avatarSize = ${renderRecord(dimensionValues(tokens.avatarSize), dep('avatarSize'))} as const;\n\nexport const contentWidth = ${renderRecord(dimensionValues(tokens.contentWidth), dep('contentWidth'))} as const;\n\nexport type ContentWidthName = keyof typeof contentWidth;\n\n/**\n * Minimum stable responsive breakpoints (min-width thresholds, px). Web-only\n * build-time constants — Tailwind/Uniwind compiles these into responsive\n * variants and remains the sole responsive execution engine. Viewports below\n * \`medium\` are the implicit compact base. These values are readable (e.g. to\n * classify a measured width) but are NOT a runtime override surface: the web\n * compiler needs constant breakpoints, so a runtime-mutable breakpoint API is\n * out of scope here (see #71).\n */\nexport const breakpoint = ${renderRecord(dimensionValues(tokens.breakpoint), dep('breakpoint'))} as const;\n\nexport type BreakpointName = keyof typeof breakpoint;\n\n/**\n * Semantic horizontal page-edge padding (px). Cross-platform: consumed on web\n * through the generated \`--spacing-page-gutter-*\` Tailwind utility and on React\n * Native through this constant. Composes additively with safe-area insets —\n * apply the gutter inside the safe area, never in place of the inset.\n */\nexport const pageGutter = ${renderRecord(dimensionValues(tokens.pageGutter), dep('pageGutter'))} as const;\n\nexport type PageGutterName = keyof typeof pageGutter;\n\n${renderDensityArtifact(source)}\n\n/**\n * Build-time vs runtime classification for the responsive-layout token groups.\n * \`breakpoint\` is a web-only build-time constant; \`pageGutter\` and\n * \`contentWidth\` are cross-platform values. None are runtime-overridable.\n */\nexport const responsiveLayoutClassification = ${ts(responsiveLayoutClassification(source))} as const;\n\nexport const elevation = ${renderRecord(elevationValues(tokens.elevation), dep('elevation'))} as const;\n\nexport type ElevationLevel = keyof typeof elevation;\n\n/**\n * Semantic z-order (stacking) contract. Deliberately separate from \`elevation\`,\n * which encodes shadow depth. Values keep intentional gaps so applications can\n * insert local sublayers between roles without colliding with BeeUI surfaces.\n */\nexport const layer = ${renderRecord(layerValues(tokens.layer), dep('layer'))} as const;\n\nexport type LayerName = keyof typeof layer;\n\nexport type LayerVariableName = \`--layer-\${LayerName}\`;\n\nexport function layerVariable(name: LayerName): LayerVariableName {\n  return \`--layer-\${name}\`;\n}\n\nexport const motionDuration = ${renderRecord(dimensionValues(tokens.motionDuration, 'ms'), dep('motionDuration'))} as const;\n\nexport type MotionDurationName = keyof typeof motionDuration;\n\nexport type MotionDurationVariableName = \`--motion-duration-\${MotionDurationName}\`;\n\nexport function motionDurationVariable(name: MotionDurationName): MotionDurationVariableName {\n  return \`--motion-duration-\${name}\`;\n}\n\nexport const motionEasing = ${renderRecord(motionEasingValues(tokens.motionEasing), dep('motionEasing'))} as const;\n\nexport const motionIntents = ${ts(motionIntentNames(source))} as const;\n\nexport type MotionIntent = (typeof motionIntents)[number];\n\n/**\n * Reduced-motion policy per intent. Chosen from the four BeeUI-supported strategies:\n * - \`immediate\`: skip animation entirely and jump to the final state;\n * - \`opacity-or-state\`: keep the opacity/state change, drop spatial (transform/size) motion;\n * - \`shorten\`: keep the motion but clamp its duration to the fast token;\n * - \`remove-spatial\`: keep non-spatial timing, drop spatial motion.\n */\nexport type MotionReducedMotionPolicy = ${MOTION_REDUCED_POLICIES.map((policy) => `'${policy}'`).join(' | ')};\n\n/**\n * Semantic motion vocabulary for recurring spatial/state transitions.\n *\n * Token presence never makes animation mandatory. Web and native representations may\n * differ while sharing a semantic intent; no frame- or time-identical parity is promised.\n * Raw spring physics (\`stiffness\`, \`damping\`, \`mass\`; unitless React-Native spring units)\n * are an implementation detail behind the semantic name, not the primary public API.\n */\nexport const motion = ${ts(motionValues(source))} as const;\n\nexport type MotionSpec = (typeof motion)[MotionIntent];\n\nexport type ResolvedMotion = {\n  /** Whether the caller should animate at all (false means jump to the final state). */\n  animate: boolean;\n  /** Effective web duration in milliseconds after any reduced-motion policy. */\n  durationMs: number;\n  /** Whether spatial (transform/size) motion should be applied. */\n  spatial: boolean;\n  /** Whether a reduced-motion policy changed the base specification. */\n  reducedMotionApplied: boolean;\n};\n\n/**\n * Resolve a semantic motion intent against the caller-supplied reduced-motion signal.\n *\n * BeeUI adds no motion/preference store: the platform or app owns the reduced-motion\n * signal (e.g. \`AccessibilityInfo.isReduceMotionEnabled\` on native, the\n * \`prefers-reduced-motion\` media query on web) and passes it in. The final state is the\n * same in every branch; reduced motion only changes how (or whether) the transition plays.\n */\nexport function resolveMotion(\n  intent: MotionIntent,\n  options: { reducedMotion?: boolean } = {},\n): ResolvedMotion {\n  const spec = motion[intent];\n  const baseDurationMs = spec.web.durationMs;\n  const spatialByDefault = spec.web.properties.some(\n    (property) => property === 'transform' || property === 'height',\n  );\n\n  if (!options.reducedMotion) {\n    return {\n      animate: true,\n      durationMs: baseDurationMs,\n      spatial: spatialByDefault,\n      reducedMotionApplied: false,\n    };\n  }\n\n  // The active intents only use a subset of policies; the exhaustive switch keeps the\n  // resolver correct if a future intent adopts \`shorten\` or \`remove-spatial\`.\n  switch (spec.reducedMotion as MotionReducedMotionPolicy) {\n    case 'immediate':\n      return { animate: false, durationMs: 0, spatial: false, reducedMotionApplied: true };\n    case 'shorten':\n      return {\n        animate: true,\n        durationMs: Math.min(baseDurationMs, motionDuration.fast),\n        spatial: spatialByDefault,\n        reducedMotionApplied: true,\n      };\n    case 'opacity-or-state':\n    case 'remove-spatial':\n      return {\n        animate: true,\n        durationMs: baseDurationMs,\n        spatial: false,\n        reducedMotionApplied: true,\n      };\n  }\n}\n\nexport const focusRing = ${ts(focusRing)} as const satisfies {\n  width: number;\n  offset: number;\n  colorToken: SemanticColorToken;\n  webVisibility: 'focus-visible';\n  nativeVisibility: 'platform-focus';\n};\n\n/**\n * Runtime-override safety classification (#71) for every canonical token group,\n * generated straight from each group's \`$extensions.com.beeui\` metadata (see\n * tokens.json). \`runtimeOverridable: true\` is the only signal that gates a\n * group into \`themeOverrideCategories\` below; every other group is public but\n * build-time/invariant. The private authoring token group has its own\n * visibility flag (see \`privateTokenGroups\` in \`$extensions.com.beeui\`) and\n * is never a \`tokens.tokens\` group, so it never appears in this table. Colors\n * have their own established public/private classification\n * (\`semanticColorDescriptions\` / \`privateTokenGroups\`) and are not repeated here.\n */\nexport const themeOverrideClassification = ${ts(tokenOverrideClassification(source))} as const;\n\n/**\n * BeeUI's #71 typed runtime-override category vocabulary, instantiated from\n * canonical, codegen-derived data. \`colors\` mirrors the existing\n * \`semanticColorTokens\` vocabulary (kept for \`defineSemanticColorOverrides\`\n * compatibility -- both compile to the identical \`--color-*\` representation).\n * Every other category here exists only because its source token group is\n * flagged \`runtimeOverridable: true\` in \`themeOverrideClassification\` above:\n * unsetting that flag and regenerating removes the category, and every\n * category's accepted \`keys\` are read live from the already-generated token\n * record (never a hand-maintained parallel list of names).\n */\nconst themeOverrideCategories = {\n  colors: {\n    keys: semanticColorTokens,\n    valueKind: 'string',\n    variable: (key: SemanticColorToken) => semanticColorVariable(key),\n    format: (value: string) => value,\n  },\n${themeOverrideCategoryEntriesTs(source)}\n} as const satisfies OverrideCategoryMap;\n\n/**\n * Typed, validated runtime-override definer for the supported safe\n * runtime-overridable public token categories. Pure define/validate/compile:\n * unknown categories, unknown keys within a known category (which includes\n * every private authoring primitive and every build-time-only/invariant\n * token -- see \`themeOverrideClassification\`), and wrong-kind values are all\n * rejected. Applying the compiled result to Uniwind is always a separate,\n * explicit \`applyThemeOverrides()\` call -- this function itself never touches\n * Uniwind, \`document\`, or any global state.\n *\n * \`\`\`ts\n * const overrides = defineThemeOverrides({\n *   colors: { primary: '#123456', focusRing: '#654321' },\n *   radius: { md: 12 },\n *   motion: { normal: 180 },\n * });\n * applyThemeOverrides(Uniwind, 'light', overrides);\n * \`\`\`\n *\n * \`defineSemanticColorOverrides()\` remains available unchanged for existing\n * color-only consumers; \`defineThemeOverrides({ colors: { primary: '#123456' } })\`\n * compiles to the identical \`--color-primary\` CSS-variable entry.\n */\nexport const defineThemeOverrides = createThemeOverridesDefiner(themeOverrideCategories);\n\n/** The exact object shape \`defineThemeOverrides\` accepts. */\nexport type ThemeOverrides = ThemeOverridesInput<typeof themeOverrideCategories>;\n\n/**\n * BeeUI's #72 typed runtime-token-read category vocabulary, instantiated from\n * canonical, codegen-derived data. Deliberately the same category set as\n * \`themeOverrideCategories\` above (\`colors\`, \`radius\`, \`motion\`) and nothing\n * else: every readable category here is real-runtime-reactive -- its value can\n * differ between the initial build and the live app, either because it is\n * theme/appearance/scope-dependent (\`colors\`) or because #71 lets it be\n * overridden at runtime (\`radius\`, \`motion\`). Every other canonical token\n * group is theme-invariant and never runtime-mutable, so it stays an ordinary\n * typed export (e.g. \`spacing\`, \`fontSize\`, \`layer\`) rather than gaining a\n * runtime-reader category -- see \`docs/data-typography.md\`'s \"Runtime-reader\n * note\" and \`token-reader.ts\`'s module documentation for the full rationale.\n */\nexport const beeTokenReaderCategories = {\n  colors: {\n    kind: 'color',\n    keys: semanticColorTokens,\n    variable: (key: SemanticColorToken) => semanticColorVariable(key),\n  },\n${tokenReaderCategoryEntriesTs(source)}\n} as const satisfies TokenCategoryMap;\n\n/**\n * BeeUI's #72 typed runtime-token reader. Pure and stateless: only derives\n * valid \`category.key\` paths and their Uniwind CSS-variable name from\n * canonical metadata (see \`token-reader.ts\`). It never reads Uniwind itself --\n * \`useBeeToken\`/\`getBeeToken\` in \`@beeui/ui\` (\`use-bee-token.ts\`) are the only\n * place this feature actually calls into Uniwind, so \`@beeui/tokens\` keeps\n * zero dependency on \`uniwind\` or React, exactly like \`beeThemeRegistry\` and\n * \`defineThemeOverrides\` above.\n */\nexport const beeTokenReader = defineTokenReader(beeTokenReaderCategories);\n\n/** Every valid runtime-readable token path, e.g. \`colors.primary\` | \`radius.md\` | \`motion.normal\`. */\nexport type BeeTokenPath = TokenPath<typeof beeTokenReaderCategories>;\n\n/** The normalized TypeScript return type for one specific \`BeeTokenPath\`. */\nexport type BeeTokenValue<Path extends BeeTokenPath> = TokenValueForPath<typeof beeTokenReaderCategories, Path>;\n`;
+  return `// AUTO-GENERATED — DO NOT EDIT DIRECTLY.\n// Canonical source: ${CANONICAL_PATH}\n// Generator: ${GENERATOR_PATH}\n\nimport { defineThemeRegistry } from './registry';\nimport { applyThemeOverrides, createThemeOverridesDefiner, type CompiledThemeOverrides, type OverrideCategoryMap, type ThemeOverridesInput, type UniwindCSSVariableClient } from './theme-overrides';\nimport { defineTokenReader, type TokenCategoryMap, type TokenPath, type TokenValueForPath } from './token-reader';\n\nexport * from './registry';\nexport * from './theme-overrides';\nexport * from './token-reader';\n\nexport const beeThemeNames = ${ts(meta.themeNames)} as const;\n\nexport type BeeThemeName = (typeof beeThemeNames)[number];\n\nexport const beeBrandNames = ${ts(meta.brandNames)} as const;\n\nexport type BeeBrandName = (typeof beeBrandNames)[number];\n\nexport const beeRuntimeThemeNames = ${ts(meta.runtimeThemeNames)} as const;\n\nexport type BeeRuntimeThemeName = (typeof beeRuntimeThemeNames)[number];\n\nexport const beeRuntimeThemeByBrand = ${ts(meta.runtimeThemeByBrand)} as const satisfies Record<BeeBrandName, Record<BeeThemeName, BeeRuntimeThemeName>>;\n\n/**\n * The default BeeUI theme registry (Bee + Violet). Built from the same canonical\n * mapping as the standalone helpers, so its \`resolve\`/\`selectionFor\` results match\n * \`resolveBeeRuntimeTheme\`/\`getBeeThemeSelection\` exactly. Applications may define\n * their own registry with \`defineThemeRegistry\` without editing BeeUI source.\n */\nexport const beeThemeRegistry = defineThemeRegistry(beeRuntimeThemeByBrand);\n\nexport function resolveBeeRuntimeTheme(\n  brand: BeeBrandName,\n  theme: BeeThemeName,\n): BeeRuntimeThemeName {\n  return beeRuntimeThemeByBrand[brand][theme];\n}\n\nexport function getBeeThemeSelection(runtimeTheme: string):\n  | { brand: BeeBrandName; theme: BeeThemeName }\n  | undefined {\n  for (const brand of beeBrandNames) {\n    for (const theme of beeThemeNames) {\n      if (beeRuntimeThemeByBrand[brand][theme] === runtimeTheme) {\n        return { brand, theme };\n      }\n    }\n  }\n\n  return undefined;\n}\n\nexport function isBeeDarkRuntimeTheme(runtimeTheme: string) {\n  return getBeeThemeSelection(runtimeTheme)?.theme === 'dark';\n}\n\nexport const beeAccessibilityBrandNames = ${ts(meta.accessibilityBrandNames ?? [])} as const satisfies readonly BeeBrandName[];\n\nexport type BeeAccessibilityBrandName = (typeof beeAccessibilityBrandNames)[number];\n\nexport const beeAccessibilityRuntimeThemeNames = ${ts(meta.accessibilityRuntimeThemeNames ?? [])} as const;\n\nexport type BeeAccessibilityRuntimeThemeName = (typeof beeAccessibilityRuntimeThemeNames)[number];\n\nexport const beeAccessibilityRuntimeThemeByBrand = ${ts(meta.accessibilityRuntimeThemeByBrand ?? {})} as const satisfies Record<BeeAccessibilityBrandName, Record<BeeThemeName, BeeAccessibilityRuntimeThemeName>>;\n\n/**\n * Accessibility (high-contrast) variant registry (#77): a second, optional\n * \`brand -> appearance -> runtime-theme\` mapping built from the exact same\n * \`defineThemeRegistry\` primitive as \`beeThemeRegistry\`. Only brands that ship a\n * certified accessibility appearance appear here — currently just \`bee\` — so this\n * never forces every brand in \`beeThemeRegistry\` to define a high-contrast variant.\n * A resolved runtime theme is still applied with the ordinary \`Uniwind.setTheme\`\n * call; there is no second theme store or context, only a second, narrower registry\n * over the same runtime-theme-name namespace.\n */\nexport const beeAccessibilityThemeRegistry = defineThemeRegistry(beeAccessibilityRuntimeThemeByBrand);\n\nexport function resolveBeeAccessibilityRuntimeTheme(\n  brand: BeeAccessibilityBrandName,\n  theme: BeeThemeName,\n): BeeAccessibilityRuntimeThemeName {\n  return beeAccessibilityRuntimeThemeByBrand[brand][theme];\n}\n\nexport function getBeeAccessibilityThemeSelection(runtimeTheme: string):\n  | { brand: BeeAccessibilityBrandName; theme: BeeThemeName }\n  | undefined {\n  for (const brand of beeAccessibilityBrandNames) {\n    for (const theme of beeThemeNames) {\n      if (beeAccessibilityRuntimeThemeByBrand[brand][theme] === runtimeTheme) {\n        return { brand, theme };\n      }\n    }\n  }\n\n  return undefined;\n}\n\nexport const semanticColorTokens = ${ts(semantics)} as const;\n\nexport type SemanticColorToken = (typeof semanticColorTokens)[number];\nexport type SemanticColorVariableName = \`--color-\${SemanticColorToken}\`;\nexport type SemanticColorOverrides = Partial<Record<SemanticColorVariableName, string>>;\n\nexport function semanticColorVariable(token: SemanticColorToken): SemanticColorVariableName {\n  return \`--color-\${token}\`;\n}\n\nexport function defineSemanticColorOverrides<const T extends SemanticColorOverrides>(\n  overrides: T,\n): Readonly<T> {\n  return Object.freeze({ ...overrides });\n}\n\nexport const spacing = ${renderRecord(dimensionValues(tokens.spacing), dep('spacing'))} as const;\n\nexport const radius = ${renderRecord(dimensionValues(tokens.radius), dep('radius'))} as const;\n\nexport type RadiusName = keyof typeof radius;\n\nexport type RadiusVariableName = \`--radius-\${RadiusName}\`;\n\nexport function radiusVariable(name: RadiusName): RadiusVariableName {\n  return \`--radius-\${name}\`;\n}\n\n/**\n * \`system\` means the platform default font. BeeUI deliberately does not force a\n * font-family utility until the consuming app loads and names a cross-platform font.\n */\nexport const fontFamily = ${renderRecord(tokenValues(tokens.fontFamily), dep('fontFamily'))} as const;\n\nexport const fontSize = ${renderRecord(dimensionValues(tokens.fontSize), dep('fontSize'))} as const;\n\nexport const lineHeight = ${renderRecord(dimensionValues(tokens.lineHeight), dep('lineHeight'))} as const;\n\nexport const fontWeight = ${renderRecord(tokenValues(tokens.fontWeight), dep('fontWeight'))} as const;\n\nexport const letterSpacing = ${renderRecord(dimensionValues(tokens.letterSpacing), dep('letterSpacing'))} as const;\n\nexport type TypographyRole = keyof typeof fontSize;\n\nexport type FontFamilyToken = keyof typeof fontFamily;\n\n/**\n * Composable numeric typography features. These compose with any of the six\n * semantic size roles (they are never size roles themselves). \`webUtilityClass\`\n * drives the CSS \`font-variant-numeric\` utility; \`nativeFontVariant\` maps to the\n * React Native \`fontVariant\` style so equal-width figures render on iOS/Android.\n */\nexport const numericVariants = ${ts(numericVariants)} as const;\n\nexport type NumericVariant = keyof typeof numericVariants;\n\n/**\n * System-monospace family for reference codes, IDs, and technical values. BeeUI\n * bundles no proprietary font: \`stack\`/\`webUtilityClass\` drive the web fallback\n * stack and \`native\` supplies the per-platform monospace family for React Native.\n * A consuming app may map these to a licensed monospace font it loads itself.\n */\nexport const monoFontFamily = ${ts(monoFontFamily)} as const;\n\nexport const controlSize = ${renderRecord(dimensionValues(tokens.controlSize), dep('controlSize'))} as const;\n\nexport const iconSize = ${renderRecord(dimensionValues(tokens.iconSize), dep('iconSize'))} as const;\n\nexport const avatarSize = ${renderRecord(dimensionValues(tokens.avatarSize), dep('avatarSize'))} as const;\n\nexport const contentWidth = ${renderRecord(dimensionValues(tokens.contentWidth), dep('contentWidth'))} as const;\n\nexport type ContentWidthName = keyof typeof contentWidth;\n\n/**\n * Minimum stable responsive breakpoints (min-width thresholds, px). Web-only\n * build-time constants — Tailwind/Uniwind compiles these into responsive\n * variants and remains the sole responsive execution engine. Viewports below\n * \`medium\` are the implicit compact base. These values are readable (e.g. to\n * classify a measured width) but are NOT a runtime override surface: the web\n * compiler needs constant breakpoints, so a runtime-mutable breakpoint API is\n * out of scope here (see #71).\n */\nexport const breakpoint = ${renderRecord(dimensionValues(tokens.breakpoint), dep('breakpoint'))} as const;\n\nexport type BreakpointName = keyof typeof breakpoint;\n\n/**\n * Semantic horizontal page-edge padding (px). Cross-platform: consumed on web\n * through the generated \`--spacing-page-gutter-*\` Tailwind utility and on React\n * Native through this constant. Composes additively with safe-area insets —\n * apply the gutter inside the safe area, never in place of the inset.\n */\nexport const pageGutter = ${renderRecord(dimensionValues(tokens.pageGutter), dep('pageGutter'))} as const;\n\nexport type PageGutterName = keyof typeof pageGutter;\n\n${renderDensityArtifact(source)}\n\n/**\n * Build-time vs runtime classification for the responsive-layout token groups.\n * \`breakpoint\` is a web-only build-time constant; \`pageGutter\` and\n * \`contentWidth\` are cross-platform values. None are runtime-overridable.\n */\nexport const responsiveLayoutClassification = ${ts(responsiveLayoutClassification(source))} as const;\n\nexport const elevation = ${renderRecord(elevationValues(tokens.elevation), dep('elevation'))} as const;\n\nexport type ElevationLevel = keyof typeof elevation;\n\n/**\n * Semantic z-order (stacking) contract. Deliberately separate from \`elevation\`,\n * which encodes shadow depth. Values keep intentional gaps so applications can\n * insert local sublayers between roles without colliding with BeeUI surfaces.\n */\nexport const layer = ${renderRecord(layerValues(tokens.layer), dep('layer'))} as const;\n\nexport type LayerName = keyof typeof layer;\n\nexport type LayerVariableName = \`--layer-\${LayerName}\`;\n\nexport function layerVariable(name: LayerName): LayerVariableName {\n  return \`--layer-\${name}\`;\n}\n\nexport const motionDuration = ${renderRecord(dimensionValues(tokens.motionDuration, 'ms'), dep('motionDuration'))} as const;\n\nexport type MotionDurationName = keyof typeof motionDuration;\n\nexport type MotionDurationVariableName = \`--motion-duration-\${MotionDurationName}\`;\n\nexport function motionDurationVariable(name: MotionDurationName): MotionDurationVariableName {\n  return \`--motion-duration-\${name}\`;\n}\n\nexport const motionEasing = ${renderRecord(motionEasingValues(tokens.motionEasing), dep('motionEasing'))} as const;\n\nexport const motionIntents = ${ts(motionIntentNames(source))} as const;\n\nexport type MotionIntent = (typeof motionIntents)[number];\n\n/**\n * Reduced-motion policy per intent. Chosen from the four BeeUI-supported strategies:\n * - \`immediate\`: skip animation entirely and jump to the final state;\n * - \`opacity-or-state\`: keep the opacity/state change, drop spatial (transform/size) motion;\n * - \`shorten\`: keep the motion but clamp its duration to the fast token;\n * - \`remove-spatial\`: keep non-spatial timing, drop spatial motion.\n */\nexport type MotionReducedMotionPolicy = ${MOTION_REDUCED_POLICIES.map((policy) => `'${policy}'`).join(' | ')};\n\n/**\n * Semantic motion vocabulary for recurring spatial/state transitions.\n *\n * Token presence never makes animation mandatory. Web and native representations may\n * differ while sharing a semantic intent; no frame- or time-identical parity is promised.\n * Raw spring physics (\`stiffness\`, \`damping\`, \`mass\`; unitless React-Native spring units)\n * are an implementation detail behind the semantic name, not the primary public API.\n */\nexport const motion = ${ts(motionValues(source))} as const;\n\nexport type MotionSpec = (typeof motion)[MotionIntent];\n\nexport type ResolvedMotion = {\n  /** Whether the caller should animate at all (false means jump to the final state). */\n  animate: boolean;\n  /** Effective web duration in milliseconds after any reduced-motion policy. */\n  durationMs: number;\n  /** Whether spatial (transform/size) motion should be applied. */\n  spatial: boolean;\n  /** Whether a reduced-motion policy changed the base specification. */\n  reducedMotionApplied: boolean;\n};\n\n/**\n * Resolve a semantic motion intent against the caller-supplied reduced-motion signal.\n *\n * BeeUI adds no motion/preference store: the platform or app owns the reduced-motion\n * signal (e.g. \`AccessibilityInfo.isReduceMotionEnabled\` on native, the\n * \`prefers-reduced-motion\` media query on web) and passes it in. The final state is the\n * same in every branch; reduced motion only changes how (or whether) the transition plays.\n */\nexport function resolveMotion(\n  intent: MotionIntent,\n  options: { reducedMotion?: boolean } = {},\n): ResolvedMotion {\n  const spec = motion[intent];\n  const baseDurationMs = spec.web.durationMs;\n  const spatialByDefault = spec.web.properties.some(\n    (property) => property === 'transform' || property === 'height',\n  );\n\n  if (!options.reducedMotion) {\n    return {\n      animate: true,\n      durationMs: baseDurationMs,\n      spatial: spatialByDefault,\n      reducedMotionApplied: false,\n    };\n  }\n\n  // The active intents only use a subset of policies; the exhaustive switch keeps the\n  // resolver correct if a future intent adopts \`shorten\` or \`remove-spatial\`.\n  switch (spec.reducedMotion as MotionReducedMotionPolicy) {\n    case 'immediate':\n      return { animate: false, durationMs: 0, spatial: false, reducedMotionApplied: true };\n    case 'shorten':\n      return {\n        animate: true,\n        durationMs: Math.min(baseDurationMs, motionDuration.fast),\n        spatial: spatialByDefault,\n        reducedMotionApplied: true,\n      };\n    case 'opacity-or-state':\n    case 'remove-spatial':\n      return {\n        animate: true,\n        durationMs: baseDurationMs,\n        spatial: false,\n        reducedMotionApplied: true,\n      };\n  }\n}\n\nexport const focusRing = ${ts(focusRing)} as const satisfies {\n  width: number;\n  offset: number;\n  colorToken: SemanticColorToken;\n  webVisibility: 'focus-visible';\n  nativeVisibility: 'platform-focus';\n};\n\n/**\n * Runtime-override safety classification (#71) for every canonical token group,\n * generated straight from each group's \`$extensions.com.beeui\` metadata (see\n * tokens.json). \`runtimeOverridable: true\` is the only signal that gates a\n * group into \`themeOverrideCategories\` below; every other group is public but\n * build-time/invariant. The private authoring token group has its own\n * visibility flag (see \`privateTokenGroups\` in \`$extensions.com.beeui\`) and\n * is never a \`tokens.tokens\` group, so it never appears in this table. Colors\n * have their own established public/private classification\n * (\`semanticColorDescriptions\` / \`privateTokenGroups\`) and are not repeated here.\n */\nexport const themeOverrideClassification = ${ts(tokenOverrideClassification(source))} as const;\n\n/**\n * BeeUI's #71 typed runtime-override category vocabulary, instantiated from\n * canonical, codegen-derived data. \`colors\` mirrors the existing\n * \`semanticColorTokens\` vocabulary (kept for \`defineSemanticColorOverrides\`\n * compatibility -- both compile to the identical \`--color-*\` representation).\n * Every other category here exists only because its source token group is\n * flagged \`runtimeOverridable: true\` in \`themeOverrideClassification\` above:\n * unsetting that flag and regenerating removes the category, and every\n * category's accepted \`keys\` are read live from the already-generated token\n * record (never a hand-maintained parallel list of names).\n */\nconst themeOverrideCategories = {\n  colors: {\n    keys: semanticColorTokens,\n    valueKind: 'string',\n    variable: (key: SemanticColorToken) => semanticColorVariable(key),\n    format: (value: string) => value,\n  },\n${themeOverrideCategoryEntriesTs(source)}\n} as const satisfies OverrideCategoryMap;\n\n/**\n * Typed, validated runtime-override definer for the supported safe\n * runtime-overridable public token categories. Pure define/validate/compile:\n * unknown categories, unknown keys within a known category (which includes\n * every private authoring primitive and every build-time-only/invariant\n * token -- see \`themeOverrideClassification\`), and wrong-kind values are all\n * rejected. Applying the compiled result to Uniwind is always a separate,\n * explicit \`applyThemeOverrides()\` call -- this function itself never touches\n * Uniwind, \`document\`, or any global state.\n *\n * \`\`\`ts\n * const overrides = defineThemeOverrides({\n *   colors: { primary: '#123456', focusRing: '#654321' },\n *   radius: { md: 12 },\n *   motion: { normal: 180 },\n * });\n * applyThemeOverrides(Uniwind, 'light', overrides);\n * \`\`\`\n *\n * \`defineSemanticColorOverrides()\` remains available unchanged for existing\n * color-only consumers; \`defineThemeOverrides({ colors: { primary: '#123456' } })\`\n * compiles to the identical \`--color-primary\` CSS-variable entry.\n */\nexport const defineThemeOverrides = createThemeOverridesDefiner(themeOverrideCategories);\n\n/** The exact object shape \`defineThemeOverrides\` accepts. */\nexport type ThemeOverrides = ThemeOverridesInput<typeof themeOverrideCategories>;\n\n/**\n * BeeUI's #72 typed runtime-token-read category vocabulary, instantiated from\n * canonical, codegen-derived data. Deliberately the same category set as\n * \`themeOverrideCategories\` above (\`colors\`, \`radius\`, \`motion\`) and nothing\n * else: every readable category here is real-runtime-reactive -- its value can\n * differ between the initial build and the live app, either because it is\n * theme/appearance/scope-dependent (\`colors\`) or because #71 lets it be\n * overridden at runtime (\`radius\`, \`motion\`). Every other canonical token\n * group is theme-invariant and never runtime-mutable, so it stays an ordinary\n * typed export (e.g. \`spacing\`, \`fontSize\`, \`layer\`) rather than gaining a\n * runtime-reader category -- see \`docs/data-typography.md\`'s \"Runtime-reader\n * note\" and \`token-reader.ts\`'s module documentation for the full rationale.\n */\nexport const beeTokenReaderCategories = {\n  colors: {\n    kind: 'color',\n    keys: semanticColorTokens,\n    variable: (key: SemanticColorToken) => semanticColorVariable(key),\n  },\n${tokenReaderCategoryEntriesTs(source)}\n} as const satisfies TokenCategoryMap;\n\n/**\n * BeeUI's #72 typed runtime-token reader. Pure and stateless: only derives\n * valid \`category.key\` paths and their Uniwind CSS-variable name from\n * canonical metadata (see \`token-reader.ts\`). It never reads Uniwind itself --\n * \`useBeeToken\`/\`getBeeToken\` in \`@beeui/ui\` (\`use-bee-token.ts\`) are the only\n * place this feature actually calls into Uniwind, so \`@beeui/tokens\` keeps\n * zero dependency on \`uniwind\` or React, exactly like \`beeThemeRegistry\` and\n * \`defineThemeOverrides\` above.\n */\nexport const beeTokenReader = defineTokenReader(beeTokenReaderCategories);\n\n/** Every valid runtime-readable token path, e.g. \`colors.primary\` | \`radius.md\` | \`motion.normal\`. */\nexport type BeeTokenPath = TokenPath<typeof beeTokenReaderCategories>;\n\n/** The normalized TypeScript return type for one specific \`BeeTokenPath\`. */\nexport type BeeTokenValue<Path extends BeeTokenPath> = TokenValueForPath<typeof beeTokenReaderCategories, Path>;\n\nexport type ContrastTextPair = {\n  readonly foreground: SemanticColorToken;\n  readonly backgrounds: readonly SemanticColorToken[];\n  readonly minRatio: number;\n  readonly usage: string;\n};\n\nexport type ContrastFeedbackFillPair = {\n  readonly fill: SemanticColorToken;\n  readonly foreground: SemanticColorToken;\n  readonly minRatio: number;\n  readonly usage: string;\n};\n\nexport type ContrastBoundaryPair = {\n  readonly boundary: SemanticColorToken;\n  readonly adjacent: readonly SemanticColorToken[];\n  readonly minRatio: number;\n  readonly usage: string;\n};\n\nexport type ContrastIndicatorPair = {\n  readonly indicator: SemanticColorToken;\n  readonly adjacent: readonly SemanticColorToken[];\n  readonly minRatio: number;\n  readonly usage: string;\n};\n\nexport type ContrastException = {\n  readonly token: SemanticColorToken;\n  readonly category: string;\n  readonly reason: string;\n};\n\n/**\n * Centralized, deterministic semantic contrast-relationship metadata (#77).\n *\n * This is the canonical, machine-tested description of which semantic-token\n * relationships BeeUI certifies for contrast, and at what minimum ratio — moving\n * the contract from ad-hoc test code into data every runtime theme (built-in\n * brand themes and accessibility high-contrast themes alike) is validated\n * against at codegen time. \`canvasTokens\` lists tokens that are backdrops, not\n * content, so they carry no contrast requirement of their own. Every other\n * semantic color token is covered by at least one required relationship below or\n * by a documented entry in \`exceptions\` — nothing is silently uncertified.\n * \`accessibilityOnlyPairs\` and \`accessibilityMinTextRatio\` are certified only for\n * \`beeAccessibilityRuntimeThemeNames\`, not the default brand themes.\n */\nexport type ContrastContract = {\n  readonly description: string;\n  readonly canvasTokens: readonly SemanticColorToken[];\n  readonly textPairs: readonly ContrastTextPair[];\n  readonly filledActionPairs: readonly ContrastTextPair[];\n  readonly feedbackFillPairs: readonly ContrastFeedbackFillPair[];\n  readonly controlBoundaryPairs: readonly ContrastBoundaryPair[];\n  readonly focusRingPairs: readonly ContrastBoundaryPair[];\n  readonly invalidBoundaryPairs: readonly ContrastBoundaryPair[];\n  readonly essentialIndicatorPairs: readonly ContrastIndicatorPair[];\n  readonly accessibilityOnlyPairs: readonly ContrastBoundaryPair[];\n  readonly accessibilityMinTextRatio: number;\n  readonly exceptions: readonly ContrastException[];\n};\n\nexport const contrastContract = ${ts(metadata(source).contrastContract)} as const satisfies ContrastContract;\n`;
 }
 
 function renderThemeCss(source) {
@@ -1337,7 +1526,8 @@ function renderThemeCss(source) {
   const focus = focusValue(source);
   const { numericVariants } = dataTypographyModels(source);
   const monoStackCss = fontFamilyStackCss(tokens.fontFamily.mono.$value);
-  const customThemes = meta.runtimeThemeNames.filter((name) => !meta.themeNames.includes(name));
+  const renderedRuntimeThemeNames = allRuntimeThemeNames(meta);
+  const customThemes = renderedRuntimeThemeNames.filter((name) => !meta.themeNames.includes(name));
   const lines = [
     '/* AUTO-GENERATED — DO NOT EDIT DIRECTLY.',
     ` * Canonical source: ${CANONICAL_PATH}`,
@@ -1411,7 +1601,7 @@ function renderThemeCss(source) {
     lines.push('}');
   }
   lines.push('', '@layer theme {', '  :root {');
-  for (const [themeIndex, themeName] of meta.runtimeThemeNames.entries()) {
+  for (const [themeIndex, themeName] of renderedRuntimeThemeNames.entries()) {
     lines.push(`    @variant ${themeName} {`);
     for (const name of semantics) {
     const deprecatedColor = deprecatedColors.get(name);
@@ -1424,7 +1614,7 @@ function renderThemeCss(source) {
     }
   }
     lines.push('    }');
-    if (themeIndex < meta.runtimeThemeNames.length - 1) lines.push('');
+    if (themeIndex < renderedRuntimeThemeNames.length - 1) lines.push('');
   }
   lines.push('  }', '}', '');
   const reducedMotionLines = [];
@@ -1448,7 +1638,7 @@ function renderThemeCss(source) {
 function renderResolverArtifact(source) {
   const meta = metadata(source);
   const contexts = Object.fromEntries(
-    meta.runtimeThemeNames.map((themeName) => [
+    allRuntimeThemeNames(meta).map((themeName) => [
       themeName,
       [{ $ref: `../tokens.json#/themes/${themeName}/colors` }],
     ]),
@@ -1473,6 +1663,7 @@ function renderResolverArtifact(source) {
         $extensions: {
           [BEEUI_EXTENSION]: {
             runtimeThemeByBrand: meta.runtimeThemeByBrand,
+            accessibilityRuntimeThemeByBrand: meta.accessibilityRuntimeThemeByBrand ?? {},
           },
         },
       },

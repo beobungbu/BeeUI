@@ -4,7 +4,7 @@ const { withUniwindConfig } = require('uniwind/metro');
 const config = withUniwindConfig(getDefaultConfig(__dirname), {
   cssEntryFile: './global.css',
   dtsFile: './uniwind-types.d.ts',
-  extraThemes: ['violet-light', 'violet-dark'],
+  extraThemes: ['violet-light', 'violet-dark', 'high-contrast-light', 'high-contrast-dark'],
 });
 
 // Ensure 'web' is a resolver platform so platform-specific modules (e.g. BeeUI's
