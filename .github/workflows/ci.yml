@@ -305,40 +305,86 @@ jobs:
 
       - name: Install iOS pods locally
         working-directory: apps/showcase/ios
+        env:
+          # Nightly schedule runs always execute a real pod install, catching
+          # any un-keyed external CocoaPods spec/CDN drift within 24h even
+          # though the resolution key itself hasn't changed.
+          BEEUI_PODS_FRESH: ${{ github.event_name == 'schedule' && '1' || '' }}
         run: |
           set -euo pipefail
 
-          # ios/ arrives fresh from the prebuild artifact with no Pods/ or
-          # Podfile.lock yet, so key the restore cache off the Podfile itself
-          # (it exists pre-install). Restore/save are best-effort: any
-          # failure here must fall back to today's exact `pod install`
-          # behavior rather than break the build.
+          # ios/ arrives fresh from the prebuild artifact with no Pods/,
+          # Podfile.lock, *.xcworkspace, or *.xcodeproj yet. `pod install`
+          # both resolves pods AND integrates the Xcode workspace/project, so
+          # this caches and restores the FULL output set and skips
+          # `pod install` entirely once the restored Pods/Manifest.lock still
+          # matches the restored Podfile.lock. The cache key covers the full
+          # resolution + app config (Podfile + pnpm-lock.yaml + app.json), not
+          # just the Podfile, so any native dependency or app-config change
+          # busts the cache and falls back to a full install (safe over
+          # fast). Restore/save are best-effort: any failure here must fall
+          # back to today's exact `pod install` behavior rather than break
+          # the build.
           safe_xcode_version="$(printf '%s' "$BEEUI_XCODE_VERSION" | tr -cs '[:alnum:].-' '_')"
-          podfile_hash="$(shasum -a 256 Podfile | awk '{ print $1 }')"
-          cache="$BEEUI_IOS_CACHE_ROOT/pods-cache/showcase/xcode-${safe_xcode_version}/podfile-${podfile_hash}"
+          pods_key="$(cat Podfile "$GITHUB_WORKSPACE/pnpm-lock.yaml" "$GITHUB_WORKSPACE/apps/showcase/app.json" | shasum -a 256 | awk '{ print $1 }')"
+          cache="$BEEUI_IOS_CACHE_ROOT/pods-cache/showcase/xcode-${safe_xcode_version}/key-${pods_key}"
 
+          restore_ok=0
           if [ -d "$cache/Pods" ] && [ -f "$cache/Podfile.lock" ]; then
-            echo "Restoring cached Pods for Podfile hash ${podfile_hash}"
-            if ! rsync -a --delete "$cache/Pods/" Pods/ || ! cp "$cache/Podfile.lock" Podfile.lock; then
-              echo "::warning::Pods cache restore failed; continuing with a full pod install."
-              rm -rf Pods Podfile.lock
+            echo "Restoring cached pod-install output set for key ${pods_key}"
+            restore_ok=1
+            rsync -a --delete "$cache/Pods/" Pods/ || restore_ok=0
+            cp "$cache/Podfile.lock" Podfile.lock || restore_ok=0
+
+            if [ "$restore_ok" -eq 1 ]; then
+              for cached_dir in "$cache"/*.xcworkspace "$cache"/*.xcodeproj; do
+                [ -d "$cached_dir" ] || continue
+                rsync -a --delete "$cached_dir/" "./$(basename "$cached_dir")/" || restore_ok=0
+              done
+            fi
+
+            if [ "$restore_ok" -ne 1 ]; then
+              echo "::warning::Pods cache restore failed; cleaning up and running a full pod install."
+              rm -rf Pods Podfile.lock ./*.xcworkspace ./*.xcodeproj
             fi
           else
-            echo "No Pods cache hit for Podfile hash ${podfile_hash}; running a full pod install."
+            echo "No pod-install cache hit for key ${pods_key}; running a full pod install."
           fi
 
-          /opt/homebrew/bin/pod install
-
-          echo "Refreshing Pods cache at $cache"
-          tmp_cache="${cache}.tmp-$$"
-          if mkdir -p "$tmp_cache" \
-            && rsync -a --delete Pods/ "$tmp_cache/Pods/" \
-            && cp Podfile.lock "$tmp_cache/Podfile.lock"; then
-            rm -rf "$cache"
-            mv "$tmp_cache" "$cache"
+          ran_pod_install=0
+          if [ "$restore_ok" -eq 1 ] && [ -z "${BEEUI_PODS_FRESH:-}" ] && cmp -s Pods/Manifest.lock Podfile.lock; then
+            echo "Pods manifest matches restored lockfile; skipping pod install."
           else
-            echo "::warning::Failed to refresh Pods cache; a future run will fall back to a full pod install."
-            rm -rf "$tmp_cache"
+            /opt/homebrew/bin/pod install
+            ran_pod_install=1
+          fi
+
+          if [ "$ran_pod_install" -eq 1 ]; then
+            echo "Refreshing pod-install cache at $cache"
+            tmp_cache="${cache}.tmp-$$"
+            save_ok=1
+
+            if ! mkdir -p "$tmp_cache" \
+              || ! rsync -a --delete Pods/ "$tmp_cache/Pods/" \
+              || ! cp Podfile.lock "$tmp_cache/Podfile.lock"; then
+              save_ok=0
+            fi
+
+            if [ "$save_ok" -eq 1 ]; then
+              for project_dir in ./*.xcworkspace ./*.xcodeproj; do
+                [ -d "$project_dir" ] || continue
+                mkdir -p "$tmp_cache/$(basename "$project_dir")"
+                rsync -a --delete "$project_dir/" "$tmp_cache/$(basename "$project_dir")/" || save_ok=0
+              done
+            fi
+
+            if [ "$save_ok" -eq 1 ]; then
+              rm -rf "$cache"
+              mv "$tmp_cache" "$cache"
+            else
+              echo "::warning::Failed to refresh pod-install cache; a future run will fall back to a full pod install."
+              rm -rf "$tmp_cache"
+            fi
           fi
 
       - name: Pin Node binary for Xcode build scripts

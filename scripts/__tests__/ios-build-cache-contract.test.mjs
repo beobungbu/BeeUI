@@ -47,12 +47,24 @@ test('bare RN consumer reuse is fail-safe: fingerprint-gated, forced clean on sc
   assert.match(bareScript, /rm -rf node_modules\/@beeui/);
 });
 
-test('Showcase Pods are persisted in a fail-safe cache keyed by the Podfile hash', async () => {
+test('Showcase pod-install output (Pods, Podfile.lock, workspace, project) is persisted in a fail-safe cache keyed by the full resolution', async () => {
   const { workflow } = await sources();
 
-  assert.match(workflow, /pods-cache\/showcase\/xcode-/);
-  assert.match(workflow, /shasum -a 256 Podfile \|/);
+  // R3b keys off Podfile + pnpm-lock.yaml + app.json (not just the Podfile),
+  // so a native dependency bump or app-config change busts the cache.
+  assert.match(workflow, /pods-cache\/showcase\/xcode-\$\{safe_xcode_version\}\/key-\$\{pods_key\}/);
+  assert.match(workflow, /cat Podfile "\$GITHUB_WORKSPACE\/pnpm-lock\.yaml" "\$GITHUB_WORKSPACE\/apps\/showcase\/app\.json" \| shasum -a 256/);
   assert.match(workflow, /rsync -a --delete/);
+  assert.match(workflow, /xcworkspace/);
+  assert.match(workflow, /xcodeproj/);
+});
+
+test('Showcase pod install is skipped only when the restored manifest matches the restored lockfile, and is forced fresh on the nightly schedule', async () => {
+  const { workflow } = await sources();
+
+  assert.match(workflow, /cmp -s Pods\/Manifest\.lock Podfile\.lock/);
+  assert.match(workflow, /BEEUI_PODS_FRESH/);
+  assert.match(workflow, /BEEUI_PODS_FRESH: \$\{\{ github\.event_name == 'schedule'/);
 });
 
 test('ci workflow gates the bare-consumer iOS leg and runs a nightly pristine backstop', async () => {
