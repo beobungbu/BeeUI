@@ -290,7 +290,40 @@ const overrides = defineSemanticColorOverrides({
 Uniwind.updateCSSVariables('light', overrides);
 ```
 
-Applications own contrast validation when overriding runtime values.
+Applications own contrast validation when overriding runtime values. `defineSemanticColorOverrides` still works exactly as shown above — it is unchanged by #71 below, and remains keyed by the raw `--color-*` CSS variable name for existing consumers.
+
+### Typed runtime overrides beyond colors (#71)
+
+`defineThemeOverrides` widens the typed override surface from colors-only to every **runtime-overridable public** token category, without inventing a second theme store or a second token-path schema:
+
+```ts
+import { applyThemeOverrides, defineThemeOverrides } from '@beeui/tokens';
+import { Uniwind } from 'uniwind';
+
+const overrides = defineThemeOverrides({
+  colors: { primary: '#123456', 'focus-ring': '#654321' },
+  radius: { md: 12 },
+  motion: { normal: 180 },
+});
+
+applyThemeOverrides(Uniwind, 'light', overrides);
+```
+
+**Define vs apply.** `defineThemeOverrides` is a pure define/validate/compile step: it never touches Uniwind, `document`, or any global state, and returns a frozen `{ cssVariables }` map. Applying it to the running app is always the separate, explicit `applyThemeOverrides(uniwind, runtimeTheme, overrides)` call (a thin forward to `uniwind.updateCSSVariables(runtimeTheme, overrides.cssVariables)`) — or your own direct `Uniwind.updateCSSVariables` call, since `overrides.cssVariables` is already the exact CSS-variable map Uniwind expects.
+
+**Supported categories.** Only `colors`, `radius`, and `motion` are exposed today. Each category's accepted keys are read live from already-generated token data (`semanticColorTokens`, `radius`, `motionDuration`) — never a hand-maintained parallel list — and each category's *inclusion* is driven by `$extensions.com.beeui.runtimeOverridable: true` on the corresponding group in `tokens.json` (see `packages/tokens/src/index.ts`'s generated `themeOverrideClassification` for the full, explicit per-group classification). Today only the `radius` and `motionDuration` token groups carry that flag.
+
+**Unsupported/private categories, and why.** Every other canonical token group — `spacing`, `fontFamily`, `fontSize`/`lineHeight` (paired for vertical rhythm), `fontWeight`, `letterSpacing`, `controlSize`/`iconSize`/`avatarSize` (touch-target/accessibility sizing), `contentWidth`, `elevation` (a compound shadow value, not a single scalar), `motionEasing`, `focusRing`, `layer`, `breakpoint` (a build-time Tailwind/Uniwind constant), and `pageGutter` — is classified `runtimeOverridable: false` and is unreachable through `defineThemeOverrides`. Private authoring primitives (the `primitives` group) are never a `tokens.tokens` group at all, so they have no category and no key in this API by construction — passing one is rejected the same way any unknown key is. Flagging a new group `runtimeOverridable: true` without also teaching `scripts/generate-tokens.mjs` its CSS-variable-naming convention fails the token build fast, so a flag can never silently do nothing.
+
+**Unit behavior.** Conversion is deterministic and category-fixed: `radius` values are plain numbers compiled to `px` (matching `--radius-*` in `theme.css`), `motion` values are plain numbers compiled to `ms` (matching `--motion-duration-*`), and `colors` values are opaque CSS color strings passed through unchanged (matching `--color-*`). A category never accepts an ambiguous mixed-unit string.
+
+**Compatibility.** `defineThemeOverrides({ colors: { primary: '#123456' } })` and `defineSemanticColorOverrides({ '--color-primary': '#123456' })` compile to the identical `--color-primary` CSS-variable entry — the new API is additive, not a replacement; migrate only if the wider vocabulary is useful.
+
+**Global vs scoped.** `applyThemeOverrides`/`Uniwind.updateCSSVariables` targets exactly one named Uniwind runtime theme (e.g. `"light"`, `"violet-dark"`) — call it once per runtime theme you want affected. It is not applied to every theme at once, and it is not scoped to a component subtree. Issue #68's scoped-theme wrapper (not part of this branch) will only ever select *which named theme* a subtree resolves to; it will not scope override *values* to that subtree. Theme-name scoping and variable overrides remain related but distinct capabilities.
+
+**Accessibility/coherence responsibility.** A typed API cannot guarantee an arbitrary caller-supplied color stays accessible. BeeUI's own built-in fixtures keep the [#65 filled-state ≥4.5:1](./theme-interactive-states.md) and [#66 ≥3:1 control-boundary](./theme-control-boundaries.md) contracts regardless of whether runtime overrides exist elsewhere in an app; `defineThemeOverrides`/`applyThemeOverrides` never auto-adjust a consumer-supplied color to compensate. Applications overriding linked foreground/background pairs (e.g. `primary` + `primary-foreground`) own re-verifying contrast for their own override values.
+
+**Uniwind remains the mutation authority.** `defineThemeOverrides` holds no override store, cache, React context, or provider; every call is stateless. Only `Uniwind.updateCSSVariables` (called directly, or through `applyThemeOverrides`) ever mutates runtime theme state.
 
 ## Completeness and accessibility gates
 
