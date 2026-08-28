@@ -438,18 +438,22 @@ test('a motion metadata change propagates deterministically to generated outputs
   assert.ok(artifacts.get('packages/tokens/src/theme.css').includes('--motion-disclosure-duration: 320ms;'));
 });
 
-test('generated resolver is a DTCG 2025.10 resolver document for every runtime theme', () => {
+test('generated resolver is a DTCG 2025.10 resolver document for every runtime theme, including accessibility variants', () => {
   const resolver = JSON.parse(
     generateTokenArtifacts(source).get('packages/tokens/src/tokens.resolver.json'),
   );
+  const allRuntimeThemes = [
+    ...beeMetadata().runtimeThemeNames,
+    ...beeMetadata().accessibilityRuntimeThemeNames,
+  ];
   assert.equal(resolver.$schema, RESOLVER_SCHEMA_URL);
   assert.equal(resolver.version, '2025.10');
-  assert.deepEqual(Object.keys(resolver.modifiers.runtimeTheme.contexts), beeMetadata().runtimeThemeNames);
+  assert.deepEqual(Object.keys(resolver.modifiers.runtimeTheme.contexts), allRuntimeThemes);
   assert.equal(resolver.modifiers.runtimeTheme.default, 'light');
   assert.deepEqual(resolver.sets.foundation.sources, [
     { $ref: '../tokens.json#/tokens' },
   ]);
-  for (const theme of beeMetadata().runtimeThemeNames) {
+  for (const theme of allRuntimeThemes) {
     assert.deepEqual(resolver.modifiers.runtimeTheme.contexts[theme], [
       { $ref: `../tokens.json#/themes/${theme}/colors` },
     ]);
@@ -458,6 +462,10 @@ test('generated resolver is a DTCG 2025.10 resolver document for every runtime t
     { $ref: '#/sets/foundation' },
     { $ref: '#/modifiers/runtimeTheme' },
   ]);
+  assert.deepEqual(
+    resolver.modifiers.runtimeTheme.$extensions['com.beeui'].accessibilityRuntimeThemeByBrand,
+    beeMetadata().accessibilityRuntimeThemeByBrand,
+  );
 });
 
 // --- #70 private authoring primitive -> semantic alias hierarchy -------------
@@ -613,4 +621,265 @@ test('multi-hop aliasing resolves deterministically to the base value', () => {
   assert.equal(dtcgColorToHex(resolved.themes.light.colors.foreground.$value), '#0a0b0c');
   const css = generateTokenArtifacts(chained).get('packages/tokens/src/theme.css');
   assert.match(css, /--color-foreground: #0a0b0c;/);
+});
+
+// --- #77 accessibility (high-contrast) theme path & contrast contract --------
+
+function contrastRatioOf(hexA, hexB) {
+  function luminance(hex) {
+    const channels = hex
+      .slice(1, 7)
+      .match(/.{2}/g)
+      .map((part) => Number.parseInt(part, 16) / 255);
+    const linear = channels.map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+  }
+  const [lighter, darker] = [luminance(hexA), luminance(hexB)].sort((a, b) => b - a);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+test('accessibility runtime themes are registered as a second, opt-in registry layer, not a primary-brand slot', () => {
+  const meta = beeMetadata();
+  // The primary brand/appearance registry (bee + violet) is untouched: adding an
+  // accessibility variant never forces every brand to define one.
+  assert.deepEqual(meta.brandNames, ['bee', 'violet']);
+  assert.deepEqual(meta.runtimeThemeNames, ['light', 'dark', 'violet-light', 'violet-dark']);
+  assert.deepEqual(meta.runtimeThemeByBrand, {
+    bee: { light: 'light', dark: 'dark' },
+    violet: { light: 'violet-light', dark: 'violet-dark' },
+  });
+
+  // The accessibility axis currently opts in only `bee`, per #77's required scope
+  // (Bee high-contrast light/dark first; no automatic Violet symmetry).
+  assert.deepEqual(meta.accessibilityBrandNames, ['bee']);
+  assert.deepEqual(meta.accessibilityRuntimeThemeNames, ['high-contrast-light', 'high-contrast-dark']);
+  assert.deepEqual(meta.accessibilityRuntimeThemeByBrand, {
+    bee: { light: 'high-contrast-light', dark: 'high-contrast-dark' },
+  });
+
+  // Runtime-theme names are one flat Uniwind namespace: no collisions across axes.
+  const combined = [...meta.runtimeThemeNames, ...meta.accessibilityRuntimeThemeNames];
+  assert.equal(new Set(combined).size, combined.length);
+});
+
+test('every accessibility runtime theme implements the exact unique semantic vocabulary', () => {
+  const expected = semanticNames();
+  for (const name of beeMetadata().accessibilityRuntimeThemeNames) {
+    const actual = Object.keys(source.themes[name].colors).filter((key) => !key.startsWith('$'));
+    assert.equal(new Set(actual).size, actual.length);
+    assert.deepEqual([...actual].sort(), [...expected].sort(), name);
+  }
+});
+
+test('theme.css registers a custom variant and complete color block for every accessibility runtime theme', () => {
+  const css = generateTokenArtifacts(source).get('packages/tokens/src/theme.css');
+  for (const theme of beeMetadata().accessibilityRuntimeThemeNames) {
+    assert.match(css, new RegExp(`@custom-variant ${theme} \\(&:where\\(\\.${theme}, \\.${theme} \\*\\)\\);`));
+    assert.match(css, new RegExp(`@variant ${theme} \\{`));
+  }
+  // Custom-variant registration precedes its @variant block, matching every other
+  // custom (non-built-in) theme (#67).
+  assert.ok(
+    css.indexOf('@custom-variant high-contrast-light') < css.indexOf('@variant high-contrast-light {'),
+  );
+});
+
+test('index.ts exposes a second registry built from the same defineThemeRegistry primitive, scoped to opted-in brands', () => {
+  const index = generateTokenArtifacts(source).get('packages/tokens/src/index.ts');
+  assert.match(index, /export const beeAccessibilityBrandNames = \[\s*"bee"\s*\] as const/);
+  assert.match(
+    index,
+    /export const beeAccessibilityThemeRegistry = defineThemeRegistry\(beeAccessibilityRuntimeThemeByBrand\);/,
+  );
+  assert.match(index, /export function resolveBeeAccessibilityRuntimeTheme\(/);
+  assert.match(index, /export function getBeeAccessibilityThemeSelection\(/);
+});
+
+test('rejects an accessibility brand that is not a declared brand', () => {
+  const invalid = structuredClone(source);
+  invalid.$extensions['com.beeui'].accessibilityBrandNames = ['bee', 'acme'];
+  assert.throws(() => validateCanonicalTokens(invalid), /accessibilityBrandNames must be a subset of brandNames/);
+});
+
+test('rejects an accessibility runtime theme name that collides with the primary registry', () => {
+  const invalid = structuredClone(source);
+  // Adding a colliding name alongside the two real ones keeps the by-brand mapping
+  // itself valid, so this mutation exercises only the collision invariant.
+  invalid.$extensions['com.beeui'].accessibilityRuntimeThemeNames = [
+    'high-contrast-light',
+    'high-contrast-dark',
+    'dark',
+  ];
+  assert.throws(
+    () => validateCanonicalTokens(invalid),
+    /accessibilityRuntimeThemeNames must not collide with runtimeThemeNames/,
+  );
+});
+
+test('rejects an accessibility brand mapping missing an appearance', () => {
+  const invalid = structuredClone(source);
+  delete invalid.$extensions['com.beeui'].accessibilityRuntimeThemeByBrand.bee.dark;
+  assert.throws(() => validateCanonicalTokens(invalid), /accessibility "bee" appearance mapping/);
+});
+
+test('rejects incomplete accessibility runtime theme color contracts', () => {
+  const invalid = structuredClone(source);
+  delete invalid.themes['high-contrast-dark'].colors['control-border'];
+  assert.throws(() => validateCanonicalTokens(invalid), /high-contrast-dark semantic colors/);
+});
+
+// --- contrastContract: structural coverage ------------------------------------
+
+test('contrastContract covers every semantic color token exactly once as a canvas, a required relationship, or a documented exception', () => {
+  const contract = beeMetadata().contrastContract;
+  const semantics = new Set(semanticNames());
+  const covered = new Set(contract.canvasTokens);
+  const addRole = (value) => covered.add(value);
+  for (const entry of contract.textPairs) {
+    addRole(entry.foreground);
+    entry.backgrounds.forEach(addRole);
+  }
+  for (const entry of contract.filledActionPairs) {
+    addRole(entry.foreground);
+    entry.backgrounds.forEach(addRole);
+  }
+  for (const entry of contract.feedbackFillPairs) {
+    addRole(entry.fill);
+    addRole(entry.foreground);
+  }
+  for (const entry of [...contract.controlBoundaryPairs, ...contract.focusRingPairs, ...contract.invalidBoundaryPairs, ...contract.accessibilityOnlyPairs]) {
+    addRole(entry.boundary);
+    entry.adjacent.forEach(addRole);
+  }
+  for (const entry of contract.essentialIndicatorPairs) {
+    addRole(entry.indicator);
+    entry.adjacent.forEach(addRole);
+  }
+  for (const entry of contract.exceptions) addRole(entry.token);
+
+  assert.deepEqual([...semantics].filter((token) => !covered.has(token)), []);
+  // Every referenced token is a real semantic color token (no typos slip through).
+  for (const token of covered) assert.ok(semantics.has(token), `unknown token referenced: ${token}`);
+});
+
+test('rejects contrastContract metadata that leaves a semantic token uncovered', () => {
+  const invalid = structuredClone(source);
+  invalid.$extensions['com.beeui'].contrastContract.exceptions =
+    invalid.$extensions['com.beeui'].contrastContract.exceptions.filter((entry) => entry.token !== 'overlay');
+  assert.throws(() => validateCanonicalTokens(invalid), /contrastContract does not cover every semantic color token/);
+});
+
+test('rejects a contrastContract relationship that references an unknown token', () => {
+  const invalid = structuredClone(source);
+  invalid.$extensions['com.beeui'].contrastContract.textPairs.push({
+    foreground: 'not-a-real-token',
+    backgrounds: ['background'],
+    minRatio: 4.5,
+    usage: 'fixture',
+  });
+  assert.throws(() => validateCanonicalTokens(invalid), /must reference a known semantic color token/);
+});
+
+test('rejects an undocumented contrastContract exception', () => {
+  const invalid = structuredClone(source);
+  invalid.$extensions['com.beeui'].contrastContract.exceptions[0].reason = '';
+  assert.throws(() => validateCanonicalTokens(invalid), /must document why the token is excepted/);
+});
+
+// --- contrastContract: substance (real contrast math against resolved colors) --
+
+test('contrastContract relationships hold for every runtime theme, primary and accessibility alike', () => {
+  const contract = beeMetadata().contrastContract;
+  const allThemes = [...beeMetadata().runtimeThemeNames, ...beeMetadata().accessibilityRuntimeThemeNames];
+  const hex = (theme, token) => dtcgColorToHex(resolvedSource.themes[theme].colors[token].$value);
+
+  for (const theme of allThemes) {
+    for (const entry of contract.textPairs) {
+      for (const bg of entry.backgrounds) {
+        assert.ok(
+          contrastRatioOf(hex(theme, entry.foreground), hex(theme, bg)) >= entry.minRatio,
+          `${theme}: ${entry.foreground} vs ${bg} below ${entry.minRatio}:1`,
+        );
+      }
+    }
+    for (const entry of contract.filledActionPairs) {
+      for (const bg of entry.backgrounds) {
+        assert.ok(contrastRatioOf(hex(theme, entry.foreground), hex(theme, bg)) >= entry.minRatio);
+      }
+    }
+    for (const entry of contract.feedbackFillPairs) {
+      assert.ok(contrastRatioOf(hex(theme, entry.fill), hex(theme, entry.foreground)) >= entry.minRatio);
+    }
+    for (const entry of [...contract.controlBoundaryPairs, ...contract.focusRingPairs, ...contract.invalidBoundaryPairs]) {
+      for (const adjacent of entry.adjacent) {
+        assert.ok(contrastRatioOf(hex(theme, entry.boundary), hex(theme, adjacent)) >= entry.minRatio);
+      }
+    }
+    for (const entry of contract.essentialIndicatorPairs) {
+      for (const adjacent of entry.adjacent) {
+        assert.ok(contrastRatioOf(hex(theme, entry.indicator), hex(theme, adjacent)) >= entry.minRatio);
+      }
+    }
+  }
+});
+
+test('accessibilityOnlyPairs and the AAA text minimum are certified for high-contrast themes but not asserted (and are not all true) for default themes', () => {
+  const contract = beeMetadata().contrastContract;
+  const hex = (theme, token) => dtcgColorToHex(resolvedSource.themes[theme].colors[token].$value);
+
+  for (const theme of beeMetadata().accessibilityRuntimeThemeNames) {
+    for (const entry of contract.accessibilityOnlyPairs) {
+      for (const adjacent of entry.adjacent) {
+        assert.ok(contrastRatioOf(hex(theme, entry.boundary), hex(theme, adjacent)) >= entry.minRatio);
+      }
+    }
+    for (const entry of contract.textPairs) {
+      for (const bg of entry.backgrounds) {
+        assert.ok(contrastRatioOf(hex(theme, entry.foreground), hex(theme, bg)) >= contract.accessibilityMinTextRatio);
+      }
+    }
+  }
+
+  // Documents *why* accessibilityOnlyPairs is its own list: the default light theme's
+  // border-strong/input pair (the Checkbox/Radio unchecked boundary) does not meet the
+  // 3:1 non-text minimum today. #77 does not silently widen the default contract to
+  // cover this — it is tracked in contrastContract.exceptions as a known limitation.
+  for (const entry of contract.accessibilityOnlyPairs) {
+    for (const adjacent of entry.adjacent) {
+      assert.ok(
+        contrastRatioOf(hex('light', entry.boundary), hex('light', adjacent)) < entry.minRatio,
+        'expected default light theme to NOT meet the accessibility-only boundary contract',
+      );
+    }
+  }
+});
+
+test('rejects a contrastContract relationship that does not actually hold against resolved colors', () => {
+  const invalid = structuredClone(source);
+  invalid.$extensions['com.beeui'].contrastContract.textPairs.push({
+    foreground: 'subtle-foreground',
+    backgrounds: ['background'],
+    minRatio: 4.5,
+    usage: 'fixture: subtle-foreground is intentionally low-contrast and must fail this assertion',
+  });
+  assert.throws(() => validateCanonicalTokens(invalid), /textPairs fails in runtime theme "light"/);
+});
+
+test('#65 and #66 baseline contrast invariants are unaffected by the accessibility axis', () => {
+  // Re-derive the exact #65/#66 relationships this generator already certified before
+  // #77, to prove #77 only adds coverage rather than displacing it.
+  for (const theme of beeMetadata().runtimeThemeNames) {
+    const hex = (token) => dtcgColorToHex(resolvedSource.themes[theme].colors[token].$value);
+    for (const [foreground, backgrounds] of [
+      ['primary-foreground', ['primary', 'primary-hover', 'primary-pressed']],
+      ['secondary-foreground', ['secondary', 'secondary-hover', 'secondary-pressed']],
+      ['destructive-foreground', ['destructive', 'destructive-hover', 'destructive-pressed']],
+    ]) {
+      for (const background of backgrounds) {
+        assert.ok(contrastRatioOf(hex(background), hex(foreground)) >= 4.5, `${theme}: ${foreground} vs ${background}`);
+      }
+    }
+    assert.ok(contrastRatioOf(hex('control-border'), hex('input')) >= 3, `${theme}: control-border`);
+    assert.ok(contrastRatioOf(hex('destructive'), hex('input')) >= 3, `${theme}: destructive vs input`);
+  }
 });

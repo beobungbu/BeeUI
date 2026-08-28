@@ -31,6 +31,7 @@ import {
   Field,
   FormGroup,
   Input,
+  Link,
   ListGroup,
   ListGroupHeader,
   Progress,
@@ -428,6 +429,54 @@ function DropdownMenuOpenScenario() {
   );
 }
 
+// #77 finalization — a compact, deterministic reconstruction of
+// apps/showcase/patterns/auth's sign-in screen, built the same way every other
+// scenario in this file is: from @beeui/ui primitives only, with fixed
+// content and no cross-app import. Representative of a real Pattern Gallery
+// screen (labeled fields, primary action, secondary link) rather than an
+// isolated component, so the accessibility axis is proven against composed
+// screen layout too, not just Foundation/Forms in isolation.
+function PatternSignInScenario() {
+  return (
+    <ScenarioShell title="Pattern: sign in">
+      <Box className="gap-1">
+        <Text variant="heading">Welcome back</Text>
+        <Text tone="muted" variant="body">
+          Use your email and password to continue where you left off.
+        </Text>
+      </Box>
+
+      <Card className="gap-4" padding="lg" variant="raised">
+        <Field label="Email" required>
+          <Input defaultValue="visual@beeui.dev" />
+        </Field>
+
+        <Box className="gap-2">
+          <Field label="Password" required>
+            <PasswordInput defaultValue="beeui-visual" />
+          </Field>
+          <Link className="self-start" onPress={() => undefined}>
+            Forgot password?
+          </Link>
+        </Box>
+
+        <Button onPress={() => undefined} size="lg">
+          Sign in
+        </Button>
+      </Card>
+
+      <Box className="items-center gap-1">
+        <Text tone="muted" variant="caption">
+          New to BeeUI?
+        </Text>
+        <Link className="self-center" onPress={() => undefined}>
+          Create an account
+        </Link>
+      </Box>
+    </ScenarioShell>
+  );
+}
+
 /**
  * Browser-only hardening fixture for the exact registration-order regression:
  * Dialog + nested menu commit first. Only after that commit (passive effect) does
@@ -522,6 +571,8 @@ function Scenario({ scenario }: { scenario: VisualScenarioId }) {
       return <PopoverOpenScenario />;
     case 'dropdown-menu-open':
       return <DropdownMenuOpenScenario />;
+    case 'pattern-sign-in':
+      return <PatternSignInScenario />;
   }
 }
 

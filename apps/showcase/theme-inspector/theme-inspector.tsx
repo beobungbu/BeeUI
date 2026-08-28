@@ -1,5 +1,7 @@
 import {
+  getBeeAccessibilityThemeSelection,
   getBeeThemeSelection,
+  resolveBeeAccessibilityRuntimeTheme,
   resolveBeeRuntimeTheme,
   type BeeBrandName,
   type BeeThemeName,
@@ -78,12 +80,27 @@ function applyRuntimeTheme(brand: BeeBrandName, mode: BeeThemeName) {
   Uniwind.setTheme(runtimeTheme as Parameters<typeof Uniwind.setTheme>[0]);
 }
 
+// #77: applies the Bee accessibility (high-contrast) runtime theme. This goes through
+// the exact same `Uniwind.setTheme` call as every other runtime theme — the
+// accessibility variant is a second, narrower registry over the same runtime-theme-name
+// mechanism, not a second theme store or a component branch.
+function applyAccessibilityTheme(mode: BeeThemeName) {
+  const runtimeTheme = resolveBeeAccessibilityRuntimeTheme('bee', mode);
+  Uniwind.setTheme(runtimeTheme as Parameters<typeof Uniwind.setTheme>[0]);
+}
+
 export function ThemeInspector({ onBack }: ThemeInspectorProps) {
   const { theme } = useUniwind();
   const runtimeTheme = String(theme);
   const selection = getBeeThemeSelection(runtimeTheme);
+  const accessibilitySelection = getBeeAccessibilityThemeSelection(runtimeTheme);
+  const highContrastActive = accessibilitySelection !== undefined;
+  // Accessibility runtime themes are Bee-only today, so `highContrastActive` alone
+  // is enough to know the active brand when the primary registry doesn't recognize
+  // the runtime theme.
   const activeBrand: BeeBrandName = selection?.brand ?? 'bee';
-  const activeMode: BeeThemeName = selection?.theme ?? (runtimeTheme === 'dark' ? 'dark' : 'light');
+  const activeMode: BeeThemeName =
+    selection?.theme ?? accessibilitySelection?.theme ?? (runtimeTheme === 'dark' ? 'dark' : 'light');
   const otherBrand: BeeBrandName = activeBrand === 'bee' ? 'violet' : 'bee';
 
   return (
@@ -142,6 +159,26 @@ export function ThemeInspector({ onBack }: ThemeInspectorProps) {
                     Dark
                   </Button>
                   <Badge variant="secondary">{runtimeTheme}</Badge>
+                </HStack>
+                <HStack align="center" gap="sm" wrap>
+                  <Button
+                    accessibilityLabel={
+                      highContrastActive ? 'Turn off Bee high contrast' : 'Turn on Bee high contrast'
+                    }
+                    disabled={activeBrand !== 'bee'}
+                    onPress={() =>
+                      highContrastActive
+                        ? applyRuntimeTheme('bee', activeMode)
+                        : applyAccessibilityTheme(activeMode)
+                    }
+                    size="sm"
+                    variant={highContrastActive ? 'secondary' : 'outline'}
+                  >
+                    {`High contrast ${highContrastActive ? 'on' : 'off'}`}
+                  </Button>
+                  <Text tone="muted" variant="caption">
+                    Bee-only accessibility appearance (#77); Violet has no high-contrast variant yet.
+                  </Text>
                 </HStack>
                 <Card className="gap-4" variant="raised">
                   <Text variant="title">Semantic branding proof</Text>

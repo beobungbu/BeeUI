@@ -7,8 +7,10 @@
 // literal, and that invalid brand/appearance access is a compile error.
 
 import {
+  beeAccessibilityThemeRegistry,
   beeThemeRegistry,
   defineThemeRegistry,
+  type BeeAccessibilityRuntimeThemeName,
   type BeeRuntimeThemeName,
   type RegistryAppearance,
   type RegistryBrand,
@@ -71,3 +73,20 @@ type _BeeResolve = Expect<Equal<typeof beeVioletDark, 'violet-dark'>>;
 // enough for #77 to add appearances later without changing this API).
 const minimalRegistry = defineThemeRegistry({ solo: { light: 'solo-light' } });
 type _MinimalAppearance = Expect<Equal<RegistryAppearance<typeof minimalRegistry.map>, 'light'>>;
+
+// #77's accessibility (high-contrast) registry is exactly this "single-appearance
+// registry" pattern applied for real: a second, independent registry built from the
+// same `defineThemeRegistry` primitive, scoped to only the brands that opt in
+// (currently just `bee`). It infers its own brand/runtime-theme unions and never
+// widens `beeThemeRegistry`'s.
+type _AccessibilityBrand = Expect<Equal<RegistryBrand<typeof beeAccessibilityThemeRegistry.map>, 'bee'>>;
+type _AccessibilityRuntime = Expect<
+  Equal<RegistryRuntimeTheme<typeof beeAccessibilityThemeRegistry.map>, BeeAccessibilityRuntimeThemeName>
+>;
+
+const beeHighContrastLight = beeAccessibilityThemeRegistry.resolve('bee', 'light');
+type _AccessibilityResolve = Expect<Equal<typeof beeHighContrastLight, 'high-contrast-light'>>;
+
+// Unknown brand is a compile error: `violet` never opted into an accessibility variant.
+// @ts-expect-error - 'violet' is not a brand in the accessibility registry.
+beeAccessibilityThemeRegistry.resolve('violet', 'light');

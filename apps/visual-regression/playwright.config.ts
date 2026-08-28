@@ -1,5 +1,6 @@
 import { defineConfig } from '@playwright/test';
 import {
+  colorSchemeForVisualTheme,
   visualThemes,
   visualViewports,
   type VisualProjectMetadata,
@@ -17,7 +18,7 @@ const canonicalProjects = viewportNames.flatMap((viewportName) =>
     } satisfies VisualProjectMetadata,
     testIgnore: /(showcase|overlay-context)\.spec\.ts/,
     use: {
-      colorScheme: theme,
+      colorScheme: colorSchemeForVisualTheme(theme),
       deviceScaleFactor: 1,
       viewport: visualViewports[viewportName],
     },
