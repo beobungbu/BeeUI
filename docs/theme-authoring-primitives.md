@@ -99,4 +99,4 @@ pnpm typecheck
 pnpm test
 ```
 
-Reusable-component leakage is guarded by a representative static check that `@beeui/ui` source consumes no private primitive identifier. Issue #83 will own the general enforcement rule; issue #80 will handle DTCG export/interoperability. This document covers only the private-primitive → semantic-alias authoring contract.
+Reusable-component leakage is guarded by the general semantic-token consumption guard (issue #83): `pnpm tokens:consumption-check`, documented in [`token-consumption-guard.md`](./token-consumption-guard.md). It flags private primitive identifiers, raw color literals, unsupported raw CSS-variable access, and brand-literal branches in `packages/ui/src/**`, all derived from this document's `privateTokenGroups` metadata. Issue #80 will handle DTCG export/interoperability separately. This document covers only the private-primitive → semantic-alias authoring contract.
