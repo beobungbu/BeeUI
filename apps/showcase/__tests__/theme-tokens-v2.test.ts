@@ -10,14 +10,20 @@ import {
   defineSemanticColorOverrides,
   elevation,
   focusRing,
+  fontFamily,
   fontSize,
+  fontWeight,
   getBeeThemeSelection,
   iconSize,
+  letterSpacing,
   lineHeight,
   motionDuration,
+  motionEasing,
+  radius,
   resolveBeeRuntimeTheme,
   semanticColorTokens,
   semanticColorVariable,
+  spacing,
   type BeeRuntimeThemeName,
   type SemanticColorOverrides,
   type SemanticColorToken,
@@ -27,6 +33,68 @@ const themeCss = fs.readFileSync(
   path.resolve(__dirname, '../../../packages/tokens/src/theme.css'),
   'utf8',
 );
+const canonicalTokens = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, '../../../packages/tokens/tokens.json'), 'utf8'),
+);
+
+const beeMetadata = canonicalTokens.$extensions['com.beeui'];
+
+function publicEntries(group: Record<string, any>) {
+  return Object.entries(group)
+    .filter(([name]) => !name.startsWith('$'))
+    .map(([name, token]) => [
+      token?.$extensions?.['com.beeui']?.publicName ?? name,
+      token,
+    ] as const);
+}
+
+function canonicalValues(group: Record<string, { $value: unknown }>) {
+  return Object.fromEntries(
+    publicEntries(group).map(([name, token]) => [name, token.$value]),
+  );
+}
+
+function canonicalDimensionValues(group: Record<string, { $value: { value: number } }>) {
+  return Object.fromEntries(
+    publicEntries(group).map(([name, token]) => [name, token.$value.value]),
+  );
+}
+
+function dtcgColorToHex(value: {
+  colorSpace: 'srgb';
+  components: [number, number, number];
+  alpha?: number;
+}) {
+  const base = `#${value.components
+    .map((component) => Math.round(component * 255).toString(16).padStart(2, '0'))
+    .join('')}`;
+  if (value.alpha === undefined || value.alpha === 1) return base;
+  return `${base}${Math.round(value.alpha * 255).toString(16).padStart(2, '0')}`;
+}
+
+function canonicalElevationValues() {
+  return Object.fromEntries(
+    publicEntries(canonicalTokens.tokens.elevation).map(([name, token]) => {
+      const extension = token.$extensions['com.beeui'];
+      return [
+        name,
+        {
+          web: extension.legacyWebValue,
+          nativeElevation: extension.nativeElevation,
+        },
+      ];
+    }),
+  );
+}
+
+function canonicalMotionEasingValues() {
+  return Object.fromEntries(
+    publicEntries(canonicalTokens.tokens.motionEasing).map(([name, token]) => [
+      name,
+      `cubic-bezier(${token.$value.join(', ')})`,
+    ]),
+  );
+}
 
 const legacySemanticColorContract = [
   'background',
@@ -144,6 +212,18 @@ describe('theme/token system v2', () => {
     expect(new Set(semanticColorTokens).size).toBe(semanticColorTokens.length);
   });
 
+  it('keeps the canonical token document on the DTCG 2025.10 contract', () => {
+    expect(canonicalTokens.$schema).toBe(
+      'https://www.designtokens.org/schemas/2025.10/format.json',
+    );
+    expect(beeMetadata.dtcgVersion).toBe('2025.10');
+    expect(canonicalTokens.tokens.motionEasing.standard.$value).toEqual([0.2, 0, 0, 1]);
+    expect(canonicalTokens.tokens.elevation.$type).toBe('shadow');
+    expect(canonicalTokens.tokens.focusRing.$value).toBeUndefined();
+    expect(canonicalTokens.tokens.spacing['2.5']).toBeUndefined();
+    expect(canonicalTokens.tokens.spacing['2-5'].$extensions['com.beeui'].publicName).toBe('2.5');
+  });
+
   it('self-registers custom brand variants in distributable theme CSS', () => {
     expect(themeCss).toContain(
       '@custom-variant violet-light (&:where(.violet-light, .violet-light *));',
@@ -165,9 +245,17 @@ describe('theme/token system v2', () => {
     expect(beeRuntimeThemeNames).toEqual(['light', 'dark', 'violet-light', 'violet-dark']);
 
     for (const theme of beeRuntimeThemeNames) {
-      const { entries } = colorVariables(extractVariant(themeCss, theme));
+      const { entries, values } = colorVariables(extractVariant(themeCss, theme));
       expect(entries.map(([name]) => name).sort()).toEqual([...semanticColorTokens].sort());
       expect(new Set(entries.map(([name]) => name)).size).toBe(semanticColorTokens.length);
+      expect(Object.fromEntries(values)).toEqual(
+        Object.fromEntries(
+          publicEntries(canonicalTokens.themes[theme].colors).map(([name, token]) => [
+            name,
+            dtcgColorToHex(token.$value),
+          ]),
+        ),
+      );
     }
   });
 
@@ -191,15 +279,22 @@ describe('theme/token system v2', () => {
   });
 
   it('exports the intentional v2 sizing, type, elevation, motion, and focus contracts', () => {
+    expect(spacing).toEqual(canonicalDimensionValues(canonicalTokens.tokens.spacing));
+    expect(radius).toEqual(canonicalDimensionValues(canonicalTokens.tokens.radius));
+    expect(fontFamily).toEqual(canonicalValues(canonicalTokens.tokens.fontFamily));
     expect(fontSize).toEqual({ caption: 12, label: 14, body: 16, heading: 18, title: 24, display: 32 });
     expect(lineHeight).toEqual({ caption: 16, label: 20, body: 24, heading: 24, title: 32, display: 40 });
+    expect(fontWeight).toEqual(canonicalValues(canonicalTokens.tokens.fontWeight));
+    expect(letterSpacing).toEqual(canonicalDimensionValues(canonicalTokens.tokens.letterSpacing));
     expect(controlSize).toEqual({ compact: 36, default: 44, large: 48, icon: 44, touchTarget: 44 });
     expect(iconSize).toEqual({ xs: 12, sm: 16, md: 20, lg: 24 });
     expect(avatarSize).toEqual({ sm: 32, md: 40, lg: 48, xl: 64 });
     expect(contentWidth).toEqual({ form: 512, reading: 704, page: 1152, dialog: 512 });
+    expect(elevation).toEqual(canonicalElevationValues());
     expect(elevation.raised.nativeElevation).toBe(2);
     expect(elevation.overlay.nativeElevation).toBe(8);
     expect(motionDuration).toEqual({ fast: 120, normal: 200, slow: 320 });
+    expect(motionEasing).toEqual(canonicalMotionEasingValues());
     expect(focusRing).toMatchObject({ width: 2, offset: 2, colorToken: 'focus-ring' });
     expect(controlSize.touchTarget).toBeGreaterThanOrEqual(44);
   });

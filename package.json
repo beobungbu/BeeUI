@@ -11,8 +11,11 @@
     "ios": "pnpm --filter @beeui/showcase ios",
     "android": "pnpm --filter @beeui/showcase android",
     "web": "pnpm --filter @beeui/showcase web",
-    "typecheck": "pnpm -r --if-present typecheck",
-    "test": "pnpm --filter @beeui/showcase test && pnpm registry:verify && pnpm registry:test",
+    "tokens:generate": "node ./scripts/generate-tokens.mjs",
+    "tokens:check": "node ./scripts/generate-tokens.mjs --check",
+    "tokens:test": "node --test ./scripts/__tests__/generate-tokens.test.mjs",
+    "typecheck": "pnpm tokens:check && pnpm -r --if-present typecheck",
+    "test": "pnpm tokens:test && pnpm --filter @beeui/showcase test && pnpm registry:verify && pnpm registry:test",
     "check": "pnpm typecheck && pnpm test",
     "release:verify": "node ./scripts/verify-release.mjs",
     "beeui": "node ./scripts/beeui.mjs",
@@ -20,6 +23,7 @@
     "registry:test": "node --test ./scripts/__tests__/beeui.test.mjs"
   },
   "devDependencies": {
+    "@hyperjump/json-schema": "1.17.8",
     "@types/react": "^19.2.0",
     "typescript": "~5.9.2"
   }
