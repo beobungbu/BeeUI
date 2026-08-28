@@ -20,31 +20,49 @@
         "light": [
           {
             "$ref": "../tokens.json#/themes/light/colors"
+          },
+          {
+            "$ref": "../tokens.json#/themes/light/chart"
           }
         ],
         "dark": [
           {
             "$ref": "../tokens.json#/themes/dark/colors"
+          },
+          {
+            "$ref": "../tokens.json#/themes/dark/chart"
           }
         ],
         "violet-light": [
           {
             "$ref": "../tokens.json#/themes/violet-light/colors"
+          },
+          {
+            "$ref": "../tokens.json#/themes/violet-light/chart"
           }
         ],
         "violet-dark": [
           {
             "$ref": "../tokens.json#/themes/violet-dark/colors"
+          },
+          {
+            "$ref": "../tokens.json#/themes/violet-dark/chart"
           }
         ],
         "high-contrast-light": [
           {
             "$ref": "../tokens.json#/themes/high-contrast-light/colors"
+          },
+          {
+            "$ref": "../tokens.json#/themes/high-contrast-light/chart"
           }
         ],
         "high-contrast-dark": [
           {
             "$ref": "../tokens.json#/themes/high-contrast-dark/colors"
+          },
+          {
+            "$ref": "../tokens.json#/themes/high-contrast-dark/chart"
           }
         ]
       },

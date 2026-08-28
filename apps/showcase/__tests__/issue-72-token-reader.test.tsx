@@ -29,9 +29,9 @@ function RadiusProbe({ testID }: { testID: string }) {
 }
 
 describe('issue #72 — path vocabulary is derived from canonical metadata', () => {
-  it('accepts exactly colors.* | radius.* | motion.* — the same set #71 flags runtime-reactive', () => {
+  it('accepts exactly colors.* | chart.* | radius.* | motion.* — every real-runtime-reactive category (#71 for radius/motion, #78 for chart)', () => {
     const categories = new Set(beeTokenReader.paths.map((path) => path.split('.')[0]));
-    expect(categories).toEqual(new Set(['colors', 'radius', 'motion']));
+    expect(categories).toEqual(new Set(['colors', 'chart', 'radius', 'motion']));
   });
 
   it('resolves a valid path to its exact Uniwind CSS-variable name', () => {

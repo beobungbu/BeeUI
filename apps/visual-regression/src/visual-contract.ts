@@ -12,6 +12,12 @@ export const visualScenarios = [
   // cross-app import) so the accessibility axis is proven against a realistic
   // composed screen, not just isolated components.
   { id: 'pattern-sign-in', label: 'Pattern: sign in' },
+  // #78 — semantic data-visualization (chart) color tokens. A lightweight,
+  // dependency-free SVG fixture (no chart library) proving the `chart.*` token
+  // contract: a 4-series categorical bar chart with gridlines/axis and a
+  // highlighted bar, plus a positive/negative/neutral finance-delta list with
+  // non-color reinforcement (sign + arrow + label, never color alone).
+  { id: 'dataviz', label: 'Data visualization' },
 ] as const;
 
 export type VisualScenarioId = (typeof visualScenarios)[number]['id'];
