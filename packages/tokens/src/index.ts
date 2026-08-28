@@ -4,9 +4,11 @@
 
 import { defineThemeRegistry } from './registry';
 import { createThemeOverridesDefiner, type OverrideCategoryMap, type ThemeOverridesInput } from './theme-overrides';
+import { defineTokenReader, type TokenCategoryMap, type TokenPath, type TokenValueForPath } from './token-reader';
 
 export * from './registry';
 export * from './theme-overrides';
+export * from './token-reader';
 
 export const beeThemeNames = [
   "light",
@@ -150,6 +152,14 @@ export const radius = {
   "2xl": 24,
   "full": 9999
 } as const;
+
+export type RadiusName = keyof typeof radius;
+
+export type RadiusVariableName = `--radius-${RadiusName}`;
+
+export function radiusVariable(name: RadiusName): RadiusVariableName {
+  return `--radius-${name}`;
+}
 
 /**
  * `system` means the platform default font. BeeUI deliberately does not force a
@@ -370,6 +380,14 @@ export const motionDuration = {
   "normal": 200,
   "slow": 320
 } as const;
+
+export type MotionDurationName = keyof typeof motionDuration;
+
+export type MotionDurationVariableName = `--motion-duration-${MotionDurationName}`;
+
+export function motionDurationVariable(name: MotionDurationName): MotionDurationVariableName {
+  return `--motion-duration-${name}`;
+}
 
 export const motionEasing = {
   "standard": "cubic-bezier(0.2, 0, 0, 1)",
@@ -680,3 +698,51 @@ export const defineThemeOverrides = createThemeOverridesDefiner(themeOverrideCat
 
 /** The exact object shape `defineThemeOverrides` accepts. */
 export type ThemeOverrides = ThemeOverridesInput<typeof themeOverrideCategories>;
+
+/**
+ * BeeUI's #72 typed runtime-token-read category vocabulary, instantiated from
+ * canonical, codegen-derived data. Deliberately the same category set as
+ * `themeOverrideCategories` above (`colors`, `radius`, `motion`) and nothing
+ * else: every readable category here is real-runtime-reactive -- its value can
+ * differ between the initial build and the live app, either because it is
+ * theme/appearance/scope-dependent (`colors`) or because #71 lets it be
+ * overridden at runtime (`radius`, `motion`). Every other canonical token
+ * group is theme-invariant and never runtime-mutable, so it stays an ordinary
+ * typed export (e.g. `spacing`, `fontSize`, `layer`) rather than gaining a
+ * runtime-reader category -- see `docs/data-typography.md`'s "Runtime-reader
+ * note" and `token-reader.ts`'s module documentation for the full rationale.
+ */
+export const beeTokenReaderCategories = {
+  colors: {
+    kind: 'color',
+    keys: semanticColorTokens,
+    variable: (key: SemanticColorToken) => semanticColorVariable(key),
+  },
+  radius: {
+    kind: 'dimension',
+    keys: Object.keys(radius) as RadiusName[],
+    variable: (key: RadiusName) => radiusVariable(key),
+  },
+  motion: {
+    kind: 'duration',
+    keys: Object.keys(motionDuration) as MotionDurationName[],
+    variable: (key: MotionDurationName) => motionDurationVariable(key),
+  },
+} as const satisfies TokenCategoryMap;
+
+/**
+ * BeeUI's #72 typed runtime-token reader. Pure and stateless: only derives
+ * valid `category.key` paths and their Uniwind CSS-variable name from
+ * canonical metadata (see `token-reader.ts`). It never reads Uniwind itself --
+ * `useBeeToken`/`getBeeToken` in `@beeui/ui` (`use-bee-token.ts`) are the only
+ * place this feature actually calls into Uniwind, so `@beeui/tokens` keeps
+ * zero dependency on `uniwind` or React, exactly like `beeThemeRegistry` and
+ * `defineThemeOverrides` above.
+ */
+export const beeTokenReader = defineTokenReader(beeTokenReaderCategories);
+
+/** Every valid runtime-readable token path, e.g. `colors.primary` | `radius.md` | `motion.normal`. */
+export type BeeTokenPath = TokenPath<typeof beeTokenReaderCategories>;
+
+/** The normalized TypeScript return type for one specific `BeeTokenPath`. */
+export type BeeTokenValue<Path extends BeeTokenPath> = TokenValueForPath<typeof beeTokenReaderCategories, Path>;

@@ -325,6 +325,38 @@ applyThemeOverrides(Uniwind, 'light', overrides);
 
 **Uniwind remains the mutation authority.** `defineThemeOverrides` holds no override store, cache, React context, or provider; every call is stateless. Only `Uniwind.updateCSSVariables` (called directly, or through `applyThemeOverrides`) ever mutates runtime theme state.
 
+### Typed runtime token readers (#72)
+
+`useBeeToken`/`getBeeToken` (from `@beeui/ui`) let JS/TS consumers that cannot use `className` — SVG props, chart libraries, a React Navigation theme object, `StatusBar`/platform APIs, canvas, imperative animation/configuration — read a resolved BeeUI semantic value without spelling `--color-*`/`--radius-*`/`--motion-duration-*` by hand:
+
+```ts
+// Hook form: live, scope-aware, re-renders on theme change or a #71 override.
+const fill = useBeeToken('colors.primary');
+const cornerRadius = useBeeToken('radius.md');
+
+// Non-hook form: a one-shot snapshot of the *global* theme only.
+const navigationTheme = {
+  colors: {
+    primary: getBeeToken('colors.primary'),
+    background: getBeeToken('colors.background'),
+  },
+};
+```
+
+**A read adapter, not a store.** Both functions are thin, stateless wrappers over Uniwind's own public read APIs — `useCSSVariable` and `Uniwind.getCSSVariable` from the `uniwind` package. `@beeui/tokens`'s `beeTokenReader` only derives *which* CSS variable to ask Uniwind for and *how* to normalize whatever it returns; it never reads Uniwind itself, holds no cache, and adds no React context/provider. Uniwind remains the sole runtime theme authority.
+
+**Path vocabulary.** A `BeeTokenPath` is a `"category.key"` string derived from canonical token metadata: `colors.<SemanticColorToken>`, `radius.<RadiusName>`, or `motion.<MotionDurationName>` — deliberately the same three categories `defineThemeOverrides` (#71) exposes, since every readable category here is real-runtime-reactive (theme/appearance/scope-dependent, or #71-overridable). Everything else is rejected by construction: private #70 authoring primitives are never part of `semanticColorTokens`, so there is no `'colors.amber-500'` path to construct; `breakpoint` is a build-time-only Tailwind/Uniwind constant and has no reader category; theme-invariant groups (`spacing`, typography, `controlSize`/`iconSize`/`avatarSize`, `contentWidth`/`pageGutter`, `elevation`, `motionEasing`, `layer`, `focusRing`) never change at runtime, so they stay ordinary typed exports — import them directly instead of reading them through Uniwind (see the "Runtime-reader note" in `docs/data-typography.md`).
+
+**Units.** `colors.*` normalizes to a `string` CSS color (`#rrggbb`/`#rrggbbaa` hex); `radius.*`/`motion.*` normalize to a plain `number` (CSS pixels / milliseconds, unit stripped). Uniwind's own `useCSSVariable` returns `string | number` and documents that web is always a string while native can be either — BeeUI's reader absorbs that platform difference so every consumer gets the same typed shape everywhere.
+
+**Global vs. scoped.** `useBeeToken` reads through Uniwind's own ambient scope context, so it resolves the nearest `BeeThemeScope`/`ScopedTheme` ancestor exactly like a `className` would, and falls back to the global theme outside any scope. `getBeeToken` delegates to `Uniwind.getCSSVariable`, which Uniwind itself hardcodes to the global theme only — calling it inside a scoped subtree still returns the app's current global-theme value. This is a genuine Uniwind limitation, not a BeeUI choice; prefer `useBeeToken` inside a scope, and reserve `getBeeToken` for call sites outside any scope you care about.
+
+**Override interaction.** A #71 `applyThemeOverrides`/`Uniwind.updateCSSVariables` write is visible to both readers on the very next read — `useBeeToken` re-renders through Uniwind's own listener, and `getBeeToken` re-reads live on every call. Neither reader caches a value itself, so there is nothing to go stale.
+
+**Non-hook lifecycle caveat.** `getBeeToken` is a snapshot, not a subscription: it returns the value valid *at the moment it is called* and does not re-run later — call it again after a theme change to get a fresh value. It also requires BeeUI's `theme.css`/Uniwind's active runtime theme to already be initialized; calling it too early throws a descriptive error rather than silently returning the wrong value.
+
+See `packages/tokens/src/token-reader.ts` and `packages/ui/src/components/use-bee-token.ts` for the full API documentation, including SVG/chart/React-Navigation/platform-API examples.
+
 ## Completeness and accessibility gates
 
 Every registered runtime theme must implement the exact same semantic-color vocabulary. Adding or removing a role is rejected unless all runtime themes move together.
