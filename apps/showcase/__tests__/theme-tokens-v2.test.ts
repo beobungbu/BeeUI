@@ -329,8 +329,8 @@ describe('theme/token system v2', () => {
       '--container-reading:',
       '--container-page:',
       '--container-dialog:',
-      '--breakpoint-medium:',
-      '--breakpoint-expanded:',
+      '--breakpoint-md:',
+      '--breakpoint-xl:',
       '--spacing-page-gutter-compact:',
       '--spacing-page-gutter-regular:',
       '--spacing-page-gutter-spacious:',
@@ -345,6 +345,9 @@ describe('theme/token system v2', () => {
     ]) {
       expect(themeCss).toContain(variable);
     }
+
+    expect(themeCss).not.toContain('--breakpoint-medium:');
+    expect(themeCss).not.toContain('--breakpoint-expanded:');
   });
 
   it.each(beeRuntimeThemeNames)(
