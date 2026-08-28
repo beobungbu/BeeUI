@@ -30,6 +30,7 @@ const packageSpecs = [
       'package/src/theme.css',
       'package/tokens.json',
       'package/src/tokens.resolver.json',
+      'package/src/lifecycle.json',
     ],
   },
   {

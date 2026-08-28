@@ -25,11 +25,12 @@ DTCG token/group names cannot contain `.`. The canonical spacing token historica
 
 The canonical `packages/tokens/tokens.json` is also the distributable `@beeui/tokens/tokens.json` export. Exporting the canonical file directly avoids a second machine-readable copy that could drift while preserving the single-source contract.
 
-The deterministic build-time generator is `scripts/generate-tokens.mjs`. It commits three derived consumer-ready outputs:
+The deterministic build-time generator is `scripts/generate-tokens.mjs`. It commits four derived consumer-ready outputs:
 
 - `packages/tokens/src/index.ts` — the existing public TypeScript API;
 - `packages/tokens/src/theme.css` — Tailwind CSS v4 variables and Uniwind runtime themes;
 - `packages/tokens/src/tokens.resolver.json` — a DTCG 2025.10 Resolver document describing the foundation set plus the four registered runtime-theme contexts.
+- `packages/tokens/src/lifecycle.json` — a machine-readable lifecycle manifest (status, deprecations, replacements) derived from canonical lifecycle metadata. See [`docs/token-lifecycle.md`](./token-lifecycle.md).
 
 The Resolver artifact uses the official 2025.10 resolver schema and references the packaged canonical document via URI + JSON Pointer sources instead of duplicating the token payload. It models `light`, `dark`, `violet-light`, and `violet-dark` as contexts of one `runtimeTheme` modifier.
 
