@@ -178,7 +178,7 @@ Consumers can copy it explicitly:
 pnpm beeui -- add theme
 ```
 
-Every supported phase-1 component also depends transitively on `theme`, so adding a component preflights and copies the same canonical CSS to `config.themeFile` when it is absent.
+Every supported component also depends transitively on `theme`, so adding a component preflights and copies the same canonical CSS to `config.themeFile` when it is absent.
 
 The CLI does **not** silently edit an application's existing global CSS entry. After source copy, the consumer must import `config.themeFile` from the CSS entry used by its Tailwind v4/Uniwind setup. This separation avoids guessing which CSS entry file owns the consumer's build configuration.
 
@@ -232,7 +232,7 @@ pnpm registry:verify
 
 ## Security boundaries
 
-Phase 1 deliberately keeps the trust surface small:
+The current repository-local workflow deliberately keeps the trust surface small:
 
 - Node.js built-ins implement CLI parsing and filesystem behavior.
 - Registry data is JSON, not executable code.
@@ -285,9 +285,10 @@ Generated/copied source contains no timestamps or machine-specific absolute path
 - TypeScript/TSX transpile syntax smoke
 - copied relative-import graph resolution
 - no partial writes after preflight collision
+- anchored-overlay module rewrite via Popover
 - doctor behavior
 
-The root `pnpm test` command also runs `pnpm registry:test` after the existing showcase test suite.
+The root `pnpm test` command also runs `pnpm registry:verify` and `pnpm registry:test` after the existing showcase test suite.
 
 ## Why there is no public `npx beeui` yet
 
@@ -305,4 +306,4 @@ A later CLI publication tranche can:
 4. define remote registry distribution with integrity/version controls if BeeUI needs it;
 5. expand source transforms only when each transform has drift/error tests.
 
-Registry coverage should expand separately and incrementally. Each new component should declare its exact source files, internal registry dependencies, external packages, peer expectations, and required transforms, then add consumer tests before the item becomes public. Components with more complex native dependencies or provider/context behavior should not be marked supported until their source-owned consumer path is independently verified.
+The registry should stay in lockstep with the stable public component-module surface. `pnpm registry:verify` enforces that invariant; new components must declare their exact source files, internal registry dependencies, external packages, peer expectations, and required transforms before their public export can land. Components with more complex native dependencies or provider/context behavior still need consumer verification appropriate to their runtime contract.
