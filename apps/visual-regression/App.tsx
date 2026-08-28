@@ -86,6 +86,11 @@ function readHardeningQuery() {
   return new URLSearchParams(window.location.search).get('hardening');
 }
 
+function readDataTypographyQuery() {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).get('data') === 'typography';
+}
+
 function nextFrame() {
   return new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 }
@@ -460,6 +465,47 @@ function CaseCHardeningFixture() {
   );
 }
 
+/**
+ * Non-screenshot geometry fixture: proves tabular numerals render equal-width
+ * figures (so numeric columns align) and that the mono family resolves, without
+ * committing a platform-specific PNG baseline. Driven by `data-typography.spec.ts`.
+ */
+function DataTypographyFixture() {
+  const alignedValues = ['111.11', '888.88', '909.90', '123.45'];
+  return (
+    <Box className="min-h-screen gap-6 bg-surface p-6" testID="data-typography-fixture">
+      <Text variant="title">Data typography</Text>
+      {/* Tabular column: proves the font-variant-numeric mechanism is wired. Absolute
+          equal-width rendering depends on the active web font supporting tnum. */}
+      <Box className="w-40 gap-1" testID="tabular-column">
+        {alignedValues.map((value) => (
+          <Text
+            className="text-right"
+            key={`tabular-${value}`}
+            numeric="tabular"
+            testID={`tabular-${value}`}
+            variant="body"
+          >
+            {value}
+          </Text>
+        ))}
+      </Box>
+      {/* Mono column: the system-monospace family is guaranteed equal-width on every
+          platform, so same-length values align — a font-independent geometry proof. */}
+      <Box className="gap-1" testID="mono-column">
+        {alignedValues.map((value) => (
+          <Text family="mono" key={`mono-${value}`} testID={`mono-num-${value}`} variant="body">
+            {value}
+          </Text>
+        ))}
+      </Box>
+      <Text family="mono" testID="mono-code" variant="body">
+        BEE-2026-08-22-0202
+      </Text>
+    </Box>
+  );
+}
+
 function Scenario({ scenario }: { scenario: VisualScenarioId }) {
   switch (scenario) {
     case 'foundation':
@@ -482,11 +528,18 @@ function Scenario({ scenario }: { scenario: VisualScenarioId }) {
 export default function App() {
   const [{ scenario, theme }] = React.useState(readVisualQuery);
   const [hardening] = React.useState(readHardeningQuery);
+  const [dataTypography] = React.useState(readDataTypographyQuery);
   useVisualReadiness(scenario, theme);
 
   return (
     <BeeUIProvider>
-      {hardening === 'case-c' ? <CaseCHardeningFixture /> : <Scenario scenario={scenario} />}
+      {hardening === 'case-c' ? (
+        <CaseCHardeningFixture />
+      ) : dataTypography ? (
+        <DataTypographyFixture />
+      ) : (
+        <Scenario scenario={scenario} />
+      )}
     </BeeUIProvider>
   );
 }

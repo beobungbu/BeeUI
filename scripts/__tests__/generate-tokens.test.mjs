@@ -117,6 +117,48 @@ test('font-size and line-height roles must stay exactly aligned', () => {
   assert.throws(() => validateCanonicalTokens(extra), /lineHeight roles/);
 });
 
+test('adds composable data-typography semantics without touching the six size roles', () => {
+  const index = generateTokenArtifacts(source).get('packages/tokens/src/index.ts');
+  const css = generateTokenArtifacts(source).get('packages/tokens/src/theme.css');
+
+  // The six size/line-height roles remain byte-identical.
+  assert.match(index, /export const fontSize = \{\s*"caption": 12,\s*"label": 14,\s*"body": 16,\s*"heading": 18,\s*"title": 24,\s*"display": 32\s*\} as const;/);
+  assert.match(index, /export const lineHeight = \{\s*"caption": 16,\s*"label": 20,\s*"body": 24,\s*"heading": 24,\s*"title": 32,\s*"display": 40\s*\} as const;/);
+  assert.doesNotMatch(index, /"tabular": 1[0-9]/); // never a size role
+
+  // Mono family is composed onto the existing family group, not a new size scale.
+  assert.match(index, /export const fontFamily = \{[\s\S]*"sans": "system"[\s\S]*"mono": \[[\s\S]*"monospace"[\s\S]*\]\s*\} as const;/);
+  assert.match(index, /export const monoFontFamily = \{[\s\S]*"webUtilityClass": "font-mono"[\s\S]*"native": \{[\s\S]*"ios": "Menlo"[\s\S]*"android": "monospace"[\s\S]*"default": "monospace"/);
+  assert.match(index, /export const numericVariants = \{[\s\S]*"tabular": \{[\s\S]*"webUtilityClass": "bee-tabular-nums"[\s\S]*"nativeFontVariant": \[\s*"tabular-nums"/);
+  assert.match(index, /export type NumericVariant = keyof typeof numericVariants;/);
+
+  // Web utilities/variables are generated, not hand-authored.
+  assert.match(css, /--font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;/);
+  assert.match(css, /@utility bee-tabular-nums \{\n {2}font-variant-numeric: tabular-nums;\n\}/);
+});
+
+test('rejects data-typography metadata regressions', () => {
+  const noMono = structuredClone(source);
+  delete noMono.tokens.fontFamily.mono;
+  assert.throws(() => validateCanonicalTokens(noMono), /fontFamily\.mono/);
+
+  const openMono = structuredClone(source);
+  openMono.tokens.fontFamily.mono.$value = ['Menlo'];
+  assert.throws(() => validateCanonicalTokens(openMono), /generic monospace fallback/);
+
+  const noNative = structuredClone(source);
+  delete noNative.$extensions['com.beeui'].monoFontFamilyNative.android;
+  assert.throws(() => validateCanonicalTokens(noNative), /monoFontFamilyNative\.android/);
+
+  const noFeatures = structuredClone(source);
+  noFeatures.$extensions['com.beeui'].numericVariants = {};
+  assert.throws(() => validateCanonicalTokens(noFeatures), /numericVariants must declare at least one/);
+
+  const brokenFeature = structuredClone(source);
+  brokenFeature.$extensions['com.beeui'].numericVariants.tabular.nativeFontVariant = [];
+  assert.throws(() => validateCanonicalTokens(brokenFeature), /nativeFontVariant must be a non-empty/);
+});
+
 test('every runtime theme implements the exact unique semantic vocabulary', () => {
   const expected = semanticNames();
   assert.equal(new Set(expected).size, expected.length);
