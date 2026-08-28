@@ -71,19 +71,46 @@ function resolveBaselineSha() {
   return undefined;
 }
 
+export function tokenSourceExistsAtRevision(revision, run = execFileSync) {
+  try {
+    run('git', ['cat-file', '-e', `${revision}:${CANONICAL_PATH}`], { stdio: 'ignore' });
+    return true;
+  } catch (error) {
+    // `git cat-file -e` uses a non-zero status when the object/path is absent. That is a
+    // valid first-introduction baseline (for example PR #56 against a main branch that
+    // predates the canonical token system), not a token-removal policy violation.
+    if (error && typeof error === 'object' && (error.status === 1 || error.status === 128)) {
+      return false;
+    }
+    throw error;
+  }
+}
+
 function loadSourceAtRevision(revision) {
   const raw = execFileSync('git', ['show', `${revision}:${CANONICAL_PATH}`], { encoding: 'utf8' });
   return JSON.parse(raw);
 }
 
-export function checkTokenRemovalsAgainstGitBaseline(baseSha = resolveBaselineSha()) {
+export function checkTokenRemovalsAgainstGitBaseline(
+  baseSha = resolveBaselineSha(),
+  options = {},
+) {
   if (!baseSha) {
     console.log('Token lifecycle removal check skipped (no PR/base revision available).');
     return [];
   }
 
-  const previousSource = loadSourceAtRevision(baseSha);
-  const currentSource = loadCanonicalTokens();
+  const sourceExistsAtRevision = options.sourceExistsAtRevision ?? tokenSourceExistsAtRevision;
+  if (!sourceExistsAtRevision(baseSha)) {
+    console.log(
+      `Token lifecycle removal check passed against ${baseSha} (canonical token source is newly introduced; 0 governed token removals).`,
+    );
+    return [];
+  }
+
+  const readPreviousSource = options.loadSourceAtRevision ?? loadSourceAtRevision;
+  const currentSource = options.currentSource ?? loadCanonicalTokens();
+  const previousSource = readPreviousSource(baseSha);
   const removed = validateTokenRemovalDiff(previousSource, currentSource);
   console.log(
     `Token lifecycle removal check passed against ${baseSha} (${removed.length} governed token removal${removed.length === 1 ? '' : 's'}).`,
