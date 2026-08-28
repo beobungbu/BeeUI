@@ -85,8 +85,8 @@ const SHOWCASE_JS_PREFIXES = [
 function normalizePath(value) {
   return String(value ?? '')
     .trim()
-    .replaceAll('\\\\', '/')
-    .replace(/^\\.\\//, '');
+    .replaceAll('\\', '/')
+    .replace(/^\.\//, '');
 }
 
 function extensionOf(file) {
@@ -304,19 +304,19 @@ function envFlag(name) {
 function writeGithubOutput(nativeResult, boundaryResult, bareResult, showcaseResult) {
   if (!process.env.GITHUB_OUTPUT) return;
   appendFileSync(process.env.GITHUB_OUTPUT, `ios-native=${nativeResult.iosNative ? 'true' : 'false'}\n`);
-  appendFileSync(process.env.GITHUB_OUTPUT, `reason=${nativeResult.reason.replace(/[\\r\\n]/g, ' ')}\n`);
+  appendFileSync(process.env.GITHUB_OUTPUT, `reason=${nativeResult.reason.replace(/[\r\n]/g, ' ')}\n`);
   appendFileSync(
     process.env.GITHUB_OUTPUT,
     `package-boundary=${boundaryResult.packageBoundary ? 'true' : 'false'}\n`,
   );
   appendFileSync(
     process.env.GITHUB_OUTPUT,
-    `package-boundary-reason=${boundaryResult.reason.replace(/[\\r\\n]/g, ' ')}\n`,
+    `package-boundary-reason=${boundaryResult.reason.replace(/[\r\n]/g, ' ')}\n`,
   );
   appendFileSync(process.env.GITHUB_OUTPUT, `bare-native=${bareResult.bareNative ? 'true' : 'false'}\n`);
   appendFileSync(
     process.env.GITHUB_OUTPUT,
-    `bare-native-reason=${bareResult.reason.replace(/[\\r\\n]/g, ' ')}\n`,
+    `bare-native-reason=${bareResult.reason.replace(/[\r\n]/g, ' ')}\n`,
   );
   appendFileSync(
     process.env.GITHUB_OUTPUT,
@@ -324,7 +324,7 @@ function writeGithubOutput(nativeResult, boundaryResult, bareResult, showcaseRes
   );
   appendFileSync(
     process.env.GITHUB_OUTPUT,
-    `showcase-native-reason=${showcaseResult.reason.replace(/[\\r\\n]/g, ' ')}\n`,
+    `showcase-native-reason=${showcaseResult.reason.replace(/[\r\n]/g, ' ')}\n`,
   );
   // Compatibility for any external consumer still reading the R2 output.
   appendFileSync(
@@ -335,7 +335,7 @@ function writeGithubOutput(nativeResult, boundaryResult, bareResult, showcaseRes
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
   const input = readFileSync(0, 'utf8');
-  const files = input.split(/\\r?\\n/).filter(Boolean);
+  const files = input.split(/\r?\n/).filter(Boolean);
   const forceNative = envFlag('BEEUI_FORCE_NATIVE');
   const boundaryResult = classifyPackageBoundaryChanges(files, { forceNative });
   const bareResult = classifyBareNativeChanges(files, { forceNative });
