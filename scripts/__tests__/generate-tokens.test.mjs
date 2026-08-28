@@ -153,6 +153,63 @@ test('invalid theme vocabulary cannot generate partial runtime output', () => {
   assert.throws(() => validateCanonicalTokens(invalid), /dark semantic colors/);
 });
 
+test('semantic layer contract encodes the exact evidence-based z-order vocabulary', () => {
+  const names = Object.keys(source.tokens.layer).filter((key) => !key.startsWith('$'));
+  assert.deepEqual(names, ['base', 'overlay', 'toast']);
+  const values = names.map((name) => source.tokens.layer[name].$value);
+  assert.deepEqual(values, [0, 100, 1000]);
+});
+
+test('semantic layer values are emitted to TypeScript, CSS variables, and z-index utilities', () => {
+  const artifacts = generateTokenArtifacts(source);
+  const index = artifacts.get('packages/tokens/src/index.ts');
+  const css = artifacts.get('packages/tokens/src/theme.css');
+
+  assert.match(index, /export const layer = \{\n {2}"base": 0,\n {2}"overlay": 100,\n {2}"toast": 1000\n\} as const;/);
+  assert.match(index, /export type LayerName = keyof typeof layer;/);
+  assert.match(index, /export function layerVariable\(name: LayerName\): LayerVariableName/);
+
+  for (const [name, value] of [
+    ['base', 0],
+    ['overlay', 100],
+    ['toast', 1000],
+  ]) {
+    assert.match(css, new RegExp(`--layer-${name}: ${value};`));
+    assert.match(css, new RegExp(`@utility bee-layer-${name} \\{\\n {2}z-index: var\\(--layer-${name}\\);\\n\\}`));
+  }
+});
+
+test('a canonical layer mutation propagates to both TypeScript and CSS outputs', () => {
+  const mutated = structuredClone(source);
+  mutated.tokens.layer.toast.$value = 1200;
+  const artifacts = generateTokenArtifacts(mutated);
+
+  assert.match(artifacts.get('packages/tokens/src/index.ts'), /"toast": 1200/);
+  assert.match(artifacts.get('packages/tokens/src/theme.css'), /--layer-toast: 1200;/);
+});
+
+test('layer roles must be a strictly ascending, unique, base-zero integer scale', () => {
+  const nonZeroBase = structuredClone(source);
+  nonZeroBase.tokens.layer.base.$value = 10;
+  assert.throws(() => validateCanonicalTokens(nonZeroBase), /layer\.base must equal 0/);
+
+  const notAscending = structuredClone(source);
+  notAscending.tokens.layer.toast.$value = 50;
+  assert.throws(() => validateCanonicalTokens(notAscending), /strictly ascend/);
+
+  const duplicate = structuredClone(source);
+  duplicate.tokens.layer.toast.$value = 100;
+  assert.throws(() => validateCanonicalTokens(duplicate), /strictly ascend/);
+
+  const fractional = structuredClone(source);
+  fractional.tokens.layer.overlay.$value = 10.5;
+  assert.throws(() => validateCanonicalTokens(fractional), /non-negative integer/);
+
+  const missingBase = structuredClone(source);
+  delete missingBase.tokens.layer.base;
+  assert.throws(() => validateCanonicalTokens(missingBase), /layer must declare "base"/);
+});
+
 test('DTCG value-shape regressions are rejected', () => {
   const easing = structuredClone(source);
   easing.tokens.motionEasing.standard.$value = 'cubic-bezier(0.2, 0, 0, 1)';

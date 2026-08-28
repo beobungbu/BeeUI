@@ -5,6 +5,7 @@ import {
   type AnchoredOverlayDirection,
   type AnchoredOverlayPlacement,
 } from '@beeui/core';
+import { layer } from '@beeui/tokens';
 import * as React from 'react';
 import {
   I18nManager,
@@ -911,7 +912,7 @@ SelectLabel.displayName = 'SelectLabel';
 const styles = StyleSheet.create({
   content: {
     position: 'absolute',
-    zIndex: 1,
+    zIndex: layer.overlay,
   },
   hidden: {
     display: 'none',

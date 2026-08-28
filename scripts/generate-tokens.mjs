@@ -409,6 +409,19 @@ function elevationCssValues(group) {
   );
 }
 
+function layerValues(group) {
+  return Object.fromEntries(
+    publicEntries(group).map(([name, token]) => {
+      const value = token?.$value;
+      invariant(
+        typeof value === 'number' && Number.isInteger(value) && value >= 0,
+        `layer.${name} must be a non-negative integer z-order value`,
+      );
+      return [name, value];
+    }),
+  );
+}
+
 function motionEasingValues(group) {
   return Object.fromEntries(
     publicEntries(group).map(([name, token]) => [
@@ -507,6 +520,20 @@ export function validateCanonicalTokens(source) {
     validateTokenValue('cubicBezier', token.$value, `motionEasing.${name}`);
   }
 
+  const layerNames = publicEntries(tokens.layer).map(([name]) => name);
+  invariant(layerNames.length > 0, 'layer must define at least one stacking role');
+  assertUnique(layerNames, 'layer roles');
+  invariant(layerNames[0] === 'base', 'layer must declare "base" as the first (ground) role');
+  const layerNumbers = Object.values(layerValues(tokens.layer));
+  invariant(layerNumbers[0] === 0, 'layer.base must equal 0 so the ground plane is the numeric origin');
+  for (let index = 1; index < layerNumbers.length; index += 1) {
+    invariant(
+      layerNumbers[index] > layerNumbers[index - 1],
+      'layer values must strictly ascend in declaration order to encode a deterministic z-order',
+    );
+  }
+  assertUnique(layerNumbers.map(String), 'layer values');
+
   const focus = focusValue(source);
   invariant(semanticNames(source).includes(focus.colorToken), 'focusRing colorToken must be a semantic color token');
   invariant(focus.webVisibility === 'focus-visible', 'focusRing webVisibility must preserve focus-visible');
@@ -533,7 +560,7 @@ function renderIndex(source) {
   const semantics = semanticNames(source);
   const focusRing = focusValue(source);
 
-  return `// AUTO-GENERATED — DO NOT EDIT DIRECTLY.\n// Canonical source: ${CANONICAL_PATH}\n// Generator: ${GENERATOR_PATH}\n\nexport const beeThemeNames = ${ts(meta.themeNames)} as const;\n\nexport type BeeThemeName = (typeof beeThemeNames)[number];\n\nexport const beeBrandNames = ${ts(meta.brandNames)} as const;\n\nexport type BeeBrandName = (typeof beeBrandNames)[number];\n\nexport const beeRuntimeThemeNames = ${ts(meta.runtimeThemeNames)} as const;\n\nexport type BeeRuntimeThemeName = (typeof beeRuntimeThemeNames)[number];\n\nexport const beeRuntimeThemeByBrand = ${ts(meta.runtimeThemeByBrand)} as const satisfies Record<BeeBrandName, Record<BeeThemeName, BeeRuntimeThemeName>>;\n\nexport function resolveBeeRuntimeTheme(\n  brand: BeeBrandName,\n  theme: BeeThemeName,\n): BeeRuntimeThemeName {\n  return beeRuntimeThemeByBrand[brand][theme];\n}\n\nexport function getBeeThemeSelection(runtimeTheme: string):\n  | { brand: BeeBrandName; theme: BeeThemeName }\n  | undefined {\n  for (const brand of beeBrandNames) {\n    for (const theme of beeThemeNames) {\n      if (beeRuntimeThemeByBrand[brand][theme] === runtimeTheme) {\n        return { brand, theme };\n      }\n    }\n  }\n\n  return undefined;\n}\n\nexport function isBeeDarkRuntimeTheme(runtimeTheme: string) {\n  return getBeeThemeSelection(runtimeTheme)?.theme === 'dark';\n}\n\nexport const semanticColorTokens = ${ts(semantics)} as const;\n\nexport type SemanticColorToken = (typeof semanticColorTokens)[number];\nexport type SemanticColorVariableName = \`--color-\${SemanticColorToken}\`;\nexport type SemanticColorOverrides = Partial<Record<SemanticColorVariableName, string>>;\n\nexport function semanticColorVariable(token: SemanticColorToken): SemanticColorVariableName {\n  return \`--color-\${token}\`;\n}\n\nexport function defineSemanticColorOverrides<const T extends SemanticColorOverrides>(\n  overrides: T,\n): Readonly<T> {\n  return Object.freeze({ ...overrides });\n}\n\nexport const spacing = ${ts(dimensionValues(tokens.spacing))} as const;\n\nexport const radius = ${ts(dimensionValues(tokens.radius))} as const;\n\n/**\n * \`system\` means the platform default font. BeeUI deliberately does not force a\n * font-family utility until the consuming app loads and names a cross-platform font.\n */\nexport const fontFamily = ${ts(tokenValues(tokens.fontFamily))} as const;\n\nexport const fontSize = ${ts(dimensionValues(tokens.fontSize))} as const;\n\nexport const lineHeight = ${ts(dimensionValues(tokens.lineHeight))} as const;\n\nexport const fontWeight = ${ts(tokenValues(tokens.fontWeight))} as const;\n\nexport const letterSpacing = ${ts(dimensionValues(tokens.letterSpacing))} as const;\n\nexport type TypographyRole = keyof typeof fontSize;\n\nexport const controlSize = ${ts(dimensionValues(tokens.controlSize))} as const;\n\nexport const iconSize = ${ts(dimensionValues(tokens.iconSize))} as const;\n\nexport const avatarSize = ${ts(dimensionValues(tokens.avatarSize))} as const;\n\nexport const contentWidth = ${ts(dimensionValues(tokens.contentWidth))} as const;\n\nexport const elevation = ${ts(elevationValues(tokens.elevation))} as const;\n\nexport type ElevationLevel = keyof typeof elevation;\n\nexport const motionDuration = ${ts(dimensionValues(tokens.motionDuration, 'ms'))} as const;\n\nexport const motionEasing = ${ts(motionEasingValues(tokens.motionEasing))} as const;\n\nexport const focusRing = ${ts(focusRing)} as const satisfies {\n  width: number;\n  offset: number;\n  colorToken: SemanticColorToken;\n  webVisibility: 'focus-visible';\n  nativeVisibility: 'platform-focus';\n};\n`;
+  return `// AUTO-GENERATED — DO NOT EDIT DIRECTLY.\n// Canonical source: ${CANONICAL_PATH}\n// Generator: ${GENERATOR_PATH}\n\nexport const beeThemeNames = ${ts(meta.themeNames)} as const;\n\nexport type BeeThemeName = (typeof beeThemeNames)[number];\n\nexport const beeBrandNames = ${ts(meta.brandNames)} as const;\n\nexport type BeeBrandName = (typeof beeBrandNames)[number];\n\nexport const beeRuntimeThemeNames = ${ts(meta.runtimeThemeNames)} as const;\n\nexport type BeeRuntimeThemeName = (typeof beeRuntimeThemeNames)[number];\n\nexport const beeRuntimeThemeByBrand = ${ts(meta.runtimeThemeByBrand)} as const satisfies Record<BeeBrandName, Record<BeeThemeName, BeeRuntimeThemeName>>;\n\nexport function resolveBeeRuntimeTheme(\n  brand: BeeBrandName,\n  theme: BeeThemeName,\n): BeeRuntimeThemeName {\n  return beeRuntimeThemeByBrand[brand][theme];\n}\n\nexport function getBeeThemeSelection(runtimeTheme: string):\n  | { brand: BeeBrandName; theme: BeeThemeName }\n  | undefined {\n  for (const brand of beeBrandNames) {\n    for (const theme of beeThemeNames) {\n      if (beeRuntimeThemeByBrand[brand][theme] === runtimeTheme) {\n        return { brand, theme };\n      }\n    }\n  }\n\n  return undefined;\n}\n\nexport function isBeeDarkRuntimeTheme(runtimeTheme: string) {\n  return getBeeThemeSelection(runtimeTheme)?.theme === 'dark';\n}\n\nexport const semanticColorTokens = ${ts(semantics)} as const;\n\nexport type SemanticColorToken = (typeof semanticColorTokens)[number];\nexport type SemanticColorVariableName = \`--color-\${SemanticColorToken}\`;\nexport type SemanticColorOverrides = Partial<Record<SemanticColorVariableName, string>>;\n\nexport function semanticColorVariable(token: SemanticColorToken): SemanticColorVariableName {\n  return \`--color-\${token}\`;\n}\n\nexport function defineSemanticColorOverrides<const T extends SemanticColorOverrides>(\n  overrides: T,\n): Readonly<T> {\n  return Object.freeze({ ...overrides });\n}\n\nexport const spacing = ${ts(dimensionValues(tokens.spacing))} as const;\n\nexport const radius = ${ts(dimensionValues(tokens.radius))} as const;\n\n/**\n * \`system\` means the platform default font. BeeUI deliberately does not force a\n * font-family utility until the consuming app loads and names a cross-platform font.\n */\nexport const fontFamily = ${ts(tokenValues(tokens.fontFamily))} as const;\n\nexport const fontSize = ${ts(dimensionValues(tokens.fontSize))} as const;\n\nexport const lineHeight = ${ts(dimensionValues(tokens.lineHeight))} as const;\n\nexport const fontWeight = ${ts(tokenValues(tokens.fontWeight))} as const;\n\nexport const letterSpacing = ${ts(dimensionValues(tokens.letterSpacing))} as const;\n\nexport type TypographyRole = keyof typeof fontSize;\n\nexport const controlSize = ${ts(dimensionValues(tokens.controlSize))} as const;\n\nexport const iconSize = ${ts(dimensionValues(tokens.iconSize))} as const;\n\nexport const avatarSize = ${ts(dimensionValues(tokens.avatarSize))} as const;\n\nexport const contentWidth = ${ts(dimensionValues(tokens.contentWidth))} as const;\n\nexport const elevation = ${ts(elevationValues(tokens.elevation))} as const;\n\nexport type ElevationLevel = keyof typeof elevation;\n\n/**\n * Semantic z-order (stacking) contract. Deliberately separate from \`elevation\`,\n * which encodes shadow depth. Values keep intentional gaps so applications can\n * insert local sublayers between roles without colliding with BeeUI surfaces.\n */\nexport const layer = ${ts(layerValues(tokens.layer))} as const;\n\nexport type LayerName = keyof typeof layer;\n\nexport type LayerVariableName = \`--layer-\${LayerName}\`;\n\nexport function layerVariable(name: LayerName): LayerVariableName {\n  return \`--layer-\${name}\`;\n}\n\nexport const motionDuration = ${ts(dimensionValues(tokens.motionDuration, 'ms'))} as const;\n\nexport const motionEasing = ${ts(motionEasingValues(tokens.motionEasing))} as const;\n\nexport const focusRing = ${ts(focusRing)} as const satisfies {\n  width: number;\n  offset: number;\n  colorToken: SemanticColorToken;\n  webVisibility: 'focus-visible';\n  nativeVisibility: 'platform-focus';\n};\n`;
 }
 
 function renderThemeCss(source) {
@@ -553,6 +580,7 @@ function renderThemeCss(source) {
   const elevation = elevationCssValues(tokens.elevation);
   const motionDuration = dimensionValues(tokens.motionDuration, 'ms');
   const motionEasing = motionEasingValues(tokens.motionEasing);
+  const layer = layerValues(tokens.layer);
   const focus = focusValue(source);
   const customThemes = meta.runtimeThemeNames.filter((name) => !meta.themeNames.includes(name));
   const lines = [
@@ -593,12 +621,17 @@ function renderThemeCss(source) {
   for (const [name, value] of Object.entries(motionDuration)) lines.push(`  --motion-duration-${name}: ${value}ms;`);
   lines.push(`  --focus-ring-width: ${focus.width}px;`);
   lines.push(`  --focus-ring-offset: ${focus.offset}px;`);
+  for (const [name, value] of Object.entries(layer)) lines.push(`  --layer-${name}: ${value};`);
   lines.push('}', '', '@utility bee-focus-ring {');
   lines.push('  outline-color: var(--color-focus-ring);');
   lines.push('  outline-offset: var(--focus-ring-offset);');
   lines.push('  outline-style: solid;');
   lines.push('  outline-width: var(--focus-ring-width);');
-  lines.push('}', '', '@layer theme {', '  :root {');
+  lines.push('}');
+  for (const name of Object.keys(layer)) {
+    lines.push('', `@utility bee-layer-${name} {`, `  z-index: var(--layer-${name});`, '}');
+  }
+  lines.push('', '@layer theme {', '  :root {');
   for (const [themeIndex, themeName] of meta.runtimeThemeNames.entries()) {
     lines.push(`    @variant ${themeName} {`);
     for (const name of semantics) lines.push(`      --color-${name}: ${dtcgColorToHex(themes[themeName].colors[name].$value)};`);

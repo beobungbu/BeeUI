@@ -1,3 +1,4 @@
+import { layer } from '@beeui/tokens';
 import * as React from 'react';
 import {
   AccessibilityInfo,
@@ -299,7 +300,10 @@ const styles = StyleSheet.create({
     left: 12,
     right: 12,
     alignItems: 'center',
-    zIndex: 1000,
-    elevation: 1000,
+    // Layer/z-order contract: toasts float above base content and anchored
+    // overlays. On Android `elevation` also governs sibling draw order, so it is
+    // fed the same semantic layer value (native draw-order parity, not shadow).
+    zIndex: layer.toast,
+    elevation: layer.toast,
   },
 });

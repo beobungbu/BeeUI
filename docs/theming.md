@@ -67,7 +67,8 @@ The v2 token package preserves the existing public semantic color vocabulary whi
 | Icons | `xs/sm/md/lg` geometry |
 | Avatars | `sm/md/lg/xl` = 32/40/48/64 px |
 | Content width | form/reading/page/dialog |
-| Elevation | flat/raised/overlay semantic levels |
+| Elevation | flat/raised/overlay semantic shadow levels |
+| Layer | base/overlay/toast semantic z-order (stacking) levels |
 | Motion | fast/normal/slow durations plus standard/emphasized easing |
 | Focus | 2 px ring, 2 px offset, semantic color, web/native visibility policy |
 | Branding | Bee + Violet, both light/dark |
@@ -115,6 +116,69 @@ Elevation describes layering intent rather than pixel identity across platforms:
 - `overlay`: modal/popover-class depth.
 
 The canonical `$value` is a DTCG `shadow` value. Exact historical web serialization and React Native elevation (`0`, `2`, `8`) are platform metadata under `$extensions["com.beeui"]`. Generated `index.ts` therefore preserves the existing `{ web, nativeElevation }` API while `theme.css` preserves the accepted `--shadow-*` CSS declarations.
+
+## Stacking layers (z-order)
+
+Layer tokens define the **stacking order** of reusable BeeUI surfaces. This is a
+separate concern from elevation: elevation is shadow/visual depth, layer is
+paint/z-order. The two never share a token family, and a surface can be `flat`
+elevation while still owning a distinct layer (and vice versa).
+
+The vocabulary is intentionally minimal and derived from the actual recurring
+surfaces in BeeUI, not a generic `z1..z99` scale:
+
+| Layer | Value | Meaning | Consumed by |
+| --- | ---: | --- | --- |
+| `base` | 0 | Default in-flow content plane (the ground). | Implicit for normal content; app persistent/sticky surfaces sit just above it. |
+| `overlay` | 100 | Anchored transient surfaces and the overlay host outlet. | `DropdownMenu`, `Popover`, `Select`, and the overlay host in `overlay-runtime`. |
+| `toast` | 1000 | Transient notifications that float above content and anchored overlays. | `Toast` viewport. |
+
+Required ordering contract (asserted by tests): `base < overlay < toast`. Values
+are unitless integers with **intentional gaps** so an application can insert its
+own local sublayers — a sticky header at `50`, a bespoke scrim at `500`, a
+tooltip at `1100` — without colliding with a BeeUI role.
+
+### Dialogs and native windows
+
+`Dialog` / `AlertDialog` present through the React Native `Modal` (a native
+window on iOS/Android and a portaled top-level layer on web). Their stacking is
+owned by the platform window model, so they do **not** consume a numeric layer
+token. Anchored overlays opened *inside* a modal render into that modal's own
+overlay host, so they layer correctly within the modal's window rather than
+competing with root-level `overlay` values.
+
+### Coexistence and portal caveats
+
+- Multiple anchored surfaces (e.g. a `Popover` and a `DropdownMenu`) share the
+  single `overlay` layer. Their relative paint order is decided by portal/DOM
+  order (later-opened paints above), not by competing z-index values — the same
+  behavior as before these tokens existed.
+- On Android, the `elevation` style prop also governs sibling draw order. The
+  `Toast` viewport therefore feeds the same `layer.toast` value to both `zIndex`
+  and `elevation` purely for native draw-order parity; that `elevation` value is
+  a z-order mechanism there, not a shadow token.
+- These tokens change only which stacking value a surface reads. Overlay
+  portals, focus traps, pointer/event routing, Escape handling, dismissal, and
+  React context propagation are unchanged.
+
+### When to use a layer token vs a local z-index
+
+- Use a semantic layer token when the surface is a reusable design-system role
+  that must stack deterministically against other BeeUI surfaces.
+- Keep a plain local `zIndex` for product-specific, in-component ordering that
+  does not represent a shared design-system layer (for example ordering two
+  children inside one custom widget). Do not migrate those to layer tokens.
+
+### Adding a new layer role
+
+Add a role only when there is **recurring behavioral evidence** that a distinct
+stacking level is required (multiple components inventing the same new value, or
+a demonstrated stacking conflict). Add it to `tokens.layer` in
+`packages/tokens/tokens.json` with a value that preserves strict ascending order
+and keeps deliberate gaps, then run `pnpm tokens:generate`. The generator emits
+the TypeScript `layer` constant, the `--layer-*` CSS variables, and the
+`bee-layer-*` utilities, and validation enforces the base-zero, unique,
+strictly-ascending integer contract.
 
 ## Motion and reduced motion
 
