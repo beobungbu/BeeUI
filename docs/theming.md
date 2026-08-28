@@ -34,6 +34,8 @@ The deterministic build-time generator is `scripts/generate-tokens.mjs`. It comm
 
 The Resolver artifact uses the official 2025.10 resolver schema and references the packaged canonical document via URI + JSON Pointer sources instead of duplicating the token payload. It models `light`, `dark`, `violet-light`, `violet-dark`, `high-contrast-light`, and `high-contrast-dark` as contexts of one `runtimeTheme` modifier.
 
+See [`docs/token-interop.md`](./token-interop.md) for a Style Dictionary consumption worked example, Tokens Studio/Figma handoff guidance, and the round-trip ownership contract these published artifacts are consumed under.
+
 To add or change a token:
 
 1. edit only `packages/tokens/tokens.json`;
