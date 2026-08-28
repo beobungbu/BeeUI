@@ -29,6 +29,9 @@ const SAFE_EXACT_PATHS = new Set([
   'scripts/beeui.mjs',
   'scripts/registry-lib.mjs',
   'scripts/verify-registry.mjs',
+  // This script owns only the isolated bare consumer. It remains bare-native
+  // sensitive below but must not pull the independent Expo Showcase graph.
+  'scripts/verify-bare-consumer.sh',
 ]);
 
 const SAFE_PREFIXES = [
