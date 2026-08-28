@@ -61,7 +61,7 @@ test('Showcase pod-install caching keys whole-tree snapshots from the fresh preb
   // downloaded ios/ tree before any restore prevents stale generated native
   // sources, config-plugin output, or codegen inputs from compiling green.
   assert.match(workflow, /prebuild_hash=/);
-  assert.match(workflow, /find \. \\( -type f -o -type l \\)/);
+  assert.ok(workflow.includes("find . \\( -type f -o -type l \\) ! -name '.xcode.env.local' -print"));
   assert.match(workflow, /pods_key=.*prebuild_hash.*lock_hash.*app_hash/s);
   assert.match(workflow, /pods-cache\/showcase\/xcode-\$\{safe_xcode_version\}\/key-\$\{pods_key\}/);
 
