@@ -9,6 +9,7 @@ import {
   AlertDialogFooter,
   AlertDialogTitle,
   Badge,
+  BeeThemeScope,
   BeeUIProvider,
   Box,
   Breadcrumb,
@@ -34,6 +35,7 @@ import {
   Link,
   ListGroup,
   ListGroupHeader,
+  ListItem,
   Progress,
   PasswordInput,
   Popover,
@@ -59,6 +61,7 @@ import {
   TimelineItem,
   useBeeToken,
 } from '@beeui/ui';
+import { applyDensity, defaultDensityMode, densityModes, type DensityMode } from '@beeui/tokens';
 import * as React from 'react';
 import { Uniwind } from 'uniwind';
 import {
@@ -91,6 +94,40 @@ function readHardeningQuery() {
 function readDataTypographyQuery() {
   if (typeof window === 'undefined') return false;
   return new URLSearchParams(window.location.search).get('data') === 'typography';
+}
+
+// #74/#78/#68/#77 finalization — a fourth, dedicated URL flag (like `hardening`
+// and `data=typography` above) for fixtures that are driven by their own
+// standalone spec files rather than the canonical `scenario` x `theme` x
+// `viewport` matrix. Keeping these OUT of `visualScenarios` is deliberate: that
+// array is multiplied by every canonical theme/viewport project, and none of
+// these four fixtures need that full cross-product (see each fixture's own
+// spec file for exactly which combinations it captures).
+type FixtureId = 'density' | 'dataviz-brands' | 'scoped-preview' | 'high-contrast-focus';
+
+const fixtureIds: readonly FixtureId[] = [
+  'density',
+  'dataviz-brands',
+  'scoped-preview',
+  'high-contrast-focus',
+];
+
+function isFixtureId(value: string | null): value is FixtureId {
+  return (fixtureIds as readonly string[]).includes(value ?? '');
+}
+
+function readFixtureQuery(): FixtureId | null {
+  if (typeof window === 'undefined') return null;
+  const requested = new URLSearchParams(window.location.search).get('fixture');
+  return isFixtureId(requested) ? requested : null;
+}
+
+function readDensityModeQuery(): DensityMode {
+  if (typeof window === 'undefined') return defaultDensityMode;
+  const requested = new URLSearchParams(window.location.search).get('density');
+  return (densityModes as readonly string[]).includes(requested ?? '')
+    ? (requested as DensityMode)
+    : defaultDensityMode;
 }
 
 function nextFrame() {
@@ -623,6 +660,183 @@ function DataVizScenario() {
   );
 }
 
+// #74 — application density semantics. One representative list/table row group
+// (ListGroup/ListItem, density's `rowHeight`/`rowGap` metrics) AND one
+// representative form/settings group (FormGroup/Field, density's `formGap`
+// metric), rendered through the real `applyDensity` runtime mechanism — never
+// hand-set pixels. `comfortable` intentionally never calls `applyDensity`: it
+// is the baseline default every density-sensitive class already resolves to
+// without any override, so this fixture proves the "comfortable matches the
+// current default" invariant by construction rather than by a separate
+// pixel-diff assertion.
+function DensityFixture({ density, theme }: { density: DensityMode; theme: VisualTheme }) {
+  React.useEffect(() => {
+    if (density !== defaultDensityMode) {
+      applyDensity(Uniwind, theme, density);
+    }
+  }, [density, theme]);
+
+  return (
+    <Box className="min-h-screen gap-6 bg-surface p-6" testID="density-fixture">
+      <Box className="gap-1">
+        <Text variant="title">Density: {density}</Text>
+        <Text tone="muted" variant="caption">
+          BeeUI issue #74 — compact / comfortable / spacious application density
+        </Text>
+      </Box>
+
+      <ListGroup testID="density-row-group">
+        <ListGroupHeader description="Row height and row gap scale with density" title="Workspace" />
+        <ListItem description="Canonical browser" testID="density-row-1" title="Engine" />
+        <ListItem description="Deterministic capture" testID="density-row-2" title="Pixel ratio" />
+        <ListItem description="Density-sensitive spacing" testID="density-row-3" title="Row height" />
+      </ListGroup>
+
+      <Card className="gap-3" padding="lg" variant="raised">
+        <FormGroup
+          description="Form gap scales with density"
+          legend="Notification channel"
+          testID="density-form-group"
+        >
+          <Field label="Email">
+            <Input defaultValue="visual@beeui.dev" />
+          </Field>
+          <Field label="Display name">
+            <Input defaultValue="BeeUI" />
+          </Field>
+        </FormGroup>
+      </Card>
+    </Box>
+  );
+}
+
+/**
+ * Derives a `BeeThemeScope` `appearance` ('light' | 'dark') from the outer
+ * harness `theme`. Only the appearance half of the outer theme matters here —
+ * the brand/accessibility axis is what each fixture below is scoping
+ * explicitly through `BeeThemeScope` itself.
+ */
+function appearanceForVisualTheme(theme: VisualTheme): 'light' | 'dark' {
+  return theme.endsWith('dark') ? 'dark' : 'light';
+}
+
+// #78 — semantic data-visualization (chart) color tokens under Brand B
+// (Violet), proven side by side against Brand A (Bee) through `BeeThemeScope`
+// rather than by adding `violet-light`/`violet-dark` to the canonical
+// `visualThemes` matrix (which every other scenario in this file would also be
+// multiplied by). Reuses the exact same `CategoricalBarChart` fixture the
+// `dataviz` scenario already renders — `useBeeToken` is scope-aware, so each
+// copy resolves its own scoped brand's `chart.*` tokens (see
+// `chart.highlight`, which is `violet-500` for Bee and `amber-700` for Violet
+// in canonical tokens.json, precisely so it never doubles as the Violet brand
+// accent).
+function DataVizBrandsFixture({ theme }: { theme: VisualTheme }) {
+  const appearance = appearanceForVisualTheme(theme);
+
+  return (
+    <ScenarioShell title="Data visualization: Bee vs Violet">
+      <Box className="flex-row flex-wrap gap-4">
+        <BeeThemeScope appearance={appearance} brand="bee">
+          <Card className="min-w-72 flex-1 gap-3" padding="lg" variant="raised">
+            <Text variant="heading">Bee</Text>
+            <CategoricalBarChart />
+          </Card>
+        </BeeThemeScope>
+        <BeeThemeScope appearance={appearance} brand="violet">
+          <Card className="min-w-72 flex-1 gap-3" padding="lg" variant="raised">
+            <Text variant="heading">Violet</Text>
+            <CategoricalBarChart />
+          </Card>
+        </BeeThemeScope>
+      </Box>
+    </ScenarioShell>
+  );
+}
+
+// #68 — a scoped Brand A/B preview: Bee and Violet rendered side by side, each
+// under its own `BeeThemeScope`, proving scoped brand selection visually with
+// a couple of ordinary primitives (Button, Badge) rather than the chart
+// vocabulary #78 already covers above.
+function ScopedPreviewFixture({ theme }: { theme: VisualTheme }) {
+  const appearance = appearanceForVisualTheme(theme);
+
+  return (
+    <ScenarioShell title="Scoped preview: Bee vs Violet">
+      <Box className="flex-row flex-wrap gap-4">
+        <BeeThemeScope appearance={appearance} brand="bee">
+          <Card className="min-w-64 flex-1 gap-3" padding="lg" variant="raised">
+            <Text variant="heading">Bee</Text>
+            <Text tone="muted" variant="caption">
+              brand=&quot;bee&quot;
+            </Text>
+            <Button onPress={() => undefined} size="md">
+              Primary action
+            </Button>
+            <Badge variant="secondary">Badge</Badge>
+          </Card>
+        </BeeThemeScope>
+        <BeeThemeScope appearance={appearance} brand="violet">
+          <Card className="min-w-64 flex-1 gap-3" padding="lg" variant="raised">
+            <Text variant="heading">Violet</Text>
+            <Text tone="muted" variant="caption">
+              brand=&quot;violet&quot;
+            </Text>
+            <Button onPress={() => undefined} size="md">
+              Primary action
+            </Button>
+            <Badge variant="secondary">Badge</Badge>
+          </Card>
+        </BeeThemeScope>
+      </Box>
+    </ScenarioShell>
+  );
+}
+
+// #77 finalization — active keyboard-focus proof for the high-contrast
+// themes. A Button on the plain background, an Input inside a raised Card, and
+// a Link on a muted surface — one representative placement per surface, tabbed
+// through and captured mid-focus by `tests/high-contrast-focus.spec.ts` (a
+// static page-load screenshot never exercises `:focus-visible`, so this
+// fixture only supplies the DOM; the actual Tab-driven interaction lives in
+// the spec).
+function HighContrastFocusFixture() {
+  return (
+    <Box className="min-h-screen gap-6 bg-surface p-6" testID="high-contrast-focus-fixture">
+      <Box className="gap-1">
+        <Text variant="title">High-contrast keyboard focus</Text>
+        <Text tone="muted" variant="caption">
+          BeeUI issue #77 — actively Tab-triggered focus-visible proof
+        </Text>
+      </Box>
+
+      <Box className="gap-2" testID="focus-target-background">
+        <Text tone="muted" variant="caption">
+          On background
+        </Text>
+        <Button onPress={() => undefined} testID="focus-target-button">
+          Continue
+        </Button>
+      </Box>
+
+      <Card className="gap-2" padding="lg" testID="focus-target-card" variant="raised">
+        <Text tone="muted" variant="caption">
+          On card
+        </Text>
+        <Input defaultValue="visual@beeui.dev" testID="focus-target-input" />
+      </Card>
+
+      <Box className="gap-2 rounded-md bg-surface-muted p-4" testID="focus-target-muted">
+        <Text tone="muted" variant="caption">
+          On muted surface
+        </Text>
+        <Link onPress={() => undefined} testID="focus-target-link">
+          Learn more
+        </Link>
+      </Box>
+    </Box>
+  );
+}
+
 /**
  * Browser-only hardening fixture for the exact registration-order regression:
  * Dialog + nested menu commit first. Only after that commit (passive effect) does
@@ -728,6 +942,8 @@ export default function App() {
   const [{ scenario, theme }] = React.useState(readVisualQuery);
   const [hardening] = React.useState(readHardeningQuery);
   const [dataTypography] = React.useState(readDataTypographyQuery);
+  const [fixture] = React.useState(readFixtureQuery);
+  const [densityMode] = React.useState(readDensityModeQuery);
   useVisualReadiness(scenario, theme);
 
   return (
@@ -736,6 +952,14 @@ export default function App() {
         <CaseCHardeningFixture />
       ) : dataTypography ? (
         <DataTypographyFixture />
+      ) : fixture === 'density' ? (
+        <DensityFixture density={densityMode} theme={theme} />
+      ) : fixture === 'dataviz-brands' ? (
+        <DataVizBrandsFixture theme={theme} />
+      ) : fixture === 'scoped-preview' ? (
+        <ScopedPreviewFixture theme={theme} />
+      ) : fixture === 'high-contrast-focus' ? (
+        <HighContrastFocusFixture />
       ) : (
         <Scenario scenario={scenario} />
       )}
