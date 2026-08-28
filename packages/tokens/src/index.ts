@@ -235,6 +235,25 @@ export const elevation = {
 
 export type ElevationLevel = keyof typeof elevation;
 
+/**
+ * Semantic z-order (stacking) contract. Deliberately separate from `elevation`,
+ * which encodes shadow depth. Values keep intentional gaps so applications can
+ * insert local sublayers between roles without colliding with BeeUI surfaces.
+ */
+export const layer = {
+  "base": 0,
+  "overlay": 100,
+  "toast": 1000
+} as const;
+
+export type LayerName = keyof typeof layer;
+
+export type LayerVariableName = `--layer-${LayerName}`;
+
+export function layerVariable(name: LayerName): LayerVariableName {
+  return `--layer-${name}`;
+}
+
 export const motionDuration = {
   "fast": 120,
   "normal": 200,
