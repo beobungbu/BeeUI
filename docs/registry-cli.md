@@ -21,7 +21,9 @@ The workflow copies supported BeeUI source into a consumer project. The consumer
 
 ## Supported registry entries
 
-Registry coverage has expanded from the initial 6-component slice to the full stable public component surface described in `docs/components.md` (52 public components as of this writing). Run `pnpm beeui -- list` for the canonical, sorted, up-to-date list — it is generated from `registry/registry.json`, so it never drifts from this doc.
+Registry coverage has expanded from the initial 6-component slice to the full stable public component surface described in `docs/components.md` (**53 public component modules** as of this writing). Run `pnpm beeui -- list` for the canonical, sorted, up-to-date list — it is generated from `registry/registry.json`.
+
+`pnpm registry:verify` additionally compares the public `packages/ui/src/index.ts` component-module exports with public registry component entries. Adding or removing a public component without updating the registry therefore fails CI instead of silently allowing registry coverage to drift.
 
 Internal transitive entries (not directly addable, but resolved automatically):
 
