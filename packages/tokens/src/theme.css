@@ -48,11 +48,17 @@
   --spacing-avatar-md: 2.5rem;
   --spacing-avatar-lg: 3rem;
   --spacing-avatar-xl: 4rem;
+  --spacing-page-gutter-compact: 1rem;
+  --spacing-page-gutter-regular: 1.25rem;
+  --spacing-page-gutter-spacious: 1.5rem;
 
   --container-form: 32rem;
   --container-reading: 44rem;
   --container-page: 72rem;
   --container-dialog: 32rem;
+
+  --breakpoint-medium: 48rem;
+  --breakpoint-expanded: 80rem;
 
   --shadow-flat: 0 0 #0000;
   --shadow-raised: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);

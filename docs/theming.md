@@ -201,6 +201,8 @@ The existing public API remains stable:
 
 Do not mechanically replace literals whose product intent does not match the semantic contract.
 
+For the canonical responsive breakpoint, page-gutter, and content-container vocabulary (and how it composes with safe-area insets on native), see [`docs/responsive-layout.md`](./responsive-layout.md).
+
 ## Extending BeeUI tokens
 
 1. Edit only `packages/tokens/tokens.json`.

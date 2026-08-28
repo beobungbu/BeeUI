@@ -13,7 +13,7 @@
     "web": "pnpm --filter @beeui/showcase web",
     "tokens:generate": "node ./scripts/generate-tokens.mjs",
     "tokens:check": "node ./scripts/generate-tokens.mjs --check",
-    "tokens:test": "node --test ./scripts/__tests__/generate-tokens.test.mjs",
+    "tokens:test": "node --test ./scripts/__tests__/generate-tokens.test.mjs ./scripts/__tests__/responsive-layout-tokens.test.mjs",
     "typecheck": "pnpm tokens:check && pnpm -r --if-present typecheck",
     "test": "pnpm tokens:test && pnpm --filter @beeui/showcase test && pnpm registry:verify && pnpm registry:test",
     "check": "pnpm typecheck && pnpm test",

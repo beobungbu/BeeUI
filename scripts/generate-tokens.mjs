@@ -422,6 +422,25 @@ function semanticNames(source) {
   return Object.keys(metadata(source).semanticColorDescriptions ?? {});
 }
 
+function groupClassification(group) {
+  const extension = beeExtension(group);
+  return {
+    layer: extension.layer,
+    binding: extension.binding,
+    runtimeOverridable: extension.runtimeOverridable,
+    engine: extension.engine,
+  };
+}
+
+function responsiveLayoutClassification(source) {
+  const { tokens } = source;
+  return {
+    breakpoint: groupClassification(tokens.breakpoint),
+    pageGutter: groupClassification(tokens.pageGutter),
+    contentWidth: groupClassification(tokens.contentWidth),
+  };
+}
+
 function focusValue(source) {
   const group = source.tokens.focusRing;
   const extension = beeExtension(group);
@@ -483,9 +502,51 @@ export function validateCanonicalTokens(source) {
     'iconSize',
     'avatarSize',
     'contentWidth',
+    'breakpoint',
+    'pageGutter',
   ]) {
     dimensionValues(tokens[groupName]);
   }
+
+  const breakpointMeta = beeExtension(tokens.breakpoint);
+  invariant(
+    breakpointMeta.layer === 'web-responsive' &&
+      breakpointMeta.binding === 'build-time-constant' &&
+      breakpointMeta.runtimeOverridable === false,
+    'breakpoint group must be classified as a web-only build-time constant that is not runtime-overridable (compiler needs constant breakpoints; runtime override belongs to #71)',
+  );
+  invariant(
+    breakpointMeta.engine === 'tailwind-uniwind',
+    'breakpoint execution engine must remain Tailwind/Uniwind; BeeUI does not author a second media-query engine',
+  );
+  let previousBreakpoint = 0;
+  const breakpointVariants = [];
+  for (const [name, token] of publicEntries(tokens.breakpoint)) {
+    const value = token.$value.value;
+    invariant(value > 0, `breakpoint.${name} must be a positive min-width threshold`);
+    invariant(value > previousBreakpoint, 'breakpoint values must be strictly ascending and unique (no duplicate or conflicting definitions)');
+    previousBreakpoint = value;
+    const variant = beeExtension(token).tailwindVariant;
+    invariant(typeof variant === 'string' && variant.length > 0, `breakpoint.${name} must map to a Tailwind/Uniwind variant`);
+    breakpointVariants.push(variant);
+  }
+  assertUnique(breakpointVariants, 'breakpoint Tailwind variants');
+
+  const pageGutterMeta = beeExtension(tokens.pageGutter);
+  invariant(
+    pageGutterMeta.layer === 'cross-platform' && pageGutterMeta.runtimeOverridable === false,
+    'pageGutter group must be classified as a cross-platform, non-runtime-overridable value',
+  );
+  assertUnique(Object.values(dimensionValues(tokens.pageGutter)), 'pageGutter values');
+  for (const value of Object.values(dimensionValues(tokens.pageGutter))) {
+    invariant(value > 0, 'pageGutter values must be positive');
+  }
+
+  const contentWidthMeta = beeExtension(tokens.contentWidth);
+  invariant(
+    contentWidthMeta.layer === 'cross-platform' && contentWidthMeta.runtimeOverridable === false,
+    'contentWidth group must remain a cross-platform, non-runtime-overridable value contract',
+  );
 
   const fontSizeNames = publicEntries(tokens.fontSize).map(([name]) => name);
   const lineHeightNames = publicEntries(tokens.lineHeight).map(([name]) => name);
@@ -533,7 +594,7 @@ function renderIndex(source) {
   const semantics = semanticNames(source);
   const focusRing = focusValue(source);
 
-  return `// AUTO-GENERATED — DO NOT EDIT DIRECTLY.\n// Canonical source: ${CANONICAL_PATH}\n// Generator: ${GENERATOR_PATH}\n\nexport const beeThemeNames = ${ts(meta.themeNames)} as const;\n\nexport type BeeThemeName = (typeof beeThemeNames)[number];\n\nexport const beeBrandNames = ${ts(meta.brandNames)} as const;\n\nexport type BeeBrandName = (typeof beeBrandNames)[number];\n\nexport const beeRuntimeThemeNames = ${ts(meta.runtimeThemeNames)} as const;\n\nexport type BeeRuntimeThemeName = (typeof beeRuntimeThemeNames)[number];\n\nexport const beeRuntimeThemeByBrand = ${ts(meta.runtimeThemeByBrand)} as const satisfies Record<BeeBrandName, Record<BeeThemeName, BeeRuntimeThemeName>>;\n\nexport function resolveBeeRuntimeTheme(\n  brand: BeeBrandName,\n  theme: BeeThemeName,\n): BeeRuntimeThemeName {\n  return beeRuntimeThemeByBrand[brand][theme];\n}\n\nexport function getBeeThemeSelection(runtimeTheme: string):\n  | { brand: BeeBrandName; theme: BeeThemeName }\n  | undefined {\n  for (const brand of beeBrandNames) {\n    for (const theme of beeThemeNames) {\n      if (beeRuntimeThemeByBrand[brand][theme] === runtimeTheme) {\n        return { brand, theme };\n      }\n    }\n  }\n\n  return undefined;\n}\n\nexport function isBeeDarkRuntimeTheme(runtimeTheme: string) {\n  return getBeeThemeSelection(runtimeTheme)?.theme === 'dark';\n}\n\nexport const semanticColorTokens = ${ts(semantics)} as const;\n\nexport type SemanticColorToken = (typeof semanticColorTokens)[number];\nexport type SemanticColorVariableName = \`--color-\${SemanticColorToken}\`;\nexport type SemanticColorOverrides = Partial<Record<SemanticColorVariableName, string>>;\n\nexport function semanticColorVariable(token: SemanticColorToken): SemanticColorVariableName {\n  return \`--color-\${token}\`;\n}\n\nexport function defineSemanticColorOverrides<const T extends SemanticColorOverrides>(\n  overrides: T,\n): Readonly<T> {\n  return Object.freeze({ ...overrides });\n}\n\nexport const spacing = ${ts(dimensionValues(tokens.spacing))} as const;\n\nexport const radius = ${ts(dimensionValues(tokens.radius))} as const;\n\n/**\n * \`system\` means the platform default font. BeeUI deliberately does not force a\n * font-family utility until the consuming app loads and names a cross-platform font.\n */\nexport const fontFamily = ${ts(tokenValues(tokens.fontFamily))} as const;\n\nexport const fontSize = ${ts(dimensionValues(tokens.fontSize))} as const;\n\nexport const lineHeight = ${ts(dimensionValues(tokens.lineHeight))} as const;\n\nexport const fontWeight = ${ts(tokenValues(tokens.fontWeight))} as const;\n\nexport const letterSpacing = ${ts(dimensionValues(tokens.letterSpacing))} as const;\n\nexport type TypographyRole = keyof typeof fontSize;\n\nexport const controlSize = ${ts(dimensionValues(tokens.controlSize))} as const;\n\nexport const iconSize = ${ts(dimensionValues(tokens.iconSize))} as const;\n\nexport const avatarSize = ${ts(dimensionValues(tokens.avatarSize))} as const;\n\nexport const contentWidth = ${ts(dimensionValues(tokens.contentWidth))} as const;\n\nexport const elevation = ${ts(elevationValues(tokens.elevation))} as const;\n\nexport type ElevationLevel = keyof typeof elevation;\n\nexport const motionDuration = ${ts(dimensionValues(tokens.motionDuration, 'ms'))} as const;\n\nexport const motionEasing = ${ts(motionEasingValues(tokens.motionEasing))} as const;\n\nexport const focusRing = ${ts(focusRing)} as const satisfies {\n  width: number;\n  offset: number;\n  colorToken: SemanticColorToken;\n  webVisibility: 'focus-visible';\n  nativeVisibility: 'platform-focus';\n};\n`;
+  return `// AUTO-GENERATED — DO NOT EDIT DIRECTLY.\n// Canonical source: ${CANONICAL_PATH}\n// Generator: ${GENERATOR_PATH}\n\nexport const beeThemeNames = ${ts(meta.themeNames)} as const;\n\nexport type BeeThemeName = (typeof beeThemeNames)[number];\n\nexport const beeBrandNames = ${ts(meta.brandNames)} as const;\n\nexport type BeeBrandName = (typeof beeBrandNames)[number];\n\nexport const beeRuntimeThemeNames = ${ts(meta.runtimeThemeNames)} as const;\n\nexport type BeeRuntimeThemeName = (typeof beeRuntimeThemeNames)[number];\n\nexport const beeRuntimeThemeByBrand = ${ts(meta.runtimeThemeByBrand)} as const satisfies Record<BeeBrandName, Record<BeeThemeName, BeeRuntimeThemeName>>;\n\nexport function resolveBeeRuntimeTheme(\n  brand: BeeBrandName,\n  theme: BeeThemeName,\n): BeeRuntimeThemeName {\n  return beeRuntimeThemeByBrand[brand][theme];\n}\n\nexport function getBeeThemeSelection(runtimeTheme: string):\n  | { brand: BeeBrandName; theme: BeeThemeName }\n  | undefined {\n  for (const brand of beeBrandNames) {\n    for (const theme of beeThemeNames) {\n      if (beeRuntimeThemeByBrand[brand][theme] === runtimeTheme) {\n        return { brand, theme };\n      }\n    }\n  }\n\n  return undefined;\n}\n\nexport function isBeeDarkRuntimeTheme(runtimeTheme: string) {\n  return getBeeThemeSelection(runtimeTheme)?.theme === 'dark';\n}\n\nexport const semanticColorTokens = ${ts(semantics)} as const;\n\nexport type SemanticColorToken = (typeof semanticColorTokens)[number];\nexport type SemanticColorVariableName = \`--color-\${SemanticColorToken}\`;\nexport type SemanticColorOverrides = Partial<Record<SemanticColorVariableName, string>>;\n\nexport function semanticColorVariable(token: SemanticColorToken): SemanticColorVariableName {\n  return \`--color-\${token}\`;\n}\n\nexport function defineSemanticColorOverrides<const T extends SemanticColorOverrides>(\n  overrides: T,\n): Readonly<T> {\n  return Object.freeze({ ...overrides });\n}\n\nexport const spacing = ${ts(dimensionValues(tokens.spacing))} as const;\n\nexport const radius = ${ts(dimensionValues(tokens.radius))} as const;\n\n/**\n * \`system\` means the platform default font. BeeUI deliberately does not force a\n * font-family utility until the consuming app loads and names a cross-platform font.\n */\nexport const fontFamily = ${ts(tokenValues(tokens.fontFamily))} as const;\n\nexport const fontSize = ${ts(dimensionValues(tokens.fontSize))} as const;\n\nexport const lineHeight = ${ts(dimensionValues(tokens.lineHeight))} as const;\n\nexport const fontWeight = ${ts(tokenValues(tokens.fontWeight))} as const;\n\nexport const letterSpacing = ${ts(dimensionValues(tokens.letterSpacing))} as const;\n\nexport type TypographyRole = keyof typeof fontSize;\n\nexport const controlSize = ${ts(dimensionValues(tokens.controlSize))} as const;\n\nexport const iconSize = ${ts(dimensionValues(tokens.iconSize))} as const;\n\nexport const avatarSize = ${ts(dimensionValues(tokens.avatarSize))} as const;\n\nexport const contentWidth = ${ts(dimensionValues(tokens.contentWidth))} as const;\n\nexport type ContentWidthName = keyof typeof contentWidth;\n\n/**\n * Minimum stable responsive breakpoints (min-width thresholds, px). Web-only\n * build-time constants — Tailwind/Uniwind compiles these into responsive\n * variants and remains the sole responsive execution engine. Viewports below\n * \`medium\` are the implicit compact base. These values are readable (e.g. to\n * classify a measured width) but are NOT a runtime override surface: the web\n * compiler needs constant breakpoints, so a runtime-mutable breakpoint API is\n * out of scope here (see #71).\n */\nexport const breakpoint = ${ts(dimensionValues(tokens.breakpoint))} as const;\n\nexport type BreakpointName = keyof typeof breakpoint;\n\n/**\n * Semantic horizontal page-edge padding (px). Cross-platform: consumed on web\n * through the generated \`--spacing-page-gutter-*\` Tailwind utility and on React\n * Native through this constant. Composes additively with safe-area insets —\n * apply the gutter inside the safe area, never in place of the inset.\n */\nexport const pageGutter = ${ts(dimensionValues(tokens.pageGutter))} as const;\n\nexport type PageGutterName = keyof typeof pageGutter;\n\n/**\n * Build-time vs runtime classification for the responsive-layout token groups.\n * \`breakpoint\` is a web-only build-time constant; \`pageGutter\` and\n * \`contentWidth\` are cross-platform values. None are runtime-overridable.\n */\nexport const responsiveLayoutClassification = ${ts(responsiveLayoutClassification(source))} as const;\n\nexport const elevation = ${ts(elevationValues(tokens.elevation))} as const;\n\nexport type ElevationLevel = keyof typeof elevation;\n\nexport const motionDuration = ${ts(dimensionValues(tokens.motionDuration, 'ms'))} as const;\n\nexport const motionEasing = ${ts(motionEasingValues(tokens.motionEasing))} as const;\n\nexport const focusRing = ${ts(focusRing)} as const satisfies {\n  width: number;\n  offset: number;\n  colorToken: SemanticColorToken;\n  webVisibility: 'focus-visible';\n  nativeVisibility: 'platform-focus';\n};\n`;
 }
 
 function renderThemeCss(source) {
@@ -550,6 +611,8 @@ function renderThemeCss(source) {
   const iconSize = dimensionValues(tokens.iconSize);
   const avatarSize = dimensionValues(tokens.avatarSize);
   const contentWidth = dimensionValues(tokens.contentWidth);
+  const breakpoint = dimensionValues(tokens.breakpoint);
+  const pageGutter = dimensionValues(tokens.pageGutter);
   const elevation = elevationCssValues(tokens.elevation);
   const motionDuration = dimensionValues(tokens.motionDuration, 'ms');
   const motionEasing = motionEasingValues(tokens.motionEasing);
@@ -583,8 +646,11 @@ function renderThemeCss(source) {
   }
   for (const [name, value] of Object.entries(iconSize)) lines.push(`  --spacing-icon-${name}: ${pxToRem(value, reference)};`);
   for (const [name, value] of Object.entries(avatarSize)) lines.push(`  --spacing-avatar-${name}: ${pxToRem(value, reference)};`);
+  for (const [name, value] of Object.entries(pageGutter)) lines.push(`  --spacing-page-gutter-${name}: ${pxToRem(value, reference)};`);
   lines.push('');
   for (const [name, value] of Object.entries(contentWidth)) lines.push(`  --container-${name}: ${pxToRem(value, reference)};`);
+  lines.push('');
+  for (const [name, value] of Object.entries(breakpoint)) lines.push(`  --breakpoint-${name}: ${pxToRem(value, reference)};`);
   lines.push('');
   for (const [name, value] of Object.entries(elevation)) lines.push(`  --shadow-${name}: ${value};`);
   lines.push('');
