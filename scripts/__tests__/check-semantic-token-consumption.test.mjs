@@ -8,11 +8,13 @@ import {
   buildGuardRules,
   collectComponentSourceFiles,
   EXCEPTION_MARKER,
+  isTypedReaderImplementationFile,
   MIN_EXCEPTION_RATIONALE_LENGTH,
   runTokenConsumptionGuard,
   scanSourceText,
+  TYPED_READER_IMPLEMENTATION_RELATIVE_PATH,
 } from '../check-semantic-token-consumption.mjs';
-import { loadCanonicalTokens } from '../generate-tokens.mjs';
+import { loadCanonicalTokens, readableTokenNamespaces, readableVariablePrefixes } from '../generate-tokens.mjs';
 
 const source = loadCanonicalTokens();
 const { rules } = buildGuardRules(source);
@@ -84,9 +86,55 @@ test("Tailwind's own default numeric palette scale fails even outside BeeUI prim
   assert.deepEqual(ruleIds(violations), ['palette-scale-utility']);
 });
 
-test('unsupported raw CSS-variable access fails when a typed path already exists', () => {
+test('unsupported raw CSS-variable access fails when a typed path already exists — colors', () => {
   const violations = scan('const style = { outlineColor: "var(--color-primary)" };\n');
-  assert.deepEqual(ruleIds(violations), ['raw-css-color-variable']);
+  assert.deepEqual(ruleIds(violations), ['raw-css-variable-access']);
+  assert.match(violations[0].message, /useBeeToken\('colors\.<key>'\)/);
+});
+
+test('unsupported raw CSS-variable access fails — chart namespace', () => {
+  const violations = scan('const style = { stroke: "var(--chart-series-1)" };\n');
+  assert.deepEqual(ruleIds(violations), ['raw-css-variable-access']);
+  assert.match(violations[0].message, /useBeeToken\('chart\.<key>'\)/);
+  assert.match(violations[0].message, /chartColorVariable\(\)/);
+});
+
+test('unsupported raw CSS-variable access fails — radius namespace', () => {
+  const violations = scan('const style = { borderRadius: "var(--radius-md)" };\n');
+  assert.deepEqual(ruleIds(violations), ['raw-css-variable-access']);
+  assert.match(violations[0].message, /useBeeToken\('radius\.<key>'\)/);
+  assert.match(violations[0].message, /radiusVariable\(\)/);
+});
+
+test('unsupported raw CSS-variable access fails — motion-duration namespace', () => {
+  const violations = scan('const style = { transitionDuration: "var(--motion-duration-normal)" };\n');
+  assert.deepEqual(ruleIds(violations), ['raw-css-variable-access']);
+  assert.match(violations[0].message, /useBeeToken\('motion\.<key>'\)/);
+  assert.match(violations[0].message, /motionDurationVariable\(\)/);
+});
+
+test('a non-token var(--...) with no typed reader passes — layout/z-index vars', () => {
+  const violations = scan('const style = { zIndex: "var(--z-40)", top: "var(--layer-overlay)" };\n');
+  assert.deepEqual(violations, []);
+});
+
+test('direct useCSSVariable() call with a readable-namespace literal fails', () => {
+  const violations = scan("const raw = useCSSVariable('--color-primary');\n");
+  assert.deepEqual(ruleIds(violations), ['typed-reader-bypass-call']);
+  assert.match(violations[0].message, /useBeeToken\('colors\.<key>'\)/);
+});
+
+test('direct Uniwind.getCSSVariable() call with a readable-namespace literal fails', () => {
+  const violations = scan("const raw = Uniwind.getCSSVariable('--radius-md');\n");
+  assert.deepEqual(ruleIds(violations), ['typed-reader-bypass-call']);
+  assert.match(violations[0].message, /getBeeToken\('radius\.<key>'\)/);
+});
+
+test('a useCSSVariable() call for a non-readable namespace is not flagged by the bypass rule', () => {
+  // "--layer-overlay" has no typed reader category (see readableTokenNamespaces()), so
+  // calling Uniwind's raw read API with it is not a typed-reader bypass.
+  const violations = scan("const raw = useCSSVariable('--layer-overlay');\n");
+  assert.deepEqual(violations, []);
 });
 
 test('brand-specific styling branch fails', () => {
@@ -196,6 +244,94 @@ test('classification automatically follows canonical metadata changes — declas
   // fallback. With no private groups declared, no rule can see it anymore.
   const violations = scanSourceText('fixture.tsx', 'const cls = "bg-danger-emphasis";\n', mutatedRules);
   assert.deepEqual(violations, []);
+});
+
+test('a documented escape-hatch exception on a readable-namespace violation passes', () => {
+  const violations = scan(
+    [
+      "const raw = useCSSVariable('--color-primary'); " +
+        `// ${EXCEPTION_MARKER}: reviewed one-off vendor SDK bridge, see issue #999`,
+    ].join('\n'),
+  );
+  assert.deepEqual(violations, []);
+});
+
+test('readable-namespace classification is derived from canonical metadata, not hand-maintained — includes colors/chart/radius/motionDuration', () => {
+  const namespaces = readableTokenNamespaces(source);
+  const categories = namespaces.map((namespace) => namespace.readerCategory).sort();
+  assert.deepEqual(categories, ['chart', 'colors', 'motion', 'radius']);
+  assert.deepEqual(
+    readableVariablePrefixes(source).sort(),
+    ['--chart-', '--color-', '--motion-duration-', '--radius-'].sort(),
+  );
+});
+
+test('classification automatically follows canonical metadata changes — declassifying radius as runtimeOverridable stops flagging var(--radius-*)', () => {
+  const mutated = structuredClone(source);
+  mutated.tokens.radius.$extensions['com.beeui'].runtimeOverridable = false;
+  const { rules: mutatedRules } = buildGuardRules(mutated);
+  const violations = scanSourceText(
+    'fixture.tsx',
+    'const style = { borderRadius: "var(--radius-md)" };\n',
+    mutatedRules,
+  );
+  assert.deepEqual(violations, []);
+  // colors is unaffected by the radius flag — it stays flagged.
+  const colorViolations = scanSourceText(
+    'fixture.tsx',
+    'const style = { outlineColor: "var(--color-primary)" };\n',
+    mutatedRules,
+  );
+  assert.deepEqual(ruleIds(colorViolations), ['raw-css-variable-access']);
+});
+
+test('isTypedReaderImplementationFile matches only the exact sanctioned adapter file', () => {
+  assert.equal(isTypedReaderImplementationFile(TYPED_READER_IMPLEMENTATION_RELATIVE_PATH), true);
+  assert.equal(isTypedReaderImplementationFile('packages/ui/src/components/button.tsx'), false);
+  assert.equal(
+    isTypedReaderImplementationFile('packages/ui/src/components/other/use-bee-token.ts'),
+    false,
+  );
+});
+
+test('the sanctioned use-bee-token.ts implementation is exempted from the typed-reader-bypass-call rule, but nothing else in its directory is', () => {
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-token-guard-exempt-'));
+  try {
+    const componentsDir = path.join(tmpRoot, 'packages/ui/src/components');
+    fs.mkdirSync(componentsDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(componentsDir, 'use-bee-token.ts'),
+      [
+        "import { Uniwind, useCSSVariable } from 'uniwind';",
+        'export function useBeeToken(path) {',
+        "  const raw = useCSSVariable('--color-primary');",
+        '  return raw;',
+        '}',
+        'export function getBeeToken(path) {',
+        "  return Uniwind.getCSSVariable('--radius-md');",
+        '}',
+      ].join('\n'),
+    );
+    // A sibling file in the SAME directory using the same raw calls is still flagged —
+    // the exemption is by exact file path, never a directory-level ignore.
+    fs.writeFileSync(
+      path.join(componentsDir, 'other-component.tsx'),
+      "const raw = useCSSVariable('--color-primary');\n",
+    );
+
+    const { violations } = runTokenConsumptionGuard({ rootDir: tmpRoot, source });
+    const byFile = new Map();
+    for (const violation of violations) {
+      byFile.set(violation.file, [...(byFile.get(violation.file) ?? []), violation.ruleId]);
+    }
+
+    assert.equal(byFile.has(path.join('packages/ui/src/components', 'use-bee-token.ts')), false);
+    assert.deepEqual(byFile.get(path.join('packages/ui/src/components', 'other-component.tsx')), [
+      'typed-reader-bypass-call',
+    ]);
+  } finally {
+    fs.rmSync(tmpRoot, { recursive: true, force: true });
+  }
 });
 
 test('file collection excludes generated output, declaration files, and test/story files', () => {

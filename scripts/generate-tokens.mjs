@@ -958,6 +958,17 @@ function tokenOverrideClassification(source) {
 // registered convention, so the flag can never silently do nothing.
 const OVERRIDABLE_GROUP_BUILDERS = {
   radius: {
+    // Reader-category name (matches the `beeTokenReaderCategories`/`BeeTokenPath` key,
+    // e.g. `radius.md`) and the Uniwind CSS-variable prefix this group is rendered under
+    // (`renderThemeCss`'s own convention, mirrored by `radiusVariable()` in the generated
+    // index.ts). `readableTokenNamespaces()` below reads these two fields — plus
+    // `helperName`, the `*Variable()` string-helper a caller should reach for instead of
+    // spelling the CSS variable out raw — so the #83 semantic-token-consumption guard can
+    // derive its raw-CSS-variable-namespace rule from this single source instead of a
+    // hand-maintained second list.
+    readerCategory: 'radius',
+    variablePrefix: '--radius-',
+    helperName: 'radiusVariable',
     renderTsEntry: () =>
       [
         '  radius: {',
@@ -979,6 +990,9 @@ const OVERRIDABLE_GROUP_BUILDERS = {
       ].join('\n'),
   },
   motionDuration: {
+    readerCategory: 'motion',
+    variablePrefix: '--motion-duration-',
+    helperName: 'motionDurationVariable',
     renderTsEntry: () =>
       [
         '  motion: {',
@@ -998,6 +1012,53 @@ const OVERRIDABLE_GROUP_BUILDERS = {
       ].join('\n'),
   },
 };
+
+// The two color reader categories are always present in `beeTokenReaderCategories`
+// (never gated by a group's `runtimeOverridable` flag — see that object's own
+// generated JSDoc above), so their namespace metadata is fixed rather than derived
+// from `OVERRIDABLE_GROUP_BUILDERS`/canonical group iteration. `variablePrefix` mirrors
+// `semanticColorVariable()`/`chartColorVariable()`'s naming convention exactly.
+const READER_COLOR_NAMESPACES = [
+  { readerCategory: 'colors', variablePrefix: '--color-', helperName: 'semanticColorVariable' },
+  { readerCategory: 'chart', variablePrefix: '--chart-', helperName: 'chartColorVariable' },
+];
+
+/**
+ * Every CSS custom-property namespace with a typed BeeUI runtime reader
+ * (`useBeeToken`/`getBeeToken` in `@beeui/ui`) — the exact same category set as
+ * `beeTokenReaderCategories` in the generated `index.ts`: the two always-present color
+ * categories (`colors`, `chart`) plus every token group flagged `runtimeOverridable: true`
+ * in `packages/tokens/tokens.json` (currently `radius`, `motionDuration`). This is the
+ * single source of truth the #83 semantic-token-consumption guard reads to broaden its raw
+ * CSS-variable rule beyond `--color-*` — there is no second hand-maintained namespace list,
+ * mirroring how `privatePrimitiveIdentifiers()` derives the private side of that guard.
+ */
+export function readableTokenNamespaces(source) {
+  const { tokens } = source;
+  const overridable = Object.keys(tokens)
+    .filter((groupName) => beeExtension(tokens[groupName]).runtimeOverridable === true)
+    .map((groupName) => {
+      const builder = OVERRIDABLE_GROUP_BUILDERS[groupName];
+      invariant(
+        builder,
+        `token group "${groupName}" is flagged runtimeOverridable but generate-tokens.mjs has no ` +
+          'registered Uniwind CSS-variable convention for it; add an entry to OVERRIDABLE_GROUP_BUILDERS ' +
+          'in scripts/generate-tokens.mjs or unset com.beeui.runtimeOverridable for this group',
+      );
+      invariant(
+        builder.readerCategory && builder.variablePrefix && builder.helperName,
+        `OVERRIDABLE_GROUP_BUILDERS.${groupName} is missing readable-namespace metadata ` +
+          '(readerCategory/variablePrefix/helperName)',
+      );
+      return { readerCategory: builder.readerCategory, variablePrefix: builder.variablePrefix, helperName: builder.helperName };
+    });
+  return [...READER_COLOR_NAMESPACES, ...overridable];
+}
+
+/** Just the CSS-variable prefixes from {@link readableTokenNamespaces}, e.g. `['--color-', '--chart-', '--radius-', '--motion-duration-']`. */
+export function readableVariablePrefixes(source) {
+  return readableTokenNamespaces(source).map((namespace) => namespace.variablePrefix);
+}
 
 function validateThemeOverrideCategories(source) {
   const { tokens } = source;

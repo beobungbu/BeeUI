@@ -51,6 +51,12 @@ same canonical/generated metadata every run, via helpers exported from
   just `primitives`) and flattens each family/leaf into the styling-name shapes a component
   could reference (`neutral`, `neutral-500`, `danger-emphasis`, …).
 - **brand names** — `brandNames(source)`, reading `$extensions["com.beeui"].brandNames`.
+- **runtime-readable CSS-variable namespaces** — `readableTokenNamespaces(source)` /
+  `readableVariablePrefixes(source)`, reading the exact same canonical
+  `$extensions["com.beeui"].runtimeOverridable` flags (plus the two always-present color
+  categories) that build `beeTokenReaderCategories`/`useBeeToken`/`getBeeToken` (#72) in
+  `packages/tokens/src/index.ts`. Currently `--color-`, `--chart-`, `--radius-`, and
+  `--motion-duration-` — every namespace that has a typed reader path.
 
 Add, rename, or reclassify a token in `packages/tokens/tokens.json` and the guard's rules
 change on the next run — nothing in `scripts/check-semantic-token-consumption.mjs` needs
@@ -65,11 +71,15 @@ editing.
 | `private-primitive-utility` | `bg-neutral-500`, `text-danger-emphasis`, … | Consumes an authoring-only primitive directly (see `theme-authoring-primitives.md`). |
 | `private-primitive-pointer` | `#/primitives/...`, `primitives.foo` | Reaches into the private layer's own reference syntax. |
 | `palette-scale-utility` | `bg-sky-500`, `border-red-600`, … | A raw numbered color-scale utility. No BeeUI public semantic color token ever ends in a bare numeric shade, so this pattern is always either Tailwind's built-in default palette or an authoring primitive — never the semantic contract. |
-| `raw-css-color-variable` | `var(--color-primary)` | A typed path already exists (a Tailwind semantic utility class, or `semanticColorVariable()` from `@beeui/tokens`); the raw CSS custom property should not be spelled out in component source. |
+| `raw-css-variable-access` | `var(--color-primary)`, `var(--chart-series-1)`, `var(--radius-md)`, `var(--motion-duration-normal)` | A typed path already exists for every runtime-readable namespace (`useBeeToken`/`getBeeToken`, the generated Tailwind semantic utility class for colors, or a `*Variable()` string helper from `@beeui/tokens`); the raw CSS custom property should not be spelled out in component source. A `var(--...)` access to a namespace with **no** typed reader (e.g. `--layer-*`, `--z-*`) is not flagged — only namespaces present in `readableTokenNamespaces()` are. |
+| `typed-reader-bypass-call` | `useCSSVariable('--color-primary')`, `Uniwind.getCSSVariable('--radius-md')` | Calling Uniwind's raw CSS-variable read API directly with a readable-namespace variable name bypasses the typed `useBeeToken`/`getBeeToken` adapter the same way `var(--color-*)` does. Exempted only for the adapter's own sanctioned implementation file, `packages/ui/src/components/use-bee-token.ts` — matched by exact relative file path, never a directory-level ignore; every other file in scope, including siblings in the same directory, is still checked. |
 | `brand-literal-branch` | `brand === 'violet'` | Reusable components stay brand-blind; branching on a brand name bypasses the semantic/theme mapping. |
 
 It does **not** ban numeric literals, spacing/sizing utilities, or content strings — `px-4`,
-`gap-2`, `z-50`, `"Order #12345"`, and similar never match any rule.
+`gap-2`, `z-50`, `"Order #12345"`, and similar never match any rule. It also does not ban
+`var(--...)`/`useCSSVariable(...)` access to a CSS-variable namespace that has no typed
+reader (e.g. `--layer-*`) — only namespaces with a real `useBeeToken`/`getBeeToken` path are
+in scope for these two rules.
 
 ### Allowed vs. rejected examples
 
@@ -83,6 +93,15 @@ It does **not** ban numeric literals, spacing/sizing utilities, or content strin
 
 // Rejected — raw literal
 <View style={{ backgroundColor: '#f59e0b' }} />
+
+// Rejected — raw CSS-variable access to a readable namespace
+const stroke = { color: 'var(--chart-series-1)' };
+
+// Rejected — bypasses the typed reader via Uniwind's raw read API directly
+const radius = useCSSVariable('--radius-md');
+
+// Allowed — the typed #72 reader
+const radius = useBeeToken('radius.md');
 
 // Rejected — brand branch in reusable component source
 if (brand === 'violet') return <VioletOnlyIcon />;
@@ -126,5 +145,8 @@ generated artifact — updates automatically.
 `scripts/__tests__/check-semantic-token-consumption.test.mjs` covers every rule
 (positive and negative fixtures), the exception model (valid, blank, and too-short
 rationale), file-collection exclusions, that classification tracks canonical metadata
-changes, and that the real `packages/ui/src` tree currently passes with zero violations and
-no broad ignore list.
+changes — including flipping a token group's `runtimeOverridable` flag on or off and
+confirming the `raw-css-variable-access`/`typed-reader-bypass-call` rules follow — the
+exact-file-path exemption for `packages/ui/src/components/use-bee-token.ts` (and that a
+sibling file in the same directory is still checked), and that the real `packages/ui/src`
+tree currently passes with zero violations and no broad ignore list.
