@@ -6,8 +6,34 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORK_ROOT="${RUNNER_TEMP:-/tmp}/beeui-bare-consumer"
 APP_DIR="${WORK_ROOT}/BeeUIBareSmoke"
 PACKAGE_DIR="${WORK_ROOT}/packages"
+FINGERPRINT_FILE="${WORK_ROOT}/.beeui-bare-fingerprint"
 CLI_VERSION="${BEEUI_RN_CLI_VERSION:-20.2.0}"
 RN_VERSION="${BEEUI_RN_VERSION:-0.86.2}"
+
+# @beeui/ui peers on react-native-teleport for its native context-preserving
+# overlay host; teleport in turn peers on react-dom, so pin react-dom to the
+# app's react version to keep strict peer resolution clean.
+PINNED_DEPS=(
+  uniwind@1.10.1
+  tailwindcss@4.3.3
+  react-native-safe-area-context@5.7.0
+  react-native-teleport@1.1.13
+  react-dom@19.2.3
+)
+
+is_truthy() {
+  case "${1:-}" in
+    1|[Tt][Rr][Uu][Ee]|[Yy][Ee][Ss]) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+compute_bare_fingerprint() {
+  {
+    printf '%s\n' "${CLI_VERSION}" "${RN_VERSION}"
+    printf '%s\n' "${PINNED_DEPS[@]}"
+  } | shasum -a 256 | awk '{ print $1 }'
+}
 
 pack_beeui() {
   echo "::group::Pack BeeUI packages through the package boundary"
@@ -30,35 +56,62 @@ pack_beeui() {
 }
 
 prepare_consumer() {
-  echo "::group::Create fresh bare React Native ${RN_VERSION} consumer"
-  rm -rf "${WORK_ROOT}"
-  mkdir -p "${WORK_ROOT}"
+  local fingerprint existing_fingerprint need_clean=0
+  fingerprint="$(compute_bare_fingerprint)"
 
-  npx --yes "@react-native-community/cli@${CLI_VERSION}" init BeeUIBareSmoke \
-    --version "${RN_VERSION}" \
-    --directory "${APP_DIR}" \
-    --pm npm \
-    --install-pods false \
-    --skip-git-init true
-  echo "::endgroup::"
+  if is_truthy "${BEEUI_BARE_CLEAN:-}"; then
+    need_clean=1
+  elif [ ! -d "${APP_DIR}" ]; then
+    need_clean=1
+  else
+    existing_fingerprint="$(cat "${FINGERPRINT_FILE}" 2>/dev/null || true)"
+    if [ "${existing_fingerprint}" != "${fingerprint}" ]; then
+      need_clean=1
+    fi
+  fi
 
-  pack_beeui
-  cd "${APP_DIR}"
+  if [ "${need_clean}" -eq 1 ]; then
+    echo "::group::Create fresh bare React Native ${RN_VERSION} consumer"
+    rm -rf "${WORK_ROOT}"
+    mkdir -p "${WORK_ROOT}"
 
-  echo "::group::Install BeeUI tarballs and runtime styling dependencies"
-  # @beeui/ui peers on react-native-teleport for its native context-preserving
-  # overlay host; teleport in turn peers on react-dom, so pin react-dom to the
-  # app's react version to keep strict peer resolution clean.
-  npm install --save-exact \
-    "${CORE_TARBALL}" \
-    "${TOKENS_TARBALL}" \
-    "${UI_TARBALL}" \
-    uniwind@1.10.1 \
-    tailwindcss@4.3.3 \
-    react-native-safe-area-context@5.7.0 \
-    react-native-teleport@1.1.13 \
-    react-dom@19.2.3
-  echo "::endgroup::"
+    npx --yes "@react-native-community/cli@${CLI_VERSION}" init BeeUIBareSmoke \
+      --version "${RN_VERSION}" \
+      --directory "${APP_DIR}" \
+      --pm npm \
+      --install-pods false \
+      --skip-git-init true
+    echo "::endgroup::"
+
+    pack_beeui
+    cd "${APP_DIR}"
+
+    echo "::group::Install BeeUI tarballs and runtime styling dependencies"
+    npm install --save-exact \
+      "${CORE_TARBALL}" \
+      "${TOKENS_TARBALL}" \
+      "${UI_TARBALL}" \
+      "${PINNED_DEPS[@]}"
+    echo "::endgroup::"
+
+    printf '%s' "${fingerprint}" > "${FINGERPRINT_FILE}"
+  else
+    echo "Reusing existing bare React Native consumer at ${APP_DIR} (environment fingerprint unchanged)"
+    pack_beeui
+    cd "${APP_DIR}"
+
+    echo "::group::Reinstall BeeUI tarballs into existing consumer"
+    # The BeeUI tarball versions do not change between runs, so npm would skip
+    # a same-version reinstall; force it by clearing the scope first so new
+    # tarball content is always picked up. The rest of node_modules and
+    # ios/Pods are left intact for incremental installs/builds.
+    rm -rf node_modules/@beeui
+    npm install --save-exact \
+      "${CORE_TARBALL}" \
+      "${TOKENS_TARBALL}" \
+      "${UI_TARBALL}"
+    echo "::endgroup::"
+  fi
 
   if node -e "require.resolve('expo')" >/dev/null 2>&1; then
     echo "Bare consumer unexpectedly resolves the Expo runtime."
