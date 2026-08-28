@@ -2,7 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { loadCanonicalTokens } from '../generate-tokens.mjs';
-import { validateTokenRemovalDiff } from '../check-token-removals.mjs';
+import {
+  checkTokenRemovalsAgainstGitBaseline,
+  tokenSourceExistsAtRevision,
+  validateTokenRemovalDiff,
+} from '../check-token-removals.mjs';
 import { assertRemovalAllowed } from '../token-lifecycle.mjs';
 
 const source = loadCanonicalTokens();
@@ -46,6 +50,38 @@ function withoutRadiusXs(previous, version = '0.2.0') {
   setVersion(current, version);
   return current;
 }
+
+test('first introduction passes when the PR base has no canonical token source', () => {
+  const missing = Object.assign(new Error('missing object'), { status: 128 });
+  assert.equal(
+    tokenSourceExistsAtRevision('pre-token-system', () => {
+      throw missing;
+    }),
+    false,
+  );
+  assert.equal(tokenSourceExistsAtRevision('token-system-present', () => {}), true);
+
+  let attemptedRead = false;
+  const removed = checkTokenRemovalsAgainstGitBaseline('pre-token-system', {
+    sourceExistsAtRevision: () => false,
+    loadSourceAtRevision: () => {
+      attemptedRead = true;
+      throw new Error('must not read a canonical source that does not exist');
+    },
+  });
+  assert.deepEqual(removed, []);
+  assert.equal(attemptedRead, false);
+});
+
+test('unexpected git errors while probing the baseline are not swallowed', () => {
+  const failure = Object.assign(new Error('repository unavailable'), { status: 2 });
+  assert.throws(
+    () => tokenSourceExistsAtRevision('broken-base', () => {
+      throw failure;
+    }),
+    /repository unavailable/,
+  );
+});
 
 test('baseline-aware guard rejects direct removal of a stable public token', () => {
   const current = structuredClone(source);
