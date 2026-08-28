@@ -23,6 +23,7 @@
     "registry:test": "node --test ./scripts/__tests__/beeui.test.mjs"
   },
   "devDependencies": {
+    "@hyperjump/json-schema": "1.17.8",
     "@types/react": "^19.2.0",
     "typescript": "~5.9.2"
   }

@@ -17,7 +17,7 @@ The runtime implementation remains **Uniwind + Tailwind CSS v4**. `@beeui/tokens
 - focus is represented as a group of standard dimension tokens rather than an invented generic composite type;
 - BeeUI-only runtime/native metadata lives under `$extensions["com.beeui"]`.
 
-The root `$schema` points at the official DTCG 2025.10 Format JSON Schema for editor/tooling validation. DTCG-specific data stays in standard fields; platform information such as React Native elevation, Uniwind runtime-theme mapping, exact CSS serialization, and backward-compatible public names is namespaced in the BeeUI extension.
+The root `$schema` points at the published DTCG 2025.10 Format JSON Schema for editor/tooling validation. The Format specification itself does **not** define `$schema` as a normative design-token property; the published schema intentionally accepts it as tooling metadata and notes that caveat. BeeUI keeps it for deterministic validation and editor integration without treating it as token semantics. DTCG-specific data stays in standard fields; platform information such as React Native elevation, Uniwind runtime-theme mapping, exact CSS serialization, and backward-compatible public names is namespaced in the BeeUI extension.
 
 DTCG token/group names cannot contain `.`. The canonical spacing token historically exposed to TypeScript as `"2.5"` is therefore authored as the valid DTCG name `2-5`, with `$extensions["com.beeui"].publicName: "2.5"`. Generated TypeScript continues to expose `"2.5": 10`, so standards conformance does not break the existing public API.
 
@@ -44,6 +44,8 @@ To add or change a token:
 `pnpm tokens:check` performs a read-only byte comparison. CI runs it explicitly, typecheck guards it, and release verification refuses to package stale generated artifacts. Generation uses no network, timestamp, absolute path, or platform-specific shell behavior, so a clean checkout produces byte-identical output.
 
 The canonical JSON loader rejects duplicate object keys before normal JavaScript parsing can overwrite an earlier value and treats special keys such as `__proto__` as inert own data. Typography generation also requires exact `fontSize`/`lineHeight` role parity, preventing missing/`NaN` CSS line heights or TS-only roles.
+
+CI applies two independent validation layers. First, `packages/tokens/tokens.json` and the generated resolver are validated with `@hyperjump/json-schema` against byte-pinned snapshots of the published DTCG 2025.10 Format and Resolver schemas under `scripts/vendor/dtcg/2025.10/`; this path performs no network access. Second, BeeUI-specific validation enforces authoring/runtime invariants that generic JSON Schema cannot express, including duplicate raw JSON keys, public-name compatibility, exact theme vocabulary, typography-role parity, and deterministic generated output. The official-schema gate supplements rather than replaces the BeeUI validator.
 
 ## DTCG conformance versus alias architecture
 

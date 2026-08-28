@@ -12,6 +12,12 @@ import {
   validateCanonicalTokens,
   validateDtcgDocument,
 } from '../generate-tokens.mjs';
+import {
+  validateOfficialDtcg2025_10,
+  validateOfficialDtcgFormat,
+  validateOfficialDtcgResolver,
+  verifyPinnedDtcgSchemaSnapshots,
+} from '../validate-dtcg-schemas.mjs';
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const FORMAT_SCHEMA_URL = 'https://www.designtokens.org/schemas/2025.10/format.json';
@@ -164,6 +170,31 @@ test('DTCG value-shape regressions are rejected', () => {
 test('canonical distributable token artifact remains DTCG-conformant', () => {
   assert.equal(source.$schema, FORMAT_SCHEMA_URL);
   assert.doesNotThrow(() => validateDtcgDocument(source));
+});
+
+test('vendored official DTCG 2025.10 schemas are byte-pinned', () => {
+  assert.doesNotThrow(() => verifyPinnedDtcgSchemaSnapshots());
+});
+
+test('canonical tokens and generated resolver pass the official DTCG 2025.10 schemas offline', async () => {
+  const resolver = JSON.parse(
+    generateTokenArtifacts(source).get('packages/tokens/src/tokens.resolver.json'),
+  );
+  await assert.doesNotReject(() =>
+    validateOfficialDtcg2025_10({ canonical: source, resolver }),
+  );
+});
+
+test('official schema validation rejects format and resolver regressions independently of BeeUI policy checks', async () => {
+  const invalidFormat = structuredClone(source);
+  invalidFormat.tokens.spacing['bad.name'] = invalidFormat.tokens.spacing['2-5'];
+  await assert.rejects(() => validateOfficialDtcgFormat(invalidFormat), /does not validate/);
+
+  const invalidResolver = JSON.parse(
+    generateTokenArtifacts(source).get('packages/tokens/src/tokens.resolver.json'),
+  );
+  invalidResolver.version = '2025.11';
+  await assert.rejects(() => validateOfficialDtcgResolver(invalidResolver), /does not validate/);
 });
 
 test('generated resolver is a DTCG 2025.10 resolver document for every runtime theme', () => {
