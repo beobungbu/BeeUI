@@ -454,8 +454,11 @@ test('generated resolver is a DTCG 2025.10 resolver document for every runtime t
     { $ref: '../tokens.json#/tokens' },
   ]);
   for (const theme of allRuntimeThemes) {
+    // #78 — the chart (data-visualization) color group sits beside `colors` under every
+    // runtime theme, so the resolver context references both.
     assert.deepEqual(resolver.modifiers.runtimeTheme.contexts[theme], [
       { $ref: `../tokens.json#/themes/${theme}/colors` },
+      { $ref: `../tokens.json#/themes/${theme}/chart` },
     ]);
   }
   assert.deepEqual(resolver.resolutionOrder, [

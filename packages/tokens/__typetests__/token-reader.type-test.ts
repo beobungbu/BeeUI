@@ -16,6 +16,10 @@ import {
   type TokenValueForPath,
 } from '../src/index';
 
+// #78 — the `chart` category (data-visualization color tokens) is generated the same
+// way `colors` is: a codegen-derived `SemanticChartToken` union feeding the same
+// generic `TokenPath`/`TokenValueForPath` machinery, never a hand-maintained parallel type.
+
 type Equal<A, B> =
   (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 
@@ -26,14 +30,17 @@ type Expect<T extends true> = T;
 const colorPath: BeeTokenPath = 'colors.primary';
 const radiusPath: BeeTokenPath = 'radius.md';
 const motionPath: BeeTokenPath = 'motion.normal';
+const chartPath: BeeTokenPath = 'chart.series-1';
 void colorPath;
 void radiusPath;
 void motionPath;
+void chartPath;
 
-// Per-category return types: colors normalize to `string`, radius/motion to `number`.
+// Per-category return types: colors/chart normalize to `string`, radius/motion to `number`.
 type _ColorValue = Expect<Equal<BeeTokenValue<'colors.primary'>, string>>;
 type _RadiusValue = Expect<Equal<BeeTokenValue<'radius.md'>, number>>;
 type _MotionValue = Expect<Equal<BeeTokenValue<'motion.normal'>, number>>;
+type _ChartValue = Expect<Equal<BeeTokenValue<'chart.series-1'>, string>>;
 
 // `beeTokenReader.resolve` returns the exact category/key/variable/kind for a
 // valid path (asserted at the value level below via the runtime test file;
@@ -66,6 +73,16 @@ void _spacingPath;
 // @ts-expect-error - unknown radius key.
 const _unknownRadius: BeeTokenPath = 'radius.notAKey';
 void _unknownRadius;
+
+// #78 — a `colors.*` semantic-color path is never a valid `chart.*` path (and vice
+// versa): the two are disjoint vocabularies, never a shared namespace.
+// @ts-expect-error - 'primary' is a `colors` token, never a `chart` token.
+const _colorAsChartPath: BeeTokenPath = 'chart.primary';
+void _colorAsChartPath;
+
+// @ts-expect-error - unknown chart key.
+const _unknownChart: BeeTokenPath = 'chart.notAKey';
+void _unknownChart;
 
 // The generic engine infers the same path/value shapes for a consumer-defined
 // reader (mirrors `defineThemeRegistry`'s extensibility story for #67).

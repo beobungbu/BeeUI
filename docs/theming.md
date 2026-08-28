@@ -89,6 +89,40 @@ The public semantic color contract is:
 
 Each runtime theme implements exactly the same color-token names. Components and reusable component source should consume semantic names, never raw palette identifiers.
 
+## Data-visualization (chart) tokens — #78
+
+BeeUI's dashboard/finance patterns (`apps/showcase/patterns/dashboard-finance`) needed chart colors before #78: a trend bar chart and a revenue-mix breakdown. Reusing `success`/`destructive`/`warning`/`info` for ordinary chart series would conflate feedback meaning ("this failed") with chart meaning ("this is category 3"), so BeeUI ships a small, separate, function-based chart-color vocabulary instead of an unlimited raw palette.
+
+**Roles, and the evidence behind each:**
+
+| Token | Role | Evidence |
+| --- | --- | --- |
+| `series-1`..`series-4` | Categorical/comparison series | The dashboard-finance revenue-mix breakdown uses 3 categories (Subscriptions, Services, Marketplace) today; 4 gives one category of headroom without an unbounded palette. Values are a subset of the published Okabe–Ito colorblind-safe qualitative palette, deepened/lightened per theme for contrast — not an arbitrary hue pick. |
+| `positive` / `negative` | Upward/downward financial or trend delta | The dashboard `TrendIndicator`/activity feed already models `direction: 'up' \| 'down'` (income/expense, trend arrows). |
+| `neutral` | Flat/unchanged/baseline series | `TrendIndicator`'s `flat` direction and any single-series trend chart with no positive/negative framing (`MiniBarChart`). |
+| `highlight` | Emphasis for a selected/reference/compared series or data point | Range-controlled analytics (`AnalyticsScreen`) and "current period" style comparisons. |
+| `grid` | Subordinate chart gridline | Decorative, like `border` — never the sole carrier of required information. |
+| `axis` | Axis line and tick/label color | Carries real labeling information (values, categories), so unlike `grid` it is contrast-checked. |
+
+**Kept structurally separate from `colors`.** Chart tokens live under `themes.<theme>.chart` in `tokens.json` (sibling to `themes.<theme>.colors`), generate as their own `chartColorTokens`/`SemanticChartToken` export and `--chart-*` CSS custom properties (never `--color-chart-*`), and the canonical source rejects a chart token name that collides with a `colors` semantic name. `chart-positive`/`chart-negative` are deliberately allowed to *resolve* to the same color as `success`/`destructive` in a given theme (a financial delta legitimately shares meaning with feedback) — but a consumer always reads them through the `chart` path, never `colors.success`, so the two vocabularies never fuse into one.
+
+**Completeness.** Exactly like `colors`, every shipped runtime theme — the primary Bee/Violet brand themes and the #77 accessibility high-contrast themes alike — defines the complete, exact `chart` token set. Charts are a general-purpose UI feature, not scoped to a subset of themes, so there is no runtime theme this vocabulary does not apply to.
+
+**Contrast.** `chartContrastContract` (exported from `@beeui/tokens`, canonical source `$extensions["com.beeui"].chartContrastContract`) is the data-viz counterpart to `contrastContract` (see [The contrast-relationship contract](#the-contrast-relationship-contract)): every series/`positive`/`negative`/`neutral`/`highlight`/`axis` role must reach at least 3:1 against every realistic chart backdrop (`surface`, `surface-muted`, `surface-raised`) in every runtime theme, checked against the resolved colors at generation time. `grid` is a documented exception (`category: "decorative"`), matching `border`'s own exception — a gridline is a structural aid, never the sole means of conveying required information.
+
+**Color is not the only signal.** `chart-positive`/`chart-negative` differentiate financial meaning by color, but a consumer must still pair them with a non-color cue (a `+`/`−` sign, an arrow glyph, a label, a pattern) wherever that meaning is critical — color alone is never an accessibility guarantee. See `apps/showcase/__tests__/theme-tokens-v3-chart.test.tsx`'s `DeltaRow` fixture for a minimal example (sign + arrow + accessible label, independent of the rendered color), and `apps/visual-regression`'s `dataviz` scenario for a rendered fixture.
+
+**Reading chart values.** Chart tokens are exposed through the same #72 generic runtime reader as `colors` — there is no separate chart reader/store:
+
+```ts
+const seriesColor = useBeeToken('chart.series-1');
+const positiveColor = useBeeToken('chart.positive');
+```
+
+**No chart library.** #78 adds tokens, not components: BeeUI ships no chart-rendering library, no chart component, and no chart animation system. The `dataviz` visual-regression scenario and the reader test's `DeltaRow` are lightweight proofs the token contract renders correctly (SVG/inline styles, zero new dependencies) — not a production charting API.
+
+**Adding another series role.** Requesting `series-5`+ (or any new chart role) needs the same evidence bar as the original four: a real, recurring product need (not "might be useful"), documented in the same place this table is. Add the token to every theme's `themes.<theme>.chart` group, a `chartColorDescriptions` entry, and a `chartContrastContract.requiredPairs` (or documented `exceptions`) entry, then `pnpm tokens:generate`.
+
 ## Typography
 
 The default family is the platform system font. BeeUI does not force a font-family utility until an application deliberately loads and names a cross-platform family.
@@ -349,7 +383,7 @@ const navigationTheme = {
 
 **A read adapter, not a store.** Both functions are thin, stateless wrappers over Uniwind's own public read APIs — `useCSSVariable` and `Uniwind.getCSSVariable` from the `uniwind` package. `@beeui/tokens`'s `beeTokenReader` only derives *which* CSS variable to ask Uniwind for and *how* to normalize whatever it returns; it never reads Uniwind itself, holds no cache, and adds no React context/provider. Uniwind remains the sole runtime theme authority.
 
-**Path vocabulary.** A `BeeTokenPath` is a `"category.key"` string derived from canonical token metadata: `colors.<SemanticColorToken>`, `radius.<RadiusName>`, or `motion.<MotionDurationName>` — deliberately the same three categories `defineThemeOverrides` (#71) exposes, since every readable category here is real-runtime-reactive (theme/appearance/scope-dependent, or #71-overridable). Everything else is rejected by construction: private #70 authoring primitives are never part of `semanticColorTokens`, so there is no `'colors.amber-500'` path to construct; `breakpoint` is a build-time-only Tailwind/Uniwind constant and has no reader category; theme-invariant groups (`spacing`, typography, `controlSize`/`iconSize`/`avatarSize`, `contentWidth`/`pageGutter`, `elevation`, `motionEasing`, `layer`, `focusRing`) never change at runtime, so they stay ordinary typed exports — import them directly instead of reading them through Uniwind (see the "Runtime-reader note" in `docs/data-typography.md`).
+**Path vocabulary.** A `BeeTokenPath` is a `"category.key"` string derived from canonical token metadata: `colors.<SemanticColorToken>`, `chart.<SemanticChartToken>` (#78), `radius.<RadiusName>`, or `motion.<MotionDurationName>`. `colors`/`radius`/`motion` are the same three categories `defineThemeOverrides` (#71) exposes; `chart` (#78's data-visualization vocabulary) is reader-only — it is real-runtime-reactive the same way `colors` is (theme/appearance/scope-dependent) but is not part of the #71 runtime-override surface. Everything else is rejected by construction: private #70 authoring primitives are never part of `semanticColorTokens`/`chartColorTokens`, so there is no `'colors.amber-500'` or `'chart.amber-500'` path to construct; `breakpoint` is a build-time-only Tailwind/Uniwind constant and has no reader category; theme-invariant groups (`spacing`, typography, `controlSize`/`iconSize`/`avatarSize`, `contentWidth`/`pageGutter`, `elevation`, `motionEasing`, `layer`, `focusRing`) never change at runtime, so they stay ordinary typed exports — import them directly instead of reading them through Uniwind (see the "Runtime-reader note" in `docs/data-typography.md`).
 
 **Units.** `colors.*` normalizes to a `string` CSS color (`#rrggbb`/`#rrggbbaa` hex); `radius.*`/`motion.*` normalize to a plain `number` (CSS pixels / milliseconds, unit stripped). Uniwind's own `useCSSVariable` returns `string | number` and documents that web is always a string while native can be either — BeeUI's reader absorbs that platform difference so every consumer gets the same typed shape everywhere.
 

@@ -181,6 +181,38 @@ export function defineSemanticColorOverrides<const T extends SemanticColorOverri
   return Object.freeze({ ...overrides });
 }
 
+/**
+ * Semantic data-visualization (chart) color tokens (#78) — a distinct color
+ * vocabulary from `semanticColorTokens` above, never a component/status color.
+ * Chart tokens describe chart-rendering roles only (categorical series,
+ * positive/negative delta, neutral baseline, highlight/emphasis, gridline, axis)
+ * and never reuse a `SemanticColorToken` name; the canonical source enforces this
+ * disjointness at generation time. Every shipped runtime theme -- including the
+ * #77 accessibility high-contrast themes -- defines a complete, exact set of
+ * these tokens (the same completeness rule `semanticColorTokens` gets). Read via
+ * the `chart` category of `beeTokenReaderCategories`/`useBeeToken`/`getBeeToken`
+ * below (e.g. `useBeeToken('chart.series-1')`), never a separate chart reader.
+ */
+export const chartColorTokens = [
+  "series-1",
+  "series-2",
+  "series-3",
+  "series-4",
+  "positive",
+  "negative",
+  "neutral",
+  "highlight",
+  "grid",
+  "axis"
+] as const;
+
+export type SemanticChartToken = (typeof chartColorTokens)[number];
+export type SemanticChartVariableName = `--chart-${SemanticChartToken}`;
+
+export function chartColorVariable(token: SemanticChartToken): SemanticChartVariableName {
+  return `--chart-${token}`;
+}
+
 export const spacing = {
   "0": 0,
   "1": 4,
@@ -892,6 +924,11 @@ export const beeTokenReaderCategories = {
     keys: semanticColorTokens,
     variable: (key: SemanticColorToken) => semanticColorVariable(key),
   },
+  chart: {
+    kind: 'color',
+    keys: chartColorTokens,
+    variable: (key: SemanticChartToken) => chartColorVariable(key),
+  },
   radius: {
     kind: 'dimension',
     keys: Object.keys(radius) as RadiusName[],
@@ -1185,3 +1222,138 @@ export const contrastContract = {
     }
   ]
 } as const satisfies ContrastContract;
+
+export type ChartContrastPair = {
+  readonly indicator: SemanticChartToken;
+  readonly adjacent: readonly SemanticColorToken[];
+  readonly minRatio: number;
+  readonly usage: string;
+};
+
+export type ChartContrastException = {
+  readonly token: SemanticChartToken;
+  readonly category: string;
+  readonly reason: string;
+};
+
+/**
+ * Centralized, deterministic chart-token contrast-relationship metadata (#78) --
+ * the data-visualization counterpart to `contrastContract` above, kept as its own
+ * export (never merged into `contrastContract`) because its `indicator`/`token`
+ * fields draw from the `chart` semantic-color domain (`SemanticChartToken`), not
+ * `colors` (`SemanticColorToken`). `adjacent` still references ordinary
+ * `SemanticColorToken`s -- the real canvas/surface colors a chart renders on.
+ * Every chart color token is covered by at least one required relationship in
+ * `requiredPairs` or by a documented entry in `exceptions` -- nothing is silently
+ * uncertified. Required in every runtime theme (built-in brand themes and
+ * accessibility high-contrast themes alike): charts are a general-purpose UI
+ * feature, not scoped to a subset of themes.
+ */
+export type ChartContrastContract = {
+  readonly description: string;
+  readonly requiredPairs: readonly ChartContrastPair[];
+  readonly exceptions: readonly ChartContrastException[];
+};
+
+export const chartContrastContract = {
+  "description": "Deterministic, machine-tested chart-token contrast relationships (#78), the data-viz counterpart to com.beeui.contrastContract. Scoped to the chart semantic-color domain: each entry's indicator draws from com.beeui.chartColorDescriptions (never a semantic color token), and its adjacent backgrounds draw from the ordinary semantic-color canvas tokens a chart actually renders on. All runtime themes (built-in brand themes and accessibility high-contrast themes alike) must satisfy every required pair below.",
+  "requiredPairs": [
+    {
+      "indicator": "series-1",
+      "adjacent": [
+        "surface",
+        "surface-muted",
+        "surface-raised"
+      ],
+      "minRatio": 3,
+      "usage": "Categorical series 1 legibility on every realistic chart canvas."
+    },
+    {
+      "indicator": "series-2",
+      "adjacent": [
+        "surface",
+        "surface-muted",
+        "surface-raised"
+      ],
+      "minRatio": 3,
+      "usage": "Categorical series 2 legibility on every realistic chart canvas."
+    },
+    {
+      "indicator": "series-3",
+      "adjacent": [
+        "surface",
+        "surface-muted",
+        "surface-raised"
+      ],
+      "minRatio": 3,
+      "usage": "Categorical series 3 legibility on every realistic chart canvas."
+    },
+    {
+      "indicator": "series-4",
+      "adjacent": [
+        "surface",
+        "surface-muted",
+        "surface-raised"
+      ],
+      "minRatio": 3,
+      "usage": "Categorical series 4 legibility on every realistic chart canvas."
+    },
+    {
+      "indicator": "positive",
+      "adjacent": [
+        "surface",
+        "surface-muted",
+        "surface-raised"
+      ],
+      "minRatio": 3,
+      "usage": "Positive financial/trend delta legibility on every realistic chart canvas."
+    },
+    {
+      "indicator": "negative",
+      "adjacent": [
+        "surface",
+        "surface-muted",
+        "surface-raised"
+      ],
+      "minRatio": 3,
+      "usage": "Negative financial/trend delta legibility on every realistic chart canvas."
+    },
+    {
+      "indicator": "neutral",
+      "adjacent": [
+        "surface",
+        "surface-muted",
+        "surface-raised"
+      ],
+      "minRatio": 3,
+      "usage": "Flat/baseline series legibility on every realistic chart canvas."
+    },
+    {
+      "indicator": "highlight",
+      "adjacent": [
+        "surface",
+        "surface-muted",
+        "surface-raised"
+      ],
+      "minRatio": 3,
+      "usage": "Highlighted/selected series or data-point legibility on every realistic chart canvas."
+    },
+    {
+      "indicator": "axis",
+      "adjacent": [
+        "surface",
+        "surface-muted",
+        "surface-raised"
+      ],
+      "minRatio": 3,
+      "usage": "Axis line and tick-label legibility on every realistic chart canvas."
+    }
+  ],
+  "exceptions": [
+    {
+      "token": "grid",
+      "category": "decorative",
+      "reason": "Subordinate gridline; decorative structural aid, never the sole means of conveying required chart information (mirrors the colors.border decorative exception)."
+    }
+  ]
+} as const satisfies ChartContrastContract;

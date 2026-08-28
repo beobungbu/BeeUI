@@ -57,6 +57,7 @@ import {
   Textarea,
   Timeline,
   TimelineItem,
+  useBeeToken,
 } from '@beeui/ui';
 import * as React from 'react';
 import { Uniwind } from 'uniwind';
@@ -477,6 +478,151 @@ function PatternSignInScenario() {
   );
 }
 
+// #78 — semantic data-visualization (chart) color tokens. A lightweight,
+// dependency-free SVG fixture (raw `<svg>`/`<rect>`/`<line>`/`<text>` DOM
+// elements this web app already renders through, no chart library) that
+// proves the `chart.*` token contract renders correctly, not a production
+// charting component. Deterministic, fixed data — see
+// apps/showcase/patterns/dashboard-finance's revenue-mix breakdown (3
+// categories) and activity feed (positive/negative direction) for the real
+// product evidence this vocabulary is based on.
+const CATEGORY_CHART_DATA = [
+  { label: 'Subscriptions', value: 54, tokenKey: 'series-1' as const },
+  { label: 'Services', value: 29, tokenKey: 'series-2' as const },
+  { label: 'Marketplace', value: 17, tokenKey: 'series-3' as const, highlighted: true },
+  { label: 'Other', value: 8, tokenKey: 'series-4' as const },
+];
+
+const CHART_MAX_VALUE = 54;
+const CHART_BAR_WIDTH = 60;
+const CHART_BAR_MAX_HEIGHT = 140;
+const CHART_BASELINE_Y = 180;
+const CHART_GRID_LINE_YS = [40, 80, 120, 160];
+
+function CategoricalBarChart() {
+  const seriesColors = {
+    'series-1': useBeeToken('chart.series-1'),
+    'series-2': useBeeToken('chart.series-2'),
+    'series-3': useBeeToken('chart.series-3'),
+    'series-4': useBeeToken('chart.series-4'),
+  };
+  const gridColor = useBeeToken('chart.grid');
+  const axisColor = useBeeToken('chart.axis');
+  const highlightColor = useBeeToken('chart.highlight');
+
+  return (
+    <Box className="gap-2">
+      <svg
+        aria-label="Revenue mix by category, Marketplace highlighted as the current selection"
+        role="img"
+        viewBox="0 0 400 210"
+      >
+        {CHART_GRID_LINE_YS.map((y) => (
+          <line key={`grid-${y}`} stroke={gridColor} strokeWidth={1} x1={20} x2={380} y1={y} y2={y} />
+        ))}
+        <line stroke={axisColor} strokeWidth={2} x1={20} x2={380} y1={CHART_BASELINE_Y} y2={CHART_BASELINE_Y} />
+
+        {CATEGORY_CHART_DATA.map((item, index) => {
+          const barHeight = (item.value / CHART_MAX_VALUE) * CHART_BAR_MAX_HEIGHT;
+          const x = 40 + index * 90;
+          const y = CHART_BASELINE_Y - barHeight;
+          return (
+            <React.Fragment key={item.label}>
+              {item.highlighted ? (
+                // Non-color reinforcement for "highlighted": an explicit "Current" text
+                // label above the bar, not only a distinct outline color/pattern.
+                <text
+                  fill={highlightColor}
+                  fontSize={11}
+                  fontWeight="bold"
+                  textAnchor="middle"
+                  x={x + CHART_BAR_WIDTH / 2}
+                  y={y - 20}
+                >
+                  Current
+                </text>
+              ) : null}
+              <rect
+                fill={seriesColors[item.tokenKey]}
+                height={barHeight}
+                stroke={item.highlighted ? highlightColor : 'none'}
+                strokeDasharray={item.highlighted ? '4 3' : undefined}
+                strokeWidth={item.highlighted ? 2 : 0}
+                width={CHART_BAR_WIDTH}
+                x={x}
+                y={y}
+              />
+              <text fill={axisColor} fontSize={11} textAnchor="middle" x={x + CHART_BAR_WIDTH / 2} y={CHART_BASELINE_Y + 18}>
+                {item.label}
+              </text>
+            </React.Fragment>
+          );
+        })}
+      </svg>
+    </Box>
+  );
+}
+
+function FinanceDeltaRow({
+  direction,
+  label,
+  percent,
+}: {
+  direction: 'up' | 'down' | 'flat';
+  label: string;
+  percent: string;
+}) {
+  const positiveColor = useBeeToken('chart.positive');
+  const negativeColor = useBeeToken('chart.negative');
+  const neutralColor = useBeeToken('chart.neutral');
+  const color = direction === 'up' ? positiveColor : direction === 'down' ? negativeColor : neutralColor;
+  // Non-color reinforcement: the sign and arrow glyph carry the meaning in the
+  // accessible text itself, independent of `color` — see docs/theming.md's
+  // "Data-visualization (chart) tokens" section.
+  const sign = direction === 'up' ? '+' : direction === 'down' ? '−' : '';
+  const arrow = direction === 'up' ? '▲' : direction === 'down' ? '▼' : '→';
+
+  return (
+    <Box className="flex-row items-center justify-between">
+      <Text variant="label">{label}</Text>
+      <Text
+        accessibilityLabel={`${label} ${direction} ${sign}${percent}`}
+        style={{ color }}
+        variant="label"
+      >
+        {arrow} {sign}
+        {percent}
+      </Text>
+    </Box>
+  );
+}
+
+function DataVizScenario() {
+  return (
+    <ScenarioShell title="Data visualization">
+      <Card className="gap-3" padding="lg" variant="raised">
+        <Text variant="heading">Revenue mix</Text>
+        <Text tone="muted" variant="caption">
+          4 categorical series (chart.series-1..4), gridlines (chart.grid), axis (chart.axis), and a
+          highlighted current-period bar (chart.highlight) reinforced with a "Current" label.
+        </Text>
+        <CategoricalBarChart />
+      </Card>
+
+      <Card className="gap-3" padding="lg" variant="outlined">
+        <Text variant="heading">Weekly change</Text>
+        <Text tone="muted" variant="caption">
+          Positive/negative/neutral deltas (chart.positive/negative/neutral), each reinforced with a
+          sign and arrow glyph independent of color.
+        </Text>
+        <FinanceDeltaRow direction="up" label="Revenue" percent="12.8%" />
+        <FinanceDeltaRow direction="down" label="Expenses" percent="3.1%" />
+        <FinanceDeltaRow direction="flat" label="Conversion" percent="0.1%" />
+      </Card>
+    </ScenarioShell>
+  );
+}
+
 /**
  * Browser-only hardening fixture for the exact registration-order regression:
  * Dialog + nested menu commit first. Only after that commit (passive effect) does
@@ -573,6 +719,8 @@ function Scenario({ scenario }: { scenario: VisualScenarioId }) {
       return <DropdownMenuOpenScenario />;
     case 'pattern-sign-in':
       return <PatternSignInScenario />;
+    case 'dataviz':
+      return <DataVizScenario />;
   }
 }
 

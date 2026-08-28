@@ -24,19 +24,23 @@ import { Uniwind, useCSSVariable } from 'uniwind';
  * ## Token paths
  *
  * A `BeeTokenPath` is a `"category.key"` string derived from canonical token
- * metadata: `\`colors.\${SemanticColorToken}\``, `\`radius.\${RadiusName}\``, or
- * `\`motion.\${MotionDurationName}\`` (e.g. `'colors.primary'`, `'radius.md'`,
- * `'motion.normal'`). Passing any other string is a compile-time error, and a
- * non-literal/dynamic string that is not one of these paths throws at runtime
- * (`beeTokenReader.resolve` fails fast — see `token-reader.ts`).
+ * metadata: `\`colors.\${SemanticColorToken}\``, `\`chart.\${SemanticChartToken}\``,
+ * `\`radius.\${RadiusName}\``, or `\`motion.\${MotionDurationName}\`` (e.g.
+ * `'colors.primary'`, `'chart.series-1'`, `'radius.md'`, `'motion.normal'`).
+ * Passing any other string is a compile-time error, and a non-literal/dynamic
+ * string that is not one of these paths throws at runtime (`beeTokenReader.resolve`
+ * fails fast — see `token-reader.ts`).
  *
- * Only these three categories are exposed, deliberately:
+ * Only these four categories are exposed, deliberately:
  *
- * - **Included** — `colors` (every public `SemanticColorToken`), `radius`,
- *   `motion` (duration). Each is real-runtime-reactive: its resolved value can
- *   differ between the initial build and the live app, because it is
- *   theme/appearance/scope-dependent (`colors`) or because #71 lets it be
- *   overridden at runtime (`radius`, `motion`).
+ * - **Included** — `colors` (every public `SemanticColorToken`), `chart` (every
+ *   public `SemanticChartToken`, #78's data-visualization color vocabulary —
+ *   categorical series, positive/negative delta, neutral, highlight, grid, axis;
+ *   a distinct color domain from `colors`, never a feedback/status token reused
+ *   as a chart color), `radius`, `motion` (duration). Each is real-runtime-reactive:
+ *   its resolved value can differ between the initial build and the live app,
+ *   because it is theme/appearance/scope-dependent (`colors`, `chart`) or because
+ *   #71 lets it be overridden at runtime (`radius`, `motion`).
  * - **Rejected: private #70 primitives** — authoring-only primitives (e.g.
  *   `amber-500`, `neutral-800`) are never part of `semanticColorTokens` and so
  *   are structurally unreachable through any `BeeTokenPath` — there is no
