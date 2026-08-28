@@ -155,6 +155,50 @@ Uniwind.setTheme(resolveBeeRuntimeTheme('violet', 'dark'));
 
 Uniwind remains the runtime theme authority. Code generation changes build-time ownership only; it does not add a runtime store, runtime reader, or second theme engine.
 
+### Extensible theme registry
+
+`resolveBeeRuntimeTheme` and the `bee | violet` union are convenient but closed: they hard-code the shipped example brands. `defineThemeRegistry` opens that boundary so an application can add its own brand from an ordinary TypeScript project, using only the public `@beeui/tokens` API and without editing BeeUI source.
+
+A registry is **typed mapping metadata only**. It is not a React context, state store, provider, or mutable singleton, and constructing one never mutates Uniwind or any global state. It simply records `brand -> appearance -> Uniwind runtime-theme name` and derives typed, deterministic lookups from it.
+
+```ts
+import { defineThemeRegistry } from '@beeui/tokens';
+import { Uniwind } from 'uniwind';
+
+// Brand, appearance, and runtime-theme unions are inferred from this object.
+const registry = defineThemeRegistry({
+  bee: { light: 'light', dark: 'dark' },
+  violet: { light: 'violet-light', dark: 'violet-dark' },
+  acme: { light: 'acme-light', dark: 'acme-dark' },
+});
+
+registry.resolve('acme', 'dark'); // typed as 'acme-dark'
+registry.selectionFor('acme-dark'); // { brand: 'acme', appearance: 'dark' }
+
+// Applying the theme stays an explicit, app-owned Uniwind call.
+Uniwind.setTheme(registry.resolve('acme', 'dark'));
+```
+
+The default registry `beeThemeRegistry` (Bee + Violet) is exported for callers that want the registry API against the shipped brands. It is built from the same canonical mapping as the standalone helpers, so its results match them exactly.
+
+**Mapping to Uniwind names.** The runtime-theme names in the mapping (`acme-light`, `acme-dark`, …) are the exact strings passed to `Uniwind.setTheme`. Registering the corresponding CSS/native theme with Uniwind stays the application's responsibility; the registry only names the mapping. BeeUI's own themes are registered through `packages/tokens/tokens.json` and the generated `theme.css`.
+
+**Reverse-lookup guarantees.** `selectionFor(runtimeTheme)` is a deterministic reverse lookup: it returns `{ brand, appearance }` for a known runtime-theme name and `undefined` otherwise. Because runtime-theme names are validated unique at construction, the reverse mapping is never ambiguous.
+
+**Duplicate and completeness rules.** `defineThemeRegistry` validates its input deterministically at construction and throws on:
+
+- an empty registry or a brand with no appearances;
+- a brand that does not define exactly the same appearance set as the rest (completeness);
+- a runtime-theme name reused by more than one brand/appearance (which would make reverse lookup ambiguous).
+
+Unknown brands and unknown appearances passed to `resolve` are compile-time errors under the inferred unions.
+
+**Compatibility.** The existing helpers stay as they are: `resolveBeeRuntimeTheme`, `getBeeThemeSelection`, `isBeeDarkRuntimeTheme`, `beeRuntimeThemeByBrand`, `beeBrandNames`/`BeeBrandName`, `beeThemeNames`/`BeeThemeName`, and `beeRuntimeThemeNames`/`BeeRuntimeThemeName` are unchanged. `getBeeThemeSelection` keeps its `{ brand, theme }` shape (the registry's `selectionFor` uses the more general `{ brand, appearance }`). No migration is required; adopting the registry is additive.
+
+**The registry is metadata, not a store.** It holds no mutable state, exposes only frozen data and pure functions, and does not own or observe the active theme. Uniwind stays the single runtime theme authority.
+
+**Layering scoped themes (#68).** Issue #68's scoped-theme wrapper will consume this registry as read-only metadata to resolve a scope's `brand + appearance` to a Uniwind runtime-theme name; it will not change where theme authority lives, add a second registry, or make the registry mutable. This issue intentionally does not implement scoped themes, runtime overrides (#71), token readers (#72), or the high-contrast appearance contract (#77) — the registry only stays extensible enough not to block them (for example, a brand may declare additional appearances beyond `light`/`dark`).
+
 ### Runtime semantic overrides
 
 Uniwind may update registered CSS variables at runtime. Keep overrides semantic and typed:
