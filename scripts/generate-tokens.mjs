@@ -501,8 +501,14 @@ function motionValues(source) {
   );
 }
 
-function semanticNames(source) {
+export function semanticNames(source) {
   return Object.keys(metadata(source).semanticColorDescriptions ?? {});
+}
+
+export function brandNames(source) {
+  const names = metadata(source).brandNames ?? [];
+  invariant(Array.isArray(names), 'com.beeui.brandNames must be an array of brand names');
+  return names;
 }
 
 function groupClassification(group) {
@@ -580,10 +586,42 @@ function typedNodeAtPointer(root, pointer, label) {
   return { node, type };
 }
 
-function privateTokenGroups(source) {
+export function privateTokenGroups(source) {
   const groups = metadata(source).privateTokenGroups ?? [];
   invariant(Array.isArray(groups), 'com.beeui.privateTokenGroups must be an array of group names');
   return groups;
+}
+
+/**
+ * Flatten every private authoring-primitive identifier declared under the canonical
+ * document's `com.beeui.privateTokenGroups` (currently just `primitives`) into the
+ * styling-name shapes a component could accidentally reference:
+ *  - the bare family name (e.g. `neutral`, `danger`);
+ *  - `family-leaf` (e.g. `neutral-500`, `danger-emphasis-hover`), matching how a Tailwind
+ *    color utility or a `--color-*` custom property would spell the identifier.
+ *
+ * This is the single source of truth for "what is a private primitive identifier" so
+ * downstream enforcement (issue #83) and tests never hand-maintain a second copy of this
+ * list — it is derived from the canonical document every time it runs.
+ */
+export function privatePrimitiveIdentifiers(source) {
+  const families = [];
+  const identifiers = [];
+  for (const groupName of privateTokenGroups(source)) {
+    const group = source[groupName];
+    invariant(isPlainObject(group), `private token group "${groupName}" is declared but missing`);
+    for (const [family, familyGroup] of Object.entries(group)) {
+      if (family.startsWith('$')) continue;
+      families.push(family);
+      identifiers.push(family);
+      if (!isPlainObject(familyGroup)) continue;
+      for (const leaf of Object.keys(familyGroup)) {
+        if (leaf.startsWith('$')) continue;
+        identifiers.push(`${family}-${leaf}`);
+      }
+    }
+  }
+  return { families, identifiers };
 }
 
 // Follows a reference chain to its resolved $value, rejecting dangling pointers,
