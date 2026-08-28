@@ -67,6 +67,8 @@ When the legacy fallback is in effect:
 
 Every transport preserves the accepted non-modal geometry/dismissal contract; BeeUI never silently converts an anchored overlay into React Native core `Modal`.
 
+Uniwind's `ScopedTheme` (wrapped by BeeUI's `BeeThemeScope`, #68) is a plain React context provider, so a scoped theme follows exactly the same per-transport rule as any other consumer context above. See [`docs/theme-scope.md`](./theme-scope.md#portals-and-overlays-dialog-popover-dropdownmenu-select) for the theme-specific proof.
+
 #### Overlay scope model (host · geometry · dismissal)
 
 An anchored overlay resolves against the **nearest `OverlayScope`**. `BeeUIProvider` provisions the root scope; each modal-class surface (`DialogContent`, and therefore `AlertDialog`) provisions a modal-local scope via `ModalOverlayHost`. The mechanism is generic for future anchored components.
