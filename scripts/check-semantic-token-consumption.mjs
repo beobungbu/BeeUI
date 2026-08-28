@@ -15,7 +15,15 @@
 //   - private authoring-primitive identifiers: `com.beeui.privateTokenGroups` (currently
 //     `primitives`) in the same document, flattened by
 //     `privatePrimitiveIdentifiers()` in scripts/generate-tokens.mjs;
-//   - brand names: `com.beeui.brandNames`.
+//   - brand names: `com.beeui.brandNames`;
+//   - runtime-readable CSS-variable namespaces (`--color-`, `--chart-`, `--radius-`,
+//     `--motion-duration-`): `readableTokenNamespaces()` in scripts/generate-tokens.mjs,
+//     the same canonical `runtimeOverridable` flags (plus the two always-present color
+//     categories) that build `beeTokenReaderCategories`/`useBeeToken`/`getBeeToken` (#72)
+//     in packages/tokens/src/index.ts. A raw `var(--...)` or a direct
+//     `useCSSVariable`/`Uniwind.getCSSVariable` call against any of these namespaces
+//     bypasses that typed reader and is flagged, except in the one sanctioned
+//     implementation file itself (see `TYPED_READER_IMPLEMENTATION_RELATIVE_PATH` below).
 // There is no second hand-maintained token list anywhere in this file.
 //
 // See docs/token-consumption-guard.md for the contributor-facing rules and the
@@ -25,7 +33,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { brandNames, loadCanonicalTokens, privatePrimitiveIdentifiers, semanticNames } from './generate-tokens.mjs';
+import {
+  brandNames,
+  loadCanonicalTokens,
+  privatePrimitiveIdentifiers,
+  readableTokenNamespaces,
+  semanticNames,
+} from './generate-tokens.mjs';
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -34,6 +48,17 @@ const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 // product-specific Pattern Gallery content (explicitly out of scope), and
 // `packages/core`/`packages/tokens` are not component styling surfaces.
 export const DEFAULT_INCLUDE_ROOTS = ['packages/ui/src'];
+
+// The one sanctioned call site for Uniwind's raw CSS-variable read APIs
+// (`useCSSVariable`/`Uniwind.getCSSVariable`) — BeeUI's #72 typed-reader adapter itself.
+// Every other file in scope must go through `useBeeToken`/`getBeeToken` instead of calling
+// these directly, so the `typed-reader-bypass-call` rule exempts exactly this file path and
+// nothing broader (no directory-level ignore — see module docs above).
+export const TYPED_READER_IMPLEMENTATION_RELATIVE_PATH = 'packages/ui/src/components/use-bee-token.ts';
+
+export function isTypedReaderImplementationFile(relativePath) {
+  return relativePath.split(path.sep).join('/') === TYPED_READER_IMPLEMENTATION_RELATIVE_PATH;
+}
 
 const SOURCE_FILE_PATTERN = /\.(?:ts|tsx)$/;
 const EXCLUDED_FILE_PATTERN = /\.d\.ts$/;
@@ -69,6 +94,18 @@ export function buildGuardRules(source) {
   const { identifiers: privateIdentifiers } = privatePrimitiveIdentifiers(source);
   const brands = brandNames(source);
 
+  // Every CSS custom-property namespace with a typed BeeUI runtime reader (#72
+  // `useBeeToken`/`getBeeToken`) — currently `--color-`, `--chart-`, `--radius-`,
+  // `--motion-duration-`. Derived from the same canonical/generated metadata that builds
+  // `beeTokenReaderCategories` in packages/tokens/src/index.ts (see
+  // `readableTokenNamespaces()` in generate-tokens.mjs) — no second hand-maintained list.
+  const readableNamespaces = readableTokenNamespaces(source);
+  const readablePrefixAlternation = readableNamespaces.map((namespace) => escapeRegExp(namespace.variablePrefix)).join('|');
+
+  function readableNamespaceForMatch(matchText) {
+    return readableNamespaces.find((namespace) => matchText.includes(namespace.variablePrefix));
+  }
+
   const rules = [
     {
       id: 'raw-hex-color',
@@ -87,12 +124,58 @@ export function buildGuardRules(source) {
         'a public semantic color token, not a raw rgb()/rgba()/hsl()/hsla() literal.',
     },
     {
-      id: 'raw-css-color-variable',
-      regex: /var\(\s*--color-[a-zA-Z0-9-]+/g,
-      message: (match) =>
-        `unsupported raw CSS custom-property access "${match}". A typed BeeUI path already ` +
-        'exists: use the generated Tailwind semantic utility class, or the `semanticColorVariable()` ' +
-        'helper from @beeui/tokens if you need the variable name as a string.',
+      // Covers every runtime-readable namespace, not just colors: `var(--color-*)`,
+      // `var(--chart-*)`, `var(--radius-*)`, `var(--motion-duration-*)`. A #72 typed reader
+      // path exists for each of these — see `readableNamespaces` above — so raw
+      // `var(--...)` access to any of them is redundant and untyped. A `var(--...)` access
+      // to a namespace with NO typed reader (e.g. `--layer-*`, `--z-*`) never matches this
+      // rule; only namespaces present in `readableNamespaces` do.
+      id: 'raw-css-variable-access',
+      regex: new RegExp(`var\\(\\s*(?:${readablePrefixAlternation})[a-zA-Z0-9-]+`, 'g'),
+      message: (match) => {
+        const namespace = readableNamespaceForMatch(match);
+        const category = namespace ? namespace.readerCategory : undefined;
+        const helperName = namespace ? namespace.helperName : undefined;
+        const readerGuidance = category
+          ? `use \`useBeeToken('${category}.<key>')\`/\`getBeeToken('${category}.<key>')\` from @beeui/ui`
+          : 'use the typed BeeUI runtime-token reader (useBeeToken/getBeeToken) from @beeui/ui';
+        const utilityGuidance = category === 'colors' ? ', the generated Tailwind semantic utility class,' : '';
+        const helperGuidance = helperName
+          ? ` or the \`${helperName}()\` helper from @beeui/tokens if you need the variable name as a string`
+          : '';
+        return (
+          `unsupported raw CSS custom-property access "${match}". A typed BeeUI path already ` +
+          `exists: ${readerGuidance}${utilityGuidance}${helperGuidance}.`
+        );
+      },
+    },
+    {
+      // The `useBeeToken`/`getBeeToken` adapters exist specifically so component source
+      // never calls Uniwind's raw CSS-variable read APIs directly for a readable
+      // namespace. Calling `useCSSVariable('--color-primary')` or
+      // `Uniwind.getCSSVariable('--radius-md')` with a string-literal readable-namespace
+      // variable name bypasses that typed path exactly the way `var(--color-*)` does —
+      // this rule catches the call-based bypass the `raw-css-variable-access` rule above
+      // cannot see. The one sanctioned exception — `use-bee-token.ts` itself, which
+      // legitimately calls these APIs to implement the adapters — is exempted by exact
+      // file path in `runTokenConsumptionGuard`, not by this rule or a directory ignore.
+      id: 'typed-reader-bypass-call',
+      regex: new RegExp(
+        `\\b(?:useCSSVariable|Uniwind\\.getCSSVariable)\\(\\s*(['"\`])(?:${readablePrefixAlternation})[a-zA-Z0-9-]*\\1`,
+        'g',
+      ),
+      message: (match) => {
+        const namespace = readableNamespaceForMatch(match);
+        const category = namespace ? namespace.readerCategory : '<category>';
+        return (
+          `"${match}" calls Uniwind's raw CSS-variable read API directly with a readable-namespace ` +
+          "variable name, bypassing BeeUI's typed reader. Use " +
+          `\`useBeeToken('${category}.<key>')\` (inside a hook/component) or ` +
+          `\`getBeeToken('${category}.<key>')\` (imperative, global-theme-only) from ` +
+          '@beeui/ui instead — see packages/ui/src/components/use-bee-token.ts and ' +
+          'docs/token-consumption-guard.md.'
+        );
+      },
     },
   ];
 
@@ -307,13 +390,19 @@ export function runTokenConsumptionGuard({
   includeRoots = DEFAULT_INCLUDE_ROOTS,
 } = {}) {
   const { rules } = buildGuardRules(source);
+  const rulesWithoutTypedReaderBypass = rules.filter((rule) => rule.id !== 'typed-reader-bypass-call');
   const files = collectComponentSourceFiles(rootDir, includeRoots);
   const violations = [];
 
   for (const file of files) {
     const text = fs.readFileSync(file, 'utf8');
     const relative = path.relative(rootDir, file);
-    violations.push(...scanSourceText(relative, text, rules));
+    // The `typed-reader-bypass-call` rule exists to keep every OTHER file honest about
+    // going through `useBeeToken`/`getBeeToken`; the adapter implementation itself is
+    // exempted here by exact relative file path (see the constant's own docs above) —
+    // never by a broad directory ignore.
+    const applicableRules = isTypedReaderImplementationFile(relative) ? rulesWithoutTypedReaderBypass : rules;
+    violations.push(...scanSourceText(relative, text, applicableRules));
   }
 
   return { violations, filesScanned: files.length };
