@@ -58,8 +58,11 @@ test('Showcase executable JS changes are proven by Expo export and skip native c
   for (const file of [
     'apps/showcase/App.tsx',
     'apps/showcase/index.ts',
+    'apps/showcase/global.css',
+    'apps/showcase/metro.config.js',
     'apps/showcase/patterns/auth/screens/sign-in-screen.tsx',
     'apps/showcase/pattern-gallery/pattern-gallery.tsx',
+    'apps/showcase/component-gallery/component-gallery.tsx',
   ]) {
     assert.equal(classifyPackageBoundaryChanges([file]).packageBoundary, false, file);
     assert.equal(classifyBareNativeChanges([file]).bareNative, false, file);
@@ -72,9 +75,22 @@ test('Showcase manifest/config changes require Showcase native compile only', ()
   for (const file of [
     'apps/showcase/package.json',
     'apps/showcase/app.json',
+    'apps/showcase/app.config.json',
     'apps/showcase/app.config.ts',
     'apps/showcase/react-native.config.js',
     'apps/showcase/plugins/with-beeui.js',
+  ]) {
+    assert.equal(classifyBareNativeChanges([file]).bareNative, false, file);
+    assert.equal(classifyShowcaseNativeChanges([file]).showcaseNative, true, file);
+    assert.equal(classifyNativeIosChanges([file]).iosNative, true, file);
+  }
+});
+
+test('arbitrary Showcase config helpers outside explicit runtime surfaces fail closed', () => {
+  for (const file of [
+    'apps/showcase/with-native.ts',
+    'apps/showcase/config/with-entitlements.js',
+    'apps/showcase/config/native-options.json',
   ]) {
     assert.equal(classifyBareNativeChanges([file]).bareNative, false, file);
     assert.equal(classifyShowcaseNativeChanges([file]).showcaseNative, true, file);
@@ -105,12 +121,22 @@ test('a future BeeUI native implementation fails closed for both consumers', () 
     'packages/ui/ios/BeeUIView.mm',
     'packages/core/android/src/main/java/com/beeui/CoreModule.kt',
     'packages/ui/src/native-view.cpp',
+    'packages/ui/src/NativeBeeUIManager.ts',
+    'packages/ui/src/BeeUIViewNativeComponent.tsx',
   ]) {
     assert.equal(classifyPackageBoundaryChanges([file]).packageBoundary, true, file);
     assert.equal(classifyBareNativeChanges([file]).bareNative, true, file);
     assert.equal(classifyShowcaseNativeChanges([file]).showcaseNative, true, file);
     assert.equal(classifyNativeIosChanges([file]).iosNative, true, file);
   }
+});
+
+test('ordinary package runtime TS remains native-safe even with native wording', () => {
+  const file = 'packages/ui/src/components/native-utils.ts';
+  assert.equal(classifyPackageBoundaryChanges([file]).packageBoundary, true);
+  assert.equal(classifyBareNativeChanges([file]).bareNative, false);
+  assert.equal(classifyShowcaseNativeChanges([file]).showcaseNative, false);
+  assert.equal(classifyNativeIosChanges([file]).iosNative, false);
 });
 
 test('CI policy implementation changes self-validate with full native proof', () => {
@@ -186,7 +212,10 @@ test('path helpers normalize slash spellings and expose the tier split', () => {
   assert.equal(isPackageBoundarySensitivePath('./packages/ui/src/index.ts'), true);
   assert.equal(isBareConsumerSensitivePath('packages\\core\\src\\index.ts'), true);
   assert.equal(isBareNativeSensitivePath('packages\\ui\\package.json'), true);
+  assert.equal(isBareNativeSensitivePath('packages\\ui\\src\\NativeBeeUIManager.ts'), true);
   assert.equal(isShowcaseNativeSensitivePath('apps\\showcase\\App.tsx'), false);
+  assert.equal(isShowcaseNativeSensitivePath('apps\\showcase\\with-native.ts'), true);
   assert.equal(isNativeIosSafePath('packages\\ui\\src\\button.tsx'), true);
+  assert.equal(isNativeIosSafePath('packages\\ui\\src\\BeeUIViewNativeComponent.tsx'), false);
   assert.equal(isNativeIosSafePath('apps\\showcase\\app.json'), false);
 });
