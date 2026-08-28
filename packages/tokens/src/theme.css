@@ -68,6 +68,9 @@
   --motion-duration-slow: 320ms;
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
+  --layer-base: 0;
+  --layer-overlay: 100;
+  --layer-toast: 1000;
 }
 
 @utility bee-focus-ring {
@@ -75,6 +78,18 @@
   outline-offset: var(--focus-ring-offset);
   outline-style: solid;
   outline-width: var(--focus-ring-width);
+}
+
+@utility bee-layer-base {
+  z-index: var(--layer-base);
+}
+
+@utility bee-layer-overlay {
+  z-index: var(--layer-overlay);
+}
+
+@utility bee-layer-toast {
+  z-index: var(--layer-toast);
 }
 
 @layer theme {

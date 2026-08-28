@@ -5,6 +5,7 @@ import {
   type AnchoredOverlayDirection,
   type AnchoredOverlayPlacement,
 } from '@beeui/core';
+import { layer } from '@beeui/tokens';
 import * as React from 'react';
 import {
   I18nManager,
@@ -835,7 +836,7 @@ DropdownMenuSeparator.displayName = 'DropdownMenuSeparator';
 const styles = StyleSheet.create({
   content: {
     position: 'absolute',
-    zIndex: 1,
+    zIndex: layer.overlay,
   },
   measuring: {
     left: -10000,
