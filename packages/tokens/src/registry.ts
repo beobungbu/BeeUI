@@ -109,15 +109,24 @@ export function defineThemeRegistry<const Def extends ThemeRegistryDefinition>(
   invariant(brands.length > 0, 'a registry must define at least one brand');
 
   // Deep-freeze an internal snapshot so the registry never exposes mutable data
-  // and can never be desynchronized by a caller mutating the input object. The
-  // caller's own object is not mutated: each brand row is a shallow clone.
-  const snapshotDraft: Record<string, Readonly<Record<string, string>>> = {};
+  // and can never be desynchronized by a caller mutating the input object. Both
+  // mapping levels use null-prototype dictionaries so consumer-defined keys such
+  // as "__proto__", "constructor", or "toString" are ordinary data keys rather
+  // than prototype mutation/access paths. The caller's own object is untouched.
+  const snapshotDraft = Object.create(null) as Record<
+    string,
+    Readonly<Record<string, string>>
+  >;
   for (const brand of brands) {
     invariant(
       definition[brand] !== null && typeof definition[brand] === 'object' && !Array.isArray(definition[brand]),
       `brand "${brand}" must map appearances to runtime-theme names`,
     );
-    snapshotDraft[brand] = Object.freeze({ ...definition[brand] });
+    const rowDraft = Object.assign(
+      Object.create(null) as Record<string, string>,
+      definition[brand],
+    );
+    snapshotDraft[brand] = Object.freeze(rowDraft);
   }
   const snapshot = Object.freeze(snapshotDraft) as Def;
 
@@ -164,14 +173,13 @@ export function defineThemeRegistry<const Def extends ThemeRegistryDefinition>(
     brand: B,
     appearance: A,
   ): Def[B][A] {
+    invariant(Object.hasOwn(snapshot, brand), `unknown brand "${String(brand)}"`);
     const appearances = snapshot[brand];
-    invariant(appearances !== undefined, `unknown brand "${String(brand)}"`);
-    const runtimeTheme = appearances[appearance];
     invariant(
-      runtimeTheme !== undefined,
+      Object.hasOwn(appearances, appearance),
       `unknown appearance "${String(appearance)}" for brand "${String(brand)}"`,
     );
-    return runtimeTheme;
+    return appearances[appearance];
   }
 
   function selectionFor(runtimeTheme: string): ThemeSelection<Def> | undefined {
