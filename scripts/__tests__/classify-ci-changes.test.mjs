@@ -1,178 +1,221 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  classifyNativeIosChanges,
-  isNativeIosSafePath,
   classifyBareConsumerChanges,
+  classifyBareNativeChanges,
+  classifyNativeIosChanges,
+  classifyPackageBoundaryChanges,
+  classifyShowcaseNativeChanges,
   isBareConsumerSensitivePath,
+  isBareNativeSensitivePath,
+  isNativeIosSafePath,
+  isPackageBoundarySensitivePath,
+  isShowcaseNativeSensitivePath,
 } from '../classify-ci-changes.mjs';
 
-test('classifies documentation-only changes as native-safe', () => {
-  const result = classifyNativeIosChanges([
-    'README.md',
-    'docs/release.md',
-    'CHANGELOG.md',
-  ]);
-  assert.equal(result.iosNative, false);
-  assert.deepEqual(result.nativeSensitiveFiles, []);
+test('pure BeeUI JS/TS/CSS changes run package boundary but skip native compilers', () => {
+  for (const file of [
+    'packages/ui/src/components/button.tsx',
+    'packages/core/src/index.ts',
+    'packages/tokens/src/theme.css',
+  ]) {
+    assert.equal(classifyPackageBoundaryChanges([file]).packageBoundary, true, file);
+    assert.equal(classifyBareNativeChanges([file]).bareNative, false, file);
+    assert.equal(classifyShowcaseNativeChanges([file]).showcaseNative, false, file);
+    assert.equal(classifyNativeIosChanges([file]).iosNative, false, file);
+  }
 });
 
-test('classifies auth pattern implementation as native-sensitive executable Showcase input', () => {
-  const result = classifyNativeIosChanges(['apps/showcase/patterns/auth/screens/sign-in-screen.tsx']);
-  assert.equal(result.iosNative, true);
+test('package tsconfig changes keep boundary proof without native compile', () => {
+  const file = 'packages/ui/tsconfig.json';
+  assert.equal(classifyPackageBoundaryChanges([file]).packageBoundary, true);
+  assert.equal(classifyBareNativeChanges([file]).bareNative, false);
+  assert.equal(classifyShowcaseNativeChanges([file]).showcaseNative, false);
 });
 
-test('classifies dashboard-finance pattern implementation as native-sensitive', () => {
-  const result = classifyNativeIosChanges(['apps/showcase/patterns/dashboard-finance/screens/dashboard-overview-screen.tsx']);
-  assert.equal(result.iosNative, true);
-});
-
-test('classifies commerce-social pattern implementation as native-sensitive', () => {
-  const result = classifyNativeIosChanges(['apps/showcase/patterns/commerce-social/screens/product-detail-screen.tsx']);
-  assert.equal(result.iosNative, true);
-});
-
-test('classifies account-settings pattern implementation as native-sensitive', () => {
-  const result = classifyNativeIosChanges(['apps/showcase/patterns/account-settings/screens/settings-screen.tsx']);
-  assert.equal(result.iosNative, true);
-});
-
-test('keeps isolated pattern tests native-safe', () => {
-  const result = classifyNativeIosChanges(['apps/showcase/__tests__/patterns/auth-patterns.test.tsx']);
-  assert.equal(result.iosNative, false);
-});
-
-test('classifies executable Pattern Gallery implementation as native-sensitive', () => {
-  const result = classifyNativeIosChanges(['apps/showcase/pattern-gallery/pattern-gallery.tsx']);
-  assert.equal(result.iosNative, true);
-});
-
-test('mixed documentation and pattern implementation changes require native verification', () => {
-  const result = classifyNativeIosChanges([
-    'docs/roadmap.md',
-    'apps/showcase/patterns/auth/screens/sign-in-screen.tsx',
-  ]);
-  assert.equal(result.iosNative, true);
-});
-
-test('classifies visual-regression-only changes as native-safe', () => {
-  const result = classifyNativeIosChanges([
-    'apps/visual-regression/App.tsx',
-    'apps/visual-regression/tests/__screenshots__/foundation--light--mobile.png',
-  ]);
-  assert.equal(result.iosNative, false);
-});
-
-test('classifies registry-only implementation changes as native-safe', () => {
-  const result = classifyNativeIosChanges([
-    'registry/registry.json',
-    'scripts/beeui.mjs',
-    'scripts/registry-lib.mjs',
-    'scripts/verify-registry.mjs',
-    'scripts/__tests__/beeui.test.mjs',
-  ]);
-  assert.equal(result.iosNative, false);
-});
-
-test('classifies package implementation changes as native-sensitive', () => {
-  const result = classifyNativeIosChanges(['packages/ui/src/components/button.tsx']);
-  assert.equal(result.iosNative, true);
-  assert.deepEqual(result.nativeSensitiveFiles, ['packages/ui/src/components/button.tsx']);
-});
-
-test('classifies executable Showcase changes as native-sensitive', () => {
-  const result = classifyNativeIosChanges(['apps/showcase/App.tsx']);
-  assert.equal(result.iosNative, true);
-});
-
-test('classifies root dependency metadata as native-sensitive', () => {
-  for (const file of ['package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml']) {
+test('package manifests change both bare and Showcase native dependency graphs', () => {
+  for (const file of [
+    'packages/core/package.json',
+    'packages/ui/package.json',
+    'packages/tokens/package.json',
+  ]) {
+    assert.equal(classifyPackageBoundaryChanges([file]).packageBoundary, true, file);
+    assert.equal(classifyBareNativeChanges([file]).bareNative, true, file);
+    assert.equal(classifyShowcaseNativeChanges([file]).showcaseNative, true, file);
     assert.equal(classifyNativeIosChanges([file]).iosNative, true, file);
   }
 });
 
-test('classifies workflow and unknown scripts as native-sensitive', () => {
-  assert.equal(classifyNativeIosChanges(['.github/workflows/ci.yml']).iosNative, true);
-  assert.equal(classifyNativeIosChanges(['scripts/verify-bare-consumer.sh']).iosNative, true);
+test('bare consumer script changes boundary and bare native only', () => {
+  const file = 'scripts/verify-bare-consumer.sh';
+  assert.equal(classifyPackageBoundaryChanges([file]).packageBoundary, true);
+  assert.equal(classifyBareNativeChanges([file]).bareNative, true);
+  assert.equal(classifyShowcaseNativeChanges([file]).showcaseNative, false);
+  assert.equal(classifyNativeIosChanges([file]).iosNative, true);
 });
 
-test('mixed safe and sensitive changes require native verification', () => {
-  const result = classifyNativeIosChanges([
+test('Showcase executable JS changes are proven by Expo export and skip native compile', () => {
+  for (const file of [
+    'apps/showcase/App.tsx',
+    'apps/showcase/index.ts',
+    'apps/showcase/global.css',
+    'apps/showcase/metro.config.js',
+    'apps/showcase/patterns/auth/screens/sign-in-screen.tsx',
+    'apps/showcase/pattern-gallery/pattern-gallery.tsx',
+    'apps/showcase/component-gallery/component-gallery.tsx',
+  ]) {
+    assert.equal(classifyPackageBoundaryChanges([file]).packageBoundary, false, file);
+    assert.equal(classifyBareNativeChanges([file]).bareNative, false, file);
+    assert.equal(classifyShowcaseNativeChanges([file]).showcaseNative, false, file);
+    assert.equal(classifyNativeIosChanges([file]).iosNative, false, file);
+  }
+});
+
+test('Showcase manifest/config changes require Showcase native compile only', () => {
+  for (const file of [
+    'apps/showcase/package.json',
+    'apps/showcase/app.json',
+    'apps/showcase/app.config.json',
+    'apps/showcase/app.config.ts',
+    'apps/showcase/react-native.config.js',
+    'apps/showcase/plugins/with-beeui.js',
+  ]) {
+    assert.equal(classifyBareNativeChanges([file]).bareNative, false, file);
+    assert.equal(classifyShowcaseNativeChanges([file]).showcaseNative, true, file);
+    assert.equal(classifyNativeIosChanges([file]).iosNative, true, file);
+  }
+});
+
+test('arbitrary Showcase config helpers outside explicit runtime surfaces fail closed', () => {
+  for (const file of [
+    'apps/showcase/with-native.ts',
+    'apps/showcase/config/with-entitlements.js',
+    'apps/showcase/config/native-options.json',
+  ]) {
+    assert.equal(classifyBareNativeChanges([file]).bareNative, false, file);
+    assert.equal(classifyShowcaseNativeChanges([file]).showcaseNative, true, file);
+    assert.equal(classifyNativeIosChanges([file]).iosNative, true, file);
+  }
+});
+
+test('workspace dependency-resolution metadata requires Showcase native compile', () => {
+  for (const file of ['package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.npmrc']) {
+    assert.equal(classifyBareNativeChanges([file]).bareNative, false, file);
+    assert.equal(classifyShowcaseNativeChanges([file]).showcaseNative, true, file);
+    assert.equal(classifyNativeIosChanges([file]).iosNative, true, file);
+  }
+});
+
+test('committed/generated native Showcase trees fail closed', () => {
+  for (const file of [
+    'apps/showcase/ios/BeeUIShowcase/AppDelegate.swift',
+    'apps/showcase/android/app/build.gradle',
+  ]) {
+    assert.equal(classifyShowcaseNativeChanges([file]).showcaseNative, true, file);
+  }
+});
+
+test('a future BeeUI native implementation fails closed for both consumers', () => {
+  for (const file of [
+    'packages/ui/ios/BeeUI.podspec',
+    'packages/ui/ios/BeeUIView.mm',
+    'packages/core/android/src/main/java/com/beeui/CoreModule.kt',
+    'packages/ui/src/native-view.cpp',
+    'packages/ui/src/NativeBeeUIManager.ts',
+    'packages/ui/src/BeeUIViewNativeComponent.tsx',
+  ]) {
+    assert.equal(classifyPackageBoundaryChanges([file]).packageBoundary, true, file);
+    assert.equal(classifyBareNativeChanges([file]).bareNative, true, file);
+    assert.equal(classifyShowcaseNativeChanges([file]).showcaseNative, true, file);
+    assert.equal(classifyNativeIosChanges([file]).iosNative, true, file);
+  }
+});
+
+test('ordinary package runtime TS remains native-safe even with native wording', () => {
+  const file = 'packages/ui/src/components/native-utils.ts';
+  assert.equal(classifyPackageBoundaryChanges([file]).packageBoundary, true);
+  assert.equal(classifyBareNativeChanges([file]).bareNative, false);
+  assert.equal(classifyShowcaseNativeChanges([file]).showcaseNative, false);
+  assert.equal(classifyNativeIosChanges([file]).iosNative, false);
+});
+
+test('CI policy implementation changes self-validate with full native proof', () => {
+  for (const file of ['.github/workflows/ci.yml', 'scripts/classify-ci-changes.mjs']) {
+    assert.equal(classifyBareNativeChanges([file]).bareNative, true, file);
+    assert.equal(classifyShowcaseNativeChanges([file]).showcaseNative, true, file);
+    assert.equal(classifyNativeIosChanges([file]).iosNative, true, file);
+  }
+});
+
+test('documentation, registry and isolated tests stay native-safe', () => {
+  for (const file of [
+    'README.md',
     'docs/release.md',
-    'packages/ui/src/index.ts',
+    'registry/registry.json',
+    'apps/visual-regression/App.tsx',
+    'apps/showcase/__tests__/patterns/auth-patterns.test.tsx',
+    'scripts/__tests__/beeui.test.mjs',
+  ]) {
+    assert.equal(classifyNativeIosChanges([file]).iosNative, false, file);
+  }
+});
+
+test('unknown repository inputs retain fail-closed native behavior', () => {
+  const result = classifyShowcaseNativeChanges(['scripts/change-native-tooling.sh']);
+  assert.equal(result.showcaseNative, true);
+  assert.deepEqual(result.showcaseNativeSensitiveFiles, ['scripts/change-native-tooling.sh']);
+});
+
+test('mixed JS package and native-sensitive changes require only the affected native tier', () => {
+  const files = ['packages/ui/src/index.ts', 'apps/showcase/app.json'];
+  assert.equal(classifyPackageBoundaryChanges(files).packageBoundary, true);
+  assert.equal(classifyBareNativeChanges(files).bareNative, false);
+  assert.equal(classifyShowcaseNativeChanges(files).showcaseNative, true);
+  assert.equal(classifyNativeIosChanges(files).iosNative, true);
+});
+
+test('rename-out lists preserve the old package path for boundary classification', () => {
+  const files = [
+    'packages/ui/src/components/legacy-button.tsx',
+    'docs/legacy-button.tsx',
+  ];
+  const result = classifyPackageBoundaryChanges(files);
+  assert.equal(result.packageBoundary, true);
+  assert.deepEqual(result.packageBoundarySensitiveFiles, [
+    'packages/ui/src/components/legacy-button.tsx',
   ]);
-  assert.equal(result.iosNative, true);
-  assert.deepEqual(result.nativeSensitiveFiles, ['packages/ui/src/index.ts']);
+  assert.equal(classifyNativeIosChanges(files).iosNative, false);
 });
 
-test('empty input fails safe by requiring native verification', () => {
-  const result = classifyNativeIosChanges([]);
-  assert.equal(result.iosNative, true);
-  assert.match(result.reason, /fail-safe/);
+test('forceNative requires boundary, bare native and Showcase native verification', () => {
+  const options = { forceNative: true };
+  assert.equal(classifyPackageBoundaryChanges(['docs/release.md'], options).packageBoundary, true);
+  assert.equal(classifyBareNativeChanges(['docs/release.md'], options).bareNative, true);
+  assert.equal(classifyShowcaseNativeChanges(['docs/release.md'], options).showcaseNative, true);
+  assert.equal(classifyNativeIosChanges(['docs/release.md'], options).iosNative, true);
 });
 
-test('forceNative always requires native verification', () => {
-  const result = classifyNativeIosChanges(['docs/release.md'], { forceNative: true });
-  assert.equal(result.iosNative, true);
-  assert.match(result.reason, /forced/);
+test('empty input fails safe for all tiers', () => {
+  assert.equal(classifyPackageBoundaryChanges([]).packageBoundary, true);
+  assert.equal(classifyBareNativeChanges([]).bareNative, true);
+  assert.equal(classifyShowcaseNativeChanges([]).showcaseNative, true);
+  assert.equal(classifyNativeIosChanges([]).iosNative, true);
 });
 
-test('normalizes ordinary git path spellings under the new topology', () => {
-  assert.equal(isNativeIosSafePath('./docs/release.md'), true);
-  assert.equal(isNativeIosSafePath('apps\\showcase\\__tests__\\patterns\\auth-patterns.test.tsx'), true);
-  assert.equal(isNativeIosSafePath('apps\\showcase\\patterns\\auth\\screens\\sign-in-screen.tsx'), false);
-});
-
-test('classifies package path changes as bare-consumer-sensitive', () => {
+test('backward bare-consumer API now maps to package-boundary proof', () => {
   const result = classifyBareConsumerChanges(['packages/ui/src/components/button.tsx']);
   assert.equal(result.bareConsumer, true);
   assert.deepEqual(result.bareConsumerSensitiveFiles, ['packages/ui/src/components/button.tsx']);
 });
 
-test('rename-out path lists remain bare-consumer-sensitive when the deleted package path is preserved', () => {
-  const result = classifyBareConsumerChanges([
-    'packages/ui/src/components/legacy-button.tsx',
-    'docs/legacy-button.tsx',
-  ]);
-  assert.equal(result.bareConsumer, true);
-  assert.deepEqual(result.bareConsumerSensitiveFiles, ['packages/ui/src/components/legacy-button.tsx']);
-});
-
-test('classifies core and tokens package changes as bare-consumer-sensitive', () => {
-  assert.equal(classifyBareConsumerChanges(['packages/core/src/index.ts']).bareConsumer, true);
-  assert.equal(classifyBareConsumerChanges(['packages/tokens/theme.css']).bareConsumer, true);
-});
-
-test('classifies the bare-consumer script itself as bare-consumer-sensitive', () => {
-  const result = classifyBareConsumerChanges(['scripts/verify-bare-consumer.sh']);
-  assert.equal(result.bareConsumer, true);
-});
-
-test('showcase-only changes require native verification but skip the bare-consumer leg', () => {
-  const bareResult = classifyBareConsumerChanges(['apps/showcase/App.tsx']);
-  assert.equal(bareResult.bareConsumer, false);
-  assert.equal(classifyNativeIosChanges(['apps/showcase/App.tsx']).iosNative, true);
-});
-
-test('docs-only changes skip both native and bare-consumer verification', () => {
-  assert.equal(classifyNativeIosChanges(['docs/release.md']).iosNative, false);
-  assert.equal(classifyBareConsumerChanges(['docs/release.md']).bareConsumer, false);
-});
-
-test('forceNative requires both native and bare-consumer verification', () => {
-  const nativeResult = classifyNativeIosChanges(['docs/release.md'], { forceNative: true });
-  const bareResult = classifyBareConsumerChanges(['docs/release.md'], { forceNative: true });
-  assert.equal(nativeResult.iosNative, true);
-  assert.equal(bareResult.bareConsumer, true);
-});
-
-test('empty input fails safe for both native and bare-consumer verification', () => {
-  assert.equal(classifyNativeIosChanges([]).iosNative, true);
-  assert.equal(classifyBareConsumerChanges([]).bareConsumer, true);
-});
-
-test('normalizes path spellings for bare-consumer sensitivity checks', () => {
-  assert.equal(isBareConsumerSensitivePath('./packages/ui/src/index.ts'), true);
+test('path helpers normalize slash spellings and expose the tier split', () => {
+  assert.equal(isPackageBoundarySensitivePath('./packages/ui/src/index.ts'), true);
   assert.equal(isBareConsumerSensitivePath('packages\\core\\src\\index.ts'), true);
-  assert.equal(isBareConsumerSensitivePath('apps/showcase/App.tsx'), false);
+  assert.equal(isBareNativeSensitivePath('packages\\ui\\package.json'), true);
+  assert.equal(isBareNativeSensitivePath('packages\\ui\\src\\NativeBeeUIManager.ts'), true);
+  assert.equal(isShowcaseNativeSensitivePath('apps\\showcase\\App.tsx'), false);
+  assert.equal(isShowcaseNativeSensitivePath('apps\\showcase\\with-native.ts'), true);
+  assert.equal(isNativeIosSafePath('packages\\ui\\src\\button.tsx'), true);
+  assert.equal(isNativeIosSafePath('packages\\ui\\src\\BeeUIViewNativeComponent.tsx'), false);
+  assert.equal(isNativeIosSafePath('apps\\showcase\\app.json'), false);
 });
