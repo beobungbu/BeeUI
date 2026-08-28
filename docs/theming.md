@@ -51,9 +51,9 @@ CI applies two independent validation layers. First, `packages/tokens/tokens.jso
 
 DTCG conformance and BeeUI's primitive-to-semantic authoring model are separate concerns.
 
-PR #90 / issue #69 establishes a conformant canonical format, generated DTCG tooling artifacts, deterministic generation, and runtime-theme resolution metadata. Issue #70 still owns the **private primitive -> semantic alias hierarchy**: deciding which repeated palette values deserve primitives, expressing semantic roles as DTCG references, resolving multi-hop references, rejecting cycles/dangling references, and keeping primitive names out of reusable component APIs.
+PR #90 / issue #69 establishes a conformant canonical format, generated DTCG tooling artifacts, deterministic generation, and runtime-theme resolution metadata. Issue #70 adds the **private primitive -> semantic alias hierarchy** on top of that model: recurring brand/neutral palette values become private authoring primitives, semantic roles alias them with standard DTCG references, and the generator resolves those references (including multi-hop) while rejecting cycles, dangling references, cross-category references, and references that escape the private layer. Primitive identifiers stay out of reusable component APIs.
 
-A DTCG document does not need to use aliases to be conformant. When #70 introduces aliases, it must use DTCG reference semantics rather than inventing a parallel BeeUI reference syntax.
+A DTCG document does not need to use aliases to be conformant. BeeUI's aliases use DTCG reference semantics (`$ref` JSON Pointers) rather than a parallel BeeUI reference syntax. See [Private authoring primitives and semantic aliases](./theme-authoring-primitives.md) for the authoring contract.
 
 ## Current inventory and v1 compatibility
 
@@ -211,4 +211,4 @@ Do not mechanically replace literals whose product intent does not match the sem
 6. Run `pnpm tokens:check`, token tests, workspace tests, contrast checks, Component Gallery, the complete Pattern Gallery matrix, and native export/compile gates.
 7. Keep reusable components semantic-only.
 
-If a repeated raw value deserves a reusable primitive or semantic reference, implement that through the #70 primitive/alias contract rather than adding an ad-hoc reference convention.
+If a repeated raw value deserves a reusable primitive or semantic reference, implement that through the primitive/alias contract in [Private authoring primitives and semantic aliases](./theme-authoring-primitives.md) rather than adding an ad-hoc reference convention.
