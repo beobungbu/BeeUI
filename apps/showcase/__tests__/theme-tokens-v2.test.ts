@@ -5,6 +5,7 @@ import {
   beeBrandNames,
   beeRuntimeThemeNames,
   beeThemeNames,
+  breakpoint,
   contentWidth,
   controlSize,
   defineSemanticColorOverrides,
@@ -19,8 +20,10 @@ import {
   lineHeight,
   motionDuration,
   motionEasing,
+  pageGutter,
   radius,
   resolveBeeRuntimeTheme,
+  responsiveLayoutClassification,
   semanticColorTokens,
   semanticColorVariable,
   spacing,
@@ -311,6 +314,16 @@ describe('theme/token system v2', () => {
     expect(iconSize).toEqual({ xs: 12, sm: 16, md: 20, lg: 24 });
     expect(avatarSize).toEqual({ sm: 32, md: 40, lg: 48, xl: 64 });
     expect(contentWidth).toEqual({ form: 512, reading: 704, page: 1152, dialog: 512 });
+    expect(breakpoint).toEqual({ medium: 768, expanded: 1280 });
+    expect(pageGutter).toEqual({ compact: 16, regular: 20, spacious: 24 });
+    expect(responsiveLayoutClassification.breakpoint).toEqual({
+      layer: 'web-responsive',
+      binding: 'build-time-constant',
+      runtimeOverridable: false,
+      engine: 'tailwind-uniwind',
+    });
+    expect(responsiveLayoutClassification.pageGutter.runtimeOverridable).toBe(false);
+    expect(responsiveLayoutClassification.contentWidth.layer).toBe('cross-platform');
     expect(elevation).toEqual(canonicalElevationValues());
     expect(elevation.raised.nativeElevation).toBe(2);
     expect(elevation.overlay.nativeElevation).toBe(8);
@@ -337,6 +350,11 @@ describe('theme/token system v2', () => {
       '--container-reading:',
       '--container-page:',
       '--container-dialog:',
+      '--breakpoint-md:',
+      '--breakpoint-xl:',
+      '--spacing-page-gutter-compact:',
+      '--spacing-page-gutter-regular:',
+      '--spacing-page-gutter-spacious:',
       '--shadow-raised:',
       '--shadow-overlay:',
       '--motion-duration-fast:',
@@ -348,6 +366,9 @@ describe('theme/token system v2', () => {
     ]) {
       expect(themeCss).toContain(variable);
     }
+
+    expect(themeCss).not.toContain('--breakpoint-medium:');
+    expect(themeCss).not.toContain('--breakpoint-expanded:');
   });
 
   it.each(beeRuntimeThemeNames)(

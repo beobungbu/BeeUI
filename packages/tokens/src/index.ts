@@ -218,6 +218,62 @@ export const contentWidth = {
   "dialog": 512
 } as const;
 
+export type ContentWidthName = keyof typeof contentWidth;
+
+/**
+ * Minimum stable responsive breakpoints (min-width thresholds, px). Web-only
+ * build-time constants — Tailwind/Uniwind compiles these into responsive
+ * variants and remains the sole responsive execution engine. Viewports below
+ * `medium` are the implicit compact base. These values are readable (e.g. to
+ * classify a measured width) but are NOT a runtime override surface: the web
+ * compiler needs constant breakpoints, so a runtime-mutable breakpoint API is
+ * out of scope here (see #71).
+ */
+export const breakpoint = {
+  "medium": 768,
+  "expanded": 1280
+} as const;
+
+export type BreakpointName = keyof typeof breakpoint;
+
+/**
+ * Semantic horizontal page-edge padding (px). Cross-platform: consumed on web
+ * through the generated `--spacing-page-gutter-*` Tailwind utility and on React
+ * Native through this constant. Composes additively with safe-area insets —
+ * apply the gutter inside the safe area, never in place of the inset.
+ */
+export const pageGutter = {
+  "compact": 16,
+  "regular": 20,
+  "spacious": 24
+} as const;
+
+export type PageGutterName = keyof typeof pageGutter;
+
+/**
+ * Build-time vs runtime classification for the responsive-layout token groups.
+ * `breakpoint` is a web-only build-time constant; `pageGutter` and
+ * `contentWidth` are cross-platform values. None are runtime-overridable.
+ */
+export const responsiveLayoutClassification = {
+  "breakpoint": {
+    "layer": "web-responsive",
+    "binding": "build-time-constant",
+    "runtimeOverridable": false,
+    "engine": "tailwind-uniwind"
+  },
+  "pageGutter": {
+    "layer": "cross-platform",
+    "binding": "value",
+    "runtimeOverridable": false
+  },
+  "contentWidth": {
+    "layer": "cross-platform",
+    "binding": "value",
+    "runtimeOverridable": false
+  }
+} as const;
+
 export const elevation = {
   "flat": {
     "web": "none",
