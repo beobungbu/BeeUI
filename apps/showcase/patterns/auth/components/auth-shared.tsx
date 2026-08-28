@@ -4,13 +4,13 @@ import {
   Button,
   Card,
   HStack,
+  KeyboardAwareScreen,
   Progress,
   Separator,
   Text,
   VStack,
 } from '@beeui/ui';
 import * as React from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 
 export type AuthShellProps = {
   children: React.ReactNode;
@@ -21,31 +21,14 @@ export type AuthShellProps = {
 
 export function AuthShell({ children, compact = false, footer, testID }: AuthShellProps) {
   return (
-    <Box className="flex-1 bg-background" testID={testID}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-      >
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1 }}
-          keyboardDismissMode="interactive"
-          keyboardShouldPersistTaps="handled"
-        >
-          <Box
-            className={
-              compact
-                ? 'mx-auto w-full max-w-[440px] flex-1 px-5 py-6'
-                : 'mx-auto w-full max-w-[440px] flex-1 px-5 py-8 web:py-12'
-            }
-          >
-            <VStack className="flex-1" gap="xl">
-              {children}
-              {footer ? <Box className="mt-auto pt-4">{footer}</Box> : null}
-            </VStack>
-          </Box>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </Box>
+    <KeyboardAwareScreen contentWidth="sm" testID={testID}>
+      <Box className={compact ? 'flex-1 px-5 py-6' : 'flex-1 px-5 py-8 web:py-12'}>
+        <VStack className="flex-1" gap="xl">
+          {children}
+          {footer ? <Box className="mt-auto pt-4">{footer}</Box> : null}
+        </VStack>
+      </Box>
+    </KeyboardAwareScreen>
   );
 }
 
