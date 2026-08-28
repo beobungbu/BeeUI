@@ -28,7 +28,7 @@ test('Showcase iOS build keeps persistent keyed DerivedData and Xcode compilatio
   assert.match(workflow, /-showBuildTimingSummary/);
 });
 
-test('bare RN iOS build keeps a fresh consumer while moving reusable compiler and Ruby outputs outside RUNNER_TEMP', async () => {
+test('bare RN iOS build keeps reusable compiler and Ruby outputs outside RUNNER_TEMP', async () => {
   const { bareScript } = await sources();
 
   assert.match(bareScript, /rm -rf "\$\{WORK_ROOT\}"/);
@@ -47,32 +47,94 @@ test('bare RN consumer reuse is fail-safe: fingerprint-gated, forced clean on sc
   assert.match(bareScript, /rm -rf node_modules\/@beeui/);
 });
 
-test('PR path classification disables rename detection so moves out of packages cannot false-skip bare verification', async () => {
+test('PR path classification disables rename detection so moves out of packages preserve the deleted path', async () => {
   const { workflow } = await sources();
 
   assert.match(workflow, /git diff --name-only --no-renames "\$BEEUI_BASE_SHA" "\$BEEUI_HEAD_SHA"/);
 });
 
+test('workflow exposes separate package-boundary, bare-native and Showcase-native gates', async () => {
+  const { workflow } = await sources();
+
+  assert.match(workflow, /package-boundary-required:/);
+  assert.match(workflow, /bare-native-required:/);
+  assert.match(workflow, /showcase-native-required:/);
+  assert.match(workflow, /ios-native-required:/);
+});
+
+test('pure package changes keep boundary prepare/bundle while Gradle is native-graph gated', async () => {
+  const { workflow } = await sources();
+
+  assert.match(
+    workflow,
+    /Prepare true bare React Native consumer[\s\S]*package-boundary-required == 'true'[\s\S]*bare-native-required == 'true'/,
+  );
+  assert.match(
+    workflow,
+    /Bundle bare consumer for Android and iOS[\s\S]*package-boundary-required == 'true'[\s\S]*bare-native-required == 'true'/,
+  );
+  assert.match(
+    workflow,
+    /Compile bare Android debug APK\n\s+if: needs\.verify\.outputs\.bare-native-required == 'true'/,
+  );
+  assert.match(
+    workflow,
+    /Setup Java\n\s+if: needs\.verify\.outputs\.bare-native-required == 'true'/,
+  );
+});
+
+test('Expo prebuild and Showcase Xcode work run only for Showcase native graph changes', async () => {
+  const { workflow } = await sources();
+
+  assert.match(
+    workflow,
+    /Generate native projects with Expo Prebuild\n\s+if: steps\.native-changes\.outputs\.showcase-native == 'true'/,
+  );
+  assert.match(
+    workflow,
+    /Download generated iOS project source\n\s+if: needs\.verify\.outputs\.showcase-native-required == 'true'/,
+  );
+  assert.match(
+    workflow,
+    /Compile Showcase for iOS Simulator\n\s+if: needs\.verify\.outputs\.showcase-native-required == 'true'/,
+  );
+});
+
+test('bare iOS compile runs only for bare native graph changes', async () => {
+  const { workflow } = await sources();
+
+  assert.match(
+    workflow,
+    /Prepare true bare React Native consumer for iOS\n\s+if: needs\.verify\.outputs\.bare-native-required == 'true'/,
+  );
+  assert.match(
+    workflow,
+    /Compile bare React Native consumer for iOS Simulator\n\s+if: needs\.verify\.outputs\.bare-native-required == 'true'/,
+  );
+});
+
+test('ios-native tolerates a skipped boundary job but never bypasses verify or a failed bare job', async () => {
+  const { workflow } = await sources();
+
+  assert.match(workflow, /always\(\)/);
+  assert.match(workflow, /needs\.verify\.result == 'success'/);
+  assert.match(
+    workflow,
+    /needs\.bare-native\.result == 'success' \|\| needs\.bare-native\.result == 'skipped'/,
+  );
+  assert.match(workflow, /needs\.verify\.outputs\.ios-native-required == 'true'/);
+});
+
 test('Showcase pod-install caching keys whole-tree snapshots from the fresh prebuild before restore', async () => {
   const { workflow } = await sources();
 
-  // The post-install snapshot may safely replace the working tree only when it
-  // was produced from the exact same fresh Expo prebuild. Hashing the complete
-  // downloaded ios/ tree before any restore prevents stale generated native
-  // sources, config-plugin output, or codegen inputs from compiling green.
   assert.match(workflow, /prebuild_hash=/);
   assert.ok(workflow.includes("find . \\( -type f -o -type l \\) ! -name '.xcode.env.local' -print"));
   assert.match(workflow, /pods_key=.*prebuild_hash.*lock_hash.*app_hash/s);
   assert.match(workflow, /pods-cache\/showcase\/xcode-\$\{safe_xcode_version\}\/key-\$\{pods_key\}/);
-
-  // The cache still holds the whole post-install tree so CocoaPods integration
-  // and RN codegen outputs are restored together on a valid hot hit.
   assert.match(workflow, /elif \[ -d "\$cache\/ios" \]/);
   assert.match(workflow, /rsync -a --delete "\$cache\/ios\/" \.\//);
   assert.match(workflow, /rsync -a --delete --exclude '\.xcode\.env\.local' \.\/ "\$tmp_cache\/ios\/"/);
-
-  // A restore failure must never delete the fresh prebuild tree; it falls
-  // through to pod install, which self-corrects partial state.
   assert.doesNotMatch(workflow, /ios\/ snapshot restore failed[\s\S]{0,80}rm -rf/);
 });
 
@@ -85,10 +147,9 @@ test('nightly pod validation bypasses snapshot restore and performs pod install 
   assert.match(workflow, /if \[ "\$restore_ok" -eq 1 \] && cmp -s Pods\/Manifest\.lock Podfile\.lock/);
 });
 
-test('ci workflow gates the bare-consumer iOS leg and runs an isolated nightly pristine backstop', async () => {
+test('nightly remains an isolated pristine full-native backstop', async () => {
   const { workflow } = await sources();
 
-  assert.match(workflow, /bare-consumer-required/);
   assert.match(workflow, /schedule:/);
   assert.match(workflow, /BEEUI_BARE_CLEAN: \$\{\{ github\.event_name == 'schedule'/);
   assert.match(
