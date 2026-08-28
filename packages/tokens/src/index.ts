@@ -2,6 +2,10 @@
 // Canonical source: packages/tokens/tokens.json
 // Generator: scripts/generate-tokens.mjs
 
+import { defineThemeRegistry } from './registry';
+
+export * from './registry';
+
 export const beeThemeNames = [
   "light",
   "dark"
@@ -35,6 +39,14 @@ export const beeRuntimeThemeByBrand = {
     "dark": "violet-dark"
   }
 } as const satisfies Record<BeeBrandName, Record<BeeThemeName, BeeRuntimeThemeName>>;
+
+/**
+ * The default BeeUI theme registry (Bee + Violet). Built from the same canonical
+ * mapping as the standalone helpers, so its `resolve`/`selectionFor` results match
+ * `resolveBeeRuntimeTheme`/`getBeeThemeSelection` exactly. Applications may define
+ * their own registry with `defineThemeRegistry` without editing BeeUI source.
+ */
+export const beeThemeRegistry = defineThemeRegistry(beeRuntimeThemeByBrand);
 
 export function resolveBeeRuntimeTheme(
   brand: BeeBrandName,
