@@ -312,6 +312,132 @@ test('official schema validation rejects format and resolver regressions indepen
   await assert.rejects(() => validateOfficialDtcgResolver(invalidResolver), /does not validate/);
 });
 
+test('semantic motion exposes exactly the approved recurring-transition vocabulary', () => {
+  const intents = Object.keys(beeMetadata().semanticMotion);
+  assert.deepEqual(intents, ['overlay-enter', 'overlay-exit', 'disclosure']);
+  assert.equal(new Set(intents).size, intents.length);
+
+  const index = generateTokenArtifacts(source).get('packages/tokens/src/index.ts');
+  assert.match(index, /export const motionIntents = \[\n\s*"overlay-enter",\n\s*"overlay-exit",\n\s*"disclosure"\n\] as const;/);
+});
+
+test('every motion intent declares web, native, and a reduced-motion policy from the supported set', () => {
+  const policies = new Set(['immediate', 'opacity-or-state', 'shorten', 'remove-spatial']);
+  const durations = new Set(Object.keys(source.tokens.motionDuration).filter((key) => !key.startsWith('$')));
+  const easings = new Set(Object.keys(source.tokens.motionEasing).filter((key) => !key.startsWith('$')));
+
+  for (const [name, spec] of Object.entries(beeMetadata().semanticMotion)) {
+    assert.ok(policies.has(spec.reducedMotion), `${name} reduced-motion policy`);
+    assert.ok(durations.has(spec.web.durationToken), `${name} web duration token`);
+    assert.ok(easings.has(spec.web.easingToken), `${name} web easing token`);
+    assert.ok(Array.isArray(spec.web.properties) && spec.web.properties.length > 0, `${name} web properties`);
+    assert.ok(spec.native.type === 'spring' || spec.native.type === 'timing', `${name} native type`);
+    if (spec.native.type === 'spring') {
+      for (const parameter of ['stiffness', 'damping', 'mass']) {
+        assert.ok(Number.isFinite(spec.native[parameter]) && spec.native[parameter] > 0, `${name} spring ${parameter}`);
+      }
+    } else {
+      assert.ok(durations.has(spec.native.durationToken), `${name} native duration token`);
+      assert.ok(easings.has(spec.native.easingToken), `${name} native easing token`);
+    }
+  }
+});
+
+test('generated motion object resolves web timing and native spring/timing representations', () => {
+  const index = generateTokenArtifacts(source).get('packages/tokens/src/index.ts');
+
+  // Web representation derives from the shared duration/easing tokens.
+  assert.match(index, /"overlay-enter": \{\s*"web": \{\s*"durationMs": 200,\s*"easing": "cubic-bezier\(0\.2, 0, 0, 1\)"/);
+  // Native spring keeps raw physics as an implementation detail behind the semantic name.
+  assert.match(index, /"native": \{\s*"type": "spring",\s*"stiffness": 260,\s*"damping": 26,\s*"mass": 1\s*\}/);
+  // Native timing keeps the DTCG cubic-bezier array (distinct from the web string form).
+  assert.match(index, /"overlay-exit":[\s\S]*?"native": \{\s*"type": "timing",\s*"durationMs": 120,\s*"easing": \[\s*0\.2,\s*0,\s*0,\s*1\s*\]/);
+});
+
+test('theme.css exposes motion variables and a reduced-motion override for immediate/shorten intents', () => {
+  const css = generateTokenArtifacts(source).get('packages/tokens/src/theme.css');
+
+  for (const intent of ['overlay-enter', 'overlay-exit', 'disclosure']) {
+    assert.ok(css.includes(`--motion-${intent}-duration:`), `${intent} duration var`);
+    assert.ok(css.includes(`--motion-${intent}-easing:`), `${intent} easing var`);
+  }
+
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{\n  :root \{/);
+  // Exit and disclosure declare `immediate`, so their duration collapses under reduced motion.
+  assert.match(css, /--motion-overlay-exit-duration: 0\.01ms;/);
+  assert.match(css, /--motion-disclosure-duration: 0\.01ms;/);
+  // Enter declares `opacity-or-state`, so its (opacity) timing is preserved, not collapsed.
+  const reducedBlock = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
+  assert.doesNotMatch(reducedBlock, /--motion-overlay-enter-duration:/);
+});
+
+test('theme.css exposes a per-intent spatial flag that flips under reduced motion by canonical policy', () => {
+  const css = generateTokenArtifacts(source).get('packages/tokens/src/theme.css');
+  const reducedIndex = css.indexOf('@media (prefers-reduced-motion: reduce)');
+  const baseBlock = css.slice(0, reducedIndex);
+  const reducedBlock = css.slice(reducedIndex);
+
+  // Single source: the CSS flag under reduced motion must equal the policy-derived spatial value.
+  const spatialDropping = new Set(['immediate', 'opacity-or-state', 'remove-spatial']);
+  for (const [name, spec] of Object.entries(beeMetadata().semanticMotion)) {
+    const spatialByDefault = spec.web.properties.some((property) => property === 'transform' || property === 'height');
+    const expectedBase = spatialByDefault ? 1 : 0;
+    const expectedReduced = spec.reducedMotion === 'shorten' ? expectedBase : 0;
+
+    assert.ok(baseBlock.includes(`--motion-${name}-spatial: ${expectedBase};`), `${name} base spatial flag`);
+
+    if (expectedReduced !== expectedBase) {
+      assert.ok(reducedBlock.includes(`--motion-${name}-spatial: ${expectedReduced};`), `${name} reduced spatial flag`);
+    } else {
+      assert.ok(!reducedBlock.includes(`--motion-${name}-spatial:`), `${name} keeps spatial under reduced motion`);
+    }
+
+    // Cross-check the derivation is policy-driven, not hardcoded per intent.
+    assert.equal(expectedReduced === 0, spatialDropping.has(spec.reducedMotion) || !spatialByDefault, `${name} policy drives spatial drop`);
+  }
+});
+
+test('legacy motion duration and easing exports remain byte-compatible', () => {
+  const index = generateTokenArtifacts(source).get('packages/tokens/src/index.ts');
+  assert.match(index, /export const motionDuration = \{\n\s*"fast": 120,\n\s*"normal": 200,\n\s*"slow": 320\n\} as const;/);
+  assert.match(index, /export const motionEasing = \{\n\s*"standard": "cubic-bezier\(0\.2, 0, 0, 1\)",\n\s*"emphasized": "cubic-bezier\(0\.2, 0, 0, 1\.2\)"\n\} as const;/);
+
+  const css = generateTokenArtifacts(source).get('packages/tokens/src/theme.css');
+  for (const variable of ['--motion-duration-fast: 120ms;', '--motion-duration-normal: 200ms;', '--motion-duration-slow: 320ms;']) {
+    assert.ok(css.includes(variable), variable);
+  }
+});
+
+test('canonical motion validation rejects dangling or unsafe platform config', () => {
+  const unknownDuration = structuredClone(source);
+  unknownDuration.$extensions['com.beeui'].semanticMotion['overlay-enter'].web.durationToken = 'nope';
+  assert.throws(() => validateCanonicalTokens(unknownDuration), /web\.durationToken references unknown duration nope/);
+
+  const badPolicy = structuredClone(source);
+  badPolicy.$extensions['com.beeui'].semanticMotion.disclosure.reducedMotion = 'fade-please';
+  assert.throws(() => validateCanonicalTokens(badPolicy), /reducedMotion must be one of/);
+
+  const unstableSpring = structuredClone(source);
+  unstableSpring.$extensions['com.beeui'].semanticMotion['overlay-enter'].native.stiffness = 0;
+  assert.throws(() => validateCanonicalTokens(unstableSpring), /native\.stiffness must be a positive finite number/);
+
+  const danglingTiming = structuredClone(source);
+  danglingTiming.$extensions['com.beeui'].semanticMotion['overlay-exit'].native.easingToken = 'ghost';
+  assert.throws(() => validateCanonicalTokens(danglingTiming), /native\.easingToken references unknown easing ghost/);
+
+  const empty = structuredClone(source);
+  empty.$extensions['com.beeui'].semanticMotion = {};
+  assert.throws(() => validateCanonicalTokens(empty), /semanticMotion must define at least one intent/);
+});
+
+test('a motion metadata change propagates deterministically to generated outputs', () => {
+  const mutated = structuredClone(source);
+  mutated.$extensions['com.beeui'].semanticMotion.disclosure.web.durationToken = 'slow';
+  const artifacts = generateTokenArtifacts(mutated);
+  assert.match(artifacts.get('packages/tokens/src/index.ts'), /"disclosure":[\s\S]*?"durationMs": 320/);
+  assert.ok(artifacts.get('packages/tokens/src/theme.css').includes('--motion-disclosure-duration: 320ms;'));
+});
+
 test('generated resolver is a DTCG 2025.10 resolver document for every runtime theme', () => {
   const resolver = JSON.parse(
     generateTokenArtifacts(source).get('packages/tokens/src/tokens.resolver.json'),

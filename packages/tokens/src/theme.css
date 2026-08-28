@@ -78,6 +78,15 @@
   --layer-base: 0;
   --layer-overlay: 100;
   --layer-toast: 1000;
+  --motion-overlay-enter-duration: 200ms;
+  --motion-overlay-enter-easing: cubic-bezier(0.2, 0, 0, 1);
+  --motion-overlay-enter-spatial: 1;
+  --motion-overlay-exit-duration: 120ms;
+  --motion-overlay-exit-easing: cubic-bezier(0.2, 0, 0, 1);
+  --motion-overlay-exit-spatial: 1;
+  --motion-disclosure-duration: 200ms;
+  --motion-disclosure-easing: cubic-bezier(0.2, 0, 0, 1);
+  --motion-disclosure-spatial: 1;
 }
 
 @utility bee-focus-ring {
@@ -252,5 +261,15 @@
       --color-disabled-foreground: #786d87;
       --color-overlay: #000000a3;
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-overlay-enter-spatial: 0;
+    --motion-overlay-exit-duration: 0.01ms;
+    --motion-overlay-exit-spatial: 0;
+    --motion-disclosure-duration: 0.01ms;
+    --motion-disclosure-spatial: 0;
   }
 }

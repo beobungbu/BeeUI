@@ -9,6 +9,7 @@
   ],
   "exports": {
     ".": "./src/index.ts",
+    "./motion-runtime": "./src/motion-runtime.ts",
     "./theme.css": "./src/theme.css",
     "./tokens.json": "./tokens.json",
     "./tokens.resolver.json": "./src/tokens.resolver.json",

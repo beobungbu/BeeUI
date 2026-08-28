@@ -29,6 +29,8 @@ import * as React from 'react';
 import { ScrollView } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
 
+import { MotionPreview } from './motion-preview';
+
 type ThemeInspectorProps = {
   onBack: () => void;
 };
@@ -348,6 +350,7 @@ export function ThemeInspector({ onBack }: ThemeInspectorProps) {
                 <Text tone="muted">
                   CSS transitions must provide a motion-reduce path. JavaScript-driven motion must consult the platform reduced-motion preference and skip or simplify non-essential motion.
                 </Text>
+                <MotionPreview />
               </VStack>
             </InspectorSection>
           </Box>
