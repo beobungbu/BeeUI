@@ -266,6 +266,7 @@ export {
 export { Text, textVariants, type TextProps } from './components/text';
 export { Textarea, type TextareaProps } from './components/textarea';
 export { BeeThemeScope, type BeeThemeScopeProps } from './components/theme-scope';
+export { getBeeToken, useBeeToken } from './components/use-bee-token';
 export {
   Timeline,
   TimelineItem,

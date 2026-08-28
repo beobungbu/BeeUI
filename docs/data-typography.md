@@ -121,11 +121,15 @@ also pass explicit `allowFontScaling` / `maxFontSizeMultiplier` props through th
 feature combination to guard against future data-typography code mutating those
 accessibility controls.
 
-## Runtime-reader note (deferred integration)
+## Runtime-reader note
 
 The numeric/mono semantics are emitted as ordinary typed exports
 (`numericVariants`, `monoFontFamily`) in `@beeui/tokens`. Non-`className`
 consumers read the web utility class, the CSS property/value, and the native
-`fontVariant`/`fontFamily` values directly from that canonical metadata. This is
-the same readable-metadata surface a runtime reader consumes, so it is picked up
-without adding a second typography reader.
+`fontVariant`/`fontFamily` values directly from that canonical metadata. These
+values are theme-invariant (identical across every runtime theme) and never
+runtime-overridable, so BeeUI's typed runtime-token reader (#72,
+`useBeeToken`/`getBeeToken` — see `docs/theming.md`) deliberately does not cover
+them: routing an already-constant value through Uniwind would add indirection
+and a platform-representation mismatch for no benefit. Reading the typed
+constant directly is the correct, permanent answer here, not a stopgap.
