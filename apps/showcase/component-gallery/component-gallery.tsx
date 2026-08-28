@@ -15,6 +15,7 @@ import {
   AppHeader,
   Avatar,
   Badge,
+  BeeThemeScope,
   BottomActionBar,
   Box,
   Breadcrumb,
@@ -270,6 +271,66 @@ function ConsumerContextOverlays() {
         <CaseCScopeOrdering />
       </VStack>
     </OverlayConsumerContext.Provider>
+  );
+}
+
+// #68 — real-browser proof that a BeeThemeScope declared around an overlay
+// trigger is still resolved for that overlay's portaled content on web (the
+// `ReactDOM.createPortal` transport). The Playwright regression
+// (apps/visual-regression/tests/overlay-context.spec.ts) asserts these testIDs
+// against the real Uniwind runtime, the same way issue #35 proves consumer
+// context survives the same transport.
+function ThemeScopeValue({ testID }: { testID: string }) {
+  const { theme } = useUniwind();
+  return <Text testID={testID}>{`theme: ${theme}`}</Text>;
+}
+
+function ThemeScopeOverlays() {
+  return (
+    <VStack gap="sm">
+      <BeeThemeScope appearance="dark" brand="violet">
+        <VStack gap="sm">
+          <ThemeScopeValue testID="theme-scope-root-value" />
+
+          <Popover>
+            <PopoverTrigger testID="theme-scope-popover-trigger" variant="outline">
+              Popover in scope
+            </PopoverTrigger>
+            <PopoverContent placement="bottom">
+              <PopoverTitle>Popover in a BeeThemeScope</PopoverTitle>
+              <ThemeScopeValue testID="theme-scope-popover-value" />
+            </PopoverContent>
+          </Popover>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger testID="theme-scope-menu-trigger" variant="outline">
+              Menu in scope
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Menu in a BeeThemeScope</DropdownMenuLabel>
+              <ThemeScopeValue testID="theme-scope-menu-value" />
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Dialog>
+            <DialogTrigger testID="theme-scope-dialog-trigger">Dialog in scope</DialogTrigger>
+            <DialogContent>
+              <DialogTitle>Dialog inside a BeeThemeScope</DialogTitle>
+              <ThemeScopeValue testID="theme-scope-dialog-value" />
+              <DialogClose size="sm" variant="ghost">
+                Close
+              </DialogClose>
+            </DialogContent>
+          </Dialog>
+
+          <BeeThemeScope appearance="light" brand="bee">
+            <ThemeScopeValue testID="theme-scope-nested-value" />
+          </BeeThemeScope>
+        </VStack>
+      </BeeThemeScope>
+
+      <ThemeScopeValue testID="theme-scope-sibling-value" />
+    </VStack>
   );
 }
 
@@ -684,6 +745,15 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
                 title="Consumer context"
               >
                 <ConsumerContextOverlays />
+              </Section>
+
+              <Separator />
+
+              <Section
+                description="BeeThemeScope (#68) is a thin typed wrapper over Uniwind's own ScopedTheme. The scoped brand/appearance below resolves for Popover, DropdownMenu, and Dialog content declared inside it, nests independently of an inner scope, and never leaks to the sibling value outside it."
+                title="Scoped theme (BeeThemeScope)"
+              >
+                <ThemeScopeOverlays />
               </Section>
             </Card>
 
