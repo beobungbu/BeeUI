@@ -24,6 +24,26 @@ function trackedEntries() {
     });
 }
 
+function trackedIndexEolEntries() {
+  const output = execFileSync('git', ['ls-files', '--eol', '-z'], {
+    cwd: ROOT_DIR,
+    encoding: 'utf8',
+  });
+
+  return output
+    .split('\0')
+    .filter(Boolean)
+    .map((entry) => {
+      const tabIndex = entry.indexOf('\t');
+      if (tabIndex < 0) throw new Error(`Unable to parse git EOL entry: ${entry}`);
+      const metadata = entry.slice(0, tabIndex);
+      const file = entry.slice(tabIndex + 1);
+      const match = /^i\/([^\s]+)/.exec(metadata);
+      if (!match) throw new Error(`Unable to parse git index EOL metadata: ${entry}`);
+      return { indexEol: match[1], file };
+    });
+}
+
 function trackedTextFiles() {
   const result = spawnSync('git', ['grep', '-Il', '-z', '-e', '', '--', '.'], {
     cwd: ROOT_DIR,
@@ -55,6 +75,12 @@ export function collectRepositoryHygieneViolations() {
     }
   }
 
+  for (const { indexEol, file } of trackedIndexEolEntries()) {
+    if (indexEol === 'crlf' || indexEol === 'mixed') {
+      violations.push(`${file}: committed content uses ${indexEol.toUpperCase()} line endings (expected LF)`);
+    }
+  }
+
   for (const file of trackedTextFiles()) {
     const data = fs.readFileSync(path.join(ROOT_DIR, file));
     if (data.length > 0 && data[data.length - 1] !== 0x0a) {
@@ -73,6 +99,6 @@ if (isCli) {
     for (const violation of violations) console.error(`- ${violation}`);
     process.exitCode = 1;
   } else {
-    console.log('Repository hygiene check passed (file modes + final LF).');
+    console.log('Repository hygiene check passed (file modes + committed LF + final LF).');
   }
 }
