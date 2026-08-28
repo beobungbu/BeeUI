@@ -20,18 +20,20 @@ The set is deliberately minimal and evidence-based. Across the Showcase and all 
 | 768×1024 | `medium` |
 | 1280×800 | `expanded` |
 
-`medium` and `expanded` equal Tailwind's own `md` (48rem) and `xl` (80rem) thresholds, so BeeUI blesses a subset of Tailwind's scale rather than overriding the config or introducing a device taxonomy (`phone`, `phablet`, …). Tailwind's native `sm`/`md`/`lg`/`xl`/`2xl` variants stay available; `medium`/`expanded` are the BeeUI-intent names to prefer for page-level layout decisions.
+`medium` and `expanded` are BeeUI's semantic names; their canonical `tailwindVariant` bindings are `md` and `xl`. The generator emits the actual Tailwind breakpoint namespace through those bindings, so changing `breakpoint.medium` changes `md:` rather than accidentally creating a second `medium:` variant. Tailwind/Uniwind remains the only responsive execution engine.
 
 ### Web-only, build-time constants
 
-Breakpoints are classified `web-responsive` / `build-time-constant` / `runtimeOverridable: false`. Tailwind compiles them into responsive variants at build time, so they cannot be a runtime override surface — a runtime-mutable breakpoint API is out of scope (that concern belongs to #71). The generated `breakpoint` TypeScript constant is a *readable* value (e.g. to classify a measured width in a helper) but is not an override path, and it must not be used to build a parallel media-query engine on native. `responsiveLayoutClassification` in `@beeui/tokens` records this classification.
+Breakpoints are classified `web-responsive` / `build-time-constant` / `runtimeOverridable: false`. Tailwind compiles them into responsive variants at build time, so they cannot be a runtime override surface — a runtime-mutable breakpoint API is out of scope (that concern belongs to #71). The generated `breakpoint` TypeScript constant is a *readable* semantic value (`breakpoint.medium`, `breakpoint.expanded`) but is not an override path, and it must not be used to build a parallel media-query engine on native. `responsiveLayoutClassification` in `@beeui/tokens` records this classification.
 
 Generated web artifact (`packages/tokens/src/theme.css`):
 
 ```css
---breakpoint-medium: 48rem;   /* 768px */
---breakpoint-expanded: 80rem; /* 1280px */
+--breakpoint-md: 48rem; /* semantic: medium = 768px */
+--breakpoint-xl: 80rem; /* semantic: expanded = 1280px */
 ```
+
+This is intentionally a semantic-to-engine binding: TypeScript/application vocabulary stays `medium`/`expanded`, while Tailwind utility syntax stays `md:`/`xl:`. There is no generated `medium:` or `expanded:` responsive namespace.
 
 ## Page gutters
 
@@ -101,7 +103,7 @@ Responsive layout and density are **separate axes**. Breakpoints, gutters, and c
 ## Adding or changing responsive-layout tokens
 
 1. Edit only `packages/tokens/tokens.json`.
-2. Keep breakpoint values strictly ascending and unique, each mapped to a Tailwind/Uniwind variant via `$extensions["com.beeui"].tailwindVariant`.
+2. Keep breakpoint values strictly ascending and unique, each mapped to a Tailwind/Uniwind variant via `$extensions["com.beeui"].tailwindVariant`; the generator must emit that variant name as `--breakpoint-<variant>`.
 3. Keep page-gutter values unique and positive; keep the `contentWidth` contract compatible unless an overflow bug is directly demonstrated.
 4. Regenerate with `pnpm tokens:generate` and review every generated change.
 5. Run `pnpm tokens:check`, `pnpm tokens:test`, `pnpm typecheck`, the workspace tests, and the full Pattern Gallery viewport matrix.

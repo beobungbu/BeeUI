@@ -441,6 +441,16 @@ function responsiveLayoutClassification(source) {
   };
 }
 
+function breakpointCssValues(group) {
+  const semanticValues = dimensionValues(group);
+  return Object.fromEntries(
+    publicEntries(group).map(([name, token]) => [
+      beeExtension(token).tailwindVariant,
+      semanticValues[name],
+    ]),
+  );
+}
+
 function focusValue(source) {
   const group = source.tokens.focusRing;
   const extension = beeExtension(group);
@@ -611,7 +621,7 @@ function renderThemeCss(source) {
   const iconSize = dimensionValues(tokens.iconSize);
   const avatarSize = dimensionValues(tokens.avatarSize);
   const contentWidth = dimensionValues(tokens.contentWidth);
-  const breakpoint = dimensionValues(tokens.breakpoint);
+  const breakpoint = breakpointCssValues(tokens.breakpoint);
   const pageGutter = dimensionValues(tokens.pageGutter);
   const elevation = elevationCssValues(tokens.elevation);
   const motionDuration = dimensionValues(tokens.motionDuration, 'ms');

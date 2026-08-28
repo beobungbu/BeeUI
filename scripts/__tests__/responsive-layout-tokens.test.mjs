@@ -45,10 +45,7 @@ test('a duplicate/out-of-order breakpoint is rejected by canonical validation', 
   assert.throws(() => validateCanonicalTokens(conflicting), /strictly ascending and unique/);
 });
 
-test('each breakpoint maps cleanly to a Tailwind/Uniwind variant and keeps that value', () => {
-  // medium == Tailwind `md` (48rem/768px), expanded == Tailwind `xl` (80rem/1280px):
-  // BeeUI blesses a subset of Tailwind's own scale so no config override or
-  // second engine is needed.
+test('each semantic breakpoint binds to the intended Tailwind/Uniwind variant', () => {
   assert.equal(source.tokens.breakpoint.medium.$extensions['com.beeui'].tailwindVariant, 'md');
   assert.equal(source.tokens.breakpoint.expanded.$extensions['com.beeui'].tailwindVariant, 'xl');
 });
@@ -97,23 +94,35 @@ test('build-time vs runtime classification is explicit and safe', () => {
   assert.match(indexTs, /"binding": "build-time-constant"/);
 });
 
-test('generated web artifacts emit Tailwind-native breakpoint and gutter representations', () => {
-  // Tailwind v4 turns `--breakpoint-*` theme vars into responsive variants and
-  // `--spacing-*` vars into padding utilities — BeeUI adds no parallel engine.
-  assert.match(themeCss, /--breakpoint-medium: 48rem;/);
-  assert.match(themeCss, /--breakpoint-expanded: 80rem;/);
+test('generated web artifacts bind semantic breakpoints to Tailwind-native variant names', () => {
+  // Tailwind v4 derives responsive variants from the suffix of --breakpoint-*.
+  // Therefore the semantic BeeUI names (medium/expanded) must emit through the
+  // canonical tailwindVariant binding (md/xl), not create accidental duplicate
+  // medium:/expanded: variant namespaces.
+  assert.match(themeCss, /--breakpoint-md: 48rem;/);
+  assert.match(themeCss, /--breakpoint-xl: 80rem;/);
+  assert.doesNotMatch(themeCss, /--breakpoint-medium:/);
+  assert.doesNotMatch(themeCss, /--breakpoint-expanded:/);
   assert.match(themeCss, /--spacing-page-gutter-compact: 1rem;/);
   assert.match(themeCss, /--spacing-page-gutter-regular: 1.25rem;/);
   assert.match(themeCss, /--spacing-page-gutter-spacious: 1.5rem;/);
-  // contentWidth containers remain intact.
   for (const container of ['form', 'reading', 'page', 'dialog']) {
     assert.match(themeCss, new RegExp(`--container-${container}:`));
   }
 });
 
-test('breakpoint rem output equals px / 16 (deterministic, no rounding drift)', () => {
+test('canonical breakpoint values drive their mapped Tailwind variants', () => {
+  const mutated = structuredClone(source);
+  mutated.tokens.breakpoint.medium.$value.value = 800;
+  const css = generateTokenArtifacts(mutated).get('packages/tokens/src/theme.css');
+  assert.match(css, /--breakpoint-md: 50rem;/);
+  assert.doesNotMatch(css, /--breakpoint-medium:/);
+});
+
+test('breakpoint rem output equals px / 16 through the variant binding', () => {
   for (const [name, px] of Object.entries(publicValues(source.tokens.breakpoint))) {
-    const rem = Number(themeCss.match(new RegExp(`--breakpoint-${name}: ([0-9.]+)rem;`))[1]);
+    const variant = source.tokens.breakpoint[name].$extensions['com.beeui'].tailwindVariant;
+    const rem = Number(themeCss.match(new RegExp(`--breakpoint-${variant}: ([0-9.]+)rem;`))[1]);
     assert.equal(rem * CSS_REFERENCE, px);
   }
 });
@@ -148,8 +157,6 @@ test('the canonical five-viewport set maps onto the breakpoint classes without i
   );
 });
 
-// Containers must shrink to the available width rather than force horizontal
-// overflow: effective width = min(maxWidth, available - 2 * gutter).
 function effectiveContentWidth(maxWidth, viewportWidth, gutter) {
   return Math.min(maxWidth, viewportWidth - 2 * gutter);
 }
@@ -163,11 +170,8 @@ test('containers shrink to available width and never force horizontal overflow',
       const available = viewport - 2 * gutter;
       for (const maxWidth of Object.values(contentWidth)) {
         const effective = effectiveContentWidth(maxWidth, viewport, gutter);
-        // Never wider than the max-width contract.
         assert.ok(effective <= maxWidth);
-        // Never wider than the available width (no horizontal overflow).
         assert.ok(effective <= available);
-        // Still positive/renderable on the narrowest canonical viewport.
         assert.ok(effective > 0, `content collapses at viewport ${viewport} gutter ${gutter}`);
       }
     }
@@ -175,14 +179,10 @@ test('containers shrink to available width and never force horizontal overflow',
 });
 
 test('page gutters compose additively with safe-area insets (never double-applied)', () => {
-  // Documented native contract: the gutter is padding applied INSIDE the
-  // safe-area inset, so the two stack additively and neither replaces the other.
   assert.equal(source.tokens.pageGutter.$extensions['com.beeui'].safeAreaComposition, 'additive');
 });
 
 test('responsive-layout tokens do not conflate the #74 density axis', () => {
-  // Density is a separate axis; the responsive groups expose only layout
-  // vocabulary and never a density knob.
   const groups = ['breakpoint', 'pageGutter', 'contentWidth'];
   for (const group of groups) {
     const serialized = JSON.stringify(source.tokens[group]);
