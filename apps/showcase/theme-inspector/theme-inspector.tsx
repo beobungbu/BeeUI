@@ -209,7 +209,46 @@ export function ThemeInspector({ onBack }: ThemeInspectorProps) {
                 <Text variant="label">Label · 14 / 20</Text>
                 <Text variant="caption">Caption · 12 / 16</Text>
                 <Text tone="muted">
-                  Default font family remains the platform system font. A mono family is deliberately absent until product evidence justifies one.
+                  Default font family remains the platform system font. The six roles own size and line height; data-typography features below compose onto them.
+                </Text>
+              </VStack>
+            </InspectorSection>
+
+            <InspectorSection
+              description="Evidence-driven code/data semantics compose onto the six roles: no new size scale, no bundled font. tabular numerals give equal-width figures so numeric columns align; the mono family renders reference codes and IDs. On native these map to fontVariant/fontFamily; on web to font-variant-numeric and font-family utilities."
+              title="Data typography"
+            >
+              <VStack gap="md">
+                <Text variant="label">Aligned numeric column (tabular numerals)</Text>
+                <VStack gap="xs">
+                  {[
+                    { label: 'One', amount: '$1.00' },
+                    { label: 'Eleven', amount: '$11.10' },
+                    { label: 'One hundred', amount: '$111.11' },
+                    { label: 'Payroll', amount: '$8,920.00' },
+                  ].map((row) => (
+                    <HStack key={row.label} justify="between">
+                      <Text tone="muted" variant="body">
+                        {row.label}
+                      </Text>
+                      <Text className="text-right" numeric="tabular" variant="body">
+                        {row.amount}
+                      </Text>
+                    </HStack>
+                  ))}
+                </VStack>
+                <Text variant="label">KPI / timer (size role + tabular feature)</Text>
+                <HStack gap="lg">
+                  <Text numeric="tabular" variant="display">
+                    $18,420
+                  </Text>
+                  <Text numeric="tabular" variant="display">
+                    00:09:42
+                  </Text>
+                </HStack>
+                <Text variant="label">Reference code (mono family)</Text>
+                <Text family="mono" variant="body">
+                  BEE-2026-08-22-0202
                 </Text>
               </VStack>
             </InspectorSection>

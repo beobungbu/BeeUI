@@ -101,6 +101,8 @@ The default family is the platform system font. BeeUI does not force a font-fami
 
 Weights are `regular` 400, `medium` 500, `semibold` 600, and `bold` 700. Tracking is `normal` 0 and `tight` -0.2 px; the CSS generator deterministically emits `-0.0125em` at BeeUI's accepted 16 px reference.
 
+The six roles remain the entire size hierarchy. Technical/numeric content composes **orthogonal features** onto a role rather than adding new roles or a numeric type scale: `numeric="tabular"` for equal-width figures (aligned amount columns, KPIs, timers, reference digits) and `family="mono"` for reference codes/IDs. Both are canonical, typed (`numericVariants`, `monoFontFamily`, `fontFamily.mono` in `@beeui/tokens`), and platform-honest — web utilities (`bee-tabular-nums`, `font-mono`) and native `fontVariant`/`fontFamily` styles. BeeUI bundles no font and forces no global custom font. See [`data-typography.md`](./data-typography.md).
+
 ## Sizing and touch targets
 
 Control intents are 36/44/48 px for compact/default/large, with 44 px for icon-only controls and the minimum native touch target. Compact controls may visually remain 36 px on web, but representative native controls enforce a 44 px minimum hit target.

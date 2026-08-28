@@ -154,7 +154,15 @@ export const radius = {
  * font-family utility until the consuming app loads and names a cross-platform font.
  */
 export const fontFamily = {
-  "sans": "system"
+  "sans": "system",
+  "mono": [
+    "ui-monospace",
+    "SFMono-Regular",
+    "Menlo",
+    "Consolas",
+    "Liberation Mono",
+    "monospace"
+  ]
 } as const;
 
 export const fontSize = {
@@ -188,6 +196,51 @@ export const letterSpacing = {
 } as const;
 
 export type TypographyRole = keyof typeof fontSize;
+
+export type FontFamilyToken = keyof typeof fontFamily;
+
+/**
+ * Composable numeric typography features. These compose with any of the six
+ * semantic size roles (they are never size roles themselves). `webUtilityClass`
+ * drives the CSS `font-variant-numeric` utility; `nativeFontVariant` maps to the
+ * React Native `fontVariant` style so equal-width figures render on iOS/Android.
+ */
+export const numericVariants = {
+  "tabular": {
+    "webUtilityClass": "bee-tabular-nums",
+    "cssProperty": "font-variant-numeric",
+    "cssValue": "tabular-nums",
+    "nativeFontVariant": [
+      "tabular-nums"
+    ]
+  }
+} as const;
+
+export type NumericVariant = keyof typeof numericVariants;
+
+/**
+ * System-monospace family for reference codes, IDs, and technical values. BeeUI
+ * bundles no proprietary font: `stack`/`webUtilityClass` drive the web fallback
+ * stack and `native` supplies the per-platform monospace family for React Native.
+ * A consuming app may map these to a licensed monospace font it loads itself.
+ */
+export const monoFontFamily = {
+  "webUtilityClass": "font-mono",
+  "cssVariable": "--font-mono",
+  "stack": [
+    "ui-monospace",
+    "SFMono-Regular",
+    "Menlo",
+    "Consolas",
+    "Liberation Mono",
+    "monospace"
+  ],
+  "native": {
+    "ios": "Menlo",
+    "android": "monospace",
+    "default": "monospace"
+  }
+} as const;
 
 export const controlSize = {
   "compact": 36,

@@ -34,6 +34,7 @@
   --font-weight-bold: 700;
   --tracking-normal: 0em;
   --tracking-tight: -0.0125em;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 
   --spacing-control-compact: 2.25rem;
   --spacing-control-default: 2.75rem;
@@ -96,6 +97,10 @@
 
 @utility bee-layer-toast {
   z-index: var(--layer-toast);
+}
+
+@utility bee-tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
 @layer theme {
