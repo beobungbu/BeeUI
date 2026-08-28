@@ -6,9 +6,9 @@ on:
   push:
     branches:
       - main
-  # Nightly backstop: runs the full pristine ci (forced native + bare-consumer
-  # full-clean) to validate the R1/R2 shortcuts taken on regular PRs. Offset
-  # from the runtime-native.yml nightly cron (17 3 * * *).
+  # Nightly backstop: runs the full pristine CI (package boundary + both native
+  # graphs) so PR-time shortcuts are continuously checked from clean state.
+  # Offset from runtime-native.yml nightly cron (17 3 * * *).
   schedule:
     - cron: '47 2 * * *'
 
@@ -29,6 +29,13 @@ jobs:
     outputs:
       ios-native-required: ${{ steps.native-changes.outputs.ios-native }}
       ios-native-reason: ${{ steps.native-changes.outputs.reason }}
+      package-boundary-required: ${{ steps.native-changes.outputs.package-boundary }}
+      package-boundary-reason: ${{ steps.native-changes.outputs.package-boundary-reason }}
+      bare-native-required: ${{ steps.native-changes.outputs.bare-native }}
+      bare-native-reason: ${{ steps.native-changes.outputs.bare-native-reason }}
+      showcase-native-required: ${{ steps.native-changes.outputs.showcase-native }}
+      showcase-native-reason: ${{ steps.native-changes.outputs.showcase-native-reason }}
+      # Compatibility alias retained for existing consumers of the R2 output.
       bare-consumer-required: ${{ steps.native-changes.outputs.bare-consumer }}
     steps:
       - name: Checkout
@@ -47,13 +54,13 @@ jobs:
           # Validation Error") when it does not exist.
           package-manager-cache: false
 
-      - name: Test native iOS CI policy
+      - name: Test native CI policy
         run: >
           node --test
           ./scripts/__tests__/classify-ci-changes.test.mjs
           ./scripts/__tests__/ios-build-cache-contract.test.mjs
 
-      - name: Classify native iOS verification
+      - name: Classify package boundary and native graph verification
         id: native-changes
         env:
           BEEUI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -63,11 +70,9 @@ jobs:
           set -euo pipefail
 
           # Pushes to main always retain the full native proof. A maintainer can
-          # also add the ci:native label to force the same proof on a PR; the
-          # labeled event starts a fresh run because pull_request includes it.
-          # The nightly schedule run also forces it, acting as a pristine
-          # backstop for the R1 (bare-consumer reuse) and R2 (path-gating)
-          # shortcuts taken on regular PRs.
+          # also add ci:native to force the same proof on a PR. The nightly run
+          # forces package-boundary, bare-native and Showcase-native tiers and
+          # takes the pristine cache paths below.
           if [ "$BEEUI_FORCE_NATIVE" = "true" ]; then
             printf '' | node ./scripts/classify-ci-changes.mjs
             exit 0
@@ -75,10 +80,8 @@ jobs:
 
           test -n "$BEEUI_BASE_SHA"
           test -n "$BEEUI_HEAD_SHA"
-          # Disable rename detection so a move out of a sensitive package is
-          # emitted as deletion(old path) + addition(new path). Otherwise
-          # --name-only may surface only the destination and incorrectly skip
-          # bare-consumer verification after package contents were removed.
+          # Disable rename detection so moving a file out of a package preserves
+          # the deleted package path in classifier input.
           git diff --name-only --no-renames "$BEEUI_BASE_SHA" "$BEEUI_HEAD_SHA" \
             | node ./scripts/classify-ci-changes.mjs
 
@@ -131,12 +134,14 @@ jobs:
         run: pnpm --filter @beeui/showcase exec expo export --platform ios --output-dir dist-ios
 
       - name: Generate native projects with Expo Prebuild
+        if: steps.native-changes.outputs.showcase-native == 'true'
         env:
           EXPO_NO_GIT_STATUS: 1
         working-directory: apps/showcase
         run: pnpm exec expo prebuild --clean --no-install
 
       - name: Upload generated iOS project source
+        if: steps.native-changes.outputs.showcase-native == 'true'
         uses: actions/upload-artifact@v6
         with:
           # run_id only (no run_attempt) so "Re-run failed jobs" on ios-native
@@ -148,6 +153,12 @@ jobs:
 
   bare-native:
     needs: [verify]
+    # Tier A: package source changes still prove the real tarball/install/Metro
+    # boundary. Tier B: Java/SDK/Gradle only run when the bare native graph can
+    # actually change.
+    if: >
+      needs.verify.outputs.package-boundary-required == 'true' ||
+      needs.verify.outputs.bare-native-required == 'true'
     runs-on: [self-hosted, beeui]
     timeout-minutes: 60
     steps:
@@ -158,9 +169,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
-          # pnpm store is managed explicitly; setup-node v5 auto-cache would
-          # target the default store path and fail the post step ("Path
-          # Validation Error") when it does not exist.
           package-manager-cache: false
 
       - name: Enable pnpm via Corepack
@@ -178,18 +186,18 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Setup Java
-        if: needs.verify.outputs.bare-consumer-required == 'true'
+        if: needs.verify.outputs.bare-native-required == 'true'
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Setup Android SDK
-        if: needs.verify.outputs.bare-consumer-required == 'true'
+        if: needs.verify.outputs.bare-native-required == 'true'
         uses: android-actions/setup-android@v4
 
       - name: Install Android build dependencies
-        if: needs.verify.outputs.bare-consumer-required == 'true'
+        if: needs.verify.outputs.bare-native-required == 'true'
         run: |
           sdkmanager "platform-tools" \
             "platforms;android-35" \
@@ -200,24 +208,30 @@ jobs:
             "cmake;3.22.1"
 
       - name: Prepare true bare React Native consumer
-        if: needs.verify.outputs.bare-consumer-required == 'true'
+        if: >
+          needs.verify.outputs.package-boundary-required == 'true' ||
+          needs.verify.outputs.bare-native-required == 'true'
         run: ./scripts/verify-bare-consumer.sh prepare
 
       - name: Bundle bare consumer for Android and iOS
-        if: needs.verify.outputs.bare-consumer-required == 'true'
+        if: >
+          needs.verify.outputs.package-boundary-required == 'true' ||
+          needs.verify.outputs.bare-native-required == 'true'
         run: ./scripts/verify-bare-consumer.sh bundle
 
       - name: Compile bare Android debug APK
-        if: needs.verify.outputs.bare-consumer-required == 'true'
+        if: needs.verify.outputs.bare-native-required == 'true'
         run: ./scripts/verify-bare-consumer.sh android-build
 
   ios-native:
     needs: [verify, bare-native]
-    # PRs skip this expensive macOS job only when every changed path is on the
-    # conservative native-safe list. Pushes to main, the nightly schedule, and
-    # PRs labeled ci:native always run it. Fork PRs still cannot execute on
-    # the self-hosted Mac.
+    # The macOS job is now a native-graph proof, not a JS correctness proof.
+    # Pure BeeUI/Showcase JS changes are already covered by release verification
+    # and Metro exports. Fork PRs still cannot execute on the self-hosted Mac.
     if: >
+      always() &&
+      needs.verify.result == 'success' &&
+      (needs.bare-native.result == 'success' || needs.bare-native.result == 'skipped') &&
       needs.verify.outputs.ios-native-required == 'true' &&
       (
         github.event_name == 'push' ||
@@ -304,12 +318,14 @@ jobs:
           --store-dir "$HOME/.pnpm-store/beeui-v10"
 
       - name: Download generated iOS project source
+        if: needs.verify.outputs.showcase-native-required == 'true'
         uses: actions/download-artifact@v7
         with:
           name: ios-prebuild-${{ github.run_id }}
           path: apps/showcase/ios
 
       - name: Install iOS pods locally
+        if: needs.verify.outputs.showcase-native-required == 'true'
         working-directory: apps/showcase/ios
         env:
           # Nightly schedule runs always execute a real pod install on the
@@ -383,6 +399,7 @@ jobs:
           fi
 
       - name: Pin Node binary for Xcode build scripts
+        if: needs.verify.outputs.showcase-native-required == 'true'
         working-directory: apps/showcase/ios
         run: |
           set -euo pipefail
@@ -392,6 +409,7 @@ jobs:
           echo "Pinned Xcode NODE_BINARY=$node_binary"
 
       - name: Discover generated Xcode workspace and scheme
+        if: needs.verify.outputs.showcase-native-required == 'true'
         id: xcode
         working-directory: apps/showcase/ios
         run: |
@@ -424,6 +442,7 @@ jobs:
           echo "Using workspace $workspace with scheme $scheme"
 
       - name: Compile Showcase for iOS Simulator
+        if: needs.verify.outputs.showcase-native-required == 'true'
         id: ios-build
         working-directory: apps/showcase/ios
         env:
@@ -457,7 +476,7 @@ jobs:
             build 2>&1 | tee "$log"
 
       - name: Upload xcodebuild log
-        if: always()
+        if: always() && needs.verify.outputs.showcase-native-required == 'true'
         uses: actions/upload-artifact@v6
         with:
           name: ios-xcodebuild-log-${{ github.run_id }}
@@ -466,22 +485,22 @@ jobs:
           retention-days: 2
 
       - name: Prepare true bare React Native consumer for iOS
-        if: needs.verify.outputs.bare-consumer-required == 'true'
+        if: needs.verify.outputs.bare-native-required == 'true'
         env:
-          # Nightly schedule runs take the full-clean path so R1's reuse
-          # shortcut is validated against a pristine environment.
+          # Nightly schedule runs take the full-clean path so reuse is validated
+          # against a pristine environment.
           BEEUI_BARE_CLEAN: ${{ github.event_name == 'schedule' && '1' || '' }}
         run: ./scripts/verify-bare-consumer.sh prepare
 
       - name: Compile bare React Native consumer for iOS Simulator
-        if: needs.verify.outputs.bare-consumer-required == 'true'
+        if: needs.verify.outputs.bare-native-required == 'true'
         run: |
           set -euo pipefail
           log="$RUNNER_TEMP/beeui-bare-ios-xcodebuild.log"
           ./scripts/verify-bare-consumer.sh ios-build 2>&1 | tee "$log"
 
       - name: Upload bare iOS xcodebuild log
-        if: always() && needs.verify.outputs.bare-consumer-required == 'true'
+        if: always() && needs.verify.outputs.bare-native-required == 'true'
         uses: actions/upload-artifact@v6
         with:
           name: bare-ios-xcodebuild-log-${{ github.run_id }}
