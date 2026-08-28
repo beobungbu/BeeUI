@@ -178,7 +178,7 @@ Consumers can copy it explicitly:
 pnpm beeui -- add theme
 ```
 
-Every supported component also depends transitively on `theme`, so adding a component preflights and copies the same canonical CSS to `config.themeFile` when it is absent.
+Each registry item that relies on BeeUI semantic theme tokens declares `theme` in its dependency closure, so adding such a component preflights and copies the canonical CSS to `config.themeFile` when it is absent.
 
 The CLI does **not** silently edit an application's existing global CSS entry. After source copy, the consumer must import `config.themeFile` from the CSS entry used by its Tailwind v4/Uniwind setup. This separation avoids guessing which CSS entry file owns the consumer's build configuration.
 
