@@ -112,6 +112,11 @@ describe('issue #67 — extensible theme registry', () => {
     expect(Object.isFrozen(beeThemeRegistry.brands)).toBe(true);
     expect(Object.isFrozen(beeThemeRegistry.appearances)).toBe(true);
     expect(Object.isFrozen(beeThemeRegistry.runtimeThemes)).toBe(true);
+    // The mapping itself is a deep-frozen snapshot: the top-level map and each
+    // brand row are frozen, so no consumer can desynchronize resolve from
+    // selectionFor by mutating exposed data.
+    expect(Object.isFrozen(beeThemeRegistry.map)).toBe(true);
+    expect(Object.isFrozen(beeThemeRegistry.map.bee)).toBe(true);
     expect(() => {
       (beeThemeRegistry.brands as string[]).push('mutated');
     }).toThrow(TypeError);
@@ -120,6 +125,35 @@ describe('issue #67 — extensible theme registry', () => {
     const b = defineThemeRegistry({ y: { light: 'y-light', dark: 'y-dark' } });
     expect(a.brands).toEqual(['x']);
     expect(b.brands).toEqual(['y']);
+  });
+
+  it('keeps resolve and selectionFor in sync even when a caller tries to mutate the map', () => {
+    // Mutating the exposed (deep-frozen) map is rejected either way — a TypeError
+    // in strict mode, a silent no-op in sloppy mode — and never changes resolve
+    // output, because resolve and selectionFor read the same frozen snapshot.
+    try {
+      (beeThemeRegistry.map as { bee: { light: string } }).bee.light = 'hacked';
+    } catch {
+      // A strict-mode TypeError on the frozen property is expected and fine.
+    }
+    expect(beeThemeRegistry.map.bee.light).toBe('light');
+    expect(beeThemeRegistry.resolve('bee', 'light')).toBe('light');
+    expect(beeThemeRegistry.selectionFor('light')).toEqual({ brand: 'bee', appearance: 'light' });
+    expect(beeThemeRegistry.selectionFor('hacked')).toBeUndefined();
+  });
+
+  it('snapshots its input: mutating the caller object afterward does not affect the registry', () => {
+    const definition = {
+      bee: { light: 'light', dark: 'dark' },
+    };
+    const registry = defineThemeRegistry(definition);
+    // The caller's own object is untouched (not frozen) and stays mutable.
+    expect(Object.isFrozen(definition)).toBe(false);
+    definition.bee.light = 'mutated-after-construction';
+    // The registry resolved from its internal frozen snapshot, so it is immune.
+    expect(registry.resolve('bee', 'light')).toBe('light');
+    expect(registry.map.bee.light).toBe('light');
+    expect(registry.selectionFor('light')).toEqual({ brand: 'bee', appearance: 'light' });
   });
 
   it('exposes the public registry API through the package barrel', () => {

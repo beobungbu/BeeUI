@@ -53,7 +53,7 @@ export interface ThemeSelection<Def extends ThemeRegistryDefinition> {
  * methods are pure; a registry holds no mutable state.
  */
 export interface ThemeRegistry<Def extends ThemeRegistryDefinition> {
-  /** The original brand -> appearance -> runtime-theme mapping. */
+  /** A deep-frozen snapshot of the brand -> appearance -> runtime-theme mapping. */
   readonly map: Def;
   /** Inferred brand-name union, in definition order. */
   readonly brands: readonly RegistryBrand<Def>[];
@@ -108,7 +108,20 @@ export function defineThemeRegistry<const Def extends ThemeRegistryDefinition>(
   const brands = Object.keys(definition) as RegistryBrand<Def>[];
   invariant(brands.length > 0, 'a registry must define at least one brand');
 
-  const referenceAppearances = Object.keys(definition[brands[0]]) as RegistryAppearance<Def>[];
+  // Deep-freeze an internal snapshot so the registry never exposes mutable data
+  // and can never be desynchronized by a caller mutating the input object. The
+  // caller's own object is not mutated: each brand row is a shallow clone.
+  const snapshotDraft: Record<string, Readonly<Record<string, string>>> = {};
+  for (const brand of brands) {
+    invariant(
+      definition[brand] !== null && typeof definition[brand] === 'object' && !Array.isArray(definition[brand]),
+      `brand "${brand}" must map appearances to runtime-theme names`,
+    );
+    snapshotDraft[brand] = Object.freeze({ ...definition[brand] });
+  }
+  const snapshot = Object.freeze(snapshotDraft) as Def;
+
+  const referenceAppearances = Object.keys(snapshot[brands[0]]) as RegistryAppearance<Def>[];
   invariant(
     referenceAppearances.length > 0,
     `brand "${brands[0]}" must define at least one appearance`,
@@ -116,7 +129,7 @@ export function defineThemeRegistry<const Def extends ThemeRegistryDefinition>(
   const requiredAppearances = new Set<string>(referenceAppearances);
 
   for (const brand of brands) {
-    const appearances = Object.keys(definition[brand]);
+    const appearances = Object.keys(snapshot[brand]);
     invariant(
       appearances.length === requiredAppearances.size &&
         appearances.every((appearance) => requiredAppearances.has(appearance)),
@@ -129,7 +142,7 @@ export function defineThemeRegistry<const Def extends ThemeRegistryDefinition>(
 
   for (const brand of brands) {
     for (const appearance of referenceAppearances) {
-      const runtimeTheme = definition[brand][appearance];
+      const runtimeTheme = snapshot[brand][appearance];
       invariant(
         typeof runtimeTheme === 'string' && runtimeTheme.length > 0,
         `brand "${brand}" appearance "${appearance}" must map to a non-empty runtime-theme name`,
@@ -151,7 +164,7 @@ export function defineThemeRegistry<const Def extends ThemeRegistryDefinition>(
     brand: B,
     appearance: A,
   ): Def[B][A] {
-    const appearances = definition[brand];
+    const appearances = snapshot[brand];
     invariant(appearances !== undefined, `unknown brand "${String(brand)}"`);
     const runtimeTheme = appearances[appearance];
     invariant(
@@ -170,7 +183,7 @@ export function defineThemeRegistry<const Def extends ThemeRegistryDefinition>(
   }
 
   return Object.freeze({
-    map: definition,
+    map: snapshot,
     brands: frozenBrands,
     appearances: frozenAppearances,
     runtimeThemes: frozenRuntimeThemes,
