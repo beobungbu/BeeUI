@@ -3,8 +3,10 @@
 // Generator: scripts/generate-tokens.mjs
 
 import { defineThemeRegistry } from './registry';
+import { createThemeOverridesDefiner, type OverrideCategoryMap, type ThemeOverridesInput } from './theme-overrides';
 
 export * from './registry';
+export * from './theme-overrides';
 
 export const beeThemeNames = [
   "light",
@@ -537,3 +539,144 @@ export const focusRing = {
   webVisibility: 'focus-visible';
   nativeVisibility: 'platform-focus';
 };
+
+/**
+ * Runtime-override safety classification (#71) for every canonical token group,
+ * generated straight from each group's `$extensions.com.beeui` metadata (see
+ * tokens.json). `runtimeOverridable: true` is the only signal that gates a
+ * group into `themeOverrideCategories` below; every other group is public but
+ * build-time/invariant. The private authoring token group has its own
+ * visibility flag (see `privateTokenGroups` in `$extensions.com.beeui`) and
+ * is never a `tokens.tokens` group, so it never appears in this table. Colors
+ * have their own established public/private classification
+ * (`semanticColorDescriptions` / `privateTokenGroups`) and are not repeated here.
+ */
+export const themeOverrideClassification = {
+  "spacing": {
+    "runtimeOverridable": false
+  },
+  "radius": {
+    "layer": "cross-platform",
+    "binding": "value",
+    "runtimeOverridable": true,
+    "engine": "tailwind-uniwind"
+  },
+  "fontFamily": {
+    "runtimeOverridable": false
+  },
+  "fontSize": {
+    "runtimeOverridable": false
+  },
+  "lineHeight": {
+    "runtimeOverridable": false
+  },
+  "fontWeight": {
+    "runtimeOverridable": false
+  },
+  "letterSpacing": {
+    "runtimeOverridable": false
+  },
+  "controlSize": {
+    "runtimeOverridable": false
+  },
+  "iconSize": {
+    "runtimeOverridable": false
+  },
+  "avatarSize": {
+    "runtimeOverridable": false
+  },
+  "contentWidth": {
+    "layer": "cross-platform",
+    "binding": "value",
+    "runtimeOverridable": false
+  },
+  "elevation": {
+    "runtimeOverridable": false
+  },
+  "motionDuration": {
+    "layer": "cross-platform",
+    "binding": "value",
+    "runtimeOverridable": true,
+    "engine": "tailwind-uniwind"
+  },
+  "motionEasing": {
+    "runtimeOverridable": false
+  },
+  "focusRing": {
+    "runtimeOverridable": false
+  },
+  "layer": {
+    "runtimeOverridable": false
+  },
+  "breakpoint": {
+    "layer": "web-responsive",
+    "binding": "build-time-constant",
+    "runtimeOverridable": false,
+    "engine": "tailwind-uniwind"
+  },
+  "pageGutter": {
+    "layer": "cross-platform",
+    "binding": "value",
+    "runtimeOverridable": false
+  }
+} as const;
+
+/**
+ * BeeUI's #71 typed runtime-override category vocabulary, instantiated from
+ * canonical, codegen-derived data. `colors` mirrors the existing
+ * `semanticColorTokens` vocabulary (kept for `defineSemanticColorOverrides`
+ * compatibility -- both compile to the identical `--color-*` representation).
+ * Every other category here exists only because its source token group is
+ * flagged `runtimeOverridable: true` in `themeOverrideClassification` above:
+ * unsetting that flag and regenerating removes the category, and every
+ * category's accepted `keys` are read live from the already-generated token
+ * record (never a hand-maintained parallel list of names).
+ */
+const themeOverrideCategories = {
+  colors: {
+    keys: semanticColorTokens,
+    valueKind: 'string',
+    variable: (key: SemanticColorToken) => semanticColorVariable(key),
+    format: (value: string) => value,
+  },
+  radius: {
+    keys: Object.keys(radius) as (keyof typeof radius)[],
+    valueKind: 'number',
+    variable: (key: keyof typeof radius) => `--radius-${key}` as const,
+    format: (value: number) => `${value}px`,
+  },
+  motion: {
+    keys: Object.keys(motionDuration) as (keyof typeof motionDuration)[],
+    valueKind: 'number',
+    variable: (key: keyof typeof motionDuration) => `--motion-duration-${key}` as const,
+    format: (value: number) => `${value}ms`,
+  },
+} as const satisfies OverrideCategoryMap;
+
+/**
+ * Typed, validated runtime-override definer for the supported safe
+ * runtime-overridable public token categories. Pure define/validate/compile:
+ * unknown categories, unknown keys within a known category (which includes
+ * every private authoring primitive and every build-time-only/invariant
+ * token -- see `themeOverrideClassification`), and wrong-kind values are all
+ * rejected. Applying the compiled result to Uniwind is always a separate,
+ * explicit `applyThemeOverrides()` call -- this function itself never touches
+ * Uniwind, `document`, or any global state.
+ *
+ * ```ts
+ * const overrides = defineThemeOverrides({
+ *   colors: { primary: '#123456', focusRing: '#654321' },
+ *   radius: { md: 12 },
+ *   motion: { normal: 180 },
+ * });
+ * applyThemeOverrides(Uniwind, 'light', overrides);
+ * ```
+ *
+ * `defineSemanticColorOverrides()` remains available unchanged for existing
+ * color-only consumers; `defineThemeOverrides({ colors: { primary: '#123456' } })`
+ * compiles to the identical `--color-primary` CSS-variable entry.
+ */
+export const defineThemeOverrides = createThemeOverridesDefiner(themeOverrideCategories);
+
+/** The exact object shape `defineThemeOverrides` accepts. */
+export type ThemeOverrides = ThemeOverridesInput<typeof themeOverrideCategories>;
