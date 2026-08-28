@@ -357,6 +357,19 @@
       "peerDependencies": { "react": ">=19.0.0", "react-native": ">=0.85.0" }
     },
     {
+      "name": "keyboard-aware-screen",
+      "type": "component",
+      "public": true,
+      "files": [{
+        "source": "packages/ui/src/components/keyboard-aware-screen.tsx",
+        "target": { "root": "components", "path": "keyboard-aware-screen.tsx" },
+        "transforms": ["rewrite-beeui-core-cn"]
+      }],
+      "registryDependencies": ["core-cn", "safe-area", "theme"],
+      "dependencies": {},
+      "peerDependencies": { "react": ">=19.0.0", "react-native": ">=0.85.0" }
+    },
+    {
       "name": "label",
       "type": "component",
       "public": true,
