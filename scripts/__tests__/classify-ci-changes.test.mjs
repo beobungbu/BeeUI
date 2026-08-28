@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {
   classifyNativeIosChanges,
   isNativeIosSafePath,
+  classifyBareConsumerChanges,
+  isBareConsumerSensitivePath,
 } from '../classify-ci-changes.mjs';
 
 test('classifies documentation-only changes as native-safe', () => {
@@ -119,4 +121,58 @@ test('normalizes ordinary git path spellings under the new topology', () => {
   assert.equal(isNativeIosSafePath('./docs/release.md'), true);
   assert.equal(isNativeIosSafePath('apps\\showcase\\__tests__\\patterns\\auth-patterns.test.tsx'), true);
   assert.equal(isNativeIosSafePath('apps\\showcase\\patterns\\auth\\screens\\sign-in-screen.tsx'), false);
+});
+
+test('classifies package path changes as bare-consumer-sensitive', () => {
+  const result = classifyBareConsumerChanges(['packages/ui/src/components/button.tsx']);
+  assert.equal(result.bareConsumer, true);
+  assert.deepEqual(result.bareConsumerSensitiveFiles, ['packages/ui/src/components/button.tsx']);
+});
+
+test('rename-out path lists remain bare-consumer-sensitive when the deleted package path is preserved', () => {
+  const result = classifyBareConsumerChanges([
+    'packages/ui/src/components/legacy-button.tsx',
+    'docs/legacy-button.tsx',
+  ]);
+  assert.equal(result.bareConsumer, true);
+  assert.deepEqual(result.bareConsumerSensitiveFiles, ['packages/ui/src/components/legacy-button.tsx']);
+});
+
+test('classifies core and tokens package changes as bare-consumer-sensitive', () => {
+  assert.equal(classifyBareConsumerChanges(['packages/core/src/index.ts']).bareConsumer, true);
+  assert.equal(classifyBareConsumerChanges(['packages/tokens/theme.css']).bareConsumer, true);
+});
+
+test('classifies the bare-consumer script itself as bare-consumer-sensitive', () => {
+  const result = classifyBareConsumerChanges(['scripts/verify-bare-consumer.sh']);
+  assert.equal(result.bareConsumer, true);
+});
+
+test('showcase-only changes require native verification but skip the bare-consumer leg', () => {
+  const bareResult = classifyBareConsumerChanges(['apps/showcase/App.tsx']);
+  assert.equal(bareResult.bareConsumer, false);
+  assert.equal(classifyNativeIosChanges(['apps/showcase/App.tsx']).iosNative, true);
+});
+
+test('docs-only changes skip both native and bare-consumer verification', () => {
+  assert.equal(classifyNativeIosChanges(['docs/release.md']).iosNative, false);
+  assert.equal(classifyBareConsumerChanges(['docs/release.md']).bareConsumer, false);
+});
+
+test('forceNative requires both native and bare-consumer verification', () => {
+  const nativeResult = classifyNativeIosChanges(['docs/release.md'], { forceNative: true });
+  const bareResult = classifyBareConsumerChanges(['docs/release.md'], { forceNative: true });
+  assert.equal(nativeResult.iosNative, true);
+  assert.equal(bareResult.bareConsumer, true);
+});
+
+test('empty input fails safe for both native and bare-consumer verification', () => {
+  assert.equal(classifyNativeIosChanges([]).iosNative, true);
+  assert.equal(classifyBareConsumerChanges([]).bareConsumer, true);
+});
+
+test('normalizes path spellings for bare-consumer sensitivity checks', () => {
+  assert.equal(isBareConsumerSensitivePath('./packages/ui/src/index.ts'), true);
+  assert.equal(isBareConsumerSensitivePath('packages\\core\\src\\index.ts'), true);
+  assert.equal(isBareConsumerSensitivePath('apps/showcase/App.tsx'), false);
 });
