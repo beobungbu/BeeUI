@@ -129,6 +129,15 @@ test('classifies package path changes as bare-consumer-sensitive', () => {
   assert.deepEqual(result.bareConsumerSensitiveFiles, ['packages/ui/src/components/button.tsx']);
 });
 
+test('rename-out path lists remain bare-consumer-sensitive when the deleted package path is preserved', () => {
+  const result = classifyBareConsumerChanges([
+    'packages/ui/src/components/legacy-button.tsx',
+    'docs/legacy-button.tsx',
+  ]);
+  assert.equal(result.bareConsumer, true);
+  assert.deepEqual(result.bareConsumerSensitiveFiles, ['packages/ui/src/components/legacy-button.tsx']);
+});
+
 test('classifies core and tokens package changes as bare-consumer-sensitive', () => {
   assert.equal(classifyBareConsumerChanges(['packages/core/src/index.ts']).bareConsumer, true);
   assert.equal(classifyBareConsumerChanges(['packages/tokens/theme.css']).bareConsumer, true);
