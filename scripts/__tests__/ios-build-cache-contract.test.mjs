@@ -47,16 +47,27 @@ test('bare RN consumer reuse is fail-safe: fingerprint-gated, forced clean on sc
   assert.match(bareScript, /rm -rf node_modules\/@beeui/);
 });
 
-test('Showcase pod-install output (Pods, Podfile.lock, workspace, project) is persisted in a fail-safe cache keyed by the full resolution', async () => {
+test('Showcase pod-install caching restores the ENTIRE ios/ tree as one snapshot, not a hand-picked list of outputs', async () => {
   const { workflow } = await sources();
 
   // R3b keys off Podfile + pnpm-lock.yaml + app.json (not just the Podfile),
   // so a native dependency bump or app-config change busts the cache.
   assert.match(workflow, /pods-cache\/showcase\/xcode-\$\{safe_xcode_version\}\/key-\$\{pods_key\}/);
   assert.match(workflow, /cat Podfile "\$GITHUB_WORKSPACE\/pnpm-lock\.yaml" "\$GITHUB_WORKSPACE\/apps\/showcase\/app\.json" \| shasum -a 256/);
-  assert.match(workflow, /rsync -a --delete/);
-  assert.match(workflow, /xcworkspace/);
-  assert.match(workflow, /xcodeproj/);
+
+  // The cache holds a single whole-tree snapshot ($cache/ios), taken after a
+  // real pod install (Pods/, Podfile.lock, *.xcworkspace, *.xcodeproj, AND
+  // React Native codegen output under build/generated/ all fall out of this
+  // for free) — not an enumerated per-item list, which previously missed
+  // build/generated and broke the compile step on a skip.
+  assert.match(workflow, /if \[ -d "\$cache\/ios" \]/);
+  assert.match(workflow, /rsync -a --delete "\$cache\/ios\/" \.\//);
+  assert.match(workflow, /rsync -a --delete --exclude '\.xcode\.env\.local' \.\/ "\$tmp_cache\/ios\/"/);
+
+  // A restore failure must never delete the working tree (it still holds
+  // the prebuild artifact's Podfile/native sources a fallback pod install
+  // needs) — only fall through to a full pod install.
+  assert.doesNotMatch(workflow, /ios\/ snapshot restore failed[\s\S]{0,80}rm -rf/);
 });
 
 test('Showcase pod install is skipped only when the restored manifest matches the restored lockfile, and is forced fresh on the nightly schedule', async () => {

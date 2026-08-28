@@ -313,42 +313,39 @@ jobs:
         run: |
           set -euo pipefail
 
-          # ios/ arrives fresh from the prebuild artifact with no Pods/,
-          # Podfile.lock, *.xcworkspace, or *.xcodeproj yet. `pod install`
-          # both resolves pods AND integrates the Xcode workspace/project, so
-          # this caches and restores the FULL output set and skips
-          # `pod install` entirely once the restored Pods/Manifest.lock still
-          # matches the restored Podfile.lock. The cache key covers the full
-          # resolution + app config (Podfile + pnpm-lock.yaml + app.json), not
-          # just the Podfile, so any native dependency or app-config change
-          # busts the cache and falls back to a full install (safe over
-          # fast). Restore/save are best-effort: any failure here must fall
-          # back to today's exact `pod install` behavior rather than break
-          # the build.
+          # `pod install` does not just resolve Pods/ — it also integrates
+          # *.xcworkspace / *.xcodeproj AND writes React Native codegen
+          # output under build/generated/. A cache that tracks only a
+          # hand-picked list of outputs is fragile (we already missed
+          # build/generated once); any output pod install produces that
+          # isn't enumerated goes stale on a skip and breaks the downstream
+          # compile step. So this snapshots the ENTIRE working tree right
+          # after a real `pod install` and restores it as a unit, keyed off
+          # the full resolution + app config (Podfile + pnpm-lock.yaml +
+          # app.json — not just the Podfile, so a native dependency bump or
+          # app-config change busts the cache and forces a full install).
+          # Restore/save are best-effort: any failure here must fall back to
+          # today's exact `pod install` behavior rather than break the
+          # build. On a restore failure we deliberately do NOT delete
+          # anything in the working tree (it still holds the fresh prebuild
+          # artifact's Podfile and native project sources, which a fallback
+          # `pod install` depends on) — we just fall through and let
+          # `pod install` run and self-correct over whatever partial state
+          # resulted.
           safe_xcode_version="$(printf '%s' "$BEEUI_XCODE_VERSION" | tr -cs '[:alnum:].-' '_')"
           pods_key="$(cat Podfile "$GITHUB_WORKSPACE/pnpm-lock.yaml" "$GITHUB_WORKSPACE/apps/showcase/app.json" | shasum -a 256 | awk '{ print $1 }')"
           cache="$BEEUI_IOS_CACHE_ROOT/pods-cache/showcase/xcode-${safe_xcode_version}/key-${pods_key}"
 
           restore_ok=0
-          if [ -d "$cache/Pods" ] && [ -f "$cache/Podfile.lock" ]; then
-            echo "Restoring cached pod-install output set for key ${pods_key}"
-            restore_ok=1
-            rsync -a --delete "$cache/Pods/" Pods/ || restore_ok=0
-            cp "$cache/Podfile.lock" Podfile.lock || restore_ok=0
-
-            if [ "$restore_ok" -eq 1 ]; then
-              for cached_dir in "$cache"/*.xcworkspace "$cache"/*.xcodeproj; do
-                [ -d "$cached_dir" ] || continue
-                rsync -a --delete "$cached_dir/" "./$(basename "$cached_dir")/" || restore_ok=0
-              done
-            fi
-
-            if [ "$restore_ok" -ne 1 ]; then
-              echo "::warning::Pods cache restore failed; cleaning up and running a full pod install."
-              rm -rf Pods Podfile.lock ./*.xcworkspace ./*.xcodeproj
+          if [ -d "$cache/ios" ]; then
+            echo "Restoring cached post-install ios/ snapshot for key ${pods_key}"
+            if rsync -a --delete "$cache/ios/" ./; then
+              restore_ok=1
+            else
+              echo "::warning::ios/ snapshot restore failed; falling back to a full pod install without deleting the working tree."
             fi
           else
-            echo "No pod-install cache hit for key ${pods_key}; running a full pod install."
+            echo "No pod-install snapshot cache hit for key ${pods_key}; running a full pod install."
           fi
 
           ran_pod_install=0
@@ -360,29 +357,17 @@ jobs:
           fi
 
           if [ "$ran_pod_install" -eq 1 ]; then
-            echo "Refreshing pod-install cache at $cache"
+            echo "Refreshing pod-install snapshot cache at $cache"
             tmp_cache="${cache}.tmp-$$"
-            save_ok=1
-
-            if ! mkdir -p "$tmp_cache" \
-              || ! rsync -a --delete Pods/ "$tmp_cache/Pods/" \
-              || ! cp Podfile.lock "$tmp_cache/Podfile.lock"; then
-              save_ok=0
-            fi
-
-            if [ "$save_ok" -eq 1 ]; then
-              for project_dir in ./*.xcworkspace ./*.xcodeproj; do
-                [ -d "$project_dir" ] || continue
-                mkdir -p "$tmp_cache/$(basename "$project_dir")"
-                rsync -a --delete "$project_dir/" "$tmp_cache/$(basename "$project_dir")/" || save_ok=0
-              done
-            fi
-
-            if [ "$save_ok" -eq 1 ]; then
+            # .xcode.env.local is written by the later "Pin Node binary for
+            # Xcode build scripts" step, not by pod install, so it should
+            # never exist yet here; excluding it is belt-and-suspenders.
+            if mkdir -p "$tmp_cache/ios" \
+              && rsync -a --delete --exclude '.xcode.env.local' ./ "$tmp_cache/ios/"; then
               rm -rf "$cache"
               mv "$tmp_cache" "$cache"
             else
-              echo "::warning::Failed to refresh pod-install cache; a future run will fall back to a full pod install."
+              echo "::warning::Failed to refresh pod-install snapshot cache; a future run will fall back to a full pod install."
               rm -rf "$tmp_cache"
             fi
           fi
