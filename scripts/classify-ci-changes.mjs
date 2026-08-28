@@ -7,10 +7,10 @@ const PACKAGE_SRC_RE = new RegExp(`^packages/${PACKAGE_NAMES}/src/`);
 const PACKAGE_TSCONFIG_RE = new RegExp(`^packages/${PACKAGE_NAMES}/tsconfig\\.json$`);
 
 // BeeUI currently ships no native implementation. Source files with these
-// extensions are therefore package/runtime inputs only; Metro/typecheck/release
-// verification proves them without spending native compiler time. If a native
-// source extension or a new top-level native directory is introduced later,
-// the package classifier deliberately falls through to native-sensitive.
+// extensions are therefore package/runtime inputs only unless they match an
+// official React Native Codegen spec naming convention. Metro/typecheck/release
+// verification proves ordinary runtime source without spending native compiler
+// time. New top-level native package surfaces still fail closed below.
 const JS_RUNTIME_EXTENSIONS = new Set([
   '.ts',
   '.tsx',
@@ -21,6 +21,9 @@ const JS_RUNTIME_EXTENSIONS = new Set([
   '.css',
   '.json',
 ]);
+
+const REACT_NATIVE_CODEGEN_SPEC_BASENAME_RE =
+  /^(?:Native[A-Za-z0-9_].*|.*NativeComponent)\.(?:js|jsx|ts|tsx)$/;
 
 const SAFE_EXACT_PATHS = new Set([
   'README.md',
@@ -63,6 +66,7 @@ const SHOWCASE_NATIVE_EXACT_PATHS = new Set([
   'scripts/classify-ci-changes.mjs',
   'apps/showcase/package.json',
   'apps/showcase/app.json',
+  'apps/showcase/app.config.json',
   'apps/showcase/app.config.js',
   'apps/showcase/app.config.jsx',
   'apps/showcase/app.config.ts',
@@ -79,9 +83,23 @@ const SHOWCASE_NATIVE_PREFIXES = [
   'apps/showcase/plugins/',
 ];
 
-const SHOWCASE_JS_PREFIXES = [
+// Only known executable/runtime surfaces are carved out as native-safe.
+// Arbitrary JS/TS/JSON elsewhere under apps/showcase fails closed because an
+// Expo app.config.* file may import local helpers/config plugins that mutate the
+// generated iOS/Android projects during prebuild.
+const SHOWCASE_RUNTIME_EXACT_PATHS = new Set([
+  'apps/showcase/App.tsx',
+  'apps/showcase/index.ts',
+  'apps/showcase/global.css',
+  'apps/showcase/expo-env.d.ts',
+  'apps/showcase/metro.config.js',
+  'apps/showcase/tsconfig.json',
+]);
+
+const SHOWCASE_RUNTIME_PREFIXES = [
   'apps/showcase/patterns/',
   'apps/showcase/pattern-gallery/',
+  'apps/showcase/component-gallery/',
   'apps/showcase/__mocks__/',
 ];
 
@@ -92,14 +110,22 @@ function normalizePath(value) {
     .replace(/^\.\//, '');
 }
 
+function basenameOf(file) {
+  return file.slice(file.lastIndexOf('/') + 1);
+}
+
 function extensionOf(file) {
-  const base = file.slice(file.lastIndexOf('/') + 1);
+  const base = basenameOf(file);
   const dot = base.lastIndexOf('.');
   return dot === -1 ? '' : base.slice(dot).toLowerCase();
 }
 
 function isJsRuntimeFile(file) {
   return JS_RUNTIME_EXTENSIONS.has(extensionOf(file));
+}
+
+function isReactNativeCodegenSpecPath(file) {
+  return REACT_NATIVE_CODEGEN_SPEC_BASENAME_RE.test(basenameOf(file));
 }
 
 function isPackagePath(file) {
@@ -110,7 +136,10 @@ function isPackageNativeImplementationPath(file) {
   if (!isPackagePath(file)) return false;
   if (PACKAGE_MANIFEST_RE.test(file)) return true;
   if (PACKAGE_TSCONFIG_RE.test(file)) return false;
-  if (PACKAGE_SRC_RE.test(file)) return !isJsRuntimeFile(file);
+  if (PACKAGE_SRC_RE.test(file)) {
+    if (isReactNativeCodegenSpecPath(file)) return true;
+    return !isJsRuntimeFile(file);
+  }
 
   // Fail closed for any new top-level package surface (podspec, ios/, android/,
   // cpp/, react-native.config.*, codegen metadata, etc.). Today the packages
@@ -140,19 +169,22 @@ export function isShowcaseNativeSensitivePath(value) {
   if (SHOWCASE_NATIVE_PREFIXES.some((prefix) => file.startsWith(prefix))) return true;
 
   // A BeeUI package gaining native implementation affects both the bare
-  // consumer and the Showcase consumer. Pure JS/TS/CSS package source does not.
+  // consumer and the Showcase consumer. Ordinary JS/TS/CSS package runtime
+  // source does not, but RN Codegen specs under src/ are native-sensitive.
   if (PACKAGE_MANIFEST_RE.test(file)) return true;
   if (isPackageNativeImplementationPath(file)) return true;
   if (isPackagePath(file)) return false;
 
   // Showcase executable source is already proven by Expo export on web,
-  // Android and iOS in verify. Native compilers are only needed when the
-  // generated/native graph can change.
-  if (file === 'apps/showcase/App.tsx' || file === 'apps/showcase/index.ts') return false;
-  if (SHOWCASE_JS_PREFIXES.some((prefix) => file.startsWith(prefix)) && isJsRuntimeFile(file)) {
+  // Android and iOS in verify. Keep this allowlist explicit so arbitrary local
+  // config helpers cannot silently bypass Expo prebuild/native compilation.
+  if (SHOWCASE_RUNTIME_EXACT_PATHS.has(file) && isJsRuntimeFile(file)) return false;
+  if (
+    SHOWCASE_RUNTIME_PREFIXES.some((prefix) => file.startsWith(prefix)) &&
+    isJsRuntimeFile(file)
+  ) {
     return false;
   }
-  if (file.startsWith('apps/showcase/') && isJsRuntimeFile(file)) return false;
 
   if (SAFE_EXACT_PATHS.has(file)) return false;
   if (SAFE_PREFIXES.some((prefix) => file.startsWith(prefix))) return false;
