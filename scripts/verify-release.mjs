@@ -28,7 +28,8 @@ const packageSpecs = [
     requiredPackedFiles: [
       'package/src/index.ts',
       'package/src/theme.css',
-      'package/src/tokens.json',
+      'package/tokens.json',
+      'package/src/tokens.resolver.json',
     ],
   },
   {
@@ -169,7 +170,12 @@ try {
     assert(manifest.version === rootVersion, `${spec.name} stays on lockstep version`, manifest.version);
     assert(manifest.private === true, `${spec.name} remains private before the distribution workflow is enabled`);
     assert(manifest.type === 'module', `${spec.name} remains an ESM source package`);
-    assert(Array.isArray(manifest.files) && manifest.files.length === 1 && manifest.files[0] === 'src', `${spec.name} packs only its source surface`);
+    const expectedFiles = spec.name === '@beeui/tokens' ? ['src', 'tokens.json'] : ['src'];
+    assert(
+      Array.isArray(manifest.files) && JSON.stringify(manifest.files) === JSON.stringify(expectedFiles),
+      `${spec.name} packs only its declared source surface`,
+      manifest.files?.join(', ') ?? 'missing',
+    );
 
     const exportTargets = collectExportTargets(manifest.exports);
     assert(exportTargets.length > 0, `${spec.name} declares package exports`);

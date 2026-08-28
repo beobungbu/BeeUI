@@ -4,12 +4,14 @@
   "private": true,
   "type": "module",
   "files": [
-    "src"
+    "src",
+    "tokens.json"
   ],
   "exports": {
     ".": "./src/index.ts",
     "./theme.css": "./src/theme.css",
-    "./tokens.json": "./src/tokens.json"
+    "./tokens.json": "./tokens.json",
+    "./tokens.resolver.json": "./src/tokens.resolver.json"
   },
   "scripts": {
     "generate": "node ../../scripts/generate-tokens.mjs",

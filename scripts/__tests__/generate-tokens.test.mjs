@@ -5,17 +5,25 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import {
+  dtcgColorToHex,
   generateTokenArtifacts,
   loadCanonicalTokens,
   parseCanonicalJson,
   validateCanonicalTokens,
+  validateDtcgDocument,
 } from '../generate-tokens.mjs';
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const FORMAT_SCHEMA_URL = 'https://www.designtokens.org/schemas/2025.10/format.json';
+const RESOLVER_SCHEMA_URL = 'https://www.designtokens.org/schemas/2025.10/resolver.json';
 const source = loadCanonicalTokens();
 
+function beeMetadata(tokens = source) {
+  return tokens.$extensions['com.beeui'];
+}
+
 function semanticNames(tokens = source) {
-  return Object.keys(tokens.semanticColors).filter((name) => !name.startsWith('$'));
+  return Object.keys(beeMetadata(tokens).semanticColorDescriptions);
 }
 
 test('committed generated token artifacts are byte-current', () => {
@@ -41,6 +49,43 @@ test('raw canonical JSON rejects duplicate object keys before JSON overwrite', (
   );
 });
 
+test('raw canonical JSON preserves __proto__ as inert own data', () => {
+  const parsed = parseCanonicalJson('{"__proto__":{"polluted":true}}', 'prototype-key-fixture');
+  assert.equal(Object.getPrototypeOf(parsed), Object.prototype);
+  assert.equal(Object.hasOwn(parsed, '__proto__'), true);
+  assert.equal(parsed.__proto__.polluted, true);
+  assert.equal({}.polluted, undefined);
+});
+
+test('canonical source conforms to the DTCG 2025.10 format contract BeeUI emits', () => {
+  assert.equal(source.$schema, FORMAT_SCHEMA_URL);
+  assert.equal(beeMetadata().dtcgVersion, '2025.10');
+  assert.doesNotThrow(() => validateDtcgDocument(source));
+
+  assert.deepEqual(source.tokens.motionEasing.standard.$value, [0.2, 0, 0, 1]);
+  assert.equal(source.tokens.elevation.$type, 'shadow');
+  assert.ok(Array.isArray(source.tokens.elevation.raised.$value));
+  assert.equal(Object.hasOwn(source.tokens.focusRing, '$value'), false);
+  assert.equal(source.tokens.focusRing.width.$type, 'dimension');
+  assert.equal(source.themes.light.colors.$type, 'color');
+  assert.deepEqual(source.themes.light.colors.primary.$value, {
+    colorSpace: 'srgb',
+    components: [0.960784, 0.619608, 0.043137],
+    hex: '#f59e0b',
+  });
+});
+
+test('DTCG-invalid token names are rejected while the legacy public spacing key stays compatible', () => {
+  assert.equal(Object.hasOwn(source.tokens.spacing, '2.5'), false);
+  assert.equal(source.tokens.spacing['2-5'].$extensions['com.beeui'].publicName, '2.5');
+  const index = generateTokenArtifacts(source).get('packages/tokens/src/index.ts');
+  assert.match(index, /"2\.5": 10/);
+
+  const invalid = structuredClone(source);
+  invalid.tokens.spacing['bad.name'] = invalid.tokens.spacing['2-5'];
+  assert.throws(() => validateDtcgDocument(invalid), /invalid DTCG token\/group name "bad\.name"/);
+});
+
 test('one canonical mutation propagates to both TypeScript and CSS outputs', () => {
   const mutated = structuredClone(source);
   mutated.tokens.fontSize.body.$value.value = 17;
@@ -63,30 +108,32 @@ test('font-size and line-height roles must stay exactly aligned', () => {
 test('every runtime theme implements the exact unique semantic vocabulary', () => {
   const expected = semanticNames();
   assert.equal(new Set(expected).size, expected.length);
-  for (const name of source.metadata.runtimeThemeNames) {
-    const actual = Object.keys(source.themes[name].colors);
+  for (const name of beeMetadata().runtimeThemeNames) {
+    const actual = Object.keys(source.themes[name].colors).filter((key) => !key.startsWith('$'));
     assert.equal(new Set(actual).size, actual.length);
     assert.deepEqual([...actual].sort(), [...expected].sort(), name);
   }
 });
 
 test('the accepted #65, #66, and brand mapping values remain canonical', () => {
-  assert.deepEqual(source.metadata.runtimeThemeByBrand, {
+  assert.deepEqual(beeMetadata().runtimeThemeByBrand, {
     bee: { light: 'light', dark: 'dark' },
     violet: { light: 'violet-light', dark: 'violet-dark' },
   });
-  assert.equal(source.themes.light.colors['primary-hover'].$value, '#e58a05');
-  assert.equal(source.themes.light.colors['primary-pressed'].$value, '#d97706');
-  assert.equal(source.themes['violet-dark'].colors['primary-pressed'].$value, '#9066f4');
+  assert.equal(dtcgColorToHex(source.themes.light.colors['primary-hover'].$value), '#e58a05');
+  assert.equal(dtcgColorToHex(source.themes.light.colors['primary-pressed'].$value), '#d97706');
+  assert.equal(dtcgColorToHex(source.themes['violet-dark'].colors['primary-pressed'].$value), '#9066f4');
   assert.deepEqual(
-    source.metadata.runtimeThemeNames.map((theme) => source.themes[theme].colors['control-border'].$value),
+    beeMetadata().runtimeThemeNames.map((theme) =>
+      dtcgColorToHex(source.themes[theme].colors['control-border'].$value),
+    ),
     ['#8590a2', '#667085', '#9488a4', '#786d87'],
   );
 });
 
 test('letter-spacing px and CSS em representations are intentionally equivalent at 16px', () => {
   const canonicalPx = source.tokens.letterSpacing.tight.$value.value;
-  const referencePx = source.metadata.cssPixelReference;
+  const referencePx = beeMetadata().cssPixelReference;
   const css = generateTokenArtifacts(source).get('packages/tokens/src/theme.css');
   const cssEm = Number(css.match(/--tracking-tight:\s*(-?[0-9.]+)em;/)?.[1]);
 
@@ -100,11 +147,43 @@ test('invalid theme vocabulary cannot generate partial runtime output', () => {
   assert.throws(() => validateCanonicalTokens(invalid), /dark semantic colors/);
 });
 
-test('machine-readable artifact identifies its canonical ownership', () => {
-  const artifact = JSON.parse(
-    generateTokenArtifacts(source).get('packages/tokens/src/tokens.json'),
+test('DTCG value-shape regressions are rejected', () => {
+  const easing = structuredClone(source);
+  easing.tokens.motionEasing.standard.$value = 'cubic-bezier(0.2, 0, 0, 1)';
+  assert.throws(() => validateDtcgDocument(easing), /array of four finite numbers/);
+
+  const color = structuredClone(source);
+  color.themes.light.colors.primary.$value = '#f59e0b';
+  assert.throws(() => validateDtcgDocument(color), /DTCG color object/);
+
+  const shadow = structuredClone(source);
+  shadow.tokens.elevation.raised.$value = { web: '0 1px 3px #000', nativeElevation: 2 };
+  assert.throws(() => validateDtcgDocument(shadow), /DTCG color object/);
+});
+
+test('canonical distributable token artifact remains DTCG-conformant', () => {
+  assert.equal(source.$schema, FORMAT_SCHEMA_URL);
+  assert.doesNotThrow(() => validateDtcgDocument(source));
+});
+
+test('generated resolver is a DTCG 2025.10 resolver document for every runtime theme', () => {
+  const resolver = JSON.parse(
+    generateTokenArtifacts(source).get('packages/tokens/src/tokens.resolver.json'),
   );
-  assert.equal(artifact.$generated.notice, 'AUTO-GENERATED — DO NOT EDIT DIRECTLY');
-  assert.equal(artifact.$generated.canonicalSource, 'packages/tokens/tokens.json');
-  assert.equal(artifact.$generated.generator, 'scripts/generate-tokens.mjs');
+  assert.equal(resolver.$schema, RESOLVER_SCHEMA_URL);
+  assert.equal(resolver.version, '2025.10');
+  assert.deepEqual(Object.keys(resolver.modifiers.runtimeTheme.contexts), beeMetadata().runtimeThemeNames);
+  assert.equal(resolver.modifiers.runtimeTheme.default, 'light');
+  assert.deepEqual(resolver.sets.foundation.sources, [
+    { $ref: '../tokens.json#/tokens' },
+  ]);
+  for (const theme of beeMetadata().runtimeThemeNames) {
+    assert.deepEqual(resolver.modifiers.runtimeTheme.contexts[theme], [
+      { $ref: `../tokens.json#/themes/${theme}/colors` },
+    ]);
+  }
+  assert.deepEqual(resolver.resolutionOrder, [
+    { $ref: '#/sets/foundation' },
+    { $ref: '#/modifiers/runtimeTheme' },
+  ]);
 });
