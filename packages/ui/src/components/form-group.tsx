@@ -67,7 +67,15 @@ export const FormGroup = React.forwardRef<React.ComponentRef<typeof View>, FormG
 
     return (
       <FormGroupContext.Provider value={contextValue}>
-        <View ref={ref} {...props} accessible={false} className={cn('gap-2', className)}>
+        <View
+          ref={ref}
+          {...props}
+          accessible={false}
+          // Gap between legend/children/helper text comes from the #74 application-density
+          // axis (`--spacing-density-form-gap`, default = comfortable = the pre-#74 `gap-2`
+          // literal, pixel-identical).
+          className={cn('gap-density-form-gap', className)}
+        >
           <Label
             nativeID={resolvedLegendNativeID}
             required={required}
