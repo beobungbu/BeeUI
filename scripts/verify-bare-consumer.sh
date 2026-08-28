@@ -3,7 +3,12 @@ set -euo pipefail
 
 ACTION="${1:-all}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-WORK_ROOT="${RUNNER_TEMP:-/tmp}/beeui-bare-consumer"
+# WORK_ROOT must survive across CI jobs for the R1 reuse path to hit: the
+# GitHub Actions runner empties RUNNER_TEMP at the start of every job, so the
+# reusable bare app lives under the persistent iOS cache root instead (the
+# same location family as the DerivedData caches derived below). Fall back to
+# the same HOME path the ios-build step uses, then to /tmp for throwaway runs.
+WORK_ROOT="${BEEUI_BARE_WORK_ROOT:-${BEEUI_IOS_CACHE_ROOT:-${HOME:-/tmp}/Library/Caches/BeeUI}/bare-consumer}"
 APP_DIR="${WORK_ROOT}/BeeUIBareSmoke"
 PACKAGE_DIR="${WORK_ROOT}/packages"
 FINGERPRINT_FILE="${WORK_ROOT}/.beeui-bare-fingerprint"
