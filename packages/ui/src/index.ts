@@ -130,6 +130,13 @@ export {
 } from './components/form-message';
 export { IconButton, type IconButtonProps } from './components/icon-button';
 export { Input, inputVariants, type InputProps } from './components/input';
+export {
+  KeyboardAwareScreen,
+  type KeyboardAwareScreenContentWidth,
+  type KeyboardAwareScreenKeyboardDismissMode,
+  type KeyboardAwareScreenProps,
+  type KeyboardAwareScreenSafeAreaEdges,
+} from './components/keyboard-aware-screen';
 export { Label, type LabelProps } from './components/label';
 export { Link, type LinkProps } from './components/link';
 export {
