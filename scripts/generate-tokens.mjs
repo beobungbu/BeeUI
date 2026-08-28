@@ -434,8 +434,139 @@ function focusValue(source) {
   };
 }
 
-export function validateCanonicalTokens(source) {
-  validateDtcgDocument(source);
+const REFERENCE_PREFIX = '#/';
+
+function decodePointerSegment(segment) {
+  return segment.replace(/~1/g, '/').replace(/~0/g, '~');
+}
+
+function pointerSegments(pointer, label) {
+  invariant(
+    typeof pointer === 'string' && pointer.startsWith(REFERENCE_PREFIX),
+    `${label} must be a same-document JSON Pointer starting with "#/"`,
+  );
+  return pointer
+    .slice(REFERENCE_PREFIX.length)
+    .split('/')
+    .filter((segment) => segment.length > 0)
+    .map(decodePointerSegment);
+}
+
+// Walks a same-document JSON Pointer, tracking the DTCG group $type inherited at
+// each step so cross-category references can be rejected deterministically.
+function typedNodeAtPointer(root, pointer, label) {
+  let node = root;
+  let type;
+  for (const segment of pointerSegments(pointer, label)) {
+    invariant(
+      isPlainObject(node) && Object.hasOwn(node, segment),
+      `${label} points at a missing node (${pointer})`,
+    );
+    node = node[segment];
+    if (isPlainObject(node) && typeof node.$type === 'string') type = node.$type;
+  }
+  return { node, type };
+}
+
+function privateTokenGroups(source) {
+  const groups = metadata(source).privateTokenGroups ?? [];
+  invariant(Array.isArray(groups), 'com.beeui.privateTokenGroups must be an array of group names');
+  return groups;
+}
+
+// Follows a reference chain to its resolved $value, rejecting dangling pointers,
+// reference cycles (including multi-node cycles), references that escape the
+// private authoring layer, and cross-category references.
+function resolveReferenceChain(root, startPointer, referencingType, label) {
+  const privateGroups = privateTokenGroups(root);
+  const seen = new Set();
+  let pointer = startPointer;
+  for (;;) {
+    invariant(!seen.has(pointer), `${label} forms a reference cycle at ${pointer}`);
+    seen.add(pointer);
+    const [firstSegment] = pointerSegments(pointer, label);
+    invariant(
+      privateGroups.includes(firstSegment),
+      `${label} must reference a private authoring primitive; ${pointer} is not inside ${privateGroups.join(', ') || '(none)'}`,
+    );
+    const { node, type } = typedNodeAtPointer(root, pointer, label);
+    invariant(isPlainObject(node), `${label} must reference a token object (${pointer})`);
+    const hasValue = Object.hasOwn(node, '$value');
+    const hasRef = Object.hasOwn(node, '$ref');
+    invariant(hasValue || hasRef, `${label} references a group, not a token (${pointer})`);
+    if (referencingType && type) {
+      invariant(
+        type === referencingType,
+        `${label} makes an invalid cross-category reference to ${pointer} (${referencingType} cannot alias ${type})`,
+      );
+    }
+    if (hasValue) return node.$value;
+    pointer = node.$ref;
+  }
+}
+
+function walkReferenceNodes(node, inheritedType, label, visit) {
+  if (!isPlainObject(node)) return;
+  const type = node.$type ?? inheritedType;
+  if (Object.hasOwn(node, '$ref')) {
+    visit(node, type, label);
+    return;
+  }
+  if (Object.hasOwn(node, '$value')) return;
+  for (const [name, child] of Object.entries(node)) {
+    if (name.startsWith('$')) continue;
+    walkReferenceNodes(child, type, label === '<root>' ? name : `${label}.${name}`, visit);
+  }
+}
+
+function validatePrivateClassification(source) {
+  const meta = metadata(source);
+  for (const groupName of privateTokenGroups(source)) {
+    const group = source[groupName];
+    invariant(isPlainObject(group), `private token group "${groupName}" is declared but missing`);
+    invariant(
+      beeExtension(group).visibility === 'private',
+      `private token group "${groupName}" must declare com.beeui.visibility "private"`,
+    );
+  }
+  for (const themeName of meta.runtimeThemeNames ?? []) {
+    const colors = source.themes?.[themeName]?.colors;
+    if (!isPlainObject(colors)) continue;
+    for (const [name, token] of publicEntries(colors)) {
+      invariant(
+        beeExtension(token).visibility !== 'private',
+        `semantic token ${themeName}.${name} must stay public; only authoring primitives may be private`,
+      );
+    }
+  }
+}
+
+// Validates the reference graph on the raw (unresolved) canonical document.
+export function validateTokenReferences(source) {
+  walkReferenceNodes(source, undefined, '<root>', (node, type, label) => {
+    resolveReferenceChain(source, node.$ref, type, `${label} ($ref ${node.$ref})`);
+  });
+  validatePrivateClassification(source);
+  return source;
+}
+
+// Returns a deep clone of the canonical document with every $ref replaced by its
+// deterministically resolved $value. Runtime artifacts are rendered from this so
+// generated output never contains unresolved private references.
+export function resolveTokenReferences(source) {
+  const resolved = structuredClone(source);
+  walkReferenceNodes(resolved, undefined, '<root>', (node, type, label) => {
+    const value = resolveReferenceChain(source, node.$ref, type, `${label} ($ref ${node.$ref})`);
+    delete node.$ref;
+    node.$value = structuredClone(value);
+  });
+  return resolved;
+}
+
+export function validateCanonicalTokens(rawSource) {
+  validateDtcgDocument(rawSource);
+  validateTokenReferences(rawSource);
+  const source = resolveTokenReferences(rawSource);
   const meta = metadata(source);
   const { themes, tokens } = source;
 
@@ -651,11 +782,14 @@ function renderResolverArtifact(source) {
 }
 
 export function generateTokenArtifacts(source) {
-  validateCanonicalTokens(source);
+  validateDtcgDocument(source);
+  validateTokenReferences(source);
+  const resolved = resolveTokenReferences(source);
+  validateCanonicalTokens(resolved);
   return new Map([
-    [ARTIFACT_PATHS[0], renderIndex(source)],
-    [ARTIFACT_PATHS[1], renderThemeCss(source)],
-    [ARTIFACT_PATHS[2], renderResolverArtifact(source)],
+    [ARTIFACT_PATHS[0], renderIndex(resolved)],
+    [ARTIFACT_PATHS[1], renderThemeCss(resolved)],
+    [ARTIFACT_PATHS[2], renderResolverArtifact(resolved)],
   ]);
 }
 

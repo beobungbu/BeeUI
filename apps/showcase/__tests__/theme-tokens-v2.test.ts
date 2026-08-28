@@ -72,6 +72,27 @@ function dtcgColorToHex(value: {
   return `${base}${Math.round(value.alpha * 255).toString(16).padStart(2, '0')}`;
 }
 
+// Resolves a canonical token's value, following DTCG $ref aliases into the
+// private authoring primitive layer (introduced in #70). Semantic theme tokens
+// may alias primitives; the emitted CSS always contains resolved values.
+function resolveCanonicalValue(token: any): any {
+  let node = token;
+  const seen = new Set<string>();
+  while (node && typeof node === 'object' && typeof node.$ref === 'string') {
+    if (seen.has(node.$ref)) throw new Error(`reference cycle at ${node.$ref}`);
+    seen.add(node.$ref);
+    node = node.$ref
+      .replace(/^#\//, '')
+      .split('/')
+      .map((segment: string) => segment.replace(/~1/g, '/').replace(/~0/g, '~'))
+      .reduce((acc: any, key: string) => {
+        if (!acc || !(key in acc)) throw new Error(`missing node ${token.$ref}`);
+        return acc[key];
+      }, canonicalTokens);
+  }
+  return node.$value;
+}
+
 function canonicalElevationValues() {
   return Object.fromEntries(
     publicEntries(canonicalTokens.tokens.elevation).map(([name, token]) => {
@@ -252,7 +273,7 @@ describe('theme/token system v2', () => {
         Object.fromEntries(
           publicEntries(canonicalTokens.themes[theme].colors).map(([name, token]) => [
             name,
-            dtcgColorToHex(token.$value),
+            dtcgColorToHex(resolveCanonicalValue(token)),
           ]),
         ),
       );
