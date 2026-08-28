@@ -13,15 +13,16 @@
     "web": "pnpm --filter @beeui/showcase web",
     "hygiene:check": "node ./scripts/check-repo-hygiene.mjs",
     "tokens:generate": "node ./scripts/generate-tokens.mjs",
-    "tokens:check": "node ./scripts/generate-tokens.mjs --check",
-    "tokens:test": "node --test ./scripts/__tests__/generate-tokens.test.mjs ./scripts/__tests__/responsive-layout-tokens.test.mjs",
+    "tokens:check": "node ./scripts/generate-tokens.mjs --check && node ./scripts/check-token-removals.mjs",
+    "tokens:test": "node --test ./scripts/__tests__/generate-tokens.test.mjs ./scripts/__tests__/responsive-layout-tokens.test.mjs ./scripts/__tests__/token-lifecycle.test.mjs ./scripts/__tests__/token-removal-guard.test.mjs",
     "typecheck": "pnpm hygiene:check && pnpm tokens:check && pnpm -r --if-present typecheck",
     "test": "pnpm tokens:test && pnpm --filter @beeui/showcase test && pnpm registry:verify && pnpm registry:test",
     "check": "pnpm typecheck && pnpm test",
     "release:verify": "node ./scripts/verify-release.mjs",
     "beeui": "node ./scripts/beeui.mjs",
     "registry:verify": "node ./scripts/verify-registry.mjs",
-    "registry:test": "node --test ./scripts/__tests__/beeui.test.mjs"
+    "registry:test": "node --test ./scripts/__tests__/beeui.test.mjs",
+    "tokens:migration-report": "node ./scripts/generate-token-migration-report.mjs"
   },
   "devDependencies": {
     "@hyperjump/json-schema": "1.17.8",

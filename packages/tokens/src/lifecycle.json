@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "stability": "pre-1.0",
+  "generator": "scripts/generate-tokens.mjs",
+  "source": "packages/tokens/tokens.json",
+  "statuses": [
+    "stable",
+    "experimental",
+    "deprecated"
+  ],
+  "aliasKinds": {
+    "authoring": "publicName",
+    "deprecatedCompatibility": "deprecated-compatibility"
+  },
+  "policy": {
+    "defaultStatus": "stable",
+    "minimumCompatibilityWindow": "At least one subsequent pre-1.0 minor release before a deprecated public token is removed.",
+    "governedScope": "Public foundation scale tokens and semantic color tokens."
+  },
+  "summary": {
+    "governed": 106,
+    "stable": 106,
+    "experimental": 0,
+    "deprecated": 0
+  },
+  "tokens": []
+}
