@@ -9,6 +9,7 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `BeeUIProvider` | application root | Provides safe-area measurement, a provider-local Toast runtime/viewport, and the shared anchored-overlay runtime/host; by default synchronizes measured insets to Uniwind safe-area utilities. Nested providers reuse the outer anchored-overlay runtime while Toast state remains scoped to the nearest BeeUIProvider. |
 | `SafeArea` | layout | Explicit `react-native-safe-area-context` surface with caller-owned edge selection; BeeUI never silently adds system insets to generic screen/chrome components. |
 | `Screen` | layout | Base application surface with semantic background and optional spacing; owns no safe-area or scroll behavior. |
+| `KeyboardAwareScreen` | layout/form | Reusable scrollable form-screen shell with bounded content width, explicit safe-area ownership, iOS keyboard avoidance, Android edge-to-edge focused-field correction (including focus changes while the keyboard stays open), and platform-correct keyboard dismissal defaults. It owns no routing, form state, validation, auth, or persistence. |
 | `Box` | layout | Thin `View` primitive; no design assumptions. |
 | `Stack` | layout | Typed direction/gap/alignment/wrap composition over `View`; owns no responsive policy. |
 | `HStack` | layout | Horizontal specialization of `Stack`; defaults cross-axis alignment to center and still allows explicit alignment overrides. |
