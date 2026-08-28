@@ -3,7 +3,7 @@
 // Generator: scripts/generate-tokens.mjs
 
 import { defineThemeRegistry } from './registry';
-import { createThemeOverridesDefiner, type OverrideCategoryMap, type ThemeOverridesInput } from './theme-overrides';
+import { applyThemeOverrides, createThemeOverridesDefiner, type CompiledThemeOverrides, type OverrideCategoryMap, type ThemeOverridesInput, type UniwindCSSVariableClient } from './theme-overrides';
 import { defineTokenReader, type TokenCategoryMap, type TokenPath, type TokenValueForPath } from './token-reader';
 
 export * from './registry';
@@ -314,6 +314,112 @@ export const pageGutter = {
 } as const;
 
 export type PageGutterName = keyof typeof pageGutter;
+
+/**
+ * BeeUI issue #74 — application density semantic axis. `compact`/`comfortable`/`spacious` are the
+ * only approved density-mode names, evidence-backed by recurring list-row and form-field
+ * spacing/height literals across `ListItem`, `FormGroup`, and `Field`. `comfortable`
+ * is the default and preserves the pre-#74 BeeUI v2 visual baseline exactly (see
+ * `densityMetrics.*.comfortable` below against each component's prior literal).
+ *
+ * Density deliberately does NOT scale every spacing/radius/font token: only the metric
+ * groups flagged `com.beeui.densityAxis: true` in canonical tokens.json participate
+ * (currently `rowHeight`, `rowGap`, `formGap`). Component
+ * `size` props (Button, Card, ...), icon geometry, focus-ring geometry, controlSize, and
+ * typography are untouched by density — see docs/density.md for the full invariant list
+ * and the native interactive hit-target guarantee enforced on `rowHeight` at codegen time.
+ */
+export const densityModes = [
+  "compact",
+  "comfortable",
+  "spacious"
+] as const;
+
+export type DensityMode = (typeof densityModes)[number];
+
+export const defaultDensityMode: DensityMode = "comfortable";
+
+export const densityModeDescriptions = {
+  "compact": "Dense desktop/admin surfaces (dashboards, data tables, settings lists) where users benefit from higher information density and precise pointer input. Native interactive hit targets are never reduced below the accepted minimum.",
+  "comfortable": "Default application density. Preserves the BeeUI v2 visual baseline exactly.",
+  "spacious": "Roomier touch-oriented surfaces and wide desktop layouts where extra breathing room improves scanability."
+} as const satisfies Record<DensityMode, string>;
+
+/** Per-mode pixel values for every density-sensitive metric, read from canonical tokens.json. */
+export const densityMetrics = {
+  "rowHeight": {
+    "compact": 44,
+    "comfortable": 56,
+    "spacious": 64
+  },
+  "rowGap": {
+    "compact": 8,
+    "comfortable": 12,
+    "spacious": 16
+  },
+  "formGap": {
+    "compact": 4,
+    "comfortable": 8,
+    "spacious": 12
+  }
+} as const;
+
+export type DensityMetric = keyof typeof densityMetrics;
+
+/**
+ * Uniwind CSS-variable name for one density metric (e.g. `rowHeight` ->
+ * `--spacing-density-row-height`). Lives under the same `--spacing-*` namespace as
+ * `controlSize`/`pageGutter`, so Tailwind/Uniwind derives the matching `h-*`/`min-h-*`/
+ * `gap-*` utility classes the same way it already does for those groups.
+ */
+export const densityMetricVariables = {
+  "rowHeight": "--spacing-density-row-height",
+  "rowGap": "--spacing-density-row-gap",
+  "formGap": "--spacing-density-form-gap"
+} as const satisfies Record<DensityMetric, string>;
+
+function compileDensityPreset(mode: DensityMode): CompiledThemeOverrides {
+  const cssVariables: Record<string, string> = {};
+  for (const metric of Object.keys(densityMetrics) as DensityMetric[]) {
+    cssVariables[densityMetricVariables[metric]] = `${densityMetrics[metric][mode]}px`;
+  }
+  const orderedNames = Object.keys(cssVariables).sort();
+  const ordered: Record<string, string> = {};
+  for (const name of orderedNames) ordered[name] = cssVariables[name];
+  return Object.freeze({ cssVariables: Object.freeze(ordered) });
+}
+
+/**
+ * One precompiled #71-shaped `CompiledThemeOverrides` per approved density mode, built at
+ * module init from `densityMetrics`. Deterministic and pure — never touches Uniwind.
+ */
+export const densityPresets: Readonly<Record<DensityMode, CompiledThemeOverrides>> = Object.freeze(
+  Object.fromEntries(densityModes.map((mode) => [mode, compileDensityPreset(mode)])),
+) as Readonly<Record<DensityMode, CompiledThemeOverrides>>;
+
+/** Resolve one density mode's precompiled override bundle. Throws on an unknown mode instead of silently returning `undefined`. */
+export function resolveDensityOverrides(mode: DensityMode): CompiledThemeOverrides {
+  if (!Object.prototype.hasOwnProperty.call(densityPresets, mode)) {
+    throw new Error(`Unknown density mode "${String(mode)}"; supported modes: ${densityModes.join(', ')}`);
+  }
+  return densityPresets[mode];
+}
+
+/**
+ * Apply one density mode to a named Uniwind runtime theme. A thin call-through to the
+ * existing #71 `applyThemeOverrides` — BeeUI keeps no separate density store, cache, React
+ * context, or provider (see `applyThemeOverrides` in theme-overrides.ts for the exact
+ * contract this reuses). Like #71 overrides, and #68's `ScopedTheme`, this targets exactly
+ * one named runtime theme: density has no scoped/subtree application surface in this
+ * release (see docs/density.md for why, and the deferred path if that changes).
+ */
+export function applyDensity<RuntimeThemeName extends string>(
+  uniwind: UniwindCSSVariableClient<RuntimeThemeName>,
+  runtimeTheme: RuntimeThemeName,
+  mode: DensityMode,
+): void {
+  applyThemeOverrides(uniwind, runtimeTheme, resolveDensityOverrides(mode));
+}
 
 /**
  * Build-time vs runtime classification for the responsive-layout token groups.
@@ -633,6 +739,21 @@ export const themeOverrideClassification = {
     "engine": "tailwind-uniwind"
   },
   "pageGutter": {
+    "layer": "cross-platform",
+    "binding": "value",
+    "runtimeOverridable": false
+  },
+  "rowHeight": {
+    "layer": "cross-platform",
+    "binding": "value",
+    "runtimeOverridable": false
+  },
+  "rowGap": {
+    "layer": "cross-platform",
+    "binding": "value",
+    "runtimeOverridable": false
+  },
+  "formGap": {
     "layer": "cross-platform",
     "binding": "value",
     "runtimeOverridable": false

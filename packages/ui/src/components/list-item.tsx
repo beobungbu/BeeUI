@@ -73,7 +73,11 @@ export const ListItem = React.forwardRef<React.ComponentRef<typeof Pressable>, L
         accessibilityState={interactive ? { disabled: isDisabled } : undefined}
         accessible={interactive || groupPrimitiveContent ? true : undefined}
         className={cn(
-          'min-h-14 w-full flex-row items-center gap-3 rounded-md px-3 py-2',
+          // Row height/gap come from the #74 application-density axis (`--spacing-density-*`,
+          // default = comfortable = the pre-#74 `min-h-14`/`gap-3` literals, pixel-identical).
+          // The native touch-target guard is unconditional (like Button's `sm` size) so a
+          // `compact`-density row can never drop below the accepted native hit-target minimum.
+          'min-h-density-row-height w-full flex-row items-center gap-density-row-gap rounded-md px-3 py-2 ios:min-h-touch-target android:min-h-touch-target',
           interactive && 'active:bg-surface-muted web:hover:bg-surface-muted',
           isDisabled && 'opacity-60',
           className,

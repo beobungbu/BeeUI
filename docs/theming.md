@@ -71,6 +71,7 @@ The v2 token package preserves the existing public semantic color vocabulary whi
 | Elevation | flat/raised/overlay semantic shadow levels |
 | Layer | base/overlay/toast semantic z-order (stacking) levels |
 | Motion | fast/normal/slow durations, standard/emphasized easing, and semantic motion intents with reduced-motion policy (see `docs/motion.md`) |
+| Density | compact/comfortable/spacious application-level intent coordinating list-row and form-field metrics, applied via #71 overrides (see `docs/density.md`) |
 | Focus | 2 px ring, 2 px offset, semantic color, web/native visibility policy |
 | Branding | Bee + Violet, both light/dark |
 
@@ -324,6 +325,8 @@ applyThemeOverrides(Uniwind, 'light', overrides);
 **Accessibility/coherence responsibility.** A typed API cannot guarantee an arbitrary caller-supplied color stays accessible. BeeUI's own built-in fixtures keep the [#65 filled-state ≥4.5:1](./theme-interactive-states.md) and [#66 ≥3:1 control-boundary](./theme-control-boundaries.md) contracts regardless of whether runtime overrides exist elsewhere in an app; `defineThemeOverrides`/`applyThemeOverrides` never auto-adjust a consumer-supplied color to compensate. Applications overriding linked foreground/background pairs (e.g. `primary` + `primary-foreground`) own re-verifying contrast for their own override values.
 
 **Uniwind remains the mutation authority.** `defineThemeOverrides` holds no override store, cache, React context, or provider; every call is stateless. Only `Uniwind.updateCSSVariables` (called directly, or through `applyThemeOverrides`) ever mutates runtime theme state.
+
+Issue #74's application-density axis (`applyDensity`) reuses this exact mechanism — `resolveDensityOverrides(mode)` compiles to the same `CompiledThemeOverrides` shape, and `applyDensity` is a thin call-through to `applyThemeOverrides` — rather than adding a second override compiler. See [`docs/density.md`](./density.md).
 
 ### Typed runtime token readers (#72)
 

@@ -511,6 +511,43 @@ export function brandNames(source) {
   return names;
 }
 
+// BeeUI issue #74 — application density semantic axis.
+//
+// `com.beeui.densityIntents` (metadata, mirrors the `semanticMotion` shape) declares the
+// approved density-mode vocabulary and default. Individual canonical token groups opt into
+// being density-sensitive by declaring `com.beeui.densityAxis: true` and defining exactly
+// one dimension value per approved mode (the same shape `pageGutter` already uses for its
+// own three-tier vocabulary, reused here for codegen convenience — pageGutter's axis is
+// viewport-responsive and build-time, density's is an explicit runtime application intent;
+// the two are deliberately unrelated). This is the single source of truth for "which token
+// groups are density-sensitive" — nothing downstream hand-maintains a second list.
+function densityIntentsMeta(source) {
+  return metadata(source).densityIntents ?? {};
+}
+
+export function densityModeNames(source) {
+  return densityIntentsMeta(source).modes ?? [];
+}
+
+export function densityMetricGroupNames(source) {
+  const { tokens } = source;
+  return Object.keys(tokens).filter((name) => beeExtension(tokens[name]).densityAxis === true);
+}
+
+// Deterministic camelCase -> kebab-case conversion for density metric group names, used to
+// derive their Uniwind CSS-variable name (`rowHeight` -> `--spacing-density-row-height`).
+// Adding a new density-sensitive metric therefore never requires hand-registering a naming
+// convention (contrast with `OVERRIDABLE_GROUP_BUILDERS`, which #71 categories need because
+// their CSS-variable shape is not uniform); flagging `densityAxis: true` and regenerating is
+// the entire integration.
+export function kebabCase(name) {
+  return name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+}
+
+export function densityVariableName(groupName) {
+  return `--spacing-density-${kebabCase(groupName)}`;
+}
+
 function groupClassification(group) {
   const extension = beeExtension(group);
   return {
@@ -528,6 +565,110 @@ function responsiveLayoutClassification(source) {
     pageGutter: groupClassification(tokens.pageGutter),
     contentWidth: groupClassification(tokens.contentWidth),
   };
+}
+
+// BeeUI issue #74 — application density semantic axis. Every value here is read straight
+// from canonical `tokens.tokens` groups flagged `com.beeui.densityAxis: true`; nothing is
+// hand-maintained. See `densityMetricGroupNames`/`densityVariableName` above.
+function densityMetricsData(source) {
+  return Object.fromEntries(
+    densityMetricGroupNames(source).map((groupName) => [groupName, dimensionValues(source.tokens[groupName])]),
+  );
+}
+
+function densityMetricVariablesData(source) {
+  return Object.fromEntries(
+    densityMetricGroupNames(source).map((groupName) => [groupName, densityVariableName(groupName)]),
+  );
+}
+
+// Renders the #74 density TS artifact: the approved mode vocabulary, the codegen-derived
+// per-mode metric values, and a small apply surface that reuses #71's `applyThemeOverrides`
+// / `CompiledThemeOverrides` as its only runtime-mutation primitive (see theme-overrides.ts)
+// instead of introducing a second override-compiler or a density store/provider.
+function renderDensityArtifact(source) {
+  const modes = densityModeNames(source);
+  const meta = densityIntentsMeta(source);
+  const metrics = densityMetricsData(source);
+  const variables = densityMetricVariablesData(source);
+
+  return `/**
+ * BeeUI issue #74 — application density semantic axis. \`${modes.join('\`/\`')}\` are the
+ * only approved density-mode names, evidence-backed by recurring list-row and form-field
+ * spacing/height literals across \`ListItem\`, \`FormGroup\`, and \`Field\`. \`${meta.defaultMode}\`
+ * is the default and preserves the pre-#74 BeeUI v2 visual baseline exactly (see
+ * \`densityMetrics.*.${meta.defaultMode}\` below against each component's prior literal).
+ *
+ * Density deliberately does NOT scale every spacing/radius/font token: only the metric
+ * groups flagged \`com.beeui.densityAxis: true\` in canonical tokens.json participate
+ * (currently ${Object.keys(metrics).map((name) => `\`${name}\``).join(', ')}). Component
+ * \`size\` props (Button, Card, ...), icon geometry, focus-ring geometry, controlSize, and
+ * typography are untouched by density — see docs/density.md for the full invariant list
+ * and the native interactive hit-target guarantee enforced on \`rowHeight\` at codegen time.
+ */
+export const densityModes = ${ts(modes)} as const;
+
+export type DensityMode = (typeof densityModes)[number];
+
+export const defaultDensityMode: DensityMode = ${ts(meta.defaultMode)};
+
+export const densityModeDescriptions = ${ts(meta.descriptions)} as const satisfies Record<DensityMode, string>;
+
+/** Per-mode pixel values for every density-sensitive metric, read from canonical tokens.json. */
+export const densityMetrics = ${ts(metrics)} as const;
+
+export type DensityMetric = keyof typeof densityMetrics;
+
+/**
+ * Uniwind CSS-variable name for one density metric (e.g. \`rowHeight\` ->
+ * \`--spacing-density-row-height\`). Lives under the same \`--spacing-*\` namespace as
+ * \`controlSize\`/\`pageGutter\`, so Tailwind/Uniwind derives the matching \`h-*\`/\`min-h-*\`/
+ * \`gap-*\` utility classes the same way it already does for those groups.
+ */
+export const densityMetricVariables = ${ts(variables)} as const satisfies Record<DensityMetric, string>;
+
+function compileDensityPreset(mode: DensityMode): CompiledThemeOverrides {
+  const cssVariables: Record<string, string> = {};
+  for (const metric of Object.keys(densityMetrics) as DensityMetric[]) {
+    cssVariables[densityMetricVariables[metric]] = \`\${densityMetrics[metric][mode]}px\`;
+  }
+  const orderedNames = Object.keys(cssVariables).sort();
+  const ordered: Record<string, string> = {};
+  for (const name of orderedNames) ordered[name] = cssVariables[name];
+  return Object.freeze({ cssVariables: Object.freeze(ordered) });
+}
+
+/**
+ * One precompiled #71-shaped \`CompiledThemeOverrides\` per approved density mode, built at
+ * module init from \`densityMetrics\`. Deterministic and pure — never touches Uniwind.
+ */
+export const densityPresets: Readonly<Record<DensityMode, CompiledThemeOverrides>> = Object.freeze(
+  Object.fromEntries(densityModes.map((mode) => [mode, compileDensityPreset(mode)])),
+) as Readonly<Record<DensityMode, CompiledThemeOverrides>>;
+
+/** Resolve one density mode's precompiled override bundle. Throws on an unknown mode instead of silently returning \`undefined\`. */
+export function resolveDensityOverrides(mode: DensityMode): CompiledThemeOverrides {
+  if (!Object.prototype.hasOwnProperty.call(densityPresets, mode)) {
+    throw new Error(\`Unknown density mode "\${String(mode)}"; supported modes: \${densityModes.join(', ')}\`);
+  }
+  return densityPresets[mode];
+}
+
+/**
+ * Apply one density mode to a named Uniwind runtime theme. A thin call-through to the
+ * existing #71 \`applyThemeOverrides\` — BeeUI keeps no separate density store, cache, React
+ * context, or provider (see \`applyThemeOverrides\` in theme-overrides.ts for the exact
+ * contract this reuses). Like #71 overrides, and #68's \`ScopedTheme\`, this targets exactly
+ * one named runtime theme: density has no scoped/subtree application surface in this
+ * release (see docs/density.md for why, and the deferred path if that changes).
+ */
+export function applyDensity<RuntimeThemeName extends string>(
+  uniwind: UniwindCSSVariableClient<RuntimeThemeName>,
+  runtimeTheme: RuntimeThemeName,
+  mode: DensityMode,
+): void {
+  applyThemeOverrides(uniwind, runtimeTheme, resolveDensityOverrides(mode));
+}`;
 }
 
 /**
@@ -927,6 +1068,55 @@ export function validateCanonicalTokens(rawSource) {
     invariant(value > 0, 'pageGutter values must be positive');
   }
 
+  // BeeUI issue #74 — application density semantic axis.
+  const densityMeta = metadata(source).densityIntents;
+  invariant(isPlainObject(densityMeta), 'com.beeui.densityIntents must be an object');
+  const densityModes = densityMeta.modes;
+  invariant(Array.isArray(densityModes) && densityModes.length > 0, 'com.beeui.densityIntents.modes must be a non-empty array');
+  assertUnique(densityModes, 'densityIntents.modes');
+  invariant(
+    typeof densityMeta.defaultMode === 'string' && densityModes.includes(densityMeta.defaultMode),
+    'com.beeui.densityIntents.defaultMode must be one of densityIntents.modes',
+  );
+  invariant(isPlainObject(densityMeta.descriptions), 'com.beeui.densityIntents.descriptions must be an object');
+  assertExactNames(Object.keys(densityMeta.descriptions), densityModes, 'densityIntents.descriptions');
+  for (const mode of densityModes) {
+    invariant(
+      typeof densityMeta.descriptions[mode] === 'string' && densityMeta.descriptions[mode].length > 0,
+      `densityIntents.descriptions.${mode} must be a non-empty string`,
+    );
+  }
+
+  const densityGroupNames = densityMetricGroupNames(source);
+  invariant(
+    densityGroupNames.length > 0,
+    'at least one canonical token group must be flagged com.beeui.densityAxis to give densityIntents a real effect',
+  );
+  const touchTargetPx = dimensionValues(tokens.controlSize).touchTarget;
+  for (const groupName of densityGroupNames) {
+    const group = tokens[groupName];
+    // A density-sensitive group's public entries must be exactly the approved mode
+    // vocabulary — no extra/missing mode, and never a free-form key.
+    assertExactNames(publicEntries(group).map(([name]) => name), densityModes, `${groupName} density modes`);
+    const values = dimensionValues(group);
+    for (const mode of densityModes) {
+      invariant(values[mode] > 0, `${groupName}.${mode} must be a positive dimension value`);
+    }
+    // Native interactive hit-target invariant (#74 DoD): a density metric group that
+    // governs native-interactive geometry must never let ANY mode — including compact —
+    // fall below the canonical touch-target minimum. Opt-in via nativeHitTargetSensitive
+    // so metrics that are not interactive geometry (e.g. rowGap, formGap) are unaffected.
+    if (beeExtension(group).nativeHitTargetSensitive === true) {
+      for (const mode of densityModes) {
+        invariant(
+          values[mode] >= touchTargetPx,
+          `${groupName}.${mode} (${values[mode]}px) must stay >= controlSize.touchTarget (${touchTargetPx}px) — ` +
+            'compact visual density must never reduce the native interactive hit target',
+        );
+      }
+    }
+  }
+
   const contentWidthMeta = beeExtension(tokens.contentWidth);
   invariant(
     contentWidthMeta.layer === 'cross-platform' && contentWidthMeta.runtimeOverridable === false,
@@ -1119,7 +1309,7 @@ function renderIndex(source) {
   const deprecated = deprecatedByCategory(source);
   const dep = (category) => deprecated.get(category) ?? emptyMap();
 
-  return `// AUTO-GENERATED — DO NOT EDIT DIRECTLY.\n// Canonical source: ${CANONICAL_PATH}\n// Generator: ${GENERATOR_PATH}\n\nimport { defineThemeRegistry } from './registry';\nimport { createThemeOverridesDefiner, type OverrideCategoryMap, type ThemeOverridesInput } from './theme-overrides';\nimport { defineTokenReader, type TokenCategoryMap, type TokenPath, type TokenValueForPath } from './token-reader';\n\nexport * from './registry';\nexport * from './theme-overrides';\nexport * from './token-reader';\n\nexport const beeThemeNames = ${ts(meta.themeNames)} as const;\n\nexport type BeeThemeName = (typeof beeThemeNames)[number];\n\nexport const beeBrandNames = ${ts(meta.brandNames)} as const;\n\nexport type BeeBrandName = (typeof beeBrandNames)[number];\n\nexport const beeRuntimeThemeNames = ${ts(meta.runtimeThemeNames)} as const;\n\nexport type BeeRuntimeThemeName = (typeof beeRuntimeThemeNames)[number];\n\nexport const beeRuntimeThemeByBrand = ${ts(meta.runtimeThemeByBrand)} as const satisfies Record<BeeBrandName, Record<BeeThemeName, BeeRuntimeThemeName>>;\n\n/**\n * The default BeeUI theme registry (Bee + Violet). Built from the same canonical\n * mapping as the standalone helpers, so its \`resolve\`/\`selectionFor\` results match\n * \`resolveBeeRuntimeTheme\`/\`getBeeThemeSelection\` exactly. Applications may define\n * their own registry with \`defineThemeRegistry\` without editing BeeUI source.\n */\nexport const beeThemeRegistry = defineThemeRegistry(beeRuntimeThemeByBrand);\n\nexport function resolveBeeRuntimeTheme(\n  brand: BeeBrandName,\n  theme: BeeThemeName,\n): BeeRuntimeThemeName {\n  return beeRuntimeThemeByBrand[brand][theme];\n}\n\nexport function getBeeThemeSelection(runtimeTheme: string):\n  | { brand: BeeBrandName; theme: BeeThemeName }\n  | undefined {\n  for (const brand of beeBrandNames) {\n    for (const theme of beeThemeNames) {\n      if (beeRuntimeThemeByBrand[brand][theme] === runtimeTheme) {\n        return { brand, theme };\n      }\n    }\n  }\n\n  return undefined;\n}\n\nexport function isBeeDarkRuntimeTheme(runtimeTheme: string) {\n  return getBeeThemeSelection(runtimeTheme)?.theme === 'dark';\n}\n\nexport const semanticColorTokens = ${ts(semantics)} as const;\n\nexport type SemanticColorToken = (typeof semanticColorTokens)[number];\nexport type SemanticColorVariableName = \`--color-\${SemanticColorToken}\`;\nexport type SemanticColorOverrides = Partial<Record<SemanticColorVariableName, string>>;\n\nexport function semanticColorVariable(token: SemanticColorToken): SemanticColorVariableName {\n  return \`--color-\${token}\`;\n}\n\nexport function defineSemanticColorOverrides<const T extends SemanticColorOverrides>(\n  overrides: T,\n): Readonly<T> {\n  return Object.freeze({ ...overrides });\n}\n\nexport const spacing = ${renderRecord(dimensionValues(tokens.spacing), dep('spacing'))} as const;\n\nexport const radius = ${renderRecord(dimensionValues(tokens.radius), dep('radius'))} as const;\n\nexport type RadiusName = keyof typeof radius;\n\nexport type RadiusVariableName = \`--radius-\${RadiusName}\`;\n\nexport function radiusVariable(name: RadiusName): RadiusVariableName {\n  return \`--radius-\${name}\`;\n}\n\n/**\n * \`system\` means the platform default font. BeeUI deliberately does not force a\n * font-family utility until the consuming app loads and names a cross-platform font.\n */\nexport const fontFamily = ${renderRecord(tokenValues(tokens.fontFamily), dep('fontFamily'))} as const;\n\nexport const fontSize = ${renderRecord(dimensionValues(tokens.fontSize), dep('fontSize'))} as const;\n\nexport const lineHeight = ${renderRecord(dimensionValues(tokens.lineHeight), dep('lineHeight'))} as const;\n\nexport const fontWeight = ${renderRecord(tokenValues(tokens.fontWeight), dep('fontWeight'))} as const;\n\nexport const letterSpacing = ${renderRecord(dimensionValues(tokens.letterSpacing), dep('letterSpacing'))} as const;\n\nexport type TypographyRole = keyof typeof fontSize;\n\nexport type FontFamilyToken = keyof typeof fontFamily;\n\n/**\n * Composable numeric typography features. These compose with any of the six\n * semantic size roles (they are never size roles themselves). \`webUtilityClass\`\n * drives the CSS \`font-variant-numeric\` utility; \`nativeFontVariant\` maps to the\n * React Native \`fontVariant\` style so equal-width figures render on iOS/Android.\n */\nexport const numericVariants = ${ts(numericVariants)} as const;\n\nexport type NumericVariant = keyof typeof numericVariants;\n\n/**\n * System-monospace family for reference codes, IDs, and technical values. BeeUI\n * bundles no proprietary font: \`stack\`/\`webUtilityClass\` drive the web fallback\n * stack and \`native\` supplies the per-platform monospace family for React Native.\n * A consuming app may map these to a licensed monospace font it loads itself.\n */\nexport const monoFontFamily = ${ts(monoFontFamily)} as const;\n\nexport const controlSize = ${renderRecord(dimensionValues(tokens.controlSize), dep('controlSize'))} as const;\n\nexport const iconSize = ${renderRecord(dimensionValues(tokens.iconSize), dep('iconSize'))} as const;\n\nexport const avatarSize = ${renderRecord(dimensionValues(tokens.avatarSize), dep('avatarSize'))} as const;\n\nexport const contentWidth = ${renderRecord(dimensionValues(tokens.contentWidth), dep('contentWidth'))} as const;\n\nexport type ContentWidthName = keyof typeof contentWidth;\n\n/**\n * Minimum stable responsive breakpoints (min-width thresholds, px). Web-only\n * build-time constants — Tailwind/Uniwind compiles these into responsive\n * variants and remains the sole responsive execution engine. Viewports below\n * \`medium\` are the implicit compact base. These values are readable (e.g. to\n * classify a measured width) but are NOT a runtime override surface: the web\n * compiler needs constant breakpoints, so a runtime-mutable breakpoint API is\n * out of scope here (see #71).\n */\nexport const breakpoint = ${renderRecord(dimensionValues(tokens.breakpoint), dep('breakpoint'))} as const;\n\nexport type BreakpointName = keyof typeof breakpoint;\n\n/**\n * Semantic horizontal page-edge padding (px). Cross-platform: consumed on web\n * through the generated \`--spacing-page-gutter-*\` Tailwind utility and on React\n * Native through this constant. Composes additively with safe-area insets —\n * apply the gutter inside the safe area, never in place of the inset.\n */\nexport const pageGutter = ${renderRecord(dimensionValues(tokens.pageGutter), dep('pageGutter'))} as const;\n\nexport type PageGutterName = keyof typeof pageGutter;\n\n/**\n * Build-time vs runtime classification for the responsive-layout token groups.\n * \`breakpoint\` is a web-only build-time constant; \`pageGutter\` and\n * \`contentWidth\` are cross-platform values. None are runtime-overridable.\n */\nexport const responsiveLayoutClassification = ${ts(responsiveLayoutClassification(source))} as const;\n\nexport const elevation = ${renderRecord(elevationValues(tokens.elevation), dep('elevation'))} as const;\n\nexport type ElevationLevel = keyof typeof elevation;\n\n/**\n * Semantic z-order (stacking) contract. Deliberately separate from \`elevation\`,\n * which encodes shadow depth. Values keep intentional gaps so applications can\n * insert local sublayers between roles without colliding with BeeUI surfaces.\n */\nexport const layer = ${renderRecord(layerValues(tokens.layer), dep('layer'))} as const;\n\nexport type LayerName = keyof typeof layer;\n\nexport type LayerVariableName = \`--layer-\${LayerName}\`;\n\nexport function layerVariable(name: LayerName): LayerVariableName {\n  return \`--layer-\${name}\`;\n}\n\nexport const motionDuration = ${renderRecord(dimensionValues(tokens.motionDuration, 'ms'), dep('motionDuration'))} as const;\n\nexport type MotionDurationName = keyof typeof motionDuration;\n\nexport type MotionDurationVariableName = \`--motion-duration-\${MotionDurationName}\`;\n\nexport function motionDurationVariable(name: MotionDurationName): MotionDurationVariableName {\n  return \`--motion-duration-\${name}\`;\n}\n\nexport const motionEasing = ${renderRecord(motionEasingValues(tokens.motionEasing), dep('motionEasing'))} as const;\n\nexport const motionIntents = ${ts(motionIntentNames(source))} as const;\n\nexport type MotionIntent = (typeof motionIntents)[number];\n\n/**\n * Reduced-motion policy per intent. Chosen from the four BeeUI-supported strategies:\n * - \`immediate\`: skip animation entirely and jump to the final state;\n * - \`opacity-or-state\`: keep the opacity/state change, drop spatial (transform/size) motion;\n * - \`shorten\`: keep the motion but clamp its duration to the fast token;\n * - \`remove-spatial\`: keep non-spatial timing, drop spatial motion.\n */\nexport type MotionReducedMotionPolicy = ${MOTION_REDUCED_POLICIES.map((policy) => `'${policy}'`).join(' | ')};\n\n/**\n * Semantic motion vocabulary for recurring spatial/state transitions.\n *\n * Token presence never makes animation mandatory. Web and native representations may\n * differ while sharing a semantic intent; no frame- or time-identical parity is promised.\n * Raw spring physics (\`stiffness\`, \`damping\`, \`mass\`; unitless React-Native spring units)\n * are an implementation detail behind the semantic name, not the primary public API.\n */\nexport const motion = ${ts(motionValues(source))} as const;\n\nexport type MotionSpec = (typeof motion)[MotionIntent];\n\nexport type ResolvedMotion = {\n  /** Whether the caller should animate at all (false means jump to the final state). */\n  animate: boolean;\n  /** Effective web duration in milliseconds after any reduced-motion policy. */\n  durationMs: number;\n  /** Whether spatial (transform/size) motion should be applied. */\n  spatial: boolean;\n  /** Whether a reduced-motion policy changed the base specification. */\n  reducedMotionApplied: boolean;\n};\n\n/**\n * Resolve a semantic motion intent against the caller-supplied reduced-motion signal.\n *\n * BeeUI adds no motion/preference store: the platform or app owns the reduced-motion\n * signal (e.g. \`AccessibilityInfo.isReduceMotionEnabled\` on native, the\n * \`prefers-reduced-motion\` media query on web) and passes it in. The final state is the\n * same in every branch; reduced motion only changes how (or whether) the transition plays.\n */\nexport function resolveMotion(\n  intent: MotionIntent,\n  options: { reducedMotion?: boolean } = {},\n): ResolvedMotion {\n  const spec = motion[intent];\n  const baseDurationMs = spec.web.durationMs;\n  const spatialByDefault = spec.web.properties.some(\n    (property) => property === 'transform' || property === 'height',\n  );\n\n  if (!options.reducedMotion) {\n    return {\n      animate: true,\n      durationMs: baseDurationMs,\n      spatial: spatialByDefault,\n      reducedMotionApplied: false,\n    };\n  }\n\n  // The active intents only use a subset of policies; the exhaustive switch keeps the\n  // resolver correct if a future intent adopts \`shorten\` or \`remove-spatial\`.\n  switch (spec.reducedMotion as MotionReducedMotionPolicy) {\n    case 'immediate':\n      return { animate: false, durationMs: 0, spatial: false, reducedMotionApplied: true };\n    case 'shorten':\n      return {\n        animate: true,\n        durationMs: Math.min(baseDurationMs, motionDuration.fast),\n        spatial: spatialByDefault,\n        reducedMotionApplied: true,\n      };\n    case 'opacity-or-state':\n    case 'remove-spatial':\n      return {\n        animate: true,\n        durationMs: baseDurationMs,\n        spatial: false,\n        reducedMotionApplied: true,\n      };\n  }\n}\n\nexport const focusRing = ${ts(focusRing)} as const satisfies {\n  width: number;\n  offset: number;\n  colorToken: SemanticColorToken;\n  webVisibility: 'focus-visible';\n  nativeVisibility: 'platform-focus';\n};\n\n/**\n * Runtime-override safety classification (#71) for every canonical token group,\n * generated straight from each group's \`$extensions.com.beeui\` metadata (see\n * tokens.json). \`runtimeOverridable: true\` is the only signal that gates a\n * group into \`themeOverrideCategories\` below; every other group is public but\n * build-time/invariant. The private authoring token group has its own\n * visibility flag (see \`privateTokenGroups\` in \`$extensions.com.beeui\`) and\n * is never a \`tokens.tokens\` group, so it never appears in this table. Colors\n * have their own established public/private classification\n * (\`semanticColorDescriptions\` / \`privateTokenGroups\`) and are not repeated here.\n */\nexport const themeOverrideClassification = ${ts(tokenOverrideClassification(source))} as const;\n\n/**\n * BeeUI's #71 typed runtime-override category vocabulary, instantiated from\n * canonical, codegen-derived data. \`colors\` mirrors the existing\n * \`semanticColorTokens\` vocabulary (kept for \`defineSemanticColorOverrides\`\n * compatibility -- both compile to the identical \`--color-*\` representation).\n * Every other category here exists only because its source token group is\n * flagged \`runtimeOverridable: true\` in \`themeOverrideClassification\` above:\n * unsetting that flag and regenerating removes the category, and every\n * category's accepted \`keys\` are read live from the already-generated token\n * record (never a hand-maintained parallel list of names).\n */\nconst themeOverrideCategories = {\n  colors: {\n    keys: semanticColorTokens,\n    valueKind: 'string',\n    variable: (key: SemanticColorToken) => semanticColorVariable(key),\n    format: (value: string) => value,\n  },\n${themeOverrideCategoryEntriesTs(source)}\n} as const satisfies OverrideCategoryMap;\n\n/**\n * Typed, validated runtime-override definer for the supported safe\n * runtime-overridable public token categories. Pure define/validate/compile:\n * unknown categories, unknown keys within a known category (which includes\n * every private authoring primitive and every build-time-only/invariant\n * token -- see \`themeOverrideClassification\`), and wrong-kind values are all\n * rejected. Applying the compiled result to Uniwind is always a separate,\n * explicit \`applyThemeOverrides()\` call -- this function itself never touches\n * Uniwind, \`document\`, or any global state.\n *\n * \`\`\`ts\n * const overrides = defineThemeOverrides({\n *   colors: { primary: '#123456', focusRing: '#654321' },\n *   radius: { md: 12 },\n *   motion: { normal: 180 },\n * });\n * applyThemeOverrides(Uniwind, 'light', overrides);\n * \`\`\`\n *\n * \`defineSemanticColorOverrides()\` remains available unchanged for existing\n * color-only consumers; \`defineThemeOverrides({ colors: { primary: '#123456' } })\`\n * compiles to the identical \`--color-primary\` CSS-variable entry.\n */\nexport const defineThemeOverrides = createThemeOverridesDefiner(themeOverrideCategories);\n\n/** The exact object shape \`defineThemeOverrides\` accepts. */\nexport type ThemeOverrides = ThemeOverridesInput<typeof themeOverrideCategories>;\n\n/**\n * BeeUI's #72 typed runtime-token-read category vocabulary, instantiated from\n * canonical, codegen-derived data. Deliberately the same category set as\n * \`themeOverrideCategories\` above (\`colors\`, \`radius\`, \`motion\`) and nothing\n * else: every readable category here is real-runtime-reactive -- its value can\n * differ between the initial build and the live app, either because it is\n * theme/appearance/scope-dependent (\`colors\`) or because #71 lets it be\n * overridden at runtime (\`radius\`, \`motion\`). Every other canonical token\n * group is theme-invariant and never runtime-mutable, so it stays an ordinary\n * typed export (e.g. \`spacing\`, \`fontSize\`, \`layer\`) rather than gaining a\n * runtime-reader category -- see \`docs/data-typography.md\`'s \"Runtime-reader\n * note\" and \`token-reader.ts\`'s module documentation for the full rationale.\n */\nexport const beeTokenReaderCategories = {\n  colors: {\n    kind: 'color',\n    keys: semanticColorTokens,\n    variable: (key: SemanticColorToken) => semanticColorVariable(key),\n  },\n${tokenReaderCategoryEntriesTs(source)}\n} as const satisfies TokenCategoryMap;\n\n/**\n * BeeUI's #72 typed runtime-token reader. Pure and stateless: only derives\n * valid \`category.key\` paths and their Uniwind CSS-variable name from\n * canonical metadata (see \`token-reader.ts\`). It never reads Uniwind itself --\n * \`useBeeToken\`/\`getBeeToken\` in \`@beeui/ui\` (\`use-bee-token.ts\`) are the only\n * place this feature actually calls into Uniwind, so \`@beeui/tokens\` keeps\n * zero dependency on \`uniwind\` or React, exactly like \`beeThemeRegistry\` and\n * \`defineThemeOverrides\` above.\n */\nexport const beeTokenReader = defineTokenReader(beeTokenReaderCategories);\n\n/** Every valid runtime-readable token path, e.g. \`colors.primary\` | \`radius.md\` | \`motion.normal\`. */\nexport type BeeTokenPath = TokenPath<typeof beeTokenReaderCategories>;\n\n/** The normalized TypeScript return type for one specific \`BeeTokenPath\`. */\nexport type BeeTokenValue<Path extends BeeTokenPath> = TokenValueForPath<typeof beeTokenReaderCategories, Path>;\n`;
+  return `// AUTO-GENERATED — DO NOT EDIT DIRECTLY.\n// Canonical source: ${CANONICAL_PATH}\n// Generator: ${GENERATOR_PATH}\n\nimport { defineThemeRegistry } from './registry';\nimport { applyThemeOverrides, createThemeOverridesDefiner, type CompiledThemeOverrides, type OverrideCategoryMap, type ThemeOverridesInput, type UniwindCSSVariableClient } from './theme-overrides';\nimport { defineTokenReader, type TokenCategoryMap, type TokenPath, type TokenValueForPath } from './token-reader';\n\nexport * from './registry';\nexport * from './theme-overrides';\nexport * from './token-reader';\n\nexport const beeThemeNames = ${ts(meta.themeNames)} as const;\n\nexport type BeeThemeName = (typeof beeThemeNames)[number];\n\nexport const beeBrandNames = ${ts(meta.brandNames)} as const;\n\nexport type BeeBrandName = (typeof beeBrandNames)[number];\n\nexport const beeRuntimeThemeNames = ${ts(meta.runtimeThemeNames)} as const;\n\nexport type BeeRuntimeThemeName = (typeof beeRuntimeThemeNames)[number];\n\nexport const beeRuntimeThemeByBrand = ${ts(meta.runtimeThemeByBrand)} as const satisfies Record<BeeBrandName, Record<BeeThemeName, BeeRuntimeThemeName>>;\n\n/**\n * The default BeeUI theme registry (Bee + Violet). Built from the same canonical\n * mapping as the standalone helpers, so its \`resolve\`/\`selectionFor\` results match\n * \`resolveBeeRuntimeTheme\`/\`getBeeThemeSelection\` exactly. Applications may define\n * their own registry with \`defineThemeRegistry\` without editing BeeUI source.\n */\nexport const beeThemeRegistry = defineThemeRegistry(beeRuntimeThemeByBrand);\n\nexport function resolveBeeRuntimeTheme(\n  brand: BeeBrandName,\n  theme: BeeThemeName,\n): BeeRuntimeThemeName {\n  return beeRuntimeThemeByBrand[brand][theme];\n}\n\nexport function getBeeThemeSelection(runtimeTheme: string):\n  | { brand: BeeBrandName; theme: BeeThemeName }\n  | undefined {\n  for (const brand of beeBrandNames) {\n    for (const theme of beeThemeNames) {\n      if (beeRuntimeThemeByBrand[brand][theme] === runtimeTheme) {\n        return { brand, theme };\n      }\n    }\n  }\n\n  return undefined;\n}\n\nexport function isBeeDarkRuntimeTheme(runtimeTheme: string) {\n  return getBeeThemeSelection(runtimeTheme)?.theme === 'dark';\n}\n\nexport const semanticColorTokens = ${ts(semantics)} as const;\n\nexport type SemanticColorToken = (typeof semanticColorTokens)[number];\nexport type SemanticColorVariableName = \`--color-\${SemanticColorToken}\`;\nexport type SemanticColorOverrides = Partial<Record<SemanticColorVariableName, string>>;\n\nexport function semanticColorVariable(token: SemanticColorToken): SemanticColorVariableName {\n  return \`--color-\${token}\`;\n}\n\nexport function defineSemanticColorOverrides<const T extends SemanticColorOverrides>(\n  overrides: T,\n): Readonly<T> {\n  return Object.freeze({ ...overrides });\n}\n\nexport const spacing = ${renderRecord(dimensionValues(tokens.spacing), dep('spacing'))} as const;\n\nexport const radius = ${renderRecord(dimensionValues(tokens.radius), dep('radius'))} as const;\n\nexport type RadiusName = keyof typeof radius;\n\nexport type RadiusVariableName = \`--radius-\${RadiusName}\`;\n\nexport function radiusVariable(name: RadiusName): RadiusVariableName {\n  return \`--radius-\${name}\`;\n}\n\n/**\n * \`system\` means the platform default font. BeeUI deliberately does not force a\n * font-family utility until the consuming app loads and names a cross-platform font.\n */\nexport const fontFamily = ${renderRecord(tokenValues(tokens.fontFamily), dep('fontFamily'))} as const;\n\nexport const fontSize = ${renderRecord(dimensionValues(tokens.fontSize), dep('fontSize'))} as const;\n\nexport const lineHeight = ${renderRecord(dimensionValues(tokens.lineHeight), dep('lineHeight'))} as const;\n\nexport const fontWeight = ${renderRecord(tokenValues(tokens.fontWeight), dep('fontWeight'))} as const;\n\nexport const letterSpacing = ${renderRecord(dimensionValues(tokens.letterSpacing), dep('letterSpacing'))} as const;\n\nexport type TypographyRole = keyof typeof fontSize;\n\nexport type FontFamilyToken = keyof typeof fontFamily;\n\n/**\n * Composable numeric typography features. These compose with any of the six\n * semantic size roles (they are never size roles themselves). \`webUtilityClass\`\n * drives the CSS \`font-variant-numeric\` utility; \`nativeFontVariant\` maps to the\n * React Native \`fontVariant\` style so equal-width figures render on iOS/Android.\n */\nexport const numericVariants = ${ts(numericVariants)} as const;\n\nexport type NumericVariant = keyof typeof numericVariants;\n\n/**\n * System-monospace family for reference codes, IDs, and technical values. BeeUI\n * bundles no proprietary font: \`stack\`/\`webUtilityClass\` drive the web fallback\n * stack and \`native\` supplies the per-platform monospace family for React Native.\n * A consuming app may map these to a licensed monospace font it loads itself.\n */\nexport const monoFontFamily = ${ts(monoFontFamily)} as const;\n\nexport const controlSize = ${renderRecord(dimensionValues(tokens.controlSize), dep('controlSize'))} as const;\n\nexport const iconSize = ${renderRecord(dimensionValues(tokens.iconSize), dep('iconSize'))} as const;\n\nexport const avatarSize = ${renderRecord(dimensionValues(tokens.avatarSize), dep('avatarSize'))} as const;\n\nexport const contentWidth = ${renderRecord(dimensionValues(tokens.contentWidth), dep('contentWidth'))} as const;\n\nexport type ContentWidthName = keyof typeof contentWidth;\n\n/**\n * Minimum stable responsive breakpoints (min-width thresholds, px). Web-only\n * build-time constants — Tailwind/Uniwind compiles these into responsive\n * variants and remains the sole responsive execution engine. Viewports below\n * \`medium\` are the implicit compact base. These values are readable (e.g. to\n * classify a measured width) but are NOT a runtime override surface: the web\n * compiler needs constant breakpoints, so a runtime-mutable breakpoint API is\n * out of scope here (see #71).\n */\nexport const breakpoint = ${renderRecord(dimensionValues(tokens.breakpoint), dep('breakpoint'))} as const;\n\nexport type BreakpointName = keyof typeof breakpoint;\n\n/**\n * Semantic horizontal page-edge padding (px). Cross-platform: consumed on web\n * through the generated \`--spacing-page-gutter-*\` Tailwind utility and on React\n * Native through this constant. Composes additively with safe-area insets —\n * apply the gutter inside the safe area, never in place of the inset.\n */\nexport const pageGutter = ${renderRecord(dimensionValues(tokens.pageGutter), dep('pageGutter'))} as const;\n\nexport type PageGutterName = keyof typeof pageGutter;\n\n${renderDensityArtifact(source)}\n\n/**\n * Build-time vs runtime classification for the responsive-layout token groups.\n * \`breakpoint\` is a web-only build-time constant; \`pageGutter\` and\n * \`contentWidth\` are cross-platform values. None are runtime-overridable.\n */\nexport const responsiveLayoutClassification = ${ts(responsiveLayoutClassification(source))} as const;\n\nexport const elevation = ${renderRecord(elevationValues(tokens.elevation), dep('elevation'))} as const;\n\nexport type ElevationLevel = keyof typeof elevation;\n\n/**\n * Semantic z-order (stacking) contract. Deliberately separate from \`elevation\`,\n * which encodes shadow depth. Values keep intentional gaps so applications can\n * insert local sublayers between roles without colliding with BeeUI surfaces.\n */\nexport const layer = ${renderRecord(layerValues(tokens.layer), dep('layer'))} as const;\n\nexport type LayerName = keyof typeof layer;\n\nexport type LayerVariableName = \`--layer-\${LayerName}\`;\n\nexport function layerVariable(name: LayerName): LayerVariableName {\n  return \`--layer-\${name}\`;\n}\n\nexport const motionDuration = ${renderRecord(dimensionValues(tokens.motionDuration, 'ms'), dep('motionDuration'))} as const;\n\nexport type MotionDurationName = keyof typeof motionDuration;\n\nexport type MotionDurationVariableName = \`--motion-duration-\${MotionDurationName}\`;\n\nexport function motionDurationVariable(name: MotionDurationName): MotionDurationVariableName {\n  return \`--motion-duration-\${name}\`;\n}\n\nexport const motionEasing = ${renderRecord(motionEasingValues(tokens.motionEasing), dep('motionEasing'))} as const;\n\nexport const motionIntents = ${ts(motionIntentNames(source))} as const;\n\nexport type MotionIntent = (typeof motionIntents)[number];\n\n/**\n * Reduced-motion policy per intent. Chosen from the four BeeUI-supported strategies:\n * - \`immediate\`: skip animation entirely and jump to the final state;\n * - \`opacity-or-state\`: keep the opacity/state change, drop spatial (transform/size) motion;\n * - \`shorten\`: keep the motion but clamp its duration to the fast token;\n * - \`remove-spatial\`: keep non-spatial timing, drop spatial motion.\n */\nexport type MotionReducedMotionPolicy = ${MOTION_REDUCED_POLICIES.map((policy) => `'${policy}'`).join(' | ')};\n\n/**\n * Semantic motion vocabulary for recurring spatial/state transitions.\n *\n * Token presence never makes animation mandatory. Web and native representations may\n * differ while sharing a semantic intent; no frame- or time-identical parity is promised.\n * Raw spring physics (\`stiffness\`, \`damping\`, \`mass\`; unitless React-Native spring units)\n * are an implementation detail behind the semantic name, not the primary public API.\n */\nexport const motion = ${ts(motionValues(source))} as const;\n\nexport type MotionSpec = (typeof motion)[MotionIntent];\n\nexport type ResolvedMotion = {\n  /** Whether the caller should animate at all (false means jump to the final state). */\n  animate: boolean;\n  /** Effective web duration in milliseconds after any reduced-motion policy. */\n  durationMs: number;\n  /** Whether spatial (transform/size) motion should be applied. */\n  spatial: boolean;\n  /** Whether a reduced-motion policy changed the base specification. */\n  reducedMotionApplied: boolean;\n};\n\n/**\n * Resolve a semantic motion intent against the caller-supplied reduced-motion signal.\n *\n * BeeUI adds no motion/preference store: the platform or app owns the reduced-motion\n * signal (e.g. \`AccessibilityInfo.isReduceMotionEnabled\` on native, the\n * \`prefers-reduced-motion\` media query on web) and passes it in. The final state is the\n * same in every branch; reduced motion only changes how (or whether) the transition plays.\n */\nexport function resolveMotion(\n  intent: MotionIntent,\n  options: { reducedMotion?: boolean } = {},\n): ResolvedMotion {\n  const spec = motion[intent];\n  const baseDurationMs = spec.web.durationMs;\n  const spatialByDefault = spec.web.properties.some(\n    (property) => property === 'transform' || property === 'height',\n  );\n\n  if (!options.reducedMotion) {\n    return {\n      animate: true,\n      durationMs: baseDurationMs,\n      spatial: spatialByDefault,\n      reducedMotionApplied: false,\n    };\n  }\n\n  // The active intents only use a subset of policies; the exhaustive switch keeps the\n  // resolver correct if a future intent adopts \`shorten\` or \`remove-spatial\`.\n  switch (spec.reducedMotion as MotionReducedMotionPolicy) {\n    case 'immediate':\n      return { animate: false, durationMs: 0, spatial: false, reducedMotionApplied: true };\n    case 'shorten':\n      return {\n        animate: true,\n        durationMs: Math.min(baseDurationMs, motionDuration.fast),\n        spatial: spatialByDefault,\n        reducedMotionApplied: true,\n      };\n    case 'opacity-or-state':\n    case 'remove-spatial':\n      return {\n        animate: true,\n        durationMs: baseDurationMs,\n        spatial: false,\n        reducedMotionApplied: true,\n      };\n  }\n}\n\nexport const focusRing = ${ts(focusRing)} as const satisfies {\n  width: number;\n  offset: number;\n  colorToken: SemanticColorToken;\n  webVisibility: 'focus-visible';\n  nativeVisibility: 'platform-focus';\n};\n\n/**\n * Runtime-override safety classification (#71) for every canonical token group,\n * generated straight from each group's \`$extensions.com.beeui\` metadata (see\n * tokens.json). \`runtimeOverridable: true\` is the only signal that gates a\n * group into \`themeOverrideCategories\` below; every other group is public but\n * build-time/invariant. The private authoring token group has its own\n * visibility flag (see \`privateTokenGroups\` in \`$extensions.com.beeui\`) and\n * is never a \`tokens.tokens\` group, so it never appears in this table. Colors\n * have their own established public/private classification\n * (\`semanticColorDescriptions\` / \`privateTokenGroups\`) and are not repeated here.\n */\nexport const themeOverrideClassification = ${ts(tokenOverrideClassification(source))} as const;\n\n/**\n * BeeUI's #71 typed runtime-override category vocabulary, instantiated from\n * canonical, codegen-derived data. \`colors\` mirrors the existing\n * \`semanticColorTokens\` vocabulary (kept for \`defineSemanticColorOverrides\`\n * compatibility -- both compile to the identical \`--color-*\` representation).\n * Every other category here exists only because its source token group is\n * flagged \`runtimeOverridable: true\` in \`themeOverrideClassification\` above:\n * unsetting that flag and regenerating removes the category, and every\n * category's accepted \`keys\` are read live from the already-generated token\n * record (never a hand-maintained parallel list of names).\n */\nconst themeOverrideCategories = {\n  colors: {\n    keys: semanticColorTokens,\n    valueKind: 'string',\n    variable: (key: SemanticColorToken) => semanticColorVariable(key),\n    format: (value: string) => value,\n  },\n${themeOverrideCategoryEntriesTs(source)}\n} as const satisfies OverrideCategoryMap;\n\n/**\n * Typed, validated runtime-override definer for the supported safe\n * runtime-overridable public token categories. Pure define/validate/compile:\n * unknown categories, unknown keys within a known category (which includes\n * every private authoring primitive and every build-time-only/invariant\n * token -- see \`themeOverrideClassification\`), and wrong-kind values are all\n * rejected. Applying the compiled result to Uniwind is always a separate,\n * explicit \`applyThemeOverrides()\` call -- this function itself never touches\n * Uniwind, \`document\`, or any global state.\n *\n * \`\`\`ts\n * const overrides = defineThemeOverrides({\n *   colors: { primary: '#123456', focusRing: '#654321' },\n *   radius: { md: 12 },\n *   motion: { normal: 180 },\n * });\n * applyThemeOverrides(Uniwind, 'light', overrides);\n * \`\`\`\n *\n * \`defineSemanticColorOverrides()\` remains available unchanged for existing\n * color-only consumers; \`defineThemeOverrides({ colors: { primary: '#123456' } })\`\n * compiles to the identical \`--color-primary\` CSS-variable entry.\n */\nexport const defineThemeOverrides = createThemeOverridesDefiner(themeOverrideCategories);\n\n/** The exact object shape \`defineThemeOverrides\` accepts. */\nexport type ThemeOverrides = ThemeOverridesInput<typeof themeOverrideCategories>;\n\n/**\n * BeeUI's #72 typed runtime-token-read category vocabulary, instantiated from\n * canonical, codegen-derived data. Deliberately the same category set as\n * \`themeOverrideCategories\` above (\`colors\`, \`radius\`, \`motion\`) and nothing\n * else: every readable category here is real-runtime-reactive -- its value can\n * differ between the initial build and the live app, either because it is\n * theme/appearance/scope-dependent (\`colors\`) or because #71 lets it be\n * overridden at runtime (\`radius\`, \`motion\`). Every other canonical token\n * group is theme-invariant and never runtime-mutable, so it stays an ordinary\n * typed export (e.g. \`spacing\`, \`fontSize\`, \`layer\`) rather than gaining a\n * runtime-reader category -- see \`docs/data-typography.md\`'s \"Runtime-reader\n * note\" and \`token-reader.ts\`'s module documentation for the full rationale.\n */\nexport const beeTokenReaderCategories = {\n  colors: {\n    kind: 'color',\n    keys: semanticColorTokens,\n    variable: (key: SemanticColorToken) => semanticColorVariable(key),\n  },\n${tokenReaderCategoryEntriesTs(source)}\n} as const satisfies TokenCategoryMap;\n\n/**\n * BeeUI's #72 typed runtime-token reader. Pure and stateless: only derives\n * valid \`category.key\` paths and their Uniwind CSS-variable name from\n * canonical metadata (see \`token-reader.ts\`). It never reads Uniwind itself --\n * \`useBeeToken\`/\`getBeeToken\` in \`@beeui/ui\` (\`use-bee-token.ts\`) are the only\n * place this feature actually calls into Uniwind, so \`@beeui/tokens\` keeps\n * zero dependency on \`uniwind\` or React, exactly like \`beeThemeRegistry\` and\n * \`defineThemeOverrides\` above.\n */\nexport const beeTokenReader = defineTokenReader(beeTokenReaderCategories);\n\n/** Every valid runtime-readable token path, e.g. \`colors.primary\` | \`radius.md\` | \`motion.normal\`. */\nexport type BeeTokenPath = TokenPath<typeof beeTokenReaderCategories>;\n\n/** The normalized TypeScript return type for one specific \`BeeTokenPath\`. */\nexport type BeeTokenValue<Path extends BeeTokenPath> = TokenValueForPath<typeof beeTokenReaderCategories, Path>;\n`;
 }
 
 function renderThemeCss(source) {
@@ -1178,6 +1368,14 @@ function renderThemeCss(source) {
   for (const [name, value] of Object.entries(iconSize)) lines.push(`  --spacing-icon-${name}: ${pxToRem(value, reference)};`);
   for (const [name, value] of Object.entries(avatarSize)) lines.push(`  --spacing-avatar-${name}: ${pxToRem(value, reference)};`);
   for (const [name, value] of Object.entries(pageGutter)) lines.push(`  --spacing-page-gutter-${name}: ${pxToRem(value, reference)};`);
+  // BeeUI issue #74 — bake the default density mode's value into `@theme` so first paint
+  // (before any JS `applyDensity` call) always renders `defaultDensityMode`, matching how
+  // `radius`/`motionDuration` bake a default that #71's runtime overrides can then swap.
+  const densityDefaultMode = metadata(source).densityIntents.defaultMode;
+  for (const groupName of densityMetricGroupNames(source)) {
+    const valuesByMode = dimensionValues(tokens[groupName]);
+    lines.push(`  ${densityVariableName(groupName)}: ${pxToRem(valuesByMode[densityDefaultMode], reference)};`);
+  }
   lines.push('');
   for (const [name, value] of Object.entries(contentWidth)) lines.push(`  --container-${name}: ${pxToRem(value, reference)};`);
   lines.push('');

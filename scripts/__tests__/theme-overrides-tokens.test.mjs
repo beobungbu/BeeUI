@@ -96,6 +96,9 @@ test('the runtime-override surface composes with the existing color-only compati
 });
 
 test('the authored engine is imported, never hand-duplicated inside the generated file', () => {
-  assert.match(indexTs, /import \{ createThemeOverridesDefiner, type OverrideCategoryMap, type ThemeOverridesInput \} from '\.\/theme-overrides';/);
+  assert.match(
+    indexTs,
+    /import \{ applyThemeOverrides, createThemeOverridesDefiner, type CompiledThemeOverrides, type OverrideCategoryMap, type ThemeOverridesInput, type UniwindCSSVariableClient \} from '\.\/theme-overrides';/,
+  );
   assert.match(indexTs, /export \* from '\.\/theme-overrides';/);
 });
