@@ -374,6 +374,156 @@ export const motionEasing = {
   "emphasized": "cubic-bezier(0.2, 0, 0, 1.2)"
 } as const;
 
+export const motionIntents = [
+  "overlay-enter",
+  "overlay-exit",
+  "disclosure"
+] as const;
+
+export type MotionIntent = (typeof motionIntents)[number];
+
+/**
+ * Reduced-motion policy per intent. Chosen from the four BeeUI-supported strategies:
+ * - `immediate`: skip animation entirely and jump to the final state;
+ * - `opacity-or-state`: keep the opacity/state change, drop spatial (transform/size) motion;
+ * - `shorten`: keep the motion but clamp its duration to the fast token;
+ * - `remove-spatial`: keep non-spatial timing, drop spatial motion.
+ */
+export type MotionReducedMotionPolicy = 'immediate' | 'opacity-or-state' | 'shorten' | 'remove-spatial';
+
+/**
+ * Semantic motion vocabulary for recurring spatial/state transitions.
+ *
+ * Token presence never makes animation mandatory. Web and native representations may
+ * differ while sharing a semantic intent; no frame- or time-identical parity is promised.
+ * Raw spring physics (`stiffness`, `damping`, `mass`; unitless React-Native spring units)
+ * are an implementation detail behind the semantic name, not the primary public API.
+ */
+export const motion = {
+  "overlay-enter": {
+    "web": {
+      "durationMs": 200,
+      "easing": "cubic-bezier(0.2, 0, 0, 1)",
+      "properties": [
+        "opacity",
+        "transform"
+      ]
+    },
+    "native": {
+      "type": "spring",
+      "stiffness": 260,
+      "damping": 26,
+      "mass": 1
+    },
+    "reducedMotion": "opacity-or-state"
+  },
+  "overlay-exit": {
+    "web": {
+      "durationMs": 120,
+      "easing": "cubic-bezier(0.2, 0, 0, 1)",
+      "properties": [
+        "opacity",
+        "transform"
+      ]
+    },
+    "native": {
+      "type": "timing",
+      "durationMs": 120,
+      "easing": [
+        0.2,
+        0,
+        0,
+        1
+      ]
+    },
+    "reducedMotion": "immediate"
+  },
+  "disclosure": {
+    "web": {
+      "durationMs": 200,
+      "easing": "cubic-bezier(0.2, 0, 0, 1)",
+      "properties": [
+        "height",
+        "opacity"
+      ]
+    },
+    "native": {
+      "type": "timing",
+      "durationMs": 200,
+      "easing": [
+        0.2,
+        0,
+        0,
+        1
+      ]
+    },
+    "reducedMotion": "immediate"
+  }
+} as const;
+
+export type MotionSpec = (typeof motion)[MotionIntent];
+
+export type ResolvedMotion = {
+  /** Whether the caller should animate at all (false means jump to the final state). */
+  animate: boolean;
+  /** Effective web duration in milliseconds after any reduced-motion policy. */
+  durationMs: number;
+  /** Whether spatial (transform/size) motion should be applied. */
+  spatial: boolean;
+  /** Whether a reduced-motion policy changed the base specification. */
+  reducedMotionApplied: boolean;
+};
+
+/**
+ * Resolve a semantic motion intent against the caller-supplied reduced-motion signal.
+ *
+ * BeeUI adds no motion/preference store: the platform or app owns the reduced-motion
+ * signal (e.g. `AccessibilityInfo.isReduceMotionEnabled` on native, the
+ * `prefers-reduced-motion` media query on web) and passes it in. The final state is the
+ * same in every branch; reduced motion only changes how (or whether) the transition plays.
+ */
+export function resolveMotion(
+  intent: MotionIntent,
+  options: { reducedMotion?: boolean } = {},
+): ResolvedMotion {
+  const spec = motion[intent];
+  const baseDurationMs = spec.web.durationMs;
+  const spatialByDefault = spec.web.properties.some(
+    (property) => property === 'transform' || property === 'height',
+  );
+
+  if (!options.reducedMotion) {
+    return {
+      animate: true,
+      durationMs: baseDurationMs,
+      spatial: spatialByDefault,
+      reducedMotionApplied: false,
+    };
+  }
+
+  // The active intents only use a subset of policies; the exhaustive switch keeps the
+  // resolver correct if a future intent adopts `shorten` or `remove-spatial`.
+  switch (spec.reducedMotion as MotionReducedMotionPolicy) {
+    case 'immediate':
+      return { animate: false, durationMs: 0, spatial: false, reducedMotionApplied: true };
+    case 'shorten':
+      return {
+        animate: true,
+        durationMs: Math.min(baseDurationMs, motionDuration.fast),
+        spatial: spatialByDefault,
+        reducedMotionApplied: true,
+      };
+    case 'opacity-or-state':
+    case 'remove-spatial':
+      return {
+        animate: true,
+        durationMs: baseDurationMs,
+        spatial: false,
+        reducedMotionApplied: true,
+      };
+  }
+}
+
 export const focusRing = {
   "width": 2,
   "offset": 2,

@@ -27,6 +27,7 @@ const packageSpecs = [
     dir: 'packages/tokens',
     requiredPackedFiles: [
       'package/src/index.ts',
+      'package/src/motion-runtime.ts',
       'package/src/theme.css',
       'package/tokens.json',
       'package/src/tokens.resolver.json',

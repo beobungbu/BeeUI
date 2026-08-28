@@ -41,6 +41,10 @@ const DTCG_TYPES = new Set([
   'typography',
 ]);
 
+const MOTION_REDUCED_POLICIES = ['immediate', 'opacity-or-state', 'shorten', 'remove-spatial'];
+const MOTION_WEB_PROPERTIES = new Set(['opacity', 'transform', 'height']);
+const MOTION_NATIVE_TYPES = new Set(['spring', 'timing']);
+
 function invariant(condition, message) {
   if (!condition) throw new Error(`Invalid canonical tokens: ${message}`);
 }
@@ -444,6 +448,59 @@ function motionEasingValues(group) {
   );
 }
 
+function motionEasingArrays(group) {
+  return Object.fromEntries(publicEntries(group).map(([name, token]) => [name, token.$value]));
+}
+
+function semanticMotionSpecs(source) {
+  return metadata(source).semanticMotion ?? {};
+}
+
+// Whether an intent moves in space by default (transform/size), mirroring resolveMotion.
+function motionSpatialByDefault(spec) {
+  return spec.web.properties.some((property) => property === 'transform' || property === 'height');
+}
+
+// Whether spatial motion survives under reduced motion, derived from the canonical policy.
+// Only `shorten` keeps spatial motion; the other policies drop it. This is the single source
+// the generated CSS flag and the JS `resolveMotion().spatial` value both derive from.
+function motionReducedSpatial(spec) {
+  return spec.reducedMotion === 'shorten' ? motionSpatialByDefault(spec) : false;
+}
+
+function motionIntentNames(source) {
+  return Object.keys(semanticMotionSpecs(source));
+}
+
+function motionValues(source) {
+  const durations = dimensionValues(source.tokens.motionDuration, 'ms');
+  const easingCss = motionEasingValues(source.tokens.motionEasing);
+  const easingArrays = motionEasingArrays(source.tokens.motionEasing);
+  return Object.fromEntries(
+    Object.entries(semanticMotionSpecs(source)).map(([name, spec]) => {
+      const web = {
+        durationMs: durations[spec.web.durationToken],
+        easing: easingCss[spec.web.easingToken],
+        properties: [...spec.web.properties],
+      };
+      const native =
+        spec.native.type === 'spring'
+          ? {
+              type: 'spring',
+              stiffness: spec.native.stiffness,
+              damping: spec.native.damping,
+              mass: spec.native.mass,
+            }
+          : {
+              type: 'timing',
+              durationMs: durations[spec.native.durationToken],
+              easing: [...easingArrays[spec.native.easingToken]],
+            };
+      return [name, { web, native, reducedMotion: spec.reducedMotion }];
+    }),
+  );
+}
+
 function semanticNames(source) {
   return Object.keys(metadata(source).semanticColorDescriptions ?? {});
 }
@@ -780,6 +837,46 @@ export function validateCanonicalTokens(rawSource) {
   }
   assertUnique(layerNumbers.map(String), 'layer values');
 
+  const durationTokenNames = new Set(publicEntries(tokens.motionDuration).map(([name]) => name));
+  const easingTokenNames = new Set(publicEntries(tokens.motionEasing).map(([name]) => name));
+  const motionSpecs = semanticMotionSpecs(source);
+  const motionNames = Object.keys(motionSpecs);
+  invariant(motionNames.length > 0, 'semanticMotion must define at least one intent');
+  assertUnique(motionNames, 'semantic motion intents');
+  for (const [name, spec] of Object.entries(motionSpecs)) {
+    invariant(dtcgNameIsValid(name), `semanticMotion intent "${name}" is not a valid name`);
+    invariant(isPlainObject(spec), `semanticMotion.${name} must be an object`);
+    invariant(typeof spec.description === 'string' && spec.description.length > 0, `semanticMotion.${name} must document its description`);
+    invariant(
+      MOTION_REDUCED_POLICIES.includes(spec.reducedMotion),
+      `semanticMotion.${name}.reducedMotion must be one of: ${MOTION_REDUCED_POLICIES.join(', ')}`,
+    );
+
+    const web = spec.web;
+    invariant(isPlainObject(web), `semanticMotion.${name}.web must be an object`);
+    invariant(durationTokenNames.has(web.durationToken), `semanticMotion.${name}.web.durationToken references unknown duration ${web.durationToken}`);
+    invariant(easingTokenNames.has(web.easingToken), `semanticMotion.${name}.web.easingToken references unknown easing ${web.easingToken}`);
+    invariant(
+      Array.isArray(web.properties) && web.properties.length > 0 && web.properties.every((property) => MOTION_WEB_PROPERTIES.has(property)),
+      `semanticMotion.${name}.web.properties must be a non-empty subset of: ${[...MOTION_WEB_PROPERTIES].join(', ')}`,
+    );
+
+    const native = spec.native;
+    invariant(isPlainObject(native), `semanticMotion.${name}.native must be an object`);
+    invariant(MOTION_NATIVE_TYPES.has(native.type), `semanticMotion.${name}.native.type must be one of: ${[...MOTION_NATIVE_TYPES].join(', ')}`);
+    if (native.type === 'spring') {
+      for (const parameter of ['stiffness', 'damping', 'mass']) {
+        invariant(
+          typeof native[parameter] === 'number' && Number.isFinite(native[parameter]) && native[parameter] > 0,
+          `semanticMotion.${name}.native.${parameter} must be a positive finite number`,
+        );
+      }
+    } else {
+      invariant(durationTokenNames.has(native.durationToken), `semanticMotion.${name}.native.durationToken references unknown duration ${native.durationToken}`);
+      invariant(easingTokenNames.has(native.easingToken), `semanticMotion.${name}.native.easingToken references unknown easing ${native.easingToken}`);
+    }
+  }
+
   const focus = focusValue(source);
   invariant(semanticNames(source).includes(focus.colorToken), 'focusRing colorToken must be a semantic color token');
   invariant(focus.webVisibility === 'focus-visible', 'focusRing webVisibility must preserve focus-visible');
@@ -860,7 +957,7 @@ function renderIndex(source) {
   const deprecated = deprecatedByCategory(source);
   const dep = (category) => deprecated.get(category) ?? emptyMap();
 
-  return `// AUTO-GENERATED — DO NOT EDIT DIRECTLY.\n// Canonical source: ${CANONICAL_PATH}\n// Generator: ${GENERATOR_PATH}\n\nimport { defineThemeRegistry } from './registry';\n\nexport * from './registry';\n\nexport const beeThemeNames = ${ts(meta.themeNames)} as const;\n\nexport type BeeThemeName = (typeof beeThemeNames)[number];\n\nexport const beeBrandNames = ${ts(meta.brandNames)} as const;\n\nexport type BeeBrandName = (typeof beeBrandNames)[number];\n\nexport const beeRuntimeThemeNames = ${ts(meta.runtimeThemeNames)} as const;\n\nexport type BeeRuntimeThemeName = (typeof beeRuntimeThemeNames)[number];\n\nexport const beeRuntimeThemeByBrand = ${ts(meta.runtimeThemeByBrand)} as const satisfies Record<BeeBrandName, Record<BeeThemeName, BeeRuntimeThemeName>>;\n\n/**\n * The default BeeUI theme registry (Bee + Violet). Built from the same canonical\n * mapping as the standalone helpers, so its \`resolve\`/\`selectionFor\` results match\n * \`resolveBeeRuntimeTheme\`/\`getBeeThemeSelection\` exactly. Applications may define\n * their own registry with \`defineThemeRegistry\` without editing BeeUI source.\n */\nexport const beeThemeRegistry = defineThemeRegistry(beeRuntimeThemeByBrand);\n\nexport function resolveBeeRuntimeTheme(\n  brand: BeeBrandName,\n  theme: BeeThemeName,\n): BeeRuntimeThemeName {\n  return beeRuntimeThemeByBrand[brand][theme];\n}\n\nexport function getBeeThemeSelection(runtimeTheme: string):\n  | { brand: BeeBrandName; theme: BeeThemeName }\n  | undefined {\n  for (const brand of beeBrandNames) {\n    for (const theme of beeThemeNames) {\n      if (beeRuntimeThemeByBrand[brand][theme] === runtimeTheme) {\n        return { brand, theme };\n      }\n    }\n  }\n\n  return undefined;\n}\n\nexport function isBeeDarkRuntimeTheme(runtimeTheme: string) {\n  return getBeeThemeSelection(runtimeTheme)?.theme === 'dark';\n}\n\nexport const semanticColorTokens = ${ts(semantics)} as const;\n\nexport type SemanticColorToken = (typeof semanticColorTokens)[number];\nexport type SemanticColorVariableName = \`--color-\${SemanticColorToken}\`;\nexport type SemanticColorOverrides = Partial<Record<SemanticColorVariableName, string>>;\n\nexport function semanticColorVariable(token: SemanticColorToken): SemanticColorVariableName {\n  return \`--color-\${token}\`;\n}\n\nexport function defineSemanticColorOverrides<const T extends SemanticColorOverrides>(\n  overrides: T,\n): Readonly<T> {\n  return Object.freeze({ ...overrides });\n}\n\nexport const spacing = ${renderRecord(dimensionValues(tokens.spacing), dep('spacing'))} as const;\n\nexport const radius = ${renderRecord(dimensionValues(tokens.radius), dep('radius'))} as const;\n\n/**\n * \`system\` means the platform default font. BeeUI deliberately does not force a\n * font-family utility until the consuming app loads and names a cross-platform font.\n */\nexport const fontFamily = ${renderRecord(tokenValues(tokens.fontFamily), dep('fontFamily'))} as const;\n\nexport const fontSize = ${renderRecord(dimensionValues(tokens.fontSize), dep('fontSize'))} as const;\n\nexport const lineHeight = ${renderRecord(dimensionValues(tokens.lineHeight), dep('lineHeight'))} as const;\n\nexport const fontWeight = ${renderRecord(tokenValues(tokens.fontWeight), dep('fontWeight'))} as const;\n\nexport const letterSpacing = ${renderRecord(dimensionValues(tokens.letterSpacing), dep('letterSpacing'))} as const;\n\nexport type TypographyRole = keyof typeof fontSize;\n\nexport type FontFamilyToken = keyof typeof fontFamily;\n\n/**\n * Composable numeric typography features. These compose with any of the six\n * semantic size roles (they are never size roles themselves). \`webUtilityClass\`\n * drives the CSS \`font-variant-numeric\` utility; \`nativeFontVariant\` maps to the\n * React Native \`fontVariant\` style so equal-width figures render on iOS/Android.\n */\nexport const numericVariants = ${ts(numericVariants)} as const;\n\nexport type NumericVariant = keyof typeof numericVariants;\n\n/**\n * System-monospace family for reference codes, IDs, and technical values. BeeUI\n * bundles no proprietary font: \`stack\`/\`webUtilityClass\` drive the web fallback\n * stack and \`native\` supplies the per-platform monospace family for React Native.\n * A consuming app may map these to a licensed monospace font it loads itself.\n */\nexport const monoFontFamily = ${ts(monoFontFamily)} as const;\n\nexport const controlSize = ${renderRecord(dimensionValues(tokens.controlSize), dep('controlSize'))} as const;\n\nexport const iconSize = ${renderRecord(dimensionValues(tokens.iconSize), dep('iconSize'))} as const;\n\nexport const avatarSize = ${renderRecord(dimensionValues(tokens.avatarSize), dep('avatarSize'))} as const;\n\nexport const contentWidth = ${renderRecord(dimensionValues(tokens.contentWidth), dep('contentWidth'))} as const;\n\nexport type ContentWidthName = keyof typeof contentWidth;\n\n/**\n * Minimum stable responsive breakpoints (min-width thresholds, px). Web-only\n * build-time constants — Tailwind/Uniwind compiles these into responsive\n * variants and remains the sole responsive execution engine. Viewports below\n * \`medium\` are the implicit compact base. These values are readable (e.g. to\n * classify a measured width) but are NOT a runtime override surface: the web\n * compiler needs constant breakpoints, so a runtime-mutable breakpoint API is\n * out of scope here (see #71).\n */\nexport const breakpoint = ${renderRecord(dimensionValues(tokens.breakpoint), dep('breakpoint'))} as const;\n\nexport type BreakpointName = keyof typeof breakpoint;\n\n/**\n * Semantic horizontal page-edge padding (px). Cross-platform: consumed on web\n * through the generated \`--spacing-page-gutter-*\` Tailwind utility and on React\n * Native through this constant. Composes additively with safe-area insets —\n * apply the gutter inside the safe area, never in place of the inset.\n */\nexport const pageGutter = ${renderRecord(dimensionValues(tokens.pageGutter), dep('pageGutter'))} as const;\n\nexport type PageGutterName = keyof typeof pageGutter;\n\n/**\n * Build-time vs runtime classification for the responsive-layout token groups.\n * \`breakpoint\` is a web-only build-time constant; \`pageGutter\` and\n * \`contentWidth\` are cross-platform values. None are runtime-overridable.\n */\nexport const responsiveLayoutClassification = ${ts(responsiveLayoutClassification(source))} as const;\n\nexport const elevation = ${renderRecord(elevationValues(tokens.elevation), dep('elevation'))} as const;\n\nexport type ElevationLevel = keyof typeof elevation;\n\n/**\n * Semantic z-order (stacking) contract. Deliberately separate from \`elevation\`,\n * which encodes shadow depth. Values keep intentional gaps so applications can\n * insert local sublayers between roles without colliding with BeeUI surfaces.\n */\nexport const layer = ${renderRecord(layerValues(tokens.layer), dep('layer'))} as const;\n\nexport type LayerName = keyof typeof layer;\n\nexport type LayerVariableName = \`--layer-\${LayerName}\`;\n\nexport function layerVariable(name: LayerName): LayerVariableName {\n  return \`--layer-\${name}\`;\n}\n\nexport const motionDuration = ${renderRecord(dimensionValues(tokens.motionDuration, 'ms'), dep('motionDuration'))} as const;\n\nexport const motionEasing = ${renderRecord(motionEasingValues(tokens.motionEasing), dep('motionEasing'))} as const;\n\nexport const focusRing = ${ts(focusRing)} as const satisfies {\n  width: number;\n  offset: number;\n  colorToken: SemanticColorToken;\n  webVisibility: 'focus-visible';\n  nativeVisibility: 'platform-focus';\n};\n`;
+  return `// AUTO-GENERATED — DO NOT EDIT DIRECTLY.\n// Canonical source: ${CANONICAL_PATH}\n// Generator: ${GENERATOR_PATH}\n\nimport { defineThemeRegistry } from './registry';\n\nexport * from './registry';\n\nexport const beeThemeNames = ${ts(meta.themeNames)} as const;\n\nexport type BeeThemeName = (typeof beeThemeNames)[number];\n\nexport const beeBrandNames = ${ts(meta.brandNames)} as const;\n\nexport type BeeBrandName = (typeof beeBrandNames)[number];\n\nexport const beeRuntimeThemeNames = ${ts(meta.runtimeThemeNames)} as const;\n\nexport type BeeRuntimeThemeName = (typeof beeRuntimeThemeNames)[number];\n\nexport const beeRuntimeThemeByBrand = ${ts(meta.runtimeThemeByBrand)} as const satisfies Record<BeeBrandName, Record<BeeThemeName, BeeRuntimeThemeName>>;\n\n/**\n * The default BeeUI theme registry (Bee + Violet). Built from the same canonical\n * mapping as the standalone helpers, so its \`resolve\`/\`selectionFor\` results match\n * \`resolveBeeRuntimeTheme\`/\`getBeeThemeSelection\` exactly. Applications may define\n * their own registry with \`defineThemeRegistry\` without editing BeeUI source.\n */\nexport const beeThemeRegistry = defineThemeRegistry(beeRuntimeThemeByBrand);\n\nexport function resolveBeeRuntimeTheme(\n  brand: BeeBrandName,\n  theme: BeeThemeName,\n): BeeRuntimeThemeName {\n  return beeRuntimeThemeByBrand[brand][theme];\n}\n\nexport function getBeeThemeSelection(runtimeTheme: string):\n  | { brand: BeeBrandName; theme: BeeThemeName }\n  | undefined {\n  for (const brand of beeBrandNames) {\n    for (const theme of beeThemeNames) {\n      if (beeRuntimeThemeByBrand[brand][theme] === runtimeTheme) {\n        return { brand, theme };\n      }\n    }\n  }\n\n  return undefined;\n}\n\nexport function isBeeDarkRuntimeTheme(runtimeTheme: string) {\n  return getBeeThemeSelection(runtimeTheme)?.theme === 'dark';\n}\n\nexport const semanticColorTokens = ${ts(semantics)} as const;\n\nexport type SemanticColorToken = (typeof semanticColorTokens)[number];\nexport type SemanticColorVariableName = \`--color-\${SemanticColorToken}\`;\nexport type SemanticColorOverrides = Partial<Record<SemanticColorVariableName, string>>;\n\nexport function semanticColorVariable(token: SemanticColorToken): SemanticColorVariableName {\n  return \`--color-\${token}\`;\n}\n\nexport function defineSemanticColorOverrides<const T extends SemanticColorOverrides>(\n  overrides: T,\n): Readonly<T> {\n  return Object.freeze({ ...overrides });\n}\n\nexport const spacing = ${renderRecord(dimensionValues(tokens.spacing), dep('spacing'))} as const;\n\nexport const radius = ${renderRecord(dimensionValues(tokens.radius), dep('radius'))} as const;\n\n/**\n * \`system\` means the platform default font. BeeUI deliberately does not force a\n * font-family utility until the consuming app loads and names a cross-platform font.\n */\nexport const fontFamily = ${renderRecord(tokenValues(tokens.fontFamily), dep('fontFamily'))} as const;\n\nexport const fontSize = ${renderRecord(dimensionValues(tokens.fontSize), dep('fontSize'))} as const;\n\nexport const lineHeight = ${renderRecord(dimensionValues(tokens.lineHeight), dep('lineHeight'))} as const;\n\nexport const fontWeight = ${renderRecord(tokenValues(tokens.fontWeight), dep('fontWeight'))} as const;\n\nexport const letterSpacing = ${renderRecord(dimensionValues(tokens.letterSpacing), dep('letterSpacing'))} as const;\n\nexport type TypographyRole = keyof typeof fontSize;\n\nexport type FontFamilyToken = keyof typeof fontFamily;\n\n/**\n * Composable numeric typography features. These compose with any of the six\n * semantic size roles (they are never size roles themselves). \`webUtilityClass\`\n * drives the CSS \`font-variant-numeric\` utility; \`nativeFontVariant\` maps to the\n * React Native \`fontVariant\` style so equal-width figures render on iOS/Android.\n */\nexport const numericVariants = ${ts(numericVariants)} as const;\n\nexport type NumericVariant = keyof typeof numericVariants;\n\n/**\n * System-monospace family for reference codes, IDs, and technical values. BeeUI\n * bundles no proprietary font: \`stack\`/\`webUtilityClass\` drive the web fallback\n * stack and \`native\` supplies the per-platform monospace family for React Native.\n * A consuming app may map these to a licensed monospace font it loads itself.\n */\nexport const monoFontFamily = ${ts(monoFontFamily)} as const;\n\nexport const controlSize = ${renderRecord(dimensionValues(tokens.controlSize), dep('controlSize'))} as const;\n\nexport const iconSize = ${renderRecord(dimensionValues(tokens.iconSize), dep('iconSize'))} as const;\n\nexport const avatarSize = ${renderRecord(dimensionValues(tokens.avatarSize), dep('avatarSize'))} as const;\n\nexport const contentWidth = ${renderRecord(dimensionValues(tokens.contentWidth), dep('contentWidth'))} as const;\n\nexport type ContentWidthName = keyof typeof contentWidth;\n\n/**\n * Minimum stable responsive breakpoints (min-width thresholds, px). Web-only\n * build-time constants — Tailwind/Uniwind compiles these into responsive\n * variants and remains the sole responsive execution engine. Viewports below\n * \`medium\` are the implicit compact base. These values are readable (e.g. to\n * classify a measured width) but are NOT a runtime override surface: the web\n * compiler needs constant breakpoints, so a runtime-mutable breakpoint API is\n * out of scope here (see #71).\n */\nexport const breakpoint = ${renderRecord(dimensionValues(tokens.breakpoint), dep('breakpoint'))} as const;\n\nexport type BreakpointName = keyof typeof breakpoint;\n\n/**\n * Semantic horizontal page-edge padding (px). Cross-platform: consumed on web\n * through the generated \`--spacing-page-gutter-*\` Tailwind utility and on React\n * Native through this constant. Composes additively with safe-area insets —\n * apply the gutter inside the safe area, never in place of the inset.\n */\nexport const pageGutter = ${renderRecord(dimensionValues(tokens.pageGutter), dep('pageGutter'))} as const;\n\nexport type PageGutterName = keyof typeof pageGutter;\n\n/**\n * Build-time vs runtime classification for the responsive-layout token groups.\n * \`breakpoint\` is a web-only build-time constant; \`pageGutter\` and\n * \`contentWidth\` are cross-platform values. None are runtime-overridable.\n */\nexport const responsiveLayoutClassification = ${ts(responsiveLayoutClassification(source))} as const;\n\nexport const elevation = ${renderRecord(elevationValues(tokens.elevation), dep('elevation'))} as const;\n\nexport type ElevationLevel = keyof typeof elevation;\n\n/**\n * Semantic z-order (stacking) contract. Deliberately separate from \`elevation\`,\n * which encodes shadow depth. Values keep intentional gaps so applications can\n * insert local sublayers between roles without colliding with BeeUI surfaces.\n */\nexport const layer = ${renderRecord(layerValues(tokens.layer), dep('layer'))} as const;\n\nexport type LayerName = keyof typeof layer;\n\nexport type LayerVariableName = \`--layer-\${LayerName}\`;\n\nexport function layerVariable(name: LayerName): LayerVariableName {\n  return \`--layer-\${name}\`;\n}\n\nexport const motionDuration = ${renderRecord(dimensionValues(tokens.motionDuration, 'ms'), dep('motionDuration'))} as const;\n\nexport const motionEasing = ${renderRecord(motionEasingValues(tokens.motionEasing), dep('motionEasing'))} as const;\n\nexport const motionIntents = ${ts(motionIntentNames(source))} as const;\n\nexport type MotionIntent = (typeof motionIntents)[number];\n\n/**\n * Reduced-motion policy per intent. Chosen from the four BeeUI-supported strategies:\n * - \`immediate\`: skip animation entirely and jump to the final state;\n * - \`opacity-or-state\`: keep the opacity/state change, drop spatial (transform/size) motion;\n * - \`shorten\`: keep the motion but clamp its duration to the fast token;\n * - \`remove-spatial\`: keep non-spatial timing, drop spatial motion.\n */\nexport type MotionReducedMotionPolicy = ${MOTION_REDUCED_POLICIES.map((policy) => `'${policy}'`).join(' | ')};\n\n/**\n * Semantic motion vocabulary for recurring spatial/state transitions.\n *\n * Token presence never makes animation mandatory. Web and native representations may\n * differ while sharing a semantic intent; no frame- or time-identical parity is promised.\n * Raw spring physics (\`stiffness\`, \`damping\`, \`mass\`; unitless React-Native spring units)\n * are an implementation detail behind the semantic name, not the primary public API.\n */\nexport const motion = ${ts(motionValues(source))} as const;\n\nexport type MotionSpec = (typeof motion)[MotionIntent];\n\nexport type ResolvedMotion = {\n  /** Whether the caller should animate at all (false means jump to the final state). */\n  animate: boolean;\n  /** Effective web duration in milliseconds after any reduced-motion policy. */\n  durationMs: number;\n  /** Whether spatial (transform/size) motion should be applied. */\n  spatial: boolean;\n  /** Whether a reduced-motion policy changed the base specification. */\n  reducedMotionApplied: boolean;\n};\n\n/**\n * Resolve a semantic motion intent against the caller-supplied reduced-motion signal.\n *\n * BeeUI adds no motion/preference store: the platform or app owns the reduced-motion\n * signal (e.g. \`AccessibilityInfo.isReduceMotionEnabled\` on native, the\n * \`prefers-reduced-motion\` media query on web) and passes it in. The final state is the\n * same in every branch; reduced motion only changes how (or whether) the transition plays.\n */\nexport function resolveMotion(\n  intent: MotionIntent,\n  options: { reducedMotion?: boolean } = {},\n): ResolvedMotion {\n  const spec = motion[intent];\n  const baseDurationMs = spec.web.durationMs;\n  const spatialByDefault = spec.web.properties.some(\n    (property) => property === 'transform' || property === 'height',\n  );\n\n  if (!options.reducedMotion) {\n    return {\n      animate: true,\n      durationMs: baseDurationMs,\n      spatial: spatialByDefault,\n      reducedMotionApplied: false,\n    };\n  }\n\n  // The active intents only use a subset of policies; the exhaustive switch keeps the\n  // resolver correct if a future intent adopts \`shorten\` or \`remove-spatial\`.\n  switch (spec.reducedMotion as MotionReducedMotionPolicy) {\n    case 'immediate':\n      return { animate: false, durationMs: 0, spatial: false, reducedMotionApplied: true };\n    case 'shorten':\n      return {\n        animate: true,\n        durationMs: Math.min(baseDurationMs, motionDuration.fast),\n        spatial: spatialByDefault,\n        reducedMotionApplied: true,\n      };\n    case 'opacity-or-state':\n    case 'remove-spatial':\n      return {\n        animate: true,\n        durationMs: baseDurationMs,\n        spatial: false,\n        reducedMotionApplied: true,\n      };\n  }\n}\n\nexport const focusRing = ${ts(focusRing)} as const satisfies {\n  width: number;\n  offset: number;\n  colorToken: SemanticColorToken;\n  webVisibility: 'focus-visible';\n  nativeVisibility: 'platform-focus';\n};\n`;
 }
 
 function renderThemeCss(source) {
@@ -882,6 +979,7 @@ function renderThemeCss(source) {
   const elevation = elevationCssValues(tokens.elevation);
   const motionDuration = dimensionValues(tokens.motionDuration, 'ms');
   const motionEasing = motionEasingValues(tokens.motionEasing);
+  const motionSpecs = semanticMotionSpecs(source);
   const layer = layerValues(tokens.layer);
   const deprecatedColors = deprecatedByCategory(source).get('color') ?? emptyMap();
   const focus = focusValue(source);
@@ -931,6 +1029,13 @@ function renderThemeCss(source) {
   lines.push(`  --focus-ring-width: ${focus.width}px;`);
   lines.push(`  --focus-ring-offset: ${focus.offset}px;`);
   for (const [name, value] of Object.entries(layer)) lines.push(`  --layer-${name}: ${value};`);
+  for (const [name, spec] of Object.entries(motionSpecs)) {
+    lines.push(`  --motion-${name}-duration: ${motionDuration[spec.web.durationToken]}ms;`);
+    lines.push(`  --motion-${name}-easing: ${motionEasing[spec.web.easingToken]};`);
+    // 1 = run the spatial transform, 0 = drop it. Lets className-only consumers gate the
+    // transform under prefers-reduced-motion without a JavaScript signal.
+    lines.push(`  --motion-${name}-spatial: ${motionSpatialByDefault(spec) ? 1 : 0};`);
+  }
   lines.push('}', '', '@utility bee-focus-ring {');
   lines.push('  outline-color: var(--color-focus-ring);');
   lines.push('  outline-offset: var(--focus-ring-offset);');
@@ -962,6 +1067,21 @@ function renderThemeCss(source) {
     if (themeIndex < meta.runtimeThemeNames.length - 1) lines.push('');
   }
   lines.push('  }', '}', '');
+  const reducedMotionLines = [];
+  for (const [name, spec] of Object.entries(motionSpecs)) {
+    if (spec.reducedMotion === 'immediate') {
+      reducedMotionLines.push(`    --motion-${name}-duration: 0.01ms;`);
+    } else if (spec.reducedMotion === 'shorten') {
+      reducedMotionLines.push(`    --motion-${name}-duration: ${motionDuration.fast}ms;`);
+    }
+    if (motionReducedSpatial(spec) !== motionSpatialByDefault(spec)) {
+      reducedMotionLines.push(`    --motion-${name}-spatial: ${motionReducedSpatial(spec) ? 1 : 0};`);
+    }
+  }
+  if (reducedMotionLines.length > 0) {
+    lines.push('@media (prefers-reduced-motion: reduce) {', '  :root {', ...reducedMotionLines, '  }', '}', '');
+  }
+
   return lines.join('\n');
 }
 

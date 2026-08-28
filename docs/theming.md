@@ -70,7 +70,7 @@ The v2 token package preserves the existing public semantic color vocabulary whi
 | Content width | form/reading/page/dialog |
 | Elevation | flat/raised/overlay semantic shadow levels |
 | Layer | base/overlay/toast semantic z-order (stacking) levels |
-| Motion | fast/normal/slow durations plus standard/emphasized easing |
+| Motion | fast/normal/slow durations, standard/emphasized easing, and semantic motion intents with reduced-motion policy (see `docs/motion.md`) |
 | Focus | 2 px ring, 2 px offset, semantic color, web/native visibility policy |
 | Branding | Bee + Violet, both light/dark |
 
@@ -187,7 +187,15 @@ strictly-ascending integer contract.
 
 Durations are `fast` 120 ms, `normal` 200 ms, and `slow` 320 ms.
 
-Canonical easing values are DTCG `cubicBezier` arrays. The generator emits the existing CSS strings, including `cubic-bezier(0.2, 0, 0, 1)` for the standard curve. Tokens do not make animation mandatory. Web transitions should include a `motion-reduce` path; JS/Reanimated motion should respect the platform reduced-motion preference.
+Canonical easing values are DTCG `cubicBezier` arrays. The generator emits the existing CSS strings, including `cubic-bezier(0.2, 0, 0, 1)` for the standard curve. Tokens do not make animation mandatory.
+
+On top of these primitives, BeeUI defines a small vocabulary of semantic motion intents
+(`overlay-enter`, `overlay-exit`, `disclosure`) with web timing, native spring/timing
+config, and a mandatory reduced-motion policy per intent. Web transitions get a
+`prefers-reduced-motion` override in `theme.css`; JS consumers call `resolveMotion(intent,
+{ reducedMotion })`, passing the platform reduced-motion signal (BeeUI keeps no motion
+store). The repository standardizes on no animation runtime today, so motion tokens add no
+dependency. See [`docs/motion.md`](./motion.md) for the full contract.
 
 ## Focus
 
