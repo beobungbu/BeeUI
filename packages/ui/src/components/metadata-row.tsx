@@ -30,7 +30,7 @@ export const MetadataRow = React.forwardRef<React.ComponentRef<typeof View>, Met
       </Box>
       <Box className="max-w-[60%] items-end">
         {typeof value === 'string' || typeof value === 'number' ? (
-          <Text className="text-right" variant="label">{value}</Text>
+          <Text className="text-end" variant="label">{value}</Text>
         ) : (
           value
         )}

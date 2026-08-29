@@ -137,6 +137,12 @@ The first anchored-overlay layer is pure `@beeui/core` geometry. It has no React
 
 `resolveAnchoredOverlayPosition()` accepts measured anchor/overlay/viewport geometry plus preferred placement, alignment, direction, offsets, and collision padding. It supports four sides and logical alignment with deterministic flip/shift, finite normalization, and RTL rules. The geometry layer does not own rendering, measurement, dismissal, focus, portal behavior, or state.
 
+## Logical direction contract
+
+Direction (LTR/RTL) resolves through one stateless resolver in `@beeui/ui` (`components/use-direction.ts`), per ADR-004. There is no direction context, store, or observer. `resolveDirection(explicit?)` applies a single precedence order — an explicit per-component value, then the platform ambient authority (`I18nManager.isRTL` on native, `document.documentElement.dir` on Web), then an `'ltr'` fallback — reading the ambient authority fresh on every call rather than subscribing to it. `Popover`, `DropdownMenu`, and `Select` default their `direction` prop through this one resolver instead of each duplicating an inline `I18nManager.isRTL` read; any future anchored-geometry component that needs JS-level direction resolution consumes the same resolver. BeeUI only reads these authorities and never writes them: applying an ambient RTL/LTR mode (native `I18nManager.forceRTL()` + reload, or setting the DOM `dir`) stays the host application's responsibility, and the host owns triggering the re-render (Web) or reload (native) when direction changes.
+
+Component-level `start`/`end` semantics resolve against that same value. Logical spacing/alignment utilities (e.g. `pe-*`, `text-end`) and logical child slots (`leading`/`trailing`) mirror through React Native's own Yoga `direction` on the enclosing `View` subtree — BeeUI relies on that platform mechanism rather than reimplementing it. Directional default glyphs that encode logical navigation (pagination previous/next chevrons, the breadcrumb separator) flip with the resolved direction; inherently directional content (numerals, media-transport glyphs) stays physical.
+
 ## Anchored overlay runtime contract
 
 The second layer lives internally in `@beeui/ui` and is installed by `BeeUIProvider`.
