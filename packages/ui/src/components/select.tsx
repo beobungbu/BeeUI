@@ -383,7 +383,7 @@ export const SelectTrigger = React.forwardRef<
           text: accessibilityValue?.text ?? selectedItem?.textValue,
         }}
         className={cn(
-          'h-11 min-w-48 flex-row items-center justify-between gap-3 rounded-md border border-border-strong bg-input px-3 active:opacity-90 web:hover:bg-surface-muted',
+          'min-h-11 min-w-48 flex-row items-center justify-between gap-3 rounded-md border border-border-strong bg-input px-3 py-2 active:opacity-90 web:hover:bg-surface-muted',
           resolvedDisabled && 'border-disabled bg-disabled opacity-60',
           className,
         )}
