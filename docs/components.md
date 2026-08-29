@@ -73,13 +73,13 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `AlertDialogCancel` | modal overlay | Close action defaulting to the outline button variant while preserving caller handlers. |
 | `AlertDialogAction` | modal overlay | Close action defaulting to the destructive button variant while preserving caller handlers. |
 | `Popover` | anchored overlay | Controlled/uncontrolled non-modal anchored state. Controlled use requires `open` + `onOpenChange`; uncontrolled use supports `defaultOpen`. Reuses the shared BeeUIProvider overlay runtime rather than a private portal/Modal engine. |
-| `PopoverTrigger` | anchored overlay | Button-compatible anchor/toggle. Preserves caller accessibility state, adds `expanded`, and links to the content through React Native's typed `aria-controls` surface. |
+| `PopoverTrigger` | anchored overlay | Button-compatible anchor/toggle. Preserves caller accessibility state, adds `expanded`, and links to the content through React Native's typed `aria-controls` surface only while the content is mounted (open), so the idref never dangles when closed. |
 | `PopoverContent` | anchored overlay | Non-modal anchored surface using shared window-coordinate measurement, geometry flip/shift/collision, safe-area policy, optional keyboard avoidance, and topmost-only dismissal. Unresolved content measures invisibly offscreen rather than flashing at `(0,0)`. |
 | `PopoverTitle` | anchored overlay | Heading that registers stable native label metadata and primitive text with its Popover content. |
 | `PopoverDescription` | anchored overlay | Supporting text that registers a primitive-text accessibility hint with its Popover content. |
 | `PopoverClose` | anchored overlay | Button-compatible explicit close action. |
 | `DropdownMenu` | anchored overlay | Controlled/uncontrolled non-modal menu state layered on the same shared anchored-overlay runtime as Popover. |
-| `DropdownMenuTrigger` | anchored overlay | Button-compatible measured anchor that preserves caller accessibility state, adds `expanded`, and links to menu content. |
+| `DropdownMenuTrigger` | anchored overlay | Button-compatible measured anchor that preserves caller accessibility state, adds `expanded`, and links to menu content via `aria-controls` only while the menu content is mounted (open), so the idref never dangles when closed. |
 | `DropdownMenuContent` | anchored overlay | Menu surface defaulting to bottom/start placement with flip/shift, safe-area collision handling, unresolved-geometry gating, topmost-only dismissal, and deterministic Web current-item keyboard navigation. |
 | `DropdownMenuItem` | anchored overlay | Menu-item semantics with disabled state. `onSelect` is the cross-input selection callback; normal items close the menu by default after caller handlers run. |
 | `DropdownMenuCheckboxItem` | anchored overlay | Checked menu-item semantics with controlled `checked`/`onCheckedChange`; remains open by default and can opt into close-on-select. |
