@@ -97,6 +97,16 @@ function assignRef<T>(ref: React.ForwardedRef<T>, value: T | null) {
   if (ref) ref.current = value;
 }
 
+const SELECT_DEFAULT_PLACEHOLDER = 'Select an option';
+
+function inferSelectAccessibleFallback(children: React.ReactNode): string {
+  if (React.isValidElement(children) && children.type === SelectValue) {
+    const placeholder = (children.props as SelectValueProps).placeholder;
+    if (typeof placeholder === 'string' && placeholder.trim().length > 0) return placeholder;
+  }
+  return SELECT_DEFAULT_PLACEHOLDER;
+}
+
 function primitiveText(children: React.ReactNode): string | undefined {
   const childArray = React.Children.toArray(children);
   if (!childArray.length) return undefined;
@@ -344,6 +354,21 @@ export const SelectTrigger = React.forwardRef<
     const { anchorRef, contentNativeID, disabled: rootDisabled, open, selectedItem, setOpen } =
       useSelectRootContext();
     const resolvedDisabled = rootDisabled || disabled === true;
+    // The combobox trigger's own text (the selected value or placeholder) is
+    // rendered inside an `accessible={false}` View, and `role="combobox"`
+    // does not get an accessible name from its content per the ARIA naming
+    // algorithm — it requires an explicit `aria-label`/`aria-labelledby`.
+    // Per the WAI-ARIA APG combobox pattern, the accessible NAME must stay
+    // distinct from the selected VALUE so assistive tech users can perceive
+    // both (e.g. name "Choose a plan", value "Pro"). The selected item's
+    // label already surfaces as the combobox's value via
+    // `accessibilityValue.text` below — never promote it into the name.
+    // Fall back to a stable purpose/name derived from the SelectValue
+    // placeholder, or a generic default, so every trigger has a real
+    // accessible name even when a consumer omits `accessibilityLabel`.
+    const fallbackAccessibleLabel = inferSelectAccessibleFallback(children);
+    const resolvedAccessibilityLabel =
+      accessibilityLabel ?? (props.accessibilityLabelledBy ? undefined : fallbackAccessibleLabel);
     const setTriggerRef = React.useCallback(
       (node: React.ComponentRef<typeof Pressable> | null) => {
         anchorRef.current = node as SelectFocusableNode | null;
@@ -376,7 +401,7 @@ export const SelectTrigger = React.forwardRef<
         aria-controls={contentNativeID}
         aria-expanded={open}
         aria-haspopup="listbox"
-        accessibilityLabel={accessibilityLabel}
+        accessibilityLabel={resolvedAccessibilityLabel}
         accessibilityState={{ ...accessibilityState, disabled: resolvedDisabled, expanded: open }}
         accessibilityValue={{
           ...accessibilityValue,
@@ -417,7 +442,7 @@ export type SelectValueProps = Omit<RNTextProps, 'children' | 'role'> & {
 };
 
 export const SelectValue = React.forwardRef<React.ComponentRef<typeof Text>, SelectValueProps>(
-  ({ className, placeholder = 'Select an option', ...props }, ref) => {
+  ({ className, placeholder = SELECT_DEFAULT_PLACEHOLDER, ...props }, ref) => {
     const { disabled, selectedItem } = useSelectRootContext();
     const hasSelection = selectedItem !== undefined;
     return (

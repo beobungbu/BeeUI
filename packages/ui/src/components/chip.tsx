@@ -153,6 +153,7 @@ export const Chip = React.forwardRef<React.ComponentRef<typeof Pressable>, ChipP
         ? 'radio'
         : 'checkbox'
       : 'button';
+    const groupChecked = grouped ? resolvedSelected : false;
 
     React.useEffect(() => {
       if (typeof __DEV__ !== 'undefined' && __DEV__ && missingGroupValue) {
@@ -171,8 +172,12 @@ export const Chip = React.forwardRef<React.ComponentRef<typeof Pressable>, ChipP
         accessibilityState={{
           ...accessibilityState,
           disabled: isDisabled,
-          ...(inGroup ? { checked: grouped ? resolvedSelected : false } : { selected: resolvedSelected }),
+          ...(inGroup ? { checked: groupChecked } : { selected: resolvedSelected }),
         }}
+        // See Checkbox/Radio: `accessibilityState` is not forwarded to the DOM
+        // by react-native-web, so a grouped Chip's `role="checkbox"`/`role="radio"`
+        // needs the web-native `aria-checked` prop set explicitly.
+        aria-checked={inGroup ? groupChecked : undefined}
         className={cn(
           'min-h-9 flex-row items-center justify-center rounded-full border px-3 py-2 active:opacity-80',
           resolvedSelected

@@ -142,6 +142,10 @@ export const Radio = React.forwardRef<React.ComponentRef<typeof Pressable>, Radi
           checked: resolvedChecked,
           disabled: isDisabled,
         }}
+        // See Checkbox: `accessibilityState` is not forwarded to the DOM by
+        // react-native-web, so `role="radio"` needs the web-native `aria-checked`
+        // prop set explicitly to satisfy the required-attribute contract.
+        aria-checked={resolvedChecked}
         className={cn('flex-row items-center gap-3 active:opacity-80', className)}
         disabled={isDisabled}
         onPress={() => {
