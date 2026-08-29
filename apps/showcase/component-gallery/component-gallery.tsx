@@ -100,7 +100,7 @@ import {
   VStack,
 } from '@beeui/ui';
 import * as React from 'react';
-import { ScrollView, StatusBar } from 'react-native';
+import { type LayoutChangeEvent, ScrollView, StatusBar } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
 import { SelectShowcase } from './select-showcase';
 
@@ -416,9 +416,18 @@ function ToastPlayground() {
   );
 }
 
+// Estimate for the fixed bottom bar's reserved height (bar + its bottom safe-area
+// inset) before the first onLayout measurement lands. The actual reserved space is
+// always driven by the measured height below so scroll content never sits behind a
+// bar that has grown taller (e.g. large text / zoom); this is only the initial guess.
+const BOTTOM_ACTION_BAR_HEIGHT_ESTIMATE = 120;
+
 export function ComponentGallery({ onBack }: { onBack: () => void }) {
   const { theme } = useUniwind();
   const [accepted, setAccepted] = React.useState(false);
+  const [bottomActionBarHeight, setBottomActionBarHeight] = React.useState(
+    BOTTOM_ACTION_BAR_HEIGHT_ESTIMATE,
+  );
   const [notifications, setNotifications] = React.useState(true);
   const [plan, setPlan] = React.useState<'starter' | 'pro'>('starter');
   const [tab, setTab] = React.useState('overview');
@@ -430,6 +439,10 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
   const [menuToolbar, setMenuToolbar] = React.useState(true);
   const [menuDensity, setMenuDensity] = React.useState('comfortable');
   const [menuAction, setMenuAction] = React.useState('No action yet');
+
+  const handleBottomActionBarLayout = React.useCallback((event: LayoutChangeEvent) => {
+    setBottomActionBarHeight(event.nativeEvent.layout.height);
+  }, []);
 
   return (
     <Screen testID="component-gallery">
@@ -457,7 +470,7 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
       </SafeArea>
 
       <SafeArea className="flex-1" edges={['left', 'right']}>
-        <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
+        <ScrollView contentContainerStyle={{ paddingBottom: bottomActionBarHeight + 16 }}>
           <Box className="mx-auto w-full max-w-3xl gap-10 px-5 py-8">
             <AlertBanner
               description="Everything below is rendered from the public @beeui/ui API. Switch themes, open overlays, change form state, and resize the web window to exercise the same contracts used on native."
@@ -935,14 +948,20 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
               <Text tone="muted" variant="caption">
                 Navigation remains application-owned. This showcase intentionally has no router or docs-site framework.
               </Text>
-              <Link onPress={() => undefined}>Open documentation</Link>
+              <Link onPress={() => undefined} testID="component-gallery-footer-link">
+                Open documentation
+              </Link>
             </VStack>
           </Box>
         </ScrollView>
       </SafeArea>
 
-      <SafeArea className="bg-surface" edges={['bottom', 'left', 'right']}>
-        <BottomActionBar>
+      <SafeArea
+        className="bg-surface"
+        edges={['bottom', 'left', 'right']}
+        onLayout={handleBottomActionBarLayout}
+      >
+        <BottomActionBar testID="component-gallery-bottom-action-bar">
           <Button size="sm" variant="ghost">Cancel</Button>
           <Button size="sm">Save changes</Button>
         </BottomActionBar>
