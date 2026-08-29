@@ -1,303 +1,321 @@
 # BeeUI 1.0 Authoritative Execution Sequence
 
-This is the dependency/dispatch authority for the BeeUI 1.0 program tracked by #114.
+This file is the dependency/dispatch authority for the BeeUI 1.0 program tracked by #114.
 
-It exists to prevent agents from treating GitHub issue number order as dependency order. The roadmap defines product scope; issue bodies define task scope; `docs/agent-execution-contract.md` defines how every agent works; this file defines **when a task is eligible**.
+**Issue number is not execution order.** The roadmap defines product scope, each issue defines task scope, `docs/agent-execution-contract.md` defines worker behavior, and this file defines when work is eligible.
 
 ## Dispatch invariants
 
-- Never dispatch an issue merely because its issue number is next.
-- A task is eligible only when every hard dependency below is merged/accepted on the chosen base.
-- One worker = one issue/branch/PR unless the issue explicitly acts as an integration epic.
-- Up to four workers may run in parallel only on independent lanes with low shared-file collision risk.
-- Public exports, registry, package manifests, token vocabulary, docs metadata, and release workflow integration are serialized when sibling changes touch the same authority.
-- Implementation agents self-test and self-review under `docs/agent-execution-contract.md`, then stop with an unmerged PR for independent review.
-- Owner/admin gates are not autonomous tasks.
+- Never dispatch an issue merely because its number is next.
+- A task is `ELIGIBLE` only when every hard dependency is merged/accepted on the selected base.
+- One worker = one issue/branch/PR unless an issue is explicitly an integration epic.
+- Maximum ordinary parallelism: four independent workers.
+- Sibling work touching public exports, registry, package manifests, tokens, canonical docs/AI metadata, release workflows, or shared demo shell/state authorities must integrate serially.
+- Every worker follows `docs/agent-execution-contract.md`, completes exact-head self-tests + self-review, then stops with an unmerged PR for independent review.
+- Owner/admin/legal/account/release gates return `OWNER_ACTION_REQUIRED`; they are not autonomous actions.
+- Never automatically continue into a newly unblocked wave when only the current wave was requested.
 
 ## S0 — Control plane and repository hygiene
 
-The BeeUI 1.0 program should not dispatch implementation work until the canonical roadmap/sequence/execution-contract PR is merged.
+Do not dispatch BeeUI 1.0 implementation work from `main` until the canonical control-plane PR containing this file, `docs/roadmap.md`, and `docs/agent-execution-contract.md` is merged.
 
-After that merge:
+### S0-A — parallel
 
-### Parallel wave S0-A
-
-- #115 — stale Theme v3 issue reconciliation.
+- #115 — reconcile stale Theme v3 issues.
 - #116 — supersede obsolete PR #86.
 - #118 — labels/milestone taxonomy.
 
-### Serialized wave S0-B
+### S0-B
 
-- #117 — current-state documentation synchronization; run after S0-A so docs reflect the reconciled tracker state.
-- #119 — `main`/release-path protection; may be prepared in parallel with #117, but rules must be validated against actual current check names after the control-plane merge.
+- #117 — current-state documentation synchronization after S0-A reconciliation.
+- #119 — protect `main`/release paths using actual workflow/check names; owner/admin-only changes stop at the appropriate gate.
 
-Owner/admin actions discovered by #119 must stop at `OWNER_ACTION_REQUIRED` when the agent lacks permission or when policy choice is required.
+## S1 — Runtime, compatibility core, accessibility foundations
 
-## S1 — Runtime, compatibility core, accessibility foundation
+These lanes can progress in parallel when their changed-file authorities do not collide.
 
-These lanes can progress in parallel after S0 unless a task touches a shared runtime authority.
-
-### Lane S1-Runtime
+### Runtime lane
 
 `#120 → #121 → (#122 + #123 + #124) → #125 → #126 → #127`
 
-- #128 may research/formalize #62 policy in parallel after #120, but closure wording must use current runtime evidence.
+- #128 may research/formalize #62 policy after #120, but final wording/lifecycle uses current runtime evidence.
 
-### Lane S1-Compatibility core
+### Compatibility-core lane
 
 `#129 → (#130 + #131 + #132 + #133 + #134 + #135)`
 
-Do **not** run #136–#138 yet; final Web compatibility includes new 1.0 components and therefore belongs after R4 stabilization.
+Do not run #136–#138 yet; final Web compatibility includes the new hard 1.0 surfaces.
 
-### Lane S1-Accessibility foundation
+### Accessibility-foundation lane
 
-- `#139 → #140` — direction architecture then reusable existing-source logical-direction audit.
-- #143 — establish large-text policy/baseline for existing components; new R4 surfaces are acceptance targets later, not blockers for the foundation portion.
-- #145 — establish the reusable Web automated-a11y harness on existing representative surfaces; new R4/demo scenarios are added later.
+- `#139 → #140` — direction architecture then existing reusable-source logical-direction audit.
+- #143 — Dynamic Type/large-text policy and reusable stress fixtures on the current stable surface.
+- #145 — reusable automated Web accessibility harness on existing representative surfaces.
 
-Do **not** require #141/#142/#144/#146–#150 to close before R4. Those are cross-component acceptance tasks and must run after relevant R4 surfaces exist.
+Do not require #141/#142/#144/#146–#150 before R4. Those are post-component acceptance tasks.
+
+### Early performance foundation
+
+- #179 benchmark harness may run in S1 if it does not collide with active runtime infrastructure.
 
 ## S2 — Hard 1.0 component lanes
 
-Start after runtime/direction foundations required by each lane are accepted. Four lanes may run concurrently, but final export/registry/docs integration tasks must be serialized.
+Four feature lanes may run in parallel. Their final shared export/registry/docs/AI integrations are serialized.
 
-### Tooltip lane
+### Tooltip
 
 `#151 → (#152 + #153) → #154 → #155`
 
-Hard prerequisites:
+- #151 uses runtime contract #120–#125 + direction foundation #139.
+- #152 uses #151 + #125 + #139/#140 + Web a11y harness #145.
+- #153 uses #151 + #139 + large-text policy #143; it does not wait for final VoiceOver/TalkBack matrices.
+- #154 uses #152/#153 + final runtime hardening #127.
 
-- #151: #120–#125 and #139 policy accepted.
-- #152: #151 + Web focus/a11y harness from #145 + direction foundation #139/#140.
-- #153: #151 + native accessibility policy from existing BeeUI contracts; it does not wait for final R3 release matrices.
-- #154: #152/#153 plus runtime hardening.
-- #155: #154.
-
-### Sheet lane
+### Sheet / BottomSheet
 
 `#156 → #157 → (#158 + #159) → #160 → #161`
 
-Hard prerequisites:
+- #158 uses #156/#157 + #127 + #139 + #143.
+- #159 uses #157 + #139/#140 + #145 and does not depend on final Web contract #136.
+- #160 performs dedicated native runtime acceptance.
 
-- #158: #157 + runtime foundation + direction/large-text/reduced-motion policies.
-- #159: #157 + established Web focus/a11y harness; it does not depend on final #136 Web compatibility report.
-- #161 only after #160.
-
-### Table/DataTable lane
+### Table / DataTable
 
 `#164 → #165 → (#166 + #167 + #168) → #169 → #170`
 
-Hard prerequisites:
+- #166 uses direction/a11y foundations #139/#140/#145, not final cross-component R3 acceptance.
+- #167 uses #139/#143 and local native semantics, not final #147/#148.
+- #168 uses benchmark harness #179; it does not wait for complete R5.
 
-- #166 uses the R3 direction/a11y/focus **policies/harness**, not final cross-component R3 acceptance.
-- #167 uses direction/large-text/native semantics policies, not final VoiceOver/TalkBack release matrices.
-- #168 coordinates with the benchmark harness #179 if available; it must not wait for the complete R5 report.
-
-### Calendar/date lane
+### Calendar / DatePicker / DateTimePicker
 
 `#171 → #172 → #173 → #174 → #175 → #176 → #177 → #178`
 
-If the accepted #171 architecture makes DatePicker/DateTimePicker presentation depend on Sheet, record the exact dependency on #157/#158/#159 instead of using a vague `R4B` dependency.
+If #171 selects a presentation that requires Sheet, update downstream issues with the exact required #157/#158/#159 dependency rather than vague `R4B` wording.
 
 ### Serialized R4 integration
 
-Because #155, #161, #170, and #178 can all touch exports, registry, component docs metadata, examples and agent metadata, merge/integrate them one at a time against the latest accepted integration base and rerun impacted closure checks.
+#155, #161, #170 and #178 may originate from independent lanes but must integrate one at a time against the latest accepted base because they can collide in exports, registry, docs metadata and AI metadata.
 
 ### Optional decisions
 
 - #162 — after stable Sheet; may explicitly defer adaptive Select for 1.0.
-- #163 — independent Slider decision; if implementation is promoted, it must receive its own complete implementation/test/registry/docs execution plan rather than a partial opportunistic patch.
+- #163 — Slider decision; if promoted, implementation must be complete/tested/registered/documented, never partial.
 
-## S3 — Cross-cutting acceptance and final compatibility
+## S3 — Final compatibility and cross-component acceptance
 
-After Tooltip, Sheet, Table and Calendar/date implementations exist:
+After Tooltip, Sheet, Table and date controls are stable:
 
-### Compatibility final
+### Final compatibility
 
 `#136 → #137 → #138`
 
-#136 proves the final Web contract including new 1.0 surfaces. #137 wires the actual support matrix. #138 publishes/mechanically validates the final contract.
+#136 proves the complete Web contract including new 1.0 surfaces. #137 wires the support matrix. #138 publishes/mechanically validates the final compatibility contract.
 
-### Accessibility/RTL/localization final
+### Final accessibility / RTL / localization
 
-- #141 — RTL overlay acceptance after Tooltip exists and runtime hardening is accepted.
-- #142 — full RTL component stress after Table/Calendar exist; production-demo rows may be appended after demo exists.
-- #144 — full localization/long-content suite after new components exist; production-demo coverage may be appended later.
-- #146 — final keyboard/focus acceptance after Web implementations exist.
-- #147 — VoiceOver release checklist/acceptance after native new components exist.
-- #148 — TalkBack release checklist/acceptance after native new components exist.
-- #149 — reduced-motion acceptance after motion-consuming new components exist.
-- #150 — accessibility documentation after #141–#149 and stable component contracts.
+- #141 — RTL overlay acceptance after #154/#127.
+- #142 — full RTL component stress after #155/#161/#170/#178.
+- #144 — localization/long-content stress after the hard-component integrations.
+- #146 — final keyboard/focus matrix after #152/#159/#166/#176 + #145.
+- #147 — VoiceOver matrix after #153/#160/#167/#176.
+- #148 — TalkBack matrix after #153/#160/#167/#176.
+- #149 — reduced-motion acceptance after #154/#160/#177.
+- #150 — final accessibility documentation after #141–#149 and stable component contracts.
 
-These tasks do not block initial R4 implementation; they block 1.0 freeze.
+Demo-specific rows may be appended later, but all required component-level acceptance must be complete before freeze.
 
-## S4 — Performance, OSS/security, distribution foundation
+## S4 — Performance, OSS/security and distribution foundation
 
 ### Performance
 
-- #179 benchmark harness may start in S1/S2.
-- After relevant components are stable: `#180 + #181 + #182`.
-- Packaging-dependent chain is coordinated with R7:
-  - #197 distribution ADR
-  - #198 package names/permissions
-  - #199 package metadata and #200 package output format
-  - #183 footprint baseline on real packed layout
-  - #184 granular-export decision
-  - #201 final export maps
-  - #202 packed inventory
-  - #203 prerelease-equivalent retained artifacts
-  - #204 clean packed consumers
-- After measurement data is stable: `#185 → #186`.
+After the measured component surfaces exist:
 
-This order removes the previous R5.5/R5.6/R7.5 circular wait.
+- #180 render/update stress.
+- #181 overlay/Tooltip/Sheet latency.
+- #182 theme runtime performance.
 
-### OSS/security/governance
-
-Independent preparation may run in parallel:
-
-- #187 secret/history/asset audit.
-- #189 SECURITY.md.
-- #190 CONTRIBUTING.md.
-- #191 Code of Conduct draft/template selection.
-- #192 issue/PR templates.
-- #193 Actions security audit/hardening.
-- #194 dependency automation.
-
-Owner/decision gates:
-
-- #188 license choice: agent prepares a decision packet; final legal/business choice is owner-approved.
-- #195 repository-public conversion: **OWNER ACTION REQUIRED**; agent may prepare/preflight but must not autonomously change visibility.
-- #196 final ruleset after #119/#193 and chosen public/release policy.
-
-## S5 — Packages and CLI, release-ready but unpublished
-
-### Package chain
+Packaging-dependent performance uses this exact order:
 
 `#197 → #198 → (#199 + #200) → #183 → #184 → #201 → #202 → #203 → #204`
 
 Then:
 
-- #205 trusted publishing/provenance preparation after security and package naming/metadata are stable. Account/environment changes may require `OWNER_ACTION_REQUIRED`.
+`#185 → #186`
+
+This explicitly removes the old R5.5/R5.6/R7.5 circular wait.
+
+### OSS/security/governance — parallel preparation
+
+- #187 secret/history/asset audit.
+- #189 SECURITY.md.
+- #190 CONTRIBUTING.md.
+- #191 Code of Conduct.
+- #192 issue/PR templates.
+- #193 Actions/fork/self-hosted-runner hardening.
+- #194 dependency/security automation.
+
+Owner/decision-gated:
+
+- #188 license decision packet; final business/legal choice may require owner approval.
+- #195 repository-public preflight; actual visibility change is owner-gated.
+- #196 final ruleset after #119/#193 and chosen release/public policy.
+
+## S5 — Publication-ready packages and CLI, still unpublished
+
+### Packages
+
+Primary chain:
+
+`#197 → #198 → (#199 + #200) → #183 → #184 → #201 → #202 → #203 → #204`
+
+Then:
+
+- #205 trusted-publishing/provenance preparation after #193/#196/#198/#199; account/environment actions may return `OWNER_ACTION_REQUIRED`.
 - #206 dist-tag/prerelease policy after #205 design is known.
-- #207 provenance/integrity verification after #203/#205.
-- #208 compatibility report after #204 and final #138 matrix.
+- #207 integrity/provenance verification after #203/#205.
+- #208 package compatibility report after #204 + final #138.
 
-No task in this chain publishes npm artifacts.
+No task in this chain publishes npm packages.
 
-### CLI chain
+### CLI/source ownership
 
 `#209 → (#210 + #211 + #213 + #216)`
 
 Then:
 
-- #212 after final compatibility ranges are available.
+- #212 after final compatibility ranges #138.
 - #214 after #213.
 - #215 after #212/#213.
-- #217 after stable R4 integration (#155/#161/#170/#178).
+- #217 after stable R4 integrations #155/#161/#170/#178.
 - #218 after #210–#217.
 - #219 optional after #218; may explicitly defer.
 
 No task in this chain publishes the CLI.
 
-## S6 — Docs, Showcase and AI-native contract
+## S6 — Docs, Showcase and AI-native development
 
-Some site infrastructure can start earlier, but final acceptance uses stable APIs.
+Site infrastructure may start earlier, but final acceptance uses stable contracts.
 
-- #220 docs-site infrastructure/IA may start before all APIs freeze; final content must wait for stable component/package/CLI contracts.
-- #221 final per-component docs contract after stable 1.0 component APIs/registry.
-- #223 production pattern docs after stable component/pattern additions.
-- `#221 + #220 → #222` for executable canonical examples.
-- #224 Web Showcase after stable component/pattern surface.
-- #225 native preview after stable native Showcase/components.
-- **AI-native hard chain:** `#226 → #227 → #228`.
-- #229 MCP decision only after #228; stretch and may defer.
+- #220 docs-site infrastructure/IA may start before API freeze; final content must match stable component/package/CLI contracts.
+- #221 final per-component docs after #155/#161/#170/#178 + #217.
+- #223 final production pattern docs after #169/#177.
+- #222 after #220/#221/#218 for executable canonical examples.
+- #224 final Web Showcase after stable components/patterns + #150.
+- #225 native preview after stable native components/runtime foundation.
+
+Hard AI-native chain:
+
+`#226 → #227 → #228`
+
+- #226 consumes final compatibility #138, accessibility docs #150, package report #208, CLI E2E #218, component docs #221, executable examples #222 and pattern docs #223.
+- #227 defines the agent-development/prompt contract and canonical dispatcher behavior.
+- #228 runs repeatable fresh-agent regression from canonical context + retained packed artifacts.
+- #229 MCP is stretch and may defer after #228.
 
 ## S7 — Independent consumers and production demo
 
 ### Independent starters/consumers
 
-After packed package/CLI artifacts exist:
+When their exact dependencies are satisfied, these can run in parallel:
 
-- #230 Expo package starter.
-- #231 source-ownership starter.
-- #232 bare RN starter.
-- #233 independent Web consumer.
-
-These may run in parallel if they do not edit the same shared fixture/config authorities.
+- #230 — Expo package starter after #203/#208 + stable hard components.
+- #231 — source-ownership starter after #218.
+- #232 — bare RN starter after #138/#203/#208.
+- #233 — independent Web consumer after #136/#203/#208.
 
 ### External/agent proof
 
-- #234 real-world external consumer: owner selects/provides access when required; agent must not assume a private/customer codebase.
-- #235 fresh-agent reference app after #226–#228 and packed artifacts.
+- #234 — real-world external consumer; if private/customer-owned selection/access is needed, stop at `OWNER_ACTION_REQUIRED`.
+- #235 — fresh-agent reference app after #228/#203/#218.
 
-### Production demo
+### Production-demo architecture
 
-- #236 architecture/spec first.
-- #237 is the production-demo **integration epic**, not a single giant worker task. Its implementation is decomposed into dedicated child issues referenced from #237.
-- Child implementation work must follow #236 and be integrated serially when it touches shared app shell/navigation/state authorities.
-- #238 platform/runtime quality after #237 integration complete.
-- #239 engineering quality after #238.
-- #240 visual/product polish after #239.
-- #241 fresh-agent extension/fix after #240 and #228.
-- #242 classify findings after #234/#235/#241.
+- #236 — architecture/spec after accepted hard-component contracts #151/#157/#164/#171.
 
-## S8 — Freeze, immutable candidate, release-readiness
+### Production-demo functional implementation
 
-Only after every hard product/component/accessibility/compatibility/consumer/demo blocker is resolved:
+#237 is an **integration epic**, not one giant implementation-worker issue.
+
+1. #258 — shell + mobile-first responsive navigation. Establishes shared demo shell/navigation authority.
+2. After accepted #258 integration base:
+   - #259 — dashboard/data overview.
+   - #260 — searchable/filterable Table/DataTable flow; also requires stable #170.
+   - #261 — detail/edit-form flow.
+   - #262 — scheduling/date-time flow; also requires stable #178.
+3. #263 — settings/accessibility preferences + integrated states/E2E after #259–#262 are accepted/integrated.
+4. #237 closes only after #258–#263 are independently accepted and the integrated exact head passes functional critical-path E2E.
+
+Feature work may be implemented in parallel only when changed-file ownership is independent. Shared shell/navigation/state/service authority changes integrate serially under `docs/beeui-1.0-integration-discipline.md`.
+
+### Demo acceptance
+
+`#237/#263 → #238 → #239 → #240 → #241 → #242`
+
+- #238 final iOS/Android/Web platform/runtime matrix also depends on final #136 and #141–#149.
+- #239 production engineering quality.
+- #240 real rendered visual/product polish.
+- #241 fresh-agent extension/fix after #228 and accepted demo through #240.
+- #242 classifies #234/#235/#241 and all demo/consumer findings before freeze.
+
+## S8 — Freeze, rollback readiness and immutable RC-ready evidence
+
+Only after every hard component/accessibility/compatibility/consumer/demo blocker is resolved:
 
 1. `#243 + #244` — API and token freeze; may run in parallel, then integrate.
-2. #245 — semver/breaking-change audit.
-3. #256 — rollback/hotfix/deprecation runbook **before publication**, including dry-run incident exercise.
-4. #246 — create immutable `1.0.0-rc-ready.N` evidence candidate without publication.
-5. #247 — exact-candidate automated CI matrix.
+2. #245 — final semver/breaking-change audit.
+3. **#256 — rollback/hotfix/deprecation runbook + no-publication incident dry-run.** This intentionally executes here despite identifier R11.14.
+4. #246 — create immutable `1.0.0-rc-ready.N` candidate without publication.
+5. #247 — exact-candidate automated CI/consumer/compat/performance matrix.
 6. #248 — exact-candidate native runtime matrix.
-7. `#249 + #250` — exact-candidate assistive-tech and Web a11y acceptance.
-8. #251 — security/release-readiness audit, including owner gate and #256 runbook.
-9. #252 — final changelog/migration guide matched to candidate.
+7. `#249 + #250` — exact-candidate VoiceOver/TalkBack and Web accessibility acceptance.
+8. #251 — security/release-readiness audit, including #256 and owner-gate verification.
+9. #252 — final changelog/migration guide matched to exact candidate.
 10. #253 — bounded RC soak/external feedback.
-11. **STOP. BeeUI is 1.0-ready, not released.**
+11. **STOP — BeeUI is 1.0-ready, not released.**
 
-Any accepted P0/P1 fix after #246 invalidates candidate evidence: create a new candidate and rerun all affected exact-candidate gates.
+Any accepted P0/P1 fix after #246 invalidates the candidate. Create a new candidate and rerun every affected exact-candidate gate.
 
 ## S9 — Owner-authorized publication only
 
-#254 is not dispatched automatically.
+#254 is never auto-dispatched.
 
-It may run only after the repository owner explicitly commands BeeUI 1.0 publication and confirms the approved exact candidate.
+It may execute only after the repository owner explicitly commands BeeUI 1.0 publication and confirms the approved exact candidate remains current/green.
 
 After #254:
 
-- #255 verifies actual public artifacts/channels.
-- If verification finds an incident, execute the already-prepared #256 runbook; do not silently patch or rewrite history.
+- #255 verifies the actual public npm/CLI/docs/tag/release artifacts.
+- If #255 finds an incident, execute the already-prepared #256 runbook; do not silently patch immutable artifacts or rewrite release history.
 
-## Suggested maximum parallelism
+## Parallelism examples
 
-Use at most four implementation workers in ordinary waves.
+Good:
 
-Good parallel examples:
+- S1: runtime + compatibility core + accessibility foundation + benchmark harness.
+- S2: Tooltip + Sheet + Table + Calendar/date implementation lanes.
+- S7: independent Expo + source-owned + bare RN + Web consumer lanes.
 
-- S1: runtime + compatibility core + direction foundation + benchmark harness.
-- S2: Tooltip + Sheet + Table + Calendar lanes.
-- S7: Expo starter + source-owned starter + bare RN starter + Web starter.
+Bad:
 
-Bad parallel examples:
+- #155/#161/#170/#178 integrating exports/registry/docs metadata simultaneously.
+- export-map work before #184 is decided.
+- multiple workers rewriting the same production-demo shell/navigation/state core.
+- any candidate-changing implementation in parallel with S8 release evidence.
+- any autonomous publication/visibility/account action.
 
-- #155/#161/#170/#178 all editing registry/exports/docs metadata simultaneously;
-- package export-map decisions while the packaging ADR is unsettled;
-- multiple workers rewriting the same production-demo shell/navigation/state core;
-- any release/publication task in parallel with candidate-changing implementation.
+## Dispatcher eligibility report
 
-## Eligibility reporting
+Every dispatch wave reports:
 
-A dispatcher should report each wave as:
-
-- `AUTHORITATIVE_BASE_SHA`
-- eligible issues and exact dependencies satisfied
-- blocked issues and missing dependency
-- collision/serialization notes
-- worker branch/PR/head SHA
-- exact-head self-test status
-- self-review status
-- independent-review status
-
-Never continue automatically into a newly unblocked wave when the user requested only the current dispatch wave.
+- `AUTHORITATIVE_BASE_SHA`;
+- issues considered;
+- `ELIGIBLE` issues and exact satisfied dependencies;
+- blocked issues and exact missing dependency;
+- collision/serialization notes;
+- worker branch → PR → exact head SHA;
+- self-test state;
+- self-review state;
+- exact-head CI/evidence state;
+- independent-review state;
+- owner/admin action required, if any;
+- confirmation that no PR was self-merged and no npm/CLI/release publication occurred.
