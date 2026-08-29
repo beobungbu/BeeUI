@@ -39,7 +39,7 @@ if [ "$current" != "$MAESTRO_VERSION" ]; then
     set +e
     curl --retry 3 --retry-all-errors --retry-delay 2 -fsSL \
       "https://get.maestro.mobile.dev" | bash
-    bootstrap_status=${PIPESTATUS[1]}
+    bootstrap_status=$?
     set -e
 
     export PATH="$MAESTRO_HOME/bin:$PATH"
