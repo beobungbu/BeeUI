@@ -16,7 +16,7 @@ const canonicalProjects = viewportNames.flatMap((viewportName) =>
       visualTheme: theme,
       visualViewport: viewportName,
     } satisfies VisualProjectMetadata,
-    testIgnore: /(showcase|overlay-context)\.spec\.ts/,
+    testIgnore: /(showcase|overlay-context|a11y|a11y-gate)\.spec\.ts/,
     use: {
       colorScheme: colorSchemeForVisualTheme(theme),
       deviceScaleFactor: 1,
@@ -70,6 +70,26 @@ export default defineConfig({
         deviceScaleFactor: 1,
         viewport: { width: 390, height: 844 },
       },
+    },
+    // #145 — dedicated axe + Playwright Web accessibility audit gate. Kept as
+    // its own project (not folded into canonicalProjects) so the audit runs
+    // once against representative surfaces instead of once per visual
+    // theme/viewport combination; each scenario inside the spec opens its own
+    // browser context at the viewport it needs, mirroring showcase-qa-component.
+    {
+      name: 'a11y-audit',
+      testMatch: /a11y\.spec\.ts/,
+      use: {
+        colorScheme: 'light' as const,
+        deviceScaleFactor: 1,
+        viewport: { width: 1280, height: 800 },
+      },
+    },
+    // Pure-logic regression coverage for the allowlist/blocking gate itself —
+    // no browser page is used, so it runs under any project's browser context.
+    {
+      name: 'a11y-gate-regression',
+      testMatch: /a11y-gate\.spec\.ts/,
     },
   ],
 });

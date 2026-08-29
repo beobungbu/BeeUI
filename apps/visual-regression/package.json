@@ -8,6 +8,7 @@
     "serve:web": "node ./scripts/serve.mjs",
     "test": "pnpm build:web && playwright test",
     "test:update": "pnpm build:web && playwright test --update-snapshots",
+    "test:a11y": "pnpm build:web && playwright test --project=a11y-audit --project=a11y-gate-regression",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -24,6 +25,8 @@
     "uniwind": "1.10.1"
   },
   "devDependencies": {
-    "@playwright/test": "1.62.1"
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.62.1",
+    "@types/node": "24.13.1"
   }
 }
