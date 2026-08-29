@@ -73,6 +73,12 @@ export const Checkbox = React.forwardRef<React.ComponentRef<typeof Pressable>, C
           checked: accessibilityChecked,
           disabled: isDisabled,
         }}
+        // `accessibilityState` alone does not reach the DOM on react-native-web
+        // (it is not in its forwarded-props allowlist), so `role="checkbox"`
+        // would otherwise render without the required `aria-checked`. Setting
+        // the web-native `aria-checked` prop directly keeps native platforms
+        // (which read `accessibilityState`) and Web (which reads `aria-*`) both correct.
+        aria-checked={accessibilityChecked}
         className={cn('flex-row items-center gap-3 active:opacity-80', className)}
         disabled={isDisabled}
         onPress={() => onCheckedChange?.(checked !== true)}

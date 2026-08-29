@@ -99,6 +99,10 @@ export const SegmentedControlItem = React.forwardRef<
         accessibilityLabel={accessibilityLabel ?? inferredLabel}
         accessibilityRole="radio"
         accessibilityState={{ ...accessibilityState, checked: selected, disabled: isDisabled }}
+        // See Checkbox/Radio: `accessibilityState` is not forwarded to the DOM
+        // by react-native-web, so `role="radio"` needs the web-native
+        // `aria-checked` prop set explicitly to satisfy the required-attribute contract.
+        aria-checked={selected}
         className={cn(
           'min-h-9 flex-1 items-center justify-center rounded-sm border px-3 py-2 active:opacity-80',
           selected
