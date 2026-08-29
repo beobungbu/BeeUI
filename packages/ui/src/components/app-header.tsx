@@ -33,14 +33,14 @@ export const AppHeader = React.forwardRef<React.ComponentRef<typeof View>, AppHe
     <View
       ref={ref}
       className={cn(
-        'min-h-16 w-full flex-row items-center gap-3 bg-background px-4 py-3',
+        'min-h-16 w-full flex-row flex-wrap items-center gap-3 bg-background px-4 py-3',
         bordered && 'border-b border-border',
         className,
       )}
       {...props}
     >
       {leading ? <Box className="shrink-0">{leading}</Box> : null}
-      <Box className="min-w-0 flex-1 gap-0.5">
+      <Box className="min-w-32 flex-1 gap-0.5">
         {typeof title === 'string' || typeof title === 'number' ? (
           <Text accessibilityRole="header" className={titleClassName} variant="heading">
             {title}
@@ -58,7 +58,7 @@ export const AppHeader = React.forwardRef<React.ComponentRef<typeof View>, AppHe
           )
         ) : null}
       </Box>
-      {trailing ? <Box className="shrink-0">{trailing}</Box> : null}
+      {trailing ? <Box className="ml-auto shrink-0">{trailing}</Box> : null}
     </View>
   ),
 );
