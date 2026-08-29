@@ -9,7 +9,7 @@ This file is the dependency/dispatch authority for the BeeUI 1.0 program tracked
 - Never dispatch an issue merely because its number is next.
 - A task is `ELIGIBLE` only when every hard dependency is merged/accepted on the selected base.
 - One worker = one issue/branch/PR unless an issue is explicitly an integration epic.
-- Maximum ordinary parallelism: four independent workers.
+- Maximum ordinary parallelism: six independent workers. Six is a ceiling, not a utilization target — dispatch fewer whenever eligibility or collision analysis does not support six independent workers.
 - Sibling work touching public exports, registry, package manifests, tokens, canonical docs/AI metadata, release workflows, or shared demo shell/state authorities must integrate serially.
 - Every worker follows `docs/agent-execution-contract.md`, completes exact-head self-tests + self-review, then stops with an unmerged PR for independent review.
 - Owner/admin/legal/account/release gates return `OWNER_ACTION_REQUIRED`; they are not autonomous actions.

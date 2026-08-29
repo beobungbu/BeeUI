@@ -42,7 +42,7 @@ Never use a stale SHA from an old comment, prompt, or prior execution wave.
 
 ## 2. Dispatch policy
 
-Launch at most four independent workers concurrently.
+Launch at most six independent workers concurrently. Six is a ceiling, not a utilization target — the dispatcher must launch fewer workers whenever eligibility or collision analysis does not support six genuinely independent tasks.
 
 Each worker receives exactly one issue unless the issue is explicitly an integration epic.
 
