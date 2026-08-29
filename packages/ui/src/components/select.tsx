@@ -358,10 +358,15 @@ export const SelectTrigger = React.forwardRef<
     // rendered inside an `accessible={false}` View, and `role="combobox"`
     // does not get an accessible name from its content per the ARIA naming
     // algorithm — it requires an explicit `aria-label`/`aria-labelledby`.
-    // Fall back to the selected item's label, then the SelectValue
-    // placeholder, then a generic default, so every trigger has a real
+    // Per the WAI-ARIA APG combobox pattern, the accessible NAME must stay
+    // distinct from the selected VALUE so assistive tech users can perceive
+    // both (e.g. name "Choose a plan", value "Pro"). The selected item's
+    // label already surfaces as the combobox's value via
+    // `accessibilityValue.text` below — never promote it into the name.
+    // Fall back to a stable purpose/name derived from the SelectValue
+    // placeholder, or a generic default, so every trigger has a real
     // accessible name even when a consumer omits `accessibilityLabel`.
-    const fallbackAccessibleLabel = selectedItem?.textValue ?? inferSelectAccessibleFallback(children);
+    const fallbackAccessibleLabel = inferSelectAccessibleFallback(children);
     const resolvedAccessibilityLabel =
       accessibilityLabel ?? (props.accessibilityLabelledBy ? undefined : fallbackAccessibleLabel);
     const setTriggerRef = React.useCallback(

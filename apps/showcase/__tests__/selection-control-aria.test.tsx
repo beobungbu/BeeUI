@@ -7,6 +7,8 @@ import {
   SegmentedControl,
   SegmentedControlItem,
   Select,
+  SelectContent,
+  SelectItem,
   SelectTrigger,
   SelectValue,
   Switch,
@@ -15,6 +17,45 @@ import { render } from '@testing-library/react-native';
 import * as React from 'react';
 import { Platform, Switch as RNSwitch } from 'react-native';
 import { act, create, type ReactTestInstance, type ReactTestRenderer } from 'react-test-renderer';
+import { OverlayRuntimeProvider } from '../../../packages/ui/src/components/overlay-runtime';
+
+// Full trigger+content trees below need the anchored-overlay runtime context
+// (SelectContent portals through it even while closed, and SelectItem's
+// registration effect -- which is what populates `selectedItem` -- runs on
+// mount regardless of open state). `react-native-teleport` and
+// `react-native-safe-area-context` aren't available as real native modules
+// under Jest, so they're mocked the same way the existing Select test suite
+// (wave-2a-select.test.tsx) mocks them.
+jest.mock('react-native-teleport', () => {
+  return {
+    PortalProvider: ({ children }: { children?: React.ReactNode }) => children,
+    PortalHost: () => null,
+    Portal: ({ children }: { children?: React.ReactNode }) => children,
+  };
+});
+
+jest.mock('react-native-safe-area-context', () => {
+  const ReactActual = require('react');
+  const { View } = require('react-native');
+  const insets = { top: 20, right: 0, bottom: 30, left: 0 };
+  const frame = { x: 0, y: 0, width: 320, height: 240 };
+
+  return {
+    initialWindowMetrics: { frame, insets },
+    SafeAreaProvider: ({ children }: { children?: React.ReactNode }) => children,
+    SafeAreaListener: ({ children }: { children?: React.ReactNode }) => children,
+    SafeAreaView: ReactActual.forwardRef(
+      ({ children, ...props }: { children?: React.ReactNode }, ref: React.Ref<typeof View>) => (
+        <View ref={ref} {...props}>
+          {children}
+        </View>
+      ),
+    ),
+    useSafeAreaInsets: () => insets,
+  };
+});
+
+const SELECT_HOST_RECT = { x: 0, y: 0, width: 320, height: 240 };
 
 // react-native's own `Pressable` normalizes `aria-checked` into
 // `accessibilityState.checked` before it ever reaches a host node (see
@@ -255,6 +296,47 @@ describe('BeeUI selection control ARIA state and name contracts', () => {
 
       expect(screen.getByTestId('trigger').props.accessibilityLabel).toBeUndefined();
       expect(screen.getByTestId('trigger').props.accessibilityLabelledBy).toBe('external-label');
+    });
+
+    // WAI-ARIA APG combobox pattern: the accessible NAME must stay distinct
+    // from the selected VALUE. Regression for promoting `selectedItem.textValue`
+    // into the fallback accessibilityLabel, which collapsed name and value into
+    // the same string (e.g. name "Pro" instead of a stable "Choose a plan").
+    // https://www.w3.org/WAI/ARIA/apg/patterns/combobox/
+    function PlanSelect({ value }: { value: string }) {
+      return (
+        <OverlayRuntimeProvider hostRectOverride={SELECT_HOST_RECT}>
+          <Select onValueChange={() => {}} value={value}>
+            <SelectTrigger testID="trigger">
+              <SelectValue placeholder="Choose a plan" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="starter">Starter</SelectItem>
+              <SelectItem value="pro">Pro</SelectItem>
+            </SelectContent>
+          </Select>
+        </OverlayRuntimeProvider>
+      );
+    }
+
+    it('keeps a stable accessible name distinct from the selected value', () => {
+      const screen = render(<PlanSelect value="pro" />);
+      const trigger = screen.getByTestId('trigger');
+
+      expect(trigger.props.accessibilityLabel).toBe('Choose a plan');
+      expect(trigger.props.accessibilityValue.text).toBe('Pro');
+      expect(trigger.props.accessibilityLabel).not.toBe(trigger.props.accessibilityValue.text);
+    });
+
+    it('keeps the accessible name unchanged when the selected value changes', () => {
+      const screen = render(<PlanSelect value="starter" />);
+      expect(screen.getByTestId('trigger').props.accessibilityLabel).toBe('Choose a plan');
+      expect(screen.getByTestId('trigger').props.accessibilityValue.text).toBe('Starter');
+
+      screen.rerender(<PlanSelect value="pro" />);
+
+      expect(screen.getByTestId('trigger').props.accessibilityLabel).toBe('Choose a plan');
+      expect(screen.getByTestId('trigger').props.accessibilityValue.text).toBe('Pro');
     });
   });
 });
