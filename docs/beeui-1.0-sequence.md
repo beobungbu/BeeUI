@@ -44,6 +44,10 @@ These lanes can progress in parallel when their changed-file authorities do not 
 
 `#129 → (#130 + #131 + #132 + #133 + #134 + #135)`
 
+#129 is locked in `docs/compatibility-matrix.md`, which is the authority
+#130–#135 narrow or prove; each of those issues updates that file directly
+when it lands new evidence.
+
 Do not run #136–#138 yet; final Web compatibility includes the new hard 1.0 surfaces.
 
 ### Accessibility-foundation lane

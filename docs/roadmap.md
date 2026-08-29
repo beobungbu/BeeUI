@@ -136,9 +136,13 @@ Critical sequencing rules:
 
 # R2 — Compatibility
 
+`docs/compatibility-matrix.md` is the locked candidate support matrix authority
+for this section (#129). #130–#135 narrow or prove its rows; #136–#138
+finalize the Web contract after hard components exist.
+
 ## Core before hard-component final acceptance
 
-- #129 support matrix.
+- #129 support matrix. See `docs/compatibility-matrix.md`.
 - #130 RN 0.86 row.
 - #131 RN 0.87 row.
 - #132 RN 0.85 decision.
