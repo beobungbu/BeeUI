@@ -19,6 +19,7 @@ import { layer } from '@beeui/tokens';
 import * as React from 'react';
 import {
   Keyboard,
+  Platform,
   Pressable,
   StyleSheet,
   View,
@@ -349,19 +350,61 @@ function armMeasurementWatchdog(
 }
 
 /**
+ * The bounded terminal action a genuine measurement timeout applied, named so the
+ * dev diagnostic is actionable rather than merely "something timed out":
+ * - `fallback-committed` — host path committed a layout/explicit fallback rect.
+ * - `retain-null` — host path had no fallback; the previous (often `null`) rect
+ *   was retained.
+ * - `anchor-unavailable` — anchor path nulled the measurement and fired
+ *   `onAnchorUnavailable`.
+ */
+type MeasurementDiagnosticAction = 'fallback-committed' | 'retain-null' | 'anchor-unavailable';
+
+/**
+ * Actionable context for a genuine unresponsive-measurement timeout, so a developer
+ * can locate the specific request (host vs anchor, which generation, which host
+ * scope) and see the concrete terminal action taken — not just that "a measurement
+ * timed out somewhere".
+ */
+type MeasurementDiagnostic = {
+  target: 'host' | 'anchor';
+  /** The retired request's own generation (latest-request-wins counter value). */
+  generation: number;
+  action: MeasurementDiagnosticAction;
+  /** Anchor requests carry the host-revision scope the request was keyed to. */
+  hostRevision?: string | null;
+};
+
+/**
  * Development-only diagnostic for a genuine unresponsive-measurement timeout
  * (budget elapsed with the generation still current and no superseding cause).
  * Follows the `overlay-host-mode.ts` / `use-required-callback-warning.ts`
  * precedent: `__DEV__`-guarded, never thrown, stripped from production builds.
+ *
+ * The message names the measurement (host vs anchor), the retired request's
+ * generation, the anchor host-revision scope, and the concrete terminal action so
+ * the failure is actionable during development. Production (`__DEV__` false) never
+ * warns; the functional fallback/unavailable behavior is unconditional and
+ * identical in dev and production (ADR-003, Dev diagnostics).
  */
-function warnMeasurementUnresponsive(target: 'host' | 'anchor') {
+function warnMeasurementUnresponsive(diagnostic: MeasurementDiagnostic) {
   if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    const { target, generation, action, hostRevision } = diagnostic;
+    const scope =
+      target === 'anchor' ? `, host-revision=${hostRevision ?? 'none'}` : '';
+    // Web `measureInWindow` (react-native-web's `getBoundingClientRect`) resolves
+    // effectively synchronously, so a Web timeout is a stronger signal of a genuine
+    // defect (an unmeasurable/foreign ref) than of ordinary async latency; native
+    // callbacks are legitimately async and can be dropped by a detached/recycled
+    // view or a bridge failure (ADR-003, Web/native differences).
+    const cause =
+      Platform.OS === 'web'
+        ? 'On Web, measurement is effectively synchronous, so this most likely indicates a genuine defect (an unmeasurable or foreign ref) rather than ordinary async latency'
+        : 'On native this usually means a native measureInWindow callback was dropped (detached/recycled view or bridge failure)';
     console.warn(
-      `[BeeUI] Overlay ${target} measurement did not resolve within its completion budget; ` +
-        `applying the bounded ${
-          target === 'anchor' ? 'anchor-unavailable' : 'host-fallback'
-        } path. This usually means a native measureInWindow callback was dropped ` +
-        '(detached/recycled view or bridge failure). See docs/decisions/003-native-measurement-timeout.md.',
+      `[BeeUI] Overlay ${target} measurement did not resolve within its completion budget ` +
+        `(generation=${generation}${scope}); applied the bounded '${action}' path. ` +
+        `${cause}. See docs/decisions/003-native-measurement-timeout.md.`,
     );
   }
 }
@@ -450,7 +493,11 @@ function useMeasuredOverlayHost(
             // Commit the layout fallback if we have one; otherwise retain the last
             // good rect (or the pre-existing null state on a first measurement).
             if (resolvedFallback) setRectIfChanged(setHostRect, resolvedFallback);
-            warnMeasurementUnresponsive('host');
+            warnMeasurementUnresponsive({
+              target: 'host',
+              generation,
+              action: resolvedFallback ? 'fallback-committed' : 'retain-null',
+            });
           },
         );
       }
@@ -964,7 +1011,12 @@ export function useAnchoredOverlayPosition({
           anchorMeasurementGenerationRef.current += 1;
           setAnchorMeasurement(null);
           onAnchorUnavailable?.();
-          warnMeasurementUnresponsive('anchor');
+          warnMeasurementUnresponsive({
+            target: 'anchor',
+            generation,
+            action: 'anchor-unavailable',
+            hostRevision: requestedHostRevision,
+          });
         },
       );
     }
