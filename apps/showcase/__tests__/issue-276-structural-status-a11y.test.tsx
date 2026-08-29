@@ -17,12 +17,36 @@ describe('BeeUI #276 structural/status semantics (ListGroup list/listitem + Prog
       expect(screen.getByRole('listitem', { name: 'Engine, Canonical browser' })).toBeTruthy();
     });
 
-    it('carries the listitem role even when rendered outside a ListGroup wrapper (load-bearing: fails if the role is dropped)', () => {
-      // Pre-fix, a non-interactive ListItem rendered with no role at all, so it
-      // could never satisfy ListGroup's `role="list"` -> `role="listitem"`
-      // required-owned-children contract (WAI-ARIA `list.requiredOwned`).
+    it('stays semantically neutral (no listitem role) when rendered outside a ListGroup wrapper (load-bearing: fails if an orphan listitem role reappears)', () => {
+      // WAI-ARIA Required Context Role (5.2.7): `listitem` is only meaningful when owned
+      // by a `list`. A standalone ListItem has no such owner, so it must not claim
+      // `listitem` semantics. An earlier fix regressed this by giving every non-interactive
+      // ListItem `role="listitem"` unconditionally, including outside any ListGroup.
       const screen = render(<ListItem testID="row" title="Engine" />);
+      expect(screen.getByTestId('row').props.role).toBeUndefined();
+    });
+
+    it('gains the listitem role only once owned by a ListGroup wrapper (load-bearing: fails if ownership scoping is dropped)', () => {
+      const screen = render(
+        <ListGroup>
+          <ListItem testID="row" title="Engine" />
+        </ListGroup>,
+      );
       expect(screen.getByTestId('row').props.role).toBe('listitem');
+    });
+
+    it('renders a standalone interactive ListItem as a plain button with no orphan listitem wrapper (load-bearing: fails if an outside-list wrapper reappears)', () => {
+      const onPress = jest.fn();
+      const screen = render(<ListItem onPress={onPress} testID="row" title="Appearance" />);
+
+      // Still reachable and operable as a button...
+      const button = screen.getByRole('button', { name: 'Appearance' });
+      expect(button.props.accessibilityRole).toBe('button');
+      expect(button.props.testID).toBe('row');
+
+      // ...and, critically, with no `listitem`-role ancestor anywhere in the tree, since
+      // there is no `ListGroup` `list` container for it to be owned by.
+      expect(screen.UNSAFE_queryAllByProps({ role: 'listitem' })).toHaveLength(0);
     });
 
     it('wraps an interactive ListItem in a listitem element while preserving its button role', () => {
@@ -119,20 +143,40 @@ describe('BeeUI #276 structural/status semantics (ListGroup list/listitem + Prog
     });
   });
 
-  describe("Button's inline loading indicator accessible name", () => {
-    it('gives the busy-state indicator a non-empty, non-brand accessible name', () => {
+  describe('Button loading/busy semantics', () => {
+    it('exposes busy state on the Button itself via aria-busy, not the compound accessibilityState object (load-bearing: fails if busy moves back into accessibilityState)', () => {
       const screen = render(<Button loading>Loading action</Button>);
 
-      // The button itself keeps its own accessible name and busy state...
-      const button = screen.getByRole('button', { name: 'Loading action' });
-      expect(button.props.accessibilityState.busy).toBe(true);
+      // The button itself keeps its own accessible name...
+      expect(screen.getByRole('button', { name: 'Loading action' })).toBeTruthy();
 
-      // ...and its nested progressbar-role indicator (react-native-web's
-      // ActivityIndicator always renders `role="progressbar"` on web, unconditionally)
-      // is independently nameable rather than being left with an empty accessible name.
-      const indicator = screen.getByLabelText('Loading');
-      expect(indicator.props.accessibilityLabel).toBe('Loading');
-      expect(indicator.props.accessibilityLabel).not.toMatch(/BeeUI/i);
+      // ...and exposes busy state via the individual `aria-busy` prop passed straight to
+      // the underlying Pressable — verified against react-native-web 0.21's source:
+      // `createDOMProps`/the Pressable-forwarded-prop allowlist only ever read `aria-busy`
+      // (or the deprecated `accessibilityBusy`) directly off props, never the compound
+      // `accessibilityState` object, so `accessibilityState.busy` alone would never reach
+      // the DOM as `aria-busy` on Web. (React Native's own native Pressable additionally
+      // normalizes this same `aria-busy` prop into `accessibilityState.busy` for native
+      // platforms, which is why it no longer needs to be set inside the compound object here.)
+      expect(screen.UNSAFE_getByProps({ 'aria-busy': true })).toBeTruthy();
+    });
+
+    it('does not report busy when not loading (load-bearing: fails if aria-busy is left set unconditionally)', () => {
+      const screen = render(<Button>Save</Button>);
+      expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
+      expect(screen.UNSAFE_queryAllByProps({ 'aria-busy': true })).toHaveLength(0);
+    });
+
+    it('hides the purely decorative loading spinner from assistive tech instead of giving it a redundant accessible name (load-bearing: fails if the spinner regains its own announced name)', () => {
+      const screen = render(<Button loading>Loading action</Button>);
+
+      // react-native-web's ActivityIndicator always renders `role="progressbar"`
+      // unconditionally and it cannot be suppressed by the caller, but the Button already
+      // carries the loading semantics via `aria-busy` above, so the indicator itself must
+      // be excluded from the accessibility tree rather than independently nameable.
+      const indicator = screen.UNSAFE_getByProps({ 'aria-hidden': true });
+      expect(indicator).toBeTruthy();
+      expect(indicator.props.accessibilityLabel).toBeUndefined();
     });
   });
 });

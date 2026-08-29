@@ -2,6 +2,7 @@ import { cn } from '@beeui/core';
 import * as React from 'react';
 import { Pressable, type PressableProps } from 'react-native';
 import { Box } from './box';
+import { ListGroupMembershipContext } from './list-group';
 import { Text } from './text';
 
 function isPrimitiveAccessibilityContent(value: React.ReactNode) {
@@ -63,6 +64,11 @@ export const ListItem = React.forwardRef<React.ComponentRef<typeof Pressable>, L
     const isDisabled = disabled === true;
     const inferredLabel = getPrimitiveAccessibilityLabel(title, description, trailing);
     const groupPrimitiveContent = !interactive && inferredLabel !== undefined;
+    // WAI-ARIA Required Context Role (5.2.7): `listitem` is only meaningful when owned by
+    // a `list`. A standalone ListItem (rendered outside `ListGroup`) has no such owner, so
+    // it must stay semantically neutral — only a `ListGroup` ancestor (via this private,
+    // package-internal context; see list-group.tsx) authorizes `listitem` ownership.
+    const insideListGroup = React.useContext(ListGroupMembershipContext);
 
     const row = (
       <Pressable
@@ -71,12 +77,14 @@ export const ListItem = React.forwardRef<React.ComponentRef<typeof Pressable>, L
         accessibilityLabel={accessibilityLabel ?? inferredLabel}
         accessibilityRole={interactive ? 'button' : undefined}
         accessibilityState={interactive ? { disabled: isDisabled } : undefined}
-        // Non-interactive rows are the list's `listitem` themselves (via the web-role
-        // `role` prop — `accessibilityRole`'s fixed, native-mask-synced enum doesn't
-        // include `listitem`). Interactive rows keep their native-mapped `button` role
-        // for click affordance instead (see the `listitem`-wrapped return below) — a
-        // single native element can't carry both roles at once.
-        role={interactive ? undefined : 'listitem'}
+        // Non-interactive rows inside a ListGroup are the list's `listitem` themselves
+        // (via the web-role `role` prop — `accessibilityRole`'s fixed, native-mask-synced
+        // enum doesn't include `listitem`). Outside a ListGroup, no `listitem` role is
+        // emitted at all (Required Context Role). Interactive rows never carry `listitem`
+        // on the Pressable itself — when owned by a ListGroup they get a separate
+        // `listitem`-role wrapper instead (see the wrapped return below), since a single
+        // native element can't carry both `button` and `listitem` roles at once.
+        role={!interactive && insideListGroup ? 'listitem' : undefined}
         accessible={interactive || groupPrimitiveContent ? true : undefined}
         className={cn(
           // Row height/gap come from the #74 application-density axis (`--spacing-density-*`,
@@ -114,11 +122,13 @@ export const ListItem = React.forwardRef<React.ComponentRef<typeof Pressable>, L
       </Pressable>
     );
 
-    // Interactive rows render `button`, not `listitem`, on the Pressable itself, so
-    // wrap them in a plain `listitem` element. This mirrors the standard `<li><button>`
-    // pattern and keeps ListGroup's `role="list"` container's direct children conforming
-    // to the ARIA `list` -> `listitem` contract regardless of whether a row is interactive.
-    return interactive ? (
+    // Interactive rows render `button`, not `listitem`, on the Pressable itself. When owned
+    // by a ListGroup, wrap them in a plain `listitem` element so the list's `role="list"`
+    // container's direct children conform to the ARIA `list` -> `listitem` contract — this
+    // mirrors the standard `<li><button>` pattern. Outside a ListGroup there is no `list`
+    // to satisfy, so a standalone interactive ListItem stays a plain button with no
+    // orphan `listitem` wrapper.
+    return interactive && insideListGroup ? (
       <Box className="w-full" role="listitem">
         {row}
       </Box>

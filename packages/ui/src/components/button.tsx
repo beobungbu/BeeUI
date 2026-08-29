@@ -119,8 +119,17 @@ export const Button = React.forwardRef<React.ComponentRef<typeof Pressable>, But
         accessibilityState={{
           ...accessibilityState,
           disabled: isDisabled,
-          busy: loading,
         }}
+        // `aria-busy` (not `accessibilityState.busy`) is what carries the loading state on
+        // Web: verified against react-native-web 0.21's source — `createDOMProps` reads the
+        // individual `aria-busy`/`accessibilityBusy` props directly, and `accessibilityState`
+        // never appears there or in Pressable/View's forwarded-prop allowlist, so a compound
+        // `accessibilityState={{ busy }}` is silently dropped on Web and never reaches the DOM
+        // as `aria-busy`. On native, React Native's own Pressable (0.86) normalizes `aria-busy`
+        // into `accessibilityState.busy` internally (`busy: ariaBusy ?? accessibilityState?.busy`),
+        // so a single `aria-busy` prop is the correct, verified way to expose loading/busy on
+        // both platforms from the Button itself.
+        aria-busy={loading}
         className={cn(
           buttonVariants({ variant: resolvedVariant, size }),
           isDisabled && 'border-disabled bg-disabled opacity-60',
@@ -131,9 +140,13 @@ export const Button = React.forwardRef<React.ComponentRef<typeof Pressable>, But
         {loading ? (
           <EngineActivityIndicator
             // react-native-web's ActivityIndicator always renders `role="progressbar"`
-            // (WAI-ARIA `accessibleNameRequired`); give it a generic, non-brand name
-            // since it's purely decorative alongside the button's own busy state/label.
-            accessibilityLabel="Loading"
+            // (WAI-ARIA `accessibleNameRequired`) and it cannot be suppressed by the caller.
+            // The Button itself already exposes the loading state via `aria-busy` above and
+            // keeps its own accessible name, so this inner indicator is purely visual —
+            // `aria-hidden` (verified: a first-class prop on both react-native's ViewProps
+            // and react-native-web's forwarded-accessibility-prop allowlist) removes it from
+            // the accessibility tree instead of giving it a second, redundant accessible name.
+            aria-hidden
             colorClassName={spinnerColorByVariant[resolvedVariant]}
             size="small"
           />
