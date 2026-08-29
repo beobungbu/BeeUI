@@ -132,7 +132,12 @@ export function OnboardingProgress({ current, label = 'Profile setup', total }: 
           {safeCurrent} of {safeTotal}
         </Text>
       </HStack>
-      <Progress max={safeTotal} size="sm" value={safeCurrent} />
+      <Progress
+        accessibilityLabel={`${label}, ${safeCurrent} of ${safeTotal}`}
+        max={safeTotal}
+        size="sm"
+        value={safeCurrent}
+      />
     </VStack>
   );
 }
