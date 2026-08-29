@@ -581,11 +581,20 @@ run_dynamic_type_scale() {
     timeout: 15000
     visible:
       id: "component-gallery"
+# At 1x this deep gallery target already takes ~28s to reach on the API 36
+# emulator. Real Android font scaling expands the preceding content, while the
+# separate #284 AppHeader large-text defect can further reduce the usable
+# viewport on this sibling branch. Give the evidence traversal enough time,
+# scroll at full speed, and center a mostly-visible target. The measured node
+# remains the real SelectTrigger; this does not mask or duplicate #284's fix.
 - scrollUntilVisible:
     element:
       id: "select-showcase-controlled-trigger"
     direction: DOWN
-    timeout: 40000
+    timeout: 180000
+    speed: 100
+    visibilityPercentage: 80
+    centerElement: true
 - waitForAnimationToEnd
 - assertVisible:
     id: "select-showcase-controlled-trigger"
@@ -597,7 +606,10 @@ EOF_FLOW
     element:
       id: "dynamic-type-pagination-item-1"
     direction: DOWN
-    timeout: 40000
+    timeout: 180000
+    speed: 100
+    visibilityPercentage: 80
+    centerElement: true
 - waitForAnimationToEnd
 - assertVisible:
     id: "dynamic-type-pagination-item-1"
