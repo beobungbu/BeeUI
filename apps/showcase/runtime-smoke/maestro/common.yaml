@@ -7,6 +7,16 @@ appId: com.beeui.showcase
     visible:
       id: "showcase-home"
 
+# The home screen is scrollable and preserves its scroll offset when a gallery
+# pushes/pops. Always bring each launcher into the viewport before tapping it;
+# otherwise a successful return from the previous gallery can leave the next
+# launcher outside UIAutomator's visible hierarchy and make native smoke flaky.
+- scrollUntilVisible:
+    element:
+      id: "showcase-open-components"
+    direction: UP
+    timeout: 40000
+- waitForAnimationToEnd
 - tapOn:
     id: "showcase-open-components"
 - assertVisible:
@@ -20,6 +30,12 @@ appId: com.beeui.showcase
       - assertVisible:
           id: "showcase-home"
 
+- scrollUntilVisible:
+    element:
+      id: "showcase-open-patterns"
+    direction: DOWN
+    timeout: 40000
+- waitForAnimationToEnd
 - tapOn:
     id: "showcase-open-patterns"
 - assertVisible:
