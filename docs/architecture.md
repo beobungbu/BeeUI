@@ -36,7 +36,7 @@ The public component API stops at `@beeui/ui`. Applications should not need to k
 
 Owns the design vocabulary: semantic color names, spacing/radius contracts, and the canonical CSS theme consumed by the current Uniwind implementation.
 
-Theme/token v2 work is tracked in `docs/roadmap.md`; future typography, sizing, elevation, motion, focus, and branding contracts should extend this semantic layer rather than leak styling-engine APIs into components.
+Theme Tokens v3 is shipped: canonical DTCG token source/codegen, a typed theme registry/scoping system, runtime overrides/readers, density, high contrast, semantic data-viz, and motion/layout/typography/lifecycle contracts, enforced by strict semantic-consumption guardrails (see `docs/roadmap.md`). Future extensions to this semantic layer, such as expanded branding/focus contracts, should preserve those guardrails rather than leak styling-engine APIs into components.
 
 ### `@beeui/core`
 

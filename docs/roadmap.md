@@ -115,12 +115,12 @@ Critical sequencing rules:
 
 # R0 — Program synchronization & governance
 
-- **R0.1** #115 — close stale Theme v3 issues #65/#66.
-- **R0.2** #116 — supersede obsolete draft PR #86.
+- **R0.1** #115 — close stale Theme v3 issues #65/#66. **Done** — #65/#66 reconciled and closed as completed, no regression, verified by passing contrast tests.
+- **R0.2** #116 — supersede obsolete draft PR #86. **Done** — PR #86 closed unmerged, superseded by the canonical control-plane docs.
 - **R0.3** #117 — synchronize current-state documentation.
 - **R0.4** #114 — single BeeUI 1.0 tracker.
-- **R0.5** #118 — 1.0 labels/milestone taxonomy.
-- **R0.6** #119 — protect `main` and release paths using actual workflow/check names.
+- **R0.5** #118 — 1.0 labels/milestone taxonomy. **Done** — planning taxonomy created: labels `1.0:blocker`/`1.0:p0`/`1.0:p1`/`1.0:stretch` + `area:*` (runtime, a11y, compatibility, distribution, docs, release, components, performance, ai-agent, demo-app) and milestone `BeeUI 1.0`.
+- **R0.6** #119 — protect `main` and release paths using actual workflow/check names. **Owner-declined** — the repository owner explicitly closed #119 as not_planned/deferred; `main`/release branch protection is intentionally **not configured at this time** and may be revisited only by a future explicit owner decision.
 
 # R1 — Runtime hardening
 
@@ -248,7 +248,7 @@ Critical sequencing rules:
 - #192 issue/PR templates.
 - #193 Actions/fork/self-hosted-runner hardening.
 - #194 dependency/security automation.
-- #195 repository-public preflight; actual visibility action is owner-gated.
+- #195 repository-public preflight; actual visibility action is owner-gated. **Visibility mutation owner-declined** — the repository owner has explicitly rejected the visibility change (recorded on #195); BeeUI remains a **private** repository and will not be made public autonomously. #195 stays open only for its optional non-mutating preflight audit; only a future explicit owner instruction could authorize the actual change. #254 publication remains a separate owner gate regardless.
 - #196 final branch/tag/release ruleset.
 
 # R7 — Packages — publication-ready only, DO NOT publish
