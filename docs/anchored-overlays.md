@@ -126,6 +126,8 @@ Native `measureInWindow` callbacks are asynchronous. Host and anchor measurement
 
 Remeasurement occurs on open, relevant window/keyboard changes, and nearest-host geometry revision. An explicit `remeasure()` seam exists for scroll/layout integrations. BeeUI does not poll at 60fps.
 
+An anchor measurement that never resolves is bounded by the completion budget (ADR-003, `docs/decisions/003-native-measurement-timeout.md`). A scheduled anchor `measureInWindow` whose callback is dropped — a detached/recycled native view or a bridge failure — is retired when the budget elapses and routed through `onAnchorUnavailable` exactly as a synchronously unavailable anchor already is, so anchored content never stays stuck in its unresolved/offscreen placeholder. `Popover`/`DropdownMenu` treat `onAnchorUnavailable` as an anchor-loss close. This holds deterministically across initial open, host-move remeasure, anchor unmount, close-while-pending, a newer successful request superseding an older dead one, and modal-local scope; the existing latest-request-wins generation and host-revision guards remain the single supersession arbiter for the timeout path, so a superseded, closed, or host-revised request cannot fire a spurious `onAnchorUnavailable`.
+
 ### Safe-area / keyboard policy
 
 The runtime reuses safe-area data already owned by `BeeUIProvider`. Collision padding is applied only where unsafe window edges intersect the overlay host. Keyboard avoidance is explicit policy input.
