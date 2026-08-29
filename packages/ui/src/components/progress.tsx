@@ -28,6 +28,8 @@ export type ProgressProps = Omit<ViewProps, 'accessibilityRole' | 'role' | 'chil
 export const Progress = React.forwardRef<React.ComponentRef<typeof View>, ProgressProps>(
   (
     {
+      accessibilityLabel,
+      accessibilityLabelledBy,
       accessibilityValue,
       className,
       indicatorClassName,
@@ -42,11 +44,18 @@ export const Progress = React.forwardRef<React.ComponentRef<typeof View>, Progre
     const boundedMax = Number.isFinite(max) && max > 0 ? max : 100;
     const boundedValue = Math.min(Math.max(Number.isFinite(value) ? value : 0, 0), boundedMax);
     const percentage = (boundedValue / boundedMax) * 100;
+    // A progressbar always needs an accessible name (WAI-ARIA `accessibleNameRequired`).
+    // Fall back to a generic, non-brand default only when the caller hasn't supplied
+    // either an explicit label or a labelledby relationship of their own.
+    const resolvedAccessibilityLabel =
+      accessibilityLabel ?? (accessibilityLabelledBy ? undefined : 'Progress');
 
     return (
       <View
         ref={ref}
         {...props}
+        accessibilityLabel={resolvedAccessibilityLabel}
+        accessibilityLabelledBy={accessibilityLabelledBy}
         accessibilityRole="progressbar"
         accessibilityValue={{
           ...accessibilityValue,

@@ -130,6 +130,10 @@ export const Button = React.forwardRef<React.ComponentRef<typeof Pressable>, But
       >
         {loading ? (
           <EngineActivityIndicator
+            // react-native-web's ActivityIndicator always renders `role="progressbar"`
+            // (WAI-ARIA `accessibleNameRequired`); give it a generic, non-brand name
+            // since it's purely decorative alongside the button's own busy state/label.
+            accessibilityLabel="Loading"
             colorClassName={spinnerColorByVariant[resolvedVariant]}
             size="small"
           />

@@ -35,9 +35,16 @@ export type SpinnerProps = Omit<ActivityIndicatorProps, 'color'> & {
 export const Spinner = React.forwardRef<
   React.ComponentRef<typeof ActivityIndicator>,
   SpinnerProps
->(({ tone = 'primary', ...props }, ref) => {
+>(({ accessibilityLabel, accessibilityLabelledBy, tone = 'primary', ...props }, ref) => {
+  // react-native-web's ActivityIndicator always renders `role="progressbar"`
+  // (WAI-ARIA `accessibleNameRequired`), so fall back to a generic, non-brand
+  // default only when the caller hasn't supplied their own label/labelledby.
+  const resolvedAccessibilityLabel =
+    accessibilityLabel ?? (accessibilityLabelledBy ? undefined : 'Loading');
   const engineProps: EngineActivityIndicatorProps = {
     ...props,
+    accessibilityLabel: resolvedAccessibilityLabel,
+    accessibilityLabelledBy,
     colorClassName: spinnerToneClasses[tone],
   };
 

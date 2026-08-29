@@ -64,13 +64,19 @@ export const ListItem = React.forwardRef<React.ComponentRef<typeof Pressable>, L
     const inferredLabel = getPrimitiveAccessibilityLabel(title, description, trailing);
     const groupPrimitiveContent = !interactive && inferredLabel !== undefined;
 
-    return (
+    const row = (
       <Pressable
         ref={ref}
         {...props}
         accessibilityLabel={accessibilityLabel ?? inferredLabel}
         accessibilityRole={interactive ? 'button' : undefined}
         accessibilityState={interactive ? { disabled: isDisabled } : undefined}
+        // Non-interactive rows are the list's `listitem` themselves (via the web-role
+        // `role` prop — `accessibilityRole`'s fixed, native-mask-synced enum doesn't
+        // include `listitem`). Interactive rows keep their native-mapped `button` role
+        // for click affordance instead (see the `listitem`-wrapped return below) — a
+        // single native element can't carry both roles at once.
+        role={interactive ? undefined : 'listitem'}
         accessible={interactive || groupPrimitiveContent ? true : undefined}
         className={cn(
           // Row height/gap come from the #74 application-density axis (`--spacing-density-*`,
@@ -106,6 +112,18 @@ export const ListItem = React.forwardRef<React.ComponentRef<typeof Pressable>, L
         </Box>
         {trailing ? <Box className="shrink-0">{trailing}</Box> : null}
       </Pressable>
+    );
+
+    // Interactive rows render `button`, not `listitem`, on the Pressable itself, so
+    // wrap them in a plain `listitem` element. This mirrors the standard `<li><button>`
+    // pattern and keeps ListGroup's `role="list"` container's direct children conforming
+    // to the ARIA `list` -> `listitem` contract regardless of whether a row is interactive.
+    return interactive ? (
+      <Box className="w-full" role="listitem">
+        {row}
+      </Box>
+    ) : (
+      row
     );
   },
 );

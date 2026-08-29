@@ -54,7 +54,11 @@ export function SubscriptionScreen({ data, onCancel, onManage, onUpgrade, state 
       <Card padding="lg" variant="outlined">
         <VStack gap="md">
           <SectionHeader description={data.usageText} title={data.usageLabel} />
-          <Progress indicatorClassName={warning ? 'bg-warning' : undefined} value={data.usageValue} />
+          <Progress
+            accessibilityLabel={`${data.usageLabel}, ${data.usageValue}% used`}
+            indicatorClassName={warning ? 'bg-warning' : undefined}
+            value={data.usageValue}
+          />
           <HStack justify="between">
             <Text tone={warning ? 'warning' : 'muted'} variant="caption">{data.usageValue}% used</Text>
             <Text tone="muted" variant="caption">Resets next cycle</Text>
