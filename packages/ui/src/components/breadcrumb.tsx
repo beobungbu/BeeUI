@@ -2,6 +2,7 @@ import { cn } from '@beeui/core';
 import * as React from 'react';
 import { Pressable, View, type PressableProps, type ViewProps } from 'react-native';
 import { Text } from './text';
+import { useDirection } from './use-direction';
 
 function getBreadcrumbChildKey(item: React.ReactNode, index: number) {
   return React.isValidElement(item) && item.key != null ? item.key : `breadcrumb-item-${index}`;
@@ -14,8 +15,13 @@ export type BreadcrumbProps = Omit<ViewProps, 'children'> & {
 };
 
 export const Breadcrumb = React.forwardRef<React.ComponentRef<typeof View>, BreadcrumbProps>(
-  ({ children, className, separator = '›', ...props }, ref) => {
+  ({ children, className, separator, ...props }, ref) => {
     const items = React.Children.toArray(children);
+    // The default separator points along the reading direction: toward the end
+    // (visual right) in LTR, toward the start (visual left) in RTL. A consumer's
+    // explicit `separator` (including `null`) is always respected unchanged.
+    const direction = useDirection();
+    const resolvedSeparator = separator === undefined ? (direction === 'rtl' ? '‹' : '›') : separator;
 
     return (
       <View
@@ -33,12 +39,13 @@ export const Breadcrumb = React.forwardRef<React.ComponentRef<typeof View>, Brea
                 accessible={false}
                 importantForAccessibility="no-hide-descendants"
               >
-                {typeof separator === 'string' || typeof separator === 'number' ? (
+                {typeof resolvedSeparator === 'string' ||
+                typeof resolvedSeparator === 'number' ? (
                   <Text tone="muted" variant="caption">
-                    {separator}
+                    {resolvedSeparator}
                   </Text>
                 ) : (
-                  separator
+                  resolvedSeparator
                 )}
               </View>
             ) : null}

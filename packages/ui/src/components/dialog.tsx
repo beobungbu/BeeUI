@@ -295,7 +295,7 @@ export const DialogTitle = React.forwardRef<React.ComponentRef<typeof Text>, Dia
         {...props}
         accessibilityLabel={accessibilityLabel}
         accessibilityRole="header"
-        className={cn('pr-8', className)}
+        className={cn('pe-8', className)}
         nativeID={resolvedNativeID}
         variant="heading"
       >
