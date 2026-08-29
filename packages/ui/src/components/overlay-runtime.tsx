@@ -19,6 +19,7 @@ import { layer } from '@beeui/tokens';
 import * as React from 'react';
 import {
   Keyboard,
+  Platform,
   Pressable,
   StyleSheet,
   View,
@@ -522,7 +523,7 @@ export function ModalOverlayHost({
   const HostOutlet = transport?.HostOutlet;
   const boundary = (
     <View
-      accessibilityViewIsModal
+      accessibilityViewIsModal={Platform.OS === 'web' ? undefined : true}
       collapsable={false}
       pointerEvents="box-none"
       style={StyleSheet.absoluteFill}
@@ -550,6 +551,13 @@ export function ModalOverlayHost({
   // would hide every anchored overlay opened inside it (#60). The boundary's
   // own siblings are only the Modal scaffolding. It renders with or without a
   // transport so the legacy fallback keeps a boundary too.
+  //
+  // accessibilityViewIsModal is native-only: react-native-web forwards it
+  // verbatim to `aria-modal`, but this boundary View has no ARIA role, and
+  // `aria-modal` is only a valid attribute on elements whose role supports it
+  // (dialog/alertdialog). DialogContent already sets `role="dialog"` together
+  // with `aria-modal` for the correct Web semantics, so the boundary itself
+  // must not also emit `aria-modal` on Web.
   if (!transport) return boundary;
   return <OverlayScopeContext.Provider value={scope}>{boundary}</OverlayScopeContext.Provider>;
 }

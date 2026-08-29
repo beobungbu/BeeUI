@@ -364,3 +364,52 @@ describe('latest async measurement wins', () => {
     );
   });
 });
+
+describe('modal accessibility boundary aria-modal by platform', () => {
+  function renderDialog() {
+    return render(
+      <OverlayRuntimeProvider hostRectOverride={ROOT_RECT}>
+        <Dialog defaultOpen>
+          <DialogContent testID="dialog-content">
+            <DialogTitle>Dialog</DialogTitle>
+          </DialogContent>
+        </Dialog>
+      </OverlayRuntimeProvider>,
+    );
+  }
+
+  it('omits aria-modal from the portal boundary on Web, since it has no role that supports it', () => {
+    setPlatform('web');
+    const screen = renderDialog();
+    const content = screen.getByTestId('dialog-content');
+
+    // DialogContent itself still carries the correct, role-paired aria-modal.
+    expect(content.props.role).toBe('dialog');
+    expect(content.props['aria-modal']).toBe(true);
+
+    // The wrapping portal boundary must NOT also emit aria-modal on Web: it has
+    // no ARIA role, and aria-allowed-attr forbids aria-modal on a roleless
+    // element. Reverting the Platform.OS gate makes this find `true` and fail.
+    let boundary = content.parent;
+    while (boundary && boundary.props.accessibilityViewIsModal !== true) {
+      boundary = boundary.parent;
+    }
+    expect(boundary).toBeNull();
+  });
+
+  it.each(['ios', 'android'] as const)(
+    'keeps the native accessibility modal boundary on %s',
+    (os) => {
+      setPlatform(os);
+      const screen = renderDialog();
+      const content = screen.getByTestId('dialog-content');
+
+      let boundary = content.parent;
+      while (boundary && boundary.props.accessibilityViewIsModal !== true) {
+        boundary = boundary.parent;
+      }
+      expect(boundary).toBeTruthy();
+      expect(boundary?.props.accessibilityViewIsModal).toBe(true);
+    },
+  );
+});
