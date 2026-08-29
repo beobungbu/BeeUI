@@ -8,7 +8,6 @@ import {
 import { layer } from '@beeui/tokens';
 import * as React from 'react';
 import {
-  I18nManager,
   Platform,
   Pressable,
   ScrollView,
@@ -29,6 +28,7 @@ import {
   type OverlayMeasurableNode,
 } from './overlay-runtime';
 import { Text } from './text';
+import { resolveDirection } from './use-direction';
 
 export type SelectOptionValue = string;
 export type SelectPlacement = AnchoredOverlayPlacement;
@@ -501,7 +501,7 @@ export const SelectContent = React.forwardRef<
       className,
       closeOnOutsidePress = true,
       collisionPadding = 8,
-      direction = I18nManager.isRTL ? 'rtl' : 'ltr',
+      direction = resolveDirection(),
       flip = true,
       importantForAccessibility,
       maxHeight,

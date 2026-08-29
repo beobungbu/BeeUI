@@ -2,6 +2,7 @@ import { cn } from '@beeui/core';
 import * as React from 'react';
 import { Pressable, View, type PressableProps, type ViewProps } from 'react-native';
 import { Text } from './text';
+import { useDirection } from './use-direction';
 
 type PaginationContextValue = {
   disabled: boolean;
@@ -111,6 +112,14 @@ export const PaginationItem = React.forwardRef<
     ref,
   ) => {
     const pagination = usePaginationContext();
+    // Previous/next are logical navigation affordances, not physical sides: in an
+    // RTL layout "previous" points toward the end (visual right) and "next" toward
+    // the start (visual left). The default chevron glyphs therefore mirror with the
+    // resolved direction (ADR-004 logical start/end mapping). Numerals and the
+    // invalid-page em dash stay physical — they are not directional content.
+    const direction = useDirection();
+    const previousGlyph = direction === 'rtl' ? '›' : '‹';
+    const nextGlyph = direction === 'rtl' ? '‹' : '›';
     const invalidPageItem = type === 'page' && !Number.isFinite(page);
     const requestedPage = Number.isFinite(page) ? Math.floor(page as number) : pagination.page;
     const targetPage =
@@ -124,7 +133,13 @@ export const PaginationItem = React.forwardRef<
     const isDisabled = disabled || pagination.disabled || invalidPageItem || outOfRange;
     const childArray = React.Children.toArray(children);
     const fallbackContent =
-      type === 'previous' ? '‹' : type === 'next' ? '›' : invalidPageItem ? '—' : String(targetPage);
+      type === 'previous'
+        ? previousGlyph
+        : type === 'next'
+          ? nextGlyph
+          : invalidPageItem
+            ? '—'
+            : String(targetPage);
     const inferredLabel =
       type === 'previous'
         ? 'Previous page'

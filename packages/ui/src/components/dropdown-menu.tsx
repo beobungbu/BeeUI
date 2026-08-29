@@ -8,7 +8,6 @@ import {
 import { layer } from '@beeui/tokens';
 import * as React from 'react';
 import {
-  I18nManager,
   Platform,
   Pressable,
   StyleSheet,
@@ -17,6 +16,7 @@ import {
   type ViewProps,
 } from 'react-native';
 import { Button, type ButtonProps } from './button';
+import { resolveDirection } from './use-direction';
 import {
   OverlayDismissLayer,
   OverlayPortal,
@@ -229,7 +229,7 @@ export const DropdownMenuContent = React.forwardRef<
       className,
       closeOnOutsidePress = true,
       collisionPadding = 8,
-      direction = I18nManager.isRTL ? 'rtl' : 'ltr',
+      direction = resolveDirection(),
       flip = true,
       importantForAccessibility,
       nativeID,
