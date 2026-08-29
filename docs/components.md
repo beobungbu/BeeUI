@@ -133,9 +133,9 @@ The component inventory is no longer the main production-readiness bottleneck. B
 Wave 0 is implemented. The next major work is ordered by `docs/roadmap.md`:
 
 1. context-preserving anchored-overlay transport — **delivered** (Wave 1A) at the deterministic/compile contract level: web `createPortal`, native teleport, generic modal-local scope, legacy fallback contract; exact runtime/device interaction remains separately gated;
-2. establish protected iOS/Android runtime interaction smoke beyond the existing compile gates;
-3. deepen the semantic theme/token system;
-4. production `Select` — **implemented in Wave 2A** on the accepted overlay runtime; `Tooltip` remains separate work with its own hover/focus/accessibility contract;
+2. Theme Tokens v3 — **delivered**: canonical DTCG source/codegen/lifecycle, semantic-consumption guard, scoped themes, runtime overrides/readers, density, high contrast, dataviz and motion contracts;
+3. production `Select` — **implemented in Wave 2A** on the accepted overlay runtime; `Tooltip` remains separate work with its own hover/focus/accessibility contract;
+4. native runtime-smoke foundation — **established** (see `docs/native-runtime-smoke.md`); the open work is the R1 runtime-hardening dependency chain (bounded measurement completion, deterministic host fallback, and the explicit `pageSheet`/`formSheet` support/quarantine policy) tracked in `docs/roadmap.md`;
 5. implement `Sheet` as a separate gesture/keyboard/safe-area behavior class if BeeUI claims first-class modern mobile coverage;
 6. add `Slider` and later high-value components only when cross-domain evidence supports them.
 

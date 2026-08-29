@@ -6,6 +6,7 @@ All notable consumer-facing changes to BeeUI are recorded here.
 
 ### Added
 
+- Theme Tokens v3: canonical DTCG token source/codegen, a typed theme registry/scoping system, runtime overrides/readers, density, high-contrast, semantic data-viz, and motion/layout/typography contracts, enforced by strict semantic-consumption guardrails, plus targeted visual acceptance coverage.
 - Machine-readable token lifecycle/deprecation governance in the canonical token model: per-token `stable`/`experimental`/`deprecated` status, replacement paths, reasons, and optional removal targets under `$extensions["com.beeui"]`, honoring the standard DTCG `$deprecated` field. Codegen consumes it to keep deprecated tokens generating as compatibility aliases (TypeScript `@deprecated` JSDoc, CSS `--color-*` alias to the replacement), emits a generated `@beeui/tokens/lifecycle.json` manifest, and produces a deterministic migration report via `pnpm tokens:migration-report`. Existing public tokens are governed as stable with no fake deprecations. Policy documented in `docs/token-lifecycle.md`.
 - Production `Select` composition with controlled/uncontrolled string-value selection, persistent option state, placeholder/disabled/group contracts, duplicate-value fail-safe behavior, shared anchored-overlay transport, Web keyboard/typeahead/focus behavior, long-list scrolling, and Dialog-local nesting without aliasing `DropdownMenu` command semantics.
 - Provider-scoped Toast / transient notifications through `useToast()`, with descriptor-only content, three-visible FIFO queueing, timed or explicit persistent dismissal, actions, safe-area-aware stacking, and accessibility announcements without reusing the anchored-overlay portal or React Native core `Modal`.
@@ -24,7 +25,7 @@ All notable consumer-facing changes to BeeUI are recorded here.
 - Public `Popover` composition with controlled/uncontrolled state, anchored placement, title/description accessibility fallbacks, explicit close actions, and topmost-only outside/back/Escape dismissal.
 - Public `DropdownMenu` composition with anchored placement, normal/checkbox/radio items, disabled-state semantics, topmost dismissal, and deterministic Web Arrow/Home/End/Enter/Space navigation.
 - Four production-oriented Showcase pattern packs containing 37 screens across Authentication/Onboarding, Dashboard/Finance, Commerce/Social, and Account/Settings.
-- `docs/roadmap.md` as the canonical pre-1.0 production-readiness plan covering runtime device verification, theme/token v2, Select/Tooltip/Sheet, distribution, compatibility, accessibility, performance, motion, docs/demo, and later component/pattern expansion.
+- `docs/roadmap.md` as the canonical pre-1.0 production-readiness plan covering runtime device verification, Theme Tokens v3, Select/Tooltip/Sheet, distribution, compatibility, accessibility, performance, motion, docs/demo, and later component/pattern expansion.
 
 ### Changed
 
