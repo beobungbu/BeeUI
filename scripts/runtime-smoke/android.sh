@@ -84,6 +84,9 @@ cleanup() {
   if [ -n "$SERIAL" ] && [ -n "$ORIGINAL_WM_SIZE" ]; then
     adb_for_device shell wm size reset >/dev/null 2>&1 || true
   fi
+  if [ -n "$SERIAL" ]; then
+    adb_for_device shell settings put system font_scale 1.0 >/dev/null 2>&1 || true
+  fi
   if [ -n "$METRO_PID" ]; then
     kill "$METRO_PID" >/dev/null 2>&1 || true
     wait "$METRO_PID" >/dev/null 2>&1 || true
@@ -514,6 +517,135 @@ EOF_FLOW
 adb_for_device exec-out screencap -p > "$ARTIFACT_DIR/reduced-height.png"
 adb_for_device shell wm size reset
 ORIGINAL_WM_SIZE=""
+
+# #143 — real native Dynamic Type evidence. Exercise Android's actual system
+# font scale and measure the rendered native accessibility-node bounds for the
+# two text-bearing controls whose growable-height contract is audited by the
+# Dynamic Type foundation. This deliberately does not use PixelRatio mocks.
+DYNAMIC_TYPE_METRICS="$ARTIFACT_DIR/dynamic-type-metrics.tsv"
+printf 'scale\ttarget\twidth\theight\tbounds\n' > "$DYNAMIC_TYPE_METRICS"
+
+dump_dynamic_type_metric() {
+  local scale="$1" target="$2" slug="$3"
+  local remote_xml="/sdcard/beeui-dynamic-type-${slug}-${target}.xml"
+  local local_xml="$ARTIFACT_DIR/dynamic-type-${slug}-${target}.xml"
+
+  adb_for_device shell uiautomator dump "$remote_xml" >/dev/null
+  adb_for_device pull "$remote_xml" "$local_xml" >/dev/null
+  node - "$local_xml" "$scale" "$target" "$DYNAMIC_TYPE_METRICS" <<'NODE'
+const fs = require('node:fs');
+const [xmlPath, scale, target, metricsPath] = process.argv.slice(2);
+const xml = fs.readFileSync(xmlPath, 'utf8');
+const nodeTags = xml.match(/<node\b[^>]*>/g) ?? [];
+const targetNode = nodeTags.find((tag) => tag.includes(target));
+if (!targetNode) {
+  console.error(`Native Dynamic Type target not found in UIAutomator dump: ${target}`);
+  process.exit(1);
+}
+const bounds = targetNode.match(/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/);
+if (!bounds) {
+  console.error(`Native Dynamic Type target has no parseable bounds: ${targetNode}`);
+  process.exit(1);
+}
+const [, left, top, right, bottom] = bounds.map(Number);
+const width = right - left;
+const height = bottom - top;
+if (width <= 0 || height <= 0) {
+  console.error(`Native Dynamic Type target collapsed: ${target} ${bounds[0]}`);
+  process.exit(1);
+}
+fs.appendFileSync(metricsPath, `${scale}\t${target}\t${width}\t${height}\t${bounds[0]}\n`);
+console.log(`BEEUI_NATIVE_DYNAMIC_TYPE scale=${scale} target=${target} width=${width} height=${height} ${bounds[0]}`);
+NODE
+}
+
+run_dynamic_type_scale() {
+  local scale="$1"
+  local slug="${scale/./p}"
+
+  adb_for_device shell settings put system font_scale "$scale"
+  local observed_scale
+  observed_scale="$(adb_for_device shell settings get system font_scale | tr -d '\r')"
+  echo "Android font_scale requested=$scale observed=$observed_scale" | tee -a "$ARTIFACT_DIR/dynamic-type-font-scale.log"
+
+  run_inline_maestro "dynamic-type-${slug}-select" <<'EOF_FLOW'
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    timeout: 180000
+    visible:
+      id: "showcase-home"
+- tapOn:
+    id: "showcase-open-components"
+- extendedWaitUntil:
+    timeout: 15000
+    visible:
+      id: "component-gallery"
+- scrollUntilVisible:
+    element:
+      id: "select-showcase-controlled-trigger"
+    direction: DOWN
+    timeout: 40000
+- waitForAnimationToEnd
+- assertVisible:
+    id: "select-showcase-controlled-trigger"
+EOF_FLOW
+  dump_dynamic_type_metric "$scale" "select-showcase-controlled-trigger" "$slug"
+
+  run_inline_maestro "dynamic-type-${slug}-pagination" <<'EOF_FLOW'
+- scrollUntilVisible:
+    element:
+      id: "dynamic-type-pagination-item-1"
+    direction: DOWN
+    timeout: 40000
+- waitForAnimationToEnd
+- assertVisible:
+    id: "dynamic-type-pagination-item-1"
+EOF_FLOW
+  dump_dynamic_type_metric "$scale" "dynamic-type-pagination-item-1" "$slug"
+  adb_for_device exec-out screencap -p > "$ARTIFACT_DIR/dynamic-type-${slug}.png"
+}
+
+for scale in 1.0 1.3 1.5 2.0; do
+  run_dynamic_type_scale "$scale"
+done
+
+node - "$DYNAMIC_TYPE_METRICS" <<'NODE'
+const fs = require('node:fs');
+const metricsPath = process.argv[2];
+const lines = fs.readFileSync(metricsPath, 'utf8').trim().split(/\r?\n/).slice(1);
+const rows = lines.map((line) => {
+  const [scale, target, width, height, bounds] = line.split('\t');
+  return { scale: Number(scale), target, width: Number(width), height: Number(height), bounds };
+});
+const expectedScales = [1, 1.3, 1.5, 2];
+const targets = ['select-showcase-controlled-trigger', 'dynamic-type-pagination-item-1'];
+for (const target of targets) {
+  const targetRows = rows.filter((row) => row.target === target);
+  if (targetRows.length !== expectedScales.length) {
+    throw new Error(`${target}: expected ${expectedScales.length} native scale measurements, got ${targetRows.length}`);
+  }
+  for (const scale of expectedScales) {
+    const row = targetRows.find((candidate) => candidate.scale === scale);
+    if (!row || row.width <= 0 || row.height <= 0) {
+      throw new Error(`${target}: missing/non-usable native bounds at ${scale}x`);
+    }
+  }
+  const baseline = targetRows.find((row) => row.scale === 1);
+  const doubled = targetRows.find((row) => row.scale === 2);
+  if (!baseline || !doubled || doubled.height <= baseline.height) {
+    throw new Error(
+      `${target}: expected real 2x Android font scale to grow rendered height; baseline=${baseline?.height}, 2x=${doubled?.height}`,
+    );
+  }
+  console.log(
+    `BEEUI_NATIVE_DYNAMIC_TYPE_GROWTH target=${target} baselineHeight=${baseline.height} doubledHeight=${doubled.height}`,
+  );
+}
+NODE
+
+adb_for_device shell settings put system font_scale 1.0
+printf '\ndynamic_type_platform=Android emulator\ndynamic_type_font_scales=1.0,1.3,1.5,2.0\ndynamic_type_metrics=dynamic-type-metrics.tsv\n' >> "$ARTIFACT_DIR/metadata.txt"
 
 adb_for_device logcat -d -v threadtime > "$ARTIFACT_DIR/logcat.txt"
 printf 'PASS\n' > "$ARTIFACT_DIR/result.txt"
