@@ -1,710 +1,311 @@
-# BeeUI production roadmap
+# BeeUI 1.0 Roadmap
 
-This document is the canonical pre-1.0 roadmap for taking BeeUI from a strong React Native UI foundation to a production-ready public UI system comparable in practical utility and polish to mature ecosystems such as Gluestack and Tamagui, without copying their architecture, proprietary assets, or product surface.
+> **Canonical target:** BeeUI `1.0.0`  
+> **Program tracker:** [#114](https://github.com/beobungbu/BeeUI/issues/114)  
+> **Snapshot:** 2026-08-29  
+> **Authoritative base at roadmap creation:** `fe8733345ee09720808ec0f6a4db93be9ff4a78f`  
+> **Execution model:** one roadmap point = one GitHub issue; implementation PRs require independent review and exact-head evidence.
 
-BeeUI is intentionally not trying to reproduce Tamagui's compiler/styling engine or Gluestack's exact component/template catalog. BeeUI keeps Uniwind + Tailwind CSS v4 as the current styling engine and focuses its own engineering effort on semantic design contracts, cross-platform behavior, accessibility, production patterns, distribution, verification, and developer experience.
+This document supersedes the previous pre-1.0 ordering. It reconciles the current BeeUI repository after Theme Tokens v3 with the Claude competitive/BeeMVP reports and the updated 2026 market scan.
 
-## Current baseline
+## Non-negotiable release rule
 
-As of the current pre-1.0 baseline, BeeUI already has:
+**Preparation is not publication.** BeeUI packages and the BeeUI CLI must become completely release-ready—packable, installable, provenance-ready and tested from clean consumers—but **must not be published to npm or exposed as a stable public CLI until the repository owner explicitly commands the BeeUI 1.0 release**.
 
-- React Native + TypeScript foundation targeting Expo and bare React Native;
-- semantic light/dark tokens through `@beeui/tokens`;
-- reusable `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` packages;
-- safe-area integration through `BeeUIProvider` + `SafeArea`;
-- broad layout, typography, action, form, selection, navigation, disclosure, data-display, feedback, state, and application-pattern coverage;
-- React Native core `Modal`-based `Dialog` and `AlertDialog`;
-- a shared non-modal anchored-overlay geometry/runtime used by `Popover` and `DropdownMenu`;
-- provider-scoped descriptor-based Toast notifications with queueing, persistence, actions, safe-area-aware stacking, and accessibility announcements;
-- deterministic React Native Testing Library contract coverage;
-- deterministic Chromium component visual regression with 28 canonical light/dark screenshots;
-- an executable Showcase root that preserves component inspection and integrates a production Pattern Gallery;
-- four production Pattern Gallery domains containing 37 screens:
-  - Authentication + Onboarding: 9;
-  - Dashboard + Finance: 8;
-  - Commerce + Social: 12;
-  - Account + Settings: 8;
-- a declarative Showcase-local pattern catalog with local controlled demo adapters, state inspection, responsive mobile/desktop browsing, and light/dark support;
-- durable Playwright integration QA owned by `apps/visual-regression`, including representative Component/Pattern smoke coverage and a full no-baseline 370-render Pattern Gallery acceptance matrix;
-- Expo Web/Android/iOS bundling and Expo Prebuild verification;
-- fresh package-installed bare React Native consumer verification;
-- bare Android native compilation;
-- Expo Showcase and fresh bare React Native native iOS Simulator compilation on a trusted macOS ARM64 runner;
-- change-aware native iOS scheduling on pull requests plus persistent Xcode/DerivedData build caches;
-- a phase-1 repository-local Registry + source-ownership CLI with deterministic validation, collision protection, dry-run, doctor/verify, and initial component coverage.
+The only task allowed to perform stable publication is **R11.12 / #254**, and even that task must not execute merely because all technical gates are green.
 
-The remaining gap is no longer primarily “more basic components.” The highest-value work is interaction infrastructure, runtime/device evidence, theming depth, distribution, compatibility, documentation, and integrated product-level stress testing.
+## BeeUI 1.0 hard product gates
 
-## Product direction
+BeeUI 1.0 requires all of the following before release authorization:
 
-BeeUI 1.0 should provide a coherent combination of:
+- overlay/runtime correctness and explicit native presentation support policy;
+- tested React Native / Expo / Web / toolchain compatibility;
+- RTL, Dynamic Type/large text, localization, keyboard, VoiceOver/TalkBack and reduced motion;
+- Tooltip;
+- Sheet / BottomSheet;
+- **Table / DataTable**;
+- **Calendar / DatePicker / DateTimePicker**;
+- performance and package-footprint baselines;
+- OSS/security/release governance;
+- publication-ready packages and CLI, still unpublished;
+- public/release-ready documentation and Showcase;
+- **AI-native developer support** via `llms.txt` family + agent-development contract + agent regression suite;
+- **one production-grade demo/reference application on iOS, Android and Web**;
+- clean independent consumers and one immutable exact-candidate release evidence set.
 
-```text
-semantic design system
-+ behavior/accessibility-first React Native components
-+ Expo + bare React Native portability
-+ production screen patterns
-+ source-ownership CLI
-+ package distribution
-+ real runtime/device verification
-+ visual regression
-+ custom theming
-+ consumer-grade documentation
-```
+## Current baseline to preserve
 
-The goal is not maximum component count. A component is promoted into the public foundation only when its behavior, accessibility, platform, and ownership boundaries are clear.
+Already complete on `main` and therefore not future work:
 
-## Promotion policy
+- React Native + TypeScript monorepo split into `@beeui/core`, `@beeui/tokens`, `@beeui/ui`;
+- Theme Tokens v3 canonical DTCG source/codegen, lifecycle, semantic-consumption guard, scoped themes, runtime overrides/readers, density, high contrast, dataviz and motion contracts;
+- broad stable component surface including production Select;
+- context-preserving anchored-overlay architecture used by Popover/DropdownMenu/Select;
+- Dialog/AlertDialog, Toast, KeyboardAwareScreen and safe-area contracts;
+- 37-screen Pattern Gallery plus Chromium visual/integration QA;
+- Expo + bare React Native package/bundle/native-compile verification;
+- native runtime-smoke foundation;
+- source-ownership registry/CLI with full current stable public component-module coverage.
 
-Use the existing Rule of Two:
+The remaining problem is not basic component count. It is runtime hardening, missing high-value 1.0 surfaces, accessibility/compatibility proof, distribution readiness, public/agent DX and product-level evidence.
 
-1. If existing BeeUI components can compose the requirement cleanly, compose it.
-2. If the requirement is domain-specific, keep it pattern-local.
-3. Promote a new public primitive/composition only when the same meaningful need appears in at least two screens/domains, or one use has sufficiently complex behavior/accessibility/platform requirements to justify a shared contract.
-4. Create or update a `gap:` issue before implementation when a reusable gap is discovered through product work.
-
-Do not add components solely to match another library's catalog.
-
----
-
-# Wave 0 — Integrated Pattern Gallery
-
-**Priority:** P0  
-**Status:** COMPLETE / IMPLEMENTED
-
-Wave 0 shipped the production-quality executable Showcase integration over all 37 production screens.
-
-Implemented behavior:
-
-- four domains and 37 screens registered through a declarative Showcase-local catalog;
-- local controlled-state adapters without router/backend/auth/payment ownership;
-- Pattern Gallery home → domain → screen navigation on narrow mobile;
-- wide master/detail browsing at the 960px desktop breakpoint with a constrained 760px preview canvas;
-- representative loading/empty/error/processing/warning state inspection;
-- light/dark theme control through the existing Uniwind integration;
-- demo-only Toast feedback where appropriate;
-- controlled demo state reset when a screen is reopened;
-- an executable Showcase root that exposes **Components** and **Patterns** while mounting only the active heavy surface;
-- preservation/extraction of the pre-existing interactive component playground rather than replacing it;
-- durable Playwright browser QA owned by `apps/visual-regression`, with representative normal-CI coverage and a full 5-viewport × 2-theme × 37-screen acceptance matrix using structural checks/in-memory screenshots rather than 370 committed PNG baselines;
-- executable native Showcase integration, which makes production pattern implementation files native-sensitive CI inputs.
-
-The Gallery is now the canonical product-quality inspection surface for BeeUI production patterns and an evidence source for future Rule-of-Two promotion decisions.
-
-Do not mark later waves complete merely because Gallery integration exercises their current primitives.
-
----
-
-# Wave 1A — Context-preserving anchored-overlay transport — COMPLETE
-
-**Priority:** P0  
-**Status:** COMPLETE (#35)
-
-`OverlayPortal` is now a runtime-selected transport separated from the shared overlay runtime, and consumer React context declared below `BeeUIProvider` is preserved inside anchored overlay content:
-
-- **web** → `ReactDOM.createPortal`;
-- **native + New Architecture** → `react-native-teleport` (native context-preserving portal);
-- **defensive fallback** (native without Fabric, or host view unregistered) → the legacy store host, which does not preserve context, with a one-time dev warning. This is a fallback, not an advertised production configuration — BeeUI peers React Native >= 0.85 where the New Architecture is the norm.
-
-The accepted contracts are retained across transports: non-modal positioning, shared geometry/collision handling, safe-area and keyboard policy, deterministic topmost dismissal, nested overlay behavior, accessibility semantics, and no silent conversion to a full-screen React Native `Modal`. Each modal-class surface provisions a coherent **overlay scope** (generic — future `Select`/`Tooltip` inherit it): its own portal host, its own **measured geometry origin**, and its own **dismiss stack**. Scope depth is semantic (`root=0`, each modal boundary increments depth), so initial-open and nested modal ordering never depends on React effect execution order. Dismiss-controller identity is stable across geometry changes, and native host/anchor measurements are latest-request-wins so stale asynchronous `measureInWindow` callbacks cannot overwrite newer geometry.
-
-`DialogContent` preserves real React Native presentation semantics: the default `overFullScreen` presentation remains transparent, while `pageSheet`, `formSheet`, and `fullScreen` are rendered non-transparent so React Native can honor the requested presentation. Anchored overlays in modal-local scopes resolve against the measured modal host origin rather than assuming the application root origin. Platform request-close is routed by platform: **Android** hardware back (reaching BeeUI only via `Modal.onRequestClose`) is intercepted child-first; **iOS/other** request-close (which can be a native sheet-swipe dismissal) is not intercepted, so React `Dialog` state never desyncs from the native modal.
-
-Global dismissal is coordinated **per BeeUI runtime** rather than through module-global mutable scope state. BeeUI's supported physical Escape/back arbitration boundary remains one application-root runtime; nested `BeeUIProvider`s reuse it. Separate independent React roots keep their overlay state isolated, but cross-root arbitration of one physical global Escape/back event is not a supported guarantee.
-
-Regression evidence:
-
-- **Deterministic (jest)** transport + scope contract suite: native teleport preserves context; legacy fallback drops it; capability selection; open/unmount lifecycle; Dialog → Popover; Dialog → DropdownMenu; Android Modal request-close child-first; AlertDialog policy; nested Dialog isolation; root-behind-modal outside/accessibility ordering; iOS `pageSheet`/`formSheet` request-close non-interception; modal presentation transparency mapping; modal-local non-zero-origin geometry; host-move anchor remeasurement; dismiss ordering stable across host geometry changes; initial-open root/Dialog and nested-Dialog scope-depth ordering; latest-request-wins async host and anchor measurement; rapid request-close registration; controlled delayed parent updates without duplicate registration; runtime-local coordinator state isolation; legacy insertion-order and independent host-outlet remount cleanup.
-- **Deterministic (Playwright, real Showcase web browser):** consumer context resolves inside Popover, DropdownMenu, a Dialog-nested Popover, and a Dialog-nested DropdownMenu; web Escape is scope-aware; and **CASE C** is staged across separate commits — the Dialog menu is opened first, a root Popover behind it is opened later, and one Escape closes the modal-local menu while leaving both Dialog and root Popover open.
-- **Runtime/device evidence is a separate class from deterministic/compile proof.** Native compilation is automated. Exact runtime interaction evidence for a candidate head is recorded in PR/release acceptance and does not get generalized in this roadmap. Live `pageSheet`/`formSheet` interaction, representative native placement across form factors, and VoiceOver/TalkBack remain Wave 1B runtime/device gates.
-
-The #35 regression proves consumer-context preservation for the context-preserving transports and pins the legacy fallback's documented loss without overstating simulator/device coverage.
-
----
-
-# Wave 1B — Runtime iOS/Android verification foundation
-
-**Priority:** P0
-
-BeeUI CI already proves native compilation. Compilation is not runtime interaction proof.
-
-Add a protected runtime smoke tier using real iOS Simulator and Android Emulator/device execution.
-
-Representative flows should cover:
-
-- Showcase launch;
-- light/dark switching;
-- Pattern Gallery navigation;
-- non-zero safe areas;
-- Dialog and AlertDialog dismissal paths;
-- Popover and DropdownMenu open/close/positioning;
-- native `overFullScreen` plus representative `pageSheet`/`formSheet` Dialog interaction where supported;
-- Toast delivery and dismissal;
-- input focus and keyboard appearance;
-- Android hardware back;
-- basic scrolling and reduced-height layouts.
-
-Recommended scheduling:
+## Dependency spine
 
 ```text
-pull request
-  -> contract tests + visual Web + native compile as classified
-
-main
-  -> full native compile
-
-nightly / release candidate
-  -> real iOS + Android runtime smoke
+R0
+├─> R1 runtime hardening
+├─> R2 compatibility
+└─> R3 accessibility foundation
+      ↓
+R4A Tooltip + R4B Sheet + R4E Table + R4F Date/Time
+      ↓
+R5 performance / R6 OSS-security
+      ↓
+R7 package readiness + R8 CLI readiness
+      ↓
+R9 docs + AI-native
+      ↓
+R10 independent consumers + production demo
+      ↓
+R11 freeze + immutable RC-ready evidence
+      ↓
+STOP
+      ↓ only after explicit owner command
+R11.12 publish → R11.13 verify
 ```
 
-Runtime automation must not turn every ordinary pull request into an hour-long device matrix.
+Parallel work is allowed only when dependencies and shared-file collision risk make it safe. Integration touching shared exports, registry, tokens or release contracts should be serialized.
 
 ---
 
-# Wave 1C — Theme/token system v2
+# R0 — Program synchronization & governance
 
-**Priority:** P0/P1
+Make the roadmap truthful before new implementation, reconcile stale Theme v3 state, synchronize canonical docs, establish the single 1.0 tracker/taxonomy and protect `main`.
 
-The current token package establishes semantic colors, spacing, and radius. Production theming needs a broader stable vocabulary.
+- **R0.1** [#115](https://github.com/beobungbu/BeeUI/issues/115) — close stale Theme v3 issues #65/#66 with traceable evidence.
+- **R0.2** [#116](https://github.com/beobungbu/BeeUI/issues/116) — supersede obsolete draft PR #86 rather than reintroducing pre-v3 work.
+- **R0.3** [#117](https://github.com/beobungbu/BeeUI/issues/117) — synchronize README, roadmap, architecture, release/native docs, components and changelog.
+- **R0.4** [#114](https://github.com/beobungbu/BeeUI/issues/114) — maintain the single BeeUI 1.0 parent tracker.
+- **R0.5** [#118](https://github.com/beobungbu/BeeUI/issues/118) — establish 1.0 priority/area labels and milestone taxonomy.
+- **R0.6** [#119](https://github.com/beobungbu/BeeUI/issues/119) — protect `main` and the eventual release path with real required checks and no force-push/deletion.
 
-Add or explicitly standardize:
+# R1 — Runtime hardening
 
-### Typography
+No overlay may remain invisibly open because an async native measurement callback never arrives. Preserve the existing latest-request-wins, scope and dismissal architecture.
 
-- font families;
-- font sizes;
-- line heights;
-- weights;
-- letter spacing.
+- **R1.1** [#120](https://github.com/beobungbu/BeeUI/issues/120) — ADR for unresponsive native `measureInWindow()` callbacks.
+- **R1.2** [#121](https://github.com/beobungbu/BeeUI/issues/121) — bounded measurement completion state machine.
+- **R1.3** [#122](https://github.com/beobungbu/BeeUI/issues/122) — deterministic host measurement fallback.
+- **R1.4** [#123](https://github.com/beobungbu/BeeUI/issues/123) — anchor-unavailable completion and cleanup.
+- **R1.5** [#124](https://github.com/beobungbu/BeeUI/issues/124) — development diagnostics without noisy production logging.
+- **R1.6** [#125](https://github.com/beobungbu/BeeUI/issues/125) — load-bearing race/fallback/ABA/unmount regression matrix.
+- **R1.7** [#126](https://github.com/beobungbu/BeeUI/issues/126) — real iOS/Android overlay runtime stress.
+- **R1.8** [#127](https://github.com/beobungbu/BeeUI/issues/127) — independent final review and closure of #59.
+- **R1.9** [#128](https://github.com/beobungbu/BeeUI/issues/128) — formalize `pageSheet`/`formSheet` support/quarantine policy for 1.0.
 
-### Sizing
+# R2 — Compatibility contract
 
-- control heights;
-- icon sizes;
-- avatar sizes;
-- content-width contracts.
+Replace optimistic peer ranges with a tested support matrix. If BeeUI cannot continuously test a combination, narrow the public promise.
 
-### Elevation
+- **R2.1–R2.10:** [#129](https://github.com/beobungbu/BeeUI/issues/129), [#130](https://github.com/beobungbu/BeeUI/issues/130), [#131](https://github.com/beobungbu/BeeUI/issues/131), [#132](https://github.com/beobungbu/BeeUI/issues/132), [#133](https://github.com/beobungbu/BeeUI/issues/133), [#134](https://github.com/beobungbu/BeeUI/issues/134), [#135](https://github.com/beobungbu/BeeUI/issues/135), [#136](https://github.com/beobungbu/BeeUI/issues/136), [#137](https://github.com/beobungbu/BeeUI/issues/137), [#138](https://github.com/beobungbu/BeeUI/issues/138).
+- Required outcomes: explicit React/RN/Expo/Node/Uniwind/Tailwind/Web rows; RN 0.86 and 0.87 clean consumers; evidence-based RN 0.85 decision; capped React major peers; Node 22/24 tooling proof; independent Web consumer; scheduled compatibility CI; mechanically synchronized compatibility docs/package peers/CLI diagnostics.
 
-- semantic shadows;
-- native elevation mapping where applicable.
+# R3 — Accessibility, RTL, Dynamic Type & localization
 
-### Motion
+RTL and large text are system properties, not per-component polish. New 1.0 surfaces are not complete until they pass the same accessibility contract.
 
-- semantic durations;
-- easing;
-- reduced-motion policy.
+- **R3.1–R3.12:** [#139](https://github.com/beobungbu/BeeUI/issues/139) through [#150](https://github.com/beobungbu/BeeUI/issues/150).
+- Required outcomes: direction architecture ADR; logical start/end audit; RTL overlay and component stress; Dynamic Type/font scaling through 2x stress; Vietnamese/long English/CJK/Arabic content; Web axe gate; real keyboard/focus matrix; VoiceOver and TalkBack release matrices; reduced-motion acceptance; accessibility docs matching tested platform behavior.
 
-### Focus
+# R4A — Tooltip — hard 1.0 gate
 
-- ring width;
-- offset;
-- focus visibility policy.
+Tooltip must reuse the anchored-overlay runtime and remain distinct from menu/select semantics. Web owns hover/focus/delay; native behavior must be platform-honest and must not fake browser hover.
 
-### Branding
+- **R4A.1–R4A.5:** [#151](https://github.com/beobungbu/BeeUI/issues/151)–[#155](https://github.com/beobungbu/BeeUI/issues/155).
+- Required outcomes: reviewed product contract; real Web hover/focus/delay/Escape behavior; explicit native accessibility/visual policy; deterministic/browser/native regression matrix; package export, registry closure, Showcase, docs and AI metadata.
 
-Support application branding by changing semantic theme values rather than editing component implementations.
+# R4B — Sheet / BottomSheet — hard 1.0 gate
 
-Prefer Uniwind/Tailwind CSS variables and scoped/runtime variable capabilities over creating another BeeUI styling engine.
+Sheet is a separate gesture/layout-heavy surface. BeeUI owns semantics/API/tests; it should prefer a proven optional gesture engine if that best satisfies the contract instead of writing physics for its own sake.
 
-Do not build a Tamagui-style compiler or replace Uniwind without new evidence.
+- **R4B.1–R4B.6:** [#156](https://github.com/beobungbu/BeeUI/issues/156)–[#161](https://github.com/beobungbu/BeeUI/issues/161).
+- Required outcomes: dependency/gesture ADR; stable controlled/uncontrolled API; snap/presentation sizes, backdrop, drag handle, keyboard, nested scroll, safe area, Android Back, a11y, RTL, Dynamic Type, reduced motion; deliberate Web policy; exact-head native runtime proof; source-ownership closure.
 
----
+# R4C — Adaptive Select — P1 decision
 
-# Wave 1D — Documentation/release state synchronization
+- **R4C** [#162](https://github.com/beobungbu/BeeUI/issues/162) — after Sheet stabilizes, decide whether Select gains `popover | sheet | dialog | auto` presentation while keeping one selection-state implementation. This may be explicitly deferred if anchored Select remains the accepted 1.0 native policy.
 
-**Priority:** P0  
-**Status:** ongoing maintenance rule
+# R4D — Slider — stretch decision
 
-Documentation must always distinguish current implementation from future roadmap.
+- **R4D** [#163](https://github.com/beobungbu/BeeUI/issues/163) — either ship a complete cross-platform Slider contract or explicitly defer it. Partial public Slider code is not acceptable.
 
-In particular:
+# R4E — Table / DataTable — hard 1.0 gate
 
-- Registry/CLI phase 1 exists today but public `npx beeui` does not;
-- native iOS compilation is automated today, while runtime/device interaction remains separate;
-- Toast v1 exists today;
-- visual regression phase 1 exists today;
-- the executable Showcase exposes both the preserved Component Gallery and the implemented 37-screen Pattern Gallery today;
-- durable Playwright Showcase integration QA is owned by `apps/visual-regression` today;
-- production pattern implementation is a native-sensitive Showcase input today;
-- issue #35 is resolved: the context-preserving overlay transport (Wave 1A) is complete and proven at the deterministic/compile contract level, while exact runtime/device interaction remains separately evidenced;
-- packages remain private and are not publicly published to npm.
+BeeUI 1.0 **must include Table/DataTable**. BeeUI owns semantic table layout, row/cell composition, accessibility, density and responsive presentation. It does not own fetching/backend query state. Sorting/filtering/selection must remain caller-controlled or narrowly headless.
 
-Any implementation PR that invalidates a current-state statement must update the corresponding canonical documentation in the same change or an explicitly linked synchronization PR.
+- **R4E.1** [#164](https://github.com/beobungbu/BeeUI/issues/164) — architecture ADR: ownership, responsive policy, semantics, virtualization boundary, performance targets.
+- **R4E.2** [#165](https://github.com/beobungbu/BeeUI/issues/165) — stable Table/DataTable anatomy/API including header/body/footer, rows/cells, caption, states, selection/sort intent, density and responsive strategies.
+- **R4E.3** [#166](https://github.com/beobungbu/BeeUI/issues/166) — Web table/grid semantics, keyboard, sort/selection announcements, zoom, RTL and accessibility audit.
+- **R4E.4** [#167](https://github.com/beobungbu/BeeUI/issues/167) — native phone/tablet rendering, VoiceOver/TalkBack semantics, hit targets, RTL and 2x font scaling.
+- **R4E.5** [#168](https://github.com/beobungbu/BeeUI/issues/168) — performance envelope at representative 100/500-row scale and explicit virtualization limits.
+- **R4E.6** [#169](https://github.com/beobungbu/BeeUI/issues/169) — production CRM/finance/admin patterns and visual acceptance across phone/tablet/Web/theme/density/RTL/large text.
+- **R4E.7** [#170](https://github.com/beobungbu/BeeUI/issues/170) — package/registry/docs/AI metadata and clean package/source-owned consumer proof.
 
----
+# R4F — Calendar / DatePicker / DateTimePicker — hard 1.0 gate
 
-# Wave 2A — Select
+BeeUI 1.0 **must include Calendar, DatePicker and DateTimePicker**. Date-only values must not silently shift day because of timezone conversion. BeeUI does not own backend timezone storage or business-calendar rules.
 
-**Priority:** P0 after anchored-overlay transport decision
+- **R4F.1** [#171](https://github.com/beobungbu/BeeUI/issues/171) — date/time architecture ADR: value model, timezone boundary, locale/week-start ownership, native-system vs custom Calendar responsibility, Web/Sheet/Popover presentation.
+- **R4F.2** [#172](https://github.com/beobungbu/BeeUI/issues/172) — stable Calendar API with month navigation, bounds, disabled/today state, locale/week start, RTL/large-text/theming.
+- **R4F.3** [#173](https://github.com/beobungbu/BeeUI/issues/173) — stable DatePicker API with Field validation, focus restoration, keyboard/native presentation and clearing policy.
+- **R4F.4** [#174](https://github.com/beobungbu/BeeUI/issues/174) — stable DateTimePicker with coherent date+time value model and explicit 12/24h/timezone boundaries.
+- **R4F.5** [#175](https://github.com/beobungbu/BeeUI/issues/175) — Vietnamese/English/Arabic/CJK, week-start, DST and date-only timezone regression matrix.
+- **R4F.6** [#176](https://github.com/beobungbu/BeeUI/issues/176) — Calendar/date accessibility and real keyboard acceptance.
+- **R4F.7** [#177](https://github.com/beobungbu/BeeUI/issues/177) — visual + iOS/Android/Web runtime acceptance.
+- **R4F.8** [#178](https://github.com/beobungbu/BeeUI/issues/178) — package/registry/docs/AI metadata and clean consumer proof.
 
-`Select` must be a real selection component, not a visual alias of `DropdownMenu`.
+# R5 — Performance & footprint
 
-Minimum contract:
+BeeUI must have a measurable performance story rather than generic claims.
 
-- controlled and uncontrolled state where appropriate;
-- selected value and placeholder;
-- disabled state;
-- option/value semantics;
-- labels/groups if justified;
-- keyboard navigation;
-- typeahead where practical;
-- focus management/restoration policy;
-- accessibility semantics;
-- long option-list behavior;
-- Web/native presentation policy;
-- reuse of accepted anchored geometry/runtime infrastructure.
+- **R5.1–R5.8:** [#179](https://github.com/beobungbu/BeeUI/issues/179)–[#186](https://github.com/beobungbu/BeeUI/issues/186).
+- Required outcomes: reproducible benchmark harness; render/update stress; overlay open latency; theme runtime switching; Table 100/500-row scale; tarball/Web/Metro footprint; granular export decision; evidence-based regression budgets; public methodology with explicit non-claims.
 
-Do not couple Select to routers, forms libraries, persistence, or domain data fetching.
+# R6 — OSS, security & repository governance
 
----
+Prepare BeeUI for credible public OSS use before release publication.
 
-# Wave 2B — Tooltip
+- **R6.1–R6.10:** [#187](https://github.com/beobungbu/BeeUI/issues/187)–[#196](https://github.com/beobungbu/BeeUI/issues/196).
+- Required outcomes: secret/history/asset audit; LICENSE; SECURITY.md; CONTRIBUTING.md; Code of Conduct; issue/PR templates; GitHub Actions/fork/self-hosted-runner hardening; dependency automation; public-repository transition only after audits pass; final branch/tag/release ruleset.
 
-**Priority:** P0 after anchored-overlay transport decision
+# R7 — Public packages — release-ready only, DO NOT publish
 
-Tooltip owns non-interactive disclosure semantics; it must not inherit menu selection semantics.
+All package work in R7 is preparation. It must end with deterministic packed artifacts and clean-consumer proof, not npm publication.
 
-Web contract should address:
+- **R7.1–R7.12:** [#197](https://github.com/beobungbu/BeeUI/issues/197)–[#208](https://github.com/beobungbu/BeeUI/issues/208).
+- Required outcomes: distribution ADR; final package names; metadata; source/built output format; export maps; tarball inventory; prerelease-equivalent retained artifacts; Expo/bare RN/Web clean consumers; trusted publishing/OIDC/provenance setup; dist-tag policy; integrity checks; package compatibility report.
+- **Hard guard:** no `npm publish`, no stable dist-tag mutation and no package release before R11.12 receives explicit owner authorization.
 
-- hover;
-- keyboard focus;
-- delay;
-- Escape/dismiss behavior;
-- placement;
-- accessibility relationships.
+# R8 — Public CLI — release-ready only, DO NOT publish
 
-Native policy must not fake browser hover. A native visual tooltip should exist only if interaction and accessibility evidence justify it; accessibility-label/hint behavior may be the correct native path for some usages.
+Productize the proven repository-local source-ownership engine while preserving its deterministic/security invariants.
 
----
+- **R8.1–R8.11:** [#209](https://github.com/beobungbu/BeeUI/issues/209)–[#219](https://github.com/beobungbu/BeeUI/issues/219).
+- Required outcomes: packed publication-ready CLI; `init`, `list`, `add`, `add --all`, `--dry-run`, `--overwrite`, `doctor/verify`, help/version; security regression suite; semver-aware dependency diagnostics; Expo/bare/Web project detection; config policy; explicit package-manager mutation decision; registry delivery/integrity model; full stable 1.0 registry closure; Node 22/24 clean-consumer E2E; optional safe diff/update assistance.
+- **Hard guard:** do not publish the CLI before owner-authorized R11.12.
 
-# Wave 2C — Sheet / Bottom Sheet
+# R9 — Docs, Showcase & AI-native development — hard 1.0 gate
 
-**Priority:** P0 before 1.0 if BeeUI wants strong mobile-product coverage
+AI-native support must be tested, not marketing copy.
 
-Sheet remains separate from the centered Dialog kernel because its contract is gesture- and layout-heavy.
+- **R9.1–R9.6:** [#220](https://github.com/beobungbu/BeeUI/issues/220)–[#225](https://github.com/beobungbu/BeeUI/issues/225) — release-ready public docs, per-component documentation contract, executable examples, pattern docs, public Web Showcase and native preview path.
+- **R9.7** [#226](https://github.com/beobungbu/BeeUI/issues/226) — canonical `/llms.txt`, `/llms-full.txt`, `/llms-components.txt`, `/llms-patterns.txt`, generated/validated against stable APIs and support boundaries.
+- **R9.8** [#227](https://github.com/beobungbu/BeeUI/issues/227) — agent-development contract and prompt cookbook covering setup, package/source ownership, Rule of Two, a11y/RTL/large text, Table/date ownership boundaries, overlays/Sheet and contribution verification.
+- **R9.9** [#228](https://github.com/beobungbu/BeeUI/issues/228) — repeatable fresh-agent regression suite that actually builds/forms/Table/date/Tooltip/Sheet/theme flows and mechanically validates generated output.
+- **R9.10** [#229](https://github.com/beobungbu/BeeUI/issues/229) — MCP decision is stretch; static canonical llms content + agent contract + regression proof satisfy the hard AI-native gate without requiring a server.
 
-Minimum contract should address:
+# R10 — Independent consumers & production demo — hard 1.0 gate
 
-- controlled/uncontrolled open state;
-- snap points/presentation sizes;
-- backdrop and dismissal policy;
-- drag handle;
-- gesture behavior;
-- keyboard interaction;
-- bottom safe area;
-- scrollable/nested content;
-- inputs inside Sheet;
-- Android hardware back;
-- accessibility;
-- reduced motion.
+BeeUI 1.0 must prove itself outside its own monorepo and must ship one credible production-grade reference app, not merely a component catalog.
 
-Potential higher-level compositions such as action sheets or mobile Select presentation should reuse a proven Sheet contract rather than creating independent gesture runtimes.
+- **R10.1** [#230](https://github.com/beobungbu/BeeUI/issues/230) — clean Expo package-consumption starter using packed unpublished artifacts.
+- **R10.2** [#231](https://github.com/beobungbu/BeeUI/issues/231) — source-ownership starter using packed unpublished CLI/registry.
+- **R10.3** [#232](https://github.com/beobungbu/BeeUI/issues/232) — true bare RN starter/consumer.
+- **R10.4** [#233](https://github.com/beobungbu/BeeUI/issues/233) — independent Web reference consumer.
+- **R10.5** [#234](https://github.com/beobungbu/BeeUI/issues/234) — at least one real-world consumer outside the BeeUI monorepo.
+- **R10.6** [#235](https://github.com/beobungbu/BeeUI/issues/235) — fresh coding agent builds a reference app from canonical/public context only.
+- **R10.7** [#236](https://github.com/beobungbu/BeeUI/issues/236) — production demo architecture/spec for iOS + Android + Web.
+- **R10.8** [#237](https://github.com/beobungbu/BeeUI/issues/237) — functional multi-screen demo: dashboard, table/list, detail/edit form, scheduling/date-time, settings/accessibility, modal/anchored actions, Sheet and states.
+- **R10.9** [#238](https://github.com/beobungbu/BeeUI/issues/238) — platform/runtime quality matrix across phone/tablet/Web, portrait/short-height, themes, RTL and large text.
+- **R10.10** [#239](https://github.com/beobungbu/BeeUI/issues/239) — production engineering quality: strict TS, tests/E2E, service/state boundaries, error recovery, reproducible builds and performance smoke.
+- **R10.11** [#240](https://github.com/beobungbu/BeeUI/issues/240) — real rendered visual/product polish review.
+- **R10.12** [#241](https://github.com/beobungbu/BeeUI/issues/241) — fresh coding agent can extend/fix the production demo from canonical BeeUI context.
+- **R10.13** [#242](https://github.com/beobungbu/BeeUI/issues/242) — classify all consumer/demo findings before API freeze.
 
----
+# R11 — API freeze, RC evidence & owner-gated release
 
-# Wave 2D — Slider
+Build one immutable exact-candidate evidence set, run every required gate, then **STOP**. Technical readiness does not imply publication permission.
 
-**Priority:** P1
-
-Add only with a clear cross-platform gesture and accessibility contract covering value normalization, min/max/step, disabled state, keyboard interaction on Web, native accessibility actions, and theming.
-
----
-
-# Wave 3A — Registry/CLI v2
-
-**Priority:** P0/P1
-
-The phase-1 repository-local CLI is implemented. The next tranche is productization, not reinvention.
-
-Expand toward a publishable consumer workflow such as:
-
-```sh
-npx beeui init
-pnpm beeui -- add button
-pnpm beeui -- add dialog
-pnpm beeui -- add --all
-pnpm beeui -- doctor
-```
-
-Possible later capabilities:
-
-- publishable CLI package/binary naming;
-- expanded registry coverage for stable components;
-- semver-aware external dependency diagnostics;
-- optional package-manager mutation only behind an explicit safe contract;
-- component diff/update assistance for source-owned components;
-- version/integrity controls for any future remote registry.
-
-Preserve current strengths:
-
-- deterministic dependency resolution;
-- no silent overwrite;
-- dry-run parity with real add;
-- path/symlink/traversal protection;
-- no arbitrary executable registry payloads.
+- **R11.1** [#243](https://github.com/beobungbu/BeeUI/issues/243) — freeze public API inventory.
+- **R11.2** [#244](https://github.com/beobungbu/BeeUI/issues/244) — freeze token lifecycle/semantic vocabulary after new component needs are known.
+- **R11.3** [#245](https://github.com/beobungbu/BeeUI/issues/245) — final semver/breaking-change audit.
+- **R11.4** [#246](https://github.com/beobungbu/BeeUI/issues/246) — build immutable `1.0.0-rc-ready.1` package/CLI/docs/demo evidence candidate without publication.
+- **R11.5** [#247](https://github.com/beobungbu/BeeUI/issues/247) — exact-candidate automated CI/consumer/compatibility/performance matrix.
+- **R11.6** [#248](https://github.com/beobungbu/BeeUI/issues/248) — exact-candidate iOS/Android runtime matrix.
+- **R11.7** [#249](https://github.com/beobungbu/BeeUI/issues/249) — exact-candidate VoiceOver/TalkBack acceptance.
+- **R11.8** [#250](https://github.com/beobungbu/BeeUI/issues/250) — exact-candidate Web accessibility/keyboard acceptance.
+- **R11.9** [#251](https://github.com/beobungbu/BeeUI/issues/251) — final security/release-readiness audit and protected-owner publication dry run.
+- **R11.10** [#252](https://github.com/beobungbu/BeeUI/issues/252) — final changelog + migration guide.
+- **R11.11** [#253](https://github.com/beobungbu/BeeUI/issues/253) — bounded RC soak/external feedback; any P0/P1 fix creates a new candidate and requires rerunning evidence.
+- **R11.12** [#254](https://github.com/beobungbu/BeeUI/issues/254) — **OWNER-AUTHORIZED `1.0.0` PUBLICATION ONLY.** No explicit owner command = do not execute. After authorization only: tag, npm packages, public CLI, dist-tags, GitHub Release and release messaging.
+- **R11.13** [#255](https://github.com/beobungbu/BeeUI/issues/255) — verify the actual published npm/CLI/docs/release artifacts after authorized publication.
+- **R11.14** [#256](https://github.com/beobungbu/BeeUI/issues/256) — rollback/hotfix/deprecation incident runbook.
 
 ---
 
-# Wave 3B — Public package distribution
-
-**Priority:** P0/P1
-
-Current packages remain `private: true` and packed tarballs are verification artifacts, not public distribution.
-
-Before public 1.0, decide and implement supported public consumption paths.
-
-Recommended direction:
-
-1. package consumption for consumers who prefer centralized upgrades;
-2. source ownership for consumers who prefer editable local component source.
-
-Public package publication needs:
-
-- final package names;
-- package metadata;
-- export maps;
-- provenance/signing policy where applicable;
-- public install documentation;
-- clean-consumer verification from the actual published artifact;
-- explicit compatibility ranges.
-
----
-
-# Wave 3C — Release automation
-
-**Priority:** P0/P1
-
-Automate deterministic release preparation and publication:
-
-- version bump;
-- lockstep package versions;
-- changelog cut;
-- migration-note validation;
-- tag;
-- release candidate versions;
-- package publication when enabled;
-- GitHub Release;
-- package smoke from published artifacts;
-- release evidence retention.
-
-Example release flow:
-
-```text
-0.x.y-rc.1
-  -> exact-candidate CI/runtime gates
-  -> review
-  -> 0.x.y
-```
-
----
-
-# Wave 3D — Compatibility matrix
-
-**Priority:** P0/P1
-
-Do not claim a broad peer range that CI does not exercise.
-
-At minimum, test:
-
-- minimum supported React Native version;
-- current supported React Native version;
-- minimum supported Expo SDK if a range is documented;
-- current supported Expo SDK;
-- supported Node/pnpm toolchain;
-- supported Uniwind/Tailwind major versions.
-
-Compatibility claims in package manifests and docs must match this matrix.
-
----
-
-# Wave 4A — Accessibility, RTL, large-text, and localization gates
-
-**Priority:** P0/P1
-
-Add systematic coverage beyond per-component semantic tests.
-
-### Web
-
-- automated accessibility audit for representative pages/components;
-- target WCAG 2.2 AA where React Native Web exposes the relevant browser semantics;
-- automated semantic-token contrast checks where deterministic.
-
-### Native
-
-- RNTL semantic contracts;
-- VoiceOver release matrix;
-- TalkBack release matrix;
-- accessibility escape/back behavior;
-- focus-order checks for representative flows.
-
-### Layout stress
-
-Test:
-
-- RTL;
-- 1.3x/1.5x font scaling;
-- long English/German-like strings;
-- Vietnamese;
-- CJK;
-- Arabic/RTL content;
-- short-height/landscape layouts.
-
-Pay particular attention to logical start/end semantics in anchored overlays, breadcrumbs, pagination, stepper, settings rows, and application chrome.
-
----
-
-# Wave 4B — Performance benchmark harness
-
-**Priority:** P1
-
-BeeUI needs a measurable performance story rather than generic claims.
-
-Benchmark the abstraction overhead BeeUI controls, for example:
-
-- large Button/Badge sets;
-- hundreds of ListItems/SettingsItems;
-- large settings screens;
-- theme switching;
-- Dialog open latency;
-- Popover/DropdownMenu open latency;
-- large menu item counts;
-- Toast queue activity;
-- Pattern Gallery bundle/runtime footprint.
-
-Track where useful:
-
-- render/commit time;
-- memory;
-- Web bundle size;
-- native bundle/startup delta;
-- regression thresholds.
-
-The benchmark question is “what overhead does BeeUI add over the underlying React Native + Uniwind stack?”, not “can BeeUI beat every other framework benchmark?”.
-
----
-
-# Wave 4C — Motion system
-
-**Priority:** P1
-
-Create semantic motion contracts for common UI transitions:
-
-- Dialog/AlertDialog;
-- Popover/DropdownMenu;
-- Toast;
-- Tabs indicator;
-- Collapsible/Accordion;
-- Sheet;
-- pressed/loading transitions.
-
-The base component system should remain usable without requiring Reanimated everywhere. Use an optional enhanced-motion path where native-thread gestures/transitions materially justify it.
-
-Reduced-motion behavior is required.
-
----
-
-# Wave 5A — Consumer documentation website
-
-**Priority:** P0/P1 for public launch
-
-Markdown engineering contracts are not enough for a public UI product.
-
-The public docs experience should include:
-
-- Getting Started;
-- Expo installation;
-- bare React Native installation;
-- provider setup;
-- theming/custom branding;
-- components;
-- patterns;
-- accessibility;
-- platform-specific behavior;
-- Registry/CLI;
-- migration/versioning;
-- troubleshooting;
-- compatibility/support matrix.
-
-Per component, document where relevant:
-
-- preview;
-- anatomy;
-- usage;
-- props;
-- controlled/uncontrolled behavior;
-- accessibility;
-- iOS behavior;
-- Android behavior;
-- Web behavior;
-- examples and limitations.
-
----
-
-# Wave 5B — Public Showcase / Expo demo
-
-**Priority:** P0/P1 for public launch
-
-Publish the existing Showcase architecture as a product surface:
-
-- browse components;
-- browse production patterns;
-- switch light/dark;
-- provide an Expo/native demo path where practical;
-- link install/docs/source.
-
-The public demo should be built from the same contracts consumers receive, not a separate marketing-only implementation.
-
----
-
-# Wave 5C — Starter projects
-
-**Priority:** P1
-
-Provide small verified starter consumers, not another application framework:
-
-- Expo starter;
-- bare React Native starter;
-- optionally a Web-enabled React Native starter if the support contract is stable.
-
-Starters should demonstrate provider/theme setup, source-owned component setup where applicable, and the current compatibility matrix.
-
----
-
-# Wave 6 — Additional high-value components
-
-**Priority:** P2, evidence-driven
-
-Candidate areas after the P0/P1 foundation is stable:
-
-### Table / DataTable foundation
-
-Useful for admin/CRM/finance/tablet/Web. Core Table should own layout/semantics, not fetching, sorting state, pagination state, or virtualization policy unless those behaviors are separately justified.
-
-### Calendar / Date / DateTime
-
-High value for booking, CRM, finance, events, and travel, but requires deliberate locale, timezone, range-selection, keyboard, accessibility, and Web/native presentation contracts.
-
-### Icon abstraction
-
-Prefer a small semantic `Icon`/`createIcon` integration surface over bundling a large proprietary icon set. Keep compatibility with consumer-selected icon libraries and custom SVG sources.
-
-Other components should be driven by Pattern Gallery/product evidence.
-
----
-
-# Wave 7 — Expand production pattern library
-
-**Priority:** P2 after infrastructure stabilization
-
-The current 37 screens prove four product domains. A later target of roughly 60–80 high-quality production screens is reasonable only after the core/runtime/distribution work above is stable.
-
-Potential packs:
-
-- chat/messaging;
-- calendar/scheduling;
-- utility/offline/permissions/maintenance;
-- business CRUD/list/detail/create/edit/filter flows;
-- media/upload/gallery/player;
-- navigation shells including tabs/sidebar/master-detail.
-
-Patterns remain original BeeUI compositions. Do not copy proprietary Gluestack Pro, Tamagui Takeout, or other paid template source/assets.
-
----
-
-# Explicit non-goals
-
-BeeUI should not:
-
-- build its own styling compiler merely to resemble Tamagui;
-- replace Uniwind without concrete technical evidence;
-- force Expo Router, React Navigation, or another router into public component contracts;
-- own backend/data fetching;
-- own auth SDKs;
-- own payment SDKs;
-- own React Hook Form/Zod or another validation library;
-- add a chart framework to the core UI system;
-- promote one-off domain components solely to increase component count;
-- copy proprietary commercial templates or assets.
-
-Router-neutral Expo + bare React Native support is an intentional product advantage, not a missing feature.
-
----
-
-# BeeUI 1.0 exit criteria
-
-BeeUI should not declare 1.0 solely because the package has many components.
-
-A 1.0 candidate should have, at minimum:
-
-## Component/runtime
-
-- stable semantic token names;
-- broad stable component coverage already proven by product patterns;
-- context-preserving anchored-overlay transport (Wave 1A, complete);
-- production-ready Select;
-- production-ready Tooltip policy;
-- production-ready Sheet if BeeUI claims first-class modern mobile application coverage;
-- stable Toast v1 contract;
-- no known architecture blocker hidden by documentation wording.
-
-## Product proof
-
-- integrated Pattern Gallery retained as a supported executable Showcase surface;
-- at least the current 37 production screens retained and browsable;
-- representative integration visual-regression/browser coverage;
-- no unresolved cross-domain P0 gap discovered by the gallery.
-
-## Quality
-
-- deterministic behavioral tests;
-- deterministic Web visual regression;
-- native iOS and Android compile evidence;
-- protected runtime simulator/device smoke;
-- documented VoiceOver/TalkBack release process;
-- RTL/large-text/long-content coverage;
-- accessibility/contrast checks appropriate to each platform;
-- performance benchmark baseline.
-
-## Theming
-
-- stable semantic colors;
-- typography/sizing/elevation/motion/focus contracts;
-- consumer branding/custom-theme path;
-- reduced-motion policy.
-
-## Distribution/DX
-
-- publishable Registry/CLI workflow;
-- substantial registry coverage for stable source-owned components;
-- public package distribution decision implemented;
-- release automation;
-- compatibility matrix enforced by CI;
-- consumer documentation website;
-- public Showcase/demo;
-- migration/versioning policy.
-
-## Release integrity
-
-- exact-candidate automated gates green;
-- applicable runtime/device gates recorded;
-- changelog complete;
-- migration notes present for intentional breaking changes;
-- public install artifacts proven in clean consumers.
-
----
-
-# Roadmap maintenance
-
-This file describes direction, not proof that a future item already exists.
-
-When a roadmap item ships:
-
-1. update this file's status/wording;
-2. update `README.md` current-state summaries;
-3. update `docs/architecture.md` if architecture boundaries changed;
-4. update `docs/release.md` if verification/distribution changed;
-5. update the relevant component/runtime document;
-6. add a consumer-facing `CHANGELOG.md` entry when appropriate.
-
-Current-state documentation must never describe implemented work as future work or future work as already supported.
+## Definition of Done for every implementation issue
+
+Unless an issue explicitly narrows the requirement, every implementation PR must state:
+
+1. public contract added/changed;
+2. why the behavior belongs in BeeUI rather than application/pattern-local code;
+3. reused architecture and any new dependency/runtime authority;
+4. Web vs iOS vs Android differences;
+5. accessibility, RTL, large-text and reduced-motion behavior;
+6. compatibility rows affected;
+7. deterministic tests;
+8. real browser/native runtime evidence required;
+9. registry/package/docs/AI metadata changes;
+10. migration/semver impact;
+11. explicit out-of-scope items;
+12. exact PR head SHA and applicable CI evidence.
+
+A compile-only result is not runtime proof. A browser-only result is not native proof. Simulator/device evidence must identify the tested SHA/build/environment.
+
+## BeeUI 1.0 final acceptance checklist
+
+### Runtime / components
+- [ ] #59 is resolved under the bounded-completion contract.
+- [ ] #62 has one explicit support/quarantine policy with no false-green wording.
+- [ ] Tooltip is stable and verified.
+- [ ] Sheet is stable and verified on native plus its Web policy.
+- [ ] Table/DataTable is stable, accessible, responsive and performance-bounded.
+- [ ] Calendar, DatePicker and DateTimePicker are stable with explicit date/timezone/i18n semantics.
+
+### Accessibility / compatibility
+- [ ] RTL is systemic across components, overlays, Table, date controls and demo.
+- [ ] Dynamic Type/large text passes the documented stress level.
+- [ ] Web keyboard + automated accessibility gates are green.
+- [ ] VoiceOver and TalkBack release matrices are recorded on the exact candidate.
+- [ ] compatibility docs, package peers and CI matrix agree.
+
+### Distribution
+- [ ] package tarballs and CLI tarball are deterministic and clean-consumer tested.
+- [ ] registry covers the full stable 1.0 public component surface.
+- [ ] trusted-publishing/provenance/release environment is configured.
+- [ ] **no npm package/CLI has been published before explicit owner authorization.**
+
+### AI-native / public DX
+- [ ] release-ready public docs and Showcase are complete.
+- [ ] `llms.txt`, `llms-full.txt`, `llms-components.txt`, `llms-patterns.txt` are canonical and freshness-checked.
+- [ ] agent-development cookbook exists.
+- [ ] agent regression suite meets accepted success thresholds.
+
+### Product proof
+- [ ] production demo is a real multi-screen application, not a component catalog.
+- [ ] demo passes iOS/Android/Web, RTL, large text, dark/high-contrast and runtime quality review.
+- [ ] fresh coding agent can build/extend/fix representative BeeUI application flows from canonical context.
+- [ ] at least one independent real-world consumer has been evaluated.
+
+### Release integrity
+- [ ] public API and token lifecycle are frozen.
+- [ ] changelog/migration guide matches the candidate.
+- [ ] one immutable `1.0.0-rc-ready` artifact set passes all exact-candidate gates.
+- [ ] no accepted P0/P1 1.0 blocker remains.
+- [ ] **repository owner explicitly authorizes release before R11.12.**
+
+## Roadmap maintenance rule
+
+When a child issue ships, update this roadmap and #114 in the same integration change or a linked synchronization PR. Completed work must never remain described as future work, and release-ready-but-unpublished behavior must never be documented as publicly available.
+
+The body of each linked issue is the detailed execution specification for Claude/Codex/other implementers; this file is the canonical dependency/order/status control plane.
