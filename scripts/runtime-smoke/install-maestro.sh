@@ -18,7 +18,12 @@ fi
 
 maestro_version() {
   if command -v maestro >/dev/null 2>&1; then
-    maestro --version 2>/dev/null | awk '{print $NF}' | tr -d 'v'
+    # Maestro can emit a welcome/banner line before the semantic version on
+    # some runners. Extract the last X.Y.Z token instead of treating all
+    # output fields as the version.
+    maestro --version 2>/dev/null \
+      | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+' \
+      | tail -n 1
   fi
 }
 
