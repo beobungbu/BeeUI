@@ -1,0 +1,100 @@
+{
+  "$schema": "https://www.designtokens.org/schemas/2025.10/resolver.json",
+  "name": "BeeUI runtime theme resolver",
+  "version": "2025.10",
+  "description": "DTCG 2025.10 resolver document for BeeUI foundation tokens and registered Uniwind runtime theme contexts.",
+  "sets": {
+    "foundation": {
+      "description": "BeeUI non-color foundation token groups.",
+      "sources": [
+        {
+          "$ref": "../tokens.json#/tokens"
+        }
+      ]
+    }
+  },
+  "modifiers": {
+    "runtimeTheme": {
+      "description": "Selects one complete BeeUI semantic-color runtime theme.",
+      "contexts": {
+        "light": [
+          {
+            "$ref": "../tokens.json#/themes/light/colors"
+          },
+          {
+            "$ref": "../tokens.json#/themes/light/chart"
+          }
+        ],
+        "dark": [
+          {
+            "$ref": "../tokens.json#/themes/dark/colors"
+          },
+          {
+            "$ref": "../tokens.json#/themes/dark/chart"
+          }
+        ],
+        "violet-light": [
+          {
+            "$ref": "../tokens.json#/themes/violet-light/colors"
+          },
+          {
+            "$ref": "../tokens.json#/themes/violet-light/chart"
+          }
+        ],
+        "violet-dark": [
+          {
+            "$ref": "../tokens.json#/themes/violet-dark/colors"
+          },
+          {
+            "$ref": "../tokens.json#/themes/violet-dark/chart"
+          }
+        ],
+        "high-contrast-light": [
+          {
+            "$ref": "../tokens.json#/themes/high-contrast-light/colors"
+          },
+          {
+            "$ref": "../tokens.json#/themes/high-contrast-light/chart"
+          }
+        ],
+        "high-contrast-dark": [
+          {
+            "$ref": "../tokens.json#/themes/high-contrast-dark/colors"
+          },
+          {
+            "$ref": "../tokens.json#/themes/high-contrast-dark/chart"
+          }
+        ]
+      },
+      "default": "light",
+      "$extensions": {
+        "com.beeui": {
+          "runtimeThemeByBrand": {
+            "bee": {
+              "light": "light",
+              "dark": "dark"
+            },
+            "violet": {
+              "light": "violet-light",
+              "dark": "violet-dark"
+            }
+          },
+          "accessibilityRuntimeThemeByBrand": {
+            "bee": {
+              "light": "high-contrast-light",
+              "dark": "high-contrast-dark"
+            }
+          }
+        }
+      }
+    }
+  },
+  "resolutionOrder": [
+    {
+      "$ref": "#/sets/foundation"
+    },
+    {
+      "$ref": "#/modifiers/runtimeTheme"
+    }
+  ]
+}

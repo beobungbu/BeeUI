@@ -68,6 +68,45 @@ test('Web Escape is scope-aware: closes the dialog-nested menu, Dialog stays ope
   await expect(page.getByTestId('overlay-context-dialog-menu-trigger')).toBeVisible();
 });
 
+// #68 — real-browser regression proving BeeThemeScope (a thin typed wrapper over
+// Uniwind's own ScopedTheme) is resolved for Popover/DropdownMenu/Dialog content
+// declared inside it on web, where the transport is `ReactDOM.createPortal`. This
+// mirrors the #35 pattern above exactly: "theme: violet-dark" proves the scope
+// survived the portal; anything else would be a failure. It also proves nested
+// scopes render distinct values and a scope never leaks to a sibling outside it.
+test('BeeThemeScope resolves for its own subtree', async ({ page }) => {
+  await openComponentGallery(page);
+  await expect(page.getByTestId('theme-scope-root-value')).toHaveText('theme: violet-dark');
+});
+
+test('a nested BeeThemeScope overrides its parent scope for its own subtree', async ({ page }) => {
+  await openComponentGallery(page);
+  await expect(page.getByTestId('theme-scope-nested-value')).toHaveText('theme: light');
+});
+
+test('BeeThemeScope does not leak into a sibling outside the scope', async ({ page }) => {
+  await openComponentGallery(page);
+  await expect(page.getByTestId('theme-scope-sibling-value')).not.toHaveText('theme: violet-dark');
+});
+
+test('BeeThemeScope resolves inside a web Popover portal', async ({ page }) => {
+  await openComponentGallery(page);
+  await page.getByTestId('theme-scope-popover-trigger').click();
+  await expect(page.getByTestId('theme-scope-popover-value')).toHaveText('theme: violet-dark');
+});
+
+test('BeeThemeScope resolves inside a web DropdownMenu portal', async ({ page }) => {
+  await openComponentGallery(page);
+  await page.getByTestId('theme-scope-menu-trigger').click();
+  await expect(page.getByTestId('theme-scope-menu-value')).toHaveText('theme: violet-dark');
+});
+
+test('BeeThemeScope resolves inside a web Dialog', async ({ page }) => {
+  await openComponentGallery(page);
+  await page.getByTestId('theme-scope-dialog-trigger').click();
+  await expect(page.getByTestId('theme-scope-dialog-value')).toHaveText('theme: violet-dark');
+});
+
 // CASE C pins the exact registration-order failure mode. The hardening fixture
 // commits Dialog + nested menu first, then opens the root Popover from a passive
 // effect in a later commit. Therefore the root overlay is unquestionably the later

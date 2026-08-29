@@ -4,13 +4,20 @@
   "private": true,
   "type": "module",
   "files": [
-    "src"
+    "src",
+    "tokens.json"
   ],
   "exports": {
     ".": "./src/index.ts",
-    "./theme.css": "./src/theme.css"
+    "./motion-runtime": "./src/motion-runtime.ts",
+    "./theme.css": "./src/theme.css",
+    "./tokens.json": "./tokens.json",
+    "./tokens.resolver.json": "./src/tokens.resolver.json",
+    "./lifecycle.json": "./src/lifecycle.json"
   },
   "scripts": {
+    "generate": "node ../../scripts/generate-tokens.mjs",
+    "check": "node ../../scripts/generate-tokens.mjs --check",
     "typecheck": "tsc -p tsconfig.json"
   }
 }

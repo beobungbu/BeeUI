@@ -99,6 +99,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify generated token artifacts
+        run: pnpm tokens:check
+
       - name: Verify core packages stay Expo-free
         run: |
           if grep -R -n -E "from ['\"]expo([^'\"]*)['\"]|require\(['\"]expo([^'\"]*)['\"]\)" packages/core/src packages/ui/src; then

@@ -8,7 +8,7 @@ const cardVariants = cva('rounded-lg', {
     variant: {
       surface: 'bg-surface',
       outlined: 'border border-border bg-surface',
-      raised: 'border border-border bg-surface-raised shadow-sm',
+      raised: 'border border-border bg-surface-raised shadow-raised',
       muted: 'bg-surface-muted',
     },
     padding: {

@@ -806,6 +806,19 @@
       "peerDependencies": { "tailwindcss": ">=4 <5", "uniwind": ">=1.10.1 <2" }
     },
     {
+      "name": "theme-scope",
+      "type": "component",
+      "public": true,
+      "files": [{
+        "source": "packages/ui/src/components/theme-scope.tsx",
+        "target": { "root": "components", "path": "theme-scope.tsx" },
+        "transforms": []
+      }],
+      "registryDependencies": ["theme"],
+      "dependencies": {},
+      "peerDependencies": { "react": ">=19.0.0", "uniwind": ">=1.10.1 <2" }
+    },
+    {
       "name": "timeline",
       "type": "component",
       "public": true,
@@ -834,6 +847,19 @@
         "react-native": ">=0.85.0",
         "react-native-safe-area-context": ">=5 <6"
       }
+    },
+    {
+      "name": "use-bee-token",
+      "type": "component",
+      "public": true,
+      "files": [{
+        "source": "packages/ui/src/components/use-bee-token.ts",
+        "target": { "root": "components", "path": "use-bee-token.ts" },
+        "transforms": []
+      }],
+      "registryDependencies": ["theme"],
+      "dependencies": {},
+      "peerDependencies": { "react": ">=19.0.0", "uniwind": ">=1.10.1 <2" }
     },
     {
       "name": "use-required-callback-warning",

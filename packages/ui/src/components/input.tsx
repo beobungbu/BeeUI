@@ -3,19 +3,23 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { TextInput, type TextInputProps } from 'react-native';
 import { useFieldContext } from './field-context';
+import { semanticTypographyClasses } from './text';
 
 const inputVariants = cva(
-  'w-full rounded-md border bg-input text-foreground focus:border-focus-ring',
+  'w-full rounded-md border bg-input text-foreground focus:border-focus-ring web:focus-visible:bee-focus-ring',
   {
     variants: {
       size: {
-        sm: 'h-9 px-3 text-sm',
-        md: 'h-11 px-3 text-base',
-        lg: 'h-12 px-4 text-base',
+        // Keep concrete leading utilities for React Native TextInput/textarea row measurement.
+        // The font size still comes from the semantic typography token; leading-5/6 are
+        // value-equivalent to the v2 label/body contracts and preserve pre-v2 numberOfLines sizing.
+        sm: `h-control-compact px-3 ${semanticTypographyClasses.label} leading-5 ios:min-h-touch-target android:min-h-touch-target`,
+        md: `h-control-default px-3 ${semanticTypographyClasses.body} leading-6`,
+        lg: `h-control-large px-4 ${semanticTypographyClasses.body} leading-6`,
       },
       invalid: {
         true: 'border-destructive focus:border-destructive',
-        false: 'border-border-strong',
+        false: 'border-control-border',
       },
     },
     defaultVariants: {
@@ -83,7 +87,8 @@ export const Input = React.forwardRef<React.ComponentRef<typeof TextInput>, Inpu
         accessibilityState={{ ...accessibilityState, disabled: resolvedDisabled }}
         className={cn(
           inputVariants({ invalid: resolvedInvalid, size }),
-          resolvedDisabled && 'border-disabled bg-disabled text-disabled-foreground opacity-70',
+          resolvedDisabled &&
+            'border-control-border bg-disabled text-disabled-foreground opacity-70',
           className,
         )}
         cursorColorClassName="accent-primary"

@@ -91,7 +91,7 @@ test('list output is stable and sorted', async (t) => {
     'otp-input', 'pagination', 'password-input', 'popover', 'progress', 'radio', 'safe-area',
     'screen', 'search-input', 'section', 'segmented-control', 'select', 'separator', 'skeleton',
     'spinner', 'stack', 'stat', 'state-message', 'stepper', 'switch', 'tabs', 'text', 'textarea',
-    'theme', 'timeline', 'toast', 'visually-hidden',
+    'theme', 'theme-scope', 'timeline', 'toast', 'use-bee-token', 'visually-hidden',
   ]);
 });
 

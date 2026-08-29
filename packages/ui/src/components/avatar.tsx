@@ -15,10 +15,10 @@ const avatarVariants = cva(
   {
     variants: {
       size: {
-        sm: 'h-8 w-8',
-        md: 'h-10 w-10',
-        lg: 'h-12 w-12',
-        xl: 'h-16 w-16',
+        sm: 'h-avatar-sm w-avatar-sm',
+        md: 'h-avatar-md w-avatar-md',
+        lg: 'h-avatar-lg w-avatar-lg',
+        xl: 'h-avatar-xl w-avatar-xl',
       },
     },
     defaultVariants: {
@@ -30,10 +30,10 @@ const avatarVariants = cva(
 const avatarFallbackVariants = cva('font-semibold text-muted-foreground', {
   variants: {
     size: {
-      sm: 'text-xs',
-      md: 'text-sm',
-      lg: 'text-base',
-      xl: 'text-lg',
+      sm: 'text-caption',
+      md: 'text-label',
+      lg: 'text-body',
+      xl: 'text-heading',
     },
   },
   defaultVariants: {

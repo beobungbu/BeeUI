@@ -15,6 +15,7 @@ import {
   type OverlayDismissReason,
   type OverlayDismissStack,
 } from '@beeui/core';
+import { layer } from '@beeui/tokens';
 import * as React from 'react';
 import {
   Keyboard,
@@ -822,6 +823,6 @@ export function useOverlayEnvironment() {
 
 const styles = StyleSheet.create({
   host: {
-    zIndex: 1,
+    zIndex: layer.overlay,
   },
 });

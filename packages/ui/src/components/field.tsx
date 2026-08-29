@@ -63,7 +63,14 @@ export const Field = React.forwardRef<React.ComponentRef<typeof View>, FieldProp
 
     return (
       <FieldContext.Provider value={contextValue}>
-        <View ref={ref} className={cn('gap-2', className)} {...props}>
+        <View
+          ref={ref}
+          // Gap between label/children/helper text comes from the #74 application-density
+          // axis (`--spacing-density-form-gap`, default = comfortable = the pre-#74 `gap-2`
+          // literal, pixel-identical).
+          className={cn('gap-density-form-gap', className)}
+          {...props}
+        >
           <Label
             nativeID={resolvedLabelNativeID}
             required={required}
