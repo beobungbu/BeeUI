@@ -73,20 +73,34 @@ export function readAllComponentSources(): Record<string, string> {
 
 /**
  * Every intentional `numberOfLines` truncation point on the current public
- * `@beeui/ui` surface, with the product rationale. Adding a new one requires
- * updating both this fixture and `docs/dynamic-type.md` — an undocumented
- * truncation point fails the dynamic-type contract test, and a documented
- * entry that no longer appears in source also fails it (keeps the doc, the
- * fixture, and the code from drifting apart).
+ * `@beeui/ui` surface, with the product rationale. `occurrences` is the exact
+ * count of `numberOfLines=` matches (`countNumberOfLinesUsages`) this file is
+ * reviewed and expected to contain right now.
+ *
+ * This is deliberately occurrence-specific, not just filename-specific:
+ * adding a *new* `numberOfLines` usage to a file that already has one listed
+ * here bumps that file's actual count without changing which files are
+ * listed, so a filename-only guard would silently pass it. Requiring the
+ * count to match exactly means a new, unreviewed occurrence in an
+ * already-listed file fails this contract until this fixture (and
+ * `docs/dynamic-type.md`) are updated to explicitly account for it — see
+ * `keeps every intentional numberOfLines truncation point occurrence-exact,
+ * not just documented at the file level` in dynamic-type-contract.test.tsx
+ * for the regression proof.
  */
-export const INTENTIONAL_TRUNCATION_POINTS: Record<string, { rationale: string }> = {
+export const INTENTIONAL_TRUNCATION_POINTS: Record<
+  string,
+  { rationale: string; occurrences: number }
+> = {
   'select.tsx': {
+    occurrences: 1,
     rationale:
       'SelectValue renders the single persisted combobox value with numberOfLines={1}, matching native single-line select/picker trigger conventions on iOS/Android/Web. The full value remains reachable in SelectContent, and SelectTrigger itself uses a growable min-h-11 row rather than a fixed height.',
   },
   'textarea.tsx': {
+    occurrences: 2,
     rationale:
-      'Textarea forwards a caller-controlled numberOfLines (default 4) that sizes the multiline editable viewport row count, not a single-line clip. It is paired with h-auto/min-h-24 so the control still grows with typed content and larger text; callers may raise numberOfLines for more visible rows.',
+      'Textarea forwards a caller-controlled numberOfLines (default 4) that sizes the multiline editable viewport row count, not a single-line clip. It is paired with h-auto/min-h-24 so the control still grows with typed content and larger text; callers may raise numberOfLines for more visible rows. The count of 2 covers the destructured default (`numberOfLines = 4`) and the single forwarded JSX prop usage — both textual matches of the same one caller-facing prop, not two different truncation behaviors.',
   },
 };
 
@@ -94,79 +108,131 @@ export const INTENTIONAL_TRUNCATION_POINTS: Record<string, { rationale: string }
  * Every text-bearing `@beeui/ui` control whose row uses a fixed (`h-*`)
  * height class instead of a growable (`min-h-*`) one, with the rationale for
  * why that control is exempt from the "rows grow with scaled text" default.
- * A source file/class pair not listed here is a contract violation: any
- * caller-text-bearing row must use `min-h-*` so it can grow instead of
- * clipping content at large font scales.
+ *
+ * `classes` maps each allow-listed class token to the exact number of times
+ * it is reviewed and expected to occur in that file right now
+ * (`findFixedHeightClassViolations` counts real occurrences, not just
+ * presence). This is deliberately occurrence-specific, not just
+ * file+token-specific: a *new* occurrence of an already-allow-listed class in
+ * the same file (e.g. a second `h-5` row added to `checkbox.tsx` for an
+ * unrelated element) would keep the file/class pair "known" under a
+ * presence-only check and silently bypass review. Requiring the count to
+ * match exactly means that new, unreviewed occurrence fails this contract
+ * until this fixture (and `docs/dynamic-type.md`) are updated to explicitly
+ * account for it — see `keeps every fixed-height class occurrence-exact, not
+ * just documented at the file level` in dynamic-type-contract.test.tsx for
+ * the regression proof.
  */
-export const FIXED_HEIGHT_ALLOWLIST: Record<string, { classes: string[]; rationale: string }> = {
+export const FIXED_HEIGHT_ALLOWLIST: Record<
+  string,
+  { classes: Record<string, number>; rationale: string }
+> = {
   'avatar.tsx': {
-    classes: ['h-avatar-sm', 'h-avatar-md', 'h-avatar-lg', 'h-avatar-xl', 'h-full'],
+    classes: { 'h-avatar-sm': 1, 'h-avatar-md': 1, 'h-avatar-lg': 1, 'h-avatar-xl': 1, 'h-full': 1 },
     rationale:
       'Avatar geometry (image frame / short fallback initials) is a fixed decorative badge on every platform convention BeeUI targets. Fallback initials are capped at a couple of characters by callers and are not reflowable prose.',
   },
   'button.tsx': {
-    classes: ['h-control-compact', 'h-control-default', 'h-control-large', 'h-control-icon'],
+    classes: {
+      'h-control-compact': 1,
+      'h-control-default': 1,
+      'h-control-large': 1,
+      'h-control-icon': 1,
+    },
     rationale:
       "Button's controlSize scale is a documented, density-invariant component-level API (docs/density.md). The ios:min-h-touch-target/android:min-h-touch-target guard keeps the tappable region at >=44px at every scale; label text wraps within the row (Button never sets numberOfLines) instead of being clipped.",
   },
   'checkbox.tsx': {
-    classes: ['h-5'],
+    classes: { 'h-5': 1 },
     rationale:
       'The 20x20 box is a decorative checked-state glyph indicator, not the accessible hit target (the full label row is the Pressable) and not reflowable text.',
   },
   'dropdown-menu.tsx': {
-    classes: ['h-px'],
+    classes: { 'h-px': 1 },
     rationale: 'Decorative separator line (DropdownMenuSeparator); carries no text.',
   },
   'input.tsx': {
-    classes: ['h-control-compact', 'h-control-default', 'h-control-large'],
+    classes: { 'h-control-compact': 1, 'h-control-default': 1, 'h-control-large': 1 },
     rationale:
       "Input mirrors the native single-line text-field convention (UITextField/EditText) and shares Button's density-invariant controlSize scale. The ios/android touch-target guard on the sm size keeps the tappable region floor at >=44px regardless of scale; multi-line growth is Textarea's contract, not Input's.",
   },
   'progress.tsx': {
-    classes: ['h-1', 'h-2', 'h-3', 'h-full'],
+    classes: { 'h-1': 1, 'h-2': 1, 'h-3': 1, 'h-full': 1 },
     rationale: 'Progress bar track/fill geometry; carries no caller text.',
   },
   'radio.tsx': {
-    classes: ['h-5', 'h-2'],
+    classes: { 'h-5': 1, 'h-2': 1 },
     rationale: 'Decorative selected-state glyph indicators; not reflowable text.',
   },
   'separator.tsx': {
-    classes: ['h-px'],
+    classes: { 'h-px': 1 },
     rationale: 'Decorative 1px divider line; carries no text.',
   },
   'skeleton.tsx': {
-    classes: ['h-4'],
+    classes: { 'h-4': 1 },
     rationale: 'Decorative static loading placeholder; carries no real text.',
   },
   'stepper.tsx': {
-    classes: ['h-8'],
+    classes: { 'h-8': 1 },
     rationale: 'Decorative circular step-index glyph, not reflowable text.',
   },
   'textarea.tsx': {
-    classes: ['h-auto'],
+    classes: { 'h-auto': 1 },
     rationale:
       'h-auto is an explicit auto/content-driven height (paired with min-h-24), not a fixed pixel height — Textarea already grows with its multiline content.',
   },
   'timeline.tsx': {
-    classes: ['h-3'],
+    classes: { 'h-3': 1 },
     rationale: 'Decorative status-marker dot; carries no text.',
   },
 };
 
+/** One occurrence-level violation of the fixed-height contract for a single file. */
+export type FixedHeightViolation =
+  | { type: 'unlisted'; className: string; actual: number }
+  | { type: 'occurrence-count-mismatch'; className: string; expected: number; actual: number };
+
 /**
  * Scans one component source file's literal `h-<token>` class occurrences
  * (across any quote/template-literal style, and ignoring `min-h-*`, which is
- * always growable) and returns any that are not present in
- * `FIXED_HEIGHT_ALLOWLIST` for that file. An empty result means the file has
- * no undocumented fixed-height, text-bearing-row regression.
+ * always growable) and returns every occurrence-level violation against
+ * `FIXED_HEIGHT_ALLOWLIST` for that file:
+ *
+ * - a class token not listed at all for this file (`'unlisted'`);
+ * - a listed class token whose actual occurrence count in source does not
+ *   match the reviewed, documented count (`'occurrence-count-mismatch'`) —
+ *   this is what catches a *new*, unreviewed occurrence of an
+ *   already-allow-listed class, not just a brand-new class name.
+ *
+ * An empty result means the file has no undocumented fixed-height,
+ * text-bearing-row regression — every occurrence of every fixed-height class
+ * in this file is exactly the reviewed, expected one.
  */
-export function findUnlistedFixedHeightClasses(fileName: string, source: string): string[] {
+export function findFixedHeightClassViolations(
+  fileName: string,
+  source: string,
+): FixedHeightViolation[] {
   const matches = Array.from(source.matchAll(/(?<!min-)\bh-([a-z0-9-]+)/g)).map(
     (match) => `h-${match[1]}`,
   );
-  const allowed = new Set(FIXED_HEIGHT_ALLOWLIST[fileName]?.classes ?? []);
-  return Array.from(new Set(matches.filter((className) => !allowed.has(className))));
+  const actualCounts = new Map<string, number>();
+  for (const className of matches) {
+    actualCounts.set(className, (actualCounts.get(className) ?? 0) + 1);
+  }
+
+  const allowed = FIXED_HEIGHT_ALLOWLIST[fileName]?.classes ?? {};
+  const violations: FixedHeightViolation[] = [];
+
+  for (const [className, actual] of actualCounts) {
+    const expected = allowed[className];
+    if (expected === undefined) {
+      violations.push({ type: 'unlisted', className, actual });
+    } else if (expected !== actual) {
+      violations.push({ type: 'occurrence-count-mismatch', className, expected, actual });
+    }
+  }
+
+  return violations;
 }
 
 /** Returns true if `source` disables OS/browser font scaling anywhere. */

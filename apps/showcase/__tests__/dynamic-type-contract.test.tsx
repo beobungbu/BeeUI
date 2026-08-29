@@ -17,7 +17,7 @@ import {
 import {
   containsFontScalingOptOut,
   countNumberOfLinesUsages,
-  findUnlistedFixedHeightClasses,
+  findFixedHeightClassViolations,
   FIXED_HEIGHT_ALLOWLIST,
   FONT_SCALE_STRESS_LEVELS,
   INTENTIONAL_TRUNCATION_POINTS,
@@ -62,41 +62,94 @@ describe('Dynamic Type / font-scaling contract (#143)', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('keeps every intentional numberOfLines truncation point documented and in sync', () => {
+  it('keeps every intentional numberOfLines truncation point occurrence-exact, not just documented at the file level', () => {
     const sources = readAllComponentSources();
     const actualTruncationFiles = UI_COMPONENT_SOURCE_FILES.filter(
       (fileName) => countNumberOfLinesUsages(sources[fileName]) > 0,
     ).sort();
     const documentedFiles = Object.keys(INTENTIONAL_TRUNCATION_POINTS).sort();
 
+    // Every file that uses numberOfLines is documented, and vice versa.
     expect(actualTruncationFiles).toEqual(documentedFiles);
 
     for (const fileName of documentedFiles) {
-      expect(INTENTIONAL_TRUNCATION_POINTS[fileName].rationale.length).toBeGreaterThan(0);
+      const entry = INTENTIONAL_TRUNCATION_POINTS[fileName];
+      expect(entry.rationale.length).toBeGreaterThan(0);
+      // Occurrence-specific, not filename-specific: a *new* numberOfLines
+      // usage added to a file that already has one documented would keep
+      // this file in `documentedFiles` unchanged — only comparing the exact
+      // count catches it. See the dedicated revert-proof test below.
+      expect(countNumberOfLinesUsages(sources[fileName])).toBe(entry.occurrences);
     }
   });
 
-  it('keeps every fixed-height, non-min-h row allow-listed with a rationale, and rejects unlisted ones', () => {
+  it('FAILS when a new, unregistered numberOfLines occurrence is added to an already-documented file (guard revert-proof)', () => {
+    // Proves the occurrence-count guard actually catches what a
+    // filename-only guard would miss: a second numberOfLines usage added to
+    // select.tsx, which already has one documented entry. This does not
+    // touch real source — it exercises the scanner directly against a
+    // synthetic copy of the real file with one extra occurrence spliced in,
+    // which is the load-bearing, revert-proof way to test a guard without
+    // needing to actually break the codebase to prove the guard works.
+    const realSource = readComponentSource('select.tsx');
+    const injectedSource = `${realSource}\n// synthetic unreviewed second occurrence:\nconst rogueNumberOfLines = 2;\n<Text numberOfLines={rogueNumberOfLines} />;\n`;
+
+    const documentedOccurrences = INTENTIONAL_TRUNCATION_POINTS['select.tsx'].occurrences;
+    expect(countNumberOfLinesUsages(realSource)).toBe(documentedOccurrences);
+    expect(countNumberOfLinesUsages(injectedSource)).not.toBe(documentedOccurrences);
+    expect(countNumberOfLinesUsages(injectedSource)).toBe(documentedOccurrences + 1);
+  });
+
+  it('keeps every fixed-height, non-min-h row occurrence-exact, not just documented at the file+class level, and rejects unlisted ones', () => {
     const sources = readAllComponentSources();
-    const violations: Record<string, string[]> = {};
+    const violations: Record<string, ReturnType<typeof findFixedHeightClassViolations>> = {};
 
     for (const fileName of UI_COMPONENT_SOURCE_FILES) {
-      const unlisted = findUnlistedFixedHeightClasses(fileName, sources[fileName]);
-      if (unlisted.length > 0) violations[fileName] = unlisted;
+      const fileViolations = findFixedHeightClassViolations(fileName, sources[fileName]);
+      if (fileViolations.length > 0) violations[fileName] = fileViolations;
     }
 
     expect(violations).toEqual({});
 
     for (const [fileName, entry] of Object.entries(FIXED_HEIGHT_ALLOWLIST)) {
-      expect(entry.classes.length).toBeGreaterThan(0);
+      expect(Object.keys(entry.classes).length).toBeGreaterThan(0);
       expect(entry.rationale.length).toBeGreaterThan(0);
       // The allow-list must not silently accumulate stale entries: every
-      // allow-listed class must still actually appear in that file's source.
+      // allow-listed class must still actually appear in that file's source,
+      // and its documented occurrence count must be a positive integer.
       expect(sources[fileName]).toBeDefined();
-      for (const className of entry.classes) {
+      for (const [className, expectedCount] of Object.entries(entry.classes)) {
         expect(sources[fileName]).toContain(className);
+        expect(expectedCount).toBeGreaterThan(0);
       }
     }
+  });
+
+  it('FAILS when a new, unregistered occurrence of an already-allow-listed class is added to a file (guard revert-proof)', () => {
+    // Proves the occurrence-count guard catches a *new* usage of a class
+    // token that is already allow-listed for that file — the exact gap a
+    // presence-only ("does this class appear somewhere in this file")
+    // allow-list check cannot see. Uses a synthetic copy of the real
+    // checkbox.tsx source with a second, unrelated h-5 row spliced in, so
+    // this proves the scanner's behavior directly without needing to modify
+    // real component source to demonstrate the guard works.
+    const realSource = readComponentSource('checkbox.tsx');
+    const injectedSource = `${realSource}\n// synthetic unreviewed second occurrence of an already-allow-listed class:\n<View className="h-5 w-5" />;\n`;
+
+    expect(findFixedHeightClassViolations('checkbox.tsx', realSource)).toEqual([]);
+
+    const violations = findFixedHeightClassViolations('checkbox.tsx', injectedSource);
+    expect(violations).toEqual([
+      { type: 'occurrence-count-mismatch', className: 'h-5', expected: 1, actual: 2 },
+    ]);
+  });
+
+  it('FAILS when a brand-new, never-allow-listed fixed-height class is added to a file (guard revert-proof)', () => {
+    const realSource = readComponentSource('separator.tsx');
+    const injectedSource = `${realSource}\n// synthetic unreviewed brand-new fixed-height class:\nconst rogue = 'h-99';\n`;
+
+    const violations = findFixedHeightClassViolations('separator.tsx', injectedSource);
+    expect(violations).toContainEqual({ type: 'unlisted', className: 'h-99', actual: 1 });
   });
 
   it('fixes SelectTrigger and PaginationItem to grow instead of clipping at scale', () => {

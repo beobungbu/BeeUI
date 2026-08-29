@@ -538,7 +538,11 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
 
             <Card className="gap-4">
               <Field description="Used only for account notifications." label="Email" required>
-                <Input autoCapitalize="none" placeholder="you@example.com" />
+                <Input
+                  autoCapitalize="none"
+                  placeholder="you@example.com"
+                  testID="dynamic-type-email-input"
+                />
               </Field>
               <Field label="Search">
                 <SearchInput onSearch={() => undefined} placeholder="Search projects" />
@@ -781,7 +785,7 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
                 <Text variant="label">Page</Text>
                 <Pagination onPageChange={setPage} page={page} pageCount={4}>
                   <PaginationItem type="previous" />
-                  <PaginationItem page={1} />
+                  <PaginationItem page={1} testID="dynamic-type-pagination-item-1" />
                   <PaginationItem page={2} />
                   <PaginationItem page={3} />
                   <PaginationItem page={4} />
@@ -944,7 +948,7 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
       <SafeArea className="bg-surface" edges={['bottom', 'left', 'right']}>
         <BottomActionBar>
           <Button size="sm" variant="ghost">Cancel</Button>
-          <Button size="sm">Save changes</Button>
+          <Button size="sm" testID="dynamic-type-save-button">Save changes</Button>
         </BottomActionBar>
       </SafeArea>
     </Screen>
