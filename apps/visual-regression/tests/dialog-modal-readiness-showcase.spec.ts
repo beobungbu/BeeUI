@@ -18,7 +18,7 @@ test('proves the transient roleless aria-modal belongs to RNW Modal entrance rea
     const trackedInvalidNodes: Element[] = [];
 
     const record = () => {
-      for (const element of document.querySelectorAll('[aria-modal="true"]')) {
+      for (const element of Array.from(document.querySelectorAll('[aria-modal="true"]'))) {
         const role = element.getAttribute('role');
         if (role !== 'dialog' && role !== 'alertdialog') {
           if (!trackedInvalidNodes.includes(element)) trackedInvalidNodes.push(element);
@@ -65,7 +65,7 @@ test('proves the transient roleless aria-modal belongs to RNW Modal entrance rea
     if (!probe) throw new Error('Modal readiness probe was not installed.');
     probe.observer.disconnect();
 
-    const settledInvalid = [...document.querySelectorAll('[aria-modal="true"]')]
+    const settledInvalid = Array.from(document.querySelectorAll('[aria-modal="true"]'))
       .filter((element) => {
         const role = element.getAttribute('role');
         return role !== 'dialog' && role !== 'alertdialog';
