@@ -1,9 +1,12 @@
 node_modules/
 .expo/
 dist/
+dist-*/
 build/
 coverage/
 .artifacts/
+playwright-report/
+test-results/
 *.log
 .DS_Store
 .env
