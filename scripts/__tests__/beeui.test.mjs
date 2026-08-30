@@ -470,6 +470,66 @@ test('table resolves the use-direction and use-required-callback-warning utiliti
   }
 });
 
+// Issue #161: `sheet.tsx`/`sheet.web.tsx`/`sheet.native.tsx` import the local
+// `./button`, `./overlay-runtime`, and `./text` modules, and `sheet.native.tsx`
+// additionally requires the optional `@gorhom/bottom-sheet` native adapter plus
+// its own Reanimated/Gesture-Handler/Worklets peers (ADR-006). This proves the
+// full copied `sheet` file set — including its `overlay-runtime` dependency
+// closure — resolves every relative import, the same class of check #155/#170
+// already run for `tooltip`/`table`, and that the four sheet-only optional
+// native peers are reported exactly once and only for `sheet`.
+test('sheet resolves its button/overlay-runtime/text dependency closure and reports optional native peers only for itself', async (t) => {
+  const root = await init(t);
+  const result = await run(root, ['add', 'sheet']);
+  assert.equal(result.code, 0, result.stderr);
+  const dir = path.join(root, 'src/components/beeui');
+
+  assert.match(result.stdout, /core-cn -> theme -> text -> button -> core-overlay -> overlay-runtime -> sheet/);
+
+  for (const relative of [
+    'src/components/beeui/sheet.tsx',
+    'src/components/beeui/sheet.web.tsx',
+    'src/components/beeui/sheet.native.tsx',
+    'src/components/beeui/button.tsx',
+    'src/components/beeui/text.tsx',
+    'src/components/beeui/overlay-runtime.tsx',
+    'src/components/beeui/overlay-transport.web.tsx',
+    'src/components/beeui/overlay-transport.native.tsx',
+    'src/components/beeui/overlay-transport.d.ts',
+    'src/components/beeui/overlay-transport-shared.tsx',
+    'src/components/beeui/overlay-dismiss-events.ts',
+    'src/components/beeui/overlay-dismiss-events.web.ts',
+    'src/components/beeui/overlay-host-mode.ts',
+    'src/lib/beeui/core/index.ts',
+  ]) assert.equal(await exists(path.join(root, relative)), true, relative);
+
+  for (const file of ['sheet.tsx', 'sheet.web.tsx', 'sheet.native.tsx']) {
+    const source = await readFile(path.join(dir, file), 'utf8');
+    for (const match of source.matchAll(/from ['"](\.[^'"]+)['"]/g)) {
+      const base = path.resolve(dir, match[1]);
+      const candidates = [base, `${base}.ts`, `${base}.tsx`, `${base}.js`, `${base}.jsx`];
+      let found = false;
+      for (const candidate of candidates) {
+        if (await exists(candidate)) { found = true; break; }
+      }
+      assert.equal(found, true, `${file} unresolved relative import ${match[1]}`);
+    }
+  }
+
+  const expectedPeers = [
+    '@gorhom/bottom-sheet@>=5.2 <6',
+    'react-native-reanimated@>=4.5 <5',
+    'react-native-gesture-handler@>=2.32 <3',
+    'react-native-worklets@>=0.10 <1',
+  ];
+  for (const peer of expectedPeers) {
+    const [name] = peer.split('@>=');
+    const occurrences = result.stdout.split(name).length - 1;
+    assert.equal(occurrences, 1, `expected exactly one report of ${name}, got ${occurrences}`);
+    assert.match(result.stdout, new RegExp(peer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
+});
+
 test('doctor validates config and registry without mutating the project', async (t) => {
   const root = await init(t);
   const before = await readFile(path.join(root, CONFIG_FILENAME), 'utf8');
