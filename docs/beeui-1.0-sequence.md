@@ -100,7 +100,7 @@ If #171 selects a presentation that requires Sheet, update downstream issues wit
 ### Optional decisions
 
 - #162 — after stable Sheet; may explicitly defer adaptive Select for 1.0.
-- #163 — Slider decision; if promoted, implementation must be complete/tested/registered/documented, never partial.
+- #163 — Slider decision: **decided, deferred**. No product/competitive evidence promotes it; not required for 1.0. See `docs/decisions/009-slider-1-0-decision.md` (ADR-009).
 
 ## S3 — Final compatibility and cross-component acceptance
 
