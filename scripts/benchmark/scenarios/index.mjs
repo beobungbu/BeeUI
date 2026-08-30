@@ -6,9 +6,16 @@
 
 import { ScenarioRegistry } from '../lib/registry.mjs';
 import webVariantClassResolution from './web/variant-class-resolution.mjs';
+import webTableRender from './web/table-render.mjs';
 import nativeListRender from './native/list-render.mjs';
+import nativeTableRender from './native/table-render.mjs';
 
-export const SCENARIOS = [webVariantClassResolution, nativeListRender];
+export const SCENARIOS = [
+  webVariantClassResolution,
+  ...webTableRender,
+  nativeListRender,
+  ...nativeTableRender,
+];
 
 export function buildDefaultRegistry() {
   return new ScenarioRegistry().registerAll(SCENARIOS);

@@ -29,8 +29,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  EmptyState,
+  ErrorState,
   Field,
   FormGroup,
+  IconButton,
   Input,
   Link,
   ListGroup,
@@ -48,9 +51,18 @@ import {
   RadioGroup,
   Separator,
   SettingsItem,
+  Skeleton,
+  Spinner,
   Stepper,
   StepperItem,
   Switch,
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
   Tabs,
   TabsContent,
   TabsList,
@@ -111,7 +123,8 @@ type FixtureId =
   | 'dataviz-brands'
   | 'scoped-preview'
   | 'high-contrast-focus'
-  | 'tooltip';
+  | 'tooltip'
+  | 'table';
 
 const fixtureIds: readonly FixtureId[] = [
   'density',
@@ -119,6 +132,7 @@ const fixtureIds: readonly FixtureId[] = [
   'scoped-preview',
   'high-contrast-focus',
   'tooltip',
+  'table',
 ];
 
 function isFixtureId(value: string | null): value is FixtureId {
@@ -137,6 +151,44 @@ function readDensityModeQuery(): DensityMode {
   return (densityModes as readonly string[]).includes(requested ?? '')
     ? (requested as DensityMode)
     : defaultDensityMode;
+}
+
+// #169 — Table production/visual acceptance. `state` covers the loading/
+// empty/error composition patterns `docs/decisions/007-table-datatable-
+// architecture.md` and `apps/showcase/__tests__/table.test.tsx` already
+// establish as a single full-width spanning `TableCell` (Table owns no data-
+// fetching state itself — the caller renders whichever body content matches
+// its own request state).
+type TableFixtureState = 'default' | 'loading' | 'empty' | 'error';
+const tableFixtureStates: readonly TableFixtureState[] = ['default', 'loading', 'empty', 'error'];
+
+function readTableStateQuery(): TableFixtureState {
+  if (typeof window === 'undefined') return 'default';
+  const requested = new URLSearchParams(window.location.search).get('state');
+  return (tableFixtureStates as readonly string[]).includes(requested ?? '')
+    ? (requested as TableFixtureState)
+    : 'default';
+}
+
+// #169 — a generic, reusable ambient-direction query flag (`useDirection()`
+// reads `document.documentElement.dir` on Web — ADR-004). Every fixture/
+// scenario benefits from real RTL screenshot coverage, not just Table, so this
+// lives at the app level rather than as a Table-only fixture concern.
+type AmbientDirection = 'ltr' | 'rtl';
+
+function readDirectionQuery(): AmbientDirection {
+  if (typeof window === 'undefined') return 'ltr';
+  return new URLSearchParams(window.location.search).get('dir') === 'rtl' ? 'rtl' : 'ltr';
+}
+
+function useAmbientDirection(direction: AmbientDirection) {
+  React.useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.documentElement.dir = direction;
+    return () => {
+      document.documentElement.dir = 'ltr';
+    };
+  }, [direction]);
 }
 
 function nextFrame() {
@@ -719,6 +771,207 @@ function DensityFixture({ density, theme }: { density: DensityMode; theme: Visua
   );
 }
 
+// #169 — Table production patterns and visual acceptance. A realistic
+// admin/CRM finance-transactions list: long Vietnamese and English customer
+// names (overflow/wrap stress), large tabular-numeral currency amounts,
+// status badges, and two embedded per-row actions (Edit/Delete) — the shape
+// `#260`'s "searchable/filterable Table/DataTable flow" production demo
+// consumes. Rendered in both `layout="scroll"` and `layout="stacked"` so the
+// same content proves both responsive presentations (ADR-007). Density is
+// applied via the same `applyDensity` mechanism `DensityFixture` uses (#74) —
+// Table reuses the existing density token axis rather than a parallel
+// Table-only sizing system.
+type FinanceTransaction = {
+  id: string;
+  customer: string;
+  amount: string;
+  date: string;
+  status: 'Completed' | 'Pending' | 'Failed';
+};
+
+const financeAmountFormatterVi = new Intl.NumberFormat('vi-VN', {
+  style: 'currency',
+  currency: 'VND',
+});
+const financeAmountFormatterEn = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+});
+
+const FINANCE_TRANSACTIONS: FinanceTransaction[] = [
+  {
+    id: 'TXN-2026-000482',
+    customer: 'Nguyễn Thị Thanh Hương',
+    amount: financeAmountFormatterVi.format(128450000),
+    date: '2026-08-12',
+    status: 'Completed',
+  },
+  {
+    id: 'TXN-2026-000483',
+    customer: 'Alexander Bartholomew Worthington-Fitzgerald III',
+    amount: financeAmountFormatterEn.format(1234567.89),
+    date: '2026-08-13',
+    status: 'Pending',
+  },
+  {
+    id: 'TXN-2026-000484',
+    customer: 'Trần Văn Minh',
+    amount: financeAmountFormatterVi.format(2500000),
+    date: '2026-08-14',
+    status: 'Failed',
+  },
+];
+
+const FINANCE_TABLE_COLUMN_COUNT = 6;
+
+const financeStatusBadgeVariant: Record<
+  FinanceTransaction['status'],
+  'success' | 'warning' | 'destructive'
+> = {
+  Completed: 'success',
+  Pending: 'warning',
+  Failed: 'destructive',
+};
+
+function FinanceTableBody({ state }: { state: TableFixtureState }) {
+  if (state === 'loading') {
+    return (
+      <TableRow testID="table-loading-row">
+        <TableCell colSpan={FINANCE_TABLE_COLUMN_COUNT}>
+          <Box className="flex-row items-center gap-3 py-2">
+            <Spinner accessibilityLabel="Loading transactions" size="small" />
+            <Skeleton className="h-4 flex-1" variant="text" />
+          </Box>
+        </TableCell>
+      </TableRow>
+    );
+  }
+
+  if (state === 'empty') {
+    return (
+      <TableRow testID="table-empty-row">
+        <TableCell colSpan={FINANCE_TABLE_COLUMN_COUNT}>
+          <EmptyState
+            description="Transactions will appear here once processed."
+            title="No transactions found"
+          />
+        </TableCell>
+      </TableRow>
+    );
+  }
+
+  if (state === 'error') {
+    return (
+      <TableRow testID="table-error-row">
+        <TableCell colSpan={FINANCE_TABLE_COLUMN_COUNT}>
+          <ErrorState description="We could not load transactions. Please retry." />
+        </TableCell>
+      </TableRow>
+    );
+  }
+
+  return (
+    <>
+      {FINANCE_TRANSACTIONS.map((transaction) => (
+        <TableRow key={transaction.id} testID={`transaction-row-${transaction.id}`}>
+          <TableCell label="Transaction">
+            <Text family="mono" variant="caption">
+              {transaction.id}
+            </Text>
+          </TableCell>
+          <TableCell label="Customer">{transaction.customer}</TableCell>
+          <TableCell label="Amount">
+            <Text className="text-end" numeric="tabular" variant="body">
+              {transaction.amount}
+            </Text>
+          </TableCell>
+          <TableCell label="Date">{transaction.date}</TableCell>
+          <TableCell label="Status">
+            <Badge variant={financeStatusBadgeVariant[transaction.status]}>
+              {transaction.status}
+            </Badge>
+          </TableCell>
+          <TableCell label="Actions">
+            <Box className="flex-row gap-1">
+              <IconButton accessibilityLabel={`Edit ${transaction.id}`} variant="ghost">
+                ✎
+              </IconButton>
+              <IconButton accessibilityLabel={`Delete ${transaction.id}`} variant="ghost">
+                🗑
+              </IconButton>
+            </Box>
+          </TableCell>
+        </TableRow>
+      ))}
+    </>
+  );
+}
+
+function FinanceTableHeaderRow() {
+  return (
+    <TableRow>
+      <TableHead label="Transaction">Transaction</TableHead>
+      <TableHead>Customer</TableHead>
+      <TableHead label="Amount">Amount</TableHead>
+      <TableHead>Date</TableHead>
+      <TableHead>Status</TableHead>
+      <TableHead label="Actions">Actions</TableHead>
+    </TableRow>
+  );
+}
+
+function TableProductionFixture({
+  density,
+  state,
+  theme,
+}: {
+  density: DensityMode;
+  state: TableFixtureState;
+  theme: VisualTheme;
+}) {
+  React.useEffect(() => {
+    if (density !== defaultDensityMode) {
+      applyDensity(Uniwind, theme, density);
+    }
+  }, [density, theme]);
+
+  return (
+    <Box className="min-h-screen gap-6 bg-surface p-6" testID="table-production-fixture">
+      <Box className="gap-1">
+        <Text variant="title">Table: production patterns</Text>
+        <Text tone="muted" variant="caption">
+          {`BeeUI issue #169 — finance transactions, density: ${density}, state: ${state}`}
+        </Text>
+      </Box>
+
+      <Card className="gap-3" padding="lg" testID="table-production-scroll" variant="raised">
+        <Text variant="heading">Scroll layout</Text>
+        <Table testID="finance-table-scroll">
+          <TableCaption>Recent transactions</TableCaption>
+          <TableHeader>
+            <FinanceTableHeaderRow />
+          </TableHeader>
+          <TableBody>
+            <FinanceTableBody state={state} />
+          </TableBody>
+        </Table>
+      </Card>
+
+      <Card className="gap-3" padding="lg" testID="table-production-stacked" variant="outlined">
+        <Text variant="heading">Stacked layout</Text>
+        <Table layout="stacked" testID="finance-table-stacked">
+          <TableHeader>
+            <FinanceTableHeaderRow />
+          </TableHeader>
+          <TableBody testID="finance-table-stacked-body">
+            <FinanceTableBody state={state} />
+          </TableBody>
+        </Table>
+      </Card>
+    </Box>
+  );
+}
+
 /**
  * Derives a `BeeThemeScope` `appearance` ('light' | 'dark') from the outer
  * harness `theme`. Only the appearance half of the outer theme matters here —
@@ -1012,6 +1265,9 @@ export default function App() {
   const [dataTypography] = React.useState(readDataTypographyQuery);
   const [fixture] = React.useState(readFixtureQuery);
   const [densityMode] = React.useState(readDensityModeQuery);
+  const [tableState] = React.useState(readTableStateQuery);
+  const [direction] = React.useState(readDirectionQuery);
+  useAmbientDirection(direction);
   useVisualReadiness(scenario, theme);
 
   return (
@@ -1030,6 +1286,8 @@ export default function App() {
         <HighContrastFocusFixture />
       ) : fixture === 'tooltip' ? (
         <TooltipFixture />
+      ) : fixture === 'table' ? (
+        <TableProductionFixture density={densityMode} state={tableState} theme={theme} />
       ) : (
         <Scenario scenario={scenario} />
       )}
