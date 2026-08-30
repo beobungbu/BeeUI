@@ -200,8 +200,6 @@ if [ -z "$METRO_BASE_URL" ]; then
 fi
 curl -fsS "$METRO_BASE_URL/status" | tee "$ARTIFACT_DIR/metro-status.txt"
 
-# Warm the RN bundle so the first launch renders immediately; otherwise the
-# app shows the "Bundling N%..." screen while Maestro's first assertion runs.
 if ! curl -fsS "$METRO_BASE_URL/.expo/.virtual-metro-entry.bundle?platform=ios&dev=true" -o /dev/null; then
   echo "::warning::Bundle warm-up request failed; the first Maestro assertion must absorb cold bundling." >&2
 fi
@@ -218,6 +216,17 @@ common_status=${PIPESTATUS[0]}
 set -e
 if [ "$common_status" -ne 0 ]; then
   exit "$common_status"
+fi
+
+set +e
+(
+  cd "$ROOT"
+  maestro --device "$SIM_UDID" test "$MAESTRO_FLOW/runtime-stress.yaml"
+) 2>&1 | tee "$ARTIFACT_DIR/maestro-runtime-stress.log"
+stress_status=${PIPESTATUS[0]}
+set -e
+if [ "$stress_status" -ne 0 ]; then
+  exit "$stress_status"
 fi
 
 set +e
