@@ -96,7 +96,7 @@ export function L10nStressAcceptance({ onBack }: { onBack: () => void }) {
               Localization / long-content stress fixture ready
             </Text>
             <Text testID="l10n-stress-active-profile" tone="muted">
-              {`profile: ${profile.label} (${profile.dir})`}
+              {`profile: ${profile.id} — ${profile.label} (${profile.dir})`}
             </Text>
 
             <Box className="flex-row flex-wrap gap-2">

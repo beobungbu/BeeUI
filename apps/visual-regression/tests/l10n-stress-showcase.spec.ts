@@ -62,13 +62,13 @@ async function openL10nStressFixture(page: Page) {
 }
 
 async function selectProfile(page: Page, id: ProfileId) {
-  const before = await page.getByTestId('l10n-stress-active-profile').textContent();
   await page.getByTestId(`l10n-stress-profile-${id}`).click();
-  // The active-profile label is real state driven by the click, not a no-op —
-  // proves the profile actually changed before the rest of the test trusts it.
-  await expect
-    .poll(async () => page.getByTestId('l10n-stress-active-profile').textContent())
-    .not.toBe(before);
+  // The fixture renders the profile id itself in this label — asserting
+  // against `id` (known locally, not imported across the app boundary)
+  // proves the click actually applied, including for whichever profile is
+  // the screen's initial default (a before/after text-diff would wrongly
+  // treat that first, no-op-looking click as a failure).
+  await expect(page.getByTestId('l10n-stress-active-profile')).toContainText(id);
 }
 
 async function assertNoViewportHorizontalOverflow(page: Page) {
@@ -80,13 +80,18 @@ async function assertNoViewportHorizontalOverflow(page: Page) {
   expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.clientWidth + 1);
 }
 
+// 2px tolerance for sub-pixel layout rounding (observed up to ~1.5px on a
+// two-line-wrapped Sheet footer button at the bottom of the viewport), not
+// for a real overflow/clip.
+const VIEWPORT_BOUNDS_TOLERANCE_PX = 2;
+
 async function assertFullyInViewport(page: Page, box: { x: number; y: number; width: number; height: number }) {
   const viewport = page.viewportSize();
   expect(viewport).not.toBeNull();
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.y).toBeGreaterThanOrEqual(0);
-  expect(box.x + box.width).toBeLessThanOrEqual(viewport!.width + 1);
-  expect(box.y + box.height).toBeLessThanOrEqual(viewport!.height + 1);
+  expect(box.x + box.width).toBeLessThanOrEqual(viewport!.width + VIEWPORT_BOUNDS_TOLERANCE_PX);
+  expect(box.y + box.height).toBeLessThanOrEqual(viewport!.height + VIEWPORT_BOUNDS_TOLERANCE_PX);
 }
 
 test.describe('Localization / long-content stress suite (#144)', () => {
@@ -142,6 +147,16 @@ test.describe('Localization / long-content stress suite (#144)', () => {
       // TabsContent's "overview" panel renders the exact same `sentence`
       // field as TooltipContent — cross-component consistency proof.
       await expect(content).toHaveText(overviewText);
+
+      // TooltipContent renders at a fixed off-screen `left/top: -10000`
+      // "measuring" position (opacity 0) before its real collision-aware
+      // placement commits (`tooltip.web.tsx`'s `styles.measuring`) —
+      // `toBeVisible()` does not itself wait past that intermediate frame
+      // (opacity 0 still has a non-empty box), so poll until the real,
+      // on-screen position lands before asserting viewport bounds.
+      await expect
+        .poll(async () => (await content.boundingBox())?.x ?? -10000)
+        .toBeGreaterThan(-1000);
 
       const box = await content.boundingBox();
       expect(box).not.toBeNull();
