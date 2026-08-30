@@ -203,7 +203,20 @@ Unsupported v1 presentation behavior is intentionally narrow: there is no Sheet 
 
 ## Sheet boundary
 
-`Sheet` remains separately gated because gesture, snap-point, keyboard, safe-area, scrolling, hardware-back, and accessibility behavior need stronger native runtime verification than a centered modal.
+`Sheet` remains separately gated because gesture, snap-point, keyboard, safe-area, scrolling, hardware-back, and accessibility behavior need stronger native runtime verification than a centered modal. Native still renders `sheet.tsx`'s cross-platform skeleton (`<Modal>`-based, no gesture) pending #158's `@gorhom/bottom-sheet` adapter.
+
+### Web implementation (#159, ADR-006)
+
+`sheet.web.tsx` replaces the skeleton's rendering on Web behind the identical public contract, per [ADR-006](decisions/006-sheet-gesture-engine.md): no `@gorhom/bottom-sheet`, no Reanimated/Gesture-Handler, and no drag-to-dismiss gesture parity claim for 1.0. It reuses `overlay-transport.web.tsx`'s portal (`OverlayPortal`/`ModalOverlayHost`) directly instead of React Native's `<Modal>`, and BeeUI's own Web overlay primitives for everything a consumer can observe:
+
+- **Dismissal**: backdrop press (`closeOnBackdropPress`) and Escape both route through `dismissOnRequestClose`/`onRequestClose`, identical to the native contract. Escape and the panel's own Tab focus-trap are each wired through a **capture-phase** `document` `keydown` listener rather than the shared bubble-phase Escape bridge (`overlay-dismiss-events.web.ts`) alone — a focused text `Input` inside the panel (a common Sheet content shape) stops that event's bubble phase before it reaches a bubble-phase listener, which would otherwise silently swallow Escape/Tab while a search or filter field has focus. Nested-overlay precedence (e.g. a `Popover` opened from inside the Sheet) is unchanged: an `isTopmost()` guard defers to whatever registered later in the Sheet's own dismiss scope.
+- **Focus**: opening moves focus to the panel's first focusable descendant (or the panel itself as a fallback); Tab/Shift+Tab cycle only within the panel; closing restores focus to the element focused before the Sheet opened.
+- **Motion**: `sheet-enter`/`sheet-exit` (`docs/motion.md`) drive an opacity + translateY transition through `resolveMotion`/`resolveNativeMotion` and React Native's built-in `Animated` — the same mechanism `apps/showcase/theme-inspector/motion-preview.tsx` already demonstrates — honoring `prefers-reduced-motion` with no Reanimated dependency.
+- **Responsive layout**: edge-to-edge bottom sheet below the `medium` (768px) breakpoint; a centered, inset, fully-rounded panel capped at the existing `max-w-dialog` (512px) content width at `medium` and above (`docs/responsive-layout.md`).
+- **RTL/large text**: no additional handling is needed beyond the existing logical-property/dynamic-type contracts already applied to the shared `SheetTitle`/`SheetDescription`/panel styling.
+- **Not claimed**: drag-to-dismiss gesture parity, native swipe completion, and safe-area inset padding (Dialog sets no Web precedent for the latter either; `react-native-safe-area-context` reports zero insets on most Web targets).
+
+Real-browser Playwright evidence lives in `apps/visual-regression/tests/sheet-showcase.spec.ts` (open/close, Escape, backdrop, focus-trap/restoration, responsive, RTL, reduced motion) and the `component-gallery-sheet-overlay` axe scenario (`apps/visual-regression/src/a11y-scenarios.ts`).
 
 ## Toast boundary
 
