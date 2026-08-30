@@ -438,6 +438,38 @@ test('tooltip resolves the core-overlay module rewrite, overlay runtime, and use
   }
 });
 
+// Issue #170: `table.tsx`/`table.web.tsx` import the local `./use-direction` helper
+// (column order under RTL) exactly like `tooltip`, so `table` must declare it as a
+// registry dependency — otherwise `beeui add table` would copy a broken relative
+// import, exactly the gap #155 fixed for `tooltip`.
+test('table resolves the use-direction and use-required-callback-warning utilities', async (t) => {
+  const root = await init(t);
+  const result = await run(root, ['add', 'table']);
+  assert.equal(result.code, 0, result.stderr);
+  const dir = path.join(root, 'src/components/beeui');
+
+  for (const relative of [
+    'src/components/beeui/table.tsx',
+    'src/components/beeui/table.web.tsx',
+    'src/components/beeui/table-shared.ts',
+    'src/components/beeui/use-direction.ts',
+    'src/components/beeui/use-required-callback-warning.ts',
+  ]) assert.equal(await exists(path.join(root, relative)), true, relative);
+
+  for (const file of ['table.tsx', 'table.web.tsx']) {
+    const source = await readFile(path.join(dir, file), 'utf8');
+    for (const match of source.matchAll(/from ['"](\.[^'"]+)['"]/g)) {
+      const base = path.resolve(dir, match[1]);
+      const candidates = [base, `${base}.ts`, `${base}.tsx`, `${base}.js`, `${base}.jsx`];
+      let found = false;
+      for (const candidate of candidates) {
+        if (await exists(candidate)) { found = true; break; }
+      }
+      assert.equal(found, true, `${file} unresolved relative import ${match[1]}`);
+    }
+  }
+});
+
 test('doctor validates config and registry without mutating the project', async (t) => {
   const root = await init(t);
   const before = await readFile(path.join(root, CONFIG_FILENAME), 'utf8');
