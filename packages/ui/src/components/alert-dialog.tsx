@@ -36,7 +36,7 @@ AlertDialogTrigger.displayName = 'AlertDialogTrigger';
 
 export type AlertDialogContentProps = Omit<
   DialogContentProps,
-  'closeOnBackdropPress' | 'dismissOnRequestClose'
+  'closeOnBackdropPress' | 'dismissOnEscape' | 'dismissOnRequestClose'
 > & {
   /**
    * Whether native request-close paths (Android hardware back and accessibility escape)
@@ -53,6 +53,13 @@ export const AlertDialogContent = React.forwardRef<
     ref={ref}
     {...props}
     closeOnBackdropPress={false}
+    // A physical `Escape` keypress must never dismiss an AlertDialog — only
+    // an explicit Cancel/Action. Independent of `cancelOnRequestClose`,
+    // which only governs native request-close sources (Android hardware
+    // back, iOS/other native modal dismissal); those do not exist on Web,
+    // where the only source of `Modal`'s `onRequestClose` is a physical
+    // `Escape` keypress (see `dialog.tsx`'s `DialogEscapeBinding`).
+    dismissOnEscape={false}
     dismissOnRequestClose={cancelOnRequestClose}
   />
 ));

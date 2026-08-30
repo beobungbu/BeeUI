@@ -10,7 +10,12 @@ import {
   type ViewProps,
 } from 'react-native';
 import { Button, type ButtonProps } from './button';
-import { ModalOverlayHost, type ModalOverlayDismissScope } from './overlay-runtime';
+import {
+  ModalOverlayHost,
+  useOverlayDismissable,
+  useOverlayId,
+  type ModalOverlayDismissScope,
+} from './overlay-runtime';
 import { Text, type TextProps } from './text';
 
 // #146 — Web-only real Tab focus-trap + initial-focus + focus-restoration for
@@ -47,6 +52,7 @@ type WebFocusKeyboardEvent = {
   key?: string;
   preventDefault?: () => void;
   shiftKey?: boolean;
+  stopPropagation?: () => void;
 };
 
 type WebFocusDocument = {
@@ -154,6 +160,57 @@ function useDialogFocusTrap(
       }
     };
   }, [open, panelRef]);
+}
+
+/**
+ * Registers this Dialog's own Escape dismissal deterministically, instead of
+ * relying on React Native Web's `Modal` internal Escape handling. RNW's
+ * `ModalContent` only treats a physical `Escape` `keyup` as a close request
+ * once its own internal `isActive` modal-stack flag has flipped true — a
+ * flag RNW sets asynchronously via an `onShow` callback fired after the
+ * Modal's own entrance bookkeeping, not synchronously with `visible`/mount.
+ * Under load (slower CI runners, a busy main thread during the entrance
+ * fade), a keyboard user's Escape keypress can land before that internal
+ * flip happens; RNW's own listener then silently no-ops on that keypress —
+ * this Dialog never closes for it. This mirrors `sheet.web.tsx`'s
+ * `SheetEscapeBinding` exactly: a BeeUI-owned **capture-phase** `document`
+ * `keydown` listener attached synchronously as soon as `open` is true, with
+ * the same `isTopmost()` nested-overlay precedence (a `Popover` opened from
+ * inside this `Dialog` is dismissed child-first, the `Dialog` stays open).
+ * Capture phase also survives a focused text `Input` inside the panel (this
+ * showcase's own "Project settings" dialog has one) stopping the bubble
+ * phase before a bubble-phase listener would see the event.
+ */
+function DialogEscapeBinding({
+  onDismiss,
+  open,
+  overlayId,
+}: {
+  onDismiss: () => void;
+  open: boolean;
+  overlayId: string;
+}) {
+  const { isTopmost } = useOverlayDismissable({ onDismiss, open, overlayId });
+  const onDismissRef = React.useRef(onDismiss);
+  onDismissRef.current = onDismiss;
+
+  React.useEffect(() => {
+    if (!open) return undefined;
+    const doc = getWebFocusDocument();
+    if (!doc) return undefined;
+
+    const handleKeyDown = (event: WebFocusKeyboardEvent) => {
+      if (event.key !== 'Escape' || !isTopmost()) return;
+      event.preventDefault?.();
+      event.stopPropagation?.();
+      onDismissRef.current();
+    };
+
+    doc.addEventListener('keydown', handleKeyDown, true);
+    return () => doc.removeEventListener('keydown', handleKeyDown, true);
+  }, [isTopmost, open]);
+
+  return null;
 }
 
 type DialogContextValue = {
@@ -278,6 +335,15 @@ export type DialogContentProps = Omit<
 > & {
   closeOnBackdropPress?: boolean;
   containerClassName?: string;
+  /**
+   * Web only: whether a physical `Escape` keypress closes this dialog.
+   * Defaults to `true`. Independent from `dismissOnRequestClose`, which
+   * governs native request-close sources (Android hardware back, iOS/other
+   * native modal dismissal) that do not exist on Web — `AlertDialogContent`
+   * sets this `false` to keep its documented "Escape never dismisses"
+   * contract regardless of `cancelOnRequestClose`.
+   */
+  dismissOnEscape?: boolean;
   dismissOnRequestClose?: boolean;
   modalProps?: DialogModalProps;
   onRequestClose?: () => void;
@@ -296,6 +362,7 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
       className,
       closeOnBackdropPress = true,
       containerClassName,
+      dismissOnEscape = true,
       dismissOnRequestClose = true,
       modalProps,
       onAccessibilityEscape,
@@ -308,6 +375,7 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
     ref,
   ) => {
     const { open, setOpen } = useDialogContext();
+    const overlayId = useOverlayId('beeui-dialog');
     const panelRef = React.useRef<WebFocusableElement | null>(null);
     useDialogFocusTrap(panelRef, open);
     const setPanelRef = React.useCallback(
@@ -337,6 +405,15 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
       if (dismissOnRequestClose) setOpen(false);
     }, [dismissOnRequestClose, onRequestClose, setOpen]);
 
+    // The deterministic Web Escape path (`DialogEscapeBinding`, below) — kept
+    // separate from `requestClose`/`dismissOnRequestClose` (native
+    // Android-back / iOS-other-request-close semantics) so `dismissOnEscape`
+    // alone controls whether a physical keypress closes this dialog.
+    const requestCloseFromEscape = React.useCallback(() => {
+      onRequestClose?.();
+      if (dismissOnEscape) setOpen(false);
+    }, [dismissOnEscape, onRequestClose, setOpen]);
+
     // Native request-close notification is preserved exactly once. Android Modal
     // suppresses the root BackHandler, so hardware back is child-first inside this
     // modal scope. iOS/other request-close (including sheet swipe dismissal) applies
@@ -346,8 +423,21 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
       if (Platform.OS === 'android' && modalDismissScopeRef.current?.dismissTopmostChild('back')) {
         return;
       }
+      // On Web, React Native Web's `Modal` only ever calls `onRequestClose`
+      // from its own internal physical-`Escape`-keyup shim — there is no
+      // Android-back or other native request-close source on Web. That shim
+      // gates on RNW's own internal, asynchronously-set "active" modal-stack
+      // flag (see `DialogEscapeBinding`'s docblock), so this branch is a
+      // defense-in-depth fallback, not the primary Escape path; it defers to
+      // the same `dismissOnEscape` policy `DialogEscapeBinding` uses rather
+      // than `dismissOnRequestClose`, which stays reserved for genuine
+      // native request-close semantics.
+      if (Platform.OS === 'web') {
+        if (dismissOnEscape) setOpen(false);
+        return;
+      }
       if (dismissOnRequestClose) setOpen(false);
-    }, [dismissOnRequestClose, onRequestClose, setOpen]);
+    }, [dismissOnEscape, dismissOnRequestClose, onRequestClose, setOpen]);
 
     const registerTitle = React.useCallback((nativeID?: string, text?: string) => {
       setTitleNativeID(nativeID);
@@ -382,6 +472,22 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
         visible={open}
       >
         <ModalOverlayHost active={open} dismissScopeRef={modalDismissScopeRef}>
+          {/* Web-only: `DialogEscapeBinding` exists solely to beat RNW Modal's
+              async Escape-keyup gate (see its docblock). It also registers an
+              `isTopmost()` dismissable via `useOverlayDismissable`, which lives
+              in this same modal-local dismiss stack that Android hardware-back
+              (`dismissTopmostChild`, above) walks to find a REAL nested
+              anchored-overlay child. Mounting it unconditionally would add the
+              Dialog's own binding as a phantom "child" in that stack — on
+              native, dismissTopmostChild('back') could then dismiss it instead
+              of a real child (or instead of falling through to the Dialog's own
+              close policy), double-firing onRequestClose and corrupting the
+              child-first back count. Native has no `document` to bind to
+              anyway (a no-op there before this gate), so scoping the mount to
+              Web keeps native back-handling byte-for-byte unchanged. */}
+          {Platform.OS === 'web' ? (
+            <DialogEscapeBinding onDismiss={requestCloseFromEscape} open={open} overlayId={overlayId} />
+          ) : null}
           <View
             className={cn(
               'flex-1 items-center justify-center px-4 py-8',
