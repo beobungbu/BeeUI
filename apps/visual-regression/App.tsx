@@ -59,25 +59,13 @@ import {
   Textarea,
   Timeline,
   TimelineItem,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useBeeToken,
 } from '@beeui/ui';
 import { applyDensity, defaultDensityMode, densityModes, type DensityMode } from '@beeui/tokens';
 import * as React from 'react';
-// #152 — `Tooltip`/`TooltipTrigger`/`TooltipContent` are not yet on the
-// `@beeui/ui` public barrel (ADR-005 implementation consequences: exporting a
-// Web-only composition from the shared `packages/ui/src/index.ts` barrel would
-// break Metro's iOS/Android module resolution for `apps/showcase`, which
-// re-exports that same barrel, before #153 adds `tooltip.native.tsx`). This
-// fixture is the one deliberate, documented exception to this file's usual
-// "from @beeui/ui primitives only" convention — `apps/visual-regression` never
-// builds for iOS/Android (`build:web` only), so the deep import is safe here
-// and unblocks real browser evidence for #152 without touching the shared
-// barrel. Switch back to `@beeui/ui` once #155 exports it.
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '../../packages/ui/src/components/tooltip.web';
 import { Uniwind } from 'uniwind';
 import {
   isVisualScenarioId,

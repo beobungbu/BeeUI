@@ -114,7 +114,7 @@ test('list output is stable and sorted', async (t) => {
     'otp-input', 'pagination', 'password-input', 'popover', 'progress', 'radio', 'safe-area',
     'screen', 'search-input', 'section', 'segmented-control', 'select', 'separator', 'sheet', 'skeleton',
     'spinner', 'stack', 'stat', 'state-message', 'stepper', 'switch', 'table', 'tabs', 'text', 'textarea',
-    'theme', 'theme-scope', 'timeline', 'toast', 'use-bee-token', 'visually-hidden',
+    'theme', 'theme-scope', 'timeline', 'toast', 'tooltip', 'use-bee-token', 'visually-hidden',
   ]);
 });
 
@@ -388,6 +388,54 @@ test('popover resolves the core-overlay module rewrite and anchored overlay runt
     'src/lib/beeui/core/utils/anchored-overlay.ts',
     'src/lib/beeui/core/utils/overlay-runtime.ts',
   ]) assert.equal(await exists(path.join(root, relative)), true, relative);
+});
+
+// Regression for #155: `tooltip.web.tsx`/`tooltip.native.tsx`/`tooltip-shared.tsx` all
+// import the local `./use-direction` helper (ADR-004), which — unlike `./text`/
+// `./overlay-runtime` — is not part of `@beeui/core` and previously had no registry
+// item of its own (a latent gap shared with `popover`/`dropdown-menu`/`select`, which
+// import it the same way). This proves the new `use-direction` registry item actually
+// resolves every relative import in the full copied `tooltip` file set, not just that
+// the individual files exist.
+test('tooltip resolves the core-overlay module rewrite, overlay runtime, and use-direction utility', async (t) => {
+  const root = await init(t);
+  const result = await run(root, ['add', 'tooltip']);
+  assert.equal(result.code, 0, result.stderr);
+  const dir = path.join(root, 'src/components/beeui');
+
+  for (const relative of [
+    'src/components/beeui/tooltip-shared.tsx',
+    'src/components/beeui/tooltip.web.tsx',
+    'src/components/beeui/tooltip.native.tsx',
+    'src/components/beeui/tooltip.d.ts',
+    'src/components/beeui/use-direction.ts',
+    'src/components/beeui/overlay-runtime.tsx',
+    'src/lib/beeui/core/index.ts',
+  ]) assert.equal(await exists(path.join(root, relative)), true, relative);
+
+  const useDirection = await readFile(path.join(dir, 'use-direction.ts'), 'utf8');
+  assert.doesNotMatch(useDirection, /@beeui\/core/);
+  assert.match(useDirection, /from '\.\.\/\.\.\/lib\/beeui\/core\/index';/);
+
+  for (const file of ['tooltip-shared.tsx', 'tooltip.web.tsx', 'tooltip.native.tsx', 'use-direction.ts']) {
+    const source = await readFile(path.join(dir, file), 'utf8');
+    // Strip comments first: `tooltip-shared.tsx`'s own doc comments discuss the
+    // `./tooltip` platform-resolution specifier in prose (e.g. "so `import ... from
+    // './tooltip'` resolves to..."), which would otherwise false-positive as an
+    // unresolved import.
+    const withoutComments = source
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/(^|[^:])\/\/.*$/gm, '$1');
+    for (const match of withoutComments.matchAll(/from ['"](\.[^'"]+)['"]/g)) {
+      const base = path.resolve(dir, match[1]);
+      const candidates = [base, `${base}.ts`, `${base}.tsx`, `${base}.js`, `${base}.jsx`];
+      let found = false;
+      for (const candidate of candidates) {
+        if (await exists(candidate)) { found = true; break; }
+      }
+      assert.equal(found, true, `${file} unresolved relative import ${match[1]}`);
+    }
+  }
 });
 
 test('doctor validates config and registry without mutating the project', async (t) => {

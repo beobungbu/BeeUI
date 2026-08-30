@@ -27,6 +27,17 @@ test('preserves consumer context inside a web DropdownMenu', async ({ page }) =>
   await expect(page.getByTestId('overlay-context-menu-value')).toHaveText('context: preserved');
 });
 
+// Tooltip (#154) opens on focus (immediate, no openDelay, ADR-005) — the
+// deterministic way to reveal `TooltipContent` for a real-browser assertion
+// without a timing dependence, exactly like `tooltip-fixture.spec.ts` already
+// does for the standalone fixture app.
+test('preserves consumer context inside a web Tooltip', async ({ page }) => {
+  test.setTimeout(90_000);
+  await openComponentGallery(page);
+  await page.getByTestId('overlay-context-tooltip-trigger').focus();
+  await expect(page.getByTestId('overlay-context-tooltip-value')).toHaveText('context: preserved');
+});
+
 test('preserves consumer context inside a Popover nested in a Dialog', async ({ page }) => {
   test.setTimeout(90_000);
   await openComponentGallery(page);
@@ -35,6 +46,36 @@ test('preserves consumer context inside a Popover nested in a Dialog', async ({ 
   await expect(page.getByTestId('overlay-context-dialog-popover-value')).toHaveText(
     'context: preserved',
   );
+});
+
+test('preserves consumer context inside a Tooltip nested in a Dialog', async ({ page }) => {
+  test.setTimeout(90_000);
+  await openComponentGallery(page);
+  await page.getByTestId('overlay-context-dialog-trigger').click();
+  await page.getByTestId('overlay-context-dialog-tooltip-trigger').focus();
+  await expect(page.getByTestId('overlay-context-dialog-tooltip-value')).toHaveText(
+    'context: preserved',
+  );
+});
+
+// #154's "nested Dialog/overlay scope" requirement: a Tooltip opened from inside
+// a Dialog must dismiss child-first through the same scope-aware Escape routing
+// Popover/DropdownMenu already prove above — Tooltip reuses `useOverlayDismissable`
+// exactly like they do (ADR-005), not a second dismiss mechanism.
+test('Web Escape is scope-aware: closes a dialog-nested Tooltip, Dialog stays open', async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await openComponentGallery(page);
+  await page.getByTestId('overlay-context-dialog-trigger').click();
+  await page.getByTestId('overlay-context-dialog-tooltip-trigger').focus();
+  await expect(page.getByTestId('overlay-context-dialog-tooltip-value')).toHaveText(
+    'context: preserved',
+  );
+
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('overlay-context-dialog-tooltip-value')).toHaveCount(0);
+  await expect(page.getByTestId('overlay-context-dialog-tooltip-trigger')).toBeVisible();
 });
 
 test('preserves context and selects in a DropdownMenu nested in a Dialog', async ({ page }) => {

@@ -360,4 +360,16 @@ export {
   type ToastOptions,
   type ToastVariant,
 } from './components/toast';
+export {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  type TooltipAlign,
+  type TooltipCollisionPadding,
+  type TooltipContentProps,
+  type TooltipDirection,
+  type TooltipPlacement,
+  type TooltipProps,
+  type TooltipTriggerProps,
+} from './components/tooltip';
 export { VisuallyHidden, type VisuallyHiddenProps } from './components/visually-hidden';

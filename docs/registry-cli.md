@@ -21,7 +21,7 @@ The workflow copies supported BeeUI source into a consumer project. The consumer
 
 ## Supported registry entries
 
-Registry coverage has expanded from the initial 6-component slice to the full stable public component-module surface exported by `packages/ui/src/index.ts` (**56 public component modules** as of this writing). Run `pnpm beeui -- list` for the canonical, sorted, up-to-date list — it is generated from `registry/registry.json`.
+Registry coverage has expanded from the initial 6-component slice to the full stable public component-module surface exported by `packages/ui/src/index.ts` (**61 public component modules** as of this writing, including `Tooltip`, #155). Run `pnpm beeui -- list` for the canonical, sorted, up-to-date list — it is generated from `registry/registry.json`.
 
 `pnpm registry:verify` additionally compares those public `./components/*` barrel exports with public registry component entries. Adding or removing a public component module without updating the registry therefore fails CI instead of silently allowing registry coverage to drift.
 
@@ -31,8 +31,9 @@ Internal transitive entries (not directly addable, but resolved automatically):
 - `field-context` — the field context required by `input`/`field`
 - `form-group-context` — the form-group context required by `form-group`/`radio`
 - `use-required-callback-warning` — the dev-mode controlled-usage warning shared by `checkbox`, `radio`, `segmented-control`, `switch`, `tabs`
-- `core-overlay` — a copy of `@beeui/core`'s cn/anchored-overlay/overlay-runtime utilities, used by components whose `@beeui/core` import mixes `cn` with anchored-overlay types/functions (`popover`, `dropdown-menu`, `select`, and the `overlay-runtime` utility itself)
-- `overlay-runtime` — the shared anchored-overlay runtime/transport kernel (`overlay-runtime.tsx` plus its platform transport/dismiss-event files), required by `dialog`, `popover`, `dropdown-menu`, `select`, and `safe-area`
+- `core-overlay` — a copy of `@beeui/core`'s cn/anchored-overlay/overlay-runtime utilities, used by components whose `@beeui/core` import mixes `cn` with anchored-overlay types/functions (`popover`, `dropdown-menu`, `select`, `tooltip`, and the `overlay-runtime`/`use-direction` utilities themselves)
+- `overlay-runtime` — the shared anchored-overlay runtime/transport kernel (`overlay-runtime.tsx` plus its platform transport/dismiss-event files), required by `dialog`, `popover`, `dropdown-menu`, `select`, `tooltip`, and `safe-area`
+- `use-direction` — the single stateless logical-direction resolver (ADR-004, `use-direction.ts`) required by every component that defaults a `direction` prop from ambient RTL/LTR state. `calendar` and `tooltip` declare it as an explicit registry dependency; `popover`/`dropdown-menu`/`select` also import the same module at the source level but do not yet declare it here, which is a known pre-existing gap in those three items' dependency closures (not a `use-direction` defect) tracked for a future fix
 
 `button` remains a representative vertical slice. Adding it resolves and copies `core-cn`, `theme`, `text`, and `button` in deterministic dependency order. The resulting Button source imports the copied consumer-local `cn` helper rather than `@beeui/core`.
 
@@ -158,7 +159,7 @@ import { cn } from '@beeui/core';
 
 `rewrite-beeui-core-cn` rewrites that exact import to the relative path of the copied `core-cn` destination in the consumer project. The transform fails if the expected import appears zero times or more than once, which makes upstream source drift visible instead of applying a broad regex heuristic.
 
-A smaller set of files (`popover`, `dropdown-menu`, `select`, and the internal `overlay-runtime` utility) import multiple symbols from `@beeui/core` in one statement — `cn` alongside anchored-overlay types/functions, or anchored-overlay types/functions alone. `rewrite-beeui-core-module` rewrites only the `'@beeui/core'` module specifier itself (not the imported symbol list) to the relative path of the copied `core-overlay` barrel (`lib/core/index`), which re-exports the same `cn`/anchored-overlay/overlay-runtime surface from mirrored, self-contained copied source. The transform fails the same way if the specifier appears zero times or more than once in the file.
+A smaller set of files (`popover`, `dropdown-menu`, `select`, `tooltip`, and the internal `overlay-runtime`/`use-direction` utilities) import multiple symbols from `@beeui/core` in one statement, or a type-only symbol on its own — `cn` alongside anchored-overlay types/functions, or anchored-overlay types/functions alone. `rewrite-beeui-core-module` rewrites only the `'@beeui/core'` module specifier itself (not the imported symbol list) to the relative path of the copied `core-overlay` barrel (`lib/core/index`), which re-exports the same `cn`/anchored-overlay/overlay-runtime surface from mirrored, self-contained copied source. The transform fails the same way if the specifier appears zero times or more than once in the file.
 
 Other imports are copied unchanged. Relative component imports such as `./text` and `./field-context` remain valid because those dependencies are explicitly represented in the registry and copied into the same configured components directory.
 

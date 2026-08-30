@@ -297,16 +297,6 @@
           "transforms": [
             "rewrite-beeui-core-module"
           ]
-        },
-        {
-          "source": "packages/ui/src/components/use-direction.ts",
-          "target": {
-            "root": "components",
-            "path": "use-direction.ts"
-          },
-          "transforms": [
-            "rewrite-beeui-core-module"
-          ]
         }
       ],
       "registryDependencies": [
@@ -314,7 +304,8 @@
         "icon-button",
         "stack",
         "text",
-        "theme"
+        "theme",
+        "use-direction"
       ],
       "dependencies": {},
       "peerDependencies": {
@@ -515,28 +506,51 @@
       "files": [
         {
           "source": "packages/ui/src/components/date-picker.d.ts",
-          "target": { "root": "components", "path": "date-picker.d.ts" },
+          "target": {
+            "root": "components",
+            "path": "date-picker.d.ts"
+          },
           "transforms": []
         },
         {
           "source": "packages/ui/src/components/date-picker.native.tsx",
-          "target": { "root": "components", "path": "date-picker.native.tsx" },
-          "transforms": ["rewrite-beeui-core-module"]
+          "target": {
+            "root": "components",
+            "path": "date-picker.native.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-module"
+          ]
         },
         {
           "source": "packages/ui/src/components/date-picker.web.tsx",
-          "target": { "root": "components", "path": "date-picker.web.tsx" },
-          "transforms": ["rewrite-beeui-core-module"]
+          "target": {
+            "root": "components",
+            "path": "date-picker.web.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-module"
+          ]
         },
         {
           "source": "packages/ui/src/components/date-picker-shared.tsx",
-          "target": { "root": "components", "path": "date-picker-shared.tsx" },
-          "transforms": ["rewrite-beeui-core-module"]
+          "target": {
+            "root": "components",
+            "path": "date-picker-shared.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-module"
+          ]
         },
         {
           "source": "packages/ui/src/components/date-picker-locale.ts",
-          "target": { "root": "components", "path": "date-picker-locale.ts" },
-          "transforms": ["rewrite-beeui-core-module"]
+          "target": {
+            "root": "components",
+            "path": "date-picker-locale.ts"
+          },
+          "transforms": [
+            "rewrite-beeui-core-module"
+          ]
         }
       ],
       "registryDependencies": [
@@ -1930,6 +1944,64 @@
       }
     },
     {
+      "name": "tooltip",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/tooltip-shared.tsx",
+          "target": {
+            "root": "components",
+            "path": "tooltip-shared.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-module"
+          ]
+        },
+        {
+          "source": "packages/ui/src/components/tooltip.web.tsx",
+          "target": {
+            "root": "components",
+            "path": "tooltip.web.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-module"
+          ]
+        },
+        {
+          "source": "packages/ui/src/components/tooltip.native.tsx",
+          "target": {
+            "root": "components",
+            "path": "tooltip.native.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-module"
+          ]
+        },
+        {
+          "source": "packages/ui/src/components/tooltip.d.ts",
+          "target": {
+            "root": "components",
+            "path": "tooltip.d.ts"
+          },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": [
+        "button",
+        "core-overlay",
+        "overlay-runtime",
+        "text",
+        "theme",
+        "use-direction"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19 <20",
+        "react-native": ">=0.86.0"
+      }
+    },
+    {
       "name": "use-bee-token",
       "type": "component",
       "public": true,
@@ -1950,6 +2022,30 @@
       "peerDependencies": {
         "react": ">=19 <20",
         "uniwind": ">=1.10.1 <2"
+      }
+    },
+    {
+      "name": "use-direction",
+      "type": "utility",
+      "public": false,
+      "files": [
+        {
+          "source": "packages/ui/src/components/use-direction.ts",
+          "target": {
+            "root": "components",
+            "path": "use-direction.ts"
+          },
+          "transforms": [
+            "rewrite-beeui-core-module"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-overlay"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react-native": ">=0.86.0"
       }
     },
     {
