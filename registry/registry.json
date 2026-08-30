@@ -132,6 +132,31 @@
       "peerDependencies": { "react": ">=19.0.0", "react-native": ">=0.85.0" }
     },
     {
+      "name": "calendar",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/calendar.tsx",
+          "target": { "root": "components", "path": "calendar.tsx" },
+          "transforms": ["rewrite-beeui-core-module"]
+        },
+        {
+          "source": "packages/ui/src/components/calendar-locale.ts",
+          "target": { "root": "components", "path": "calendar-locale.ts" },
+          "transforms": ["rewrite-beeui-core-module"]
+        },
+        {
+          "source": "packages/ui/src/components/use-direction.ts",
+          "target": { "root": "components", "path": "use-direction.ts" },
+          "transforms": ["rewrite-beeui-core-module"]
+        }
+      ],
+      "registryDependencies": ["core-overlay", "icon-button", "stack", "text", "theme"],
+      "dependencies": {},
+      "peerDependencies": { "react": ">=19.0.0", "react-native": ">=0.85.0" }
+    },
+    {
       "name": "card",
       "type": "component",
       "public": true,
@@ -209,6 +234,11 @@
         {
           "source": "packages/core/src/utils/anchored-overlay.ts",
           "target": { "root": "lib", "path": "core/utils/anchored-overlay.ts" },
+          "transforms": []
+        },
+        {
+          "source": "packages/core/src/utils/calendar-date.ts",
+          "target": { "root": "lib", "path": "core/utils/calendar-date.ts" },
           "transforms": []
         },
         {

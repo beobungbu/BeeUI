@@ -51,6 +51,11 @@ export {
   type ButtonLabelProps,
   type ButtonProps,
 } from './components/button';
+// `calendar-locale.ts` is an internal stateless resolver co-located with `Calendar`
+// (ADR-008), mirroring `use-direction.ts`'s shape — like that module, it is not part
+// of the public barrel; `Calendar` and future `DatePicker`/`DateTimePicker` (#173/#174)
+// import it directly by relative path.
+export { Calendar, type CalendarProps, type CalendarVisibleMonth } from './components/calendar';
 export { Card, cardVariants, type CardProps } from './components/card';
 export {
   Checkbox,
