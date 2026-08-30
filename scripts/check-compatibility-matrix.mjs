@@ -23,6 +23,15 @@ const CI_WORKFLOW_PATHS = [
   path.join(ROOT_DIR, '.github', 'workflows', 'web-consumer.yml'),
   path.join(ROOT_DIR, '.github', 'workflows', 'compat-rn-0-87.yml'),
 ];
+// Published apps/docs pages (#138) that surface the same pinned/tested versions declared
+// in docs/compatibility-matrix.md's machine-readable snapshot. Every value in that
+// snapshot must appear somewhere in these pages, or the published contract has silently
+// drifted from the authority doc.
+const PUBLISHED_COMPAT_DOCS_PATHS = [
+  path.join(ROOT_DIR, 'apps', 'docs', 'src', 'content', 'docs', 'compatibility', 'index.md'),
+  path.join(ROOT_DIR, 'apps', 'docs', 'src', 'content', 'docs', 'compatibility', 'native.md'),
+  path.join(ROOT_DIR, 'apps', 'docs', 'src', 'content', 'docs', 'compatibility', 'web.md'),
+];
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -130,13 +139,43 @@ export function collectCompatibilityMatrixViolations({
   return diffSnapshots(declared, actual);
 }
 
+function flattenSnapshot(snapshot, prefix = '') {
+  const entries = [];
+  for (const [key, value] of Object.entries(snapshot)) {
+    const label = prefix ? `${prefix}.${key}` : key;
+    if (value && typeof value === 'object') {
+      entries.push(...flattenSnapshot(value, label));
+    } else {
+      entries.push([label, value]);
+    }
+  }
+  return entries;
+}
+
+// Guards the published apps/docs compatibility pages (#138) against silently drifting
+// from docs/compatibility-matrix.md's machine-readable snapshot: every pinned/tested
+// version the snapshot declares must literally appear somewhere in the published pages.
+export function collectPublishedDocsViolations({ markdown, publishedDocsContent }) {
+  const snapshot = extractSnapshotFromDoc(markdown);
+  const violations = [];
+  for (const [label, value] of flattenSnapshot(snapshot)) {
+    if (!publishedDocsContent.includes(String(value))) {
+      violations.push(
+        `${label}: published apps/docs compatibility pages do not mention pinned value "${value}"`,
+      );
+    }
+  }
+  return violations;
+}
+
 function runCli() {
   const workflowContentsByFile = Object.fromEntries(
     CI_WORKFLOW_PATHS.map((filePath) => [path.relative(ROOT_DIR, filePath), fs.readFileSync(filePath, 'utf8')]),
   );
+  const matrixMarkdown = fs.readFileSync(MATRIX_DOC_PATH, 'utf8');
 
   const violations = collectCompatibilityMatrixViolations({
-    markdown: fs.readFileSync(MATRIX_DOC_PATH, 'utf8'),
+    markdown: matrixMarkdown,
     rootPackageJson: readJson(ROOT_PACKAGE_JSON_PATH),
     nvmrc: fs.readFileSync(NVMRC_PATH, 'utf8'),
     uiPackageJson: readJson(UI_PACKAGE_JSON_PATH),
@@ -151,7 +190,23 @@ function runCli() {
     return;
   }
 
-  console.log('Compatibility matrix check passed (docs/compatibility-matrix.md matches pinned versions).');
+  const publishedDocsContent = PUBLISHED_COMPAT_DOCS_PATHS.map((filePath) => fs.readFileSync(filePath, 'utf8')).join(
+    '\n',
+  );
+  const docsViolations = collectPublishedDocsViolations({ markdown: matrixMarkdown, publishedDocsContent });
+
+  if (docsViolations.length > 0) {
+    console.error(
+      'apps/docs/src/content/docs/compatibility/*.md has drifted from docs/compatibility-matrix.md:',
+    );
+    for (const violation of docsViolations) console.error(`- ${violation}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  console.log(
+    'Compatibility matrix check passed (docs/compatibility-matrix.md matches pinned versions and published apps/docs pages).',
+  );
 }
 
 const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
