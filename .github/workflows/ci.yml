@@ -241,7 +241,7 @@ jobs:
         github.event_name == 'schedule' ||
         github.event.pull_request.head.repo.full_name == github.repository
       )
-    runs-on: macos-latest
+    runs-on: ${{ contains(github.event.pull_request.labels.*.name, 'ci:hosted-mac') && 'macos-latest' || fromJSON('["self-hosted", "beeui-macos"]') }}
     timeout-minutes: 90
     steps:
       - name: Checkout
@@ -327,6 +327,21 @@ jobs:
           name: ios-prebuild-${{ github.run_id }}
           path: apps/showcase/ios
 
+      - name: Cache CocoaPods (github-hosted only)
+        # Self-hosted keeps its own persistent on-disk pod snapshot cache
+        # (BEEUI_IOS_CACHE_ROOT); GitHub-hosted runners are ephemeral, so cache
+        # the CocoaPods spec/download store via the Actions cache service to cut
+        # the cold full-`pod install` cost (macOS minutes are billed x10).
+        if: runner.environment == 'github-hosted'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cocoapods
+            ~/Library/Caches/CocoaPods
+          key: cocoapods-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            cocoapods-${{ runner.os }}-
+
       - name: Install iOS pods locally
         if: needs.verify.outputs.showcase-native-required == 'true'
         working-directory: apps/showcase/ios
@@ -381,7 +396,7 @@ jobs:
           if [ "$restore_ok" -eq 1 ] && cmp -s Pods/Manifest.lock Podfile.lock; then
             echo "Pods manifest matches restored lockfile; skipping pod install."
           else
-            /opt/homebrew/bin/pod install
+            pod install
             ran_pod_install=1
           fi
 
