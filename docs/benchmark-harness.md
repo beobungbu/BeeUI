@@ -137,9 +137,52 @@ so shared result sets are stable across runs.
   off-device. It documents the workload an on-device runner would drive and
   proves the native path is structured and honest without fabricating numbers.
 
+## Component lane (R5.2–R5.4, #180–#182)
+
+Real render/commit, overlay open-latency and theme-runtime scenarios need an
+actual React/React Native component tree — something this dependency-free ESM
+harness cannot mount itself (no bundler, no DOM/RN runtime). `apps/showcase`'s
+existing Jest + `@testing-library/react-native` setup already mounts real
+BeeUI components with the same mocks its own component tests use, so it plays
+the role a native `deviceRunner` plays for `runner.mjs`'s native lane: it
+supplies real samples this host cannot otherwise produce, and never fabricates
+a number it did not receive.
+
+The handoff is a raw-samples JSON contract, not a code import, because the
+harness is ESM (`.mjs`) and this app's Jest config runs `.ts(x)` through
+Babel/CommonJS with no ESM interop enabled:
+
+1. `pnpm --filter @beeui/showcase bench` runs
+   `apps/showcase/__tests__/perf-render-commit.test.tsx`,
+   `perf-overlay-latency.test.tsx` and `perf-theme-runtime.test.tsx`. Each
+   mounts real components, times them with `apps/showcase/perf/sample-workload.ts`
+   (a documented, behavior-locked port of this file's own `runSamples`
+   warm-up/measure algorithm — see that file's header for why it is a port,
+   not an import), and writes raw per-scenario durations to
+   `.artifacts/benchmark/raw/*.json`.
+2. `node scripts/benchmark/collect-component-results.mjs` (or `pnpm
+   bench:components`, which chains both steps) reads those raw files and turns
+   them into the SAME schema-conformant result set `cli.mjs` produces, calling
+   this harness's own `summarizeSamples`/`createResultSet`/`toJson`/`toSummary`
+   unmodified — no duplicated statistics or schema logic.
+
+Component-lane results are recorded with `platform: 'web'`: they run through
+`react-test-renderer`, not a browser or an on-device runner, so per
+`docs/beeui-1.0-evidence-classes.md` they are *deterministic-contract*
+evidence (the same class as this repo's own component tests), not
+browser-interaction or native-runtime evidence. Where the real component
+contract only settles asynchronously (anchored-overlay positioning) or where a
+real device/browser distinction genuinely matters, the scenario file's own
+comments say so.
+
 ## CI
 
 The harness is pure Node with no external dependencies, so `pnpm bench:web` and
 `pnpm bench:test` are callable in any Node CI job. `pnpm bench:test` also runs as
 part of `pnpm test`. The native lane requires an on-device runner to produce
-`measured` results; without one it deterministically reports `deferred`.
+`measured` results; without one it deterministically reports `deferred`. The
+component lane's Jest suites (`perf-*.test.tsx`) also run as part of
+`pnpm --filter @beeui/showcase test` (and therefore `pnpm test`), since they are
+deterministic pass/fail checks with no invented millisecond gate — only
+`pnpm bench:components`'s separate collection step, not the test run itself,
+produces the timing artifact.
