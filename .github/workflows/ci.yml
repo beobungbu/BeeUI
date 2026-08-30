@@ -52,14 +52,14 @@ jobs:
       bare-consumer-required: ${{ steps.native-changes.outputs.bare-consumer }}
     steps:
       - name: Checkout
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
         with:
           # The PR classifier diffs the actual base/head commits rather than
           # guessing from the synthetic pull-request merge ref.
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           # pnpm store is managed explicitly; setup-node v5 auto-cache would
@@ -154,7 +154,7 @@ jobs:
         run: pnpm release:verify
 
       - name: Upload release verification report
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-verification-${{ github.event.pull_request.head.sha || github.sha }}
           path: .artifacts/release-verification.json
@@ -178,7 +178,7 @@ jobs:
 
       - name: Upload generated iOS project source
         if: steps.native-changes.outputs.showcase-native == 'true'
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           # run_id only (no run_attempt) so "Re-run failed jobs" on ios-native
           # still resolves the artifact uploaded by an earlier verify attempt.
@@ -199,10 +199,10 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Checkout
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
 
       - name: Setup Node
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           package-manager-cache: false
@@ -242,7 +242,7 @@ jobs:
 
       - name: Setup Java
         if: needs.verify.outputs.bare-native-required == 'true'
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.0.0
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v5.0.0
         with:
           distribution: temurin
           java-version: '21'
@@ -297,7 +297,7 @@ jobs:
     timeout-minutes: 90
     steps:
       - name: Checkout
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
 
       - name: Add Homebrew to PATH
         run: echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
@@ -351,7 +351,7 @@ jobs:
           /usr/bin/xcrun swift --version
 
       - name: Setup Node
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           package-manager-cache: false
@@ -400,7 +400,7 @@ jobs:
 
       - name: Download generated iOS project source
         if: needs.verify.outputs.showcase-native-required == 'true'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: ios-prebuild-${{ github.run_id }}
           path: apps/showcase/ios
@@ -494,7 +494,7 @@ jobs:
 
       - name: Upload xcodebuild log
         if: always() && needs.verify.outputs.showcase-native-required == 'true'
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ios-xcodebuild-log-${{ github.run_id }}
           path: ${{ runner.temp }}/beeui-xcodebuild.log
@@ -518,7 +518,7 @@ jobs:
 
       - name: Upload bare iOS xcodebuild log
         if: always() && needs.verify.outputs.bare-native-required == 'true'
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bare-ios-xcodebuild-log-${{ github.run_id }}
           path: ${{ runner.temp }}/beeui-bare-ios-xcodebuild.log
