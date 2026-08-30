@@ -28,12 +28,23 @@ NPM_INSTALL_FLAGS="${BEEUI_BARE_NPM_INSTALL_FLAGS:-}"
 # DatePicker's native file (date-picker.native.tsx) hard-imports
 # @react-native-community/datetimepicker (its optional native peer), so the bare
 # consumer must install it too or the Metro bundle cannot resolve it.
+# Sheet's native file (sheet.native.tsx) hard-imports @gorhom/bottom-sheet (its
+# optional native peer), which itself peers on react-native-reanimated and
+# react-native-gesture-handler; Reanimated v4 in turn peers on
+# react-native-worklets (its own split-out worklets runtime, not an
+# independent BeeUI dependency decision — see packages/ui/package.json and
+# docs/decisions/006-sheet-gesture-engine.md). All four must be installed or
+# the Metro bundle cannot resolve them.
 PINNED_DEPS=(
   uniwind@1.10.1
   tailwindcss@4.3.3
   react-native-safe-area-context@5.7.0
   react-native-teleport@1.1.13
   @react-native-community/datetimepicker@9.1.0
+  @gorhom/bottom-sheet@5.2.14
+  react-native-reanimated@4.5.1
+  react-native-gesture-handler@2.32.0
+  react-native-worklets@0.10.1
   react-dom@19.2.3
 )
 

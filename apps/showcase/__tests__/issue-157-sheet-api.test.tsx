@@ -12,7 +12,7 @@ import {
   SheetTitle,
   SheetTrigger,
   type SheetSnapPoint,
-} from '../../../packages/ui/src/components/sheet';
+} from '../../../packages/ui/src/components/sheet.tsx';
 
 // BeeUI issue #157 (R4B.2): deterministic contract tests for the Sheet public
 // API defined per accepted ADR-006 (`docs/decisions/006-sheet-gesture-engine.md`).
