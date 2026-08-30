@@ -392,14 +392,15 @@ function warnMeasurementUnresponsive(diagnostic: MeasurementDiagnostic) {
     const { target, generation, action, hostRevision } = diagnostic;
     const scope =
       target === 'anchor' ? `, host-revision=${hostRevision ?? 'none'}` : '';
-    // Web `measureInWindow` (react-native-web's `getBoundingClientRect`) resolves
-    // effectively synchronously, so a Web timeout is a stronger signal of a genuine
-    // defect (an unmeasurable/foreign ref) than of ordinary async latency; native
-    // callbacks are legitimately async and can be dropped by a detached/recycled
-    // view or a bridge failure (ADR-003, Web/native differences).
+    // react-native-web delivers `measureInWindow` through a macrotask. The production
+    // watchdog therefore allows settled event-loop turns before declaring a miss.
+    // A Web timeout is unusual after that allowance, but it can still mean an
+    // unmeasurable/foreign ref OR an unexpectedly delayed/dropped callback; do not
+    // misclassify the transport as synchronous. Native callbacks are also async and
+    // can be dropped by a detached/recycled view or bridge failure (ADR-003).
     const cause =
       Platform.OS === 'web'
-        ? 'On Web, measurement is effectively synchronous, so this most likely indicates a genuine defect (an unmeasurable or foreign ref) rather than ordinary async latency'
+        ? 'On Web, measurement normally completes within the settled event-loop budget; this may indicate an unmeasurable or foreign ref, or an unexpectedly delayed/dropped measurement callback'
         : 'On native this usually means a native measureInWindow callback was dropped (detached/recycled view or bridge failure)';
     console.warn(
       `[BeeUI] Overlay ${target} measurement did not resolve within its completion budget ` +
@@ -775,7 +776,7 @@ export function ModalOverlayHost({
       style={StyleSheet.absoluteFill}
     >
       <OverlayHostScopeProvider hostName={hostName}>{children}</OverlayHostScopeProvider>
-    {HostOutlet ? (
+      {HostOutlet ? (
         <>
           <View
             ref={hostRef}
