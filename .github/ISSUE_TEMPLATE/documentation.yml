@@ -1,0 +1,37 @@
+name: Documentation issue
+description: A doc is missing, unclear, incorrect, or out of date with the current code.
+title: "[Docs]: "
+labels:
+  - documentation
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Affected doc(s)
+      description: File path(s) under docs/, README.md, CONTRIBUTING.md, or an ADR.
+      placeholder: docs/registry-cli.md
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's wrong or missing?
+      description: >
+        Quote the outdated/unclear text if applicable, and say what current behavior it
+        should reflect instead (link the code/config that proves the discrepancy).
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested fix
+      description: Proposed replacement text or structure, if you have one.
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I checked whether this doc is auto-generated (e.g. from registry/registry.json or token sources) before proposing a manual edit.
+          required: true

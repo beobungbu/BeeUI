@@ -1,0 +1,62 @@
+name: Accessibility / runtime regression
+description: An accessibility contract or native/Web runtime behavior regressed.
+title: "[A11y/Runtime]: "
+labels:
+  - accessibility
+  - runtime-regression
+body:
+  - type: textarea
+    id: contract
+    attributes:
+      label: Which contract regressed?
+      description: >
+        Name the affected behavior precisely: role/name/state, keyboard/focus order,
+        VoiceOver/TalkBack announcement, RTL/logical direction, Dynamic Type/large text,
+        high contrast, reduced motion, or a runtime behavior (gesture, Back button,
+        measurement timing, sheet presentation, etc.).
+    validations:
+      required: true
+  - type: textarea
+    id: expected-vs-actual
+    attributes:
+      label: Expected vs. actual
+      description: What should happen, and what actually happens.
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      options:
+        - Web
+        - iOS Simulator
+        - iOS physical device
+        - Android Emulator
+        - Android physical device
+    validations:
+      required: true
+  - type: textarea
+    id: at-evidence
+    attributes:
+      label: Assistive-technology / runtime evidence
+      description: >
+        Named tool and exact build/runtime (e.g. "VoiceOver, iOS 18 Simulator, Showcase
+        build <SHA>" or "TalkBack, Pixel 8 Emulator API 35"). State the evidence class
+        precisely per docs/beeui-1.0-evidence-classes.md — do not describe a simulator run
+        as physical-device evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: last-known-good
+    attributes:
+      label: Last known good (if known)
+      description: A commit SHA, tag, or approximate date when this last worked correctly.
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: This is not a security vulnerability (those go to SECURITY.md).
+          required: true

@@ -1,0 +1,70 @@
+name: Reusable component / gap proposal
+description: Propose a new public BeeUI primitive, or a gap in an existing one.
+title: "[Component]: "
+labels:
+  - component-proposal
+body:
+  - type: markdown
+    attributes:
+      value: |
+        BeeUI follows the **Rule of Two** (docs/components.md): compose existing
+        primitives first, keep one-off composition local to the app, and only promote a
+        new public primitive after repeated or behaviorally complex evidence justifies a
+        stable contract. This template asks for that justification up front.
+  - type: textarea
+    id: gap
+    attributes:
+      label: Gap / need
+      description: What can't be built (or built well) with existing BeeUI primitives?
+    validations:
+      required: true
+  - type: textarea
+    id: rule-of-two
+    attributes:
+      label: Rule-of-Two evidence
+      description: >
+        Where has this pattern already appeared at least twice (two real usages, two
+        products, or one usage with clearly recurring behavioral complexity)? Link
+        examples/screens/PRs if possible.
+    validations:
+      required: true
+  - type: textarea
+    id: contract
+    attributes:
+      label: Proposed contract sketch
+      description: >
+        Rough public API shape (props/composition), controlled vs. uncontrolled state,
+        and which existing kernels it should reuse (theme, overlay/portal runtime,
+        direction resolver, density tokens) rather than duplicate.
+    validations:
+      required: true
+  - type: dropdown
+    id: platforms
+    attributes:
+      label: Platform scope
+      multiple: true
+      options:
+        - Web
+        - iOS
+        - Android
+    validations:
+      required: true
+  - type: textarea
+    id: related
+    attributes:
+      label: Related ADRs / issues
+      description: >
+        Link any existing ADR under docs/decisions/ or roadmap item this overlaps with
+        (e.g. Table, Calendar, Sheet, Tooltip already have accepted ADRs — check before
+        proposing a competing shape).
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I checked docs/components.md and docs/decisions/ for an existing/competing contract.
+          required: true
+        - label: This does not pull router/backend/auth/payment/form-library ownership into BeeUI.
+          required: true
