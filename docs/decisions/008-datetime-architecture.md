@@ -650,12 +650,31 @@ ways to express the same constraint).
   round-trip does not shift day/time; VoiceOver/TalkBack traversal of `Calendar`'s
   custom grid (standalone and Web picker paths) and of the native system picker path.
   per #176.
+  - **#177 resolution (documented deferral)**: the headless iOS Simulator has a
+    reproducible Fabric blank-render defect (#349, filed against the unrelated #126
+    overlay-runtime smoke) that is not specific to Calendar/date and is not owed to
+    this ADR's scope to fix. Real-device cloud runtime testing for BeeUI 1.0 is
+    separately deferred pending a cost/tooling decision. #177 therefore substitutes the
+    strongest reachable evidence for the interactive picker path per
+    `docs/beeui-1.0-evidence-classes.md`'s "always state the strongest evidence class
+    actually obtained" rule: **deterministic contract evidence** —
+    `issue-173-date-picker-native.test.tsx` / `issue-174-date-time-picker-native.test.tsx`
+    (RNTL against a mocked `@react-native-community/datetimepicker` boundary) prove
+    BeeUI's own selection/dismiss/Field-integration/CalendarDate-adapter wiring on both
+    iOS's inline-`Dialog` and Android's imperative-open presentations — not the OS
+    picker's own on-screen rendering or gesture handling, which remains genuinely
+    untested until #349 and the real-device decision resolve. This is a scope
+    boundary, not a silent gap: revisit this ADR (see "Revisit trigger" below) once
+    either is resolved.
 - **Locale/timezone matrix evidence**: the #175 fixture set (Vietnamese, English,
   Arabic/RTL, one CJK locale; Sunday/Monday week starts; 12/24h; DST-boundary time
   values; date-only day-shift regression across timezones).
 - **Visual evidence**: representative light/dark/high-contrast, LTR/RTL, and large-text
   screenshots for standalone `Calendar`, form `DatePicker`, and `DateTimePicker`, per
-  #177.
+  #177 — real-Chromium Playwright screenshots (`date-production.spec.ts`) across the
+  canonical theme x viewport matrix, plus RTL/large-text/locale/narrow-phone/tablet
+  states. Chromium/Web evidence does not prove native pixel parity (see
+  `docs/visual-regression.md`'s "known limitations").
 - This ADR itself ships no code; the verification plan above is the acceptance bar for
   #172–#178, not for this document. This PR's own self-test is ADR/docs-only.
 
@@ -682,3 +701,8 @@ Revisit this ADR if any of the following become true with concrete evidence:
   `toLocalDate`/`fromLocalDate` adapter) — that would require re-evaluating the
   timezone-ownership boundary itself, which stays an application concern absent new
   evidence that BeeUI's boundary is actually insufficient in practice.
+- #349's headless-iOS-Simulator blank-render defect is fixed, or BeeUI 1.0 adopts a
+  real-device/cloud runtime harness — either resolves the "#177 resolution" deferral
+  above, and the native picker path should get real Simulator/device Runtime proof
+  (system-picker rendering and gesture handling) rather than relying solely on the
+  mocked-boundary deterministic contract tests.

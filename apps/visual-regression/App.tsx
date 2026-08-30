@@ -15,8 +15,13 @@ import {
   Breadcrumb,
   BreadcrumbItem,
   Button,
+  Calendar,
   Card,
   Checkbox,
+  type CalendarDate,
+  DatePicker,
+  DateTimePicker,
+  type DateTimePickerValue,
   Dialog,
   DialogClose,
   DialogContent,
@@ -124,7 +129,8 @@ type FixtureId =
   | 'scoped-preview'
   | 'high-contrast-focus'
   | 'tooltip'
-  | 'table';
+  | 'table'
+  | 'date';
 
 const fixtureIds: readonly FixtureId[] = [
   'density',
@@ -133,6 +139,7 @@ const fixtureIds: readonly FixtureId[] = [
   'high-contrast-focus',
   'tooltip',
   'table',
+  'date',
 ];
 
 function isFixtureId(value: string | null): value is FixtureId {
@@ -168,6 +175,30 @@ function readTableStateQuery(): TableFixtureState {
   return (tableFixtureStates as readonly string[]).includes(requested ?? '')
     ? (requested as TableFixtureState)
     : 'default';
+}
+
+// #177 — Calendar/date visual acceptance. `locale` reuses each date
+// component's own explicit-prop-only locale resolver (ADR-008) — no ambient
+// device/browser locale detection is added here or anywhere else. `vi-VN` is
+// the one non-default locale rendered as a real screenshot: it exercises a
+// distinct month/weekday `Intl` label (`docs/decisions/008-datetime-
+// architecture.md`'s locale-formatting decision) using a script the
+// canonical Ubuntu Chromium runner already renders reliably (the `table`
+// fixture's Vietnamese customer names, above, are the existing proof of
+// that). Arabic/RTL-numeral locale correctness is proven as deterministic
+// contract evidence by the already-merged `issue-172-calendar-locale.test.ts`
+// / `issue-175-date-i18n-*` suites rather than duplicated here as a pixel
+// baseline — headless Chromium's Arabic glyph rendering on the CI image is
+// not a determinism guarantee this fixture wants to depend on.
+type DateLocale = 'en-US' | 'vi-VN';
+const dateLocales: readonly DateLocale[] = ['en-US', 'vi-VN'];
+
+function readDateLocaleQuery(): DateLocale {
+  if (typeof window === 'undefined') return 'en-US';
+  const requested = new URLSearchParams(window.location.search).get('locale');
+  return (dateLocales as readonly string[]).includes(requested ?? '')
+    ? (requested as DateLocale)
+    : 'en-US';
 }
 
 // #169 — a generic, reusable ambient-direction query flag (`useDirection()`
@@ -972,6 +1003,109 @@ function TableProductionFixture({
   );
 }
 
+// #177 — Calendar/date visual and native runtime acceptance. A realistic
+// production shape for all three date components on one page: a standalone
+// bounded `Calendar` (min/max range + a weekend `isDateDisabled` predicate —
+// proves the "invalid/disabled/min-max" fixture bullet structurally rather
+// than through a separate state flag), and form `DatePicker`/`DateTimePicker`
+// instances in their default/invalid/disabled `Field` states. The "default"
+// picker instance of each also carries the same bounded/disabled-day
+// predicate so opening its Popover-hosted Calendar (`date-production.spec.ts`'s
+// "open" tests) exercises the identical bounded contract, not a second one.
+const DATE_PRODUCTION_VALUE: CalendarDate = { day: 15, month: 1, year: 2026 };
+const DATE_PRODUCTION_MIN: CalendarDate = { day: 5, month: 1, year: 2026 };
+const DATE_PRODUCTION_MAX: CalendarDate = { day: 25, month: 1, year: 2026 };
+const DATE_PRODUCTION_TIME_VALUE: DateTimePickerValue = {
+  date: DATE_PRODUCTION_VALUE,
+  time: { hour: 13, minute: 30 },
+};
+
+function isDateProductionWeekend(date: CalendarDate): boolean {
+  const jsDate = new Date(Date.UTC(date.year, date.month - 1, date.day));
+  const day = jsDate.getUTCDay();
+  return day === 0 || day === 6;
+}
+
+function DateProductionFixture({ locale }: { locale: DateLocale }) {
+  return (
+    <Box className="min-h-screen gap-6 bg-surface p-6" testID="date-production-fixture">
+      <Box className="gap-1">
+        <Text variant="title">Calendar / date: production patterns</Text>
+        <Text tone="muted" variant="caption">
+          {`BeeUI issue #177 — locale: ${locale}`}
+        </Text>
+      </Box>
+
+      <Card className="gap-3" padding="lg" testID="date-production-calendar" variant="raised">
+        <Text variant="heading">Standalone Calendar (bounded, weekends disabled)</Text>
+        <Calendar
+          defaultVisibleMonth={{ month: 1, year: 2026 }}
+          isDateDisabled={isDateProductionWeekend}
+          locale={locale}
+          max={DATE_PRODUCTION_MAX}
+          min={DATE_PRODUCTION_MIN}
+          testID="date-production-calendar-instance"
+          value={DATE_PRODUCTION_VALUE}
+        />
+      </Card>
+
+      <Card className="gap-3" padding="lg" testID="date-production-date-picker" variant="outlined">
+        <Text variant="heading">DatePicker</Text>
+        <Field label="Default">
+          <DatePicker
+            isDateDisabled={isDateProductionWeekend}
+            locale={locale}
+            max={DATE_PRODUCTION_MAX}
+            min={DATE_PRODUCTION_MIN}
+            testID="date-production-date-picker-default"
+            value={DATE_PRODUCTION_VALUE}
+          />
+        </Field>
+        <Field error="This field is required" invalid label="Invalid">
+          <DatePicker locale={locale} testID="date-production-date-picker-invalid" value={null} />
+        </Field>
+        <Field label="Disabled">
+          <DatePicker
+            disabled
+            locale={locale}
+            testID="date-production-date-picker-disabled"
+            value={DATE_PRODUCTION_VALUE}
+          />
+        </Field>
+      </Card>
+
+      <Card className="gap-3" padding="lg" testID="date-production-date-time-picker" variant="raised">
+        <Text variant="heading">DateTimePicker</Text>
+        <Field label="Default">
+          <DateTimePicker
+            isDateDisabled={isDateProductionWeekend}
+            locale={locale}
+            max={DATE_PRODUCTION_MAX}
+            min={DATE_PRODUCTION_MIN}
+            testID="date-production-date-time-picker-default"
+            value={DATE_PRODUCTION_TIME_VALUE}
+          />
+        </Field>
+        <Field error="This field is required" invalid label="Invalid">
+          <DateTimePicker
+            locale={locale}
+            testID="date-production-date-time-picker-invalid"
+            value={null}
+          />
+        </Field>
+        <Field label="Disabled">
+          <DateTimePicker
+            disabled
+            locale={locale}
+            testID="date-production-date-time-picker-disabled"
+            value={DATE_PRODUCTION_TIME_VALUE}
+          />
+        </Field>
+      </Card>
+    </Box>
+  );
+}
+
 /**
  * Derives a `BeeThemeScope` `appearance` ('light' | 'dark') from the outer
  * harness `theme`. Only the appearance half of the outer theme matters here —
@@ -1266,6 +1400,7 @@ export default function App() {
   const [fixture] = React.useState(readFixtureQuery);
   const [densityMode] = React.useState(readDensityModeQuery);
   const [tableState] = React.useState(readTableStateQuery);
+  const [dateLocale] = React.useState(readDateLocaleQuery);
   const [direction] = React.useState(readDirectionQuery);
   useAmbientDirection(direction);
   useVisualReadiness(scenario, theme);
@@ -1288,6 +1423,8 @@ export default function App() {
         <TooltipFixture />
       ) : fixture === 'table' ? (
         <TableProductionFixture density={densityMode} state={tableState} theme={theme} />
+      ) : fixture === 'date' ? (
+        <DateProductionFixture locale={dateLocale} />
       ) : (
         <Scenario scenario={scenario} />
       )}
