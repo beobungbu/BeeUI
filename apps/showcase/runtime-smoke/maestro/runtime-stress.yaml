@@ -1,0 +1,175 @@
+appId: com.beeui.showcase
+---
+# BeeUI 1.0 #126 — real native overlay runtime stress.
+# The movement contract separates outside-press dismissal from the subsequent
+# scroll gesture. Same-gesture responder retargeting is not a BeeUI contract.
+
+- launchApp:
+    clearState: true
+- retry:
+    maxRetries: 4
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: "showcase-open-runtime-stress"
+          direction: DOWN
+          timeout: 40000
+      - tapOn:
+          id: "showcase-open-runtime-stress"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-stress-ready"
+          timeout: 15000
+
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-stress-select-trigger"
+      - assertVisible:
+          id: "runtime-stress-select-content"
+- tapOn:
+    id: "runtime-stress-select-item-beta"
+- assertNotVisible:
+    id: "runtime-stress-select-content"
+- assertVisible:
+    text: "select: beta"
+
+# Canonical outside-press dismissal.
+- tapOn:
+    id: "runtime-stress-popover-trigger"
+- assertVisible:
+    id: "runtime-stress-popover-content"
+- tapOn:
+    text: "Root Select"
+- assertNotVisible:
+    id: "runtime-stress-popover-content"
+
+# Explicit close remains coherent after the outside-dismiss cycle.
+- retry:
+    maxRetries: 3
+    commands:
+      - waitForAnimationToEnd
+      - tapOn:
+          id: "runtime-stress-popover-trigger"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-stress-popover-content"
+          timeout: 10000
+- tapOn:
+    id: "runtime-stress-popover-close"
+- assertNotVisible:
+    id: "runtime-stress-popover-content"
+
+# New native gesture: underlying ScrollView must remain interactive. Force a
+# labelled corridor sentinel into the visual viewport before the final target
+# so evidence is unambiguous on devices with different heights.
+- scrollUntilVisible:
+    element:
+      id: "runtime-stress-scroll-sentinel-3"
+    direction: DOWN
+    timeout: 30000
+    visibilityPercentage: 80
+    centerElement: true
+- waitForAnimationToEnd
+- assertVisible:
+    id: "runtime-stress-scroll-sentinel-3"
+
+- scrollUntilVisible:
+    element:
+      id: "runtime-stress-scroll-target"
+    direction: DOWN
+    timeout: 30000
+    visibilityPercentage: 80
+    centerElement: true
+- waitForAnimationToEnd
+- assertVisible:
+    id: "runtime-stress-scroll-target"
+
+- scrollUntilVisible:
+    element:
+      id: "runtime-stress-popover-trigger"
+    direction: UP
+    timeout: 30000
+    visibilityPercentage: 80
+    centerElement: true
+- waitForAnimationToEnd
+- assertVisible:
+    id: "runtime-stress-popover-trigger"
+
+# Reopen after viewport movement; placement/content must resolve again.
+- retry:
+    maxRetries: 4
+    commands:
+      - waitForAnimationToEnd
+      - tapOn:
+          id: "runtime-stress-popover-trigger"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-stress-popover-content"
+          timeout: 10000
+- tapOn:
+    id: "runtime-stress-popover-close"
+- assertNotVisible:
+    id: "runtime-stress-popover-content"
+
+# Modal-local child Select + keyboard host-revision coherence.
+- scrollUntilVisible:
+    element:
+      id: "runtime-stress-dialog-trigger"
+    direction: DOWN
+    timeout: 30000
+    visibilityPercentage: 80
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn:
+    id: "runtime-stress-dialog-trigger"
+- assertVisible:
+    id: "runtime-stress-dialog-content"
+
+- tapOn:
+    id: "runtime-stress-dialog-select-trigger"
+- assertVisible:
+    id: "runtime-stress-dialog-select-content"
+- tapOn:
+    id: "runtime-stress-dialog-select-item"
+- assertNotVisible:
+    id: "runtime-stress-dialog-select-content"
+- assertVisible:
+    id: "runtime-stress-dialog-content"
+- assertVisible:
+    text: "select selection: selected"
+
+- tapOn:
+    id: "runtime-stress-dialog-popover-trigger"
+- assertVisible:
+    id: "runtime-stress-dialog-popover-content"
+- tapOn:
+    id: "runtime-stress-dialog-popover-keyboard-toggle"
+- extendedWaitUntil:
+    visible:
+      text: "keyboard: shown"
+    timeout: 10000
+- waitForAnimationToEnd
+- assertVisible:
+    id: "runtime-stress-dialog-popover-content"
+
+- tapOn:
+    id: "runtime-stress-dialog-popover-keyboard-toggle"
+- extendedWaitUntil:
+    visible:
+      text: "keyboard: hidden"
+    timeout: 10000
+- waitForAnimationToEnd
+- assertVisible:
+    id: "runtime-stress-dialog-popover-content"
+
+- tapOn:
+    id: "runtime-stress-dialog-popover-close"
+- assertNotVisible:
+    id: "runtime-stress-dialog-popover-content"
+- tapOn:
+    id: "runtime-stress-dialog-close"
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "runtime-stress-dialog-content"
