@@ -192,7 +192,7 @@ export const DateTimePicker = React.forwardRef<
         {showClear ? (
           <IconButton
             accessibilityLabel={clearAccessibilityLabel}
-            className="mr-1"
+            className="me-1"
             onPress={handleClear}
             testID={testID ? `${testID}-clear` : undefined}
             variant="ghost"
@@ -202,7 +202,7 @@ export const DateTimePicker = React.forwardRef<
             </Text>
           </IconButton>
         ) : (
-          <Text aria-hidden className="pr-3 text-muted-foreground" variant="body">
+          <Text aria-hidden className="pe-3 text-muted-foreground" variant="body">
             ⌄
           </Text>
         )}
