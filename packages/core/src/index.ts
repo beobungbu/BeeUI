@@ -4,6 +4,7 @@ export {
   addCalendarMonths,
   addCalendarYears,
   clampCalendarDate,
+  clockTimeFromLocalDate,
   compareCalendarDates,
   fromLocalDate,
   getCalendarDayOfWeek,

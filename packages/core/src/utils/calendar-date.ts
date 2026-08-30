@@ -231,3 +231,15 @@ export function toLocalDate(date: CalendarDate, time?: ClockTime): Date {
 export function fromLocalDate(date: Date): CalendarDate {
   return { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
 }
+
+/**
+ * The `ClockTime` counterpart to {@link fromLocalDate} (ADR-008, `DateTimePicker`
+ * #174): reads local-timezone `getHours()`/`getMinutes()` only — the exact reverse of
+ * passing a `time` argument to {@link toLocalDate}. Together `fromLocalDate` and
+ * `clockTimeFromLocalDate` decompose a native-picker `Date` result back into
+ * `DateTimePicker`'s `{ date: CalendarDate; time: ClockTime }` value without ever
+ * reading a UTC getter or reinterpreting the instant in another timezone.
+ */
+export function clockTimeFromLocalDate(date: Date): ClockTime {
+  return { hour: date.getHours(), minute: date.getMinutes() };
+}

@@ -53,15 +53,15 @@ export {
 } from './components/button';
 // `calendar-locale.ts` is an internal stateless resolver co-located with `Calendar`
 // (ADR-008), mirroring `use-direction.ts`'s shape — like that module, it is not part
-// of the public barrel; `Calendar` and future `DatePicker`/`DateTimePicker` (#173/#174)
+// of the public barrel; `Calendar`, `DatePicker`, and `DateTimePicker` (#173/#174)
 // import it directly by relative path.
 export { Calendar, type CalendarProps, type CalendarVisibleMonth } from './components/calendar';
-// `CalendarDate`/`CalendarWeekStartsOn` are `@beeui/core` types (ADR-008), re-exported
-// here because `Calendar`'s/`DatePicker`'s own controlled `value`/`weekStartsOn` props
-// use them directly — the public component API stops at `@beeui/ui`
-// (`docs/architecture.md`), so a consumer must be able to type its own controlled
-// state without reaching into the internal `@beeui/core` package.
-export type { CalendarDate, CalendarWeekStartsOn } from '@beeui/core';
+// `CalendarDate`/`CalendarWeekStartsOn`/`ClockTime` are `@beeui/core` types (ADR-008),
+// re-exported here because `Calendar`'s/`DatePicker`'s/`DateTimePicker`'s own
+// controlled `value`/`weekStartsOn` props use them directly — the public component API
+// stops at `@beeui/ui` (`docs/architecture.md`), so a consumer must be able to type its
+// own controlled state without reaching into the internal `@beeui/core` package.
+export type { CalendarDate, CalendarWeekStartsOn, ClockTime } from '@beeui/core';
 export { Card, cardVariants, type CardProps } from './components/card';
 export {
   Checkbox,
@@ -98,6 +98,19 @@ export {
   type DatePickerPlacement,
   type DatePickerProps,
 } from './components/date-picker';
+// `date-time-picker-locale.ts`/`date-time-picker-shared.tsx` are internal, mirroring
+// `date-picker-locale.ts`/`date-picker-shared.tsx`'s exact convention — only
+// `DateTimePicker`/`DateTimePickerProps`/`DateTimePickerValue` (and the small set of
+// Web-only positioning type aliases) are public.
+export {
+  DateTimePicker,
+  type DateTimePickerAlign,
+  type DateTimePickerCollisionPadding,
+  type DateTimePickerDirection,
+  type DateTimePickerPlacement,
+  type DateTimePickerProps,
+  type DateTimePickerValue,
+} from './components/date-time-picker';
 export {
   DescriptionItem,
   DescriptionList,
