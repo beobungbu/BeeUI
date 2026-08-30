@@ -1,0 +1,288 @@
+android-runtime	Run Android Emulator smoke	﻿2026-08-30T14:23:40.6880573Z ##[group]Run reactivecircus/android-emulator-runner@0a638108440efd5c7f980e6ba145dbcdd8f32009
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6881183Z with:
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6881449Z   api-level: 36
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6881697Z   target: google_apis
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6881966Z   arch: x86_64
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6882249Z   avd-name: beeui-runtime-api36
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6882590Z   force-avd-creation: false
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6882901Z   disable-animations: true
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6883709Z   emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -camera-back none -camera-front none -accel on -memory 4096 -cores 4 -no-snapshot
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6884590Z   script: bash ./scripts/runtime-smoke/android.sh
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6884976Z   cores: 2
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6885254Z   emulator-boot-timeout: 600
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6885574Z   emulator-port: 5554
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6885890Z   disable-spellchecker: false
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6886220Z   disable-linux-hw-accel: auto
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6886556Z   enable-hw-keyboard: false
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6886911Z   channel: stable
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6887190Z env:
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6887652Z   NODE_VERSION: 24.13.1
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6888158Z   PNPM_VERSION: 10.15.0
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6888463Z   MAESTRO_VERSION: 2.7.0
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6888761Z   XCODE_MIN_VERSION: 26.4
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6889162Z   BEEUI_RUNTIME_HEAD_SHA: 50687aae3b9b8c19e4f732497ba3230dbc4a7dd4
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6889642Z   BEEUI_RUNTIME_EXPECTED_BASE: 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6890100Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.12-1/x64
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6890747Z   JAVA_HOME_21_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.12-1/x64
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6891239Z   MAVEN_ARGS: -ntp
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6891545Z   ANDROID_HOME: /usr/local/lib/android/sdk
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6891949Z   ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6892300Z   BEEUI_ANDROID_ACCEL: on
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.6892585Z ##[endgroup]
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8172172Z ##[group]Configure emulator
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8174146Z API level: 36
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8174764Z System image API level: 36
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8175300Z target: google_apis
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8175729Z CPU architecture: x86_64
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8176222Z Hardware profile: 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8176612Z Cores: 2
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8177036Z RAM size: 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8177574Z Heap size: 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8177955Z SD card path or size: 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8178398Z Disk size: 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8179282Z AVD name: beeui-runtime-api36
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8179820Z force avd creation: false
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8180195Z Emulator boot timeout: 600
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8180565Z emulator port: 5554
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8181805Z emulator options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -camera-back none -camera-front none -accel on -memory 4096 -cores 4 -no-snapshot
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8182766Z disable animations: true
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8183176Z disable spellchecker: false
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8183663Z disable Linux hardware acceleration: false
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8184161Z enable hardware keyboard: false
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8184530Z Channel: 0 (stable)
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8184876Z Script:
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8185288Z bash ./scripts/runtime-smoke/android.sh
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8185746Z Pre emulator launch script:
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8186321Z ##[endgroup]
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8186765Z ##[group]Install Android SDK
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:40.8233510Z [command]/usr/bin/sh -c \yes | sdkmanager --licenses > /dev/null
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:45.3856230Z Warning: This version only understands SDK XML versions up to 3 but an SDK XML file of version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were released at different times.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:45.5334972Z Warning: package.xml parsing problem. unexpected element (uri:"", local:"abis"). Expected elements are <{}vendor>,<{}codename>,<{}base-extension>,<{}abi>,<{}api-level>,<{}extension-level>,<{}tag>
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:45.5359706Z Warning: package.xml parsing problem. unexpected element (uri:"", local:"translatedAbis"). Expected elements are <{}vendor>,<{}codename>,<{}base-extension>,<{}abi>,<{}api-level>,<{}extension-level>,<{}tag>
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:45.7920988Z Warning: package.xml parsing problem. unexpected element (uri:"", local:"abis"). Expected elements are <{}vendor>,<{}codename>,<{}base-extension>,<{}abi>,<{}api-level>,<{}extension-level>,<{}tag>
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:45.7923722Z Warning: package.xml parsing problem. unexpected element (uri:"", local:"translatedAbis"). Expected elements are <{}vendor>,<{}codename>,<{}base-extension>,<{}abi>,<{}api-level>,<{}extension-level>,<{}tag>
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:47.1798614Z Installing latest build tools, platform tools, and platform.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:47.1812866Z [command]/usr/bin/sh -c \sdkmanager --install 'build-tools;36.0.0' platform-tools 'platforms;android-36'> /dev/null
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:47.5900142Z Warning: This version only understands SDK XML versions up to 3 but an SDK XML file of version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were released at different times.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:47.7117276Z Warning: package.xml parsing problem. unexpected element (uri:"", local:"abis"). Expected elements are <{}vendor>,<{}codename>,<{}base-extension>,<{}abi>,<{}api-level>,<{}extension-level>,<{}tag>
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:47.7131453Z Warning: package.xml parsing problem. unexpected element (uri:"", local:"translatedAbis"). Expected elements are <{}vendor>,<{}codename>,<{}base-extension>,<{}abi>,<{}api-level>,<{}extension-level>,<{}tag>
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:47.8141159Z Warning: package.xml parsing problem. unexpected element (uri:"", local:"abis"). Expected elements are <{}vendor>,<{}codename>,<{}base-extension>,<{}abi>,<{}api-level>,<{}extension-level>,<{}tag>
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:47.8179546Z Warning: package.xml parsing problem. unexpected element (uri:"", local:"translatedAbis"). Expected elements are <{}vendor>,<{}codename>,<{}base-extension>,<{}abi>,<{}api-level>,<{}extension-level>,<{}tag>
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:48.3494213Z Installing latest emulator.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:48.3505503Z [command]/usr/bin/sh -c \sdkmanager --install emulator --channel=0 > /dev/null
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:48.7693047Z Warning: This version only understands SDK XML versions up to 3 but an SDK XML file of version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were released at different times.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:48.8886034Z Warning: package.xml parsing problem. unexpected element (uri:"", local:"abis"). Expected elements are <{}vendor>,<{}codename>,<{}base-extension>,<{}abi>,<{}api-level>,<{}extension-level>,<{}tag>
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:48.8888688Z Warning: package.xml parsing problem. unexpected element (uri:"", local:"translatedAbis"). Expected elements are <{}vendor>,<{}codename>,<{}base-extension>,<{}abi>,<{}api-level>,<{}extension-level>,<{}tag>
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:48.9895438Z Warning: package.xml parsing problem. unexpected element (uri:"", local:"abis"). Expected elements are <{}vendor>,<{}codename>,<{}base-extension>,<{}abi>,<{}api-level>,<{}extension-level>,<{}tag>
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:48.9919620Z Warning: package.xml parsing problem. unexpected element (uri:"", local:"translatedAbis"). Expected elements are <{}vendor>,<{}codename>,<{}base-extension>,<{}abi>,<{}api-level>,<{}extension-level>,<{}tag>
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:49.5019898Z Installing system images.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:49.5032699Z [command]/usr/bin/sh -c \sdkmanager --install 'system-images;android-36;google_apis;x86_64' --channel=0 > /dev/null
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:49.9140045Z Warning: This version only understands SDK XML versions up to 3 but an SDK XML file of version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were released at different times.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:50.0283472Z Warning: package.xml parsing problem. unexpected element (uri:"", local:"abis"). Expected elements are <{}vendor>,<{}codename>,<{}base-extension>,<{}abi>,<{}api-level>,<{}extension-level>,<{}tag>
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:50.0285395Z Warning: package.xml parsing problem. unexpected element (uri:"", local:"translatedAbis"). Expected elements are <{}vendor>,<{}codename>,<{}base-extension>,<{}abi>,<{}api-level>,<{}extension-level>,<{}tag>
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:50.1286898Z Warning: package.xml parsing problem. unexpected element (uri:"", local:"abis"). Expected elements are <{}vendor>,<{}codename>,<{}base-extension>,<{}abi>,<{}api-level>,<{}extension-level>,<{}tag>
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:50.1289442Z Warning: package.xml parsing problem. unexpected element (uri:"", local:"translatedAbis"). Expected elements are <{}vendor>,<{}codename>,<{}base-extension>,<{}abi>,<{}api-level>,<{}extension-level>,<{}tag>
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:50.6613466Z ##[endgroup]
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:50.6614860Z ##[group]Create AVD
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:50.6615613Z Creating AVD.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:50.6629495Z [command]/usr/bin/sh -c \echo no | avdmanager create avd --force -n beeui-runtime-api36 --package 'system-images;android-36;google_apis;x86_64'
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:51.2159705Z Loading local repository...                                                     
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:51.2169894Z Warning: This version only understands SDK XML versions up to 3 but an SDK XML file of version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were released at different times.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:51.3349667Z Warning: package.xml parsing problem. unexpected element (uri:"", local:"abis"). Expected elements are <{}vendor>,<{}codename>,<{}base-extension>,<{}abi>,<{}api-level>,<{}extension-level>,<{}tag>
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:51.3352254Z Warning: package.xml parsing problem. unexpected element (uri:"", local:"translatedAbis"). Expected elements are <{}vendor>,<{}codename>,<{}base-extension>,<{}abi>,<{}api-level>,<{}extension-level>,<{}tag>
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:51.3611176Z [=========                              ] 25% Loading local repository...       
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:51.3612144Z [=========                              ] 25% Fetch remote repository...        
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:51.3612735Z [=======================================] 100% Fetch remote repository...       
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:51.8671491Z Auto-selecting single ABI x86_64
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:51.9867098Z Do you wish to create a custom hardware profile? [no] [command]/usr/bin/sh -c \printf 'hw.cpu.ncore=2\n' >> /home/runner/.android/avd/beeui-runtime-api36.avd/config.ini
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:51.9883906Z ##[endgroup]
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:51.9885756Z ##[group]Launch Emulator
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:51.9886244Z Starting emulator.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:51.9903221Z [command]/usr/bin/sh -c \/usr/local/lib/android/sdk/emulator/emulator -port 5554 -avd beeui-runtime-api36 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -camera-back none -camera-front none -accel on -memory 4096 -cores 4 -no-snapshot &
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0105779Z INFO         | Android emulator version 37.1.11.0 (build_id 15917651) (CL:N/A)
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0106635Z INFO         | Graphics backend: gfxstream
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0107361Z INFO         | Found systemPath /usr/local/lib/android/sdk/system-images/android-36/google_apis/x86_64/
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0465142Z INFO         | Saving last run QEMU version for the AVD to 2
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0465766Z INFO         | Guest usage of host flag 'VulkanVirtualQueue' will be ignored.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0466300Z ##############################################################################
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0466748Z ##                        WARNING - ACTION REQUIRED                         ##
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0467251Z ##  Consider using the '-metrics-collection' flag to help improve the       ##
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0468053Z ##  emulator by sending anonymized usage data. Or use the '-no-metrics'     ##
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0468600Z ##  flag to bypass this warning and turn off the metrics collection.        ##
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0469122Z ##  In a future release this warning will turn into a one-time blocking     ##
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0469658Z ##  prompt to ask for explicit user input regarding metrics collection.     ##
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0470312Z ##                                                                          ##
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0470810Z ##  Please see '-help-metrics-collection' for more details. You can use     ##
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0471357Z ##  '-metrics-to-file' or '-metrics-to-console' flags to see what type of   ##
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0471896Z ##  data is being collected by emulator as part of usage statistics.        ##
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0472363Z ##############################################################################
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0472804Z INFO         | Guest GLES Driver: Auto (ext controls)
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0473349Z INFO         | emuglConfig_init: vulkan_mode_selected:swiftshader gles_mode_selected:swiftshader
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0473832Z INFO         | Checking system compatibility:
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0474199Z INFO         |   Checking: hasSufficientDiskSpace
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0474701Z INFO         |      Ok: Disk space requirements to run avd: `beeui-runtime-api36` are met
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0475132Z INFO         |   Checking: hasSufficientHwGpu
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0475569Z INFO         |      Ok: Hardware GPU compatibility checks are not required
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0476054Z INFO         |   Checking: hasSufficientSystem
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0476530Z INFO         |      Ok: System requirements to run avd: `beeui-runtime-api36` are met
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.0477783Z WARNING      | Feature QuickbootFileBacked is disabled due to stability issues, if you really want that, the environment variable ANDROID_EMU_FORCE_QUICKBOOT_FILE_BACKED need to set to 1
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.5479800Z ERROR        | Unable to connect to adb daemon on port: 5037
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.5481207Z INFO         | Storing crashdata in: /tmp/android-runner/emu-crash-37.1.11.db, detection is enabled for process: 3151
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.5482175Z INFO         | Initializing gfxstream backend
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.5489478Z INFO         | startOpenglesRendererImpl: gpu info
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.5489997Z INFO         | 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.5491738Z INFO         | initIcdPaths: ICD set to 'swiftshader', using Swiftshader ICD
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.5493228Z INFO         | Setting ICD filenames for the loader = /usr/local/lib/android/sdk/emulator/lib64/vulkan/vk_swiftshader_icd.json
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.5494819Z INFO         | SharedLibrary::open for [/usr/local/lib/android/sdk/emulator/qemu/linux-x86_64/lib64/vulkan/libvulkan.so]
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.5496303Z INFO         | SharedLibrary::open for [/usr/local/lib/android/sdk/emulator/qemu/linux-x86_64/lib64/vulkan/libvulkan.so.1]
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.5497730Z INFO         | SharedLibrary::open for [/usr/local/lib/android/sdk/emulator/lib64/vulkan/libvulkan.so]
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.5498829Z INFO         | Added library: /usr/local/lib/android/sdk/emulator/lib64/vulkan/libvulkan.so
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.5802378Z INFO         | Selecting Vulkan device: SwiftShader Device (Subzero), Version: 1.3.0
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.5803397Z INFO         | Using Vulkan externalMemoryMode: OpaqueFd for VkEmulation
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6025339Z INFO         | SharedLibrary::open for [libX11]
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6026159Z WARNING      | Could not open libX11.so, try libX11.so.6
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6026852Z INFO         | SharedLibrary::open for [libX11.so.6]
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6027609Z INFO         | SharedLibrary::open for [libX11-xcb]
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6028177Z WARNING      | Could not open libX11-xcb.so, try libX11-xcb.so.1
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6028642Z INFO         | SharedLibrary::open for [libX11-xcb.so.1]
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6114243Z INFO         | Initializing VkEmulation features:
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6114840Z INFO         |     glInteropSupported: false
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6119249Z INFO         |     useDeferredCommands: true
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6120074Z INFO         |     createResourceWithRequirements: true
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6120701Z INFO         |     useVulkanComposition: false
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6121371Z INFO         |     useVulkanNativeSwapchain: false
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6122327Z INFO         |     enable guestRenderDoc: false
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6122893Z INFO         |     ASTC LDR emulation mode: Gpu
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6123424Z INFO         |     enable ETC2 emulation: true
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6123958Z INFO         |     enable Ycbcr emulation: false
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6124533Z INFO         |     guestVulkanOnly: false
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6124891Z INFO         |     useDedicatedAllocations: false
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6125254Z INFO         |     guestVulkanMaxApiVersion: 1.3.0
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6125648Z INFO         |     enableProtectedMemoryEmulation: false
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6126061Z INFO         | Graphics Adapter Vendor Google (Google Inc.)
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6126600Z INFO         | Graphics Adapter Android Emulator OpenGL ES Translator (Google SwiftShader)
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6127189Z INFO         | Graphics API Version OpenGL ES 3.0 (OpenGL ES 3.0 SwiftShader 4.0.0.1)
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6130055Z INFO         | Graphics API Extensions GL_OES_EGL_sync GL_OES_EGL_image GL_OES_EGL_image_external GL_OES_depth24 GL_OES_depth32 GL_OES_element_index_uint GL_OES_texture_float GL_OES_texture_float_linear GL_OES_compressed_paletted_texture GL_OES_compressed_ETC1_RGB8_texture GL_OES_depth_texture GL_OES_texture_half_float GL_OES_texture_half_float_linear GL_OES_packed_depth_stencil GL_OES_vertex_half_float GL_OES_standard_derivatives GL_OES_texture_npot GL_OES_rgb8_rgba8 GL_EXT_color_buffer_float GL_EXT_color_buffer_half_float GL_EXT_texture_format_BGRA8888 GL_APPLE_texture_format_BGRA8888 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6131877Z INFO         | Graphics Device Extensions N/A
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6132263Z INFO         | Disabling sparse binding feature support
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6171644Z INFO         | Sending adb public key [QAAAAIcCXEbJ3Do7r3ygt924w9B6YLAjiNgrFxt/SLQO2pECWHgsxN9xiEr0R5ej4lMF0vDLoZ2CxZmzHu8IaVV7TmZuqjyNbcDOqwE0f3Qi4OYRaPNfcXkXEPjJxsNHucSzFQXizHeOkZZGLKdImebbY1PTLsaky847QNUPWP+w0NZH9rzBpHRDxZb+r1GAgLfIc7C8xzOTrCAGbPs3+QjtFgKKuOX183Z2xTHg9zV8liNU8BwMrZ8+iKGOThTjrXRcg//xPTClDQhbU64Y6z/1JHxe32fLvkMLI5xvnIJVv/RdUWesZRo1uKggkrwM1YmXC2qSBrXVB08JSMNsPKlhNurxLxDTXm3t1MVroIYEEqjGajN3ytXyl1mRkM5yxb/rqNTroxdESS8uPPIOIlt1JhsD2SUX3AtWtoF/Bo79haI1VG/TtP7HC/XSUhGAHX3k4XZ296ansHalZnEfZBlJaCjbg+RpblNLzUxhNgm1ry+sLgb1mwpw/HtxE/7/kuVql4VL3jgJvMDKMREWX/OytMN8sAF+zidWEnwPFOzX1pGtNy4mx/9r0c1wJy2hkUZGZIt+EQ5Go1qWIY1Mh8EdizPGVSCzkHockaNNUmNFXa1ysi3zxZjT7x6QAwOJW7Q8HbPevplvTaOB77MOWwQrAxMvGHXqO9DT+bn4iApdFio5Zbg9TwEAAQA= runner@unknown]
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6176508Z INFO         | Userspace boot properties:
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6177608Z INFO         |   androidboot.boot_devices=pci0000:00/0000:00:03.0 pci0000:00/0000:00:06.0
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6178493Z INFO         |   androidboot.dalvik.vm.heapsize=576m
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6179279Z INFO         |   androidboot.debug.hwui.renderer=skiagl
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6179997Z INFO         |   androidboot.debug.sf.nobootanimation=1
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6180783Z INFO         |   androidboot.hardware=ranchu
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6181480Z INFO         |   androidboot.hardware.gltransport=pipe
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6182238Z INFO         |   androidboot.hardware.vulkan=ranchu
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6182897Z INFO         |   androidboot.logcat=*:V
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6183569Z INFO         |   androidboot.opengles.version=196608
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6184192Z INFO         |   androidboot.qemu=1
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6190578Z INFO         |   androidboot.qemu.adb.pubkey=QAAAAIcCXEbJ3Do7r3ygt924w9B6YLAjiNgrFxt/SLQO2pECWHgsxN9xiEr0R5ej4lMF0vDLoZ2CxZmzHu8IaVV7TmZuqjyNbcDOqwE0f3Qi4OYRaPNfcXkXEPjJxsNHucSzFQXizHeOkZZGLKdImebbY1PTLsaky847QNUPWP+w0NZH9rzBpHRDxZb+r1GAgLfIc7C8xzOTrCAGbPs3+QjtFgKKuOX183Z2xTHg9zV8liNU8BwMrZ8+iKGOThTjrXRcg//xPTClDQhbU64Y6z/1JHxe32fLvkMLI5xvnIJVv/RdUWesZRo1uKggkrwM1YmXC2qSBrXVB08JSMNsPKlhNurxLxDTXm3t1MVroIYEEqjGajN3ytXyl1mRkM5yxb/rqNTroxdESS8uPPIOIlt1JhsD2SUX3AtWtoF/Bo79haI1VG/TtP7HC/XSUhGAHX3k4XZ296ansHalZnEfZBlJaCjbg+RpblNLzUxhNgm1ry+sLgb1mwpw/HtxE/7/kuVql4VL3jgJvMDKMREWX/OytMN8sAF+zidWEnwPFOzX1pGtNy4mx/9r0c1wJy2hkUZGZIt+EQ5Go1qWIY1Mh8EdizPGVSCzkHockaNNUmNFXa1ysi3zxZjT7x6QAwOJW7Q8HbPevplvTaOB77MOWwQrAxMvGHXqO9DT+bn4iApdFio5Zbg9TwEAAQA= runner@unknown
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6195765Z INFO         |   androidboot.qemu.avd_name=beeui-runtime-api36
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6196648Z INFO         |   androidboot.qemu.camera_hq_edge_processing=0
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6197345Z INFO         |   androidboot.qemu.camera_protocol_ver=1
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6198262Z INFO         |   androidboot.qemu.cpuvulkan.version=4206592
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6199108Z INFO         |   androidboot.qemu.gltransport.drawFlushInterval=800
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6199982Z INFO         |   androidboot.qemu.gltransport.name=pipe
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6200624Z INFO         |   androidboot.qemu.hwcodec.avcdec=2
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6201367Z INFO         |   androidboot.qemu.hwcodec.hevcdec=2
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6202043Z INFO         |   androidboot.qemu.hwcodec.vpxdec=2
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6202931Z INFO         |   androidboot.qemu.settings.system.screen_off_timeout=2147483647
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6203734Z INFO         |   androidboot.qemu.skin=320x640
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6204443Z INFO         |   androidboot.qemu.virtiowifi=1
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6205330Z INFO         |   androidboot.qemu.vsync=60
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6205994Z INFO         |   androidboot.serialno=EMULATOR37X1X11X0
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6206986Z INFO         |   androidboot.vbmeta.digest=7466b5c28e6a3e1427b22ed2c317c6c7066294bde838d4d5243cce5d37992bd5
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6209068Z INFO         |   androidboot.vbmeta.hash_alg=sha256
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6209837Z INFO         |   androidboot.vbmeta.size=6848
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6210510Z INFO         |   androidboot.veritymode=enforcing
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6439794Z WARNING: cannnot unmap ptr 0x7fccf0a01000 as it is in the protected range from 0x7fcbf0a00000 to 0x7fccf0c00000
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6442114Z pc_memory_init: above 4g size: 40000000
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:52.6593723Z INFO         | Monitoring duration of emulator setup.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:55.6439072Z INFO         | Activated packet streamer for uwb emulation
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:55.6439797Z INFO         | Successfully initialized netsim WiFi
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:55.6440410Z INFO         | Activated packet streamer for bluetooth emulation
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:55.6474693Z INFO         | Setting display: 0 configuration to: 320x640, dpi: 160x160 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:55.6475563Z INFO         | setDisplayActiveConfig: id:0, 320x640
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:55.6478642Z INFO         | emulatorSetupEnvironment: Environment scene is not required
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:55.6555162Z USER_INFO    | Emulator is performing a full startup. This may take upto two minutes, or more.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:55.6556859Z WARNING      | Failed to process .ini file /home/runner/.android/emu-update-last-check.ini for reading.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:23:55.9394432Z WARNING      | Failed to process .ini file /home/runner/.android/emu-update-last-check.ini for reading.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:01.9987796Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:02.0010036Z * daemon not running; starting now at tcp:5037
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:02.0982143Z * daemon started successfully
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:02.0983030Z adb: device offline
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:02.0990040Z The process '/usr/local/lib/android/sdk/platform-tools/adb' failed with exit code 1
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:04.1035515Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:04.1068838Z adb: device offline
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:04.1084510Z The process '/usr/local/lib/android/sdk/platform-tools/adb' failed with exit code 1
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:06.1104075Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:06.1138927Z adb: device offline
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:06.1143843Z The process '/usr/local/lib/android/sdk/platform-tools/adb' failed with exit code 1
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:08.1189677Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:08.1216056Z adb: device offline
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:08.1220000Z The process '/usr/local/lib/android/sdk/platform-tools/adb' failed with exit code 1
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:10.1247972Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:10.1278645Z adb: device offline
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:10.1281410Z The process '/usr/local/lib/android/sdk/platform-tools/adb' failed with exit code 1
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:12.1329503Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:12.1337922Z adb: device offline
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:12.1343663Z The process '/usr/local/lib/android/sdk/platform-tools/adb' failed with exit code 1
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:14.1392556Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:14.1752902Z 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:16.1798808Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:16.2033588Z 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:18.2152208Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:18.2399424Z 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:20.2451653Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:20.2701664Z 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:22.2737271Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:22.3004273Z 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:24.3063172Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:24.3418261Z 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:26.3458268Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:26.3599287Z 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:28.3656422Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:28.3840125Z 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:30.3912193Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:30.4143796Z 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:32.4244708Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:32.4653104Z 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:34.4721152Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:34.4932912Z 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:36.4996843Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:36.5241502Z 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:38.5329357Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:38.5653879Z 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:39.5690920Z INFO         | Boot completed in 47536 ms
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:39.5692994Z INFO         | Increasing screen off timeout, logcat buffer size to 2M.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:40.5711176Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell getprop sys.boot_completed
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:40.6085655Z 1
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:40.6102048Z Emulator booted.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:40.6127958Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell input keyevent 82
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:40.7298650Z Disabling animations.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:40.7328944Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell settings put global window_animation_scale 0.0
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:40.8035766Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell settings put global transition_animation_scale 0.0
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:40.9719180Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell settings put global animator_duration_scale 0.0
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.0998425Z ##[endgroup]
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.1049077Z [command]/usr/bin/sh -c bash ./scripts/runtime-smoke/android.sh
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.4128296Z * daemon not running; starting now at tcp:5037
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.4188044Z * daemon started successfully
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.4242684Z No booted Android emulator device found; expected the CI action to boot one before this script runs.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.4258261Z List of devices attached
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.4273554Z emulator-5554	offline
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.4310069Z 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.4368881Z ##[error]The process '/usr/bin/sh' failed with exit code 1
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.4381582Z ##[group]Terminate Emulator
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.4382401Z [command]/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 emu kill
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.4383244Z OK: killing emulator, bye bye
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.4383679Z OK
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.4384335Z ##[endgroup]
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.4386013Z INFO         | Wait for emulator (pid 3151) 20 seconds to shutdown gracefully before kill;you can set environment variable ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL(in seconds) to change the default value (20 seconds)
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.4396093Z 
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.4398046Z USER_INFO    | Snapshots have been disabled by the user, save request is ignored.
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.4408143Z INFO         | Saving snapshot 'default_boot' using 0 ms
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.6747766Z ERROR        | stop: Not implemented
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.6748433Z WARNING      | Emulator client has not yet been configured.. Call configure me first!
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.6992455Z INFO         | removeAll
+android-runtime	Run Android Emulator smoke	2026-08-30T14:24:41.8515509Z WARNING      | Netsim Wifi dns:///localhost:36587 is gone due to Stream removed (CANCELLED)

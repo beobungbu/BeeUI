@@ -1,0 +1,81 @@
+ios-runtime	Run iOS Simulator smoke	﻿2026-08-30T14:22:47.0767740Z ##[group]Run bash ./scripts/runtime-smoke/ios.sh
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:22:47.0768430Z ^[[36;1mbash ./scripts/runtime-smoke/ios.sh^[[0m
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:22:47.1012930Z shell: /bin/bash -e {0}
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:22:47.1013730Z env:
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:22:47.1014340Z   NODE_VERSION: 24.13.1
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:22:47.1015080Z   PNPM_VERSION: 10.15.0
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:22:47.1015790Z   MAESTRO_VERSION: 2.7.0
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:22:47.1016480Z   XCODE_MIN_VERSION: 26.4
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:22:47.1017400Z   BEEUI_RUNTIME_HEAD_SHA: 50687aae3b9b8c19e4f732497ba3230dbc4a7dd4
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:22:47.1018370Z   BEEUI_RUNTIME_EXPECTED_BASE: 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:22:47.1019330Z   DEVELOPER_DIR: /Applications/Xcode_26.6.0.app/Contents/Developer
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:22:47.1020690Z   JAVA_HOME: /Users/runner/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.12-101.0.LTS/aarch64/Contents/Home
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:22:47.1022490Z   JAVA_HOME_21_AARCH64: /Users/runner/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.12-101.0.LTS/aarch64/Contents/Home
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:22:47.1023840Z   MAVEN_ARGS: -ntp
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:22:47.1024720Z ##[endgroup]
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:22:49.3776450Z Booting iPhone 17 Pro on iOS 26.5 (26.5): 2213ABCA-DC6B-4CAA-B961-29E0C1B899CA
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:23:44.6389490Z Monitoring boot status for BeeUI Runtime 33316620531-1 (2213ABCA-DC6B-4CAA-B961-29E0C1B899CA).
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:23:44.6468640Z [2026-08-30 14:23:44 +0000] Status=2, isTerminal=NO, Elapsed=00:53.
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:23:44.6478760Z 	Waiting on Data Migration
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:23:44.6582460Z 		Reason:Running plugin com.apple.-0LaunchServicesMigrator (00LaunchServicesMigrator.migrator, user-agnostic)
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:56.9234830Z `npx expo run:ios`
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:56.9235440Z * If you are using the Community CLI, please run:
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:56.9235990Z `yarn ios`
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:56.9236780Z =============================================================
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:56.9237200Z 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:56.9237540Z Pod install took 108 [s] to run
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:56.9238110Z Integrating client project
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:56.9238500Z 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:56.9239250Z [!] Please close any current Xcode sessions and use `BeeUIShowcase.xcworkspace` for this project from now on.
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:57.4672120Z [Expo] Installing the build script for target BeeUIShowcase
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:58.2691490Z Pod installation complete! There are 90 dependencies from the Podfile and 89 total pods installed.
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:58.2692370Z 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:58.2693300Z [!] ExpoFileSystem has added 2 script phases. Please inspect before executing a build. See `https://guides.cocoapods.org/syntax/podspec.html#script_phases` for more information.
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:58.2694150Z 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:58.2695160Z [!] ExpoFont has added 2 script phases. Please inspect before executing a build. See `https://guides.cocoapods.org/syntax/podspec.html#script_phases` for more information.
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:58.2696010Z 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:58.2697020Z [!] ExpoModulesCore has added 2 script phases. Please inspect before executing a build. See `https://guides.cocoapods.org/syntax/podspec.html#script_phases` for more information.
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:58.2697830Z 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:58.2698710Z [!] ExpoModulesWorklets has added 2 script phases. Please inspect before executing a build. See `https://guides.cocoapods.org/syntax/podspec.html#script_phases` for more information.
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:58.2699460Z 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:58.2700460Z [!] React-Core-prebuilt has added 1 script phase. Please inspect before executing a build. See `https://guides.cocoapods.org/syntax/podspec.html#script_phases` for more information.
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:58.2701210Z 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:58.2702520Z [!] ReactNativeDependencies has added 1 script phase. Please inspect before executing a build. See `https://guides.cocoapods.org/syntax/podspec.html#script_phases` for more information.
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:58.2703670Z 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:58.2704610Z [!] hermes-engine has added 1 script phase. Please inspect before executing a build. See `https://guides.cocoapods.org/syntax/podspec.html#script_phases` for more information.
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:58.2711950Z [Expo-precompiled] Precompiled modules:
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:26:58.2776380Z [Expo-precompiled]   📦 ExpoFileSystem (57.0.5)
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:28:46.5194150Z Selected xcframework slice ios-arm64_x86_64-simulator
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:28:46.5196110Z rsync --delete -av --filter P .*.?????? --links --filter "- CVS/" --filter "- .svn/" --filter "- .git/" --filter "- .hg/" "/Users/runner/work/BeeUI/BeeUI/apps/showcase/ios/Pods/ExpoModulesWorklets/ExpoModulesWorklets.xcframework/ios-arm64_x86_64-simulator/*" "/Users/runner/Library/Caches/BeeUI/RuntimeDerivedData/showcase/12c1033a9486749c5c1bb7f642045e37c9c8333947c22697c903421194d03686/Build/Products/Debug-iphonesimulator/XCFrameworkIntermediates/ExpoModulesWorklets"
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:28:46.5196220Z Transfer starting: 44 files
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:28:46.5196360Z ExpoModulesWorklets.framework/
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:28:46.5196540Z ExpoModulesWorklets.framework/ExpoModulesWorklets
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:28:46.5196690Z ExpoModulesWorklets.framework/Info.plist
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:28:46.5196850Z ExpoModulesWorklets.framework/Headers/
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:28:46.5197220Z ExpoModulesWorklets.framework/Headers/EXJavaScriptSerializable.h
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:28:46.5197490Z ExpoModulesWorklets.framework/Headers/EXWorkletsProvider+Private.h
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:28:46.5197720Z ExpoModulesWorklets.framework/Headers/EXWorkletsProvider.h
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:28:46.5198050Z ExpoModulesWorklets.framework/Headers/ExpoModulesWorklets-Swift.h
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:35:34.7738430Z Retry 4 times...
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:35:34.9868170Z   Assert that id: runtime-toast-dismiss is visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:35:36.3716930Z   Tap on id: runtime-toast-dismiss... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:35:37.2757180Z   Assert that "Runtime toast" is not visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:35:37.2759070Z Retry 4 times... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:35:41.8685280Z Scrolling DOWN until id: runtime-input is visible with speed 40, visibility percentage 100%, timeout 20000 ms, with centering disabled... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:35:42.9680680Z Wait for animation to end... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:35:45.3351910Z Tap on id: runtime-input... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:35:51.6910470Z Input text runtime-keyboard... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:35:52.2715190Z Assert that "runtime-keyboard" is visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:36:13.8765320Z Hide Keyboard... FAILED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:36:18.4754030Z 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:36:18.4822370Z Couldn't hide the keyboard. This can happen if the app uses a custom input or doesn't expose a standard dismiss action.
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:36:18.4937290Z 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:36:18.5047380Z Instead of hideKeyboard, try tapping on non-interactive element to hide keyboard. Example:
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:36:18.5316320Z 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:36:18.5490230Z - tapOn: 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:36:18.5602160Z     text: 'Static Text on your screen'
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:36:18.5752520Z 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:36:18.5860740Z ==== Debug output (logs & screenshots) ====
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:36:18.5973050Z 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:36:18.6082610Z /Users/runner/.maestro/tests/2026-08-30_143042
+ios-runtime	Run iOS Simulator smoke	2026-08-30T14:37:37.2117050Z ##[error]Process completed with exit code 1.

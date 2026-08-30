@@ -1,0 +1,119 @@
+ios-runtime	Run iOS Simulator smoke	﻿2026-08-30T13:26:49.0467840Z ##[group]Run bash ./scripts/runtime-smoke/ios.sh
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:26:49.0468770Z ^[[36;1mbash ./scripts/runtime-smoke/ios.sh^[[0m
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:26:49.0537500Z shell: /bin/bash -e {0}
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:26:49.0538400Z env:
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:26:49.0538740Z   NODE_VERSION: 24.13.1
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:26:49.0538930Z   PNPM_VERSION: 10.15.0
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:26:49.0539140Z   MAESTRO_VERSION: 2.7.0
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:26:49.0539360Z   XCODE_MIN_VERSION: 26.4
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:26:49.0539660Z   BEEUI_RUNTIME_HEAD_SHA: bce661a99a8cbe1fb0e8258d3f1f3a38c04caf41
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:26:49.0540040Z   BEEUI_RUNTIME_EXPECTED_BASE: 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:26:49.0540450Z   DEVELOPER_DIR: /Applications/Xcode_26.6.0.app/Contents/Developer
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:26:49.0541070Z   JAVA_HOME: /Users/runner/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.12-101.0.LTS/aarch64/Contents/Home
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:26:49.0541880Z   JAVA_HOME_21_AARCH64: /Users/runner/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.12-101.0.LTS/aarch64/Contents/Home
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:26:49.0542400Z   MAVEN_ARGS: -ntp
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:26:49.0542710Z ##[endgroup]
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:26:50.3676760Z Booting iPhone 17 Pro on iOS 26.5 (26.5): F3D17FAD-F26A-4025-8449-43D728123D3D
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:27:19.5792170Z Monitoring boot status for BeeUI Runtime 33314116372-1 (F3D17FAD-F26A-4025-8449-43D728123D3D).
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:27:19.6029140Z [2026-08-30 13:27:19 +0000] Status=2, isTerminal=NO, Elapsed=00:28.
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:27:19.6218510Z 	Waiting on Data Migration
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:27:19.6725630Z 		Reason:Running plugin com.apple.-0LaunchServicesMigrator (00LaunchServicesMigrator.migrator, user-agnostic)
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:05.5613300Z   Assert that "theme: light" is visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:05.5845620Z Retry 3 times... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:07.9745340Z Wait for animation to end... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:07.9935400Z Retry 3 times...
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:10.0111410Z   Tap on id: runtime-theme-dark... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:10.5899200Z   Assert that "theme: dark" is visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:10.6039270Z Retry 3 times... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:13.7946350Z Wait for animation to end... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:13.8054720Z Retry 3 times...
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:16.2478080Z   Tap on id: runtime-theme-light... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:16.7140720Z   Assert that "theme: light" is visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:16.7444230Z Retry 3 times... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:19.4331290Z Tap on id: runtime-dialog-trigger... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:19.8348330Z Assert that id: runtime-dialog-content is visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:22.9314600Z Wait for animation to end... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:22.9316850Z Retry 3 times...
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:25.6393310Z   Tap on id: runtime-dialog-close... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:27.1409780Z   Assert that id: runtime-dialog-content is not visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:27.1578370Z Retry 3 times... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:29.6755920Z Tap on id: runtime-alert-trigger... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:30.0543600Z Assert that id: runtime-alert-content is visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:34.1946090Z Wait for animation to end... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:34.2064940Z Retry 3 times...
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:36.9198980Z   Tap on id: runtime-alert-cancel... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:38.6034140Z   Assert that id: runtime-alert-content is not visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:38.7747320Z Retry 3 times... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:41.7544570Z Tap on id: runtime-popover-trigger... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:42.0842260Z Assert that id: runtime-popover-content is visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:42.6113070Z Assert that "Root Popover content is visible." is visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:46.6044910Z Wait for animation to end... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:46.6140410Z Retry 3 times...
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:48.8904140Z   Tap on id: runtime-popover-close... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:50.2860660Z   Assert that id: runtime-popover-content is not visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:50.3341880Z Retry 3 times... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:52.3384040Z Tap on id: runtime-menu-trigger... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:52.7975670Z Assert that id: runtime-menu-content is visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:56.8930790Z Wait for animation to end... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:56.9102530Z Retry 3 times...
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:45:59.6510560Z   Tap on id: runtime-menu-item... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:46:00.7212890Z   Assert that id: runtime-menu-content is not visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:46:01.1629240Z   Assert that "selection: alpha" is visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:46:01.1775660Z Retry 3 times... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:46:06.2866930Z Scrolling DOWN until id: runtime-toast-show is visible with speed 40, visibility percentage 100%, timeout 20000 ms, with centering disabled... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:46:08.8743190Z Wait for animation to end... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:46:12.9725640Z Tap on id: runtime-toast-show... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:46:14.4773050Z Assert that "Runtime toast" is visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:46:17.4475890Z Wait for animation to end... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:46:17.4479690Z Retry 4 times...
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:46:18.0185320Z   Assert that id: runtime-toast-dismiss is visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:46:20.1707830Z   Tap on id: runtime-toast-dismiss... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:46:21.2161680Z   Assert that "Runtime toast" is not visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:46:21.2548710Z Retry 4 times... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:46:26.8204410Z Scrolling DOWN until id: runtime-input is visible with speed 40, visibility percentage 100%, timeout 20000 ms, with centering disabled... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:46:29.5745520Z Wait for animation to end... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:46:33.2845340Z Tap on id: runtime-input... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:46:50.2461530Z Input text runtime-keyboard... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:46:51.9363660Z Assert that "runtime-keyboard" is visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:47:31.4201120Z Hide Keyboard... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:47:41.2665020Z Scrolling DOWN until id: runtime-scroll-end is visible with speed 40, visibility percentage 100%, timeout 20000 ms, with centering disabled... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:47:46.4363400Z Wait for animation to end... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:47:47.1086070Z Assert that id: runtime-scroll-end is visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:49:13.4399100Z Running on BeeUI Runtime 33314116372-1 - iOS 26.5 - F3D17FAD-F26A-4025-8449-43D728123D3D
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:49:13.4437100Z  > Flow runtime-stress
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:50:24.7502160Z Launch app "com.beeui.showcase" with clear state... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:50:24.7522900Z Retry 4 times...
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:50:43.2987210Z   Scrolling DOWN until id: showcase-open-runtime-stress is visible with speed 40, visibility percentage 100%, timeout 40000 ms, with centering disabled... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:50:48.6174420Z   Tap on id: showcase-open-runtime-stress... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:50:49.1003340Z   Assert that id: runtime-stress-ready is visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:50:49.1183420Z Retry 4 times... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:50:49.1344180Z Retry 3 times...
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:50:51.1271280Z   Tap on id: runtime-stress-select-trigger... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:50:51.5398140Z   Assert that id: runtime-stress-select-content is visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:50:51.5533550Z Retry 3 times... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:50:53.4916890Z Tap on id: runtime-stress-select-item-beta... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:50:54.6250730Z Assert that id: runtime-stress-select-content is not visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:50:55.1320120Z Assert that "select: beta" is visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:50:57.2775910Z Tap on id: runtime-stress-popover-trigger... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:50:57.8277140Z Assert that id: runtime-stress-popover-content is visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:11.7897700Z Scrolling DOWN until id: runtime-stress-scroll-target is visible with speed 40, visibility percentage 100%, timeout 20000 ms, with centering disabled... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:18.3585230Z Wait for animation to end... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:19.4476370Z Assert that id: runtime-stress-popover-content is not visible... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:27.1043740Z Scrolling UP until id: runtime-stress-popover-trigger is visible with speed 40, visibility percentage 100%, timeout 20000 ms, with centering disabled... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:30.6741140Z Wait for animation to end... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:35.2257300Z Tap on id: runtime-stress-popover-trigger... COMPLETED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:55.4117240Z Assert that id: runtime-stress-popover-content is visible... FAILED
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:59.0426060Z 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:59.0540310Z Assertion is false: id: runtime-stress-popover-content is visible
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:59.0638180Z 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:59.0752560Z Assertion 'id: runtime-stress-popover-content is visible' failed. Check the UI hierarchy in debug artifacts to verify the element state and properties.
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:59.0851470Z 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:59.0953280Z Possible causes:
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:59.1056070Z - Element selector may be incorrect - check if there are similar elements with slightly different names/properties.
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:59.1348450Z - Element may be temporarily unavailable due to loading state
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:59.1451390Z - This could be a real regression that needs to be addressed
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:59.1560400Z 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:59.1669510Z ==== Debug output (logs & screenshots) ====
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:59.1730980Z 
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:51:59.1832730Z /Users/runner/.maestro/tests/2026-08-30_134813
+ios-runtime	Run iOS Simulator smoke	2026-08-30T13:55:21.3299060Z ##[error]Process completed with exit code 1.

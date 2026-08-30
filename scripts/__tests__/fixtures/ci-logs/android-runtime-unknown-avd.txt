@@ -1,0 +1,174 @@
+android-runtime	Run Android Emulator smoke	﻿2026-08-30T13:26:01.4883512Z ##[group]Run bash ./scripts/runtime-smoke/android.sh
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:01.4884313Z ^[[36;1mbash ./scripts/runtime-smoke/android.sh^[[0m
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:01.4938359Z shell: /usr/bin/bash -e {0}
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:01.4938754Z env:
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:01.4938969Z   NODE_VERSION: 24.13.1
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:01.4939226Z   PNPM_VERSION: 10.15.0
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:01.4939463Z   MAESTRO_VERSION: 2.7.0
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:01.4939704Z   XCODE_MIN_VERSION: 26.4
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:01.4940061Z   BEEUI_RUNTIME_HEAD_SHA: bce661a99a8cbe1fb0e8258d3f1f3a38c04caf41
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:01.4940444Z   BEEUI_RUNTIME_EXPECTED_BASE: 
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:01.4941121Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.12-1/x64
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:01.4941637Z   JAVA_HOME_21_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.12-1/x64
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:01.4942034Z   MAVEN_ARGS: -ntp
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:01.4942284Z   ANDROID_HOME: /usr/local/lib/android/sdk
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:01.4942593Z   ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:01.4942933Z   BEEUI_ANDROID_ACCEL: on
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:01.4943170Z ##[endgroup]
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:02.3521978Z Loading package information...                                                  
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:02.4447807Z Loading local repository...                                                     
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:02.4449260Z [                                       ] 3% Loading local repository...        
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:02.4481001Z [                                       ] 3% Fetch remote repository...         
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:02.8592923Z [=                                      ] 3% Fetch remote repository...         
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:02.9371409Z [=                                      ] 4% Fetch remote repository...         
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:02.9772254Z [=                                      ] 5% Fetch remote repository...         
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:03.0329611Z [==                                     ] 5% Fetch remote repository...         
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:03.1242458Z [==                                     ] 6% Fetch remote repository...         
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:03.2302723Z [==                                     ] 7% Fetch remote repository...         
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:03.2329391Z [==                                     ] 7% Computing updates...               
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:03.2431859Z [===                                    ] 8% Computing updates...               
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:03.2608389Z [===                                    ] 10% Computing updates...              
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:03.6397071Z [===                                    ] 10% Installing Google APIs Intel x86_6
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:03.8896553Z [===                                    ] 10% Downloading x86_64-36_r07.zip...  
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:04.2538330Z [====                                   ] 10% Downloading x86_64-36_r07.zip...  
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:04.8955128Z [====                                   ] 11% Downloading x86_64-36_r07.zip...  
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:05.6482724Z [====                                   ] 12% Downloading x86_64-36_r07.zip...  
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:06.3115411Z [=====                                  ] 13% Downloading x86_64-36_r07.zip...  
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:06.9776931Z [=====                                  ] 14% Downloading x86_64-36_r07.zip...  
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:07.3422504Z [=====                                  ] 15% Downloading x86_64-36_r07.zip...  
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:07.6687975Z [======                                 ] 15% Downloading x86_64-36_r07.zip...  
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:08.3323628Z [======                                 ] 16% Downloading x86_64-36_r07.zip...  
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:08.9882287Z [======                                 ] 17% Downloading x86_64-36_r07.zip...  
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:08.9892301Z [=======                                ] 18% Downloading x86_64-36_r07.zip...  
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:09.0318319Z [=======                                ] 18% Unzipping...                      
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:09.1079162Z [=======                                ] 18% Unzipping... x86_64/NOTICE.txt    
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:09.1122277Z [=======                                ] 18% Unzipping... x86_64/VerifiedBootPa
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:09.1123950Z [=======                                ] 18% Unzipping... x86_64/advancedFeatur
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:09.1125769Z [=======                                ] 18% Unzipping... x86_64/build.prop    
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:09.1127296Z [=======                                ] 18% Unzipping... x86_64/data/empty_dat
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:09.1128960Z [=======                                ] 18% Unzipping... x86_64/data/local.pro
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:09.1130397Z [=======                                ] 18% Unzipping... x86_64/data/misc/Gold
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:09.1132046Z [=======                                ] 18% Unzipping... x86_64/data/misc/emul
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:09.1133420Z [=======                                ] 18% Unzipping... x86_64/data/misc/mode
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:09.1169854Z [=======                                ] 18% Unzipping... x86_64/data/misc/pixe
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:09.1767135Z [=======                                ] 18% Unzipping... x86_64/encryptionkey.
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:09.2986963Z [=======                                ] 18% Unzipping... x86_64/kernel-ranchu 
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:09.2989753Z [=======                                ] 18% Unzipping... x86_64/kernel_cmdline
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:09.3128848Z [=======                                ] 18% Unzipping... x86_64/ramdisk.img   
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:09.3132370Z [=======                                ] 18% Unzipping... x86_64/source.propert
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:11.6412538Z [=======                                ] 18% Unzipping... x86_64/system.img    
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:14.1971692Z [=======                                ] 19% Unzipping... x86_64/system.img    
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:15.4615401Z [=======                                ] 20% Unzipping... x86_64/system.img    
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:16.8997437Z [========                               ] 20% Unzipping... x86_64/system.img    
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:19.0229239Z [========                               ] 21% Unzipping... x86_64/system.img    
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:21.8388024Z [========                               ] 22% Unzipping... x86_64/system.img    
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:24.3697343Z [=========                              ] 23% Unzipping... x86_64/system.img    
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:26.2514167Z [=========                              ] 24% Unzipping... x86_64/system.img    
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:29.5339229Z [=========                              ] 25% Unzipping... x86_64/system.img    
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.3240476Z [=========                              ] 25% Unzipping... x86_64/vendor.img    
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.4417686Z [===============                        ] 40% Unzipping... x86_64/vendor.img    
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.4964874Z [===============                        ] 40% Installing CMake 3.22.1 x86_64/ven
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.5072216Z [===============                        ] 40% Downloading cmake-3.22.1-linux.zip
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.5335327Z [================                       ] 40% Downloading cmake-3.22.1-linux.zip
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.5612521Z [================                       ] 41% Downloading cmake-3.22.1-linux.zip
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.5802565Z [================                       ] 42% Downloading cmake-3.22.1-linux.zip
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.5949544Z [=================                      ] 43% Downloading cmake-3.22.1-linux.zip
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.6105198Z [=================                      ] 44% Downloading cmake-3.22.1-linux.zip
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.6177612Z [=================                      ] 45% Downloading cmake-3.22.1-linux.zip
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.6234443Z [==================                     ] 45% Downloading cmake-3.22.1-linux.zip
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.6346827Z [==================                     ] 46% Downloading cmake-3.22.1-linux.zip
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.6453747Z [==================                     ] 47% Downloading cmake-3.22.1-linux.zip
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.6455714Z [==================                     ] 48% Downloading cmake-3.22.1-linux.zip
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.7471841Z [==================                     ] 48% Unzipping... x86_64/vendor.img    
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.7486159Z [==================                     ] 48% Unzipping... bin/cmake            
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.7889425Z [===================                    ] 48% Unzipping... bin/cmake            
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.8251190Z [===================                    ] 49% Unzipping... bin/cmake            
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.8336539Z [===================                    ] 50% Unzipping... bin/cmake            
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.8493425Z [===================                    ] 50% Unzipping... bin/ctest            
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.8687247Z [====================                   ] 50% Unzipping... bin/ctest            
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.9076426Z [====================                   ] 51% Unzipping... bin/ctest            
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.9207813Z [====================                   ] 52% Unzipping... bin/ctest            
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.9456786Z [====================                   ] 52% Unzipping... bin/cpack            
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:30.9841742Z [=====================                  ] 53% Unzipping... bin/cpack            
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.0016523Z [=====================                  ] 54% Unzipping... bin/cpack            
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.0023222Z [=====================                  ] 54% Unzipping... share/vim/vimfiles/in
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.0031379Z [=====================                  ] 54% Unzipping... share/vim/vimfiles/sy
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.0034484Z [=====================                  ] 54% Unzipping... share/aclocal/cmake.m
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.0040845Z [=====================                  ] 54% Unzipping... share/emacs/site-lisp
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.0045309Z [=====================                  ] 54% Unzipping... share/cmake-3.22/incl
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.3353329Z [=====================                  ] 54% Unzipping... share/cmake-3.22/Help
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.3457573Z [=====================                  ] 54% Unzipping... share/cmake-3.22/Temp
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.3927863Z [=====================                  ] 54% Unzipping... share/cmake-3.22/Modu
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.5304900Z [=====================                  ] 55% Unzipping... share/cmake-3.22/Modu
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.5317146Z [=====================                  ] 55% Unzipping... share/bash-completion
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.5318546Z [=====================                  ] 55% Unzipping... doc/cmake-3.22/Copyri
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.5319841Z [=====================                  ] 55% Unzipping... doc/cmake-3.22/cmzlib
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.5321893Z [=====================                  ] 55% Unzipping... doc/cmake-3.22/cmzstd
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.5324478Z [=====================                  ] 55% Unzipping... doc/cmake-3.22/cmnght
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.5326964Z [=====================                  ] 55% Unzipping... doc/cmake-3.22/cmsys/
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.5329360Z [=====================                  ] 55% Unzipping... doc/cmake-3.22/cmcurl
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.5331961Z [=====================                  ] 55% Unzipping... doc/cmake-3.22/cmlibr
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.5334447Z [=====================                  ] 55% Unzipping... doc/cmake-3.22/cmliba
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.5336916Z [=====================                  ] 55% Unzipping... doc/cmake-3.22/cmlibl
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.5339462Z [=====================                  ] 55% Unzipping... doc/cmake-3.22/cmlibu
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.5360828Z [=====================                  ] 55% Unzipping... doc/openssl-1.1.1l/LI
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.5362334Z [=====================                  ] 55% Unzipping... source.properties    
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.5377021Z [=====================                  ] 55% Unzipping... bin/ninja            
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.5380258Z [=====================                  ] 55% Unzipping... doc/ninja/LICENSE    
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.5455453Z [=====================                  ] 55% Unzipping... share/cmake-3.22/Modu
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.5522464Z [===========================            ] 70% Unzipping... share/cmake-3.22/Modu
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.5768008Z [===========================            ] 70% Installing NDK (Side by side) 27.1
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.6002381Z [===========================            ] 70% Downloading android-ndk-r27b-linux
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.7025487Z [============================           ] 70% Downloading android-ndk-r27b-linux
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:31.9675549Z [============================           ] 71% Downloading android-ndk-r27b-linux
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:32.2343391Z [============================           ] 72% Downloading android-ndk-r27b-linux
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:32.4919835Z [=============================          ] 73% Downloading android-ndk-r27b-linux
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:32.7627975Z [=============================          ] 74% Downloading android-ndk-r27b-linux
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:32.8921244Z [=============================          ] 75% Downloading android-ndk-r27b-linux
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:33.0116265Z [==============================         ] 75% Downloading android-ndk-r27b-linux
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:33.2678614Z [==============================         ] 76% Downloading android-ndk-r27b-linux
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:33.5168393Z [==============================         ] 77% Downloading android-ndk-r27b-linux
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:33.7018669Z [==============================         ] 77% Unzipping... share/cmake-3.22/Modu
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:33.7062352Z [==============================         ] 77% Unzipping... android-ndk-r27b/    
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:33.7068024Z [==============================         ] 77% Unzipping... android-ndk-r27b/READ
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:33.7091614Z [===============================        ] 78% Unzipping... android-ndk-r27b/READ
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:33.7092718Z [===============================        ] 78% Unzipping... android-ndk-r27b/meta
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:33.7945162Z [===============================        ] 78% Unzipping... android-ndk-r27b/shad
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:33.7962328Z [===============================        ] 78% Unzipping... android-ndk-r27b/ndk-
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:33.7963739Z [===============================        ] 78% Unzipping... android-ndk-r27b/wrap
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:33.7965187Z [===============================        ] 78% Unzipping... android-ndk-r27b/ndk-
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:34.9607706Z [===============================        ] 78% Unzipping... android-ndk-r27b/tool
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:36.1526662Z [===============================        ] 79% Unzipping... android-ndk-r27b/tool
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:36.7852550Z [===============================        ] 80% Unzipping... android-ndk-r27b/tool
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:37.4516339Z [================================       ] 80% Unzipping... android-ndk-r27b/tool
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:39.1658691Z [================================       ] 81% Unzipping... android-ndk-r27b/tool
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:40.6510270Z [================================       ] 82% Unzipping... android-ndk-r27b/tool
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:41.7983140Z [=================================      ] 83% Unzipping... android-ndk-r27b/tool
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:42.9682440Z [=================================      ] 84% Unzipping... android-ndk-r27b/tool
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:43.1941242Z [=================================      ] 85% Unzipping... android-ndk-r27b/tool
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:43.2066150Z [=================================      ] 85% Unzipping... android-ndk-r27b/buil
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:43.4295794Z [=================================      ] 85% Unzipping... android-ndk-r27b/sour
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:43.4317014Z [=================================      ] 85% Unzipping... android-ndk-r27b/NOTI
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:43.4319059Z [=================================      ] 85% Unzipping... android-ndk-r27b/ndk-
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:43.4334150Z [=================================      ] 85% Unzipping... android-ndk-r27b/NOTI
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:43.4373681Z [=================================      ] 85% Unzipping... android-ndk-r27b/pyth
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:43.4781072Z [=================================      ] 85% Unzipping... android-ndk-r27b/preb
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:43.4785056Z [=================================      ] 85% Unzipping... android-ndk-r27b/ndk-
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:43.4786832Z [=================================      ] 85% Unzipping... android-ndk-r27b/sour
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:43.6721666Z [=================================      ] 85% Unzipping... android-ndk-r27b/simp
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:43.7939299Z [=================================      ] 85% Unzipping... android-ndk-r27b/CHAN
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:43.7940019Z [=======================================] 100% Unzipping... android-ndk-r27b/CHA
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:43.7990621Z 
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:44.9716437Z Loading local repository...                                                     
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:45.0328773Z [=========                              ] 25% Loading local repository...       
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:45.0332087Z Auto-selecting single ABI x86_64
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:45.7607853Z * daemon not running; starting now at tcp:5037
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:45.9414704Z * daemon started successfully
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:45.9419505Z Starting Android emulator with acceleration mode: on
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:47.9589254Z Android emulator exited before boot completed
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:47.9598118Z INFO         | Android emulator version 37.1.11.0 (build_id 15917651) (CL:N/A)
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:47.9598922Z INFO         | Graphics backend: gfxstream
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:47.9600104Z ERROR        | Unknown AVD name [beeui-runtime-api36], use -list-avds to see valid list.
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:47.9601874Z ERROR        | HOME is defined but there is no file beeui-runtime-api36.ini in $HOME/.android/avd
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:47.9603553Z ERROR        | (Note: Directories are searched in the order $ANDROID_AVD_HOME, $ANDROID_SDK_HOME/avd and $HOME/.android/avd)
+android-runtime	Run Android Emulator smoke	2026-08-30T13:26:47.9618851Z ##[error]Process completed with exit code 1.
