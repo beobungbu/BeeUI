@@ -86,7 +86,7 @@ jobs:
         env:
           BEEUI_WEB_CONSUMER_WORK_ROOT: ${{ runner.temp }}/beeui-web-consumer
           BEEUI_WEB_CONSUMER_CLEAN: '1'
-        run: ./scripts/verify-web-consumer.sh all
+        run: bash scripts/verify-web-consumer.sh all
 
       - name: Upload consumer build output
         if: always()
