@@ -83,6 +83,20 @@ export const a11yScenarios: A11yScenario[] = [
     },
   },
   {
+    name: 'component-gallery-sheet-overlay',
+    description:
+      'Component Gallery — an open Sheet (#159), BeeUI\'s own Web overlay/focus primitives without a native Modal.',
+    navigate: async (page, baseUrl) => {
+      await openComponentGallery(page, baseUrl);
+      await page.getByTestId('sheet-demo-trigger').click();
+      // The Sheet Web implementation sets role="dialog"/aria-modal directly
+      // and synchronously (no react-native-web `Modal` owner-lifecycle
+      // settling race applies here — see `awaitSettledModalOwners`'s doc
+      // comment for why that race exists for RNW `Modal`-based content).
+      await page.getByTestId('sheet-demo-content').waitFor({ state: 'visible' });
+    },
+  },
+  {
     name: 'pattern-gallery-dashboard',
     description:
       'Pattern Gallery — Dashboard Overview, a representative composed application screen (non-form).',

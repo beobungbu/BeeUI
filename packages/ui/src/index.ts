@@ -224,6 +224,25 @@ export {
 } from './components/segmented-control';
 export { Section, type SectionProps } from './components/section';
 export { Separator, type SeparatorProps } from './components/separator';
+export {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHandle,
+  SheetTitle,
+  SheetTrigger,
+  type SheetCloseProps,
+  type SheetContentProps,
+  type SheetDescriptionProps,
+  type SheetFooterProps,
+  type SheetHandleProps,
+  type SheetProps,
+  type SheetSnapPoint,
+  type SheetTitleProps,
+  type SheetTriggerProps,
+} from './components/sheet';
 export { Skeleton, skeletonVariants, type SkeletonProps } from './components/skeleton';
 export { Spinner, type SpinnerProps } from './components/spinner';
 export {
