@@ -150,7 +150,7 @@ export const PaginationItem = React.forwardRef<
         accessibilityRole="button"
         accessibilityState={{ ...accessibilityState, disabled: isDisabled, selected }}
         className={cn(
-          'h-10 min-w-10 items-center justify-center rounded-md border px-3 active:opacity-80',
+          'min-h-10 min-w-10 items-center justify-center rounded-md border px-3 py-2 active:opacity-80',
           selected
             ? 'border-primary bg-primary'
             : 'border-border-strong bg-surface web:hover:bg-surface-muted',

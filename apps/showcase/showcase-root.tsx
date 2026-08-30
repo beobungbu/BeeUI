@@ -16,10 +16,10 @@ import { ScrollView, StatusBar } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
 import { ComponentGallery } from './component-gallery';
 import { PatternGallery } from './pattern-gallery';
-import { RuntimeAcceptance } from './runtime-smoke';
+import { DynamicTypeAcceptance, RuntimeAcceptance } from './runtime-smoke';
 import { ThemeInspector } from './theme-inspector';
 
-type ShowcaseSection = 'home' | 'components' | 'patterns' | 'runtime' | 'tokens';
+type ShowcaseSection = 'home' | 'components' | 'dynamic-type' | 'patterns' | 'runtime' | 'tokens';
 
 function ShowcaseThemeControl() {
   const { hasAdaptiveThemes, theme } = useUniwind();
@@ -58,21 +58,32 @@ export function ShowcaseRoot() {
     return <RuntimeAcceptance onBack={() => setSection('home')} />;
   }
 
+  if (section === 'dynamic-type') {
+    return <DynamicTypeAcceptance onBack={() => setSection('home')} />;
+  }
+
   return (
     <Screen testID="showcase-home">
       <StatusBar
         barStyle={isBeeDarkRuntimeTheme(String(theme)) || theme === 'dark' ? 'light-content' : 'dark-content'}
       />
-      <SafeArea className="bg-surface" edges={['top', 'left', 'right']}>
-        <AppHeader
+      <SafeArea className="flex-1 bg-background" edges={['top', 'left', 'right', 'bottom']}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 64 }}>
+          {/*
+            The header scrolls with the catalog instead of sitting above it as
+            fixed chrome: at large font scales (~2x) its scaled title/description
+            alone can exceed the viewport height, and any fixed region that tall
+            would leave the scrollable launcher list zero usable height, making
+            every surface below unreachable (runtime automation included). Home
+            must stay navigable at every audited Dynamic Type scale.
+          */}
+          <Box className="bg-surface">
+            <AppHeader
 description="Inspect the public component system, semantic theme foundation, production pattern library, and native runtime acceptance from one executable Showcase."
 title="BeeUI Showcase"
 trailing={<ShowcaseThemeControl />}
-        />
-      </SafeArea>
-
-      <SafeArea className="flex-1 bg-background" edges={['left', 'right', 'bottom']}>
-        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 64 }}>
+            />
+          </Box>
 <Box className="mx-auto w-full max-w-4xl gap-6 px-5 py-8">
   <VStack gap="sm">
     <Text variant="title">Choose an inspection surface</Text>
@@ -159,6 +170,26 @@ trailing={<ShowcaseThemeControl />}
         variant="outline"
       >
         Open runtime acceptance
+      </Button>
+    </Card>
+
+    <Card className="min-w-[260px] flex-1 gap-5" padding="lg" variant="raised">
+      <VStack gap="sm">
+        <HStack align="start" justify="between" wrap>
+          <Text variant="heading">Dynamic Type</Text>
+          <Badge variant="info">QA</Badge>
+        </HStack>
+        <Text tone="muted">
+          Deterministic font-scaling fixture: audited growable rows and allow-listed fixed-height exceptions, measurable one tap from home without gallery traversal.
+        </Text>
+      </VStack>
+      <Button
+        accessibilityLabel="Open Dynamic Type fixture"
+        onPress={() => setSection('dynamic-type')}
+        testID="showcase-open-dynamic-type"
+        variant="outline"
+      >
+        Open Dynamic Type fixture
       </Button>
     </Card>
   </Box>

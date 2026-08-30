@@ -84,6 +84,9 @@ cleanup() {
   if [ -n "$SERIAL" ] && [ -n "$ORIGINAL_WM_SIZE" ]; then
     adb_for_device shell wm size reset >/dev/null 2>&1 || true
   fi
+  if [ -n "$SERIAL" ]; then
+    adb_for_device shell settings put system font_scale 1.0 >/dev/null 2>&1 || true
+  fi
   if [ -n "$METRO_PID" ]; then
     kill "$METRO_PID" >/dev/null 2>&1 || true
     wait "$METRO_PID" >/dev/null 2>&1 || true
@@ -514,6 +517,10 @@ EOF_FLOW
 adb_for_device exec-out screencap -p > "$ARTIFACT_DIR/reduced-height.png"
 adb_for_device shell wm size reset
 ORIGINAL_WM_SIZE=""
+
+# #143 — real native Dynamic Type evidence on the dedicated fixture screen.
+. "$ROOT/scripts/runtime-smoke/android-dynamic-type.sh"
+run_dynamic_type_evidence
 
 adb_for_device logcat -d -v threadtime > "$ARTIFACT_DIR/logcat.txt"
 printf 'PASS\n' > "$ARTIFACT_DIR/result.txt"

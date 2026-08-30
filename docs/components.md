@@ -211,6 +211,15 @@ Toast v1 is implemented as a separate transient-notification runtime. It is not 
 
 Animation/swipe/custom-content additions remain future work and must preserve the current ownership boundary unless new evidence justifies a different contract.
 
+## Dynamic Type / font-scaling boundary
+
+Every text-bearing component in this catalog follows the Dynamic Type/font-scaling
+contract in [`dynamic-type.md`](./dynamic-type.md): OS/browser-owned scaling only (no
+`allowFontScaling={false}`, no BeeUI font-scale override), text wraps by default, and any
+single-line truncation or fixed-height row is explicitly allow-listed with a rationale
+there. A new component that introduces `numberOfLines` or a fixed-height row bearing
+caller text must add itself to that contract's tables, not silently opt out of scaling.
+
 ## Pattern-driven promotion
 
 Production patterns under `apps/showcase/patterns/**` are executable Showcase evidence sources, not automatic component requests.
