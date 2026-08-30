@@ -13,6 +13,149 @@ import { Button, type ButtonProps } from './button';
 import { ModalOverlayHost, type ModalOverlayDismissScope } from './overlay-runtime';
 import { Text, type TextProps } from './text';
 
+// #146 — Web-only real Tab focus-trap + initial-focus + focus-restoration for
+// DialogContent/AlertDialogContent while open. React Native's core `Modal`
+// gives BeeUI accessibility semantics (`aria-modal`, `role="dialog"`) and
+// real native platform modal behavior, but on Web it does not itself
+// constrain keyboard Tab order to the dialog's own content: without this,
+// a sighted keyboard user can Tab past the dialog into background page
+// content while it is open, which the R3.8 keyboard/focus acceptance matrix
+// (#146, "no focus behind overlays") names explicitly and which a real
+// keyboard-driven Playwright test (not a `.focus()` shortcut) confirmed was
+// reachable before this change. BeeUI owns this directly on top of the RN
+// Modal kernel here, the same way `sheet.web.tsx`'s `useSheetFocusTrap` owns
+// an equivalent contract on top of Sheet's own non-Modal Web engine (#159) —
+// this is an independent, Dialog-local implementation of that same contract,
+// not a shared coupling between the two overlay kernels (mirrors this
+// repo's established "duplicate the platform-neutral logic" convention
+// documented in `sheet.web.tsx`'s module docblock).
+//
+// `@beeui/ui` targets React Native and excludes the DOM lib, so this reaches
+// the DOM through narrow structural types instead of `lib.dom.d.ts`, exactly
+// like `use-direction.ts`'s `WebDocumentLike` convention.
+type WebFocusableElement = {
+  contains: (other: WebFocusableElement | null) => boolean;
+  focus: (options?: { preventScroll?: boolean }) => void;
+  getClientRects: () => ArrayLike<unknown>;
+  hasAttribute: (name: string) => boolean;
+  querySelectorAll: (selectors: string) => ArrayLike<WebFocusableElement>;
+  removeAttribute: (name: string) => void;
+  setAttribute: (name: string, value: string) => void;
+};
+
+type WebFocusKeyboardEvent = {
+  key?: string;
+  preventDefault?: () => void;
+  shiftKey?: boolean;
+};
+
+type WebFocusDocument = {
+  activeElement: WebFocusableElement | null;
+  addEventListener: (
+    type: string,
+    listener: (event: WebFocusKeyboardEvent) => void,
+    useCapture?: boolean,
+  ) => void;
+  contains: (node: WebFocusableElement | null) => boolean;
+  removeEventListener: (
+    type: string,
+    listener: (event: WebFocusKeyboardEvent) => void,
+    useCapture?: boolean,
+  ) => void;
+};
+
+function getWebFocusDocument(): WebFocusDocument | undefined {
+  if (Platform.OS !== 'web') return undefined;
+  return (globalThis as { document?: WebFocusDocument }).document;
+}
+
+const DIALOG_FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+  '[contenteditable="true"]',
+].join(',');
+
+function getDialogFocusableElements(container: WebFocusableElement): WebFocusableElement[] {
+  return Array.from(container.querySelectorAll(DIALOG_FOCUSABLE_SELECTOR)).filter(
+    (node) => !node.hasAttribute('disabled') && node.getClientRects().length > 0,
+  );
+}
+
+function useDialogFocusTrap(
+  panelRef: React.RefObject<WebFocusableElement | null>,
+  open: boolean,
+) {
+  React.useEffect(() => {
+    if (!open) return undefined;
+    const doc = getWebFocusDocument();
+    if (!doc) return undefined;
+    const previouslyFocused = doc.activeElement;
+    const panel = panelRef.current;
+    let addedTabIndex = false;
+
+    const focusInitialTarget = () => {
+      if (!panel) return;
+      const [first] = getDialogFocusableElements(panel);
+      if (first) {
+        first.focus({ preventScroll: true });
+        return;
+      }
+      if (!panel.hasAttribute('tabindex')) {
+        panel.setAttribute('tabindex', '-1');
+        addedTabIndex = true;
+      }
+      panel.focus({ preventScroll: true });
+    };
+
+    // One JS tick is enough for the Modal's freshly mounted content to be
+    // present in the DOM; a plain timeout avoids adding a second Web-only
+    // scheduler primitive to this shared cross-platform file.
+    const timer = setTimeout(focusInitialTarget, 0);
+
+    const handleKeyDown = (event: WebFocusKeyboardEvent) => {
+      if (event.key !== 'Tab' || !panel) return;
+      const focusable = getDialogFocusableElements(panel);
+      if (focusable.length === 0) {
+        event.preventDefault?.();
+        panel.focus({ preventScroll: true });
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = doc.activeElement;
+      const activeInsidePanel = active !== null && panel.contains(active);
+
+      if (event.shiftKey) {
+        if (!activeInsidePanel || active === first) {
+          event.preventDefault?.();
+          last.focus({ preventScroll: true });
+        }
+      } else if (!activeInsidePanel || active === last) {
+        event.preventDefault?.();
+        first.focus({ preventScroll: true });
+      }
+    };
+
+    // Capture phase: a focused text Input inside the dialog would otherwise
+    // stop a keydown's bubble phase before it reaches a bubble-phase
+    // document listener, silently defeating the wrap-around trap.
+    doc.addEventListener('keydown', handleKeyDown, true);
+
+    return () => {
+      clearTimeout(timer);
+      doc.removeEventListener('keydown', handleKeyDown, true);
+      if (addedTabIndex) panel?.removeAttribute('tabindex');
+      if (previouslyFocused && doc.contains(previouslyFocused)) {
+        previouslyFocused.focus({ preventScroll: true });
+      }
+    };
+  }, [open, panelRef]);
+}
+
 type DialogContextValue = {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -165,6 +308,19 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
     ref,
   ) => {
     const { open, setOpen } = useDialogContext();
+    const panelRef = React.useRef<WebFocusableElement | null>(null);
+    useDialogFocusTrap(panelRef, open);
+    const setPanelRef = React.useCallback(
+      (node: React.ComponentRef<typeof View> | null) => {
+        panelRef.current = node as unknown as WebFocusableElement | null;
+        if (typeof ref === 'function') {
+          ref(node);
+        } else if (ref) {
+          (ref as React.MutableRefObject<React.ComponentRef<typeof View> | null>).current = node;
+        }
+      },
+      [ref],
+    );
     const reactID = React.useId().replace(/:/g, '');
     const defaultTitleNativeID = `beeui-dialog-title-${reactID}`;
     const defaultDescriptionNativeID = `beeui-dialog-description-${reactID}`;
@@ -244,7 +400,7 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
             />
             <DialogContentAccessibilityContext.Provider value={accessibilityContext}>
               <View
-                ref={ref}
+                ref={setPanelRef}
                 {...props}
                 accessibilityHint={accessibilityHint ?? descriptionText}
                 accessibilityLabel={accessibilityLabel ?? titleText}
