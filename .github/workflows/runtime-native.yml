@@ -11,6 +11,8 @@ concurrency:
   group: native-runtime-smoke-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+# Least-privilege default: only reads source and uploads its own job
+# artifacts (via the runner's ACTIONS_RUNTIME_TOKEN, not this token's scope).
 permissions:
   contents: read
 
@@ -24,6 +26,10 @@ env:
 
 jobs:
   ios-runtime:
+    # Same-repo check is defense-in-depth on top of the head_ref/label gate
+    # below: a fork branch could reuse the magic branch name or a maintainer
+    # could label a fork PR without realizing the runtime smoke runs on our
+    # self-hosted Mac.
     if: >-
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
@@ -142,6 +148,10 @@ jobs:
           retention-days: 7
 
   android-runtime:
+    # Same-repo check is defense-in-depth on top of the head_ref/label gate
+    # below: a fork branch could reuse the magic branch name or a maintainer
+    # could label a fork PR without realizing the runtime smoke runs on our
+    # self-hosted runner.
     if: >-
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||

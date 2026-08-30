@@ -11,20 +11,34 @@ jest.mock('react-native-safe-area-context', () => {
   const { View } = require('react-native') as typeof import('react-native');
   const insets = { top: 47, right: 0, bottom: 34, left: 0 };
   const frame = { x: 0, y: 0, width: 390, height: 844 };
+
   return {
     initialWindowMetrics: { frame, insets },
     SafeAreaProvider: ({ children }: { children?: ReactTypes.ReactNode }) => children,
-    SafeAreaListener: ({ children, onChange }: { children?: ReactTypes.ReactNode; onChange: (metrics: { frame: typeof frame; insets: typeof insets }) => void }) => {
+    SafeAreaListener: ({
+      children,
+      onChange,
+    }: {
+      children?: ReactTypes.ReactNode;
+      onChange: (metrics: { frame: typeof frame; insets: typeof insets }) => void;
+    }) => {
       React.useEffect(() => onChange({ frame, insets }), [onChange]);
       return children;
     },
     SafeAreaView: React.forwardRef(
-      ({ children, ...props }: { children?: ReactTypes.ReactNode }, ref: ReactTypes.ForwardedRef<ReactTypes.ComponentRef<typeof View>>) => <View ref={ref} {...props}>{children}</View>,
+      (
+        { children, ...props }: { children?: ReactTypes.ReactNode },
+        ref: ReactTypes.ForwardedRef<ReactTypes.ComponentRef<typeof View>>,
+      ) => <View ref={ref} {...props}>{children}</View>,
     ),
     useSafeAreaInsets: () => insets,
   };
 });
 
+// BeeUI 1.0 #126 — guards the native overlay-runtime stress evidence surface.
+// The fixture is isolated from RuntimeAcceptance so adding stress-only content
+// cannot perturb the shared native baseline. Exact testIDs below are consumed
+// by Maestro and are pinned here to prevent a vacuous runtime flow.
 const ROOT_SELECT_TEST_IDS = [
   'runtime-stress-select-trigger',
   'runtime-stress-select-value',
@@ -49,41 +63,75 @@ const DIALOG_CHILD_TEST_IDS = [
 
 describe('Runtime overlay-stress fixture (#126)', () => {
   it('is reachable one tap from Showcase home and returns home', () => {
-    const view = render(<BeeUIProvider><ShowcaseRoot /></BeeUIProvider>);
+    const view = render(
+      <BeeUIProvider>
+        <ShowcaseRoot />
+      </BeeUIProvider>,
+    );
+
     fireEvent.press(view.getByTestId('showcase-open-runtime-stress'));
     expect(view.getByTestId('runtime-stress-smoke')).toBeTruthy();
     expect(view.getByTestId('runtime-stress-ready')).toBeTruthy();
     expect(view.queryByTestId('showcase-home')).toBeNull();
+
     fireEvent.press(view.getByTestId('runtime-stress-back'));
     expect(view.getByTestId('showcase-home')).toBeTruthy();
     expect(view.queryByTestId('runtime-stress-smoke')).toBeNull();
   });
 
-  it('renders root Select evidence testIDs', () => {
-    const view = render(<BeeUIProvider><RuntimeStressAcceptance onBack={() => undefined} /></BeeUIProvider>);
-    for (const testID of ROOT_SELECT_TEST_IDS) expect(view.getByTestId(testID)).toBeTruthy();
+  it('renders the root Select evidence testIDs the native harness asserts against', () => {
+    const view = render(
+      <BeeUIProvider>
+        <RuntimeStressAcceptance onBack={() => undefined} />
+      </BeeUIProvider>,
+    );
+
+    for (const testID of ROOT_SELECT_TEST_IDS) {
+      expect(view.getByTestId(testID)).toBeTruthy();
+    }
     expect(view.getByText('select: none')).toBeTruthy();
   });
 
   it('renders visible movement sentinels across the real scroll corridor', () => {
-    const view = render(<BeeUIProvider><RuntimeStressAcceptance onBack={() => undefined} /></BeeUIProvider>);
-    for (const testID of MOVEMENT_TEST_IDS) expect(view.getByTestId(testID)).toBeTruthy();
+    const view = render(
+      <BeeUIProvider>
+        <RuntimeStressAcceptance onBack={() => undefined} />
+      </BeeUIProvider>,
+    );
+
+    for (const testID of MOVEMENT_TEST_IDS) {
+      expect(view.getByTestId(testID)).toBeTruthy();
+    }
     expect(view.getByText('Scroll corridor 1')).toBeTruthy();
     expect(view.getByText('Scroll corridor 2')).toBeTruthy();
     expect(view.getByText('Scroll corridor 3')).toBeTruthy();
   });
 
-  it('renders modal-local child evidence once the stress Dialog opens', () => {
-    const view = render(<BeeUIProvider><RuntimeStressAcceptance onBack={() => undefined} /></BeeUIProvider>);
+  it('renders the modal-local child Select/Popover/input evidence testIDs once the stress Dialog opens', () => {
+    const view = render(
+      <BeeUIProvider>
+        <RuntimeStressAcceptance onBack={() => undefined} />
+      </BeeUIProvider>,
+    );
+
     fireEvent.press(view.getByTestId('runtime-stress-dialog-trigger'));
-    for (const testID of DIALOG_CHILD_TEST_IDS) expect(view.getByTestId(testID)).toBeTruthy();
+
+    for (const testID of DIALOG_CHILD_TEST_IDS) {
+      expect(view.getByTestId(testID)).toBeTruthy();
+    }
     expect(view.getByText('select selection: none')).toBeTruthy();
   });
 
-  it('renders the in-Popover keyboard evidence surface', () => {
-    const view = render(<BeeUIProvider><RuntimeStressAcceptance onBack={() => undefined} /></BeeUIProvider>);
+  it('renders the in-Popover keyboard-stress evidence surface once the child Popover opens', () => {
+    const view = render(
+      <BeeUIProvider>
+        <RuntimeStressAcceptance onBack={() => undefined} />
+      </BeeUIProvider>,
+    );
+
     fireEvent.press(view.getByTestId('runtime-stress-dialog-trigger'));
     fireEvent.press(view.getByTestId('runtime-stress-dialog-popover-trigger'));
+
     const hidden = { includeHiddenElements: true } as const;
     expect(view.getByTestId('runtime-stress-dialog-popover-content', hidden)).toBeTruthy();
     expect(view.getByTestId('runtime-stress-dialog-popover-keyboard-toggle', hidden)).toBeTruthy();
@@ -92,8 +140,13 @@ describe('Runtime overlay-stress fixture (#126)', () => {
     expect(view.getByText('keyboard: hidden', hidden)).toBeTruthy();
   });
 
-  it('keeps shared RuntimeAcceptance free of #126 stress content', () => {
-    const view = render(<BeeUIProvider><RuntimeAcceptance onBack={() => undefined} /></BeeUIProvider>);
+  it('keeps the shared baseline RuntimeAcceptance screen free of #126 stress content', () => {
+    const view = render(
+      <BeeUIProvider>
+        <RuntimeAcceptance onBack={() => undefined} />
+      </BeeUIProvider>,
+    );
+
     expect(view.queryByTestId('runtime-select-trigger')).toBeNull();
     expect(view.queryByTestId('runtime-stress-select-trigger')).toBeNull();
     expect(view.queryByTestId('runtime-stress-dialog-trigger')).toBeNull();

@@ -90,6 +90,14 @@ export function ShowcaseRoot() {
       />
       <SafeArea className="flex-1 bg-background" edges={['top', 'left', 'right', 'bottom']}>
         <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 64 }}>
+          {/*
+            The header scrolls with the catalog instead of sitting above it as
+            fixed chrome: at large font scales (~2x) its scaled title/description
+            alone can exceed the viewport height, and any fixed region that tall
+            would leave the scrollable launcher list zero usable height, making
+            every surface below unreachable (runtime automation included). Home
+            must stay navigable at every audited Dynamic Type scale.
+          */}
           <Box className="bg-surface">
             <AppHeader
 description="Inspect the public component system, semantic theme foundation, production pattern library, and native runtime acceptance from one executable Showcase."
@@ -116,7 +124,12 @@ trailing={<ShowcaseThemeControl />}
           Inspect foundation, forms, feedback, overlays, selection, navigation, disclosure, data, and application composition.
         </Text>
       </VStack>
-      <Button accessibilityLabel="Open Components" onPress={() => setSection('components')} testID="showcase-open-components" variant="outline">
+      <Button
+        accessibilityLabel="Open Components"
+        onPress={() => setSection('components')}
+        testID="showcase-open-components"
+        variant="outline"
+      >
         Browse components
       </Button>
     </Card>
@@ -127,9 +140,16 @@ trailing={<ShowcaseThemeControl />}
           <Text variant="heading">Theme & tokens</Text>
           <Badge variant="secondary">v2</Badge>
         </HStack>
-        <Text tone="muted">Inspect semantic colors, typography, sizing, elevation, focus, motion policy, and Brand A/B light-dark switching.</Text>
+        <Text tone="muted">
+          Inspect semantic colors, typography, sizing, elevation, focus, motion policy, and Brand A/B light-dark switching.
+        </Text>
       </VStack>
-      <Button accessibilityLabel="Open Theme and tokens" onPress={() => setSection('tokens')} testID="showcase-open-theme-tokens" variant="outline">
+      <Button
+        accessibilityLabel="Open Theme and tokens"
+        onPress={() => setSection('tokens')}
+        testID="showcase-open-theme-tokens"
+        variant="outline"
+      >
         Inspect theme
       </Button>
     </Card>
@@ -140,9 +160,16 @@ trailing={<ShowcaseThemeControl />}
           <Text variant="heading">Patterns</Text>
           <Badge variant="secondary">37 screens</Badge>
         </HStack>
-        <Text tone="muted">Browse four production domains with controlled demo state, responsive previews, state inspection, and light/dark support.</Text>
+        <Text tone="muted">
+          Browse four production domains with controlled demo state, responsive previews, state inspection, and light/dark support.
+        </Text>
       </VStack>
-      <Button accessibilityLabel="Open Patterns" onPress={() => setSection('patterns')} testID="showcase-open-patterns" variant="outline">
+      <Button
+        accessibilityLabel="Open Patterns"
+        onPress={() => setSection('patterns')}
+        testID="showcase-open-patterns"
+        variant="outline"
+      >
         Browse patterns
       </Button>
     </Card>
@@ -153,9 +180,16 @@ trailing={<ShowcaseThemeControl />}
           <Text variant="heading">Runtime acceptance</Text>
           <Badge variant="info">QA</Badge>
         </HStack>
-        <Text tone="muted">Stable native-only fixtures for simulator/emulator smoke, sheet presentation, hardware Back, keyboard, safe area, and evidence capture.</Text>
+        <Text tone="muted">
+          Stable native-only fixtures for simulator/emulator smoke, sheet presentation, hardware Back, keyboard, safe area, and evidence capture.
+        </Text>
       </VStack>
-      <Button accessibilityLabel="Open Runtime Acceptance" onPress={() => setSection('runtime')} testID="showcase-open-runtime" variant="outline">
+      <Button
+        accessibilityLabel="Open Runtime Acceptance"
+        onPress={() => setSection('runtime')}
+        testID="showcase-open-runtime"
+        variant="outline"
+      >
         Open runtime acceptance
       </Button>
     </Card>
@@ -166,9 +200,16 @@ trailing={<ShowcaseThemeControl />}
           <Text variant="heading">Runtime stress</Text>
           <Badge variant="info">QA</Badge>
         </HStack>
-        <Text tone="muted">Isolated #126 native movement/scroll/keyboard stress: root Select, Popover movement coherence, and modal-local child overlays under a real keyboard.</Text>
+        <Text tone="muted">
+          Isolated #126 native movement/scroll/keyboard stress: root Select, Popover movement coherence, and modal-local child overlays under a real keyboard.
+        </Text>
       </VStack>
-      <Button accessibilityLabel="Open Runtime Stress fixture" onPress={() => setSection('runtime-stress')} testID="showcase-open-runtime-stress" variant="outline">
+      <Button
+        accessibilityLabel="Open Runtime Stress fixture"
+        onPress={() => setSection('runtime-stress')}
+        testID="showcase-open-runtime-stress"
+        variant="outline"
+      >
         Open Runtime Stress fixture
       </Button>
     </Card>
@@ -179,9 +220,16 @@ trailing={<ShowcaseThemeControl />}
           <Text variant="heading">Dynamic Type</Text>
           <Badge variant="info">QA</Badge>
         </HStack>
-        <Text tone="muted">Deterministic font-scaling fixture: audited growable rows and allow-listed fixed-height exceptions, measurable one tap from home without gallery traversal.</Text>
+        <Text tone="muted">
+          Deterministic font-scaling fixture: audited growable rows and allow-listed fixed-height exceptions, measurable one tap from home without gallery traversal.
+        </Text>
       </VStack>
-      <Button accessibilityLabel="Open Dynamic Type fixture" onPress={() => setSection('dynamic-type')} testID="showcase-open-dynamic-type" variant="outline">
+      <Button
+        accessibilityLabel="Open Dynamic Type fixture"
+        onPress={() => setSection('dynamic-type')}
+        testID="showcase-open-dynamic-type"
+        variant="outline"
+      >
         Open Dynamic Type fixture
       </Button>
     </Card>
@@ -192,9 +240,16 @@ trailing={<ShowcaseThemeControl />}
           <Text variant="heading">Localization stress</Text>
           <Badge variant="info">QA</Badge>
         </HStack>
-        <Text tone="muted">Deterministic long-content/localization fixture: long words, CJK, Arabic RTL, and pseudo-localized profiles across Tooltip, Sheet, Table, DatePicker, forms, Settings, Toast, and navigation chrome.</Text>
+        <Text tone="muted">
+          Deterministic long-content/localization fixture: long words, CJK, Arabic RTL, and pseudo-localized profiles across Tooltip, Sheet, Table, DatePicker, forms, Settings, Toast, and navigation chrome.
+        </Text>
       </VStack>
-      <Button accessibilityLabel="Open Localization stress fixture" onPress={() => setSection('l10n-stress')} testID="showcase-open-l10n-stress" variant="outline">
+      <Button
+        accessibilityLabel="Open Localization stress fixture"
+        onPress={() => setSection('l10n-stress')}
+        testID="showcase-open-l10n-stress"
+        variant="outline"
+      >
         Open Localization stress fixture
       </Button>
     </Card>
