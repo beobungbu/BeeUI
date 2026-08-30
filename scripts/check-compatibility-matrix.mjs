@@ -20,6 +20,7 @@ const CI_WORKFLOW_PATHS = [
   path.join(ROOT_DIR, '.github', 'workflows', 'runtime-native.yml'),
   path.join(ROOT_DIR, '.github', 'workflows', 'visual-web.yml'),
   path.join(ROOT_DIR, '.github', 'workflows', 'web-a11y.yml'),
+  path.join(ROOT_DIR, '.github', 'workflows', 'web-consumer.yml'),
   path.join(ROOT_DIR, '.github', 'workflows', 'compat-rn-0-87.yml'),
 ];
 
@@ -80,6 +81,7 @@ export function computeActualSnapshot({
     react: uiPackageJson.devDependencies?.react,
     reactDom: uiPackageJson.devDependencies?.['react-dom'],
     reactNative: uiPackageJson.devDependencies?.['react-native'],
+    reactNativeWeb: showcasePackageJson.dependencies?.['react-native-web'],
     expoSdkRange: showcasePackageJson.dependencies?.expo,
     tailwindcss: showcasePackageJson.dependencies?.tailwindcss,
     uniwind: showcasePackageJson.dependencies?.uniwind,
