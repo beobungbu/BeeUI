@@ -103,6 +103,7 @@ import * as React from 'react';
 import { ScrollView, StatusBar } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
 import { SelectShowcase } from './select-showcase';
+import { TableShowcase } from './table-showcase';
 
 function ThemeToggle() {
   const { hasAdaptiveThemes, theme } = useUniwind();
@@ -611,6 +612,12 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
             </PlaygroundHeading>
 
             <SelectShowcase />
+
+            <PlaygroundHeading description="Composable primitives (no owned data/columns) — real HTML table semantics on web, keyboard-reachable sort, and caller-owned row selection.">
+              Table
+            </PlaygroundHeading>
+
+            <TableShowcase />
 
             <PlaygroundHeading description="Modal and anchored overlays now have real public APIs you can click through here.">
               Overlay playground

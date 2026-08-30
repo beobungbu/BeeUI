@@ -103,4 +103,13 @@ export const a11yScenarios: A11yScenario[] = [
       });
     },
   },
+  {
+    name: 'component-gallery-table',
+    description:
+      'Component Gallery — Table section: a real HTML table with a sortable/selectable header and its `layout="stacked"` presentation.',
+    navigate: async (page, baseUrl) => {
+      await openComponentGallery(page, baseUrl);
+      await page.getByTestId('table-showcase-stacked').scrollIntoViewIfNeeded();
+    },
+  },
 ];
