@@ -19,6 +19,7 @@ import { layer } from '@beeui/tokens';
 import * as React from 'react';
 import {
   Keyboard,
+  Platform,
   Pressable,
   StyleSheet,
   View,
@@ -244,14 +245,201 @@ export function measureOverlayNodeInWindow(
 }
 
 /**
+ * Timing primitive for the bounded-measurement watchdog (ADR-003,
+ * `docs/decisions/003-native-measurement-timeout.md`). Each `scheduleTick`
+ * schedules a single tick and returns a cancel function; calling cancel after the
+ * tick already fired is a no-op. Production wires this to `requestAnimationFrame`;
+ * deterministic tests inject a manual scheduler advanced by explicit `tick()`.
+ */
+export type MeasurementScheduler = {
+  scheduleTick: (onTick: () => void) => () => void;
+};
+
+/**
+ * Ticks a scheduled measurement is allowed before it is declared unresponsive.
+ * ADR-003 starting default; frame-tick based (not wall-clock) so the budget scales
+ * with actual frame delivery and stays deterministic under an injected scheduler.
+ */
+const MEASUREMENT_TICK_BUDGET = 2;
+
+/**
+ * Production tick = one animation frame followed by one macrotask — a fully
+ * "settled event-loop turn". The trailing macrotask is load-bearing on the Web:
+ * react-native-web delivers `measureInWindow` via a macrotask (`setTimeout`), and
+ * headless / unthrottled `requestAnimationFrame` can fire several times before a
+ * pending macrotask runs. A frame-only tick could therefore burn the whole budget
+ * and declare a legitimately in-flight Web measurement "unresponsive" before its
+ * callback ever fires — nulling the anchor and dropping the real measurement so the
+ * overlay never becomes visible. Because the measurement's macrotask is enqueued
+ * (at measure time) before this tick's trailing macrotask, macrotask FIFO ordering
+ * guarantees a real measurement resolves — and cancels the watchdog — before the
+ * tick completes. The leading frame keeps the budget frame-scaled on native, where
+ * measurement delivery tracks the bridge/frame cadence.
+ */
+// Exported as an internal deterministic test seam (not re-exported from the package
+// index) so the production tick's Web-safe frame+macrotask ordering can be asserted.
+export const defaultMeasurementScheduler: MeasurementScheduler = {
+  scheduleTick: (onTick) => {
+    if (typeof requestAnimationFrame !== 'function') {
+      // No frame clock available (e.g. SSR): the watchdog simply never fires,
+      // which reproduces the pre-ADR "eternally pending" behavior rather than a
+      // spurious timeout. Native and Web both expose requestAnimationFrame.
+      return () => {};
+    }
+    let cancelled = false;
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+    const frameHandle = requestAnimationFrame(() => {
+      if (cancelled) return;
+      if (typeof setTimeout !== 'function') {
+        onTick();
+        return;
+      }
+      timeoutHandle = setTimeout(() => {
+        if (!cancelled) onTick();
+      }, 0);
+    });
+    return () => {
+      cancelled = true;
+      if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frameHandle);
+      if (timeoutHandle !== undefined && typeof clearTimeout === 'function') {
+        clearTimeout(timeoutHandle);
+      }
+    };
+  },
+};
+
+/**
+ * Arms a cancellable frame-tick watchdog that invokes `onBudgetElapsed` once the
+ * tick budget is consumed. Returns a cancel function that is safe to call multiple
+ * times and after the budget already elapsed. Re-arms one tick at a time so a
+ * manual test scheduler proves "budget elapsed" by advancing exactly `budgetTicks`
+ * times, with no real timers.
+ */
+function armMeasurementWatchdog(
+  scheduler: MeasurementScheduler,
+  budgetTicks: number,
+  onBudgetElapsed: () => void,
+): () => void {
+  let cancelled = false;
+  let remaining = budgetTicks;
+  let cancelCurrentTick: (() => void) | null = null;
+
+  const armNext = () => {
+    cancelCurrentTick = scheduler.scheduleTick(() => {
+      cancelCurrentTick = null;
+      if (cancelled) return;
+      remaining -= 1;
+      if (remaining <= 0) {
+        onBudgetElapsed();
+        return;
+      }
+      armNext();
+    });
+  };
+
+  armNext();
+
+  return () => {
+    if (cancelled) return;
+    cancelled = true;
+    if (cancelCurrentTick) {
+      cancelCurrentTick();
+      cancelCurrentTick = null;
+    }
+  };
+}
+
+/**
+ * The bounded terminal action a genuine measurement timeout applied, named so the
+ * dev diagnostic is actionable rather than merely "something timed out":
+ * - `fallback-committed` — host path committed a layout/explicit fallback rect.
+ * - `retain-null` — host path had no fallback; the previous (often `null`) rect
+ *   was retained.
+ * - `anchor-unavailable` — anchor path nulled the measurement and fired
+ *   `onAnchorUnavailable`.
+ */
+type MeasurementDiagnosticAction = 'fallback-committed' | 'retain-null' | 'anchor-unavailable';
+
+/**
+ * Actionable context for a genuine unresponsive-measurement timeout, so a developer
+ * can locate the specific request (host vs anchor, which generation, which host
+ * scope) and see the concrete terminal action taken — not just that "a measurement
+ * timed out somewhere".
+ */
+type MeasurementDiagnostic = {
+  target: 'host' | 'anchor';
+  /** The retired request's own generation (latest-request-wins counter value). */
+  generation: number;
+  action: MeasurementDiagnosticAction;
+  /** Anchor requests carry the host-revision scope the request was keyed to. */
+  hostRevision?: string | null;
+};
+
+/**
+ * Development-only diagnostic for a genuine unresponsive-measurement timeout
+ * (budget elapsed with the generation still current and no superseding cause).
+ * Follows the `overlay-host-mode.ts` / `use-required-callback-warning.ts`
+ * precedent: `__DEV__`-guarded, never thrown, stripped from production builds.
+ *
+ * The message names the measurement (host vs anchor), the retired request's
+ * generation, the anchor host-revision scope, and the concrete terminal action so
+ * the failure is actionable during development. Production (`__DEV__` false) never
+ * warns; the functional fallback/unavailable behavior is unconditional and
+ * identical in dev and production (ADR-003, Dev diagnostics).
+ */
+function warnMeasurementUnresponsive(diagnostic: MeasurementDiagnostic) {
+  if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    const { target, generation, action, hostRevision } = diagnostic;
+    const scope =
+      target === 'anchor' ? `, host-revision=${hostRevision ?? 'none'}` : '';
+    // Web `measureInWindow` (react-native-web's `getBoundingClientRect`) resolves
+    // effectively synchronously, so a Web timeout is a stronger signal of a genuine
+    // defect (an unmeasurable/foreign ref) than of ordinary async latency; native
+    // callbacks are legitimately async and can be dropped by a detached/recycled
+    // view or a bridge failure (ADR-003, Web/native differences).
+    const cause =
+      Platform.OS === 'web'
+        ? 'On Web, measurement is effectively synchronous, so this most likely indicates a genuine defect (an unmeasurable or foreign ref) rather than ordinary async latency'
+        : 'On native this usually means a native measureInWindow callback was dropped (detached/recycled view or bridge failure)';
+    console.warn(
+      `[BeeUI] Overlay ${target} measurement did not resolve within its completion budget ` +
+        `(generation=${generation}${scope}); applied the bounded '${action}' path. ` +
+        `${cause}. See docs/decisions/003-native-measurement-timeout.md.`,
+    );
+  }
+}
+
+// Stable across the runtime's lifetime (resolved once), so it is kept separate from
+// the geometry-carrying runtime context: reading the scheduler must not subscribe a
+// consumer to host-rect/keyboard/window changes.
+const OverlayMeasurementSchedulerContext = React.createContext<MeasurementScheduler>(
+  defaultMeasurementScheduler,
+);
+
+/**
  * Measures an overlay host in window coordinates. Native measurement callbacks are
  * asynchronous, so only the newest request may commit. A stale callback from a
  * previous layout/orientation must never overwrite a newer host rectangle.
  */
-function useMeasuredOverlayHost(hostRectOverride?: AnchoredOverlayRect) {
+function useMeasuredOverlayHost(
+  scheduler: MeasurementScheduler,
+  hostRectOverride?: AnchoredOverlayRect,
+) {
   const [hostRect, setHostRect] = React.useState<AnchoredOverlayRect | null>(null);
   const hostRef = React.useRef<React.ComponentRef<typeof View>>(null);
   const measurementGenerationRef = React.useRef(0);
+  // Most recent onLayout-derived rect, used as the bounded-completion fallback for
+  // a scheduled measurement that times out without an explicit fallback (e.g. a
+  // window-resize remeasure), per ADR-003 "commit ... from the most recent onLayout".
+  const lastLayoutRectRef = React.useRef<AnchoredOverlayRect | null>(null);
+  // Cancel handle for the in-flight measurement watchdog, if any.
+  const watchdogCancelRef = React.useRef<(() => void) | null>(null);
+  const cancelWatchdog = React.useCallback(() => {
+    if (watchdogCancelRef.current) {
+      watchdogCancelRef.current();
+      watchdogCancelRef.current = null;
+    }
+  }, []);
   const overridden = React.useMemo(
     () => (hostRectOverride ? finiteRect(hostRectOverride) : null),
     [hostRectOverride?.height, hostRectOverride?.width, hostRectOverride?.x, hostRectOverride?.y],
@@ -261,26 +449,61 @@ function useMeasuredOverlayHost(hostRectOverride?: AnchoredOverlayRect) {
     measurementGenerationRef.current += 1;
     return () => {
       measurementGenerationRef.current += 1;
+      // Retiring the generation on override change/unmount must also cancel any
+      // outstanding watchdog so it can never fire after this hook is gone (ADR-003
+      // Close/unmount invalidation).
+      cancelWatchdog();
     };
-  }, [overridden?.height, overridden?.width, overridden?.x, overridden?.y]);
+  }, [cancelWatchdog, overridden?.height, overridden?.width, overridden?.x, overridden?.y]);
 
   const measureLatest = React.useCallback(
     (fallback?: AnchoredOverlayRect | null) => {
       if (overridden) return false;
+      // A newer request supersedes the previous watchdog (ADR-003 row 6).
+      cancelWatchdog();
       const generation = ++measurementGenerationRef.current;
       let callbackInvoked = false;
       const scheduled = measureOverlayNodeInWindow(hostRef.current, (nextRect) => {
         callbackInvoked = true;
+        // Guard BEFORE cancelling: a stale (superseded/retired) callback must be
+        // fully inert. Cancelling here is generation-agnostic, so a late callback
+        // from an already-retired request would otherwise kill the CURRENT
+        // request's in-flight watchdog and let it hang unbounded (ADR-003).
         if (generation !== measurementGenerationRef.current) return;
+        cancelWatchdog();
         const resolved = nextRect ?? fallback ?? null;
         if (resolved) setRectIfChanged(setHostRect, resolved);
       });
       if (!scheduled && !callbackInvoked && generation === measurementGenerationRef.current && fallback) {
         setRectIfChanged(setHostRect, fallback);
       }
+      if (scheduled && !callbackInvoked) {
+        watchdogCancelRef.current = armMeasurementWatchdog(
+          scheduler,
+          MEASUREMENT_TICK_BUDGET,
+          () => {
+            watchdogCancelRef.current = null;
+            // Superseded by a newer request while pending: normal operation, no
+            // fallback commit and no diagnostic (the newer request owns the state).
+            if (generation !== measurementGenerationRef.current) return;
+            // Retire this generation so a late real callback is dropped by the
+            // existing generation guard (ADR-003 Late-callback handling).
+            measurementGenerationRef.current += 1;
+            const resolvedFallback = fallback ?? lastLayoutRectRef.current;
+            // Commit the layout fallback if we have one; otherwise retain the last
+            // good rect (or the pre-existing null state on a first measurement).
+            if (resolvedFallback) setRectIfChanged(setHostRect, resolvedFallback);
+            warnMeasurementUnresponsive({
+              target: 'host',
+              generation,
+              action: resolvedFallback ? 'fallback-committed' : 'retain-null',
+            });
+          },
+        );
+      }
       return scheduled;
     },
-    [overridden],
+    [cancelWatchdog, overridden, scheduler],
   );
 
   const remeasureHost = React.useCallback(() => {
@@ -291,6 +514,7 @@ function useMeasuredOverlayHost(hostRectOverride?: AnchoredOverlayRect) {
     (event: LayoutChangeEvent) => {
       if (overridden) return;
       const fallback = finiteRect(event.nativeEvent.layout);
+      lastLayoutRectRef.current = fallback;
       measureLatest(fallback);
     },
     [measureLatest, overridden],
@@ -303,6 +527,12 @@ export type OverlayRuntimeProviderProps = {
   children?: React.ReactNode;
   /** Internal deterministic measurement seam used by contract tests. */
   hostRectOverride?: AnchoredOverlayRect;
+  /**
+   * Internal deterministic scheduler seam for the bounded-measurement watchdog
+   * (ADR-003). Defaults to a `requestAnimationFrame` tick clock in production;
+   * contract tests inject a manual scheduler. Not a public API.
+   */
+  measurementScheduler?: MeasurementScheduler;
   /** Internal deterministic transport seam used by contract tests. */
   transport?: OverlayTransport;
 };
@@ -310,6 +540,7 @@ export type OverlayRuntimeProviderProps = {
 function OverlayRuntimeProviderRoot({
   children,
   hostRectOverride,
+  measurementScheduler,
   transport: transportOverride,
 }: OverlayRuntimeProviderProps) {
   const transportRef = React.useRef<OverlayTransport | null>(null);
@@ -317,12 +548,19 @@ function OverlayRuntimeProviderRoot({
     transportRef.current = transportOverride ?? resolveOverlayTransport();
   }
   const transport = transportRef.current;
+  // Resolve the scheduler once for the lifetime of the runtime so host and anchor
+  // watchdogs share one stable timing primitive.
+  const schedulerRef = React.useRef<MeasurementScheduler | null>(null);
+  if (schedulerRef.current === null) {
+    schedulerRef.current = measurementScheduler ?? defaultMeasurementScheduler;
+  }
+  const scheduler = schedulerRef.current;
   const {
     handleHostLayout,
     hostRect: resolvedHostRect,
     hostRef,
     remeasureHost,
-  } = useMeasuredOverlayHost(hostRectOverride);
+  } = useMeasuredOverlayHost(scheduler, hostRectOverride);
   const dismissStackRef = React.useRef(createOverlayDismissStack());
   const safeAreaInsets = useSafeAreaInsets();
   const keyboardRect = useKeyboardRect();
@@ -387,27 +625,29 @@ function OverlayRuntimeProviderRoot({
 
   return (
     <OverlayTransportContext.Provider value={transport}>
-      <RootBoundary>
-        <OverlayRuntimeContext.Provider value={context}>
-          <OverlayActiveScopeContext.Provider value={coordinator}>
-            <OverlayScopeContext.Provider value={rootScope}>
-              <OverlayHostScopeProvider hostName={ROOT_OVERLAY_HOST}>
-                {children}
-              </OverlayHostScopeProvider>
-              <View
-                ref={hostRef}
-                accessible={false}
-                collapsable={false}
-                onLayout={handleHostLayout}
-                pointerEvents="box-none"
-                style={[StyleSheet.absoluteFill, styles.host]}
-                testID="beeui-overlay-host"
-              />
-              <HostOutlet name={ROOT_OVERLAY_HOST} style={styles.host} />
-            </OverlayScopeContext.Provider>
-          </OverlayActiveScopeContext.Provider>
-        </OverlayRuntimeContext.Provider>
-      </RootBoundary>
+      <OverlayMeasurementSchedulerContext.Provider value={scheduler}>
+        <RootBoundary>
+          <OverlayRuntimeContext.Provider value={context}>
+            <OverlayActiveScopeContext.Provider value={coordinator}>
+              <OverlayScopeContext.Provider value={rootScope}>
+                <OverlayHostScopeProvider hostName={ROOT_OVERLAY_HOST}>
+                  {children}
+                </OverlayHostScopeProvider>
+                <View
+                  ref={hostRef}
+                  accessible={false}
+                  collapsable={false}
+                  onLayout={handleHostLayout}
+                  pointerEvents="box-none"
+                  style={[StyleSheet.absoluteFill, styles.host]}
+                  testID="beeui-overlay-host"
+                />
+                <HostOutlet name={ROOT_OVERLAY_HOST} style={styles.host} />
+              </OverlayScopeContext.Provider>
+            </OverlayActiveScopeContext.Provider>
+          </OverlayRuntimeContext.Provider>
+        </RootBoundary>
+      </OverlayMeasurementSchedulerContext.Provider>
     </OverlayTransportContext.Provider>
   );
 }
@@ -415,12 +655,17 @@ function OverlayRuntimeProviderRoot({
 export function OverlayRuntimeProvider({
   children,
   hostRectOverride,
+  measurementScheduler,
   transport,
 }: OverlayRuntimeProviderProps) {
   const parent = React.useContext(OverlayRuntimeContext);
   if (parent) return <>{children}</>;
   return (
-    <OverlayRuntimeProviderRoot hostRectOverride={hostRectOverride} transport={transport}>
+    <OverlayRuntimeProviderRoot
+      hostRectOverride={hostRectOverride}
+      measurementScheduler={measurementScheduler}
+      transport={transport}
+    >
       {children}
     </OverlayRuntimeProviderRoot>
   );
@@ -481,12 +726,14 @@ export function ModalOverlayHost({
   if (controllerRef.current === null) controllerRef.current = createDismissController(dismissStack);
   const controller = controllerRef.current;
   const coordinator = React.useContext(OverlayActiveScopeContext);
+  // A modal-local host reuses the runtime's single (stable) scheduler.
+  const measurementScheduler = React.useContext(OverlayMeasurementSchedulerContext);
   const {
     handleHostLayout,
     hostRect,
     hostRef,
     remeasureHost,
-  } = useMeasuredOverlayHost(hostRectOverride);
+  } = useMeasuredOverlayHost(measurementScheduler, hostRectOverride);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
 
   React.useEffect(() => remeasureHost(), [remeasureHost, windowHeight, windowWidth]);
@@ -668,6 +915,7 @@ export function useAnchoredOverlayPosition({
 }: UseAnchoredOverlayPositionOptions): UseAnchoredOverlayPositionResult {
   const { hostRect, remeasureHost } = useNearestOverlayScope();
   const { keyboardRect, safeAreaInsets, windowRect } = useOverlayRuntime();
+  const measurementScheduler = React.useContext(OverlayMeasurementSchedulerContext);
   const hostRevision = hostRect
     ? `${hostRect.x},${hostRect.y},${hostRect.width},${hostRect.height}`
     : null;
@@ -681,22 +929,39 @@ export function useAnchoredOverlayPosition({
     anchorMeasurement?.hostRevision === hostRevision ? anchorMeasurement.rect : null;
   const [overlaySize, setOverlaySize] = React.useState<AnchoredOverlaySize | null>(null);
   const anchorMeasurementGenerationRef = React.useRef(0);
+  // Cancel handle for the in-flight anchor measurement watchdog, if any.
+  const watchdogCancelRef = React.useRef<(() => void) | null>(null);
+  const cancelWatchdog = React.useCallback(() => {
+    if (watchdogCancelRef.current) {
+      watchdogCancelRef.current();
+      watchdogCancelRef.current = null;
+    }
+  }, []);
 
   React.useEffect(
     () => () => {
       anchorMeasurementGenerationRef.current += 1;
+      // Unmount retires the generation and must cancel any outstanding watchdog so
+      // it can never fire after unmount (ADR-003 Close/unmount invalidation).
+      cancelWatchdog();
     },
-    [],
+    [cancelWatchdog],
   );
 
   const remeasure = React.useCallback(() => {
     if (!openRef.current) return;
     remeasureHost();
+    // A newer request supersedes the previous watchdog (ADR-003 row 6).
+    cancelWatchdog();
     const generation = ++anchorMeasurementGenerationRef.current;
     const requestedHostRevision = hostRevision;
     let callbackInvoked = false;
     const scheduled = measureOverlayNodeInWindow(anchorRef.current, (nextRect) => {
       callbackInvoked = true;
+      // Guard BEFORE cancelling: a stale (superseded/host-revised/closed/retired)
+      // callback must be fully inert. Cancelling here is generation-agnostic, so a
+      // late callback from an already-retired request would otherwise kill the
+      // CURRENT request's in-flight watchdog and let it hang unbounded (ADR-003).
       if (
         generation !== anchorMeasurementGenerationRef.current ||
         requestedHostRevision !== hostRevisionRef.current ||
@@ -704,6 +969,7 @@ export function useAnchoredOverlayPosition({
       ) {
         return;
       }
+      cancelWatchdog();
       if (!nextRect) {
         setAnchorMeasurement(null);
         onAnchorUnavailable?.();
@@ -724,17 +990,50 @@ export function useAnchoredOverlayPosition({
     ) {
       onAnchorUnavailable?.();
     }
-  }, [anchorRef, hostRevision, onAnchorUnavailable, remeasureHost]);
+    if (scheduled && !callbackInvoked) {
+      watchdogCancelRef.current = armMeasurementWatchdog(
+        measurementScheduler,
+        MEASUREMENT_TICK_BUDGET,
+        () => {
+          watchdogCancelRef.current = null;
+          // Superseded, host geometry changed, or overlay closed while pending:
+          // normal retirement, not unresponsiveness — no callback, no diagnostic.
+          // Reuses the exact guards that already reject a stale successful callback.
+          if (
+            generation !== anchorMeasurementGenerationRef.current ||
+            requestedHostRevision !== hostRevisionRef.current ||
+            !openRef.current
+          ) {
+            return;
+          }
+          // Retire this generation so a late real callback is dropped by the
+          // existing generation guard (ADR-003 Late-callback handling).
+          anchorMeasurementGenerationRef.current += 1;
+          setAnchorMeasurement(null);
+          onAnchorUnavailable?.();
+          warnMeasurementUnresponsive({
+            target: 'anchor',
+            generation,
+            action: 'anchor-unavailable',
+            hostRevision: requestedHostRevision,
+          });
+        },
+      );
+    }
+  }, [anchorRef, cancelWatchdog, hostRevision, measurementScheduler, onAnchorUnavailable, remeasureHost]);
 
   React.useEffect(() => {
     if (!open) {
       anchorMeasurementGenerationRef.current += 1;
+      // Close retires the generation and must cancel any outstanding watchdog
+      // (ADR-003 Close/unmount invalidation).
+      cancelWatchdog();
       setAnchorMeasurement(null);
       setOverlaySize(null);
       return;
     }
     remeasure();
-  }, [hostRevision, keyboardRect, open, remeasure, windowRect.height, windowRect.width]);
+  }, [cancelWatchdog, hostRevision, keyboardRect, open, remeasure, windowRect.height, windowRect.width]);
 
   const onOverlayLayout = React.useCallback((event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
