@@ -530,6 +530,70 @@ test('sheet resolves its button/overlay-runtime/text dependency closure and repo
   }
 });
 
+// Issue #178: `calendar.tsx` imports the local `./use-direction` helper (same RTL
+// mirroring as `tooltip`/`table`) and mixes `cn` with `calendar-date` functions/types
+// from `@beeui/core`, so it must resolve through `core-overlay` (which bundles
+// `calendar-date.ts` alongside `cn`/`anchored-overlay`/`overlay-runtime`) rather than
+// the plain `core-cn` utility. `date-picker` and `date-time-picker` each declare
+// `calendar` plus their own multi-file (`*.d.ts`/`*.native.tsx`/`*.web.tsx`/
+// `*-shared.tsx`/`*-locale.ts`) source sets. This proves the full copied file set for
+// all three resolves every local relative import, the same class of gap #155 and #170
+// fixed for `tooltip` and `table`.
+test('calendar/date-picker/date-time-picker resolve calendar-date, core-overlay, and use-direction closures', async (t) => {
+  const root = await init(t);
+  const result = await run(root, ['add', 'calendar', 'date-picker', 'date-time-picker']);
+  assert.equal(result.code, 0, result.stderr);
+  const dir = path.join(root, 'src/components/beeui');
+
+  for (const relative of [
+    'src/components/beeui/calendar.tsx',
+    'src/components/beeui/calendar-locale.ts',
+    'src/components/beeui/date-picker.d.ts',
+    'src/components/beeui/date-picker.native.tsx',
+    'src/components/beeui/date-picker.web.tsx',
+    'src/components/beeui/date-picker-shared.tsx',
+    'src/components/beeui/date-picker-locale.ts',
+    'src/components/beeui/date-time-picker.d.ts',
+    'src/components/beeui/date-time-picker.native.tsx',
+    'src/components/beeui/date-time-picker.web.tsx',
+    'src/components/beeui/date-time-picker-shared.tsx',
+    'src/components/beeui/date-time-picker-locale.ts',
+    'src/components/beeui/use-direction.ts',
+    'src/lib/beeui/core/index.ts',
+    'src/lib/beeui/core/utils/calendar-date.ts',
+  ]) assert.equal(await exists(path.join(root, relative)), true, relative);
+
+  const calendar = await readFile(path.join(dir, 'calendar.tsx'), 'utf8');
+  assert.doesNotMatch(calendar, /@beeui\/core/);
+  assert.match(calendar, /from '\.\.\/\.\.\/lib\/beeui\/core\/index';/);
+
+  for (const file of [
+    'calendar.tsx',
+    'calendar-locale.ts',
+    'date-picker.d.ts',
+    'date-picker.native.tsx',
+    'date-picker.web.tsx',
+    'date-picker-shared.tsx',
+    'date-picker-locale.ts',
+    'date-time-picker.d.ts',
+    'date-time-picker.native.tsx',
+    'date-time-picker.web.tsx',
+    'date-time-picker-shared.tsx',
+    'date-time-picker-locale.ts',
+  ]) {
+    const source = await readFile(path.join(dir, file), 'utf8');
+    for (const match of source.matchAll(/from ['"](\.[^'"]+)['"]/g)) {
+      const base = path.resolve(dir, match[1]);
+      const candidates = [base, `${base}.ts`, `${base}.tsx`, `${base}.js`, `${base}.jsx`];
+      let found = false;
+      for (const candidate of candidates) {
+        if (await exists(candidate)) { found = true; break; }
+      }
+      assert.equal(found, true, `${file} unresolved relative import ${match[1]}`);
+    }
+  }
+});
+
 test('doctor validates config and registry without mutating the project', async (t) => {
   const root = await init(t);
   const before = await readFile(path.join(root, CONFIG_FILENAME), 'utf8');

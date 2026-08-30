@@ -289,6 +289,62 @@ Real-browser Playwright evidence lives in `apps/visual-regression/tests/sheet-sh
 
 **Not claimed**: spreadsheet-style arrow-key cell navigation, in-cell editing, or a roving-tabindex grid pattern — none of these are part of Table's contract (ADR-007's explicit non-goal); the header sort trigger and any embedded row action reach normal tab order like any other interactive control.
 
+## Calendar / DatePicker / DateTimePicker contract
+
+`Calendar` (#172), `DatePicker` (#173), and `DateTimePicker` (#174) implement
+[ADR-008](decisions/008-datetime-architecture.md): timezone-free, `Intl`-driven,
+single-date-selection-only value contracts for 1.0. Locale/week-start regression
+coverage lives in [`date-i18n-timezone-matrix.md`](date-i18n-timezone-matrix.md)
+(#175); component-local a11y/keyboard behavior and native/visual runtime acceptance
+are covered by #176 and #177.
+
+```tsx
+<Calendar value={selected} onValueChange={setSelected} />
+
+<DatePicker value={selected} onValueChange={setSelected} placeholder="Pick a date" />
+
+<DateTimePicker value={value} onValueChange={setValue} />
+```
+
+**Value model**: `CalendarDate` (`{ year, month, day }`, `month` 1–12) and `ClockTime`
+(`{ hour, minute }`, `hour` 0–23) are plain, timezone-free objects (`@beeui/core`'s
+`calendar-date.ts`) — neither type carries a timezone field, so neither can express (and
+therefore cannot silently reintroduce) the classic `new Date('2026-01-15')`
+UTC-midnight day-shift bug. `Calendar`/`DatePicker` are controlled on
+`CalendarDate | null`; `DateTimePicker` is controlled on
+`{ date: CalendarDate; time: ClockTime } | null`. `fromLocalDate`/`toLocalDate` are the
+only sanctioned conversion points to/from a local-timezone-bearing `Date`, and all
+internal `Date` arithmetic is UTC-anchored (`Date.UTC(...)`) rather than
+locale/timezone-sensitive construction.
+
+**Timezone boundary**: BeeUI owns no timezone storage, inference, or business-calendar
+rules (holidays, fiscal calendars, working-day rules) — an application that needs a
+specific timezone's wall-clock date/time still owns that conversion itself. The
+components' only obligation, and the one ADR-008/#175 harden, is that a date-only value
+never changes calendar day due to an implicit UTC/local conversion.
+
+**Locale**: month/weekday labels and 12h/24h display use the JS engine's built-in
+`Intl` (no bundled CLDR data). `resolveCalendarWeekStartsOn` derives `weekStartsOn` from
+`Intl.Locale(locale).getWeekInfo()` when available, falling back to a static Monday
+otherwise. `locale` (label/week-start/hour-cycle formatting) and `direction`
+(logical LTR/RTL layout via `useDirection()`, ADR-004) are independent, explicit
+resolvers — neither is derived from the other.
+
+**Platform presentation**: `Calendar` is one custom cross-platform month-grid
+implementation (no native system-picker dependency) shared by Web and native, following
+the WAI-ARIA Date Picker Dialog grid keyboard pattern on Web. `DatePicker`/
+`DateTimePicker` diverge by platform: Web opens `Calendar` (plus, for `DateTimePicker`,
+an `Input`/`SegmentedControl` time control) inside a `Popover` anchored to the trigger,
+reusing the same overlay geometry/dismiss/focus kernel as `Select`/`DropdownMenu`/
+`Tooltip`; native delegates to the system picker via the peer native module
+`@react-native-community/datetimepicker` (`mode="date"` for `DatePicker`, a single
+`mode="datetime"` inline widget on iOS and chained date-then-time native dialogs on
+Android for `DateTimePicker`) rather than rendering BeeUI's own `Calendar` inline.
+
+**Not claimed**: range or multiple-date selection (single-date only for 1.0, ADR-008),
+a Slider-style time-wheel control, and any timezone/business-calendar ownership beyond
+the date-only day-shift guarantee above.
+
 ## Toast boundary
 
 Toast v1 is implemented as a separate transient-notification runtime. It is not anchor-positioned and does not use `OverlayPortal` or React Native core `Modal`.
