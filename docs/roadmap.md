@@ -131,8 +131,16 @@ Critical sequencing rules:
 - **R1.5** #124 — development diagnostics.
 - **R1.6** #125 — load-bearing race/fallback/ABA/unmount regression matrix.
 - **R1.7** #126 — real iOS/Android runtime stress.
-- **R1.8** #127 — independent final review and closure of #59.
+- **R1.8** #127 — independent final review and closure of #59. **Reviewed — deterministic remediation confirmed complete; #59 closure not yet fully evidenced.** See below.
 - **R1.9** #128 — explicit #62 `pageSheet`/`formSheet` support/quarantine policy. **Policy decided — status: EXPERIMENTAL; #62 remains open as a known RN-Modal/headless-sim limitation.** See below.
+
+### Independent review of the #59 remediation (#127, ADR-003)
+
+**Deterministic-contract evidence: complete.** `packages/ui/src/components/overlay-runtime.tsx`'s `useMeasuredOverlayHost`/`useAnchoredOverlayPosition` implement every row of ADR-003's terminal-state table (`docs/decisions/003-native-measurement-timeout.md`): a generation-keyed, injectable-scheduler watchdog bounds both the host and anchor `measureInWindow` paths, retiring an unresponsive request through the pre-existing latest-request-wins generation/host-revision guards with no new supersession mechanism. `apps/showcase/__tests__/overlay-measurement-completion-budget.test.tsx`, `overlay-measurement-diagnostics.test.tsx`, `overlay-measurement-aba.test.tsx`, `overlay-nested-scope-measurement.test.tsx`, `overlay-host-measurement-race.test.tsx`, and `anchor-measurement-seam-proof.test.tsx` (28 tests, verified passing at this review's head) cover all 8 scenarios in ADR-003's Verification plan, load-bearing per `docs/agent-execution-contract.md` (each asserts the watchdog/fallback/late-callback logic directly, not a snapshot). `docs/anchored-overlays.md`'s Measurement contract section now documents both the anchor-unavailable and the host-fallback bounded-completion paths.
+
+**Native runtime evidence: outstanding.** Per ADR-003's Verification plan, "#126's real iOS/Android Simulator/device runtime evidence remains required before #127 can close #59" — #126 (R1.7) was still open at this review. Deterministic-contract evidence proves the mechanism; it does not by itself prove real native callback-drop recovery (`docs/beeui-1.0-evidence-classes.md`'s rule against generalizing deterministic evidence into a native runtime claim).
+
+**Note on #59's current state:** #59 shows as closed on GitHub, but its closing reference is PR #266 (`docs: ADR for unresponsive native measurement callbacks (#120)`) — the ADR-only PR, merged before #121–#125's implementation existed. That closure predates the remediation and the evidence this review checked, so it should not be read as this review's sign-off. This review confirms the remediation is deterministically complete and documented; **closing #59 on the strength of native-runtime evidence, per ADR-003, is #126/#127's remaining and still-open action** — an explicit owner/maintainer call, not made by this review.
 
 ### iOS `pageSheet`/`formSheet` support policy (#128, tracks #62)
 
