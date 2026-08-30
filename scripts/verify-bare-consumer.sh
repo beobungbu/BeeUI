@@ -18,11 +18,15 @@ RN_VERSION="${BEEUI_RN_VERSION:-0.86.2}"
 # @beeui/ui peers on react-native-teleport for its native context-preserving
 # overlay host; teleport in turn peers on react-dom, so pin react-dom to the
 # app's react version to keep strict peer resolution clean.
+# DatePicker's native file (date-picker.native.tsx) hard-imports
+# @react-native-community/datetimepicker (its optional native peer), so the bare
+# consumer must install it too or the Metro bundle cannot resolve it.
 PINNED_DEPS=(
   uniwind@1.10.1
   tailwindcss@4.3.3
   react-native-safe-area-context@5.7.0
   react-native-teleport@1.1.13
+  @react-native-community/datetimepicker@9.1.0
   react-dom@19.2.3
 )
 
