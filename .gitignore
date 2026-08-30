@@ -6,6 +6,11 @@ coverage/
 .artifacts/
 *.log
 .DS_Store
+apps/visual-regression/a11y-report/
+apps/visual-regression/dist-web/
+apps/visual-regression/test-results/
+apps/visual-regression/playwright-report/
+apps/showcase/dist-gallery-qa/
 .env
 .env.*
 !.env.example

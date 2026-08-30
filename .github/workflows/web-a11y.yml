@@ -1,0 +1,74 @@
+name: web-a11y
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 24.13.1
+  PNPM_VERSION: 10.15.0
+
+jobs:
+  web-a11y:
+    runs-on: [self-hosted, beeui]
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pnpm via Corepack
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+      - name: Verify JavaScript toolchain
+        run: |
+          test "$(node --version)" = "v${NODE_VERSION}"
+          test "$(pnpm --version)" = "${PNPM_VERSION}"
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Provision pinned Chromium and Linux dependencies
+        run: pnpm --dir apps/visual-regression exec playwright install --with-deps chromium
+
+      - name: Run the Web accessibility audit gate (axe-core + Playwright)
+        run: pnpm --dir apps/visual-regression test:a11y
+
+      # Uploaded on every run (not just failure): the JSON/HTML detail is the
+      # actionable artifact issue #145 requires, and a passing run's report
+      # still records per-scenario allowlisted/non-blocking findings for
+      # review.
+      - name: Upload accessibility audit report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: web-a11y-report-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            apps/visual-regression/a11y-report
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload Playwright diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: web-a11y-playwright-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            apps/visual-regression/test-results
+            apps/visual-regression/playwright-report
+          if-no-files-found: warn
+          retention-days: 3
