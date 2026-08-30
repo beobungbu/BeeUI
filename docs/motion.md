@@ -138,6 +138,18 @@ requests the semantic intent. Tests spy on React Native `Animated` behavior and 
 
 This tests behavior/final state instead of brittle frame-by-frame timing.
 
+## Cross-cutting reduced-motion acceptance (#149)
+
+`docs/reduced-motion-acceptance-matrix.md` is the final, per-component sweep across every
+animated/anchored-overlay surface, run after each component's own local motion contract
+was already implemented and tested. It records, per surface: whether it runs any motion
+of its own, whether it composes the ambient reduced-motion signal, and the strongest
+evidence class obtained — including the one genuine gap that sweep fixed: `DialogContent`
+always ran RN core `Modal`'s default `fade` transition regardless of the user's
+reduced-motion preference, because `react-native-web`'s `ModalAnimation` never itself
+reads `prefers-reduced-motion`. `DialogContent` now composes BeeUI's own ambient signal
+into its `animationType` default (see `dialog.tsx`'s `useReducedMotionPreference`).
+
 ## When not to animate
 
 - Do not animate a component that has no product requirement just to exercise a token.
