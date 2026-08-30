@@ -67,9 +67,18 @@ test('registry rejects duplicate ids and orders deterministically', () => {
   );
 });
 
-test('default registry hosts one web and one native scenario without bespoke scripts', () => {
+test('default registry hosts the harness self-test scenarios plus #168 Table scenarios, without bespoke scripts', () => {
   const registry = buildDefaultRegistry();
   assert.ok(SCENARIOS.length >= 2);
-  assert.deepEqual(registry.byPlatform('web').map((s) => s.id), ['web/variant-class-resolution']);
-  assert.deepEqual(registry.byPlatform('native').map((s) => s.id), ['native/list-render']);
+  assert.deepEqual(registry.byPlatform('web').map((s) => s.id), [
+    'web/table-render-100',
+    'web/table-render-500',
+    'web/table-row-update',
+    'web/variant-class-resolution',
+  ]);
+  assert.deepEqual(registry.byPlatform('native').map((s) => s.id), [
+    'native/list-render',
+    'native/table-render-100',
+    'native/table-render-500',
+  ]);
 });

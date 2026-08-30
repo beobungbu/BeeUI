@@ -136,6 +136,27 @@ so shared result sets are stable across runs.
 - `native/list-render` — the native path, registered and callable but deferred
   off-device. It documents the workload an on-device runner would drive and
   proves the native path is structured and honest without fabricating numbers.
+- `web/table-render-100` / `web/table-render-500` (issue #168, R4E.5) — the
+  first real per-component scenario: Table's actual per-row/per-cell Web hot
+  path (`cn()` className resolution, the column-label registry, sort-glyph
+  lookup) at the accepted 100-row/500-row scale envelope
+  (`docs/decisions/007-table-datatable-architecture.md`). A full render pass
+  measures well under 1ms at both scales on a representative dev host (see
+  `docs/components/table.md`'s Performance section for the recorded numbers) —
+  comfortably inside a 16ms frame budget — which is the evidence this ADR's
+  virtualization decision gates on: no default/adapter virtualization is
+  currently justified.
+- `web/table-row-update` (issue #168) — contrasts the cost floor an optimized/
+  memoized consumer gets for a single row's selection/sort-driven recompute
+  against a full 100-row recompute, budgeted so a regression that makes a
+  single-row update scale with total row count fails CI. Table's own
+  unmemoized-by-default reality (every row's render function re-runs on a
+  sibling's selection change, and `React.memo` is a verified mitigation) is
+  proven separately in
+  `apps/showcase/__tests__/table-performance.test.tsx`, not in this harness.
+- `native/table-render-100` / `native/table-render-500` (issue #168) — the
+  native side of the same 100/500-row envelope, deferred off-device like
+  `native/list-render`.
 
 ## Component lane (R5.2–R5.4, #180–#182)
 
