@@ -214,7 +214,9 @@ shared-authority source of truth for every row below; it is drift-checked by
 # R4C / R4D — explicit optional decisions
 
 - #162 adaptive Select presentation after Sheet; may explicitly defer for 1.0.
-- #163 Slider decision; no partial public Slider accepted.
+- #163 Slider decision: **decided, deferred for 1.0** (ADR-009,
+  `docs/decisions/009-slider-1-0-decision.md`) — no product/competitive evidence
+  promotes it; no partial public Slider ships.
 
 # R4E — Table / DataTable — hard 1.0
 
