@@ -146,6 +146,16 @@ Sheet presentation screenshots/video are retained because an automated DOM-like 
 | A5 AlertDialog | real Back does not bypass explicit-action policy; explicit Cancel then closes |
 | A6 keyboard/focus | text entry plus reduced-height scroll reachability |
 
+### Sheet (`@gorhom/bottom-sheet`, #160)
+
+The `Sheet` component added by #157/#158 is a distinct surface from the
+`Dialog` `pageSheet`/`formSheet` presentation styles in the iOS table above.
+Its dedicated runtime-acceptance matrix, evidence classes actually obtained,
+and the explicit real-device-gesture deferral (real native swipe/spring
+physics, nested-scroll gesture arbitration, true keyboard-avoidance geometry,
+VoiceOver/TalkBack focus-into-sheet, and RTL mirrored geometry) are recorded
+in `docs/sheet-runtime-acceptance.md`, not in this file's I/A tables.
+
 ## Artifacts
 
 All runtime evidence is written under:
