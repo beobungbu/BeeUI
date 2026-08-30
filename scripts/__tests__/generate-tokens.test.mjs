@@ -314,11 +314,14 @@ test('official schema validation rejects format and resolver regressions indepen
 
 test('semantic motion exposes exactly the approved recurring-transition vocabulary', () => {
   const intents = Object.keys(beeMetadata().semanticMotion);
-  assert.deepEqual(intents, ['overlay-enter', 'overlay-exit', 'disclosure']);
+  assert.deepEqual(intents, ['overlay-enter', 'overlay-exit', 'sheet-enter', 'sheet-exit', 'disclosure']);
   assert.equal(new Set(intents).size, intents.length);
 
   const index = generateTokenArtifacts(source).get('packages/tokens/src/index.ts');
-  assert.match(index, /export const motionIntents = \[\n\s*"overlay-enter",\n\s*"overlay-exit",\n\s*"disclosure"\n\] as const;/);
+  assert.match(
+    index,
+    /export const motionIntents = \[\n\s*"overlay-enter",\n\s*"overlay-exit",\n\s*"sheet-enter",\n\s*"sheet-exit",\n\s*"disclosure"\n\] as const;/,
+  );
 });
 
 test('every motion intent declares web, native, and a reduced-motion policy from the supported set', () => {
@@ -357,7 +360,7 @@ test('generated motion object resolves web timing and native spring/timing repre
 test('theme.css exposes motion variables and a reduced-motion override for immediate/shorten intents', () => {
   const css = generateTokenArtifacts(source).get('packages/tokens/src/theme.css');
 
-  for (const intent of ['overlay-enter', 'overlay-exit', 'disclosure']) {
+  for (const intent of ['overlay-enter', 'overlay-exit', 'sheet-enter', 'sheet-exit', 'disclosure']) {
     assert.ok(css.includes(`--motion-${intent}-duration:`), `${intent} duration var`);
     assert.ok(css.includes(`--motion-${intent}-easing:`), `${intent} easing var`);
   }
@@ -365,10 +368,12 @@ test('theme.css exposes motion variables and a reduced-motion override for immed
   assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{\n  :root \{/);
   // Exit and disclosure declare `immediate`, so their duration collapses under reduced motion.
   assert.match(css, /--motion-overlay-exit-duration: 0\.01ms;/);
+  assert.match(css, /--motion-sheet-exit-duration: 0\.01ms;/);
   assert.match(css, /--motion-disclosure-duration: 0\.01ms;/);
   // Enter declares `opacity-or-state`, so its (opacity) timing is preserved, not collapsed.
   const reducedBlock = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
   assert.doesNotMatch(reducedBlock, /--motion-overlay-enter-duration:/);
+  assert.doesNotMatch(reducedBlock, /--motion-sheet-enter-duration:/);
 });
 
 test('theme.css exposes a per-intent spatial flag that flips under reduced motion by canonical policy', () => {

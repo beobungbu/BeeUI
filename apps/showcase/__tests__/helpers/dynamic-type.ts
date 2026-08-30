@@ -168,6 +168,11 @@ export const FIXED_HEIGHT_ALLOWLIST: Record<
     classes: { 'h-px': 1 },
     rationale: 'Decorative 1px divider line; carries no text.',
   },
+  'sheet.tsx': {
+    classes: { 'h-1': 1 },
+    rationale:
+      "SheetHandle's small pill-shaped drag-handle affordance uses the decimal class \"h-1.5\", which this scanner's non-decimal-aware h-<token> boundary records as \"h-1\" (stops before the literal dot). Like checkbox/radio's glyph indicators, it is a decorative fixed-size marker with no text, hidden from assistive tech (accessibilityElementsHidden/aria-hidden).",
+  },
   'skeleton.tsx': {
     classes: { 'h-4': 1 },
     rationale: 'Decorative static loading placeholder; carries no real text.',

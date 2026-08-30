@@ -588,6 +588,8 @@ export const motionEasing = {
 export const motionIntents = [
   "overlay-enter",
   "overlay-exit",
+  "sheet-enter",
+  "sheet-exit",
   "disclosure"
 ] as const;
 
@@ -629,6 +631,44 @@ export const motion = {
     "reducedMotion": "opacity-or-state"
   },
   "overlay-exit": {
+    "web": {
+      "durationMs": 120,
+      "easing": "cubic-bezier(0.2, 0, 0, 1)",
+      "properties": [
+        "opacity",
+        "transform"
+      ]
+    },
+    "native": {
+      "type": "timing",
+      "durationMs": 120,
+      "easing": [
+        0.2,
+        0,
+        0,
+        1
+      ]
+    },
+    "reducedMotion": "immediate"
+  },
+  "sheet-enter": {
+    "web": {
+      "durationMs": 200,
+      "easing": "cubic-bezier(0.2, 0, 0, 1)",
+      "properties": [
+        "opacity",
+        "transform"
+      ]
+    },
+    "native": {
+      "type": "spring",
+      "stiffness": 260,
+      "damping": 26,
+      "mass": 1
+    },
+    "reducedMotion": "opacity-or-state"
+  },
+  "sheet-exit": {
     "web": {
       "durationMs": 120,
       "easing": "cubic-bezier(0.2, 0, 0, 1)",

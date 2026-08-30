@@ -35,6 +35,8 @@ function usePlatformReducedMotion(): boolean {
 const intentSummaries: Record<MotionIntent, { title: string; usage: string }> = {
   'overlay-enter': { title: 'Overlay enter', usage: 'Dialog, popover, dropdown, select, toast appearing' },
   'overlay-exit': { title: 'Overlay exit', usage: 'The same overlays dismissing' },
+  'sheet-enter': { title: 'Sheet enter', usage: 'Sheet/BottomSheet panel appearing' },
+  'sheet-exit': { title: 'Sheet exit', usage: 'Sheet/BottomSheet panel dismissing' },
   disclosure: { title: 'Disclosure', usage: 'Accordion / collapsible expand and collapse' },
 };
 
