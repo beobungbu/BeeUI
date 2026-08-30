@@ -40,6 +40,25 @@ Add options:
 This CLI does not install npm packages and does not claim a public npm/npx package yet.
 `;
 
+// Only Node 24 has ever run this CLI in CI or in this repository's own
+// development workflow (docs/compatibility-matrix.md, "Node — CLI tooling"
+// row). Node 22 is a candidate target for a future packed CLI release but is
+// not yet exercised by any test, so it is not promised here. Fail loudly and
+// actionably instead of letting an unsupported runtime fail with an obscure
+// syntax/API error deeper in the CLI.
+const MIN_SUPPORTED_NODE_MAJOR = 24;
+
+function checkNodeVersion(nodeVersion = process.version) {
+  const major = Number.parseInt(nodeVersion.replace(/^v/, '').split('.')[0], 10);
+  if (Number.isNaN(major) || major < MIN_SUPPORTED_NODE_MAJOR) {
+    throw new Error(
+      `unsupported Node.js version ${nodeVersion}. The BeeUI CLI requires Node >=${MIN_SUPPORTED_NODE_MAJOR} ` +
+        `(this repository develops and tests on Node ${MIN_SUPPORTED_NODE_MAJOR} only; see docs/compatibility-matrix.md). ` +
+        `Install Node ${MIN_SUPPORTED_NODE_MAJOR}+ (for example via nvm: "nvm use") and retry.`,
+    );
+  }
+}
+
 function write(stream, value) {
   stream.write(value.endsWith('\n') ? value : `${value}\n`);
 }
@@ -95,12 +114,15 @@ function printPlan(stdout, plan, { dryRun }) {
   if (dryRun) write(stdout, 'Dry run: no files were written.');
 }
 
+export { checkNodeVersion };
+
 export async function main(argv = process.argv.slice(2), options = {}) {
   const stdout = options.stdout ?? process.stdout;
   const stderr = options.stderr ?? process.stderr;
   const cwd = options.cwd ?? process.cwd();
 
   try {
+    checkNodeVersion();
     const [command = 'help', ...args] = argv;
 
     if (command === 'help' || command === '--help' || command === '-h') {

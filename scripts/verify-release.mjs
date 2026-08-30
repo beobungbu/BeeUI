@@ -191,8 +191,8 @@ try {
   assert(uiManifest.dependencies?.['@beeui/core'] === 'workspace:*', '@beeui/ui uses the workspace protocol internally for @beeui/core');
 
   const expectedUiPeers = {
-    react: '>=19.0.0',
-    'react-native': '>=0.85.0',
+    react: '>=19 <20',
+    'react-native': '>=0.86.0',
     'react-native-safe-area-context': '>=5 <6',
     'react-native-teleport': '>=1.1 <2',
     tailwindcss: '>=4 <5',
@@ -209,7 +209,7 @@ try {
   // which installs react-dom for exactly this reason). Assert the direct-peer
   // contract stays optional here.
   assert(
-    uiManifest.peerDependencies?.['react-dom'] === '>=19.0.0',
+    uiManifest.peerDependencies?.['react-dom'] === '>=19 <20',
     '@beeui/ui declares the react-dom (web) peer range',
     uiManifest.peerDependencies?.['react-dom'],
   );

@@ -81,8 +81,8 @@ Conceptually, each item contains:
     "class-variance-authority": "0.7.1"
   },
   "peerDependencies": {
-    "react": ">=19.0.0",
-    "react-native": ">=0.85.0"
+    "react": ">=19 <20",
+    "react-native": ">=0.86.0"
   }
 }
 ```
@@ -134,9 +134,9 @@ Depending on the requested items, reported requirements can include:
 - `class-variance-authority@0.7.1`
 - `clsx@2.1.1`
 - `tailwind-merge@3.6.0`
-- `react@>=19.0.0`
-- `react-dom@>=19.0.0`
-- `react-native@>=0.85.0`
+- `react@>=19 <20`
+- `react-dom@>=19 <20`
+- `react-native@>=0.86.0`
 - `react-native-safe-area-context@>=5 <6`
 - `react-native-teleport@>=1.1 <2`
 - `tailwindcss@>=4 <5`

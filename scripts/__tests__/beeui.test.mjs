@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { main } from '../beeui.mjs';
+import { checkNodeVersion, main } from '../beeui.mjs';
 import {
   CONFIG_FILENAME,
   REPO_ROOT,
@@ -54,6 +54,29 @@ async function exists(file) {
 async function canonicalRegistryObject() {
   return JSON.parse(await readFile(path.join(REPO_ROOT, 'registry', 'registry.json'), 'utf8'));
 }
+
+test('checkNodeVersion accepts the tested Node 24 line', () => {
+  assert.doesNotThrow(() => checkNodeVersion('v24.13.1'));
+  assert.doesNotThrow(() => checkNodeVersion('v25.0.0'));
+});
+
+test('checkNodeVersion rejects an unsupported Node major with an actionable message', () => {
+  assert.throws(() => checkNodeVersion('v22.10.0'), /unsupported Node\.js version v22\.10\.0.*Node >=24/s);
+  assert.throws(() => checkNodeVersion('v18.20.4'), /unsupported Node\.js version/);
+});
+
+test('main() surfaces the Node-version error through the CLI error path', async (t) => {
+  const root = await project(t);
+  const originalVersion = process.version;
+  Object.defineProperty(process, 'version', { value: 'v20.0.0', configurable: true });
+  try {
+    const result = await run(root, ['help']);
+    assert.equal(result.code, 1);
+    assert.match(result.stderr, /unsupported Node\.js version v20\.0\.0/);
+  } finally {
+    Object.defineProperty(process, 'version', { value: originalVersion, configurable: true });
+  }
+});
 
 test('init creates a deterministic config in a clean project', async (t) => {
   const root = await project(t);
