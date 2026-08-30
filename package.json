@@ -2,6 +2,11 @@
   "name": "beeui-workspace",
   "private": true,
   "version": "0.1.0",
+  "license": "MIT",
+  "author": {
+    "name": "Trần Đức Lân",
+    "email": "lantranduc@gmail.com"
+  },
   "packageManager": "pnpm@10.15.0",
   "engines": {
     "node": "24.13.1"

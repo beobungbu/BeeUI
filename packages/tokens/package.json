@@ -1,6 +1,11 @@
 {
   "name": "@beeui/tokens",
   "version": "0.1.0",
+  "license": "MIT",
+  "author": {
+    "name": "Trần Đức Lân",
+    "email": "lantranduc@gmail.com"
+  },
   "private": true,
   "type": "module",
   "files": [
