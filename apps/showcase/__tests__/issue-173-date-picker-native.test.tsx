@@ -14,8 +14,12 @@ import { DatePicker } from '../../../packages/ui/src/components/date-picker.nati
 // datetimepicker` boundary is mocked (no native module registry in Jest), so these
 // tests prove BeeUI's own wiring — value/format, Field integration, disabled/read-only/
 // clear, and the CalendarDate<->Date boundary adapter calls — not the OS picker UI
-// itself. Real device/simulator proof is owed to native runtime acceptance (#176/#177),
-// per this file's own "known 1.0 limitation" comment in `date-picker.native.tsx`.
+// itself. This is the strongest reachable evidence for #177 (R4F.7, "native runtime
+// acceptance"): the headless iOS Simulator has a reproducible Fabric blank-render defect
+// (#349) unrelated to date/time, and real-device cloud runtime testing is separately
+// deferred, so real Simulator/device rendering/gesture proof of the OS picker itself is
+// a documented deferral — see `docs/decisions/008-datetime-architecture.md`'s "#177
+// resolution (documented deferral)" note, not an open gap in this file.
 
 type MockOnChange = (event: { type: 'set' | 'dismissed' }, date?: Date) => void;
 
