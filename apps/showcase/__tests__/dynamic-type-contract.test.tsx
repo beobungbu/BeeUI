@@ -12,6 +12,12 @@ import {
   Select,
   SelectTrigger,
   SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
   Text,
 } from '@beeui/ui';
 import {
@@ -216,6 +222,40 @@ describe('Dynamic Type / font-scaling contract (#143)', () => {
     }
   });
 
+  it('keeps Table row and sort-trigger touch-target classes present regardless of the reported font scale (#167)', () => {
+    for (const scale of FONT_SCALE_STRESS_LEVELS) {
+      withFontScale(scale, () => {
+        const screen = render(
+          <Table>
+            <TableHeader>
+              <TableRow testID="header-row">
+                <TableHead onSortChange={() => {}} sortDirection="none">
+                  Name
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow testID="body-row">
+                <TableCell>Ada</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>,
+        );
+
+        const trigger = screen.getByRole('button', { name: 'Name, not sorted' });
+        expect(trigger.props.className).toContain('ios:min-h-touch-target');
+        expect(trigger.props.className).toContain('android:min-h-touch-target');
+
+        for (const testId of ['header-row', 'body-row']) {
+          const row = screen.getByTestId(testId);
+          expect(row.props.className).toContain('min-h-density-row-height');
+          expect(row.props.className).toContain('ios:min-h-touch-target');
+          expect(row.props.className).toContain('android:min-h-touch-target');
+        }
+      });
+    }
+  });
+
   it('renders full stress-length content on representative growable rows instead of clipping it, at every audited scale', () => {
     const longLabel = stressText('accessibility', 5);
 
@@ -233,6 +273,19 @@ describe('Dynamic Type / font-scaling contract (#143)', () => {
           <AlertBanner description={longLabel} title="Notice" />,
         );
         expect(bannerScreen.getByText(longLabel)).toBeTruthy();
+
+        const tableScreen = render(
+          <Table>
+            <TableBody>
+              <TableRow>
+                <TableCell>{longLabel}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>,
+        );
+        const tableCellText = tableScreen.getByText(longLabel);
+        expect(tableCellText).toBeTruthy();
+        expect(tableCellText.props.numberOfLines).toBeUndefined();
 
         const textScreen = render(<Text>{longLabel}</Text>);
         const textNode = textScreen.getByText(longLabel);

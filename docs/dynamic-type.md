@@ -149,7 +149,8 @@ count catches it).
 The `ios:min-h-touch-target`/`android:min-h-touch-target` guard (44px / `--spacing-touch-target`,
 see [`density.md`](./density.md#native-interactive-hit-target-guarantee)) is a static class,
 not a scale-dependent computation, so it cannot regress under font scaling — it is present
-on `Button size="sm"`, `Input size="sm"`, `ListItem`/`SettingsItem` regardless of the OS
+on `Button size="sm"`, `Input size="sm"`, `ListItem`/`SettingsItem`, and native `Table`'s
+`TableRow` and `TableHead` sort trigger (`table.tsx`, #167) regardless of the OS
 font-scale value. `dynamic-type-contract.test.tsx` renders each of these under every
 `FONT_SCALE_STRESS_LEVELS` value (via the `withFontScale()` seam) and asserts the guard
 classes stay present, proving no component conditionally drops the guard based on a reported

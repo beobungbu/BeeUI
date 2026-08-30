@@ -9,10 +9,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  Text,
 } from '@beeui/ui';
 import { fireEvent, render, within } from '@testing-library/react-native';
 import * as React from 'react';
-import { I18nManager } from 'react-native';
+import { I18nManager, Pressable } from 'react-native';
 
 // ---------------------------------------------------------------------------
 // RTL toggle — mirrors `logical-direction.test.tsx`'s native-ambient pattern:
@@ -130,6 +131,64 @@ describe('BeeUI Table core anatomy (native)', () => {
     // Table itself never flips the indicator — it stays whatever the caller
     // passed, proving there is no internal sort store.
     expect(screen.getByRole('button', { name: 'Name, sorted ascending' })).toBeTruthy();
+  });
+
+  it('keeps the native touch-target floor guard on the sort trigger and on every row (#167)', () => {
+    const screen = render(
+      <Table>
+        <TableHeader>
+          <TableRow testID="header-row">
+            <TableHead onSortChange={() => {}} sortDirection="none">
+              Name
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow testID="body-row">
+            <TableCell>Ada</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>,
+    );
+
+    const trigger = screen.getByRole('button', { name: 'Name, not sorted' });
+    expect(trigger.props.className).toContain('ios:min-h-touch-target');
+    expect(trigger.props.className).toContain('android:min-h-touch-target');
+
+    for (const testId of ['header-row', 'body-row']) {
+      const row = screen.getByTestId(testId);
+      expect(row.props.className).toContain('min-h-density-row-height');
+      expect(row.props.className).toContain('ios:min-h-touch-target');
+      expect(row.props.className).toContain('android:min-h-touch-target');
+    }
+  });
+
+  it('keeps an embedded row action reachable next to a long-value cell (#167)', () => {
+    const longValue =
+      'A very long representative cell value that should wrap onto multiple lines rather than shrink or push a neighboring action off-screen';
+    const onPress = jest.fn();
+    const screen = render(
+      <Table>
+        <TableBody>
+          <TableRow testID="long-value-row">
+            <TableCell>{longValue}</TableCell>
+            <TableCell>
+              <Pressable accessibilityLabel="Delete row" accessibilityRole="button" onPress={onPress}>
+                <Text>Delete</Text>
+              </Pressable>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>,
+    );
+
+    // The full value renders (wraps), it is never truncated with
+    // `numberOfLines`, and the sibling action stays a reachable, pressable
+    // control — a long value never swallows or hides a neighboring action.
+    expect(screen.getByText(longValue).props.numberOfLines).toBeUndefined();
+    const action = screen.getByRole('button', { name: 'Delete row' });
+    fireEvent.press(action);
+    expect(onPress).toHaveBeenCalledTimes(1);
   });
 
   it('renders a plain header cell when no sort props are provided', () => {
