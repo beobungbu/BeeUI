@@ -139,6 +139,24 @@ export function DropdownMenu(props: DropdownMenuProps) {
     if (!controlled && hasOpenProp && open !== undefined) setInternalOpen(open);
   }, [controlled, hasOpenProp, open]);
 
+  // #146 — focus-restoration contract: mirrors `select.tsx`'s identical
+  // `focusTrigger`/`previousOpenRef` effect. `DropdownMenuContent` now moves
+  // real DOM focus onto the roving-tabindex current item while open (see
+  // that file's own #146 comment); closing (Escape, outside press, item
+  // selection) then unmounts that focused item, which the browser would
+  // otherwise resolve by moving focus to `document.body` instead of back to
+  // the trigger that opened the menu.
+  const focusTrigger = React.useCallback(() => {
+    if (Platform.OS === 'web') (anchorRef.current as MenuFocusableNode | null)?.focus?.();
+  }, []);
+
+  const previousOpenRef = React.useRef(resolvedOpen);
+  React.useEffect(() => {
+    const wasOpen = previousOpenRef.current;
+    previousOpenRef.current = resolvedOpen;
+    if (wasOpen && !resolvedOpen) focusTrigger();
+  }, [focusTrigger, resolvedOpen]);
+
   const setOpen = React.useCallback(
     (nextOpen: boolean) => {
       if (!controlled) setInternalOpen(nextOpen);
@@ -298,6 +316,19 @@ export const DropdownMenuContent = React.forwardRef<
         return items.find((item) => !item.disabled)?.id ?? null;
       });
     }, [items, open]);
+
+    // #146 — real Web keyboard reachability: without moving actual DOM focus
+    // onto the roving-tabindex "current" item, a keyboard user who Tabs to
+    // the trigger and opens the menu has no way to reach it at all (Tab from
+    // the trigger continues into the rest of the page; the container's own
+    // ArrowDown/ArrowUp `onKeyDown` never fires because it is not an
+    // ancestor of whatever remains focused). Mirrors `select.tsx`'s
+    // identical, already-shipped `orderedItems.find(...).focus()` effect for
+    // the same roving-tabindex contract.
+    React.useEffect(() => {
+      if (!open || Platform.OS !== 'web' || !currentItemId) return;
+      items.find((item) => item.id === currentItemId)?.focus();
+    }, [currentItemId, items, open]);
 
     const setCurrentItem = React.useCallback(
       (id: string) => {
@@ -523,7 +554,7 @@ export const DropdownMenuItem = React.forwardRef<
         accessibilityRole="menuitem"
         accessibilityState={{ ...accessibilityState, disabled: isDisabled }}
         className={cn(
-          'min-h-10 flex-row items-center gap-2 rounded-md px-3 py-2 active:bg-muted web:hover:bg-surface-muted',
+          'min-h-10 flex-row items-center gap-2 rounded-md px-3 py-2 active:bg-muted web:hover:bg-surface-muted web:focus-visible:bee-focus-ring',
           registration.current && 'bg-muted',
           isDisabled && 'opacity-50',
           className,
@@ -617,7 +648,7 @@ export const DropdownMenuCheckboxItem = React.forwardRef<
         accessibilityRole="menuitem"
         accessibilityState={{ ...accessibilityState, checked, disabled: isDisabled }}
         className={cn(
-          'min-h-10 flex-row items-center gap-2 rounded-md px-3 py-2 active:bg-muted web:hover:bg-surface-muted',
+          'min-h-10 flex-row items-center gap-2 rounded-md px-3 py-2 active:bg-muted web:hover:bg-surface-muted web:focus-visible:bee-focus-ring',
           registration.current && 'bg-muted',
           isDisabled && 'opacity-50',
           className,
@@ -766,7 +797,7 @@ export const DropdownMenuRadioItem = React.forwardRef<
         accessibilityRole="menuitem"
         accessibilityState={{ ...accessibilityState, checked, disabled: resolvedDisabled }}
         className={cn(
-          'min-h-10 flex-row items-center gap-2 rounded-md px-3 py-2 active:bg-muted web:hover:bg-surface-muted',
+          'min-h-10 flex-row items-center gap-2 rounded-md px-3 py-2 active:bg-muted web:hover:bg-surface-muted web:focus-visible:bee-focus-ring',
           registration.current && 'bg-muted',
           resolvedDisabled && 'opacity-50',
           className,
