@@ -1,0 +1,175 @@
+ios-native	Prepare true bare React Native consumer for iOS	﻿2026-08-30T14:26:24.3551730Z ##[group]Run ./scripts/verify-bare-consumer.sh prepare
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:24.3552130Z ^[[36;1m./scripts/verify-bare-consumer.sh prepare^[[0m
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:24.6266000Z shell: /bin/bash -e {0}
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:24.6266260Z env:
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:24.6266480Z   NODE_VERSION: 24.13.1
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:24.6267260Z   PNPM_VERSION: 10.15.0
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:24.6267530Z   XCODE_MIN_VERSION: 26.4
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:24.6267880Z   DEVELOPER_DIR: /Applications/Xcode_26.6.0.app/Contents/Developer
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:24.6268220Z   BEEUI_XCODE_VERSION: 26.6
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:24.6268490Z   BEEUI_IOS_CACHE_ROOT: /Users/runner/Library/Caches/BeeUI
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:24.6268770Z   BEEUI_BARE_CLEAN: 
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:24.6268990Z ##[endgroup]
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:24.7271380Z ##[group]Create fresh bare React Native 0.86.2 consumer
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:25.2364640Z npm warn Unknown project config "auto-install-peers". This will stop working in the next major version of npm.
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:25.2368920Z npm warn Unknown project config "strict-peer-dependencies". This will stop working in the next major version of npm.
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:33.5374430Z npm warn Unknown env config "auto-install-peers". This will stop working in the next major version of npm.
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:33.5409790Z npm warn Unknown project config "auto-install-peers". This will stop working in the next major version of npm.
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:33.5411260Z npm warn Unknown project config "strict-peer-dependencies". This will stop working in the next major version of npm.
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:34.2154570Z - Downloading template
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:35.3577580Z ✔ Downloading template
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:35.3704380Z - Copying template
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:35.3805810Z ✔ Copying template
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:35.3906510Z - Processing template
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:35.4092990Z ✔ Processing template
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:26:35.4141140Z - Installing dependencies
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.5918860Z ✔ Installing dependencies
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6143600Z ^[[0m
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6144220Z   
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6144800Z   ^[[32mRun instructions for ^[[1mAndroid^[[22m^[[39m:
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6145860Z     • Have an Android emulator running (quickest way to get started), or a device connected.
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6146890Z     • cd "/Users/runner/Library/Caches/BeeUI/bare-consumer/BeeUIBareSmoke" && npx react-native run-android
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6147370Z   
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6147630Z   ^[[36mRun instructions for ^[[1miOS^[[22m^[[39m:
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6148240Z     • cd "/Users/runner/Library/Caches/BeeUI/bare-consumer/BeeUIBareSmoke/ios"
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6148710Z     
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6149050Z     • Install Cocoapods
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6149690Z       • bundle install # you need to run this only once in your project.
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6150450Z       • bundle exec pod install
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6150850Z       • cd ..
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6151290Z     
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6151820Z     • npx react-native run-ios
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6152220Z     ^[[2m- or -^[[22m
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6152810Z     • Open BeeUIBareSmoke/ios/BeeUIBareSmoke.xcodeproj in Xcode or run "xed -b ios"
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6153400Z     • Hit the Run button
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6159110Z     
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6159800Z   ^[[35mRun instructions for ^[[1mmacOS^[[22m^[[39m:
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6160690Z     • See ^[[4mhttps://microsoft.github.io/react-native-macos^[[24m for the latest up-to-date instructions.
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6161470Z     
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6161770Z   ^[[0m
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6975830Z ##[endgroup]
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.7000620Z ##[group]Pack BeeUI packages through the package boundary
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.0467470Z 📦  @beeui/core@0.1.0
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.0468560Z Tarball Contents
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.0469540Z package.json
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.0470660Z src/index.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.0472090Z src/utils/anchored-overlay.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.0473110Z src/utils/calendar-date.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.0474210Z src/utils/cn.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.0474970Z src/utils/overlay-runtime.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.0476260Z Tarball Details
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.0477580Z /Users/runner/Library/Caches/BeeUI/bare-consumer/packages/beeui-core-0.1.0.tgz
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4043130Z 📦  @beeui/tokens@0.1.0
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4043660Z Tarball Contents
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4043990Z package.json
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4044320Z src/index.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4044640Z src/lifecycle.json
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4051200Z src/motion-runtime.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4051580Z src/registry.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4051900Z src/theme-overrides.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4052190Z src/theme.css
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4052540Z src/token-reader.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4052970Z src/tokens.resolver.json
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4053310Z tokens.json
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4053650Z Tarball Details
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4054290Z /Users/runner/Library/Caches/BeeUI/bare-consumer/packages/beeui-tokens-0.1.0.tgz
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8202450Z 📦  @beeui/ui@0.1.0
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8203000Z Tarball Contents
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8203320Z package.json
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8203630Z src/components/accordion.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8204020Z src/components/alert-banner.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8204940Z src/components/alert-dialog.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8205370Z src/components/app-header.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8205830Z src/components/avatar.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8206220Z src/components/badge.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8206700Z src/components/bottom-action-bar.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8207110Z src/components/box.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8207500Z src/components/breadcrumb.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8207930Z src/components/button.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8208370Z src/components/calendar-locale.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8208730Z src/components/calendar.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8209170Z src/components/card.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8209580Z src/components/checkbox.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8209980Z src/components/chip.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8210420Z src/components/collapsible.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8210870Z src/components/date-picker-locale.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8211360Z src/components/date-picker-shared.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8211780Z src/components/date-picker.d.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8212220Z src/components/date-picker.native.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8212680Z src/components/date-picker.web.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8213560Z src/components/date-time-picker-locale.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8214000Z src/components/date-time-picker-shared.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8214470Z src/components/date-time-picker.d.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8215000Z src/components/date-time-picker.native.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8215430Z src/components/date-time-picker.web.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8215890Z src/components/description-list.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8216270Z src/components/dialog.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8216690Z src/components/dropdown-menu.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8217090Z src/components/field-context.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8217500Z src/components/field.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8217950Z src/components/form-group-context.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8218250Z src/components/form-group.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8218790Z src/components/form-message.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8219320Z src/components/icon-button.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8219790Z src/components/input.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8220250Z src/components/keyboard-aware-screen.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8220750Z src/components/label.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8221100Z src/components/link.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8221420Z src/components/list-group.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8221830Z src/components/list-item.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8222240Z src/components/metadata-row.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8222820Z src/components/otp-input.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8223230Z src/components/overlay-dismiss-events.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8223720Z src/components/overlay-dismiss-events.web.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8224250Z src/components/overlay-host-mode.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8224590Z src/components/overlay-runtime.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8225070Z src/components/overlay-transport-shared.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8225570Z src/components/overlay-transport.d.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8226110Z src/components/overlay-transport.native.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8226510Z src/components/overlay-transport.web.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8227270Z src/components/pagination.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8227810Z src/components/password-input.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8228240Z src/components/popover.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8228680Z src/components/progress.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8229040Z src/components/radio.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8229560Z src/components/safe-area.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8230180Z src/components/screen.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8230700Z src/components/search-input.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8231050Z src/components/section.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8231550Z src/components/segmented-control.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8231950Z src/components/select.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8232330Z src/components/separator.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8232690Z src/components/sheet.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8232970Z src/components/sheet.web.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8233380Z src/components/skeleton.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8233690Z src/components/spinner.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8234120Z src/components/stack.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8234460Z src/components/stat.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8234860Z src/components/state-message.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8235250Z src/components/stepper.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8235550Z src/components/switch.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8235960Z src/components/table-shared.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8236300Z src/components/table.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8236690Z src/components/table.web.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8237080Z src/components/tabs.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8237430Z src/components/text.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8237810Z src/components/textarea.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8238290Z src/components/theme-scope.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8238610Z src/components/timeline.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8238920Z src/components/toast.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8239330Z src/components/tooltip-shared.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8239660Z src/components/tooltip.d.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8240000Z src/components/tooltip.native.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8240380Z src/components/tooltip.web.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8240770Z src/components/use-bee-token.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8241150Z src/components/use-direction.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8241850Z src/components/use-required-callback-warning.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8242700Z src/components/visually-hidden.tsx
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8243090Z src/index.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8243530Z src/types/react-native-classname.d.ts
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8243890Z Tarball Details
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8244400Z /Users/runner/Library/Caches/BeeUI/bare-consumer/packages/beeui-ui-0.1.0.tgz
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8402690Z ##[endgroup]
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8403370Z ##[group]Install BeeUI tarballs and runtime styling dependencies
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8418240Z ./scripts/verify-bare-consumer.sh: line 108: extra_flags[@]: unbound variable
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8653450Z ##[error]Process completed with exit code 1.

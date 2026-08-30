@@ -1,0 +1,172 @@
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	﻿2026-08-30T14:23:34.2838740Z ##[group]Run ./scripts/verify-bare-consumer.sh android-build
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:34.2839234Z ^[[36;1m./scripts/verify-bare-consumer.sh android-build^[[0m
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:34.2877782Z shell: /usr/bin/bash -e {0}
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:34.2878052Z env:
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:34.2878271Z   NODE_VERSION: 24.13.1
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:34.2878509Z   PNPM_VERSION: 10.15.0
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:34.2878754Z   BEEUI_RN_VERSION: 0.87.1
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:34.2879005Z   BEEUI_RN_CLI_VERSION: 20.2.0
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:34.2879308Z   BEEUI_BARE_NPM_INSTALL_FLAGS: --legacy-peer-deps
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:34.2879729Z   BEEUI_BARE_WORK_ROOT: /home/runner/work/BeeUI/BeeUI/.beeui-bare-rn87
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:34.2880406Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.12-1/x64
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:34.2880912Z   JAVA_HOME_21_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.12-1/x64
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:34.2881329Z   MAVEN_ARGS: -ntp
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:34.2881580Z   ANDROID_HOME: /usr/local/lib/android/sdk
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:34.2881897Z   ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:34.2882231Z ##[endgroup]
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:34.3907569Z Downloading https://services.gradle.org/distributions/gradle-9.4.1-bin.zip
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:35.7508322Z .............10%.............20%.............30%.............40%.............50%.............60%..............70%.............80%.............90%.............100%
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:37.0318234Z 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:37.0320196Z Welcome to Gradle 9.4.1!
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:37.0320632Z 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:37.0322978Z Here are the highlights of this release:
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:37.0324250Z  - Java 26 support
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:37.0325351Z  - Non-class-based JVM tests
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:37.0331602Z  - Enhanced console progress bar
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:37.0331856Z 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:37.0332343Z For more details see https://docs.gradle.org/9.4.1/release-notes.html
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:37.0332906Z 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:37.1316976Z To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:38.4311294Z Daemon will be stopped at the end of the build 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:23:39.8312594Z Calculating task graph as no cached configuration is available for tasks: assembleDebug
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:22.0362344Z > Task :gradle-plugin:settings-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:22.0365267Z > Task :gradle-plugin:shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:26.8310957Z > Task :gradle-plugin:shared:processResources NO-SOURCE
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:26.8312401Z > Task :gradle-plugin:settings-plugin:pluginDescriptors
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:26.8313211Z > Task :gradle-plugin:settings-plugin:processResources
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:32.1316942Z > Task :gradle-plugin:shared:compileKotlin
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:32.2312722Z > Task :gradle-plugin:shared:compileJava NO-SOURCE
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:32.2314499Z > Task :gradle-plugin:shared:classes UP-TO-DATE
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:32.2315754Z > Task :gradle-plugin:shared:jar
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:38.6310901Z > Task :gradle-plugin:settings-plugin:compileKotlin
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:38.6326538Z > Task :gradle-plugin:settings-plugin:compileJava NO-SOURCE
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:38.6327784Z > Task :gradle-plugin:settings-plugin:classes
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:38.6328766Z > Task :gradle-plugin:settings-plugin:jar
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:46.1325156Z > Task :gradle-plugin:react-native-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:49.0312629Z > Task :gradle-plugin:react-native-gradle-plugin:pluginDescriptors
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:49.0314658Z > Task :gradle-plugin:react-native-gradle-plugin:processResources
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:55.3310752Z > Task :gradle-plugin:react-native-gradle-plugin:compileKotlin
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:55.3312074Z > Task :gradle-plugin:react-native-gradle-plugin:compileJava NO-SOURCE
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:55.3313237Z > Task :gradle-plugin:react-native-gradle-plugin:classes
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:24:55.3314569Z > Task :gradle-plugin:react-native-gradle-plugin:jar
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6311748Z 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6315065Z > Configure project :app
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6325455Z WARNING: The option setting 'android.builtInKotlin=false' is deprecated.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6326608Z The current default is 'true'.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6327725Z It will be removed in version 10.0 of the Android Gradle plugin.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6329060Z WARNING: The option setting 'android.newDsl=false' is deprecated.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6330127Z The current default is 'true'.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6331196Z It will be removed in version 10.0 of the Android Gradle plugin.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6333736Z WARNING: API 'applicationVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6335471Z It will be removed in version 10.0 of the Android Gradle plugin.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6336926Z The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6338079Z     android.newDsl=false
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6338935Z to this project's gradle.properties file.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6340267Z For more information, see http://developer.android.com/build/r/new-dsl.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6341027Z 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6342518Z To determine what is calling applicationVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6344918Z WARNING: API 'testVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6346401Z It will be removed in version 10.0 of the Android Gradle plugin.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6347909Z The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6349032Z     android.newDsl=false
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6349950Z to this project's gradle.properties file.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6351236Z For more information, see http://developer.android.com/build/r/new-dsl.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6352076Z 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6353771Z To determine what is calling testVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6355909Z WARNING: API 'unitTestVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6357490Z It will be removed in version 10.0 of the Android Gradle plugin.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6358980Z The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6360084Z     android.newDsl=false
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6360930Z to this project's gradle.properties file.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6362397Z For more information, see http://developer.android.com/build/r/new-dsl.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6363256Z 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:05.6364981Z To determine what is calling unitTestVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:07.0310484Z 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:07.0311840Z > Configure project :react-native-community_datetimepicker
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:07.0314022Z WARNING: API 'libraryVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:07.0315819Z It will be removed in version 10.0 of the Android Gradle plugin.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:07.0317519Z The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:07.0318755Z     android.newDsl=false
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:07.0319727Z to this project's gradle.properties file.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:07.0321109Z For more information, see http://developer.android.com/build/r/new-dsl.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:07.0321994Z 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:07.0323857Z To determine what is calling libraryVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:48.7324082Z 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:48.7325187Z > Task :app:generateCodegenSchemaFromJavaScript SKIPPED
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:48.7326289Z > Task :app:generateCodegenArtifactsFromSchema SKIPPED
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:48.8344925Z > Task :app:generateAutolinkingNewArchitectureFiles
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:48.8409112Z > Task :app:generateAutolinkingPackageList
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:48.8434703Z > Task :app:generateReactNativeEntryPoint
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:48.8454562Z > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:48.8474808Z > Task :react-native-community_datetimepicker:checkKotlinGradlePluginConfigurationErrors SKIPPED
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:48.8494709Z > Task :react-native-safe-area-context:checkKotlinGradlePluginConfigurationErrors SKIPPED
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:48.8496362Z > Task :react-native-teleport:checkKotlinGradlePluginConfigurationErrors SKIPPED
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:48.8535364Z > Task :app:generateDebugAssets UP-TO-DATE
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:48.8614941Z > Task :react-native-community_datetimepicker:generateDebugAssets UP-TO-DATE
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:48.8634698Z > Task :react-native-safe-area-context:generateDebugAssets UP-TO-DATE
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:48.8691987Z > Task :react-native-teleport:generateDebugAssets UP-TO-DATE
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.0325155Z > Task :react-native-safe-area-context:generateCodegenSchemaFromJavaScript
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.0384629Z > Task :react-native-community_datetimepicker:prepareLintJarForPublish
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.0414652Z > Task :react-native-safe-area-context:prepareLintJarForPublish
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.0415844Z > Task :react-native-teleport:prepareLintJarForPublish
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.1364987Z > Task :react-native-teleport:generateCodegenSchemaFromJavaScript
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.3317394Z > Task :react-native-community_datetimepicker:generateCodegenSchemaFromJavaScript
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.4365547Z > Task :react-native-safe-area-context:generateCodegenArtifactsFromSchema
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.4424746Z > Task :react-native-safe-area-context:preBuild
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.4484725Z > Task :react-native-safe-area-context:preDebugBuild
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.4494857Z > Task :react-native-safe-area-context:processDebugNavigationResources
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.4514524Z > Task :react-native-safe-area-context:generateDebugResources
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.4544583Z > Task :react-native-safe-area-context:generateDebugBuildConfig
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.4574315Z > Task :react-native-safe-area-context:javaPreCompileDebug
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.5322523Z > Task :react-native-teleport:generateCodegenArtifactsFromSchema
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.5350758Z > Task :react-native-teleport:preBuild
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.5351809Z > Task :react-native-teleport:preDebugBuild
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.5358841Z > Task :react-native-safe-area-context:mergeDebugAssets
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.5360046Z > Task :react-native-safe-area-context:packageDebugResources
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.5361346Z > Task :react-native-teleport:processDebugNavigationResources FROM-CACHE
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.5362927Z > Task :react-native-teleport:generateDebugBuildConfig
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.5364465Z > Task :react-native-teleport:generateDebugResources FROM-CACHE
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.5365595Z > Task :react-native-teleport:packageDebugResources
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.5367326Z > Task :react-native-community_datetimepicker:generateCodegenArtifactsFromSchema
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.5368549Z > Task :react-native-community_datetimepicker:preBuild
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.5369558Z > Task :app:preBuild
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.5370126Z > Task :app:preDebugBuild
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:49.5370910Z > Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:50.2335715Z > Task :react-native-teleport:javaPreCompileDebug FROM-CACHE
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:50.2351750Z > Task :app:generateDebugBuildConfig
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:50.2357520Z > Task :react-native-community_datetimepicker:preDebugBuild
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:50.2384670Z > Task :react-native-community_datetimepicker:processDebugNavigationResources
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:50.2413606Z > Task :app:generateDebugResValues
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:50.2444151Z > Task :app:generateDebugResources
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:50.3344031Z > Task :app:packageDebugResources
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:50.3375300Z > Task :react-native-community_datetimepicker:generateDebugBuildConfig
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:50.3434432Z > Task :react-native-community_datetimepicker:generateDebugResources
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:50.4325588Z > Task :react-native-community_datetimepicker:packageDebugResources
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:50.9324806Z > Task :react-native-safe-area-context:parseDebugLocalResources
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:50.9334562Z > Task :react-native-teleport:parseDebugLocalResources
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:50.9364606Z > Task :react-native-community_datetimepicker:javaPreCompileDebug FROM-CACHE
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:51.0315028Z > Task :react-native-community_datetimepicker:parseDebugLocalResources
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:51.0344349Z > Task :react-native-teleport:generateDebugRFile
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:51.0373745Z > Task :react-native-safe-area-context:generateDebugRFile
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:25:51.0404476Z > Task :react-native-community_datetimepicker:generateDebugRFile
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:08.2314136Z e: file:///home/runner/work/BeeUI/BeeUI/.beeui-bare-rn87/BeeUIBareSmoke/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaView.kt:59:23 Unresolved reference 'uiImplementation'.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:08.2315984Z 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:08.2374528Z > Task :react-native-safe-area-context:compileDebugKotlin
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:10.4316590Z 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:10.4345186Z > Task :react-native-safe-area-context:compileDebugKotlin FAILED
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:10.6310441Z > Task :app:processDebugNavigationResources
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:11.3340807Z 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:11.3341925Z > Task :react-native-community_datetimepicker:compileDebugKotlin
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:11.3342535Z 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:11.3343045Z > Task :react-native-teleport:compileDebugKotlin
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:11.3347197Z w: file:///home/runner/work/BeeUI/BeeUI/.beeui-bare-rn87/BeeUIBareSmoke/node_modules/react-native-teleport/android/src/main/java/com/teleport/TeleportPackage.kt:19:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:11.3349434Z 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:11.3351360Z [Incubating] Problems report is available at: file:///home/runner/work/BeeUI/BeeUI/.beeui-bare-rn87/BeeUIBareSmoke/android/build/reports/problems/problems-report.html
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:11.3384203Z FAILURE: Build failed with an exception.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:11.3384670Z 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:11.3414007Z * What went wrong:
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:11.3444555Z Execution failed for task ':react-native-safe-area-context:compileDebugKotlin'.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:11.3972446Z 
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:11.3972708Z BUILD FAILED in 2m 36s
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:11.4314758Z Configuration cache entry stored.
+bare-android-rn87	Compile bare RN 0.87 Android debug APK	2026-08-30T14:26:11.8207372Z ##[error]Process completed with exit code 1.
