@@ -1,5 +1,7 @@
 # BeeUI 1.0 Authoritative Execution Sequence
 
+**Current state (2026-08-31): owner decision stops the drive at R1–R5 minus the R7-gated performance tail (77/148 child issues closed).** S0–S3 are complete; S4's #180–#182 are complete but #183–#186 stay open, blocked on the R7 packaging chain (`#197 → #198 → (#199 + #200) → #183 → #184 → #185 → #186`) below. #126 (S1 runtime lane) is parked by the owner, blocking nothing else; see `docs/roadmap.md` for the authoritative per-issue status. S4's OSS/security lane and S5–S9 are unstarted future work, not part of this drive.
+
 This file is the dependency/dispatch authority for the BeeUI 1.0 program tracked by #114.
 
 **Issue number is not execution order.** The roadmap defines product scope, each issue defines task scope, `docs/agent-execution-contract.md` defines worker behavior, and this file defines when work is eligible.
