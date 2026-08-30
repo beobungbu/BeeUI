@@ -74,12 +74,16 @@ These are real native compile gates. They are not simulator-boot/runtime interac
 ## React Native 0.87 row (#131)
 
 `.github/workflows/compat-rn-0-87.yml` runs the identical `scripts/verify-bare-consumer.sh`
-contract described above with `BEEUI_RN_VERSION=0.87.1`, proving the current upstream RN line
+contract described above with `BEEUI_RN_VERSION=0.87.1`, testing the current upstream RN line
 independently of the repo's own RN `0.86.2` pin. It adds the Android SDK platform/build-tools
 `37` generation that RN 0.87's template requires (AGP `9.2.1`, Kotlin `2.2.0`, `compileSdk 37`).
-Unlike the jobs above, it does not run on every pull request or push, since it duplicates the
-full native-compile cost of the 0.86 row for a version this repo does not itself release. It is
-opt-in only: `gh workflow run compat-rn-0-87.yml` post-merge, or the `ci:rn-0.87` PR label
+The iOS bare-consumer compile is green; the Android bare-consumer compile currently **fails**
+because `react-native-safe-area-context@5.7.0` does not build against RN 0.87's native surface,
+so RN 0.87 is excluded from the peer promise on this real evidence (not merely deferred) — see
+the "React Native — 0.87.x" row in `docs/compatibility-matrix.md` for the exact error and run
+links. Unlike the jobs above, it does not run on every pull request or push, since it duplicates
+the full native-compile cost of the 0.86 row for a version this repo does not itself release. It
+is opt-in only: `gh workflow run compat-rn-0-87.yml` post-merge, or the `ci:rn-0.87` PR label
 pre-merge (same pattern as `ci:native` in `docs/ci-native-classification.md`). See the "React
 Native — 0.87.x" row in `docs/compatibility-matrix.md` for the evidence classes obtained and the
 resulting peer-range decision.
