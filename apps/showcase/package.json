@@ -10,7 +10,8 @@
     "android": "expo run:android",
     "web": "expo start --web",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand",
+    "bench": "jest --runInBand --testPathPattern=__tests__/perf-"
   },
   "dependencies": {
     "@beeui/tokens": "workspace:*",
