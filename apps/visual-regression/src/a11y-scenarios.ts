@@ -83,6 +83,20 @@ export const a11yScenarios: A11yScenario[] = [
     },
   },
   {
+    name: 'component-gallery-sheet-overlay',
+    description:
+      'Component Gallery — an open Sheet (#159), BeeUI\'s own Web overlay/focus primitives without a native Modal.',
+    navigate: async (page, baseUrl) => {
+      await openComponentGallery(page, baseUrl);
+      await page.getByTestId('sheet-demo-trigger').click();
+      // The Sheet Web implementation sets role="dialog"/aria-modal directly
+      // and synchronously (no react-native-web `Modal` owner-lifecycle
+      // settling race applies here — see `awaitSettledModalOwners`'s doc
+      // comment for why that race exists for RNW `Modal`-based content).
+      await page.getByTestId('sheet-demo-content').waitFor({ state: 'visible' });
+    },
+  },
+  {
     name: 'pattern-gallery-dashboard',
     description:
       'Pattern Gallery — Dashboard Overview, a representative composed application screen (non-form).',
@@ -121,6 +135,15 @@ export const a11yScenarios: A11yScenario[] = [
       // get `TooltipContent` mounted for the scan without timing dependence.
       await page.getByTestId('tooltip-default-trigger').focus();
       await page.getByRole('tooltip').waitFor({ state: 'visible' });
+    },
+  },
+  {
+    name: 'component-gallery-table',
+    description:
+      'Component Gallery — Table section: a real HTML table with a sortable/selectable header and its `layout="stacked"` presentation.',
+    navigate: async (page, baseUrl) => {
+      await openComponentGallery(page, baseUrl);
+      await page.getByTestId('table-showcase-stacked').scrollIntoViewIfNeeded();
     },
   },
 ];

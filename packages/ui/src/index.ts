@@ -51,6 +51,11 @@ export {
   type ButtonLabelProps,
   type ButtonProps,
 } from './components/button';
+// `calendar-locale.ts` is an internal stateless resolver co-located with `Calendar`
+// (ADR-008), mirroring `use-direction.ts`'s shape — like that module, it is not part
+// of the public barrel; `Calendar` and future `DatePicker`/`DateTimePicker` (#173/#174)
+// import it directly by relative path.
+export { Calendar, type CalendarProps, type CalendarVisibleMonth } from './components/calendar';
 export { Card, cardVariants, type CardProps } from './components/card';
 export {
   Checkbox,
@@ -219,6 +224,25 @@ export {
 } from './components/segmented-control';
 export { Section, type SectionProps } from './components/section';
 export { Separator, type SeparatorProps } from './components/separator';
+export {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHandle,
+  SheetTitle,
+  SheetTrigger,
+  type SheetCloseProps,
+  type SheetContentProps,
+  type SheetDescriptionProps,
+  type SheetFooterProps,
+  type SheetHandleProps,
+  type SheetProps,
+  type SheetSnapPoint,
+  type SheetTitleProps,
+  type SheetTriggerProps,
+} from './components/sheet';
 export { Skeleton, skeletonVariants, type SkeletonProps } from './components/skeleton';
 export { Spinner, type SpinnerProps } from './components/spinner';
 export {
@@ -253,6 +277,26 @@ export {
   type StepperProps,
 } from './components/stepper';
 export { Switch, type SwitchProps } from './components/switch';
+export {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+  type TableBodyProps,
+  type TableCaptionProps,
+  type TableCellProps,
+  type TableFooterProps,
+  type TableHeadProps,
+  type TableHeaderProps,
+  type TableLayout,
+  type TableProps,
+  type TableRowProps,
+  type TableSortDirection,
+} from './components/table';
 export {
   Tabs,
   TabsContent,

@@ -42,7 +42,7 @@ function mockAnimationExecution() {
 
 describe('semantic motion token surface', () => {
   it('exposes exactly the approved recurring-transition vocabulary', () => {
-    expect(motionIntents).toEqual(['overlay-enter', 'overlay-exit', 'disclosure']);
+    expect(motionIntents).toEqual(['overlay-enter', 'overlay-exit', 'sheet-enter', 'sheet-exit', 'disclosure']);
     expect(Object.keys(motion)).toEqual([...motionIntents]);
     expect(Object.keys(semanticMotion)).toEqual([...motionIntents]);
   });

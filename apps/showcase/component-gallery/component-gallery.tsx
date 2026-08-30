@@ -78,6 +78,13 @@ import {
   SegmentedControlItem,
   Separator,
   SettingsItem,
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetTitle,
+  SheetTrigger,
   Skeleton,
   Spinner,
   Stack,
@@ -103,6 +110,7 @@ import * as React from 'react';
 import { ScrollView, StatusBar } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
 import { SelectShowcase } from './select-showcase';
+import { TableShowcase } from './table-showcase';
 
 function ThemeToggle() {
   const { hasAdaptiveThemes, theme } = useUniwind();
@@ -612,6 +620,12 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
 
             <SelectShowcase />
 
+            <PlaygroundHeading description="Composable primitives (no owned data/columns) — real HTML table semantics on web, keyboard-reachable sort, and caller-owned row selection.">
+              Table
+            </PlaygroundHeading>
+
+            <TableShowcase />
+
             <PlaygroundHeading description="Modal and anchored overlays now have real public APIs you can click through here.">
               Overlay playground
             </PlaygroundHeading>
@@ -653,6 +667,29 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
                     </AlertDialogContent>
                   </AlertDialog>
                 </HStack>
+              </Section>
+
+              <Separator />
+
+              <Section
+                description="Bottom-sheet surface (#159): BeeUI's own Web overlay/focus primitives — Escape, backdrop press, Tab focus-trap, and focus restoration — with no native Modal and no gorhom on Web (ADR-006)."
+                title="Sheet"
+              >
+                <Sheet>
+                  <SheetTrigger testID="sheet-demo-trigger">Open Sheet</SheetTrigger>
+                  <SheetContent overlayTestID="sheet-demo-overlay" testID="sheet-demo-content">
+                    <SheetTitle>Filters</SheetTitle>
+                    <SheetDescription>Refine results by category and price.</SheetDescription>
+                    <Field label="Search">
+                      <Input accessibilityLabel="Sheet search" testID="sheet-demo-input" />
+                    </Field>
+                    <SheetFooter>
+                      <SheetClose testID="sheet-demo-close" variant="outline">
+                        Close
+                      </SheetClose>
+                    </SheetFooter>
+                  </SheetContent>
+                </Sheet>
               </Section>
 
               <Separator />
