@@ -262,9 +262,19 @@ export const TableRow = React.forwardRef<HTMLElement, TableRowProps>(
     });
 
     if (layout === 'stacked') {
+      // `aria-selected` is only an allowed ARIA attribute on elements whose
+      // role supports it (option/row/tab/treeitem/gridcell/columnheader/
+      // rowheader — WAI-ARIA 1.2). This card is a plain, roleless `<div>`
+      // (axe-core's `aria-allowed-attr` rule correctly flags `aria-selected`
+      // here as a critical violation — proven by the `component-gallery-table`
+      // a11y scenario), unlike the `scroll` layout's real `<tr>` below, which
+      // has an implicit `row` role from being inside a `<table>` and so
+      // legitimately supports it. The row's selection state is still exposed
+      // to assistive technology correctly via its own `Checkbox`'s
+      // `aria-checked` (ADR-007: Table composes selection from `Checkbox`,
+      // it does not invent a second, invalid selection-state attribute).
       return (
         <div
-          aria-selected={selected}
           className={cn(
             'gap-1 rounded-lg border border-border bg-surface p-3',
             selected && 'border-primary',
@@ -341,7 +351,7 @@ export const TableHead = React.forwardRef<HTMLElement, TableHeadProps>(
     const innerContent = sortable ? (
       <button
         aria-label={resolvedLabel ? `Sort by ${resolvedLabel}` : undefined}
-        className="flex w-full items-center gap-1 bg-transparent text-start font-semibold hover:opacity-80"
+        className="flex w-full items-center gap-1 rounded-sm bg-transparent text-start font-semibold hover:opacity-80 focus-visible:bee-focus-ring"
         onClick={onSortChange}
         type="button"
       >
