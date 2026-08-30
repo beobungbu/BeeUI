@@ -159,4 +159,30 @@ export const a11yScenarios: A11yScenario[] = [
       await page.getByTestId('table-showcase-stacked').scrollIntoViewIfNeeded();
     },
   },
+  {
+    name: 'component-gallery-date-picker-popover',
+    description:
+      'Component Gallery — DatePicker (#173/#176): an open Popover hosting the Calendar grid.',
+    navigate: async (page, baseUrl) => {
+      await openComponentGallery(page, baseUrl);
+      const trigger = page.getByTestId('date-picker-showcase-controlled-trigger');
+      await trigger.scrollIntoViewIfNeeded();
+      await trigger.click();
+      await page.getByTestId('date-picker-showcase-controlled-content').waitFor({ state: 'visible' });
+    },
+  },
+  {
+    name: 'component-gallery-date-time-picker-popover',
+    description:
+      'Component Gallery — DateTimePicker (#174/#176): an open Popover hosting the Calendar grid plus the hour/minute/AM-PM time control.',
+    navigate: async (page, baseUrl) => {
+      await openComponentGallery(page, baseUrl);
+      const trigger = page.getByTestId('date-time-picker-showcase-controlled-trigger');
+      await trigger.scrollIntoViewIfNeeded();
+      await trigger.click();
+      await page
+        .getByTestId('date-time-picker-showcase-controlled-content')
+        .waitFor({ state: 'visible' });
+    },
+  },
 ];
