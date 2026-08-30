@@ -10,6 +10,7 @@ import {
 } from './overlay-runtime';
 import { Text } from './text';
 import {
+  getTooltipContentText,
   hasInteractiveTooltipChild,
   useTooltipContext,
   type TooltipContentProps,
@@ -32,14 +33,6 @@ function assignRef<T>(ref: React.ForwardedRef<T>, value: T | null) {
     return;
   }
   if (ref) ref.current = value;
-}
-
-function getPrimitiveText(children: React.ReactNode) {
-  const values = React.Children.toArray(children);
-  if (!values.every((value) => typeof value === 'string' || typeof value === 'number')) {
-    return undefined;
-  }
-  return values.map(String).join('');
 }
 
 // The BeeUI primitives whose presence inside `TooltipContent` violates the
@@ -178,7 +171,7 @@ export const TooltipContent = React.forwardRef<
     const resolvedStyle = position
       ? [styles.content, { left: position.x, top: position.y }, style]
       : [styles.content, styles.measuring, style];
-    const primitiveText = getPrimitiveText(children);
+    const primitiveText = getTooltipContentText(children);
 
     return (
       <OverlayPortal overlayId={overlayId}>

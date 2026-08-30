@@ -40,6 +40,17 @@ type TooltipContextValue = {
   cancelPendingOpen: () => void;
   /** Cancels a pending close — the hoverable requirement (pointer travels onto content). */
   cancelPendingClose: () => void;
+  /**
+   * `TooltipContent`'s resolved primitive text, registered unconditionally
+   * (independent of `open`) so native's merged-`accessibilityHint` path
+   * (ADR-005, "Accessible relationship semantics") always has the text
+   * available, regardless of whether the visual bubble has ever mounted.
+   * `undefined` when the content is not primitive text (see
+   * `getTooltipContentText`).
+   */
+  contentText: string | undefined;
+  /** Registers/clears the current `contentText` — called from `TooltipContent`. */
+  setContentText: (text: string | undefined) => void;
 };
 
 const TooltipContext = React.createContext<TooltipContextValue | null>(null);
@@ -118,6 +129,8 @@ export function Tooltip(props: TooltipProps) {
     },
     [controlled, onOpenChange],
   );
+
+  const [contentText, setContentText] = React.useState<string | undefined>(undefined);
 
   const openRef = React.useRef(resolvedOpen);
   openRef.current = resolvedOpen;
@@ -208,15 +221,18 @@ export function Tooltip(props: TooltipProps) {
       cancelPendingClose,
       cancelPendingOpen,
       contentNativeID,
+      contentText,
       open: resolvedOpen,
       overlayId,
       requestClose,
       requestOpen,
+      setContentText,
     }),
     [
       cancelPendingClose,
       cancelPendingOpen,
       contentNativeID,
+      contentText,
       overlayId,
       requestClose,
       requestOpen,
@@ -256,6 +272,22 @@ export type TooltipContentProps = Omit<
   shift?: boolean;
   sideOffset?: number;
 };
+
+/**
+ * Resolves `TooltipContent`'s `children` to a single plain string, or
+ * `undefined` when `children` is not exclusively string/number values (e.g.
+ * structured JSX). Shared by both platform files: Web renders this text
+ * inside a `Text` primitive (`tooltip.web.tsx`), and native registers it as
+ * the trigger's merged `accessibilityHint` via `setContentText`
+ * (`tooltip.native.tsx`, ADR-005).
+ */
+export function getTooltipContentText(children: React.ReactNode): string | undefined {
+  const values = React.Children.toArray(children);
+  if (!values.every((value) => typeof value === 'string' || typeof value === 'number')) {
+    return undefined;
+  }
+  return values.map(String).join('');
+}
 
 /**
  * True when `children` renders any element BeeUI already ships as a
