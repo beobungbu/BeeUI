@@ -1998,7 +1998,7 @@
       "dependencies": {},
       "peerDependencies": {
         "react": ">=19 <20",
-        "react-native": ">=0.86.0"
+        "react-native": ">=0.86.0 <0.87.0"
       }
     },
     {
@@ -2045,7 +2045,7 @@
       ],
       "dependencies": {},
       "peerDependencies": {
-        "react-native": ">=0.86.0"
+        "react-native": ">=0.86.0 <0.87.0"
       }
     },
     {
