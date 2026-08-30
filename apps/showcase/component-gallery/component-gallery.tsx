@@ -110,6 +110,7 @@ import * as React from 'react';
 import { ScrollView, StatusBar } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
 import { DatePickerShowcase } from './date-picker-showcase';
+import { DateTimePickerShowcase } from './date-time-picker-showcase';
 import { SelectShowcase } from './select-showcase';
 import { TableShowcase } from './table-showcase';
 
@@ -632,6 +633,12 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
             </PlaygroundHeading>
 
             <DatePickerShowcase />
+
+            <PlaygroundHeading description="Field-integrated trigger; composes DatePicker's date part with an Input/SegmentedControl time control on Web, native delegates to the system picker (chained date+time steps on Android).">
+              DateTimePicker
+            </PlaygroundHeading>
+
+            <DateTimePickerShowcase />
 
             <PlaygroundHeading description="Modal and anchored overlays now have real public APIs you can click through here.">
               Overlay playground

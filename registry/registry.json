@@ -558,6 +558,57 @@
       }
     },
     {
+      "name": "date-time-picker",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/date-time-picker.d.ts",
+          "target": { "root": "components", "path": "date-time-picker.d.ts" },
+          "transforms": []
+        },
+        {
+          "source": "packages/ui/src/components/date-time-picker.native.tsx",
+          "target": { "root": "components", "path": "date-time-picker.native.tsx" },
+          "transforms": ["rewrite-beeui-core-module"]
+        },
+        {
+          "source": "packages/ui/src/components/date-time-picker.web.tsx",
+          "target": { "root": "components", "path": "date-time-picker.web.tsx" },
+          "transforms": ["rewrite-beeui-core-module"]
+        },
+        {
+          "source": "packages/ui/src/components/date-time-picker-shared.tsx",
+          "target": { "root": "components", "path": "date-time-picker-shared.tsx" },
+          "transforms": ["rewrite-beeui-core-module"]
+        },
+        {
+          "source": "packages/ui/src/components/date-time-picker-locale.ts",
+          "target": { "root": "components", "path": "date-time-picker-locale.ts" },
+          "transforms": ["rewrite-beeui-core-module"]
+        }
+      ],
+      "registryDependencies": [
+        "button",
+        "calendar",
+        "core-overlay",
+        "dialog",
+        "field-context",
+        "icon-button",
+        "input",
+        "popover",
+        "segmented-control",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "@react-native-community/datetimepicker": ">=9.1 <10",
+        "react": ">=19 <20",
+        "react-native": ">=0.86.0"
+      }
+    },
+    {
       "name": "description-list",
       "type": "component",
       "public": true,
