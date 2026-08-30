@@ -1,0 +1,81 @@
+version: 2
+
+updates:
+  # JavaScript/TypeScript workspace. This is a pnpm monorepo (see
+  # pnpm-workspace.yaml: apps/*, packages/*) with a single root
+  # pnpm-lock.yaml; Dependabot's "npm" ecosystem auto-detects pnpm from that
+  # lockfile and resolves the whole workspace from directory "/", so one
+  # entry covers every app/package.
+  #
+  # Note: pnpm-lock.yaml and root package.json are already
+  # SHOWCASE_NATIVE_EXACT_PATHS in scripts/classify-ci-changes.mjs, so every
+  # Dependabot PR here (any dependency, any bump) already forces the
+  # Expo Prebuild + iOS Simulator compile gate in ci.yml's verify/ios-native
+  # jobs. No additional CI wiring is required for native-graph coverage.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    reviewers:
+      - "beobungbu"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      # Low-risk drift only. Deliberately excludes react-native/Expo and any
+      # scoped React Native package: those change the native dependency
+      # graph and must land as individually reviewable PRs, never batched.
+      # Security updates are never grouped here (applies-to: version-updates
+      # only), so a vulnerability alert always opens its own immediate PR.
+      safe-patch-minor:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+        exclude-patterns:
+          - "expo*"
+          - "react-native*"
+          - "@react-native/*"
+          - "react"
+          - "react-dom"
+    ignore:
+      # Native/runtime-critical majors are owner-gated (see
+      # docs/agent-execution-contract.md); Dependabot may still open an
+      # individual PR to surface the advisory/update, but major bumps of
+      # these are excluded from any automated grouping above and require
+      # explicit review either way.
+      - dependency-name: "react-native"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "expo"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions used by .github/workflows/*.yml. Actions are pinned to
+  # commit SHAs (see docs/beeui-1.0-review-checklist.md / R6 security
+  # hardening); Dependabot understands SHA-pinned `uses:` and proposes a PR
+  # that bumps the SHA (keeping the trailing version comment in sync) rather
+  # than silently floating a tag.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    reviewers:
+      - "beobungbu"
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
+    groups:
+      github-actions:
+        applies-to: version-updates
+        patterns:
+          - "*"
