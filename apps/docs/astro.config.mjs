@@ -61,7 +61,11 @@ export default defineConfig({
         },
         {
           label: 'Compatibility',
-          items: [{ label: 'Overview', slug: 'compatibility' }],
+          items: [
+            { label: 'Overview', slug: 'compatibility' },
+            { label: 'Native (RN/Expo)', slug: 'compatibility/native' },
+            { label: 'Web', slug: 'compatibility/web' },
+          ],
         },
         {
           label: 'Migration & versioning',

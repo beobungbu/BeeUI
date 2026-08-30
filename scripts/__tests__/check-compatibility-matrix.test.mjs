@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   collectCompatibilityMatrixViolations,
+  collectPublishedDocsViolations,
   computeActualSnapshot,
   extractSnapshotFromDoc,
 } from '../check-compatibility-matrix.mjs';
@@ -118,4 +119,32 @@ test('collectCompatibilityMatrixViolations reports nested diffs by dotted path',
     ...inputs,
   });
   assert.deepEqual(violations, ['safeAreaContext.ui: doc says "4.9.0", repo actually pins "5.7.0"']);
+});
+
+test('collectPublishedDocsViolations passes when every pinned value appears in the published pages', () => {
+  const snapshot = computeActualSnapshot(fixtures());
+  const publishedDocsContent = Object.entries(snapshot)
+    .flatMap(([key, value]) =>
+      typeof value === 'object' ? Object.values(value) : [value],
+    )
+    .join(' — pinned at ');
+  const violations = collectPublishedDocsViolations({
+    markdown: validMarkdown(snapshot),
+    publishedDocsContent,
+  });
+  assert.deepEqual(violations, []);
+});
+
+test('collectPublishedDocsViolations reports a pinned value missing from the published pages', () => {
+  const snapshot = computeActualSnapshot(fixtures());
+  const publishedDocsContent = 'Compatibility page mentioning nothing useful.';
+  const violations = collectPublishedDocsViolations({
+    markdown: validMarkdown(snapshot),
+    publishedDocsContent,
+  });
+  assert.ok(
+    violations.includes(
+      'reactNative: published apps/docs compatibility pages do not mention pinned value "0.86.2"',
+    ),
+  );
 });
