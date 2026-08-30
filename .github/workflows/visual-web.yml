@@ -84,9 +84,8 @@ jobs:
           pnpm --dir apps/visual-regression exec playwright --version
           pnpm --dir apps/visual-regression exec node -e "const { chromium } = require('@playwright/test'); (async () => { const browser = await chromium.launch(); console.log('Chromium ' + browser.version()); await browser.close(); })().catch(error => { console.error(error); process.exit(1); });"
 
-      # TEMPORARY (#146 focus-visible baseline regen) — REVERT before merge.
       - name: Compare canonical web screenshots (shard ${{ matrix.shard }}/3)
-        run: pnpm --dir apps/visual-regression test --shard=${{ matrix.shard }}/3 --reporter=blob --update-snapshots
+        run: pnpm --dir apps/visual-regression test --shard=${{ matrix.shard }}/3 --reporter=blob
 
       - name: Upload blob report
         if: always()
@@ -103,16 +102,6 @@ jobs:
         with:
           name: visual-regression-${{ matrix.shard }}-${{ github.event.pull_request.head.sha || github.sha }}
           path: apps/visual-regression/test-results
-          if-no-files-found: warn
-          retention-days: 3
-
-      # TEMPORARY (#146 focus-visible baseline regen) — REVERT before merge.
-      - name: Upload regenerated screenshot baselines
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: updated-screenshots-${{ matrix.shard }}-${{ github.event.pull_request.head.sha || github.sha }}
-          path: apps/visual-regression/tests/__screenshots__
           if-no-files-found: warn
           retention-days: 3
 
