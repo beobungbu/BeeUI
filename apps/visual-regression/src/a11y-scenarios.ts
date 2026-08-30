@@ -97,6 +97,18 @@ export const a11yScenarios: A11yScenario[] = [
     },
   },
   {
+    name: 'component-gallery-tooltip-overlay',
+    description:
+      'Component Gallery — a focused Tooltip trigger (#154/#155) with its content revealed, proving role="tooltip"/aria-describedby produce no automatically detectable violation against the real, composed-app instance.',
+    navigate: async (page, baseUrl) => {
+      await openComponentGallery(page, baseUrl);
+      // Focus opens immediately (no delay, ADR-005) — deterministic, same
+      // reasoning as the standalone `tooltip-open` scenario below.
+      await page.getByTestId('tooltip-demo-trigger').focus();
+      await page.getByTestId('tooltip-demo-content').waitFor({ state: 'visible' });
+    },
+  },
+  {
     name: 'pattern-gallery-dashboard',
     description:
       'Pattern Gallery — Dashboard Overview, a representative composed application screen (non-form).',
@@ -120,14 +132,15 @@ export const a11yScenarios: A11yScenario[] = [
   {
     name: 'tooltip-open',
     description:
-      'Tooltip fixture (#152) — a focused trigger with its Tooltip revealed, proving role="tooltip"/aria-describedby produce no automatically detectable violation.',
+      'Tooltip standalone fixture (#152) — a focused trigger with its Tooltip revealed, proving role="tooltip"/aria-describedby produce no automatically detectable violation in isolation.',
     // `navigate` ignores `baseUrl` (the showcase app, `openComponentGallery`'s
-    // target): Tooltip is not yet on the `@beeui/ui` public barrel (ADR-005 —
-    // exporting it would break the showcase's iOS/Android Metro bundling
-    // before #153 lands `tooltip.native.tsx`), so its real-browser evidence
-    // lives in this repo's Web-only `apps/visual-regression` app instead (see
-    // `App.tsx`'s `TooltipFixture`). Both dev servers are already started by
-    // this project's `webServer` config.
+    // target): this scenario deliberately stays on the dedicated, Web-only
+    // `apps/visual-regression` fixture app (`App.tsx`'s `TooltipFixture`) even
+    // though Tooltip is now on the `@beeui/ui` public barrel (#155) — it proves
+    // the isolated open/close/delay contract with a fixed, minimal DOM, while
+    // `component-gallery-tooltip-overlay` (above) proves the same relationship
+    // against the real, composed Showcase app instance. Both dev servers are
+    // already started by this project's `webServer` config.
     navigate: async (page) => {
       await page.goto('http://127.0.0.1:4173/?fixture=tooltip', { waitUntil: 'domcontentloaded' });
       await page.getByTestId('tooltip-fixture').waitFor({ state: 'visible' });

@@ -94,6 +94,9 @@ This file is the canonical component inventory for BeeUI. A component is conside
 | `SelectItem` | anchored selection | String-valued option with persistent selected state, disabled state, duplicate-value fail-safe behavior, and optional `textValue` for composed children. |
 | `SelectGroup` | anchored selection | Structural option grouping; Web exposes group/label association while native keeps visible label structure without inventing unsupported listbox-container semantics. |
 | `SelectLabel` | anchored selection | Visible group label with a stable native ID used by its group association. |
+| `Tooltip` | anchored disclosure | Non-interactive contextual annotation (ADR-005); composition-root context/open-close-delay state machine only, no rendered surface of its own. Controlled use requires `open` + `onOpenChange`; uncontrolled use supports `defaultOpen`. |
+| `TooltipTrigger` | anchored disclosure | Hover/focus channel (never press) that requests open/close through the shared delay state machine; never toggles open state on press so it never blocks the trigger's own action. |
+| `TooltipContent` | anchored disclosure | Anchored, portaled, non-interactive bubble reusing the shared overlay geometry/dismiss kernel. `tabIndex={-1}` (Web) / hidden from the accessibility tree (native) — it is never a focus target itself; `role="tooltip"` + gated `aria-describedby` (Web) or a merged `accessibilityHint` (native) carry the accessible relationship instead. |
 | `AppHeader` | application chrome | Title/description/leading/trailing composition; owns no navigation. Primitive titles receive header semantics; complex title nodes own their own internal accessibility semantics. |
 | `BottomActionBar` | application chrome | Bottom action surface; safe-area ownership stays explicit with the application shell via `SafeArea` or safe-area utilities. |
 | `ListGroup` | application pattern | Bordered grouped-row surface with list container semantics without taking ownership of row actions. |
@@ -143,11 +146,11 @@ Additional form-group integrations should be added only where React Native expos
 
 ## Anchored overlay components
 
-The shared anchored-overlay geometry/runtime kernels are accepted, with public `Popover`, `DropdownMenu`, and `Select` layered on them.
+The shared anchored-overlay geometry/runtime kernels are accepted, with public `Popover`, `DropdownMenu`, `Select`, and `Tooltip` layered on them.
 
 The portal transport preserves consumer React context declared below `BeeUIProvider` (web `ReactDOM.createPortal`, native `react-native-teleport`), with a defensive legacy fallback that does not preserve it. Overlays inside a `Dialog` target a modal-local host. See `docs/anchored-overlays.md`.
 
-`Select` does not alias `DropdownMenu`: menu items activate commands, while Select options represent one persistent current value. Future `Tooltip` work must likewise keep its own semantics while reusing the transport/runtime instead of cloning it.
+`Select` does not alias `DropdownMenu`: menu items activate commands, while Select options represent one persistent current value. `Tooltip` (below) likewise keeps its own semantics — a non-interactive contextual annotation, not an interactive disclosure — while reusing the same transport/runtime instead of cloning it.
 
 Do not approximate anchored overlays with full-screen modal behavior merely to avoid portal/context work. Positioning, collision handling, nested overlays, focus, keyboard semantics, and accessibility remain part of each component's contract.
 
@@ -200,6 +203,27 @@ On native, v1 deliberately keeps the same anchored presentation rather than pret
 A Select inside `Dialog` targets the Dialog's modal-local host and preserves consumer React context on the context-preserving portal transports. Closing the Dialog while Select is open unmounts the child with the modal. The legacy overlay fallback remains exactly the shared runtime's documented fallback and therefore cannot promise consumer-context preservation.
 
 Unsupported v1 presentation behavior is intentionally narrow: there is no Sheet mode, no virtualization API, and no browser-style hover/keyboard emulation on native. A future Sheet presentation may be added behind a presentation policy without changing `value`, `defaultValue`, `onValueChange`, item values, selected state, or group semantics.
+
+## Tooltip contract
+
+`Tooltip`/`TooltipTrigger`/`TooltipContent` (#152 Web, #153 native, #154 regression matrix, #155 export/registry/docs) implement [ADR-005](decisions/005-tooltip-contract.md): a **non-interactive contextual disclosure**, not a click-to-open menu or a persistent panel. Content may not contain focusable or actionable elements (`__DEV__` warns if it does); use `Popover` for interactive disclosure content.
+
+```tsx
+<Tooltip>
+  <TooltipTrigger accessibilityLabel="Autosave">
+    <Icon name="save" />
+  </TooltipTrigger>
+  <TooltipContent>Saved automatically every 30 seconds</TooltipContent>
+</Tooltip>
+```
+
+`Tooltip` supports `open`/`onOpenChange` (controlled) or `defaultOpen` (uncontrolled), plus `openDelay` (default 500ms, hover-only) and `closeDelay` (default 300ms, hover-out-only). Focus always opens immediately and blur always closes immediately — the delay only ever applies to the pointer/hover channel. `TooltipTrigger` never toggles open state on press; tapping/clicking the trigger is reserved for the trigger's own action.
+
+**Web**: `TooltipTrigger` opens on `onHoverIn`/`onFocus` and closes on `onHoverOut`/`onBlur`; a pointer that travels from the trigger onto `TooltipContent` itself does not trigger the pending close (WCAG 1.4.13 "hoverable"), and Escape dismisses without any pointer/focus movement (WCAG 1.4.13 "dismissible"). `TooltipContent` renders `role="tooltip"` and the trigger exposes `aria-describedby` only while content is mounted. `TooltipContent` is `tabIndex={-1}` — it is never a Tab stop and never receives focus itself, natural or programmatic. There is no outside-press dismiss layer; Tooltip is never modal.
+
+**Native**: there is no mouse hover, so `TooltipTrigger` opens on long-press (immediately, no `openDelay`) and closes after a fixed reveal window once the press releases; focus (external keyboard/Switch Control) opens immediately and blur closes immediately, exactly like Web. There is no RN equivalent of `aria-describedby`, so the accessible relationship is instead a merged `accessibilityHint` registered on the trigger unconditionally (independent of whether the visual bubble has ever mounted) — an explicit consumer-provided `accessibilityHint` is never overwritten. The floating visual bubble itself is hidden from the accessibility tree (`accessibilityElementsHidden`/`importantForAccessibility="no-hide-descendants"`) so it never produces a second, redundant announcement alongside the merged hint.
+
+**Shared**: placement, flip/shift, collision padding, safe-area/keyboard avoidance, direction (RTL/LTR) resolution, modal-local geometry when nested in a `Dialog`, context preservation across the portal transport, and Escape scope-awareness (a `Tooltip` opened from inside a `Dialog` dismisses child-first, the `Dialog` stays open) all come from the same accepted anchored-overlay kernel `Popover`/`DropdownMenu`/`Select` already use — no second geometry/portal/dismiss engine. `Tooltip` renders no enter/exit transition of its own (it is a synchronous mount/unmount, not an animated disclosure), so `prefers-reduced-motion` has nothing Tooltip-specific to gate.
 
 ## Sheet boundary
 

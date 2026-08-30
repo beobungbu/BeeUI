@@ -103,6 +103,9 @@ import {
   Textarea,
   Timeline,
   TimelineItem,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useToast,
   VStack,
 } from '@beeui/ui';
@@ -246,6 +249,15 @@ function ConsumerContextOverlays() {
           </DropdownMenuContent>
         </DropdownMenu>
 
+        <Tooltip>
+          <TooltipTrigger testID="overlay-context-tooltip-trigger" variant="outline">
+            Tooltip context
+          </TooltipTrigger>
+          <TooltipContent>
+            <OverlayContextValue testID="overlay-context-tooltip-value" />
+          </TooltipContent>
+        </Tooltip>
+
         <Dialog>
           <DialogTrigger testID="overlay-context-dialog-trigger">Dialog context</DialogTrigger>
           <DialogContent>
@@ -258,6 +270,15 @@ function ConsumerContextOverlays() {
                 <OverlayContextValue testID="overlay-context-dialog-popover-value" />
               </PopoverContent>
             </Popover>
+
+            <Tooltip>
+              <TooltipTrigger testID="overlay-context-dialog-tooltip-trigger" variant="outline">
+                Tooltip in dialog
+              </TooltipTrigger>
+              <TooltipContent>
+                <OverlayContextValue testID="overlay-context-dialog-tooltip-value" />
+              </TooltipContent>
+            </Tooltip>
 
             <DropdownMenu>
               <DropdownMenuTrigger testID="overlay-context-dialog-menu-trigger" variant="outline">
@@ -752,6 +773,24 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
                     {`Last action: ${menuAction} · toolbar ${menuToolbar ? 'on' : 'off'} · ${menuDensity}`}
                   </Text>
                 </VStack>
+              </Section>
+
+              <Separator />
+
+              <Section
+                description="Non-interactive contextual disclosure (#152/#153/#154): hover or focus reveals a short description after a delay; the trigger's own press action is never intercepted, Escape dismisses without moving focus, and content is never a Tab stop."
+                title="Tooltip"
+              >
+                <HStack gap="sm" wrap>
+                  <Tooltip>
+                    <TooltipTrigger testID="tooltip-demo-trigger" variant="outline">
+                      Autosave
+                    </TooltipTrigger>
+                    <TooltipContent testID="tooltip-demo-content">
+                      Saved automatically every 30 seconds
+                    </TooltipContent>
+                  </Tooltip>
+                </HStack>
               </Section>
 
               <Separator />
