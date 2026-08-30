@@ -398,10 +398,8 @@ export const Calendar = React.forwardRef<React.ComponentRef<typeof View>, Calend
                     accessibilityState={{ disabled: cellDisabled, selected }}
                     className={cn(
                       'min-h-touch-target min-w-touch-target flex-1 items-center justify-center rounded-md web:focus-visible:bee-focus-ring',
-                      !cell.isCurrentMonth && 'opacity-40',
                       selected && 'bg-primary',
                       !selected && isToday && 'border border-primary',
-                      cellDisabled && 'opacity-40',
                     )}
                     disabled={cellDisabled}
                     onBlur={() => {
@@ -418,7 +416,14 @@ export const Calendar = React.forwardRef<React.ComponentRef<typeof View>, Calend
                     tabIndex={!disabled && isRovingTarget ? 0 : -1}
                     testID={testID ? `${testID}-day-${iso}` : undefined}
                   >
-                    <Text className={cn(selected && 'text-primary-foreground')} variant="body">
+                    <Text
+                      className={cn(
+                        selected && 'text-primary-foreground',
+                        !selected && cellDisabled && 'text-disabled-foreground',
+                        !selected && !cellDisabled && !cell.isCurrentMonth && 'text-muted-foreground',
+                      )}
+                      variant="body"
+                    >
                       {cell.date.day}
                     </Text>
                   </Pressable>
