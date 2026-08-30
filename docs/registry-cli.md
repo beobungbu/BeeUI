@@ -21,7 +21,7 @@ The workflow copies supported BeeUI source into a consumer project. The consumer
 
 ## Supported registry entries
 
-Registry coverage has expanded from the initial 6-component slice to the full stable public component-module surface exported by `packages/ui/src/index.ts` (**62 public component modules** as of this writing, including `Table`, #170). Run `pnpm beeui -- list` for the canonical, sorted, up-to-date list — it is generated from `registry/registry.json`.
+Registry coverage has expanded from the initial 6-component slice to the full stable public component-module surface exported by `packages/ui/src/index.ts` (**62 public component modules** as of this writing, including `Table`, #170, and `Sheet`, #161). Run `pnpm beeui -- list` for the canonical, sorted, up-to-date list — it is generated from `registry/registry.json`.
 
 `pnpm registry:verify` additionally compares those public `./components/*` barrel exports with public registry component entries. Adding or removing a public component module without updating the registry therefore fails CI instead of silently allowing registry coverage to drift.
 
@@ -35,9 +35,13 @@ Internal transitive entries (not directly addable, but resolved automatically):
 - `overlay-runtime` — the shared anchored-overlay runtime/transport kernel (`overlay-runtime.tsx` plus its platform transport/dismiss-event files), required by `dialog`, `popover`, `dropdown-menu`, `select`, `tooltip`, and `safe-area`
 - `use-direction` — the single stateless logical-direction resolver (ADR-004, `use-direction.ts`) required by every component that defaults a `direction` prop from ambient RTL/LTR state. `calendar`, `tooltip`, and `table` declare it as an explicit registry dependency; `popover`/`dropdown-menu`/`select` also import the same module at the source level but do not yet declare it here, which is a known pre-existing gap in those three items' dependency closures (not a `use-direction` defect) tracked for a future fix
 
+**Known pre-existing gap — `@beeui/tokens` runtime imports (found during #161, not sheet-specific, tracked at #355):** `sheet`/`sheet.web`/`sheet.native` import runtime values (`spacing`, `resolveMotion`, `resolveNativeMotion`) directly from the private, unpublished `@beeui/tokens` package (`private: true`, see `docs/release.md`), exactly like `overlay-runtime` (`layer`), `popover`/`dropdown-menu`/`select`/`toast`/`tooltip`/`theme-scope`/`use-bee-token` already do. Unlike `@beeui/core`, there is no `core-cn`/`core-overlay`-style registry item or transform that vendors `@beeui/tokens` into a copied consumer project, so `beeui add sheet` (and every one of those other already-public items) copies a file with an unresolved `@beeui/tokens` bare import. This is a cross-cutting registry-CLI gap that predates Sheet and affects multiple already-shipped components identically; it is out of scope for #161's own Sheet-specific dependency closure and needs its own dedicated registry-transform design, not a one-item fix — see #355.
+
 `button` remains a representative vertical slice. Adding it resolves and copies `core-cn`, `theme`, `text`, and `button` in deterministic dependency order. The resulting Button source imports the copied consumer-local `cn` helper rather than `@beeui/core`.
 
 `popover` (or `dropdown-menu`/`select`) is the representative anchored-overlay slice: it resolves `core-cn -> theme -> text -> button -> core-overlay -> overlay-runtime -> popover`, and its `@beeui/core` import is rewritten to point at the copied `core-overlay` barrel (`lib/core/index`) via the `rewrite-beeui-core-module` transform (see below).
+
+`sheet` is the representative optional-native-adapter slice: it resolves `core-cn -> theme -> text -> button -> core-overlay -> overlay-runtime -> sheet` (its `sheet.tsx`/`sheet.web.tsx`/`sheet.native.tsx` files use the single-symbol `import { cn } from '@beeui/core'` form, so they use `rewrite-beeui-core-cn`, not `rewrite-beeui-core-module`), and reports the four `@gorhom/bottom-sheet`/Reanimated/Gesture-Handler/Worklets optional native peers described above only because `sheet` itself was requested.
 
 ## Configuration
 
@@ -142,8 +146,14 @@ Depending on the requested items, reported requirements can include:
 - `react-native-teleport@>=1.1 <2`
 - `tailwindcss@>=4 <5`
 - `uniwind@>=1.10.1 <2`
+- `@gorhom/bottom-sheet@>=5.2 <6` (optional)
+- `react-native-reanimated@>=4.5 <5` (optional)
+- `react-native-gesture-handler@>=2.32 <3` (optional)
+- `react-native-worklets@>=0.10 <1` (optional)
 
 `react-dom`, `react-native-safe-area-context`, and `react-native-teleport` are only reported for items that resolve the `overlay-runtime`/`safe-area`/`toast` utilities (anchored overlays and the app-root provider); plain components never pull them in. A successful source copy therefore does not mean external packages are fully installed.
+
+`@gorhom/bottom-sheet`, `react-native-reanimated`, `react-native-gesture-handler`, and `react-native-worklets` are reported only when `sheet` is requested (per ADR-006, `docs/decisions/006-sheet-gesture-engine.md`) — no other registry entry's reported requirements change. All four are native-only, optional (`peerDependenciesMeta.optional: true` in `packages/ui/package.json`, mirroring `react-dom` today), and are never imported by `sheet.web.tsx`; only `sheet.native.tsx` requires `@gorhom/bottom-sheet`/`react-native-reanimated`, which in turn require `react-native-gesture-handler`/`react-native-worklets` for their own native modules to link. Installing them without also configuring the required app-root wiring (`GestureHandlerRootView` + `BottomSheetModalProvider`, see `docs/components.md`'s "Sheet boundary" section) still leaves `Sheet` non-functional at runtime — the CLI proves source-copy/package-declaration completeness only, not app-root wiring, which remains a manual consumer step.
 
 These ranges are the declared public promise; `docs/compatibility-matrix.md` is the authority for which point in each range has actually been tested and which parts of the range remain an unverified candidate pending R2 (#130–#135).
 
