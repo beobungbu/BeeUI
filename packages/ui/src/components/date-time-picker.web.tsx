@@ -386,7 +386,7 @@ export const DateTimePicker = React.forwardRef<
         {showClear ? (
           <IconButton
             accessibilityLabel={clearAccessibilityLabel}
-            className="mr-1"
+            className="me-1"
             onPress={handleClear}
             testID={testID ? `${testID}-clear` : undefined}
             variant="ghost"
@@ -396,9 +396,18 @@ export const DateTimePicker = React.forwardRef<
             </Text>
           </IconButton>
         ) : (
-          <Text aria-hidden className="pr-3 text-muted-foreground" variant="body">
-            {effectiveOpen ? '⌃' : '⌄'}
-          </Text>
+          // `pe-3` lives on this wrapping `View`, not the `Text` itself —
+          // see the identical comment in `date-picker.web.tsx` (#142's
+          // real-Chromium RTL stress matrix): react-native-web's `Text`
+          // renders `dir="auto"`, which lets the browser resolve this one
+          // node's own direction from its (directionless glyph) content
+          // instead of inheriting the ambient direction, defeating
+          // `padding-inline-end`. `View` has no such attribute.
+          <View className="pe-3">
+            <Text aria-hidden className="text-muted-foreground" variant="body">
+              {effectiveOpen ? '⌃' : '⌄'}
+            </Text>
+          </View>
         )}
       </View>
       <PopoverContent

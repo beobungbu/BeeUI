@@ -14,8 +14,11 @@ import * as React from 'react';
 //     leading/trailing outgrow the row;
 //   - the title column keeps a real minimum width (`min-w-32`, not the old
 //     collapsible `min-w-0`) while still flexing (`flex-1`);
-//   - the trailing slot right-aligns on its own wrap row (`ml-auto`) and
-//     never shrinks (`shrink-0`).
+//   - the trailing slot anchors to its logical end on its own wrap row
+//     (`ms-auto` — margin-inline-start, not the physical `ml-auto`, so it
+//     mirrors correctly under RTL; see #142's
+//     `component-rtl-stress-showcase.spec.ts`) and never shrinks
+//     (`shrink-0`).
 
 function renderHeader() {
   return render(
@@ -55,14 +58,14 @@ describe('AppHeader large-text layout contract (#284)', () => {
     expect(titleColumn).toBeTruthy();
   });
 
-  it('right-aligns the trailing slot on wrap without letting it shrink', () => {
+  it('anchors the trailing slot to its logical end on wrap without letting it shrink', () => {
     const screen = renderHeader();
     const root = screen.getByTestId('header-under-test');
     const columns = root.children.filter(
       (child): child is Exclude<typeof child, string> => typeof child !== 'string',
     );
     const trailingNode = columns[columns.length - 1];
-    expect(trailingNode?.props.className).toContain('ml-auto');
+    expect(trailingNode?.props.className).toContain('ms-auto');
     expect(trailingNode?.props.className).toContain('shrink-0');
   });
 });

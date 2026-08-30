@@ -229,7 +229,7 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
           {showClear ? (
             <IconButton
               accessibilityLabel={clearAccessibilityLabel}
-              className="mr-1"
+              className="me-1"
               onPress={handleClear}
               testID={testID ? `${testID}-clear` : undefined}
               variant="ghost"
@@ -239,9 +239,22 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
               </Text>
             </IconButton>
           ) : (
-            <Text aria-hidden className="pr-3 text-muted-foreground" variant="body">
-              {effectiveOpen ? '⌃' : '⌄'}
-            </Text>
+            // `pe-3` lives on this wrapping `View`, not the `Text` itself:
+            // react-native-web renders `Text` with `dir="auto"` on Web,
+            // which lets the browser's per-element bidi auto-detection
+            // override the *inherited* ambient direction for that one node
+            // when its own content (a directionless chevron glyph) has no
+            // strong bidi character — `padding-inline-end` would then
+            // resolve against that node's own (wrong) resolved direction
+            // instead of the ambient one. `View` carries no such `dir`
+            // attribute and reliably inherits the ambient direction (found
+            // via #142's real-Chromium RTL stress matrix,
+            // `component-rtl-stress-showcase.spec.ts`).
+            <View className="pe-3">
+              <Text aria-hidden className="text-muted-foreground" variant="body">
+                {effectiveOpen ? '⌃' : '⌄'}
+              </Text>
+            </View>
           )}
         </View>
         <PopoverContent

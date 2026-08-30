@@ -163,7 +163,7 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
           {showClear ? (
             <IconButton
               accessibilityLabel={clearAccessibilityLabel}
-              className="mr-1"
+              className="me-1"
               onPress={handleClear}
               testID={testID ? `${testID}-clear` : undefined}
               variant="ghost"
@@ -173,7 +173,7 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
               </Text>
             </IconButton>
           ) : (
-            <Text aria-hidden className="pr-3 text-muted-foreground" variant="body">
+            <Text aria-hidden className="pe-3 text-muted-foreground" variant="body">
               ⌄
             </Text>
           )}

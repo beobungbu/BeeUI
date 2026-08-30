@@ -62,8 +62,16 @@ export const AppHeader = React.forwardRef<React.ComponentRef<typeof View>, AppHe
           )
         ) : null}
       </Box>
-      {/* ml-auto keeps the trailing control right-aligned when it wraps onto its own row. */}
-      {trailing ? <Box className="ml-auto shrink-0">{trailing}</Box> : null}
+      {/*
+        `ms-auto` (margin-inline-start: auto) — not the physical `ml-auto` —
+        absorbs the row's remaining space on the trailing control's *logical*
+        start side, which keeps it anchored to its logical end (visual right
+        in LTR, visual left in RTL) when it wraps onto its own row. A
+        physical `ml-auto` would stay pinned to the visual right under RTL
+        instead of mirroring (found via #142's real-Chromium RTL stress
+        matrix, `component-rtl-stress-showcase.spec.ts`).
+      */}
+      {trailing ? <Box className="ms-auto shrink-0">{trailing}</Box> : null}
     </View>
   ),
 );
