@@ -144,6 +144,8 @@ Depending on the requested items, reported requirements can include:
 
 `react-dom`, `react-native-safe-area-context`, and `react-native-teleport` are only reported for items that resolve the `overlay-runtime`/`safe-area`/`toast` utilities (anchored overlays and the app-root provider); plain components never pull them in. A successful source copy therefore does not mean external packages are fully installed.
 
+These ranges are the declared public promise; `docs/compatibility-matrix.md` is the authority for which point in each range has actually been tested and which parts of the range remain an unverified candidate pending R2 (#130–#135).
+
 ## Import transforms
 
 Two narrow source transforms are supported: `rewrite-beeui-core-cn` and `rewrite-beeui-core-module`.

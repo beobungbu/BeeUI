@@ -136,9 +136,15 @@ Critical sequencing rules:
 
 # R2 — Compatibility
 
+`docs/compatibility-matrix.md` is the locked candidate support matrix (#129) and the
+shared-authority source of truth for every row below; it is drift-checked by
+`pnpm compat:check`.
+
 ## Core before hard-component final acceptance
 
-- #129 support matrix.
+- #129 support matrix. **Locked** — candidate matrix recorded in
+  `docs/compatibility-matrix.md`; per-row verification/narrowing is delegated to
+  #130–#135 below.
 - #130 RN 0.86 row.
 - #131 RN 0.87 row.
 - #132 RN 0.85 decision.
