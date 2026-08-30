@@ -33,7 +33,11 @@ The existing `motionDuration` (`fast` 120 ms, `normal` 200 ms, `slow` 320 ms) an
 | --- | --- | --- |
 | `overlay-enter` | Dialog, alert dialog, popover, dropdown, select, toast appearing | opacity + small spatial scale (spring) |
 | `overlay-exit` | The same overlays dismissing | opacity + small spatial scale (fast timing) |
+| `sheet-enter` | Sheet/BottomSheet panel appearing ([ADR-006](decisions/006-sheet-gesture-engine.md)) | opacity + panel translate-in (spring) |
+| `sheet-exit` | Sheet/BottomSheet panel dismissing (backdrop, close affordance, Android Back, or a completed native swipe) | opacity + panel translate-out (fast timing) |
 | `disclosure` | Accordion / collapsible expand and collapse | size reveal + opacity (timing) |
+
+`sheet-enter`/`sheet-exit` were added by #157 per ADR-006's "Implementation consequences." They describe Sheet's own open/close transition only; #158's native `@gorhom/bottom-sheet` adapter is the actual driver of native open/close motion (and of any interactive drag-in-progress feel) behind its own `overrideReduceMotion` seam, itself fed by BeeUI's already-resolved reduced-motion signal — see ADR-006 "Reduced motion — composed, not duplicated." No drag-in-progress intent is added here: #157's own skeleton has no drag gesture, and #158 has not identified a token need beyond the accepted Reanimated/Gesture-Handler carve-out for that continuous, gesture-driven value.
 
 Candidates without repeated product evidence — moving tab indicators, list entry/removal,
 emphasized attention motion and animated icons — were inventoried but deliberately not
@@ -108,6 +112,8 @@ Current assignments:
 | --- | --- | --- |
 | `overlay-enter` | `opacity-or-state` | opacity fade preserved, scale removed |
 | `overlay-exit` | `immediate` | dismissal instant |
+| `sheet-enter` | `opacity-or-state` | opacity fade preserved, panel translate removed |
+| `sheet-exit` | `immediate` | dismissal instant |
 | `disclosure` | `immediate` | expand/collapse instant |
 
 BeeUI adds **no** motion/preference store. The platform/app supplies the reduced-motion
