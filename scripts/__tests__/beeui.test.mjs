@@ -86,7 +86,7 @@ test('list output is stable and sorted', async (t) => {
   assert.deepEqual(names, [
     'accordion', 'alert-banner', 'alert-dialog', 'app-header', 'avatar', 'badge',
     'bottom-action-bar', 'box', 'breadcrumb', 'button', 'calendar', 'card', 'checkbox', 'chip', 'collapsible',
-    'description-list', 'dialog', 'dropdown-menu', 'field', 'form-group', 'form-message',
+    'date-picker', 'description-list', 'dialog', 'dropdown-menu', 'field', 'form-group', 'form-message',
     'icon-button', 'input', 'keyboard-aware-screen', 'label', 'link', 'list-group', 'list-item', 'metadata-row',
     'otp-input', 'pagination', 'password-input', 'popover', 'progress', 'radio', 'safe-area',
     'screen', 'search-input', 'section', 'segmented-control', 'select', 'separator', 'sheet', 'skeleton',

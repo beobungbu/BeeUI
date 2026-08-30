@@ -509,6 +509,55 @@
       "peerDependencies": {}
     },
     {
+      "name": "date-picker",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/date-picker.d.ts",
+          "target": { "root": "components", "path": "date-picker.d.ts" },
+          "transforms": []
+        },
+        {
+          "source": "packages/ui/src/components/date-picker.native.tsx",
+          "target": { "root": "components", "path": "date-picker.native.tsx" },
+          "transforms": ["rewrite-beeui-core-module"]
+        },
+        {
+          "source": "packages/ui/src/components/date-picker.web.tsx",
+          "target": { "root": "components", "path": "date-picker.web.tsx" },
+          "transforms": ["rewrite-beeui-core-module"]
+        },
+        {
+          "source": "packages/ui/src/components/date-picker-shared.tsx",
+          "target": { "root": "components", "path": "date-picker-shared.tsx" },
+          "transforms": ["rewrite-beeui-core-module"]
+        },
+        {
+          "source": "packages/ui/src/components/date-picker-locale.ts",
+          "target": { "root": "components", "path": "date-picker-locale.ts" },
+          "transforms": ["rewrite-beeui-core-module"]
+        }
+      ],
+      "registryDependencies": [
+        "button",
+        "calendar",
+        "core-overlay",
+        "dialog",
+        "field-context",
+        "icon-button",
+        "popover",
+        "text",
+        "theme"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "@react-native-community/datetimepicker": ">=9.1 <10",
+        "react": ">=19.0.0",
+        "react-native": ">=0.85.0"
+      }
+    },
+    {
       "name": "description-list",
       "type": "component",
       "public": true,

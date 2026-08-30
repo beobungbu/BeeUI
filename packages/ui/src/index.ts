@@ -56,6 +56,12 @@ export {
 // of the public barrel; `Calendar` and future `DatePicker`/`DateTimePicker` (#173/#174)
 // import it directly by relative path.
 export { Calendar, type CalendarProps, type CalendarVisibleMonth } from './components/calendar';
+// `CalendarDate`/`CalendarWeekStartsOn` are `@beeui/core` types (ADR-008), re-exported
+// here because `Calendar`'s/`DatePicker`'s own controlled `value`/`weekStartsOn` props
+// use them directly — the public component API stops at `@beeui/ui`
+// (`docs/architecture.md`), so a consumer must be able to type its own controlled
+// state without reaching into the internal `@beeui/core` package.
+export type { CalendarDate, CalendarWeekStartsOn } from '@beeui/core';
 export { Card, cardVariants, type CardProps } from './components/card';
 export {
   Checkbox,
@@ -79,6 +85,19 @@ export {
   type CollapsibleProps,
   type CollapsibleTriggerProps,
 } from './components/collapsible';
+// `date-picker-locale.ts` is an internal formatting helper co-located with
+// `DatePicker`, mirroring `calendar-locale.ts`'s convention: it stays out of the public
+// barrel. `date-picker-shared.tsx` (re-exported by both `date-picker.web.tsx`/
+// `date-picker.native.tsx`) is likewise internal — only `DatePicker`/`DatePickerProps`
+// (and the small set of Web-only positioning type aliases) are public.
+export {
+  DatePicker,
+  type DatePickerAlign,
+  type DatePickerCollisionPadding,
+  type DatePickerDirection,
+  type DatePickerPlacement,
+  type DatePickerProps,
+} from './components/date-picker';
 export {
   DescriptionItem,
   DescriptionList,

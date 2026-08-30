@@ -109,6 +109,7 @@ import {
 import * as React from 'react';
 import { ScrollView, StatusBar } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
+import { DatePickerShowcase } from './date-picker-showcase';
 import { SelectShowcase } from './select-showcase';
 import { TableShowcase } from './table-showcase';
 
@@ -625,6 +626,12 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
             </PlaygroundHeading>
 
             <TableShowcase />
+
+            <PlaygroundHeading description="Field-integrated trigger; Web opens Calendar in a Popover, native delegates to the system picker.">
+              DatePicker
+            </PlaygroundHeading>
+
+            <DatePickerShowcase />
 
             <PlaygroundHeading description="Modal and anchored overlays now have real public APIs you can click through here.">
               Overlay playground
