@@ -16,10 +16,17 @@ import { ScrollView, StatusBar } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
 import { ComponentGallery } from './component-gallery';
 import { PatternGallery } from './pattern-gallery';
-import { DynamicTypeAcceptance, RuntimeAcceptance } from './runtime-smoke';
+import { DynamicTypeAcceptance, L10nStressAcceptance, RuntimeAcceptance } from './runtime-smoke';
 import { ThemeInspector } from './theme-inspector';
 
-type ShowcaseSection = 'home' | 'components' | 'dynamic-type' | 'patterns' | 'runtime' | 'tokens';
+type ShowcaseSection =
+  | 'home'
+  | 'components'
+  | 'dynamic-type'
+  | 'l10n-stress'
+  | 'patterns'
+  | 'runtime'
+  | 'tokens';
 
 function ShowcaseThemeControl() {
   const { hasAdaptiveThemes, theme } = useUniwind();
@@ -60,6 +67,10 @@ export function ShowcaseRoot() {
 
   if (section === 'dynamic-type') {
     return <DynamicTypeAcceptance onBack={() => setSection('home')} />;
+  }
+
+  if (section === 'l10n-stress') {
+    return <L10nStressAcceptance onBack={() => setSection('home')} />;
   }
 
   return (
@@ -190,6 +201,26 @@ trailing={<ShowcaseThemeControl />}
         variant="outline"
       >
         Open Dynamic Type fixture
+      </Button>
+    </Card>
+
+    <Card className="min-w-[260px] flex-1 gap-5" padding="lg" variant="raised">
+      <VStack gap="sm">
+        <HStack align="start" justify="between" wrap>
+          <Text variant="heading">Localization stress</Text>
+          <Badge variant="info">QA</Badge>
+        </HStack>
+        <Text tone="muted">
+          Deterministic long-content/localization fixture: long words, CJK, Arabic RTL, and pseudo-localized profiles across Tooltip, Sheet, Table, DatePicker, forms, Settings, Toast, and navigation chrome.
+        </Text>
+      </VStack>
+      <Button
+        accessibilityLabel="Open Localization stress fixture"
+        onPress={() => setSection('l10n-stress')}
+        testID="showcase-open-l10n-stress"
+        variant="outline"
+      >
+        Open Localization stress fixture
       </Button>
     </Card>
   </Box>

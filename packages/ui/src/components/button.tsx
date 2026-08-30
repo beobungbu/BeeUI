@@ -10,8 +10,24 @@ import {
 } from 'react-native';
 import { semanticTypographyClasses, Text } from './text';
 
+// `max-w-full` (#144): a `Button` is a React Native-model flex item, whose
+// default `flexShrink` is `0` (unlike CSS Web's default of `1`) — so, absent
+// an explicit width constraint, an unusually long caller-supplied label
+// (e.g. a long localized string/identifier) sizes the button to its full
+// single-line intrinsic width regardless of its flex container's available
+// space. Real evidence from #144's Playwright suite: a `SheetFooter`
+// (`flex-row flex-wrap justify-end`) primary-action Button with a ~54-char
+// label rendered ~540px wide inside a 348px-wide footer and, anchored by
+// `justify-end`, extended ~170px off-screen past the left edge of a 390px
+// viewport — the exact "clipped/off-screen primary action" #144's DoD
+// forbids. `max-w-full` caps the button at its containing block's width so
+// it shrinks (and its label wraps) instead of overflowing; it does not
+// change `Button`'s documented, density-invariant `controlSize` height
+// contract (`docs/dynamic-type.md`) — at every previously-audited label
+// length this is a no-op, since normal labels already render narrower than
+// their container.
 const buttonVariants = cva(
-  'flex-row items-center justify-center gap-2 rounded-md border web:focus-visible:bee-focus-ring',
+  'flex-row items-center justify-center gap-2 rounded-md border max-w-full web:focus-visible:bee-focus-ring',
   {
     variants: {
       variant: {

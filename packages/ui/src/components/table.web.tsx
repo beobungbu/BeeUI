@@ -45,6 +45,20 @@ type TableColumnPositionProps = {
 // text block), so their `ref`/passthrough-attribute type is widened to
 // `HTMLElement`/`React.HTMLAttributes<HTMLElement>` rather than one specific
 // element interface.
+//
+// `testID` (#144): every other BeeUI Web component renders through
+// react-native-web, which maps RN's `testID` prop to a `data-testid` DOM
+// attribute automatically. This file renders plain HTML elements directly
+// (the ADR-007 platform split — native has no `<table>`/`<td>`/`<th>`), so it
+// never got that automatic mapping: passing `testID` here previously fell
+// through to `{...props}` as a literal, unrecognized DOM attribute (rendered
+// lowercased, e.g. `testid="..."`, never `data-testid="..."`), which
+// `page.getByTestId()` (Playwright's default `data-testid` strategy) could
+// never find — real evidence from #144's Playwright suite, which timed out
+// resolving `TableCell` targets that were visibly present with the right
+// content. Every exported component below now accepts the same `testID` prop
+// its native (`table.tsx`) counterpart does and forwards it as `data-testid`,
+// restoring Web/native testability parity.
 
 // ---------------------------------------------------------------------------
 // Table
@@ -59,10 +73,13 @@ export type TableProps = Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> 
    * label-value presentation instead.
    */
   layout?: TableLayout;
+  /** Forwarded as `data-testid` — see the file header for why Web needs this
+   * explicit mapping instead of relying on react-native-web's automatic one. */
+  testID?: string;
 };
 
 export const Table = React.forwardRef<HTMLDivElement, TableProps>(
-  ({ children, className, layout = 'scroll', ...props }, ref) => {
+  ({ children, className, layout = 'scroll', testID, ...props }, ref) => {
     const direction = useDirection();
     const labelsRef = React.useRef<Map<number, string>>(new Map());
     labelsRef.current.clear();
@@ -82,7 +99,7 @@ export const Table = React.forwardRef<HTMLDivElement, TableProps>(
     return (
       <TableLayoutContext.Provider value={layout}>
         <TableColumnLabelRegistryContext.Provider value={registry}>
-          <div ref={ref} {...props} className={cn('w-full', className)}>
+          <div ref={ref} {...props} className={cn('w-full', className)} data-testid={testID}>
             {layout === 'stacked' ? (
               children
             ) : (
@@ -108,10 +125,11 @@ Table.displayName = 'Table';
 export type TableCaptionProps = Omit<React.HTMLAttributes<HTMLElement>, 'children'> & {
   children?: React.ReactNode;
   className?: string;
+  testID?: string;
 };
 
 export const TableCaption = React.forwardRef<HTMLElement, TableCaptionProps>(
-  ({ children, className, ...props }, ref) => {
+  ({ children, className, testID, ...props }, ref) => {
     const layout = useTableLayout();
     const captionClassName = cn('px-1 py-2 text-center', className);
 
@@ -119,6 +137,7 @@ export const TableCaption = React.forwardRef<HTMLElement, TableCaptionProps>(
       return (
         <p
           className={cn(textVariants({ variant: 'caption', tone: 'muted' }), captionClassName)}
+          data-testid={testID}
           ref={ref as React.Ref<HTMLParagraphElement>}
           {...props}
         >
@@ -128,7 +147,12 @@ export const TableCaption = React.forwardRef<HTMLElement, TableCaptionProps>(
     }
 
     return (
-      <caption ref={ref as React.Ref<HTMLElement>} {...props} className={captionClassName}>
+      <caption
+        data-testid={testID}
+        ref={ref as React.Ref<HTMLElement>}
+        {...props}
+        className={captionClassName}
+      >
         {children}
       </caption>
     );
@@ -144,10 +168,11 @@ TableCaption.displayName = 'TableCaption';
 export type TableHeaderProps = Omit<React.HTMLAttributes<HTMLElement>, 'children'> & {
   children?: React.ReactNode;
   className?: string;
+  testID?: string;
 };
 
 export const TableHeader = React.forwardRef<HTMLElement, TableHeaderProps>(
-  ({ children, className, ...props }, ref) => {
+  ({ children, className, testID, ...props }, ref) => {
     const layout = useTableLayout();
 
     if (layout === 'stacked') {
@@ -156,14 +181,24 @@ export const TableHeader = React.forwardRef<HTMLElement, TableHeaderProps>(
       // mounted (its `TableHead` cells still register column labels) but is
       // hidden from layout *and* the accessibility tree via `display:none`.
       return (
-        <div className="hidden" ref={ref as React.Ref<HTMLDivElement>} {...props}>
+        <div
+          className="hidden"
+          data-testid={testID}
+          ref={ref as React.Ref<HTMLDivElement>}
+          {...props}
+        >
           {children}
         </div>
       );
     }
 
     return (
-      <thead ref={ref as React.Ref<HTMLTableSectionElement>} {...props} className={className}>
+      <thead
+        data-testid={testID}
+        ref={ref as React.Ref<HTMLTableSectionElement>}
+        {...props}
+        className={className}
+      >
         {children}
       </thead>
     );
@@ -175,22 +210,33 @@ TableHeader.displayName = 'TableHeader';
 export type TableBodyProps = Omit<React.HTMLAttributes<HTMLElement>, 'children'> & {
   children?: React.ReactNode;
   className?: string;
+  testID?: string;
 };
 
 export const TableBody = React.forwardRef<HTMLElement, TableBodyProps>(
-  ({ children, className, ...props }, ref) => {
+  ({ children, className, testID, ...props }, ref) => {
     const layout = useTableLayout();
 
     if (layout === 'stacked') {
       return (
-        <div className={cn('gap-density-row-gap flex flex-col', className)} ref={ref as React.Ref<HTMLDivElement>} {...props}>
+        <div
+          className={cn('gap-density-row-gap flex flex-col', className)}
+          data-testid={testID}
+          ref={ref as React.Ref<HTMLDivElement>}
+          {...props}
+        >
           {children}
         </div>
       );
     }
 
     return (
-      <tbody ref={ref as React.Ref<HTMLTableSectionElement>} {...props} className={className}>
+      <tbody
+        data-testid={testID}
+        ref={ref as React.Ref<HTMLTableSectionElement>}
+        {...props}
+        className={className}
+      >
         {children}
       </tbody>
     );
@@ -202,15 +248,21 @@ TableBody.displayName = 'TableBody';
 export type TableFooterProps = Omit<React.HTMLAttributes<HTMLElement>, 'children'> & {
   children?: React.ReactNode;
   className?: string;
+  testID?: string;
 };
 
 export const TableFooter = React.forwardRef<HTMLElement, TableFooterProps>(
-  ({ children, className, ...props }, ref) => {
+  ({ children, className, testID, ...props }, ref) => {
     const layout = useTableLayout();
 
     if (layout === 'stacked') {
       return (
-        <div className={cn('gap-density-row-gap flex flex-col', className)} ref={ref as React.Ref<HTMLDivElement>} {...props}>
+        <div
+          className={cn('gap-density-row-gap flex flex-col', className)}
+          data-testid={testID}
+          ref={ref as React.Ref<HTMLDivElement>}
+          {...props}
+        >
           {children}
         </div>
       );
@@ -218,6 +270,7 @@ export const TableFooter = React.forwardRef<HTMLElement, TableFooterProps>(
 
     return (
       <tfoot
+        data-testid={testID}
         ref={ref as React.Ref<HTMLTableSectionElement>}
         {...props}
         className={cn('border-t border-border bg-surface-muted', className)}
@@ -242,10 +295,11 @@ export type TableRowProps = Omit<React.HTMLAttributes<HTMLElement>, 'children'> 
    * state (ADR-007) — this only reflects a boolean the caller already tracks.
    */
   selected?: boolean;
+  testID?: string;
 };
 
 export const TableRow = React.forwardRef<HTMLElement, TableRowProps>(
-  ({ children, className, selected = false, ...props }, ref) => {
+  ({ children, className, selected = false, testID, ...props }, ref) => {
     const layout = useTableLayout();
 
     let nextColumnIndex = 0;
@@ -280,6 +334,7 @@ export const TableRow = React.forwardRef<HTMLElement, TableRowProps>(
             selected && 'border-primary',
             className,
           )}
+          data-testid={testID}
           ref={ref as React.Ref<HTMLDivElement>}
           {...props}
         >
@@ -292,6 +347,7 @@ export const TableRow = React.forwardRef<HTMLElement, TableRowProps>(
       <tr
         aria-selected={selected}
         className={cn('border-b border-border last:border-b-0', selected && 'bg-surface-raised', className)}
+        data-testid={testID}
         ref={ref as React.Ref<HTMLTableRowElement>}
         {...props}
       >
@@ -326,6 +382,7 @@ export type TableHeadProps = Omit<React.ThHTMLAttributes<HTMLElement>, 'children
      * roving-tabindex grid navigation — ADR-007).
      */
     sortDirection?: TableSortDirection;
+    testID?: string;
   };
 
 const sortGlyphs: Record<TableSortDirection, string> = {
@@ -335,7 +392,7 @@ const sortGlyphs: Record<TableSortDirection, string> = {
 };
 
 export const TableHead = React.forwardRef<HTMLElement, TableHeadProps>(
-  ({ children, className, columnIndex, label, onSortChange, sortDirection, ...props }, ref) => {
+  ({ children, className, columnIndex, label, onSortChange, sortDirection, testID, ...props }, ref) => {
     const layout = useTableLayout();
     const registry = React.useContext(TableColumnLabelRegistryContext);
     const isPlainContent = typeof children === 'string' || typeof children === 'number';
@@ -366,7 +423,12 @@ export const TableHead = React.forwardRef<HTMLElement, TableHeadProps>(
 
     if (layout === 'stacked') {
       return (
-        <div ref={ref as React.Ref<HTMLDivElement>} {...props} className={className}>
+        <div
+          data-testid={testID}
+          ref={ref as React.Ref<HTMLDivElement>}
+          {...props}
+          className={className}
+        >
           {innerContent}
         </div>
       );
@@ -376,6 +438,7 @@ export const TableHead = React.forwardRef<HTMLElement, TableHeadProps>(
       <th
         aria-sort={sortDirection}
         className={cn('px-3 py-2 text-start align-middle font-semibold', className)}
+        data-testid={testID}
         ref={ref as React.Ref<HTMLElement>}
         scope="col"
         {...props}
@@ -401,10 +464,11 @@ export type TableCellProps = Omit<React.TdHTMLAttributes<HTMLElement>, 'children
      * the corresponding `TableHead`'s inferred label when omitted.
      */
     label?: string;
+    testID?: string;
   };
 
 export const TableCell = React.forwardRef<HTMLElement, TableCellProps>(
-  ({ children, className, colSpan, columnIndex, label, ...props }, ref) => {
+  ({ children, className, colSpan, columnIndex, label, testID, ...props }, ref) => {
     const layout = useTableLayout();
     const registeredLabel = useTableColumnLabel(columnIndex);
     const resolvedLabel = label ?? registeredLabel;
@@ -416,6 +480,7 @@ export const TableCell = React.forwardRef<HTMLElement, TableCellProps>(
             'flex items-start justify-between gap-3 border-b border-border py-2 last:border-b-0',
             className,
           )}
+          data-testid={testID}
           ref={ref as React.Ref<HTMLDivElement>}
           {...props}
         >
@@ -433,6 +498,7 @@ export const TableCell = React.forwardRef<HTMLElement, TableCellProps>(
       <td
         className={cn('px-3 py-2 align-middle', className)}
         colSpan={colSpan}
+        data-testid={testID}
         ref={ref as React.Ref<HTMLElement>}
         {...props}
       >
