@@ -1,5 +1,5 @@
 import { densityModes, type DensityMode } from '@beeui/tokens';
-import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import type { VisualProjectMetadata } from '../src/visual-contract';
 
 // BeeUI issue #169 (R4E.6) — Table production patterns and visual acceptance.
@@ -37,19 +37,6 @@ async function gotoTableFixture(
   await expect(page.locator('html')).toHaveAttribute('data-visual-ready', 'true');
 }
 
-// `Table`/`TableRow`/`TableCell` (`table.web.tsx`) author real DOM elements
-// (`<table>`/`<tr>`/`<td>`) directly rather than react-native-web `View`, so
-// their `testID` prop is forwarded to the DOM verbatim as a literal `testid`
-// attribute — NOT translated to `data-testid` the way `View`/`Box`/`Card`
-// (used for this fixture's own wrapper elements) do. Verified empirically
-// against the rendered DOM; `table-showcase.spec.ts` (#166) avoids the
-// mismatch entirely by only ever selecting Table-internal nodes by ARIA role.
-// This helper documents the distinction instead of relying on `getByTestId`
-// for anything owned by `table.web.tsx`.
-function byTableTestId(scope: Page | Locator, testId: string) {
-  return scope.locator(`[testid="${testId}"]`);
-}
-
 test.describe('default state — full canonical theme x viewport matrix', () => {
   test('renders both layouts with no overflow/clipping of long names or large amounts', async (
     { page },
@@ -65,7 +52,7 @@ test.describe('default state — full canonical theme x viewport matrix', () => 
       const section = page.getByTestId(testId);
       await expect(section).toBeVisible();
       for (const transactionId of financeTransactionIds) {
-        await expect(byTableTestId(section, `transaction-row-${transactionId}`)).toBeVisible();
+        await expect(section.getByTestId(`transaction-row-${transactionId}`)).toBeVisible();
       }
     }
 
@@ -122,8 +109,7 @@ test.describe('density — compact/comfortable/spacious', () => {
       // already proves in `density.spec.ts` (`gap-density-row-gap`, a flex
       // `row-gap`) — that is the real, working density signal to assert here.
       const rowGapPx = await page.evaluate(() => {
-        // `testid` (lowercase, no `data-` prefix) — see `byTableTestId`.
-        const body = document.querySelector('[testid="finance-table-stacked-body"]');
+        const body = document.querySelector('[data-testid="finance-table-stacked-body"]');
         return body ? Number.parseFloat(getComputedStyle(body as Element).rowGap) : Number.NaN;
       });
       const expectedRowGapPx = { compact: 8, comfortable: 12, spacious: 16 }[density];
@@ -186,7 +172,7 @@ test.describe('loading / empty / error production states', () => {
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await gotoTableFixture(page, { state: fixture.state, theme: 'light' });
 
-      await expect(byTableTestId(page, fixture.testId).first()).toBeVisible();
+      await expect(page.getByTestId(fixture.testId).first()).toBeVisible();
       await fixture.assert(page);
 
       await expect(page).toHaveScreenshot(`table-production--state-${fixture.state}--light--desktop.png`, {
@@ -210,7 +196,7 @@ test.describe('RTL', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await gotoTableFixture(page, { dir: 'rtl', theme: 'light' });
 
-    const tableScope = byTableTestId(page, 'finance-table-scroll');
+    const tableScope = page.getByTestId('finance-table-scroll');
     const table = tableScope.locator('table');
     const rtlWrapper = table.locator('xpath=ancestor::div[@dir="rtl"][1]');
     await expect(rtlWrapper).toHaveCount(1);
@@ -256,8 +242,7 @@ test.describe('large text (200%-equivalent)', () => {
     // horizontal-overflow escape hatch, so a wide table at large text scrolls
     // to a column instead of clipping it.
     const overflowX = await page.evaluate(() => {
-      // `testid` (lowercase, no `data-` prefix) — see `byTableTestId`.
-      const container = document.querySelector('[testid="finance-table-scroll"] table')?.parentElement;
+      const container = document.querySelector('[data-testid="finance-table-scroll"] table')?.parentElement;
       return container ? getComputedStyle(container).overflowX : null;
     });
     expect(overflowX).toBe('auto');
