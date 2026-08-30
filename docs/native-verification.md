@@ -121,6 +121,18 @@ Before a release candidate is considered fully device-verified, record the appli
 
 Do **not** list “native iOS compilation on macOS” as a remaining manual gate: that compile proof is already automated.
 
+## iOS `pageSheet`/`formSheet` support policy (#128, tracks #62)
+
+**Status for BeeUI 1.0: EXPERIMENTAL.** Native `pageSheet`/`formSheet` `DialogContent` presentation is not EXCLUDED and is not yet SUPPORTED at release-quality confidence.
+
+**Guaranteed deterministic/compile evidence:** Jest/RNTL contracts prove `transparent=false` Modal props for `pageSheet`/`formSheet`, modal-local host geometry (non-zero origin, host-move remeasurement), and iOS `onRequestClose` non-interception. Native iOS compilation (Expo Showcase and bare RN consumer, `ios-native` CI job) proves these presentations build. Neither proves live presentation, placement, or swipe dismissal.
+
+**Required evidence for release-level support:** recorded exact-head real iOS Simulator or physical-device runtime evidence — actual `pageSheet`/`formSheet` presentation, child Popover/DropdownMenu, keyboard interaction, and swipe-to-dismiss with `onRequestClose` firing, per `docs/native-runtime-smoke.md`'s I4/I5/I6/I7 cases and the runtime-gate record format in `docs/release.md`. Until that evidence exists for an exact release-candidate head, the status stays EXPERIMENTAL.
+
+**Current CI representation — quarantine, not a pass:** the `pageSheet`/`formSheet` section of `apps/showcase/runtime-smoke/maestro/ios-sheets.yaml` is explicitly QUARANTINED (skipped) on the headless CI iOS Simulator, where the trigger tap is swallowed and the sheet never presents (state stays closed, `requestClose: 0`) per #62's investigation. This is not reproducible as a hard failure in bare RN 0.86.2 and reproduces only ~33% locally (not ~100% as on CI), so it is treated as a documented RN-Modal/headless-CI-simulator limitation, not a BeeUI kernel defect. A quarantined/skipped section must never be reported or counted as a passing runtime gate. `overFullScreen` (transparent) presentation is unaffected, is exercised in the same suite, and passes.
+
+**Conditions to remove the quarantine:** re-enable the `pageSheet`/`formSheet` Maestro section once either (a) upstream React Native/iOS Simulator behavior changes so the presentation reliably fires on the headless CI simulator, or (b) a CI-proven, non-flaky presentation path is found at the BeeUI layer — in both cases the re-enabled section must pass on CI before the quarantine is lifted. Do not re-attempt the previously reverted kernel accessibility-gating fix without new CI-proven evidence (see #62).
+
 ## Roadmap
 
 `docs/roadmap.md` defines the next verification step: a protected iOS Simulator + Android Emulator/device runtime smoke tier, scheduled for nightly/release-candidate use rather than every ordinary pull request.
