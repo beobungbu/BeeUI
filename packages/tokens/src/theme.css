@@ -89,6 +89,12 @@
   --motion-overlay-exit-duration: 120ms;
   --motion-overlay-exit-easing: cubic-bezier(0.2, 0, 0, 1);
   --motion-overlay-exit-spatial: 1;
+  --motion-sheet-enter-duration: 200ms;
+  --motion-sheet-enter-easing: cubic-bezier(0.2, 0, 0, 1);
+  --motion-sheet-enter-spatial: 1;
+  --motion-sheet-exit-duration: 120ms;
+  --motion-sheet-exit-easing: cubic-bezier(0.2, 0, 0, 1);
+  --motion-sheet-exit-spatial: 1;
   --motion-disclosure-duration: 200ms;
   --motion-disclosure-easing: cubic-bezier(0.2, 0, 0, 1);
   --motion-disclosure-spatial: 1;
@@ -408,6 +414,9 @@
     --motion-overlay-enter-spatial: 0;
     --motion-overlay-exit-duration: 0.01ms;
     --motion-overlay-exit-spatial: 0;
+    --motion-sheet-enter-spatial: 0;
+    --motion-sheet-exit-duration: 0.01ms;
+    --motion-sheet-exit-spatial: 0;
     --motion-disclosure-duration: 0.01ms;
     --motion-disclosure-spatial: 0;
   }
