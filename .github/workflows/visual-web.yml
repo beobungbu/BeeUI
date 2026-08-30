@@ -86,7 +86,7 @@ jobs:
 
       # TEMPORARY (#177 date-production baseline regen) — REVERT before merge.
       - name: Compare canonical web screenshots (shard ${{ matrix.shard }}/3)
-        run: pnpm --dir apps/visual-regression test --shard=${{ matrix.shard }}/3 --reporter=blob --update-snapshots date-production.spec.ts
+        run: pnpm --dir apps/visual-regression test date-production.spec.ts --shard=${{ matrix.shard }}/3 --reporter=blob --update-snapshots
 
       - name: Upload blob report
         if: always()
