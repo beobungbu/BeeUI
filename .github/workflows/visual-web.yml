@@ -81,15 +81,16 @@ jobs:
           pnpm --dir apps/visual-regression exec node -e "const { chromium } = require('@playwright/test'); (async () => { const browser = await chromium.launch(); console.log('Chromium ' + browser.version()); await browser.close(); })().catch(error => { console.error(error); process.exit(1); });"
 
       - name: Compare canonical web screenshots
-        run: pnpm --dir apps/visual-regression test
+        run: pnpm --dir apps/visual-regression test --update-snapshots
 
       - name: Upload visual regression diagnostics
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: visual-regression-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             apps/visual-regression/test-results
             apps/visual-regression/playwright-report
+            apps/visual-regression/tests/__screenshots__
           if-no-files-found: warn
           retention-days: 3
