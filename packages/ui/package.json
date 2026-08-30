@@ -18,6 +18,7 @@
     "class-variance-authority": "0.7.1"
   },
   "devDependencies": {
+    "@react-native-community/datetimepicker": "9.1.0",
     "@types/react-dom": "19.2.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -26,6 +27,7 @@
     "react-native-teleport": "1.1.13"
   },
   "peerDependencies": {
+    "@react-native-community/datetimepicker": ">=9.1 <10",
     "react": ">=19.0.0",
     "react-dom": ">=19.0.0",
     "react-native": ">=0.85.0",
@@ -35,6 +37,9 @@
     "uniwind": ">=1.10.1 <2"
   },
   "peerDependenciesMeta": {
+    "@react-native-community/datetimepicker": {
+      "optional": true
+    },
     "react-dom": {
       "optional": true
     }
