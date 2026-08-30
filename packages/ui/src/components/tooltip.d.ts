@@ -1,6 +1,6 @@
 // Types-only module so `import ... from './tooltip'` type-checks under `tsc`
 // (which has no concept of Metro's platform-extension resolution) while Metro
-// itself resolves the real platform runtime (`tooltip.web.tsx`, later
+// itself resolves the real platform runtime (`tooltip.web.tsx`/
 // `tooltip.native.tsx`). Mirrors `overlay-transport.d.ts`'s established pattern.
 // A base `tooltip.tsx`/`.ts` here would be picked up by Metro's own generic
 // fallback resolution and could shadow the platform file on platforms with no
