@@ -1,5 +1,6 @@
 node_modules/
 .expo/
+.astro/
 dist/
 build/
 coverage/

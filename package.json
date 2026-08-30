@@ -11,6 +11,8 @@
     "ios": "pnpm --filter @beeui/showcase ios",
     "android": "pnpm --filter @beeui/showcase android",
     "web": "pnpm --filter @beeui/showcase web",
+    "docs": "pnpm --filter @beeui/docs dev",
+    "docs:build": "pnpm --filter @beeui/docs build",
     "hygiene:check": "node ./scripts/check-repo-hygiene.mjs",
     "tokens:generate": "node ./scripts/generate-tokens.mjs",
     "tokens:check": "node ./scripts/generate-tokens.mjs --check && node ./scripts/check-token-removals.mjs",
