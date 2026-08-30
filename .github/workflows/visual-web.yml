@@ -28,7 +28,7 @@ jobs:
     if: >
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, beeui]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Checkout
@@ -51,11 +51,29 @@ jobs:
           test "$(node --version)" = "v${NODE_VERSION}"
           test "$(pnpm --version)" = "${PNPM_VERSION}"
 
+      - name: pnpm store dir
+        run: pnpm config set store-dir "$HOME/.pnpm-store"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pw-${{ runner.os }}-
+
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Provision pinned Chromium and Linux dependencies
-        run: pnpm --dir apps/visual-regression exec playwright install --with-deps chromium
+        run: pnpm --dir apps/visual-regression exec playwright install ${{ steps.pw-cache.outputs.cache-hit == 'true' && '' || '--with-deps' }} chromium
 
       - name: Report visual browser versions
         run: |
