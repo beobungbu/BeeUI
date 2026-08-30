@@ -5,19 +5,37 @@ name: compat-rn-0-87
 # every ordinary PR. It reuses the exact same bare-consumer contract as the
 # repo's own pinned RN 0.86.2 row (scripts/verify-bare-consumer.sh,
 # docs/native-verification.md) with BEEUI_RN_VERSION overridden to the
-# current RN 0.87 line. Recurring/scheduled re-verification across alternate
-# rows is #137's scope, not this workflow's — this stays opt-in only:
-# - post-merge: `gh workflow run compat-rn-0-87.yml`
-# - pre-merge: add the `ci:rn-0.87` label to a pull request (mirrors the
-#   `ci:native` label pattern in ci.yml/docs/ci-native-classification.md),
-#   since workflow_dispatch cannot target a workflow file that only exists on
-#   a feature branch.
+# current RN 0.87 line. #137 adds the recurring/scheduled re-verification
+# across this alternate row on top of the pre-existing opt-in triggers:
+# - nightly: `schedule` below, offset from ci.yml (47 2 * * *) and
+#   runtime-native.yml (17 3 * * *), so an upstream fix (e.g. a
+#   react-native-safe-area-context release compatible with RN 0.87's
+#   UIManager surface) is caught automatically instead of only on request;
+# - release-candidate: `workflow_dispatch` with `release_candidate: true`
+#   additionally turns off the Android leg's `continue-on-error` waiver, so
+#   a regression blocks the run instead of being silently absorbed;
+# - post-merge ad hoc: `gh workflow run compat-rn-0-87.yml`;
+# - pre-merge peer/dependency-sensitive change: add the `ci:rn-0.87` label to
+#   a pull request (mirrors the `ci:native` label pattern in
+#   ci.yml/docs/ci-native-classification.md), since workflow_dispatch cannot
+#   target a workflow file that only exists on a feature branch.
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      release_candidate:
+        description: >-
+          Release-candidate verification: the Android bare-consumer compile
+          (expected red today per docs/compatibility-matrix.md's RN 0.87 row)
+          stops being waived via continue-on-error and a failure blocks the
+          run, instead of only being tracked as a known/diagnosed break.
+        type: boolean
+        default: false
   # Fork PRs never get this: the job `if:` below also requires
   # same-repo head, matching ci.yml's `ci:native` label pattern.
   pull_request:
     types: [labeled, synchronize, opened, reopened]
+  schedule:
+    - cron: '52 3 * * *'
 
 permissions:
   contents: read
@@ -40,8 +58,7 @@ env:
   BEEUI_BARE_NPM_INSTALL_FLAGS: --legacy-peer-deps
 
 jobs:
-  # Expected RED today, by design — not a required/gating check anywhere
-  # (this workflow only runs via workflow_dispatch or an explicit PR label).
+  # Expected RED today, by design, on ordinary (non-release-candidate) runs.
   # react-native-safe-area-context@5.7.0's Android Kotlin source does not
   # compile against RN 0.87's UIManager surface (a real upstream/peer
   # incompatibility documented in docs/compatibility-matrix.md's RN 0.87 row
@@ -49,22 +66,34 @@ jobs:
   # job is expected to fail at the Android native compile step until that
   # dependency (or an equivalent) is proven RN-0.87-compatible.
   # continue-on-error keeps that expected, already-diagnosed failure from
-  # reading as a broken/red CI signal.
+  # reading as a broken/red CI signal — except on `release_candidate: true`
+  # dispatch, where the row must be blocking so a candidate signoff cannot
+  # silently ship on stale/waived evidence.
   bare-android-rn87:
     if: >
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
       (
         contains(github.event.pull_request.labels.*.name, 'ci:rn-0.87') &&
         github.event.pull_request.head.repo.full_name == github.repository
       )
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    continue-on-error: true
+    continue-on-error: ${{ github.event.inputs.release_candidate != 'true' }}
     env:
       BEEUI_BARE_WORK_ROOT: ${{ github.workspace }}/.beeui-bare-rn87
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+
+      - name: Record exact compatibility-row SHA
+        run: |
+          {
+            echo "### Compatibility row: React Native 0.87.x (bare-consumer Android, excluded/diagnostic — #131)"
+            echo "- Exact checked-out SHA: \`$(git rev-parse HEAD)\`"
+            echo "- Trigger: \`${{ github.event_name }}\`"
+            echo "- Release-candidate blocking mode: \`${{ github.event.inputs.release_candidate == 'true' }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -138,6 +167,7 @@ jobs:
   bare-ios-rn87:
     if: >
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
       (
         contains(github.event.pull_request.labels.*.name, 'ci:rn-0.87') &&
         github.event.pull_request.head.repo.full_name == github.repository
@@ -150,6 +180,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+
+      - name: Record exact compatibility-row SHA
+        run: |
+          {
+            echo "### Compatibility row: React Native 0.87.x (bare-consumer iOS — #131)"
+            echo "- Exact checked-out SHA: \`$(git rev-parse HEAD)\`"
+            echo "- Trigger: \`${{ github.event_name }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Select Xcode ${{ env.XCODE_MIN_VERSION }}+
         run: |
