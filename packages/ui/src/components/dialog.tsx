@@ -472,7 +472,22 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
         visible={open}
       >
         <ModalOverlayHost active={open} dismissScopeRef={modalDismissScopeRef}>
-          <DialogEscapeBinding onDismiss={requestCloseFromEscape} open={open} overlayId={overlayId} />
+          {/* Web-only: `DialogEscapeBinding` exists solely to beat RNW Modal's
+              async Escape-keyup gate (see its docblock). It also registers an
+              `isTopmost()` dismissable via `useOverlayDismissable`, which lives
+              in this same modal-local dismiss stack that Android hardware-back
+              (`dismissTopmostChild`, above) walks to find a REAL nested
+              anchored-overlay child. Mounting it unconditionally would add the
+              Dialog's own binding as a phantom "child" in that stack — on
+              native, dismissTopmostChild('back') could then dismiss it instead
+              of a real child (or instead of falling through to the Dialog's own
+              close policy), double-firing onRequestClose and corrupting the
+              child-first back count. Native has no `document` to bind to
+              anyway (a no-op there before this gate), so scoping the mount to
+              Web keeps native back-handling byte-for-byte unchanged. */}
+          {Platform.OS === 'web' ? (
+            <DialogEscapeBinding onDismiss={requestCloseFromEscape} open={open} overlayId={overlayId} />
+          ) : null}
           <View
             className={cn(
               'flex-1 items-center justify-center px-4 py-8',
