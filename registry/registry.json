@@ -1770,6 +1770,7 @@
         "core-cn",
         "text",
         "theme",
+        "use-direction",
         "use-required-callback-warning"
       ],
       "dependencies": {},

@@ -253,6 +253,42 @@ Unsupported v1 presentation behavior is intentionally narrow: there is no Sheet 
 
 Real-browser Playwright evidence lives in `apps/visual-regression/tests/sheet-showcase.spec.ts` (open/close, Escape, backdrop, focus-trap/restoration, responsive, RTL, reduced motion) and the `component-gallery-sheet-overlay` axe scenario (`apps/visual-regression/src/a11y-scenarios.ts`).
 
+## Table contract
+
+`Table`/`TableCaption`/`TableHeader`/`TableBody`/`TableFooter`/`TableRow`/`TableHead`/`TableCell` (#165 core anatomy, #166 Web semantics/keyboard, #167 native rendering/a11y, #168 performance/scale, #169 production patterns, #170 export/registry/docs) implement [ADR-007](decisions/007-table-datatable-architecture.md): a **composable primitive family**, not a data-driven `columns`/`data` grid. BeeUI owns no fetching, backend/query state, sort/filter/selection state, or spreadsheet-style cell navigation/editing — the caller maps its own rows to `<TableRow>`/`<TableCell>` exactly as it already does for any other list.
+
+```tsx
+<Table>
+  <TableCaption>Recent invoices</TableCaption>
+  <TableHeader>
+    <TableRow>
+      <TableHead sortDirection={sort} onSortChange={toggleSort}>Invoice</TableHead>
+      <TableHead>Status</TableHead>
+      <TableHead>Amount</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    {invoices.map((invoice) => (
+      <TableRow key={invoice.id} selected={selectedId === invoice.id}>
+        <TableCell>{invoice.number}</TableCell>
+        <TableCell>{invoice.status}</TableCell>
+        <TableCell>{invoice.amount}</TableCell>
+      </TableRow>
+    ))}
+  </TableBody>
+</Table>
+```
+
+**State boundaries**: `TableHead`'s `sortDirection`/`onSortChange` pair is controlled by the caller (mirroring the `Checkbox`/`Tabs` controlled-callback discipline); presence of `sortDirection` is what marks a column sortable and renders an interactive sort trigger reachable by normal tab order. `TableRow`'s `selected` prop is a caller-owned boolean reflected as a visual/accessibility state only — row selection itself reuses the existing `Checkbox` component inside a cell, with the caller owning the selected-id set. Table stores none of this state itself.
+
+**Platform rendering** (ADR-007 "Platform rendering strategy", Option B): `table.web.tsx` renders the real HTML table elements (`<table>`, `<caption>`, `<thead>`, `<tbody>`, `<tfoot>`, `<tr>`, `<th scope="col">`, `<td>`) so Web gets native browser row/column/header assistive-technology semantics for free, plus `aria-sort` on sortable `<th>` elements. The default (native) file composes `View`/`Text`/`Pressable` — React Native has no table/row/column-header accessibility role, so each plain-text `TableCell` folds its column's label into its own `accessibilityLabel` (`label: value`) instead, and the sort trigger inside `TableHead` gets an accessible name that includes the current sort state (`", sorted ascending"` / `", sorted descending"` / `", not sorted"`). Both files share one identical prop contract per subcomponent, so caller JSX does not change per platform.
+
+**Responsive layout**: `Table`'s `layout` prop (`TableLayout = 'scroll' | 'stacked'`, default `'scroll'`) is an explicit caller-driven choice — BeeUI does not measure viewport/container width itself. `'scroll'` wraps the row grid in a horizontally scrolling container (Web `overflow-x`, native horizontal `ScrollView`) with column order following `useDirection()` (ADR-004) rather than a hardcoded physical left-to-right assumption. `'stacked'` renders each `TableRow` as a card and each `TableCell` as a `label: value` pair; `TableHead` cells register their column's inferred (or explicit `label` override) text into a `Table`-scoped context that `TableCell` looks up by column index, mirroring `ListGroupMembershipContext`'s local-context pattern — no global store, no state persisted across renders.
+
+**Accessibility/scale limits**: native row/cell touch targets keep the accepted `>=44dp` floor (mirrors `ListItem`'s guard) even in `compact` density. Table does not disable Dynamic Type/font scaling (`docs/dynamic-type.md`). Native VoiceOver/TalkBack row/column-announcement evidence is deterministic-contract-verified (`apps/showcase/__tests__/table.test.tsx`) rather than real-device-verified as of #167; this documentation does not claim stronger native assistive-technology evidence than that. Table ships **no default virtualization** — `TableBody` renders every supplied row directly; real, harness-measured evidence (`pnpm bench:web`, `scripts/benchmark/scenarios/web/table-render.mjs`) shows 100/500-row renders comfortably inside a 16ms frame budget on a representative dev host (see `apps/docs/src/content/docs/components/table.md`'s Performance section for the full numbers and methodology), so no virtualization adapter is currently justified. Consumers with significantly larger row counts should wrap row content in `React.memo` (proven to isolate a selection/sort update to only the changed row, `apps/showcase/__tests__/table-performance.test.tsx`) or reach for an external virtualization/data-grid library — BeeUI does not bundle one.
+
+**Not claimed**: spreadsheet-style arrow-key cell navigation, in-cell editing, or a roving-tabindex grid pattern — none of these are part of Table's contract (ADR-007's explicit non-goal); the header sort trigger and any embedded row action reach normal tab order like any other interactive control.
+
 ## Toast boundary
 
 Toast v1 is implemented as a separate transient-notification runtime. It is not anchor-positioned and does not use `OverlayPortal` or React Native core `Modal`.

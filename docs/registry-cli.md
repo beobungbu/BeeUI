@@ -21,7 +21,7 @@ The workflow copies supported BeeUI source into a consumer project. The consumer
 
 ## Supported registry entries
 
-Registry coverage has expanded from the initial 6-component slice to the full stable public component-module surface exported by `packages/ui/src/index.ts` (**61 public component modules** as of this writing, including `Tooltip`, #155). Run `pnpm beeui -- list` for the canonical, sorted, up-to-date list — it is generated from `registry/registry.json`.
+Registry coverage has expanded from the initial 6-component slice to the full stable public component-module surface exported by `packages/ui/src/index.ts` (**62 public component modules** as of this writing, including `Table`, #170). Run `pnpm beeui -- list` for the canonical, sorted, up-to-date list — it is generated from `registry/registry.json`.
 
 `pnpm registry:verify` additionally compares those public `./components/*` barrel exports with public registry component entries. Adding or removing a public component module without updating the registry therefore fails CI instead of silently allowing registry coverage to drift.
 
@@ -30,10 +30,10 @@ Internal transitive entries (not directly addable, but resolved automatically):
 - `core-cn` — the `cn` helper required by most components (single-symbol `@beeui/core` import)
 - `field-context` — the field context required by `input`/`field`
 - `form-group-context` — the form-group context required by `form-group`/`radio`
-- `use-required-callback-warning` — the dev-mode controlled-usage warning shared by `checkbox`, `radio`, `segmented-control`, `switch`, `tabs`
+- `use-required-callback-warning` — the dev-mode controlled-usage warning shared by `checkbox`, `radio`, `segmented-control`, `switch`, `tabs`, `table`
 - `core-overlay` — a copy of `@beeui/core`'s cn/anchored-overlay/overlay-runtime utilities, used by components whose `@beeui/core` import mixes `cn` with anchored-overlay types/functions (`popover`, `dropdown-menu`, `select`, `tooltip`, and the `overlay-runtime`/`use-direction` utilities themselves)
 - `overlay-runtime` — the shared anchored-overlay runtime/transport kernel (`overlay-runtime.tsx` plus its platform transport/dismiss-event files), required by `dialog`, `popover`, `dropdown-menu`, `select`, `tooltip`, and `safe-area`
-- `use-direction` — the single stateless logical-direction resolver (ADR-004, `use-direction.ts`) required by every component that defaults a `direction` prop from ambient RTL/LTR state. `calendar` and `tooltip` declare it as an explicit registry dependency; `popover`/`dropdown-menu`/`select` also import the same module at the source level but do not yet declare it here, which is a known pre-existing gap in those three items' dependency closures (not a `use-direction` defect) tracked for a future fix
+- `use-direction` — the single stateless logical-direction resolver (ADR-004, `use-direction.ts`) required by every component that defaults a `direction` prop from ambient RTL/LTR state. `calendar`, `tooltip`, and `table` declare it as an explicit registry dependency; `popover`/`dropdown-menu`/`select` also import the same module at the source level but do not yet declare it here, which is a known pre-existing gap in those three items' dependency closures (not a `use-direction` defect) tracked for a future fix
 
 `button` remains a representative vertical slice. Adding it resolves and copies `core-cn`, `theme`, `text`, and `button` in deterministic dependency order. The resulting Button source imports the copied consumer-local `cn` helper rather than `@beeui/core`.
 
@@ -289,6 +289,7 @@ Generated/copied source contains no timestamps or machine-specific absolute path
 - copied relative-import graph resolution
 - no partial writes after preflight collision
 - anchored-overlay module rewrite via Popover
+- Table's `use-direction`/`use-required-callback-warning` dependency closure
 - doctor behavior
 
 The root `pnpm test` command also runs `pnpm registry:verify` and `pnpm registry:test` after the existing showcase test suite.
