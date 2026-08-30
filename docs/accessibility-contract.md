@@ -37,7 +37,7 @@ strongest evidence class desired. Concretely:
 | Keyboard & focus (cross-cutting matrix) | `docs/keyboard-focus-acceptance-matrix.md` | #146 | Closed | Browser interaction (Playwright, real keydown/focus, never `.focus()`/synthetic `onKeyDown`) |
 | Web automated accessibility (axe-core) | `docs/web-accessibility-audit.md` | #145 | Closed | Browser interaction (axe-core over real Showcase scenarios) |
 | Dynamic Type / font scaling | `docs/dynamic-type.md` | #143 | Closed | Deterministic contract + browser interaction (Web) + native runtime (Android emulator, real OS font-scale) |
-| Reduced motion | `docs/motion.md` § "Reduced-motion contract" | #149 | **Open** — no cross-cutting acceptance matrix yet | Deterministic contract (`Animated` spy) + browser interaction (`motion-reduced.spec.ts`, one representative fixture); per-component reduced-motion assertions exist only where an individual component's own test suite added one (see "Known gaps" below) |
+| Reduced motion | `docs/motion.md` § "Reduced-motion contract", `docs/reduced-motion-acceptance-matrix.md` | #149 | Closed | Deterministic contract (`Animated` spy, `issue-149-reduced-motion-acceptance.test.tsx`) + browser interaction (`motion-reduced.spec.ts`, `reduced-motion-acceptance-showcase.spec.ts`, plus the existing per-component Sheet/Tooltip specs) — the full per-component breakdown lives in `docs/reduced-motion-acceptance-matrix.md`, including the one genuine gap that sweep fixed (Dialog/AlertDialog's `animationType` now composes the ambient signal) |
 | RTL / logical direction | `docs/decisions/004-direction-architecture.md` (ADR-004, accepted) | #141 (overlay acceptance), #142 (component stress matrix) | **Both open** — no cross-cutting acceptance matrix yet | Deterministic contract (`use-direction.ts` precedence, `logical-direction.test.tsx`) + browser interaction (per-component Playwright specs — see the per-component sections below); RTL is implemented and exercised, but there is no single consolidated matrix document the way #146 exists for keyboard |
 | VoiceOver (iOS) | — | #147 | **Open** | None recorded (see "Native screen readers") |
 | TalkBack (Android) | — | #148 | **Open** | None recorded (see "Native screen readers") |
@@ -259,8 +259,13 @@ architecture.md`); `Field` derives `accessibilityHint`/`accessibilityLabel`/
   touch target at every scale. Evidence: `calendar-accessibility-showcase.spec.ts` ("...
   remains usable ... under a large text-scale override", "... meet the minimum 44x44
   touch-target size").
-- **Reduced motion**: no Calendar/DatePicker/DateTimePicker-specific motion intent beyond
-  the shared `overlay-enter`/`overlay-exit` the anchored `Popover` already uses.
+- **Reduced motion**: no Calendar/DatePicker/DateTimePicker-specific motion of its own —
+  presentation is the anchored `Popover`, which itself runs no enter/exit transition
+  (verified by source inspection). Evidence:
+  `apps/visual-regression/tests/reduced-motion-acceptance-showcase.spec.ts` ("DatePicker
+  opens the Calendar in a Popover and selects a date under prefers-reduced-motion:
+  reduce"); native picker delegation to the system control (ADR-008) is out of BeeUI's
+  motion contract by design. See `docs/reduced-motion-acceptance-matrix.md`.
 - **Focus indicator**: a focused day cell renders a visible, non-transparent keyboard focus
   indicator (evidence: `calendar-accessibility-showcase.spec.ts`).
 - **AT expectations**: deterministic contract (RNTL role/label assertions) plus real
@@ -295,6 +300,13 @@ only what those do not already state.
   until simulator/device evidence exists" (already stated verbatim in `docs/components.md`
   § "Select contract" — restated here because it applies equally to `Popover`/
   `DropdownMenu`).
+- **Reduced motion**: none of the three run an enter/exit transition of their own
+  (verified by source inspection — no `Animated` import, no RN core `Modal`, no CSS
+  transition class), the same "nothing to gate" contract Tooltip already has below.
+  Evidence: `apps/showcase/__tests__/issue-149-reduced-motion-acceptance.test.tsx`
+  (Popover/DropdownMenu, deterministic) and `apps/visual-regression/tests/
+  reduced-motion-acceptance-showcase.spec.ts` (Popover/DropdownMenu/Select, browser); see
+  `docs/reduced-motion-acceptance-matrix.md`.
 
 ### Dialog / AlertDialog
 
@@ -308,6 +320,18 @@ register real accessibility relationships (`accessibilityLabelledBy`/hint), evid
 title and description semantics". Native `pageSheet`/`formSheet` presentation is
 EXPERIMENTAL (`docs/native-verification.md`) — do not treat it as release-quality until
 that document's status changes.
+
+- **Reduced motion**: **fixed by #149** — `DialogContent`'s default `animationType`
+  (`fade`, an RN core `Modal` transition, opacity-only) previously ran unconditionally;
+  `react-native-web`'s `ModalAnimation` never itself reads `prefers-reduced-motion`, so it
+  ignored the user's preference. `DialogContent` now composes BeeUI's own ambient
+  reduced-motion signal into that default (`none` under reduced motion, `fade`
+  otherwise), gated on the Dialog's own `open` state; an explicit caller-supplied
+  `modalProps.animationType` always wins. Evidence:
+  `apps/showcase/__tests__/issue-149-reduced-motion-acceptance.test.tsx` (deterministic
+  `animationType` mapping) and `apps/visual-regression/tests/
+  reduced-motion-acceptance-showcase.spec.ts` (browser: opens/dismisses under
+  `prefers-reduced-motion: reduce`); see `docs/reduced-motion-acceptance-matrix.md`.
 
 ### Forms (Input, Textarea, Field, Checkbox, Radio, RadioGroup, Switch, SearchInput,
 PasswordInput, OTPInput)
@@ -341,7 +365,11 @@ PasswordInput, OTPInput)
   content on iOS with polite queueing", "does not announce AlertBanner content when live
   semantics are disabled"). Toast shares the same announcement policy family through its
   own transient-notification runtime (`docs/toast.md`), not `OverlayPortal`/core `Modal`.
-- **Keyboard/RTL/Dynamic Type/reduced motion**: no component-specific exception.
+- **Keyboard/RTL/Dynamic Type**: no component-specific exception.
+- **Reduced motion**: Toast runs no enter/exit transition of its own (`docs/toast.md`);
+  its auto-dismiss timer is unrelated to, and unaffected by, motion preference. Evidence:
+  `apps/visual-regression/tests/reduced-motion-acceptance-showcase.spec.ts` ("Toast shows
+  its essential content under prefers-reduced-motion: reduce").
 - **AT expectations**: deterministic contract only (Jest-mocked `AccessibilityInfo`); no
   live VoiceOver/TalkBack announcement evidence recorded yet.
 
@@ -360,6 +388,14 @@ Covered by #276's structural/status semantics work
 - `Button`'s loading state exposes `aria-busy` directly on the button (not buried in the
   compound `accessibilityState` object), and the decorative loading spinner is hidden from
   assistive tech instead of producing a redundant second announcement.
+- **Reduced motion**: `Skeleton` ships no `animate-*` utility class — a static muted
+  block, nothing to gate (regression-guarded:
+  `apps/showcase/__tests__/issue-149-reduced-motion-acceptance.test.tsx` "Skeleton ...
+  ships no animate-* utility class"). `Spinner` (RN core `ActivityIndicator`) is a
+  platform-native indeterminate busy indicator BeeUI does not own or animate itself and
+  has no accessibility API to suppress; it is treated as an accessibility-exempt
+  "essential" indicator (small-scale, non-parallax, non-flashing), the same category WCAG
+  2.3.3 does not require disabling. See `docs/reduced-motion-acceptance-matrix.md`.
 
 ## Native screen readers (VoiceOver/TalkBack)
 
@@ -408,11 +444,11 @@ implicit.
   Table/Calendar via direct `useDirection()` calls), with real Playwright evidence for
   Table, Sheet, Tooltip, and Calendar specifically — but there is no single document that
   enumerates every RTL-relevant component the way #146's matrix does for keyboard.
-- **No cross-cutting reduced-motion acceptance matrix yet** (#149 open). `docs/motion.md`
-  defines the policy and one representative Playwright fixture
-  (`motion-reduced.spec.ts`) plus a deterministic `Animated`-spy suite proves the policy
-  is honored for the defined intents; it does not enumerate every component the way #146
-  does for keyboard.
+- **Reduced motion** now has a cross-cutting acceptance matrix
+  (`docs/reduced-motion-acceptance-matrix.md`, #149), the same way #146 has one for
+  keyboard. It fixed one genuine gap (Dialog/AlertDialog's `animationType` did not
+  compose the ambient reduced-motion signal) and recorded explicit no-motion rationale,
+  with real evidence, for every other animated/anchored-overlay surface.
 - **No assistive-technology (VoiceOver/TalkBack) evidence exists for any component**
   (#147/#148 open) — see "Native screen readers" above.
 - **Localization/long-content stress suite is open** (#144) — this document does not
@@ -432,5 +468,5 @@ implicit.
   names it.
 
 This document should be revisited (not silently left stale) once #141, #142, #144, #147,
-#148, #149, #161, #170, #177, and #178 close, since several of them will add or change the
+#148, #161, #170, #177, and #178 close, since several of them will add or change the
 evidence class available for claims made above.

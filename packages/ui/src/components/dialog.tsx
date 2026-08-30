@@ -1,6 +1,7 @@
 import { cn } from '@beeui/core';
 import * as React from 'react';
 import {
+  AccessibilityInfo,
   Modal,
   Platform,
   Pressable,
@@ -160,6 +161,57 @@ function useDialogFocusTrap(
       }
     };
   }, [open, panelRef]);
+}
+
+/**
+ * Reads BeeUI's own ambient reduced-motion signal the same "compose, don't
+ * own a second store" way `sheet.native.tsx`'s own `useReducedMotionPreference`
+ * does (`docs/motion.md`, ADR-006 "Reduced motion — composed, not
+ * duplicated") and feeds it into this file's `animationType` default below.
+ * `AccessibilityInfo.isReduceMotionEnabled()` is genuinely cross-platform
+ * here (unlike Sheet, which needs a Web-specific `matchMedia` variant
+ * because it also drives a JS-owned `Animated` interpolation): on Web,
+ * `react-native-web` itself implements `isReduceMotionEnabled`/
+ * `addEventListener('reduceMotionChanged', ...)` by reading
+ * `window.matchMedia('(prefers-reduced-motion: reduce)')`, so one
+ * implementation already covers both platforms.
+ *
+ * This exists because React Native Web's `Modal`/`ModalAnimation` (the
+ * engine `animationType` reaches on Web) applies its `fade`/`slide` CSS
+ * keyframe unconditionally — it never itself checks `prefers-reduced-motion`
+ * — so `DialogContent`/`AlertDialogContent` would otherwise always run a
+ * real ~300ms transition regardless of the user's reduced-motion
+ * preference. `fade` (the default) has no spatial component, so this was
+ * never a "no mandatory spatial animation" violation, but it did not honor
+ * the ambient preference either; this closes that gap for the default case.
+ * An explicit caller-supplied `modalProps.animationType` always wins
+ * (`slide`/`fade`/`none`), matching Sheet's own "explicit override always
+ * wins" precedent.
+ *
+ * Gated on `enabled` (this Dialog's own `open` state): `DialogContent`
+ * always mounts regardless of `open` (`Modal`'s own `visible` prop is what
+ * actually hides it), so reading/subscribing to the ambient signal
+ * unconditionally would query the native accessibility bridge — and, in
+ * tests, trigger a post-`act()` state update — for every closed Dialog in
+ * the tree, never just the ones actually being shown.
+ */
+function useReducedMotionPreference(enabled: boolean): boolean {
+  const [reducedMotion, setReducedMotion] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!enabled) return undefined;
+    let mounted = true;
+    AccessibilityInfo.isReduceMotionEnabled().then((value) => {
+      if (mounted) setReducedMotion(value);
+    });
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReducedMotion);
+    return () => {
+      mounted = false;
+      subscription.remove();
+    };
+  }, [enabled]);
+
+  return reducedMotion;
 }
 
 /**
@@ -395,8 +447,12 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
     const [titleNativeID, setTitleNativeID] = React.useState<string>();
     const [titleText, setTitleText] = React.useState<string>();
     const [descriptionText, setDescriptionText] = React.useState<string>();
-    const { animationType = 'fade', presentationStyle = 'overFullScreen', ...restModalProps } =
-      modalProps ?? {};
+    const reducedMotion = useReducedMotionPreference(open);
+    const {
+      animationType = reducedMotion ? 'none' : 'fade',
+      presentationStyle = 'overFullScreen',
+      ...restModalProps
+    } = modalProps ?? {};
 
     const modalDismissScopeRef = React.useRef<ModalOverlayDismissScope | null>(null);
 
