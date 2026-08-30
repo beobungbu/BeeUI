@@ -20,6 +20,7 @@ const CI_WORKFLOW_PATHS = [
   path.join(ROOT_DIR, '.github', 'workflows', 'runtime-native.yml'),
   path.join(ROOT_DIR, '.github', 'workflows', 'visual-web.yml'),
   path.join(ROOT_DIR, '.github', 'workflows', 'web-a11y.yml'),
+  path.join(ROOT_DIR, '.github', 'workflows', 'compat-rn-0-87.yml'),
 ];
 
 function readJson(filePath) {
