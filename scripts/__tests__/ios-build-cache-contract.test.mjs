@@ -75,11 +75,11 @@ test('pure package changes keep boundary prepare/bundle while Gradle is native-g
   );
   assert.match(
     workflow,
-    /Compile bare Android debug APK\n\s+if: needs\.verify\.outputs\.bare-native-required == 'true'/,
+    /Compile bare Android debug APK\n\s+if: needs\.classify\.outputs\.bare-native-required == 'true'/,
   );
   assert.match(
     workflow,
-    /Setup Java\n\s+if: needs\.verify\.outputs\.bare-native-required == 'true'/,
+    /Setup Java\n\s+if: needs\.classify\.outputs\.bare-native-required == 'true'/,
   );
 });
 
@@ -88,15 +88,11 @@ test('Expo prebuild and Showcase Xcode work run only for Showcase native graph c
 
   assert.match(
     workflow,
-    /Generate native projects with Expo Prebuild\n\s+if: steps\.native-changes\.outputs\.showcase-native == 'true'/,
+    /Generate native projects with Expo Prebuild\n\s+if: needs\.classify\.outputs\.showcase-native-required == 'true'/,
   );
   assert.match(
     workflow,
-    /Download generated iOS project source\n\s+if: needs\.verify\.outputs\.showcase-native-required == 'true'/,
-  );
-  assert.match(
-    workflow,
-    /Compile Showcase for iOS Simulator\n\s+if: needs\.verify\.outputs\.showcase-native-required == 'true'/,
+    /Compile Showcase for iOS Simulator\n\s+if: needs\.classify\.outputs\.showcase-native-required == 'true'/,
   );
 });
 
@@ -105,24 +101,26 @@ test('bare iOS compile runs only for bare native graph changes', async () => {
 
   assert.match(
     workflow,
-    /Prepare true bare React Native consumer for iOS\n\s+if: needs\.verify\.outputs\.bare-native-required == 'true'/,
+    /Prepare true bare React Native consumer for iOS\n\s+if: needs\.classify\.outputs\.bare-native-required == 'true'/,
   );
   assert.match(
     workflow,
-    /Compile bare React Native consumer for iOS Simulator\n\s+if: needs\.verify\.outputs\.bare-native-required == 'true'/,
+    /Compile bare React Native consumer for iOS Simulator\n\s+if: needs\.classify\.outputs\.bare-native-required == 'true'/,
   );
 });
 
-test('ios-native tolerates a skipped boundary job but never bypasses verify or a failed bare job', async () => {
+test('classify is the sole gate for the parallel verify/bare-native/ios-native graph', async () => {
   const { workflow } = await sources();
 
-  assert.match(workflow, /always\(\)/);
-  assert.match(workflow, /needs\.verify\.result == 'success'/);
-  assert.match(
-    workflow,
-    /needs\.bare-native\.result == 'success' \|\| needs\.bare-native\.result == 'skipped'/,
-  );
-  assert.match(workflow, /needs\.verify\.outputs\.ios-native-required == 'true'/);
+  assert.match(workflow, /^\s{2}classify:\n/m);
+  assert.match(workflow, /^\s{2}verify:\n\s+needs: \[classify\]/m);
+  assert.match(workflow, /^\s{2}bare-native:\n\s+needs: \[classify\]/m);
+  assert.match(workflow, /^\s{2}ios-native:\n\s+needs: \[classify\]/m);
+  assert.match(workflow, /needs\.classify\.outputs\.ios-native-required == 'true'/);
+  // ios-native self-prebuilds instead of depending on verify/bare-native or
+  // downloading verify's artifact, so the three heavy jobs run in parallel.
+  assert.doesNotMatch(workflow, /needs: \[verify(?:, bare-native)?\]/);
+  assert.doesNotMatch(workflow, /Download generated iOS project source/);
 });
 
 test('ios-native runs a plain pod install on PATH with no self-hosted snapshot rsync', async () => {
