@@ -14,6 +14,13 @@ PACKAGE_DIR="${WORK_ROOT}/packages"
 FINGERPRINT_FILE="${WORK_ROOT}/.beeui-bare-fingerprint"
 CLI_VERSION="${BEEUI_RN_CLI_VERSION:-20.2.0}"
 RN_VERSION="${BEEUI_RN_VERSION:-0.86.2}"
+# Extra npm flags for the tarball install, e.g. "--legacy-peer-deps" when a
+# caller deliberately tests an RN line outside @beeui/ui's current declared
+# peerDependencies range (see .github/workflows/compat-rn-0-87.yml, which
+# tests an RN line the peer range excludes and needs to bypass npm's strict
+# peer resolution to still gather real bundle/compile evidence). Left empty
+# for the default in-range consumer, where strict resolution should hold.
+NPM_INSTALL_FLAGS="${BEEUI_BARE_NPM_INSTALL_FLAGS:-}"
 
 # @beeui/ui peers on react-native-teleport for its native context-preserving
 # overlay host; teleport in turn peers on react-dom, so pin react-dom to the
@@ -39,7 +46,7 @@ is_truthy() {
 
 compute_bare_fingerprint() {
   {
-    printf '%s\n' "${CLI_VERSION}" "${RN_VERSION}"
+    printf '%s\n' "${CLI_VERSION}" "${RN_VERSION}" "${NPM_INSTALL_FLAGS}"
     printf '%s\n' "${PINNED_DEPS[@]}"
   } | shasum -a 256 | awk '{ print $1 }'
 }
@@ -96,7 +103,9 @@ prepare_consumer() {
     cd "${APP_DIR}"
 
     echo "::group::Install BeeUI tarballs and runtime styling dependencies"
-    npm install --save-exact \
+    # shellcheck disable=SC2206 # NPM_INSTALL_FLAGS is a controlled, space-separated flag list.
+    extra_flags=(${NPM_INSTALL_FLAGS})
+    npm install --save-exact "${extra_flags[@]}" \
       "${CORE_TARBALL}" \
       "${TOKENS_TARBALL}" \
       "${UI_TARBALL}" \
@@ -115,7 +124,9 @@ prepare_consumer() {
     # tarball content is always picked up. The rest of node_modules and
     # ios/Pods are left intact for incremental installs/builds.
     rm -rf node_modules/@beeui
-    npm install --save-exact \
+    # shellcheck disable=SC2206 # NPM_INSTALL_FLAGS is a controlled, space-separated flag list.
+    extra_flags=(${NPM_INSTALL_FLAGS})
+    npm install --save-exact "${extra_flags[@]}" \
       "${CORE_TARBALL}" \
       "${TOKENS_TARBALL}" \
       "${UI_TARBALL}"
