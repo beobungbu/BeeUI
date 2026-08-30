@@ -162,7 +162,10 @@ appId: com.beeui.showcase
 - inputText: "runtime-keyboard"
 - assertVisible:
     text: "runtime-keyboard"
-- hideKeyboard
+# Maestro's hideKeyboard helper is unreliable on iOS Simulator. Dismiss using
+# an explicit non-interactive label adjacent to the focused input instead.
+- tapOn:
+    text: "Runtime input"
 
 - scrollUntilVisible:
     element:
