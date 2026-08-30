@@ -20,6 +20,13 @@ appId: com.beeui.showcase
       - assertVisible:
           id: "showcase-home"
 
+# Home is intentionally scrollable at large Dynamic Type scales. Never assume
+# lower catalog launchers remain inside the viewport after returning home.
+- scrollUntilVisible:
+    element:
+      id: "showcase-open-patterns"
+    direction: DOWN
+- waitForAnimationToEnd
 - tapOn:
     id: "showcase-open-patterns"
 - assertVisible:
