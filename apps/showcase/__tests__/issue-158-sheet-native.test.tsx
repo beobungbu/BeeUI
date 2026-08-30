@@ -24,33 +24,9 @@ import {
 // and accessibility relationship registration — not gorhom's own physics,
 // which real native runtime acceptance (#160) owns.
 
-// react-native-reanimated v4's own official mock (`react-native-reanimated/mock`)
-// still pulls in the real `react-native-worklets` native module chain, which
-// throws outside a real native runtime. This hand-rolled mock covers exactly
-// the seam `sheet.native.tsx` uses (a stable `AnimatedPressable`, a
-// pass-through `useAnimatedStyle`, and the `ReduceMotion`/`Extrapolation`
-// enums/`interpolate` helper) without touching the native worklets runtime.
-jest.mock('react-native-reanimated', () => {
-  const ReactActual = require('react');
-
-  return {
-    __esModule: true,
-    default: {
-      createAnimatedComponent: (Component: unknown) =>
-        ReactActual.forwardRef((props: object, ref: unknown) =>
-          ReactActual.createElement(Component as never, { ...props, ref }),
-        ),
-    },
-    Extrapolation: { CLAMP: 'clamp' },
-    ReduceMotion: { Always: 'always', Never: 'never', System: 'system' },
-    interpolate: (value: number, input: number[], output: number[]) => {
-      if (value <= input[0]) return output[0];
-      if (value >= input[input.length - 1]) return output[output.length - 1];
-      return output[0];
-    },
-    useAnimatedStyle: (factory: () => object) => factory(),
-  };
-});
+// `react-native-reanimated` is mocked globally in `jest.setup.ts` (needed by
+// every suite that imports `@beeui/ui`, not just this one — see that file's
+// docblock) so this suite does not redeclare its own copy.
 
 type MockBackdropProps = { animatedIndex: { value: number } };
 type MockHandleProps = Record<string, never>;

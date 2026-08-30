@@ -168,6 +168,11 @@ export const FIXED_HEIGHT_ALLOWLIST: Record<
     classes: { 'h-px': 1 },
     rationale: 'Decorative 1px divider line; carries no text.',
   },
+  'sheet.native.tsx': {
+    classes: { 'h-1': 1 },
+    rationale:
+      "#158's native `SheetHandle` re-implementation (rendered through gorhom's own `handleComponent` slot, see the file's module docblock) reuses the exact same decorative pill-shaped handle as sheet.tsx's, including its \"h-1.5\" class (recorded as \"h-1\" by this scanner's non-decimal-aware boundary, same as sheet.tsx/sheet.web.tsx). Same rationale: a decorative fixed-size marker with no text, hidden from assistive tech.",
+  },
   'sheet.tsx': {
     classes: { 'h-1': 1 },
     rationale:
