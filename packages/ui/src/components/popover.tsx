@@ -8,7 +8,6 @@ import {
 import { layer } from '@beeui/tokens';
 import * as React from 'react';
 import {
-  I18nManager,
   Pressable,
   StyleSheet,
   View,
@@ -16,6 +15,7 @@ import {
   type ViewProps,
 } from 'react-native';
 import { Button, type ButtonProps } from './button';
+import { resolveDirection } from './use-direction';
 import {
   OverlayDismissLayer,
   OverlayPortal,
@@ -197,7 +197,7 @@ export const PopoverContent = React.forwardRef<React.ComponentRef<typeof View>, 
       className,
       closeOnOutsidePress = true,
       collisionPadding = 8,
-      direction = I18nManager.isRTL ? 'rtl' : 'ltr',
+      direction = resolveDirection(),
       flip = true,
       importantForAccessibility,
       nativeID,
