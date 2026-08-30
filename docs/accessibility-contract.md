@@ -39,8 +39,8 @@ strongest evidence class desired. Concretely:
 | Dynamic Type / font scaling | `docs/dynamic-type.md` | #143 | Closed | Deterministic contract + browser interaction (Web) + native runtime (Android emulator, real OS font-scale) |
 | Reduced motion | `docs/motion.md` § "Reduced-motion contract", `docs/reduced-motion-acceptance-matrix.md` | #149 | Closed | Deterministic contract (`Animated` spy, `issue-149-reduced-motion-acceptance.test.tsx`) + browser interaction (`motion-reduced.spec.ts`, `reduced-motion-acceptance-showcase.spec.ts`, plus the existing per-component Sheet/Tooltip specs) — the full per-component breakdown lives in `docs/reduced-motion-acceptance-matrix.md`, including the one genuine gap that sweep fixed (Dialog/AlertDialog's `animationType` now composes the ambient signal) |
 | RTL / logical direction | `docs/decisions/004-direction-architecture.md` (ADR-004, accepted) | #141 (overlay acceptance), #142 (component stress matrix) | **Both open** — no cross-cutting acceptance matrix yet | Deterministic contract (`use-direction.ts` precedence, `logical-direction.test.tsx`) + browser interaction (per-component Playwright specs — see the per-component sections below); RTL is implemented and exercised, but there is no single consolidated matrix document the way #146 exists for keyboard |
-| VoiceOver (iOS) | — | #147 | **Open** | None recorded (see "Native screen readers") |
-| TalkBack (Android) | — | #148 | **Open** | None recorded (see "Native screen readers") |
+| VoiceOver (iOS) | `docs/voiceover-release-matrix.md` | #147 | **Open** | Deterministic contract (see the matrix's Part A) + a documented manual release-gate checklist (Part B); no assistive-technology evidence recorded (see "Native screen readers") |
+| TalkBack (Android) | `docs/talkback-release-matrix.md` | #148 | **Open** | Deterministic contract (see the matrix's Part A) + a documented manual release-gate checklist (Part B); no assistive-technology evidence recorded (see "Native screen readers") |
 | Localization / long-content stress | — | #144 | **Open** | Not evaluated by this document |
 
 Do not read the "Closed" rows above as claiming certification beyond what each canonical
@@ -412,12 +412,17 @@ entries** for any component. Every accessibility claim in this document and in
 currently **open** issues that would produce the first real assistive-technology evidence
 class entries — a repeatable checklist, recorded device/simulator/build/SHA, and explicit
 per-flow pass/fail for Form entry/error, Dialog/AlertDialog, Popover/Select/Tooltip, Toast
-announcement, Sheet, Table/DataTable, and Calendar/DatePicker/DateTimePicker. Until those
-land, do not describe any BeeUI component as VoiceOver- or TalkBack-verified beyond "its
-requested accessibility props are asserted by a deterministic test" — several component
-docs already say this explicitly (`docs/components.md` § "Select contract"); this document
-extends the same honesty to every other interactive component rather than leaving it
-implicit.
+announcement, Sheet, Table/DataTable, and Calendar/DatePicker/DateTimePicker.
+`docs/voiceover-release-matrix.md` and `docs/talkback-release-matrix.md` now exist and
+define exactly that checklist plus the deterministic-contract evidence already backing its
+automatable half; neither has a completed evidence-log entry yet, because no real-device
+VoiceOver/TalkBack run has been executed for a release-candidate build (device-cloud
+automation was researched and explicitly not adopted for 1.0 — see those two documents'
+"Evidence-honesty rule" sections). Until a run is recorded, do not describe any BeeUI
+component as VoiceOver- or TalkBack-verified beyond "its requested accessibility props are
+asserted by a deterministic test" — several component docs already say this explicitly
+(`docs/components.md` § "Select contract"); this document extends the same honesty to
+every other interactive component rather than leaving it implicit.
 
 ## Evidence index
 
@@ -450,7 +455,10 @@ implicit.
   compose the ambient reduced-motion signal) and recorded explicit no-motion rationale,
   with real evidence, for every other animated/anchored-overlay surface.
 - **No assistive-technology (VoiceOver/TalkBack) evidence exists for any component**
-  (#147/#148 open) — see "Native screen readers" above.
+  (#147/#148 open) — see "Native screen readers" above. The release-gate checklists and
+  their deterministic-contract backing now exist (`docs/voiceover-release-matrix.md`,
+  `docs/talkback-release-matrix.md`); what remains open is executing them against a
+  release-candidate build and recording the result.
 - **Localization/long-content stress suite is open** (#144) — this document does not
   evaluate long-string/CJK/complex-script wrapping behavior beyond what
   `docs/dynamic-type.md`'s wrap-vs-truncation policy already covers for stress-length
