@@ -35,3 +35,14 @@ PR #315 therefore keeps the scroll-gesture dismissal variant Android-only
 outside-press + popover-closed scroll + reopen. See
 [[beeui-github-hosted-ci-migration]] and
 [[beeui-overlay-dismiss-layer-contract]].
+
+**Status 2026-08-30: #126 PARKED by owner at PR #315 head 934963d** (blocks
+nothing; #127/#59 merged with deterministic evidence). Known remaining
+failure points at that head (run 33321952665), deliberately NOT fixed:
+(1) android-runtime: `scrollUntilVisible` DOWN to
+`runtime-stress-scroll-target` times out at 20s (popover flow itself now
+green after pixel_7 + keyboard-toggle fixes); (2) ios-runtime: post-scroll
+popover reopen still lands on the blank-render (even with the popover
+CLOSED during the scroll — so mid-gesture dismiss-layer unmount is NOT the
+only trigger; any long Maestro scroll on this screen may blank the headless
+sim). Owner is filing the iOS blank-render as its own tracking issue.
