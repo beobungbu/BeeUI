@@ -8,21 +8,18 @@ import { awaitSettledModalOwners } from '../src/a11y-scenarios';
 // before the allowed dialog role lands (role is applied when the entrance
 // completes). An axe scan inside that window reports a transient critical
 // `aria-allowed-attr` violation that no settled DOM exhibits — the #280
-// misdiagnosis. This spec pins both halves of the corrected understanding:
+// readiness race. Coverage is deliberately split in two:
 //
-//   1. (unconditional) after `awaitSettledModalOwners`, the DOM holds a
-//      settled `[role="dialog"][aria-modal="true"]` owner and zero
-//      `aria-modal` nodes without an allowed dialog role — the exact state
-//      the dialog-overlay a11y scenario now requires before invoking axe;
-//   2. (lifecycle, when observable) any roleless `aria-modal` node captured
-//      by a MutationObserver installed *before* the dialog opens either
-//      gains an allowed role or disconnects — i.e. the transient state is
-//      entrance-lifecycle, not a persistent product defect.
+//   1. the real Showcase/RNW integration test installs a MutationObserver
+//      before opening the dialog, verifies the settled state unconditionally,
+//      and records whether the timing-dependent transient was observed;
+//   2. a deterministic synthetic lifecycle test starts from the exact invalid
+//      intermediate DOM shape and proves awaitSettledModalOwners() does not
+//      consider the overlay ready until the dialog role lands.
 //
-// The transient window is timing-dependent (a fast render can close it
-// before the observer's microtask sees it), so assertion 2 only runs when a
-// transient node was actually captured; assertion 1 is the contract that
-// must always hold and is what the a11y scenario synchronizes on.
+// This keeps the production synchronization state-based (no sleeps and no
+// allowlist) while making the regression proof deterministic even on browsers
+// where RNW's transient window closes before MutationObserver delivery.
 
 const showcaseBaseUrl = 'http://127.0.0.1:4174';
 
@@ -72,7 +69,6 @@ test('dialog-overlay a11y scenario readiness: modal owner settles into role="dia
   await page.getByRole('button', { name: 'Open Dialog' }).click();
   await awaitSettledModalOwners(page);
 
-  // 1. Unconditional settled-state contract (what the a11y scenario scans).
   const settled = await page.evaluate(() => ({
     owners: document.querySelectorAll('[role="dialog"][aria-modal="true"], [role="alertdialog"][aria-modal="true"]').length,
     unsettled: Array.from(document.querySelectorAll('[aria-modal="true"]')).filter((node) => {
@@ -83,8 +79,6 @@ test('dialog-overlay a11y scenario readiness: modal owner settles into role="dia
   expect(settled.owners).toBeGreaterThanOrEqual(1);
   expect(settled.unsettled).toBe(0);
 
-  // 2. Lifecycle disposition of any captured transient owner: it must have
-  // settled into an allowed role or left the DOM — never persisted invalid.
   const probe = await page.evaluate(() => {
     const captured = (window as unknown as {
       __beeuiModalProbe: { sawTransient: boolean; nodes: Element[] };
@@ -104,4 +98,43 @@ test('dialog-overlay a11y scenario readiness: modal owner settles into role="dia
     type: 'rnw-modal-transient-observed',
     description: String(probe.sawTransient),
   });
+});
+
+test('awaitSettledModalOwners deterministically waits through roleless aria-modal intermediate state', async ({ page }) => {
+  await page.setContent('<div id="modal-owner" aria-modal="true">Dialog content</div>');
+
+  // Pin the exact #280 intermediate DOM shape before starting the waiter.
+  const transient = await page.evaluate(() => {
+    const owner = document.getElementById('modal-owner');
+    return {
+      ariaModal: owner?.getAttribute('aria-modal'),
+      role: owner?.getAttribute('role'),
+    };
+  });
+  expect(transient).toEqual({ ariaModal: 'true', role: null });
+
+  // Mutate on the next animation frame, mirroring RNW's entrance lifecycle.
+  // Promise.all ensures the readiness waiter is already active while the DOM
+  // is still transient; it can only resolve after the role mutation satisfies
+  // its state predicate.
+  const roleLands = page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          document.getElementById('modal-owner')?.setAttribute('role', 'dialog');
+          resolve();
+        });
+      }),
+  );
+
+  await Promise.all([awaitSettledModalOwners(page), roleLands]);
+
+  const finalState = await page.evaluate(() => {
+    const owner = document.getElementById('modal-owner');
+    return {
+      ariaModal: owner?.getAttribute('aria-modal'),
+      role: owner?.getAttribute('role'),
+    };
+  });
+  expect(finalState).toEqual({ ariaModal: 'true', role: 'dialog' });
 });
