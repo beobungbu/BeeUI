@@ -171,6 +171,12 @@ jobs:
         run: bash ./scripts/runtime-smoke/install-maestro.sh
 
       - name: Run Android Emulator smoke
+        env:
+          # The runtime AVD is x86_64. Building every RN ABI while the emulator
+          # is alive needlessly competes with SystemUI for CPU/RAM and can turn
+          # an infrastructure starvation event into a false app failure.
+          ORG_GRADLE_PROJECT_reactNativeArchitectures: x86_64
+          GRADLE_OPTS: -Dorg.gradle.workers.max=2
         run: bash ./scripts/runtime-smoke/android.sh
 
       - name: Upload Android runtime evidence
