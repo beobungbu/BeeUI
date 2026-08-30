@@ -754,6 +754,31 @@
       "peerDependencies": { "react": ">=19.0.0", "react-native": ">=0.85.0" }
     },
     {
+      "name": "table",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/table.tsx",
+          "target": { "root": "components", "path": "table.tsx" },
+          "transforms": ["rewrite-beeui-core-cn"]
+        },
+        {
+          "source": "packages/ui/src/components/table.web.tsx",
+          "target": { "root": "components", "path": "table.web.tsx" },
+          "transforms": ["rewrite-beeui-core-cn"]
+        },
+        {
+          "source": "packages/ui/src/components/table-shared.ts",
+          "target": { "root": "components", "path": "table-shared.ts" },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": ["core-cn", "text", "theme", "use-required-callback-warning"],
+      "dependencies": {},
+      "peerDependencies": { "react": ">=19.0.0", "react-native": ">=0.85.0" }
+    },
+    {
       "name": "tabs",
       "type": "component",
       "public": true,
