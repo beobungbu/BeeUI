@@ -105,7 +105,10 @@ prepare_consumer() {
     echo "::group::Install BeeUI tarballs and runtime styling dependencies"
     # shellcheck disable=SC2206 # NPM_INSTALL_FLAGS is a controlled, space-separated flag list.
     extra_flags=(${NPM_INSTALL_FLAGS})
-    npm install --save-exact "${extra_flags[@]}" \
+    # Expand a possibly-empty array safely under `set -u`: on bash 3.2 (the macOS
+    # ios-native runner) a bare "${extra_flags[@]}" over an empty array is an
+    # unbound-variable error. The ${arr[@]+"${arr[@]}"} idiom is portable.
+    npm install --save-exact ${extra_flags[@]+"${extra_flags[@]}"} \
       "${CORE_TARBALL}" \
       "${TOKENS_TARBALL}" \
       "${UI_TARBALL}" \
@@ -126,7 +129,10 @@ prepare_consumer() {
     rm -rf node_modules/@beeui
     # shellcheck disable=SC2206 # NPM_INSTALL_FLAGS is a controlled, space-separated flag list.
     extra_flags=(${NPM_INSTALL_FLAGS})
-    npm install --save-exact "${extra_flags[@]}" \
+    # Expand a possibly-empty array safely under `set -u`: on bash 3.2 (the macOS
+    # ios-native runner) a bare "${extra_flags[@]}" over an empty array is an
+    # unbound-variable error. The ${arr[@]+"${arr[@]}"} idiom is portable.
+    npm install --save-exact ${extra_flags[@]+"${extra_flags[@]}"} \
       "${CORE_TARBALL}" \
       "${TOKENS_TARBALL}" \
       "${UI_TARBALL}"
