@@ -58,8 +58,48 @@ test('ios-runtime: pinpoints the Maestro assertion failure, not the tail', () =>
   );
   assert.match(
     result.stdout,
-    /^Classification: iOS: Maestro runtime assertion failed/m,
-    'must classify as an iOS Maestro runtime failure',
+    /^Classification: iOS: Maestro command failed/m,
+    'must classify as an iOS Maestro runtime failure (the "... FAILED" command line precedes the detailed assertion message)',
+  );
+});
+
+test('android-runtime: pinpoints adb device-offline, not an early benign daemon-connect blip or the tail', () => {
+  const result = runOnFixture('android-runtime-adb-device-offline.txt');
+  assert.equal(result.status, 1, 'a real failure must exit non-zero');
+  assert.match(
+    result.stdout,
+    /^>> adb: device offline$/m,
+    'must surface the persistent device-offline symptom, not just the transient "Unable to connect to adb daemon" startup blip',
+  );
+  assert.match(
+    result.stdout,
+    /^Classification: Android: emulator device offline \/ adb not ready/m,
+    'must classify as an Android emulator/adb device-offline failure',
+  );
+});
+
+test('ios-runtime: pinpoints the Maestro "Hide Keyboard" command failure, not a benign CocoaPods [!] notice or a framework header path', () => {
+  const result = runOnFixture('ios-runtime-maestro-hide-keyboard-failed.txt');
+  assert.equal(result.status, 1, 'a real failure must exit non-zero');
+  assert.match(
+    result.stdout,
+    /^>> Hide Keyboard\.\.\. FAILED$/m,
+    'must surface the true root-cause Maestro command failure line',
+  );
+  assert.match(
+    result.stdout,
+    /^Classification: iOS: Maestro command failed: Hide Keyboard\.\.\. FAILED$/m,
+    'must classify as an iOS Maestro command failure',
+  );
+  assert.doesNotMatch(
+    result.stdout,
+    /Please close any current Xcode sessions/,
+    'the benign advisory CocoaPods [!] notice must never be reported as a root cause',
+  );
+  assert.doesNotMatch(
+    result.stdout,
+    /npm dependency resolution error/,
+    'a bundled framework header path must never false-positive as an npm/ERESOLVE error',
   );
 });
 
