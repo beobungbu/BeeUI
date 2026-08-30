@@ -35,6 +35,14 @@ BeeUI currently includes:
 
 The canonical component inventory lives in [`docs/components.md`](docs/components.md). The production-readiness plan lives in [`docs/roadmap.md`](docs/roadmap.md).
 
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for local setup, required gates, and BeeUI's
+architecture invariants (Rule of Two, semantic-token/brand-blind rule, no-self-merge
+review discipline). Participation is governed by
+[`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). Report security issues privately per
+[`SECURITY.md`](SECURITY.md) — do not open a public issue for a vulnerability.
+
 ## Production pattern coverage
 
 | Pack | Screens |

@@ -1,0 +1,65 @@
+name: Bug report
+description: Something in a BeeUI component or tool behaves incorrectly.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. If this is a **security vulnerability**, stop —
+        do not file it here. Follow [SECURITY.md](../../SECURITY.md) instead.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: >
+        Minimal steps to reproduce, ideally a code snippet or a link to a minimal
+        repro repository. Include the exact BeeUI component(s) involved.
+      placeholder: |
+        1. Render <Component .../>
+        2. Do X
+        3. Observe Y instead of Z
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Platform, versions, and how you consume BeeUI.
+      placeholder: |
+        - Platform: iOS Simulator / Android Emulator / physical device / Web (browser + version)
+        - React Native / Expo SDK version:
+        - React version:
+        - Node version (see .nvmrc):
+        - BeeUI consumption: workspace package / packed tarball / Registry-copied source (which components)
+        - OS:
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: >
+        Screenshot, screen recording, failing test output, or console/log output.
+        State the evidence class (see docs/beeui-1.0-evidence-classes.md) — e.g. "Web
+        Playwright test failure" vs. "iOS Simulator visual only" — do not overstate what
+        you actually observed.
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: This is not a security vulnerability (those go to SECURITY.md).
+          required: true

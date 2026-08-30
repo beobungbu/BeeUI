@@ -1,0 +1,10 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability report
+    url: https://github.com/beobungbu/BeeUI/security/advisories/new
+    about: >-
+      Do not file security vulnerabilities as public issues. Use GitHub's private
+      security advisory workflow (see SECURITY.md) instead.
+  - name: Program tracker (#114)
+    url: https://github.com/beobungbu/BeeUI/issues/114
+    about: BeeUI 1.0 program status, owner-locked gates, and execution authorities.
