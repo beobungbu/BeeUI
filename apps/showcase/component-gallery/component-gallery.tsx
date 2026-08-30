@@ -458,7 +458,24 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
         />
       </SafeArea>
 
-      <SafeArea className="flex-1" edges={['left', 'right']}>
+      {/*
+        #281 — `min-h-24` is a rem-scaled floor (matches the row/text
+        scaling contract, so it keeps pace at any zoom) that stops this
+        flex:1 scroll region from being squeezed toward zero when the
+        pinned AppHeader above and BottomActionBar below both grow at large
+        text / zoom. Without it, once combined header+bar height leaves
+        less room than a single row needs, `scrollIntoView` can only
+        partially reveal that row, and hit-testing at its (unclipped)
+        geometric center lands on the BottomActionBar's real on-screen
+        rect — reported as the bar "intercepting pointer events" for
+        content that's actually just been squeezed out of its own
+        viewport. The floor keeps the scroll region a real, usable size;
+        on the rare device/zoom combination where total content still
+        exceeds the viewport, the page falls back to ordinary
+        document-level scrolling instead of corrupting hit-testing for
+        in-view content.
+      */}
+      <SafeArea className="flex-1 min-h-24" edges={['left', 'right']}>
         <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
           <Box className="mx-auto w-full max-w-3xl gap-10 px-5 py-8">
             <AlertBanner
