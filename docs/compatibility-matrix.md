@@ -74,9 +74,18 @@ whether that promise is justified.
 - **Node 22 CLI verification**: decided (#134) to narrow the promise to Node 24 only
   instead of adding an unproven CI job; no CI job exists yet. Revisit if a real Node 22
   requirement emerges.
-- **Compatibility CI scheduling** (a dedicated recurring job that actually runs
-  alternate rows, as opposed to this document's drift check against the single row this
-  repo already builds): owned by [#137](https://github.com/beobungbu/BeeUI/issues/137).
+- **Compatibility CI scheduling** ([#137](https://github.com/beobungbu/BeeUI/issues/137)):
+  implemented. `.github/workflows/ci.yml` and `runtime-native.yml` already re-run the
+  pinned RN 0.86.2 row nightly from clean state; `compat-rn-0-87.yml` now additionally
+  runs the RN 0.87 alternate row nightly (`52 3 * * *`) so drift in that excluded row
+  (e.g. an upstream fix landing) is caught automatically instead of only on manual
+  dispatch or the `ci:rn-0.87` label, and `web-consumer.yml` runs the independent Web
+  consumer row (#136) weekly (`22 4 * * 1`) in addition to every PR/push. Each of these
+  workflows accepts a `workflow_dispatch` `release_candidate` input: on `compat-rn-0-87`
+  this turns off the Android leg's `continue-on-error` waiver so a release-candidate
+  check cannot silently pass on a known-diagnosed failure. Every scheduled/dispatched run
+  records the exact checked-out SHA and its row name in the job summary, and none of
+  these triggers run on ordinary pull requests, so docs-only PRs stay unaffected.
 - **Mechanically synchronized compatibility documentation** beyond this file's own
   drift check (e.g. generating package README compatibility tables from this file):
   owned by [#138](https://github.com/beobungbu/BeeUI/issues/138).
