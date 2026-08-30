@@ -254,6 +254,26 @@ export {
 } from './components/stepper';
 export { Switch, type SwitchProps } from './components/switch';
 export {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+  type TableBodyProps,
+  type TableCaptionProps,
+  type TableCellProps,
+  type TableFooterProps,
+  type TableHeadProps,
+  type TableHeaderProps,
+  type TableLayout,
+  type TableProps,
+  type TableRowProps,
+  type TableSortDirection,
+} from './components/table';
+export {
   Tabs,
   TabsContent,
   TabsList,
