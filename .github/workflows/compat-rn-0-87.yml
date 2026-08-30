@@ -5,13 +5,19 @@ name: compat-rn-0-87
 # every ordinary PR. It reuses the exact same bare-consumer contract as the
 # repo's own pinned RN 0.86.2 row (scripts/verify-bare-consumer.sh,
 # docs/native-verification.md) with BEEUI_RN_VERSION overridden to the
-# current RN 0.87 line. This intentionally does not run on push/pull_request:
-# recurring/scheduled re-verification across alternate rows is #137's scope,
-# not this workflow's. Trigger manually (`gh workflow run compat-rn-0-87.yml`)
-# when re-verifying the 0.87 row, e.g. before widening/narrowing the
-# `react-native` peer range in packages/ui/package.json.
+# current RN 0.87 line. Recurring/scheduled re-verification across alternate
+# rows is #137's scope, not this workflow's — this stays opt-in only:
+# - post-merge: `gh workflow run compat-rn-0-87.yml`
+# - pre-merge: add the `ci:rn-0.87` label to a pull request (mirrors the
+#   `ci:native` label pattern in ci.yml/docs/ci-native-classification.md),
+#   since workflow_dispatch cannot target a workflow file that only exists on
+#   a feature branch.
 on:
   workflow_dispatch: {}
+  # Fork PRs never get this: the job `if:` below also requires
+  # same-repo head, matching ci.yml's `ci:native` label pattern.
+  pull_request:
+    types: [labeled, synchronize, opened, reopened]
 
 permissions:
   contents: read
@@ -27,6 +33,12 @@ env:
 
 jobs:
   bare-android-rn87:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        contains(github.event.pull_request.labels.*.name, 'ci:rn-0.87') &&
+        github.event.pull_request.head.repo.full_name == github.repository
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -98,6 +110,12 @@ jobs:
         run: ./scripts/verify-bare-consumer.sh android-build
 
   bare-ios-rn87:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        contains(github.event.pull_request.labels.*.name, 'ci:rn-0.87') &&
+        github.event.pull_request.head.repo.full_name == github.repository
+      )
     runs-on: macos-latest
     timeout-minutes: 90
     env:

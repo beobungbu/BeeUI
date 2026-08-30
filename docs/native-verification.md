@@ -77,11 +77,12 @@ These are real native compile gates. They are not simulator-boot/runtime interac
 contract described above with `BEEUI_RN_VERSION=0.87.1`, proving the current upstream RN line
 independently of the repo's own RN `0.86.2` pin. It adds the Android SDK platform/build-tools
 `37` generation that RN 0.87's template requires (AGP `9.2.1`, Kotlin `2.2.0`, `compileSdk 37`).
-Unlike the jobs above, it is `workflow_dispatch`-only — it does not run on every pull request or
-push, since it duplicates the full native-compile cost of the 0.86 row for a version this repo
-does not itself release. Trigger it manually to re-verify the row (e.g. `gh workflow run
-compat-rn-0-87.yml`). See the "React Native — 0.87.x" row in `docs/compatibility-matrix.md` for
-the evidence classes obtained and the resulting peer-range decision.
+Unlike the jobs above, it does not run on every pull request or push, since it duplicates the
+full native-compile cost of the 0.86 row for a version this repo does not itself release. It is
+opt-in only: `gh workflow run compat-rn-0-87.yml` post-merge, or the `ci:rn-0.87` PR label
+pre-merge (same pattern as `ci:native` in `docs/ci-native-classification.md`). See the "React
+Native — 0.87.x" row in `docs/compatibility-matrix.md` for the evidence classes obtained and the
+resulting peer-range decision.
 
 ## Pull-request scheduling
 
