@@ -99,7 +99,7 @@ If #171 selects a presentation that requires Sheet, update downstream issues wit
 
 ### Optional decisions
 
-- #162 — after stable Sheet; may explicitly defer adaptive Select for 1.0.
+- #162 — Select presentation decision: **decided, deferred**. No product/competitive evidence promotes an adaptive `popover | sheet | dialog | auto` policy; anchored Select remains the accepted 1.0 policy. See `docs/decisions/010-select-presentation-1-0-decision.md` (ADR-010).
 - #163 — Slider decision: **decided, deferred**. No product/competitive evidence promotes it; not required for 1.0. See `docs/decisions/009-slider-1-0-decision.md` (ADR-009).
 
 ## S3 — Final compatibility and cross-component acceptance

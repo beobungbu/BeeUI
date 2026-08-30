@@ -221,7 +221,9 @@ shared-authority source of truth for every row below; it is drift-checked by
 
 # R4C / R4D — explicit optional decisions
 
-- #162 adaptive Select presentation after Sheet; may explicitly defer for 1.0.
+- #162 adaptive Select presentation: **decided, deferred for 1.0** (ADR-010,
+  `docs/decisions/010-select-presentation-1-0-decision.md`) — no product/competitive
+  evidence promotes it; anchored Select remains the accepted 1.0 policy.
 - #163 Slider decision: **decided, deferred for 1.0** (ADR-009,
   `docs/decisions/009-slider-1-0-decision.md`) — no product/competitive evidence
   promotes it; no partial public Slider ships.
