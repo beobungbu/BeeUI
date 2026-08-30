@@ -67,8 +67,6 @@ dynamic_type_run_scale() {
   local scale="$1"
   local slug="${scale/./p}"
   local expected_label
-  # LC_ALL=C pins the decimal separator: the fixture renders toFixed(2) ("1.30"),
-  # which a comma-decimal runner locale would otherwise fail to match.
   expected_label="$(LC_ALL=C printf 'font scale: %.2f' "$scale")"
 
   adb_for_device shell settings put system font_scale "$scale"
@@ -76,9 +74,6 @@ dynamic_type_run_scale() {
   observed_scale="$(adb_for_device shell settings get system font_scale | tr -d '\r')"
   echo "Android font_scale requested=$scale observed=$observed_scale" | tee -a "$ARTIFACT_DIR/dynamic-type-font-scale.log"
 
-  # One deterministic flow per scale: cold relaunch under the new scale, one
-  # tap from home into the fixture, then direct visibility assertions — the
-  # only scroll is over the short home screen to reach the launcher card.
   run_inline_maestro "dynamic-type-${slug}" <<EOF_FLOW
 - launchApp:
     clearState: true
@@ -86,9 +81,6 @@ dynamic_type_run_scale() {
     timeout: 180000
     visible:
       id: "showcase-home"
-# Cold relaunch (clearState) leaves the app cold-bundling; retry the whole
-# open-fixture navigation until the fixture is ready, mirroring the runtime
-# smoke's home-navigation hardening.
 - retry:
     maxRetries: 4
     commands:
@@ -104,8 +96,6 @@ dynamic_type_run_scale() {
             id: "dynamic-type-ready"
           timeout: 15000
 - waitForAnimationToEnd
-# In-app proof the OS font scale reached this process before anything is
-# measured. PixelRatio.getFontScale() is rendered by the fixture itself.
 - assertVisible:
     text: "${expected_label}"
 - assertVisible:
@@ -137,7 +127,9 @@ const rows = lines.map((line) => {
 });
 const expectedScales = [1, 1.3, 1.5, 2];
 for (const target of targets) {
-  const targetRows = rows.filter((row) => row.target === target);
+  const targetRows = rows
+    .filter((row) => row.target === target)
+    .sort((a, b) => a.scale - b.scale);
   if (targetRows.length !== expectedScales.length) {
     throw new Error(`${target}: expected ${expectedScales.length} native scale measurements, got ${targetRows.length}`);
   }
@@ -147,6 +139,17 @@ for (const target of targets) {
       throw new Error(`${target}: missing/non-usable native bounds at ${scale}x`);
     }
   }
+
+  for (let index = 1; index < targetRows.length; index += 1) {
+    const previous = targetRows[index - 1];
+    const current = targetRows[index];
+    if (current.height < previous.height) {
+      throw new Error(
+        `${target}: native rendered height regressed as font scale increased; ${previous.scale}x=${previous.height}, ${current.scale}x=${current.height}`,
+      );
+    }
+  }
+
   const baseline = targetRows.find((row) => row.scale === 1);
   const doubled = targetRows.find((row) => row.scale === 2);
   if (!baseline || !doubled || doubled.height <= baseline.height) {
