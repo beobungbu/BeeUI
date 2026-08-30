@@ -114,6 +114,7 @@ function ThemeToggle() {
       accessibilityLabel={`Theme ${activeTheme}. Switch to ${nextTheme}`}
       onPress={() => Uniwind.setTheme(nextTheme)}
       size="sm"
+      testID="component-gallery-theme-toggle"
       variant="outline"
     >
       {`Theme: ${activeTheme}`}
@@ -437,6 +438,7 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
       <SafeArea className="bg-surface" edges={['top', 'left', 'right']}>
         <AppHeader
           description="Interactive React Native component playground built entirely from the public BeeUI API."
+          testID="component-gallery-header"
           leading={
             <HStack gap="sm">
               <Button
