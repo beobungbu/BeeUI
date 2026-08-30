@@ -284,7 +284,16 @@ export const TableRow = React.forwardRef<React.ComponentRef<typeof View>, TableR
           // keeps its bottom border rather than assuming an unverified
           // Uniwind capability (`TimelineItem` computes "last" in JS for the
           // same reason).
-          'min-h-density-row-height flex-row items-stretch border-b border-border',
+          //
+          // `ios:min-h-touch-target android:min-h-touch-target` mirrors
+          // `ListItem`'s unconditional guard (`list-item.tsx`): rows are the
+          // layout space embedded interactive controls (a sort trigger, a
+          // selection `Checkbox`) render into, so a `compact`-density row must
+          // never drop the tappable region below the accepted native
+          // hit-target floor (ADR-007 "embedded row/cell actions keep >=44dp
+          // touch targets"), on top of `--spacing-density-row-height`'s own
+          // build-time 44px floor (`docs/density.md`).
+          'min-h-density-row-height flex-row items-stretch border-b border-border ios:min-h-touch-target android:min-h-touch-target',
           direction === 'rtl' && 'flex-row-reverse',
           selected && 'bg-surface-raised',
           className,
@@ -384,7 +393,15 @@ export const TableHead = React.forwardRef<React.ComponentRef<typeof View>, Table
       <Pressable
         accessibilityLabel={computedAccessibilityLabel}
         accessibilityRole="button"
-        className="flex-row items-center gap-1 active:opacity-80"
+        // `ios:min-h-touch-target android:min-h-touch-target` (ADR-007
+        // "embedded row/cell actions keep >=44dp touch targets"): the sort
+        // trigger's own content (a label + a small glyph) is shorter than
+        // 44px, so without this guard a compact header row would render a
+        // real, sub-floor tap target. `justify-center` keeps the label
+        // vertically centered once the guard grows the Pressable past its
+        // content height. Matches `Button`/`Input`/`ListItem`'s identical
+        // guard (`docs/dynamic-type.md` "Minimum hit targets survive scale").
+        className="flex-row items-center justify-center gap-1 active:opacity-80 ios:min-h-touch-target android:min-h-touch-target"
         onPress={onSortChange}
       >
         {textNode}
