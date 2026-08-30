@@ -1518,6 +1518,16 @@
           "transforms": [
             "rewrite-beeui-core-cn"
           ]
+        },
+        {
+          "source": "packages/ui/src/components/sheet.native.tsx",
+          "target": {
+            "root": "components",
+            "path": "sheet.native.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
         }
       ],
       "registryDependencies": [
@@ -1529,8 +1539,12 @@
       ],
       "dependencies": {},
       "peerDependencies": {
+        "@gorhom/bottom-sheet": ">=5.2 <6",
         "react": ">=19 <20",
-        "react-native": ">=0.86.0 <0.87.0"
+        "react-native": ">=0.86.0 <0.87.0",
+        "react-native-gesture-handler": ">=2.32 <3",
+        "react-native-reanimated": ">=4.5 <5",
+        "react-native-worklets": ">=0.10 <1"
       }
     },
     {

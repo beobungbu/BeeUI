@@ -227,7 +227,18 @@ Unsupported v1 presentation behavior is intentionally narrow: there is no Sheet 
 
 ## Sheet boundary
 
-`Sheet` remains separately gated because gesture, snap-point, keyboard, safe-area, scrolling, hardware-back, and accessibility behavior need stronger native runtime verification than a centered modal. Native still renders `sheet.tsx`'s cross-platform skeleton (`<Modal>`-based, no gesture) pending #158's `@gorhom/bottom-sheet` adapter.
+`Sheet` remains separately gated because gesture, snap-point, keyboard, safe-area, scrolling, hardware-back, and accessibility behavior need stronger native runtime verification than a centered modal.
+
+### Native implementation (#158, ADR-006)
+
+`sheet.native.tsx` replaces the skeleton's rendering on iOS/Android behind the identical public contract, wrapping the optional `@gorhom/bottom-sheet` adapter (`BottomSheetModal`) instead of RN's `<Modal>`. **Required app-root wiring**: any consumer rendering `Sheet` must wrap its app root in both `GestureHandlerRootView` (`react-native-gesture-handler`) and `BottomSheetModalProvider` (`@gorhom/bottom-sheet`) — see `apps/showcase/App.tsx` for the reference wiring. This is an unavoidable upstream integration cost of the chosen engine (ADR-006), not a BeeUI-invented requirement.
+
+- **Dismissal**: backdrop press (custom `backdropComponent`, `closeOnBackdropPress`), swipe-to-dismiss (`enableSwipeToDismiss` → `enablePanDownToClose`), and Android hardware back all route through `dismissOnRequestClose`/`onRequestClose`. `@gorhom/bottom-sheet` does not integrate `BackHandler` itself, so `sheet.native.tsx` owns the back-press contract directly, reusing the same nested-scope-first dismiss precedence (`ModalOverlayHost`) `DialogContent`/the Web Sheet already document.
+- **Motion**: gorhom's own drag/spring physics drive the sheet; BeeUI adds no second motion engine, only forwards its own already-read `AccessibilityInfo.isReduceMotionEnabled()` signal into gorhom's `overrideReduceMotion` seam.
+- **Handle**: rendered through gorhom's own `handleComponent` slot (required for the real pan-gesture wiring) rather than as a plain child — visually similar to, but structurally distinct from, the Web/skeleton placement.
+- **Known limitations (owed to #160 native runtime acceptance)**: `avoidKeyboard={false}` cannot map to a true "disable keyboard avoidance" behavior (gorhom's `keyboardBehavior` enum has no such option upstream); presenting a Sheet from inside an already-open RN `<Modal>` can render behind the native modal window on iOS without a `react-native-screens` `FullWindowOverlay` (a fourth dependency BeeUI does not add for 1.0 — prefer a BeeUI-native overlay, e.g. Popover, as the opener in that scenario).
+
+### Web implementation (#159, ADR-006)
 
 ### Web implementation (#159, ADR-006)
 
