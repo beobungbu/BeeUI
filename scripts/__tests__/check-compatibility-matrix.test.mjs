@@ -30,6 +30,7 @@ function fixtures() {
         uniwind: '1.10.1',
         'react-native-safe-area-context': '~5.7.0',
         'react-native-teleport': '~1.1.13',
+        'react-native-web': '0.21.0',
       },
     },
     workflowContentsByFile: {
@@ -66,6 +67,7 @@ test('computeActualSnapshot reflects package.json/.nvmrc/CI pins', () => {
     react: '19.2.3',
     reactDom: '19.2.3',
     reactNative: '0.86.2',
+    reactNativeWeb: '0.21.0',
     expoSdkRange: '~57.0.0',
     tailwindcss: '4.3.3',
     uniwind: '1.10.1',
