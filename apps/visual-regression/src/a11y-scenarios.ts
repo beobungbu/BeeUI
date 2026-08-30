@@ -118,6 +118,26 @@ export const a11yScenarios: A11yScenario[] = [
     },
   },
   {
+    name: 'tooltip-open',
+    description:
+      'Tooltip fixture (#152) — a focused trigger with its Tooltip revealed, proving role="tooltip"/aria-describedby produce no automatically detectable violation.',
+    // `navigate` ignores `baseUrl` (the showcase app, `openComponentGallery`'s
+    // target): Tooltip is not yet on the `@beeui/ui` public barrel (ADR-005 —
+    // exporting it would break the showcase's iOS/Android Metro bundling
+    // before #153 lands `tooltip.native.tsx`), so its real-browser evidence
+    // lives in this repo's Web-only `apps/visual-regression` app instead (see
+    // `App.tsx`'s `TooltipFixture`). Both dev servers are already started by
+    // this project's `webServer` config.
+    navigate: async (page) => {
+      await page.goto('http://127.0.0.1:4173/?fixture=tooltip', { waitUntil: 'domcontentloaded' });
+      await page.getByTestId('tooltip-fixture').waitFor({ state: 'visible' });
+      // Focus opens immediately (no delay, ADR-005) — the deterministic way to
+      // get `TooltipContent` mounted for the scan without timing dependence.
+      await page.getByTestId('tooltip-default-trigger').focus();
+      await page.getByRole('tooltip').waitFor({ state: 'visible' });
+    },
+  },
+  {
     name: 'component-gallery-table',
     description:
       'Component Gallery — Table section: a real HTML table with a sortable/selectable header and its `layout="stacked"` presentation.',

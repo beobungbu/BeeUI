@@ -63,6 +63,21 @@ import {
 } from '@beeui/ui';
 import { applyDensity, defaultDensityMode, densityModes, type DensityMode } from '@beeui/tokens';
 import * as React from 'react';
+// #152 — `Tooltip`/`TooltipTrigger`/`TooltipContent` are not yet on the
+// `@beeui/ui` public barrel (ADR-005 implementation consequences: exporting a
+// Web-only composition from the shared `packages/ui/src/index.ts` barrel would
+// break Metro's iOS/Android module resolution for `apps/showcase`, which
+// re-exports that same barrel, before #153 adds `tooltip.native.tsx`). This
+// fixture is the one deliberate, documented exception to this file's usual
+// "from @beeui/ui primitives only" convention — `apps/visual-regression` never
+// builds for iOS/Android (`build:web` only), so the deep import is safe here
+// and unblocks real browser evidence for #152 without touching the shared
+// barrel. Switch back to `@beeui/ui` once #155 exports it.
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '../../packages/ui/src/components/tooltip.web';
 import { Uniwind } from 'uniwind';
 import {
   isVisualScenarioId,
@@ -103,13 +118,19 @@ function readDataTypographyQuery() {
 // array is multiplied by every canonical theme/viewport project, and none of
 // these four fixtures need that full cross-product (see each fixture's own
 // spec file for exactly which combinations it captures).
-type FixtureId = 'density' | 'dataviz-brands' | 'scoped-preview' | 'high-contrast-focus';
+type FixtureId =
+  | 'density'
+  | 'dataviz-brands'
+  | 'scoped-preview'
+  | 'high-contrast-focus'
+  | 'tooltip';
 
 const fixtureIds: readonly FixtureId[] = [
   'density',
   'dataviz-brands',
   'scoped-preview',
   'high-contrast-focus',
+  'tooltip',
 ];
 
 function isFixtureId(value: string | null): value is FixtureId {
@@ -915,6 +936,65 @@ function DataTypographyFixture() {
   );
 }
 
+// #152 — real-browser evidence for the Tooltip Web contract
+// (`docs/decisions/005-tooltip-contract.md`): pointer hover with a default
+// 500ms open delay, keyboard focus with no delay, a fast-delay instance so
+// timing assertions do not need arbitrary long waits, and a controlled
+// instance proving `open`/`onOpenChange` plumb through unchanged.
+function TooltipFixture() {
+  const [controlledOpen, setControlledOpen] = React.useState(false);
+
+  return (
+    <Box className="min-h-screen gap-6 bg-surface p-6" testID="tooltip-fixture">
+      <Box className="gap-1">
+        <Text variant="title">Tooltip</Text>
+        <Text tone="muted" variant="caption">
+          BeeUI issue #152 — Web hover/focus/Escape behavior
+        </Text>
+      </Box>
+
+      <Card className="min-h-32 items-start justify-center gap-3" padding="lg" variant="raised">
+        <Text variant="heading">Default (500ms open / 300ms close)</Text>
+        <Tooltip>
+          <TooltipTrigger testID="tooltip-default-trigger" variant="outline">
+            Hover or focus me
+          </TooltipTrigger>
+          <TooltipContent testID="tooltip-default-content">
+            Saved automatically every 30 seconds
+          </TooltipContent>
+        </Tooltip>
+      </Card>
+
+      <Card className="min-h-32 items-start justify-center gap-3" padding="lg" variant="outlined">
+        <Text variant="heading">Fast delays (quick enter/leave evidence)</Text>
+        <Tooltip closeDelay={60} openDelay={300}>
+          <TooltipTrigger testID="tooltip-fast-trigger" variant="outline">
+            Hover me (300ms)
+          </TooltipTrigger>
+          <TooltipContent testID="tooltip-fast-content">Fast tooltip</TooltipContent>
+        </Tooltip>
+      </Card>
+
+      <Card className="min-h-32 items-start justify-center gap-3" padding="lg" variant="raised">
+        <Text variant="heading">Controlled</Text>
+        <Tooltip onOpenChange={setControlledOpen} open={controlledOpen}>
+          <TooltipTrigger
+            onPress={() => setControlledOpen((value) => !value)}
+            testID="tooltip-controlled-trigger"
+            variant="outline"
+          >
+            Toggle via press
+          </TooltipTrigger>
+          <TooltipContent testID="tooltip-controlled-content">Controlled open state</TooltipContent>
+        </Tooltip>
+        <Text testID="tooltip-controlled-state" tone="muted" variant="caption">
+          {`open: ${controlledOpen}`}
+        </Text>
+      </Card>
+    </Box>
+  );
+}
+
 function Scenario({ scenario }: { scenario: VisualScenarioId }) {
   switch (scenario) {
     case 'foundation':
@@ -960,6 +1040,8 @@ export default function App() {
         <ScopedPreviewFixture theme={theme} />
       ) : fixture === 'high-contrast-focus' ? (
         <HighContrastFocusFixture />
+      ) : fixture === 'tooltip' ? (
+        <TooltipFixture />
       ) : (
         <Scenario scenario={scenario} />
       )}
