@@ -125,26 +125,33 @@ test('ios-native tolerates a skipped boundary job but never bypasses verify or a
   assert.match(workflow, /needs\.verify\.outputs\.ios-native-required == 'true'/);
 });
 
-test('Showcase pod-install caching keys whole-tree snapshots from the fresh prebuild before restore', async () => {
+test('ios-native runs a plain pod install on PATH with no self-hosted snapshot rsync', async () => {
   const { workflow } = await sources();
 
-  assert.match(workflow, /prebuild_hash=/);
-  assert.ok(workflow.includes("find . \\( -type f -o -type l \\) ! -name '.xcode.env.local' -print"));
-  assert.match(workflow, /pods_key=.*prebuild_hash.*lock_hash.*app_hash/s);
-  assert.match(workflow, /pods-cache\/showcase\/xcode-\$\{safe_xcode_version\}\/key-\$\{pods_key\}/);
-  assert.match(workflow, /elif \[ -d "\$cache\/ios" \]/);
-  assert.match(workflow, /rsync -a --delete "\$cache\/ios\/" \.\//);
-  assert.match(workflow, /rsync -a --delete --exclude '\.xcode\.env\.local' \.\/ "\$tmp_cache\/ios\/"/);
-  assert.doesNotMatch(workflow, /ios\/ snapshot restore failed[\s\S]{0,80}rm -rf/);
+  // Github-hosted runners are ephemeral, so the whole-tree post-install ios/
+  // snapshot mechanism (fingerprint the fresh prebuild, rsync-restore, rsync
+  // back to a persistent cache root) cannot survive across jobs. It has been
+  // replaced by a real `pod install` on every run plus the CocoaPods
+  // spec/download cache asserted below.
+  assert.match(workflow, /run: pod install\b/);
+  assert.doesNotMatch(workflow, /\/opt\/homebrew\/bin\/pod install/);
+  assert.doesNotMatch(workflow, /BEEUI_PODS_FRESH/);
+  assert.doesNotMatch(workflow, /pods-cache\/showcase/);
+  assert.doesNotMatch(workflow, /rsync -a --delete/);
 });
 
-test('nightly pod validation bypasses snapshot restore and performs pod install on the fresh prebuild', async () => {
+test('ios-native caches CocoaPods spec/download data and Xcode DerivedData via actions/cache', async () => {
   const { workflow } = await sources();
 
-  assert.match(workflow, /BEEUI_PODS_FRESH: \$\{\{ github\.event_name == 'schedule'/);
-  assert.match(workflow, /if \[ -n "\$\{BEEUI_PODS_FRESH:-\}" \]; then/);
-  assert.match(workflow, /Fresh pod install requested; bypassing ios\/ snapshot restore/);
-  assert.match(workflow, /if \[ "\$restore_ok" -eq 1 \] && cmp -s Pods\/Manifest\.lock Podfile\.lock/);
+  assert.match(workflow, /Cache CocoaPods/);
+  assert.match(workflow, /~\/\.cocoapods/);
+  assert.match(workflow, /~\/Library\/Caches\/CocoaPods/);
+  assert.match(workflow, /key: pods-macos-\$\{\{ hashFiles\('pnpm-lock\.yaml'\) \}\}/);
+
+  assert.match(workflow, /Cache Xcode DerivedData/);
+  assert.match(workflow, /path: ~\/Library\/Developer\/Xcode\/DerivedData/);
+  assert.match(workflow, /key: dd-macos-\$\{\{ hashFiles\('pnpm-lock\.yaml'\) \}\}/);
+  assert.match(workflow, /derived_data="\$HOME\/Library\/Developer\/Xcode\/DerivedData\/showcase/);
 });
 
 test('nightly remains an isolated pristine full-native backstop', async () => {
