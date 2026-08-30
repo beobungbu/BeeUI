@@ -207,3 +207,69 @@ component lane's Jest suites (`perf-*.test.tsx`) also run as part of
 deterministic pass/fail checks with no invented millisecond gate — only
 `pnpm bench:components`'s separate collection step, not the test run itself,
 produces the timing artifact.
+
+## Bundle & package footprint baseline (R5.5, #183)
+
+`scripts/benchmark/footprint.mjs` (`pnpm bench:footprint`) measures *bytes*,
+not *time*, so it deliberately does not go through the scenario
+registry/sampler/statistics pipeline above — there is no warm-up, no samples,
+no percentile, just a real point-in-time size for a fixed layout. It reuses
+this harness's git-provenance helper (`lib/metadata.mjs`) and its
+JSON-plus-human-summary dual-output convention for consistency, and writes to
+the same gitignored `.artifacts/benchmark/` directory
+(`footprint-<sha>.json`).
+
+It reports three things, kept explicitly separate per
+`docs/beeui-1.0-evidence-classes.md`:
+
+1. **Packed tarball sizes.** Real `npm pack --dry-run --json` output (gzip
+   `size`, `unpackedSize`, and a per-file inventory) for every public package
+   (`@beeui/core`, `@beeui/tokens`, `@beeui/ui`) against *today's* actual
+   layout. No package currently has a build step (`exports` point straight at
+   `src/*.ts(x)`), so this packs source, not a built ESM/dist artifact.
+2. **Clean-consumer bundle contribution.** `esbuild` (a devDependency added
+   solely for this script — the sampling harness above stays dependency-free,
+   this measurement genuinely needs a bundler) bundles small synthetic entry
+   points that import only from `@beeui/ui`/`@beeui/core`/`@beeui/tokens`,
+   never the whole monorepo or the showcase app. Every `peerDependency` of
+   `@beeui/ui` (`react`, `react-dom`, `react-native`, and every optional
+   native peer: `@gorhom/bottom-sheet`, `react-native-reanimated`,
+   `react-native-gesture-handler`, `react-native-safe-area-context`,
+   `react-native-teleport`, `react-native-worklets`,
+   `@react-native-community/datetimepicker`, `uniwind`, `tailwindcss`) is
+   marked `external`, so the reported bytes are what `@beeui/ui` itself
+   contributes, not what the consumer's platform already supplies. Web and a
+   native-extension-priority proxy are both run: extensionless imports like
+   `./sheet` are resolved with `.web.tsx` preferred for `web/*` scenarios and
+   `.native.tsx` preferred for `native/*` scenarios, the same platform-file
+   convention Metro/webpack use, without requiring an actual Metro/webpack
+   build. **This is an esbuild-bundled proxy, not a real Metro/webpack/Vite
+   build** — it is reported as bundle-contribution *estimation*, not as
+   bundle/compile evidence, and each scenario also lists the distinct
+   `externalModules` it actually referenced, so optional-peer cost (e.g.
+   Sheet pulling in `@gorhom/bottom-sheet` + `react-native-reanimated` only on
+   the native-priority proxy, never on Web) is visible and separated from
+   BeeUI-owned source bytes rather than folded into one number.
+3. **Granular-import feasibility data for #184.** A `*-direct` scenario per
+   component bypasses the barrel and imports the component's module file
+   directly, showing what a hypothetical subpath export could cost versus
+   today's only-a-full-barrel reality (`web/full-barrel` vs.
+   `web/single-component-via-barrel` are nearly identical today because
+   neither package declares `"sideEffects": false`, so a bundler cannot prove
+   the rest of the barrel is safe to drop — `web/single-component-direct`
+   shows the size if that barrier were removed). This is exactly the input
+   #183's own sequencing note says feeds #184's granular-subpath-export
+   decision.
+
+**Sequencing caveat — read before treating a run as final.** Per
+`docs/roadmap.md`'s package/performance chain
+(`#197 → #198 → (#199 + #200) → #183 → #184 → ...`) and #183's own issue body,
+this script is meant to run against the **release-ready package layout**
+once the distribution ADR (#197), package name reservation (#198), package
+metadata (#199) and package output format (#200) land. As of this baseline
+none of #197/#198/#199/#200 have merged, so every number here is a
+**pre-distribution, source-shaped baseline**: real, reproducible, and useful
+for #184's granular-export decision today, but not yet the final
+release-ready number the full #183 DoD asks for. Re-run
+`pnpm bench:footprint` once #200 lands and replace the recorded baseline in
+`docs/bundle-footprint-baseline.md`.

@@ -28,8 +28,9 @@
     "bench": "node ./scripts/benchmark/cli.mjs",
     "bench:web": "node ./scripts/benchmark/cli.mjs --platform web",
     "bench:native": "node ./scripts/benchmark/cli.mjs --platform native",
-    "bench:test": "node --test ./scripts/__tests__/benchmark-statistics.test.mjs ./scripts/__tests__/benchmark-sampler.test.mjs ./scripts/__tests__/benchmark-registry.test.mjs ./scripts/__tests__/benchmark-runner.test.mjs",
+    "bench:test": "node --test ./scripts/__tests__/benchmark-statistics.test.mjs ./scripts/__tests__/benchmark-sampler.test.mjs ./scripts/__tests__/benchmark-registry.test.mjs ./scripts/__tests__/benchmark-runner.test.mjs ./scripts/__tests__/footprint-analysis.test.mjs",
     "bench:components": "pnpm --filter @beeui/showcase bench && node ./scripts/benchmark/collect-component-results.mjs",
+    "bench:footprint": "node ./scripts/benchmark/footprint.mjs",
     "typecheck": "pnpm hygiene:check && pnpm tokens:check && pnpm tokens:consumption-check && pnpm compat:check && pnpm -r --if-present typecheck",
     "test": "pnpm tokens:test && pnpm compat:test && pnpm bench:test && pnpm --filter @beeui/showcase test && pnpm registry:verify && pnpm registry:test",
     "check": "pnpm typecheck && pnpm test",
@@ -42,6 +43,7 @@
   "devDependencies": {
     "@hyperjump/json-schema": "1.17.8",
     "@types/react": "^19.2.0",
+    "esbuild": "0.28.2",
     "typescript": "~5.9.2"
   }
 }
