@@ -1,0 +1,197 @@
+name: compat-rn-0-87
+
+# Gathers real, current-upstream React Native 0.87 clean-consumer evidence for
+# the R2.3 compatibility row (#131) without adding native-compile cost to
+# every ordinary PR. It reuses the exact same bare-consumer contract as the
+# repo's own pinned RN 0.86.2 row (scripts/verify-bare-consumer.sh,
+# docs/native-verification.md) with BEEUI_RN_VERSION overridden to the
+# current RN 0.87 line. This intentionally does not run on push/pull_request:
+# recurring/scheduled re-verification across alternate rows is #137's scope,
+# not this workflow's. Trigger manually (`gh workflow run compat-rn-0-87.yml`)
+# when re-verifying the 0.87 row, e.g. before widening/narrowing the
+# `react-native` peer range in packages/ui/package.json.
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 24.13.1
+  PNPM_VERSION: 10.15.0
+  # The current upstream React Native line proven by this workflow (#131).
+  # Keep in lockstep with the "React Native — 0.87.x" row in
+  # docs/compatibility-matrix.md.
+  BEEUI_RN_VERSION: 0.87.1
+  BEEUI_RN_CLI_VERSION: 20.2.0
+
+jobs:
+  bare-android-rn87:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      BEEUI_BARE_WORK_ROOT: ${{ github.workspace }}/.beeui-bare-rn87
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pnpm via Corepack
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+      - name: Verify JavaScript toolchain
+        run: |
+          test "$(node --version)" = "v${NODE_VERSION}"
+          test "$(pnpm --version)" = "${PNPM_VERSION}"
+
+      - name: pnpm store dir
+        run: pnpm config set store-dir "$HOME/.pnpm-store"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Java
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.0
+
+      - name: Install Android build dependencies
+        # React Native 0.87's template pins AGP 9.2.1 / Kotlin 2.2.0 with
+        # compileSdk/buildTools 37 (gradle/libs.versions.toml in the
+        # react-native@0.87.1 package), one platform/build-tools generation
+        # ahead of the repo's own RN 0.86.2 row.
+        run: |
+          sdkmanager "platform-tools" \
+            "platforms;android-36" \
+            "platforms;android-37" \
+            "build-tools;36.0.0" \
+            "build-tools;37.0.0" \
+            "ndk;27.1.12297006" \
+            "cmake;3.22.1"
+
+      - name: Prepare true bare React Native 0.87 consumer
+        run: ./scripts/verify-bare-consumer.sh prepare
+
+      - name: Bundle bare RN 0.87 consumer for Android and iOS
+        run: ./scripts/verify-bare-consumer.sh bundle
+
+      - name: Compile bare RN 0.87 Android debug APK
+        run: ./scripts/verify-bare-consumer.sh android-build
+
+  bare-ios-rn87:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    env:
+      BEEUI_BARE_WORK_ROOT: ${{ github.workspace }}/.beeui-bare-rn87
+      XCODE_MIN_VERSION: "26.4"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+
+      - name: Select Xcode ${{ env.XCODE_MIN_VERSION }}+
+        run: |
+          set -euo pipefail
+
+          selected_developer_dir=""
+          selected_version=""
+
+          version_is_supported() {
+            local version="$1" min_version="$2"
+            local major minor min_major min_minor
+            IFS='.' read -r major minor _ <<< "$version"
+            IFS='.' read -r min_major min_minor _ <<< "$min_version"
+            (( ${major:-0} > ${min_major:-0} || \
+               (${major:-0} == ${min_major:-0} && ${minor:-0} >= ${min_minor:-0}) ))
+          }
+
+          for app in $(ls -d /Applications/Xcode*.app 2>/dev/null | sort -rV); do
+            [ -d "$app/Contents/Developer" ] || continue
+            candidate="$app/Contents/Developer"
+            version="$(DEVELOPER_DIR="$candidate" /usr/bin/xcodebuild -version | awk 'NR == 1 { print $2 }')"
+            echo "Found $app -> Xcode $version"
+            if version_is_supported "$version" "$XCODE_MIN_VERSION"; then
+              selected_developer_dir="$candidate"
+              selected_version="$version"
+              break
+            fi
+          done
+
+          if [ -z "$selected_developer_dir" ]; then
+            active_version="$(/usr/bin/xcodebuild -version | awk 'NR == 1 { print $2 }')"
+            echo "::error::compat-rn-0-87 requires Xcode ${XCODE_MIN_VERSION}+. Active Xcode is ${active_version}."
+            exit 1
+          fi
+
+          echo "DEVELOPER_DIR=$selected_developer_dir" >> "$GITHUB_ENV"
+          export DEVELOPER_DIR="$selected_developer_dir"
+          echo "Using Xcode $selected_version at $DEVELOPER_DIR"
+          /usr/bin/xcodebuild -version
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pnpm via Corepack
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+      - name: Verify JavaScript toolchain
+        run: |
+          test "$(node --version)" = "v${NODE_VERSION}"
+          test "$(pnpm --version)" = "${PNPM_VERSION}"
+
+      - name: pnpm store dir
+        run: pnpm config set store-dir "$HOME/.pnpm-store"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - name: Install darwin-arm64 workspace dependencies
+        run: >
+          pnpm install --frozen-lockfile --prefer-offline
+          --store-dir "$HOME/.pnpm-store/beeui-v10"
+
+      - name: Prepare true bare React Native 0.87 consumer for iOS
+        run: ./scripts/verify-bare-consumer.sh prepare
+
+      - name: Compile bare RN 0.87 consumer for iOS Simulator
+        run: |
+          set -euo pipefail
+          log="$RUNNER_TEMP/beeui-bare-ios-rn87-xcodebuild.log"
+          ./scripts/verify-bare-consumer.sh ios-build 2>&1 | tee "$log"
+
+      - name: Upload bare iOS RN 0.87 xcodebuild log
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bare-ios-rn87-xcodebuild-log-${{ github.run_id }}
+          path: ${{ runner.temp }}/beeui-bare-ios-rn87-xcodebuild.log
+          if-no-files-found: warn
+          retention-days: 2

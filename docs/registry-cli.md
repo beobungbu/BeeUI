@@ -83,7 +83,7 @@ Conceptually, each item contains:
   },
   "peerDependencies": {
     "react": ">=19 <20",
-    "react-native": ">=0.86.0"
+    "react-native": ">=0.86.0 <0.88.0"
   }
 }
 ```
@@ -137,7 +137,7 @@ Depending on the requested items, reported requirements can include:
 - `tailwind-merge@3.6.0`
 - `react@>=19 <20`
 - `react-dom@>=19 <20`
-- `react-native@>=0.86.0`
+- `react-native@>=0.86.0 <0.88.0`
 - `react-native-safe-area-context@>=5 <6`
 - `react-native-teleport@>=1.1 <2`
 - `tailwindcss@>=4 <5`
