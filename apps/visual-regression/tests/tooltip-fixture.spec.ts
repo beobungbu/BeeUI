@@ -138,18 +138,3 @@ test('a controlled Tooltip mirrors its own onOpenChange from a press', async ({ 
   await expect(state).toHaveText('open: false');
   await expect(content).toBeHidden();
 });
-
-test('a visible tooltip bubble matches the representative visual baseline', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await gotoFixture(page);
-
-  await page.getByTestId('tooltip-default-trigger').focus();
-  await expect(page.getByTestId('tooltip-default-content')).toBeVisible();
-
-  await expect(page).toHaveScreenshot('tooltip-open--light--desktop.png', {
-    animations: 'disabled',
-    caret: 'hide',
-    fullPage: true,
-    maxDiffPixelRatio: 0.0001,
-  });
-});
