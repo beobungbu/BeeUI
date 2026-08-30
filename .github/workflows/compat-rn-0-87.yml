@@ -90,11 +90,15 @@ jobs:
         # React Native 0.87's template pins AGP 9.2.1 / Kotlin 2.2.0 with
         # compileSdk/buildTools 37 (gradle/libs.versions.toml in the
         # react-native@0.87.1 package), one platform/build-tools generation
-        # ahead of the repo's own RN 0.86.2 row.
+        # ahead of the repo's own RN 0.86.2 row. Android's SDK repository has
+        # no bare "platforms;android-37" package — API level 37's baseline
+        # release is only published as "platforms;android-37.0" (the new
+        # major.minor platform naming Google introduced starting at this
+        # level; "android-36" still has a bare alias, "android-37" does not).
         run: |
           sdkmanager "platform-tools" \
             "platforms;android-36" \
-            "platforms;android-37" \
+            "platforms;android-37.0" \
             "build-tools;36.0.0" \
             "build-tools;37.0.0" \
             "ndk;27.1.12297006" \
