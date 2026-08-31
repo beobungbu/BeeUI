@@ -121,9 +121,20 @@ if [ "$(adb_for_device shell getprop sys.boot_completed 2>/dev/null | tr -d '\r'
 fi
 
 adb_for_device shell input keyevent 82 >/dev/null 2>&1 || true
-adb_for_device shell settings put global window_animation_scale 0
-adb_for_device shell settings put global transition_animation_scale 0
-adb_for_device shell settings put global animator_duration_scale 0
+# The baseline runtime suite must run with normal system motion. The emulator
+# action may disable animations before invoking this script; leaving the scales
+# at zero makes Reanimated enter Reduced Motion in development mode and opens a
+# LogBox warning that can intercept native evidence taps. Reduced-motion behavior
+# has its own acceptance coverage and must not contaminate this baseline.
+adb_for_device shell settings put global window_animation_scale 1.0
+adb_for_device shell settings put global transition_animation_scale 1.0
+adb_for_device shell settings put global animator_duration_scale 1.0
+WINDOW_ANIMATION_SCALE="$(adb_for_device shell settings get global window_animation_scale | tr -d '\r')"
+TRANSITION_ANIMATION_SCALE="$(adb_for_device shell settings get global transition_animation_scale | tr -d '\r')"
+ANIMATOR_DURATION_SCALE="$(adb_for_device shell settings get global animator_duration_scale | tr -d '\r')"
+test "$WINDOW_ANIMATION_SCALE" = "1.0"
+test "$TRANSITION_ANIMATION_SCALE" = "1.0"
+test "$ANIMATOR_DURATION_SCALE" = "1.0"
 ORIGINAL_WM_SIZE="$(adb_for_device shell wm size | tr -d '\r')"
 
 cat > "$ARTIFACT_DIR/metadata.txt" <<EOF_META
@@ -140,6 +151,9 @@ wm_size=$ORIGINAL_WM_SIZE
 acceleration=$ANDROID_ACCEL
 system_image=$SYSTEM_IMAGE
 avd_name=$AVD_NAME
+window_animation_scale=$WINDOW_ANIMATION_SCALE
+transition_animation_scale=$TRANSITION_ANIMATION_SCALE
+animator_duration_scale=$ANIMATOR_DURATION_SCALE
 EOF_META
 
 (
