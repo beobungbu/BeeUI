@@ -201,6 +201,10 @@ import {
   Screen,
   Text,
 } from '@beeui/ui';
+// #204: proves a granular per-component subpath (ADR-012,
+// docs/decisions/012-granular-subpath-exports.md) resolves through Metro
+// from the packed @beeui/ui tarball, not just the barrel import above.
+import { Badge } from '@beeui/ui/badge';
 import * as React from 'react';
 import { ScrollView } from 'react-native';
 
@@ -215,6 +219,7 @@ export default function App() {
           <ScrollView contentContainerStyle={{ padding: 24 }}>
             <Card className="gap-4">
               <Text variant="title">BeeUI bare React Native smoke</Text>
+              <Badge>Granular subpath: @beeui/ui/badge</Badge>
               <Input accessibilityLabel="Project name" placeholder="Project name" />
               <Checkbox checked={checked} label="Enable notifications" onCheckedChange={setChecked} />
               <ChipGroup onValueChange={(value) => setFilter(String(value))} value={filter}>
