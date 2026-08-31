@@ -9,6 +9,9 @@
     "ios": "expo run:ios",
     "android": "expo run:android",
     "web": "expo start --web",
+    "build:web": "expo export --platform web --output-dir dist-web",
+    "bundle:ios": "expo export --platform ios --output-dir dist-ios",
+    "bundle:android": "expo export --platform android --output-dir dist-android",
     "typecheck": "tsc -p tsconfig.json",
     "test": "jest --runInBand",
     "bench": "jest --runInBand --testPathPattern=__tests__/perf-"
