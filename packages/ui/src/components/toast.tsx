@@ -299,10 +299,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 12,
     right: 12,
-    // Keep the native viewport non-collapsing on Android/Fabric. A top/left/right-only
-    // absolute View can resolve to height 0; Android then clips Toast children to the
-    // parent bounds even though iOS can still paint descendants outside those bounds.
-    bottom: 0,
     alignItems: 'center',
     // Layer/z-order contract: toasts float above base content and anchored
     // overlays. On Android `elevation` also governs sibling draw order, so it is
