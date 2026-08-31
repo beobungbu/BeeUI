@@ -1,4 +1,4 @@
-import { ListGroup, Separator } from '@beeui/ui';
+import { ListGroup, Separator } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { PreferenceRow } from '../components/preference-row';
 import { SettingsScreenShell } from '../components/settings-screen-shell';

@@ -13,7 +13,7 @@ if (!config.resolver.platforms.includes('web')) {
   config.resolver.platforms = [...config.resolver.platforms, 'web'];
 }
 
-// @beeui/core, @beeui/tokens, and @beeui/ui publish a `source` exports
+// @beemvp/beeui-core, @beemvp/beeui-tokens, and @beemvp/beeui-ui publish a `source` exports
 // condition alongside their built `dist/` output (#199/#200). Inside this
 // monorepo the workspace-linked packages resolve through node_modules
 // exports too, so without this override Metro would resolve the `browser`

@@ -5,7 +5,7 @@ import {
   resolveBeeRuntimeTheme,
   type BeeBrandName,
   type BeeThemeName,
-} from '@beeui/tokens';
+} from '@beemvp/beeui-tokens';
 import {
   AppHeader,
   Avatar,
@@ -26,7 +26,7 @@ import {
   Screen,
   Text,
   VStack,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { ScrollView } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';

@@ -6,9 +6,9 @@ Tracking issue: #68. Depends on the extensible typed registry from #67
 
 ## What this is
 
-`BeeThemeScope` (`@beeui/ui`) is a thin typed wrapper around Uniwind's own
+`BeeThemeScope` (`@beemvp/beeui-ui`) is a thin typed wrapper around Uniwind's own
 `ScopedTheme` component. It maps a typed `{ brand, appearance }` selection — or
-an already-resolved runtime-theme name — through a `@beeui/tokens` theme
+an already-resolved runtime-theme name — through a `@beemvp/beeui-tokens` theme
 registry, and forwards the resulting Uniwind runtime-theme name to Uniwind's
 `ScopedTheme`. **Uniwind remains the sole runtime theme authority.**
 `BeeThemeScope` owns no React context, no state, and no propagation logic of
@@ -35,7 +35,7 @@ rest of the app."*
 Two typed forms, both narrowed to the supplied (or default) registry:
 
 ```tsx
-import { BeeThemeScope } from '@beeui/ui';
+import { BeeThemeScope } from '@beemvp/beeui-ui';
 
 // 1. Registry selection — brand + appearance, resolved through a registry.
 // Omitting `registry` uses the default beeThemeRegistry (Bee + Violet, #67).
@@ -194,7 +194,7 @@ transport mode is active determines whether a scope reaches portaled content.
 
 `BeeThemeScope` introduces no `React.createContext`, no module-level mutable
 state, and no subscription mechanism of its own. It is a stateless function
-component that resolves a name through a `@beeui/tokens` registry and renders
+component that resolves a name through a `@beemvp/beeui-tokens` registry and renders
 Uniwind's `ScopedTheme`. `apps/showcase/__tests__/issue-68-theme-scope.test.tsx`
 asserts the package export surface is exactly `{ BeeThemeScope }` — no
 accompanying provider or hook.

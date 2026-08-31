@@ -97,7 +97,7 @@ Both fixes are additive (new effects / a new ref-merge callback; no existing pro
 export, or DOM attribute removed) and are covered by:
 
 - the new Playwright tests above (browser interaction evidence);
-- the full existing `@beeui/showcase` Jest/RNTL suite (770 tests) passing unchanged,
+- the full existing `@beemvp/beeui-showcase` Jest/RNTL suite (770 tests) passing unchanged,
   since both fixes are `Platform.OS === 'web'`-gated and the native rendering path is
   untouched (deterministic contract evidence).
 

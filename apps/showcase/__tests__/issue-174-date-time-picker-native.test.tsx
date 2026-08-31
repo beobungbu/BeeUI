@@ -1,5 +1,5 @@
-import { type CalendarDate } from '@beeui/core';
-import { Field } from '@beeui/ui';
+import { type CalendarDate } from '@beemvp/beeui-core';
+import { Field } from '@beemvp/beeui-ui';
 import { fireEvent, render } from '@testing-library/react-native';
 import * as React from 'react';
 import { Platform } from 'react-native';

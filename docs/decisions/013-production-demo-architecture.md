@@ -33,8 +33,8 @@ follow:
   component catalog," so the demo diverges from the Showcase precisely on routing.
 - **Consumer starters (#230–#233), `examples/`.** `examples/expo-package-consumer/App.tsx`
   composes `BeeUIProvider`/`Screen`/`SafeArea` and exercises Input/Checkbox/Select/Tooltip/
-  Dialog/Sheet/Calendar/Table/Toast through the **public `@beeui/ui` barrel only**, resolved
-  through packed tarballs (`@beeui/ui: file:.beeui-tarballs/beeui-ui-0.1.0.tgz`) on the
+  Dialog/Sheet/Calendar/Table/Toast through the **public `@beemvp/beeui-ui` barrel only**, resolved
+  through packed tarballs (`@beemvp/beeui-ui: file:.beeui-tarballs/beeui-ui-0.1.0.tgz`) on the
   pinned Expo SDK 57 / React 19.2.3 / RN 0.86.2 / react-native-web 0.21.0 stack.
 - **The responsive vocabulary, `docs/responsive-layout.md`.** Three semantic classes —
   compact (`< 768px`, phone, no variant), `medium` (`768px`, `md:`), `expanded` (`1280px`,
@@ -55,8 +55,8 @@ mechanism it rests on and the downstream issue that implements it.
   navigation, data/service layer, and application state. Routing, fetching, and global
   state are **application-owned infrastructure**, never pushed into BeeUI public APIs.
 - **Public BeeUI APIs only; no hidden monorepo dependency** (#237 DoD). The app imports from
-  the published package entrypoints (`@beeui/ui`, `@beeui/tokens`, transitively
-  `@beeui/core`) and never from `packages/**/src/**` deep paths or unexported internals.
+  the published package entrypoints (`@beemvp/beeui-ui`, `@beemvp/beeui-tokens`, transitively
+  `@beemvp/beeui-core`) and never from `packages/**/src/**` deep paths or unexported internals.
 - **No duplicate runtime.** No second theme, direction, overlay, or Sheet runtime
   (#258/#259/#263 constraints). Theme/density/direction/text-scale wire to the **existing**
   BeeUIProvider + Uniwind + `use-direction` runtimes.
@@ -65,10 +65,10 @@ mechanism it rests on and the downstream issue that implements it.
   are timezone-free and date-only values must not silently drift a day (ADR-008); overlay
   modal-vs-anchored policy follows ADR-002; direction resolves through `useDirection()`
   (ADR-004).
-- **Unpublished status must stay truthful.** Per ADR-011 and `docs/release.md`, `@beeui/*`
+- **Unpublished status must stay truthful.** Per ADR-011 and `docs/release.md`, `@beemvp/beeui-*`
   are pre-publication (`private: true`). The demo may dogfood the **published package shape**
   but must make **no false npm claim** — exactly as the Showcase build-identity note already
-  states ("The @beeui/* packages and beeui CLI are not on npm yet").
+  states ("The @beemvp/beeui-* packages and beeui CLI are not on npm yet").
 - **Mobile-first responsive** (#236, #258). Compact phone layout is the base; `medium`/
   `expanded` layouts are progressive enhancements using the ADR / `responsive-layout.md`
   vocabulary, not ad-hoc breakpoint literals.
@@ -88,19 +88,19 @@ source-ownership), **navigation** (app-owned router vs Showcase-style local stat
 
 ### D1 — Consumption model: package-consumption, dogfooding the published shape
 
-The demo consumes BeeUI through the **public package entrypoints** — `@beeui/ui`,
-`@beeui/tokens`, and transitively `@beeui/core` — importing only their exported barrels,
+The demo consumes BeeUI through the **public package entrypoints** — `@beemvp/beeui-ui`,
+`@beemvp/beeui-tokens`, and transitively `@beemvp/beeui-core` — importing only their exported barrels,
 never `packages/**/src/**` deep paths. This **dogfoods the published package shape**
 (ADR-011 D1–D5) that external consumers will see, giving the strongest possible signal that
 the 1.0 public surface is coherent.
 
 - **Design.** The app lives in-repo as **`apps/demo`**, a first-class Expo app parallel to
-  `apps/showcase`. It declares `@beeui/ui`/`@beeui/tokens` as dependencies resolved via the
+  `apps/showcase`. It declares `@beemvp/beeui-ui`/`@beemvp/beeui-tokens` as dependencies resolved via the
   workspace during development (same as `apps/showcase`), but its **import surface is
   identical to a clean consumer**: only public exports. A lint/hygiene rule (#239) forbids
   deep imports, so "in-repo for dev velocity" never leaks into "monorepo-coupled."
 - **Benefits.** Zero pack step in the dev loop (fast iteration) while still exercising the
-  exact public API a `npm i @beeui/ui` consumer gets; reuses `apps/showcase`'s proven Expo
+  exact public API a `npm i @beemvp/beeui-ui` consumer gets; reuses `apps/showcase`'s proven Expo
   wiring; naturally feeds #238's clean-consumer-shaped acceptance.
 - **Risk / mitigation.** Workspace resolution could mask a packaging gap (an export that
   works in-repo but not from a tarball). Mitigated because that class of gap is owned by
@@ -110,7 +110,7 @@ the 1.0 public surface is coherent.
 - **Platform.** Identical resolution to `apps/showcase` on iOS/Android/Web.
 - **Rejected: source-ownership (`beeui add`).** It would copy component source into the app,
   proving the CLI/registry path instead of the published-package path — but that path is
-  already owned by ADR-011 D5 / #217 and blocked on #355 (the `@beeui/tokens` resolution
+  already owned by ADR-011 D5 / #217 and blocked on #355 (the `@beemvp/beeui-tokens` resolution
   gap). Making the flagship demo depend on an unclosed gap is a worse gate. Source-ownership
   remains validated by its own starter (`examples/source-ownership-starter`).
 

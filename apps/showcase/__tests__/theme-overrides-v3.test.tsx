@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react-native';
 import * as React from 'react';
 import { Uniwind } from 'uniwind';
-import { Button } from '@beeui/ui';
+import { Button } from '@beemvp/beeui-ui';
 import {
   applyThemeOverrides,
   beeRuntimeThemeNames,
@@ -10,13 +10,13 @@ import {
   semanticColorTokens,
   themeOverrideClassification,
   type CompiledThemeOverrides,
-} from '@beeui/tokens';
+} from '@beemvp/beeui-tokens';
 
 // Runtime tests for BeeUI issue #71 — typed runtime overrides beyond colors.
 //
-// These exercise `@beeui/tokens`'s generated `defineThemeOverrides` /
+// These exercise `@beemvp/beeui-tokens`'s generated `defineThemeOverrides` /
 // `applyThemeOverrides` from the Showcase app, the same way a consuming
-// application would: no reusable @beeui/ui component source is touched by
+// application would: no reusable @beemvp/beeui-ui component source is touched by
 // any test in this file.
 
 describe('issue #71 — typed runtime overrides beyond colors', () => {
@@ -131,7 +131,7 @@ describe('issue #71 — typed runtime overrides beyond colors', () => {
   });
 
   it('exposes no additional React theme provider/store — only the pure definer + a thin apply helper', () => {
-    const tokensExports = require('@beeui/tokens') as Record<string, unknown>;
+    const tokensExports = require('@beemvp/beeui-tokens') as Record<string, unknown>;
     const suspiciousNames = Object.keys(tokensExports).filter((name) =>
       /provider|context|store/i.test(name),
     );

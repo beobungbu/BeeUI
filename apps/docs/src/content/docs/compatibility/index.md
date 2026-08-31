@@ -30,7 +30,7 @@ actually tested against.
 | React Native | `0.86.2` exact (floor) | `>=0.86.0 <0.87.0` | Confirmed ([#130](https://github.com/beobungbu/BeeUI/issues/130)) |
 | React Native 0.87.x | `0.87.1` tested and excluded | outside the promise | Excluded on real evidence ([#131](https://github.com/beobungbu/BeeUI/issues/131)) |
 | Expo SDK | `~57.0.0` | not a declared peer (app-level) | Confirmed — only tested line |
-| `react-native-web` | `0.21.0` exact | not a declared `@beeui/ui` peer (bundler responsibility) | Confirmed, two independent bundlers |
+| `react-native-web` | `0.21.0` exact | not a declared `@beemvp/beeui-ui` peer (bundler responsibility) | Confirmed, two independent bundlers |
 | Node (repo/release toolchain) | `24.13.1` exact | `engines.node: "24.13.1"` | Confirmed |
 | Node (CLI tooling) | `24` only | none published yet | Narrowed ([#134](https://github.com/beobungbu/BeeUI/issues/134)) |
 | Tailwind CSS | `4.3.3` exact | `>=4 <5` | Confirmed ([#135](https://github.com/beobungbu/BeeUI/issues/135)) |

@@ -1,4 +1,4 @@
-import { cn, fromLocalDate, toLocalDate, type CalendarDate } from '@beeui/core';
+import { cn, fromLocalDate, toLocalDate, type CalendarDate } from '@beemvp/beeui-core';
 import * as React from 'react';
 import DateTimePicker, {
   DateTimePickerAndroid,

@@ -34,7 +34,7 @@ function sha256Hex(content) {
 // one source file + a matching sha256 integrity.json) in a fresh temp
 // directory, mirroring the shape `packages/cli/scripts/build.mjs` produces
 // for a real published package. Used to unit-test the #216 integrity
-// verification path without requiring a full `pnpm --filter @beeui/cli run
+// verification path without requiring a full `pnpm --filter @beemvp/beeui-cli run
 // build` (that end-to-end path is covered separately by `pnpm cli:smoke`).
 async function integrityFixture(t) {
   // Canonicalize: on macOS, os.tmpdir() paths often cross a symlinked segment
@@ -267,7 +267,7 @@ test('--overwrite is explicit and restores canonical transformed source', async 
   const output = await readFile(target, 'utf8');
   assert.match(result.stdout, /OVERWRITE src\/components\/beeui\/button\.tsx/);
   assert.match(output, /import \{ cn \} from '\.\.\/\.\.\/lib\/beeui\/cn';/);
-  assert.doesNotMatch(output, /@beeui\/core/);
+  assert.doesNotMatch(output, /@beemvp\/beeui-core/);
 });
 
 test('--dry-run performs no filesystem mutation', async (t) => {
@@ -357,7 +357,7 @@ test('deterministic plan is independent of requested item order', async (t) => {
 });
 
 // Regression for #355: this check used to run against a curated file list that
-// happened to exclude every file affected by the `@beeui/tokens` runtime-import
+// happened to exclude every file affected by the `@beemvp/beeui-tokens` runtime-import
 // gap (sheet, popover, dropdown-menu, select, toast, tooltip, theme-scope,
 // use-bee-token, overlay-runtime), so the gap shipped undetected through CI for
 // every one of those already-public items. It now resolves and inspects *every*
@@ -365,13 +365,13 @@ test('deterministic plan is independent of requested item order', async (t) => {
 // too, e.g. core-cn/core-overlay/overlay-runtime/use-direction), so no future
 // item can skip this invariant by not being named in a hand-picked list.
 //
-// `@beeui/core` and `workspace:*`/monorepo-relative-path references must never
-// survive into copied source (ADR-011 D5: `@beeui/core` is vendored-by-transform).
-// `@beeui/tokens` is the one intentional exception — ADR-011 D5 resolves it by
-// declaring `@beeui/tokens` as a consumer dependency instead of vendoring it, so
-// a bare `@beeui/tokens` specifier is expected to remain; the CLI recording it as
+// `@beemvp/beeui-core` and `workspace:*`/monorepo-relative-path references must never
+// survive into copied source (ADR-011 D5: `@beemvp/beeui-core` is vendored-by-transform).
+// `@beemvp/beeui-tokens` is the one intentional exception — ADR-011 D5 resolves it by
+// declaring `@beemvp/beeui-tokens` as a consumer dependency instead of vendoring it, so
+// a bare `@beemvp/beeui-tokens` specifier is expected to remain; the CLI recording it as
 // a consumer dependency is proven separately below.
-test('copied source contains no @beeui/core, workspace:*, or monorepo-relative-path leaks across the full registry', async (t) => {
+test('copied source contains no @beemvp/beeui-core, workspace:*, or monorepo-relative-path leaks across the full registry', async (t) => {
   const root = await init(t);
   const registry = await loadRegistry({ repoRoot: REPO_ROOT });
   const config = await readConfig(root);
@@ -379,66 +379,66 @@ test('copied source contains no @beeui/core, workspace:*, or monorepo-relative-p
   const inspected = plan.files.filter((file) => /\.(?:tsx?|mjs|cjs)$/.test(file.targetRelative));
   assert.ok(inspected.length > 0, 'expected at least one copied source file to inspect');
   // Scoped to actual import/require specifiers (quoted module strings), not prose —
-  // several files reference `@beeui/core` in JSDoc/comments (e.g. calendar-locale.ts
-  // documents its relationship to `@beeui/core`'s CalendarDate boundary) without
+  // several files reference `@beemvp/beeui-core` in JSDoc/comments (e.g. calendar-locale.ts
+  // documents its relationship to `@beemvp/beeui-core`'s CalendarDate boundary) without
   // importing it, which is not a workspace leak.
   const importSpecifier = /(?:from|require\()\s*['"]([^'"]+)['"]/g;
   for (const file of inspected) {
     for (const match of file.content.matchAll(importSpecifier)) {
       const specifier = match[1];
       assert.notEqual(specifier, 'workspace:*', `${file.targetRelative}: ${specifier}`);
-      assert.doesNotMatch(specifier, /^@beeui\/core(?:\/|$)/, `${file.targetRelative}: ${specifier}`);
+      assert.doesNotMatch(specifier, /^@beemvp\/beeui-core(?:\/|$)/, `${file.targetRelative}: ${specifier}`);
       assert.doesNotMatch(specifier, /packages\//, `${file.targetRelative}: ${specifier}`);
     }
   }
 });
 
-// Closure proof for #355 (ADR-011 D5): `@beeui/tokens` is a published package
+// Closure proof for #355 (ADR-011 D5): `@beemvp/beeui-tokens` is a published package
 // (D1), so the fix is to *record* it as a consumer dependency rather than
-// vendor a subset of it into the copied source the way `@beeui/core` is
+// vendor a subset of it into the copied source the way `@beemvp/beeui-core` is
 // vendored-by-transform. This performs a real `beeui add` of one single-file
 // affected item (`dropdown-menu`) and one multi-platform affected item with a
-// deep subpath import (`sheet`, which also imports `@beeui/tokens/motion-runtime`)
+// deep subpath import (`sheet`, which also imports `@beemvp/beeui-tokens/motion-runtime`)
 // into a clean temp consumer, and proves both halves of the fix together:
-// the copied source keeps the resolvable `@beeui/tokens` import (no vendoring,
-// no dangling/rewritten specifier, no `@beeui/core` or workspace leak), and the
-// CLI plan actually reports `@beeui/tokens` as a consumer dependency
+// the copied source keeps the resolvable `@beemvp/beeui-tokens` import (no vendoring,
+// no dangling/rewritten specifier, no `@beemvp/beeui-core` or workspace leak), and the
+// CLI plan actually reports `@beemvp/beeui-tokens` as a consumer dependency
 // requirement rather than silently dropping it.
-test('#355: beeui add records @beeui/tokens as a consumer dependency for every affected item', async (t) => {
+test('#355: beeui add records @beemvp/beeui-tokens as a consumer dependency for every affected item', async (t) => {
   const root = await init(t);
   const result = await run(root, ['add', 'dropdown-menu', 'sheet']);
   assert.equal(result.code, 0, result.stderr);
 
   const dropdownMenu = await readFile(path.join(root, 'src/components/beeui/dropdown-menu.tsx'), 'utf8');
-  assert.match(dropdownMenu, /from '@beeui\/tokens'/, 'dropdown-menu must keep its resolvable @beeui/tokens import');
-  assert.doesNotMatch(dropdownMenu, /@beeui\/core/);
+  assert.match(dropdownMenu, /from '@beemvp\/beeui-tokens'/, 'dropdown-menu must keep its resolvable @beemvp/beeui-tokens import');
+  assert.doesNotMatch(dropdownMenu, /@beemvp\/beeui-core/);
 
   const sheetWeb = await readFile(path.join(root, 'src/components/beeui/sheet.web.tsx'), 'utf8');
-  assert.match(sheetWeb, /from '@beeui\/tokens'/);
-  assert.match(sheetWeb, /from '@beeui\/tokens\/motion-runtime'/);
-  assert.doesNotMatch(sheetWeb, /@beeui\/core/);
+  assert.match(sheetWeb, /from '@beemvp\/beeui-tokens'/);
+  assert.match(sheetWeb, /from '@beemvp\/beeui-tokens\/motion-runtime'/);
+  assert.doesNotMatch(sheetWeb, /@beemvp\/beeui-core/);
 
   const sheetNative = await readFile(path.join(root, 'src/components/beeui/sheet.native.tsx'), 'utf8');
-  assert.match(sheetNative, /from '@beeui\/tokens'/);
-  assert.doesNotMatch(sheetNative, /@beeui\/core/);
+  assert.match(sheetNative, /from '@beemvp\/beeui-tokens'/);
+  assert.doesNotMatch(sheetNative, /@beemvp\/beeui-core/);
 
   for (const source of [dropdownMenu, sheetWeb, sheetNative]) {
     assert.doesNotMatch(source, /workspace:\*/);
     assert.doesNotMatch(source, /\.\.\/.*packages\//);
   }
 
-  assert.match(result.stdout, /@beeui\/tokens@0\.1\.0 \[missing from package\.json\]/);
+  assert.match(result.stdout, /@beemvp\/beeui-tokens@0\.1\.0 \[missing from package\.json\]/);
 });
 
-test('#355: the CLI detects an already-declared @beeui/tokens consumer dependency', async (t) => {
+test('#355: the CLI detects an already-declared @beemvp/beeui-tokens consumer dependency', async (t) => {
   const root = await init(t);
   await writeFile(
     path.join(root, 'package.json'),
-    JSON.stringify({ name: 'consumer', dependencies: { '@beeui/tokens': '^0.1.0' } }, null, 2),
+    JSON.stringify({ name: 'consumer', dependencies: { '@beemvp/beeui-tokens': '^0.1.0' } }, null, 2),
   );
   const result = await run(root, ['add', 'popover']);
   assert.equal(result.code, 0, result.stderr);
-  assert.match(result.stdout, /@beeui\/tokens@0\.1\.0 \[declared in dependencies as \^0\.1\.0\]/);
+  assert.match(result.stdout, /@beemvp\/beeui-tokens@0\.1\.0 \[declared in dependencies as \^0\.1\.0\]/);
 });
 
 test('copied TypeScript/TSX passes transpile syntax smoke when TypeScript is installed', async (t) => {
@@ -518,7 +518,7 @@ test('popover resolves the core-overlay module rewrite and anchored overlay runt
   const result = await run(root, ['add', 'popover']);
   assert.equal(result.code, 0, result.stderr);
   const popover = await readFile(path.join(root, 'src/components/beeui/popover.tsx'), 'utf8');
-  assert.doesNotMatch(popover, /@beeui\/core/);
+  assert.doesNotMatch(popover, /@beemvp\/beeui-core/);
   assert.match(popover, /from '\.\.\/\.\.\/lib\/beeui\/core\/index';/);
   for (const relative of [
     'src/components/beeui/overlay-runtime.tsx',
@@ -532,7 +532,7 @@ test('popover resolves the core-overlay module rewrite and anchored overlay runt
 
 // Regression for #155: `tooltip.web.tsx`/`tooltip.native.tsx`/`tooltip-shared.tsx` all
 // import the local `./use-direction` helper (ADR-004), which — unlike `./text`/
-// `./overlay-runtime` — is not part of `@beeui/core` and previously had no registry
+// `./overlay-runtime` — is not part of `@beemvp/beeui-core` and previously had no registry
 // item of its own (a latent gap shared with `popover`/`dropdown-menu`/`select`, which
 // import it the same way). This proves the new `use-direction` registry item actually
 // resolves every relative import in the full copied `tooltip` file set, not just that
@@ -554,7 +554,7 @@ test('tooltip resolves the core-overlay module rewrite, overlay runtime, and use
   ]) assert.equal(await exists(path.join(root, relative)), true, relative);
 
   const useDirection = await readFile(path.join(dir, 'use-direction.ts'), 'utf8');
-  assert.doesNotMatch(useDirection, /@beeui\/core/);
+  assert.doesNotMatch(useDirection, /@beemvp\/beeui-core/);
   assert.match(useDirection, /from '\.\.\/\.\.\/lib\/beeui\/core\/index';/);
 
   for (const file of ['tooltip-shared.tsx', 'tooltip.web.tsx', 'tooltip.native.tsx', 'use-direction.ts']) {
@@ -672,7 +672,7 @@ test('sheet resolves its button/overlay-runtime/text dependency closure and repo
 
 // Issue #178: `calendar.tsx` imports the local `./use-direction` helper (same RTL
 // mirroring as `tooltip`/`table`) and mixes `cn` with `calendar-date` functions/types
-// from `@beeui/core`, so it must resolve through `core-overlay` (which bundles
+// from `@beemvp/beeui-core`, so it must resolve through `core-overlay` (which bundles
 // `calendar-date.ts` alongside `cn`/`anchored-overlay`/`overlay-runtime`) rather than
 // the plain `core-cn` utility. `date-picker` and `date-time-picker` each declare
 // `calendar` plus their own multi-file (`*.d.ts`/`*.native.tsx`/`*.web.tsx`/
@@ -704,7 +704,7 @@ test('calendar/date-picker/date-time-picker resolve calendar-date, core-overlay,
   ]) assert.equal(await exists(path.join(root, relative)), true, relative);
 
   const calendar = await readFile(path.join(dir, 'calendar.tsx'), 'utf8');
-  assert.doesNotMatch(calendar, /@beeui\/core/);
+  assert.doesNotMatch(calendar, /@beemvp\/beeui-core/);
   assert.match(calendar, /from '\.\.\/\.\.\/lib\/beeui\/core\/index';/);
 
   for (const file of [
@@ -768,7 +768,7 @@ test('version/--version/-v print the installed package name and version and acce
     // eslint-disable-next-line no-await-in-loop -- sequential CLI invocations, clarity over throughput
     const result = await run(root, [flag]);
     assert.equal(result.code, 0, result.stderr);
-    assert.match(result.stdout.trim(), /^@beeui\/cli \d+\.\d+\.\d+/);
+    assert.match(result.stdout.trim(), /^@beemvp\/beeui-cli \d+\.\d+\.\d+/);
   }
   const withArgs = await run(root, ['version', 'extra']);
   assert.equal(withArgs.code, 1);
@@ -1256,7 +1256,7 @@ test('formatDetectionSummary reports kind, platforms, package manager, TypeScrip
 });
 
 // EXPO_SDK_SUPPORTED_RANGE is deliberately duplicated data (Expo is not a
-// `@beeui/ui` peerDependency, so it cannot be derived from registry.json —
+// `@beemvp/beeui-ui` peerDependency, so it cannot be derived from registry.json —
 // see dependency-diagnostics.mjs's own header comment). This guards against
 // silent drift from docs/compatibility-matrix.md's machine-checked
 // `expoSdkRange`, the same way scripts/check-compatibility-matrix.mjs guards

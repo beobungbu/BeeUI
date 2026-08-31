@@ -1,4 +1,4 @@
-import { AppHeader, Box } from '@beeui/ui';
+import { AppHeader, Box } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { ScrollView } from 'react-native';
 

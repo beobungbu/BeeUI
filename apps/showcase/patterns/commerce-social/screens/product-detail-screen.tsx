@@ -1,4 +1,4 @@
-import { Badge, Button, Card, Chip, ChipGroup, HStack, Separator, Text, VStack } from '@beeui/ui';
+import { Badge, Button, Card, Chip, ChipGroup, HStack, Separator, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import type { Product } from '../fixtures/commerce-fixtures';
 import { products } from '../fixtures/commerce-fixtures';

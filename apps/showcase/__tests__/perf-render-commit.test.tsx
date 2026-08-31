@@ -22,7 +22,7 @@ import {
   TableRow,
   useToast,
   BeeUIProvider,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import { act, render } from '@testing-library/react-native';
 import * as React from 'react';
 import { View } from 'react-native';
@@ -41,7 +41,7 @@ import { writeRawScenarioRecords, type RawScenarioRecord } from '../perf/scenari
 // mount and an update/re-render cost, per #180's "not only initial mount"
 // requirement.
 //
-// `pnpm --filter @beeui/showcase bench` runs this file (and its #181/#182
+// `pnpm --filter @beemvp/beeui-showcase bench` runs this file (and its #181/#182
 // siblings) and writes raw per-scenario durations to
 // `.artifacts/benchmark/raw/`; `pnpm bench:components` (root) additionally
 // turns those into the harness's schema-conformant result set.

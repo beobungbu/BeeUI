@@ -1,6 +1,6 @@
 # BeeUI Expo package consumer (#230)
 
-R10.1 — a minimal Expo SDK 57 starter consuming `@beeui/ui` through
+R10.1 — a minimal Expo SDK 57 starter consuming `@beemvp/beeui-ui` through
 release-ready packed packages, matching `apps/showcase`'s tested Expo SDK 57
 dependency set (`docs/compatibility-matrix.md`) without any Showcase-only
 internals.
@@ -8,7 +8,7 @@ internals.
 ## Unpublished status
 
 BeeUI is not published to npm (see `../README.md`). `setup.sh` packs
-`@beeui/core`, `@beeui/tokens`, and `@beeui/ui` with `pnpm pack` and installs
+`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` with `pnpm pack` and installs
 those tarballs with `npm install`, plus Expo SDK 57's own runtime deps
 (`expo`, `@expo/metro-runtime`, `react-native-web`, and BeeUI's native peers).
 

@@ -3,7 +3,7 @@
 // Generates docs/pattern-library.md — the production pattern library (#223) — and
 // enforces it in --check mode.
 //
-// The @beeui/showcase Pattern Gallery is a real, typechecked reference application
+// The @beemvp/beeui-showcase Pattern Gallery is a real, typechecked reference application
 // (37 screens across four domain packs). This turns it into a documented product
 // surface: for every screen it records purpose, state contract, composition,
 // responsive/accessibility guidance, the callback/ownership boundary, related
@@ -62,7 +62,7 @@ function screenSection(screen, content) {
     .join(' ');
   const composition = screen.beeuiComponents.length
     ? screen.beeuiComponents.map((c) => `\`${c}\``).join(', ')
-    : '_no direct @beeui/ui imports (composed from local pattern components)_';
+    : '_no direct @beemvp/beeui-ui imports (composed from local pattern components)_';
   const callbacks = screen.callbacks.length
     ? screen.callbacks.map((c) => `\`${c}\``).join(', ')
     : '_none_';
@@ -109,7 +109,7 @@ ${body}`;
 
 # BeeUI production pattern library
 
-> ${screens.length} production screen patterns across ${PATTERN_PACKS.length} domain packs, composed entirely from public \`@beeui/ui\` components. Each entry links to its executable, typechecked source in the [@beeui/showcase](../apps/showcase) Pattern Gallery. Derived from the showcase pattern sources and docs/pattern-library.content.json; enforced by \`pnpm docs:patterns:check\`.
+> ${screens.length} production screen patterns across ${PATTERN_PACKS.length} domain packs, composed entirely from public \`@beemvp/beeui-ui\` components. Each entry links to its executable, typechecked source in the [@beemvp/beeui-showcase](../apps/showcase) Pattern Gallery. Derived from the showcase pattern sources and docs/pattern-library.content.json; enforced by \`pnpm docs:patterns:check\`.
 
 ${UNPUBLISHED_NOTE}
 
@@ -148,7 +148,7 @@ export function runStructuralChecks(rootDir = ROOT_DIR) {
   add('every screen entry has purpose + excluded', badProse.length === 0, badProse.length ? `incomplete: ${badProse.join(', ')}` : '');
 
   const noComposition = screens.filter((s) => s.beeuiComponents.length === 0 && !s.file.includes('/components/')).map((s) => s.slug);
-  add('every screen composes @beeui/ui components', noComposition.length === 0, noComposition.length ? `no @beeui/ui: ${noComposition.join(', ')}` : '');
+  add('every screen composes @beemvp/beeui-ui components', noComposition.length === 0, noComposition.length ? `no @beemvp/beeui-ui: ${noComposition.join(', ')}` : '');
 
   const doc = buildDocument(rootDir);
   const perScreen = doc.split(/^### /m).slice(1);

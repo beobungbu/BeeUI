@@ -40,9 +40,9 @@
 const DEFAULT_TOLERANCE = { warnPct: 0.10, failPct: 0.20 };
 
 export const PACKAGE_FOOTPRINT_BUDGETS = {
-  '@beeui/core': { baselineGzipBytes: 25.1 * 1024, ...DEFAULT_TOLERANCE },
-  '@beeui/tokens': { baselineGzipBytes: 97.3 * 1024, ...DEFAULT_TOLERANCE },
-  '@beeui/ui': { baselineGzipBytes: 495.3 * 1024, ...DEFAULT_TOLERANCE },
+  '@beemvp/beeui-core': { baselineGzipBytes: 25.1 * 1024, ...DEFAULT_TOLERANCE },
+  '@beemvp/beeui-tokens': { baselineGzipBytes: 97.3 * 1024, ...DEFAULT_TOLERANCE },
+  '@beemvp/beeui-ui': { baselineGzipBytes: 495.3 * 1024, ...DEFAULT_TOLERANCE },
 };
 
 export const BUNDLE_SCENARIO_FOOTPRINT_BUDGETS = {

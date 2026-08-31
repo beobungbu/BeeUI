@@ -1,4 +1,4 @@
-import type { OverlayDismissReason } from '@beeui/core';
+import type { OverlayDismissReason } from '@beemvp/beeui-core';
 
 export type OverlayPlatformDismissHandler = (reason: OverlayDismissReason) => boolean;
 

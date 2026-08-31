@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { BeeThemeScope, BeeUIProvider, getBeeToken, useBeeToken } from '@beeui/ui';
+import { BeeThemeScope, BeeUIProvider, getBeeToken, useBeeToken } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import type * as ReactTypes from 'react';
 import { Text } from 'react-native';
@@ -18,7 +18,7 @@ import {
   semanticColorTokens,
   type BeeAccessibilityRuntimeThemeName,
   type SemanticColorToken,
-} from '@beeui/tokens';
+} from '@beemvp/beeui-tokens';
 
 import { ThemeInspector } from '../theme-inspector';
 

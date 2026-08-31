@@ -2,7 +2,7 @@
 
 # BeeUI production pattern library
 
-> 37 production screen patterns across 4 domain packs, composed entirely from public `@beeui/ui` components. Each entry links to its executable, typechecked source in the [@beeui/showcase](../apps/showcase) Pattern Gallery. Derived from the showcase pattern sources and docs/pattern-library.content.json; enforced by `pnpm docs:patterns:check`.
+> 37 production screen patterns across 4 domain packs, composed entirely from public `@beemvp/beeui-ui` components. Each entry links to its executable, typechecked source in the [@beemvp/beeui-showcase](../apps/showcase) Pattern Gallery. Derived from the showcase pattern sources and docs/pattern-library.content.json; enforced by `pnpm docs:patterns:check`.
 
 STATUS: BeeUI is pre-1.0 and UNPUBLISHED. The Pattern Gallery is an in-repo reference application, not a published template. Screens are original BeeUI compositions you own via source-ownership (`pnpm beeui -- add <component>`), not a redistributable third-party template.
 

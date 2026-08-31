@@ -44,7 +44,7 @@ test('bare RN consumer reuse is fail-safe: fingerprint-gated, forced clean on sc
 
   assert.match(bareScript, /BEEUI_BARE_CLEAN/);
   assert.match(bareScript, /\.beeui-bare-fingerprint/);
-  assert.match(bareScript, /rm -rf node_modules\/@beeui/);
+  assert.match(bareScript, /rm -rf node_modules\/@beemvp/beeui-);
 });
 
 test('PR path classification disables rename detection so moves out of packages preserve the deleted path', async () => {

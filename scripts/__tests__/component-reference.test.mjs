@@ -17,7 +17,7 @@ import {
 // --- Pure helper unit tests -------------------------------------------------
 
 test('extractBeeuiImports collects symbols and strips type qualifiers', () => {
-  const src = "import { Button, ButtonLabel, type ButtonProps } from '@beeui/ui';\nimport { Card } from '@beeui/ui';";
+  const src = "import { Button, ButtonLabel, type ButtonProps } from '@beemvp/beeui-ui';\nimport { Card } from '@beemvp/beeui-ui';";
   assert.deepEqual([...extractBeeuiImports(src)].sort(), ['Button', 'ButtonLabel', 'ButtonProps', 'Card']);
 });
 

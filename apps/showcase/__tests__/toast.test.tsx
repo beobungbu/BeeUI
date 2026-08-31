@@ -7,7 +7,7 @@ import {
   TOAST_MAX_VISIBLE,
   useToast,
   type ToastApi,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 
 const TEST_INSETS = { top: 47, right: 0, bottom: 34, left: 0 };
 

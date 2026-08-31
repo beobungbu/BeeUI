@@ -6,7 +6,7 @@ import { evaluateFootprintBudgets } from '../benchmark/lib/budget-evaluator.mjs'
 function fakeResultSet(overrides = {}) {
   return {
     packages: {
-      core: { name: '@beeui/core', packedGzipBytes: 25700 },
+      core: { name: '@beemvp/beeui-core', packedGzipBytes: 25700 },
     },
     scenarios: [{ id: 'web/full-barrel', gzipBytes: 53555 }],
     ...overrides,
@@ -16,7 +16,7 @@ function fakeResultSet(overrides = {}) {
 function fakeBudgets(overrides = {}) {
   return {
     packages: {
-      '@beeui/core': { baselineGzipBytes: 25700, warnPct: 0.1, failPct: 0.2 },
+      '@beemvp/beeui-core': { baselineGzipBytes: 25700, warnPct: 0.1, failPct: 0.2 },
     },
     scenarios: {
       'web/full-barrel': { baselineGzipBytes: 53555, warnPct: 0.1, failPct: 0.2 },
@@ -35,10 +35,10 @@ test('evaluateFootprintBudgets passes rows at or below baseline', () => {
 
 test('evaluateFootprintBudgets warns on drift beyond warnPct but within failPct', () => {
   const resultSet = fakeResultSet({
-    packages: { core: { name: '@beeui/core', packedGzipBytes: 25700 * 1.15 } },
+    packages: { core: { name: '@beemvp/beeui-core', packedGzipBytes: 25700 * 1.15 } },
   });
   const evaluation = evaluateFootprintBudgets(resultSet, fakeBudgets());
-  const coreRow = evaluation.rows.find((row) => row.id === '@beeui/core');
+  const coreRow = evaluation.rows.find((row) => row.id === '@beemvp/beeui-core');
   assert.equal(coreRow.status, 'warn');
   assert.equal(evaluation.hasWarning, true);
   assert.equal(evaluation.hasFailure, false);
@@ -56,20 +56,20 @@ test('evaluateFootprintBudgets fails on drift beyond failPct', () => {
 
 test('evaluateFootprintBudgets treats a shrink as pass, not a false failure', () => {
   const resultSet = fakeResultSet({
-    packages: { core: { name: '@beeui/core', packedGzipBytes: 25700 * 0.5 } },
+    packages: { core: { name: '@beemvp/beeui-core', packedGzipBytes: 25700 * 0.5 } },
   });
   const evaluation = evaluateFootprintBudgets(resultSet, fakeBudgets());
-  const coreRow = evaluation.rows.find((row) => row.id === '@beeui/core');
+  const coreRow = evaluation.rows.find((row) => row.id === '@beemvp/beeui-core');
   assert.equal(coreRow.status, 'pass');
   assert.ok(coreRow.deltaPct < 0);
 });
 
 test('evaluateFootprintBudgets reports an unbudgeted package/scenario without failing', () => {
   const resultSet = fakeResultSet({
-    packages: { tokens: { name: '@beeui/tokens', packedGzipBytes: 99000 } },
+    packages: { tokens: { name: '@beemvp/beeui-tokens', packedGzipBytes: 99000 } },
   });
   const evaluation = evaluateFootprintBudgets(resultSet, fakeBudgets());
-  const tokensRow = evaluation.rows.find((row) => row.id === '@beeui/tokens');
+  const tokensRow = evaluation.rows.find((row) => row.id === '@beemvp/beeui-tokens');
   assert.equal(tokensRow.status, 'unbudgeted');
   assert.equal(tokensRow.baselineGzipBytes, null);
   assert.equal(evaluation.hasFailure, false);

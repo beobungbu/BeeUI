@@ -100,7 +100,7 @@ jobs:
         run: pnpm --dir apps/visual-regression exec playwright install ${{ steps.pw-cache.outputs.cache-hit == 'true' && '' || '--with-deps' }} chromium
 
       # Issue #136 — the independent, non-Showcase clean Web consumer: packs
-      # @beeui/core/@beeui/tokens/@beeui/ui, installs them (plus the exact
+      # @beemvp/beeui-core/@beemvp/beeui-tokens/@beemvp/beeui-ui, installs them (plus the exact
       # runtime/tooling versions docs/compatibility-matrix.md's Web support
       # contract claims) into an isolated Vite + react-native-web app with no
       # monorepo fallback, proves the production build, then drives real

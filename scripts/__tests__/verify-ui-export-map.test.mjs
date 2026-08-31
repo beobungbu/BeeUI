@@ -1,4 +1,4 @@
-// End-to-end proof that `@beeui/ui`'s package "exports" map (#201, built on
+// End-to-end proof that `@beemvp/beeui-ui`'s package "exports" map (#201, built on
 // #184's granular-subpath decision, ADR `docs/decisions/012-granular-subpath-exports.md`)
 // behaves correctly for a real consumer, using Node's own package-exports
 // resolution algorithm directly — the same algorithm every bundler (Metro,
@@ -12,7 +12,7 @@
 // loading the module body, which is exactly what "does this subpath resolve"
 // means here.
 //
-// Resolution runs from `apps/showcase`'s real, pnpm-linked `@beeui/ui`
+// Resolution runs from `apps/showcase`'s real, pnpm-linked `@beemvp/beeui-ui`
 // dependency (a real workspace consumer, not a synthetic one) so the "require"
 // and "import" conditions are evaluated exactly as an installed consumer sees
 // them.
@@ -29,16 +29,16 @@ import { computePublicUiExports } from '../generate-ui-exports.mjs';
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const UI_DIST_DIR = path.join(ROOT_DIR, 'packages/ui/dist');
 const CONSUMER_CWD = path.join(ROOT_DIR, 'apps/showcase');
-const CONSUMER_LINK = path.join(CONSUMER_CWD, ['node', 'modules'].join('_'), '@beeui', 'ui');
+const CONSUMER_LINK = path.join(CONSUMER_CWD, ['node', 'modules'].join('_'), '@beemvp', 'beeui-ui');
 
-const INTERNAL_DEEP_IMPORT = '@beeui/ui/overlay-runtime';
+const INTERNAL_DEEP_IMPORT = '@beemvp/beeui-ui/overlay-runtime';
 
 function skipReason() {
   if (!fs.existsSync(UI_DIST_DIR)) {
     return 'packages/ui/dist is not built; run `pnpm build` (or `pnpm ui-exports:test`) first';
   }
   if (!fs.existsSync(CONSUMER_LINK)) {
-    return 'apps/showcase’s @beeui/ui workspace link is missing; run `pnpm install` first';
+    return 'apps/showcase’s @beemvp/beeui-ui workspace link is missing; run `pnpm install` first';
   }
   return false;
 }
@@ -81,13 +81,13 @@ function resolveViaRequire(specifiers) {
 }
 
 test(
-  'every documented public @beeui/ui component resolves via its subpath (import/require/types), and the barrel still resolves',
+  'every documented public @beemvp/beeui-ui component resolves via its subpath (import/require/types), and the barrel still resolves',
   { skip: skipReason() },
   () => {
     const { exportsField, names } = computePublicUiExports({ rootDir: ROOT_DIR });
     assert.ok(names.length > 0, 'expected at least one public component');
 
-    const specifiers = ['@beeui/ui', ...names.map((name) => `@beeui/ui/${name}`)];
+    const specifiers = ['@beemvp/beeui-ui', ...names.map((name) => `@beemvp/beeui-ui/${name}`)];
     const importResults = resolveViaImport(specifiers);
     const requireResults = resolveViaRequire(specifiers);
 
@@ -131,7 +131,7 @@ test('an internal/private deep import fails intentionally (leak guard)', { skip:
   assert.equal(requireResults[INTERNAL_DEEP_IMPORT].code, 'ERR_PACKAGE_PATH_NOT_EXPORTED');
 });
 
-test('the @beeui/ui package.json exports map has no permissive wildcard leak guard', { skip: skipReason() }, () => {
+test('the @beemvp/beeui-ui package.json exports map has no permissive wildcard leak guard', { skip: skipReason() }, () => {
   const { packageJson } = computePublicUiExports({ rootDir: ROOT_DIR });
   const subpaths = Object.keys(packageJson.exports);
   assert.ok(!subpaths.includes('./*'), 'exports map must not include a permissive "./*" wildcard');

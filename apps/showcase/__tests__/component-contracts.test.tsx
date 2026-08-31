@@ -8,7 +8,7 @@ import {
   PaginationItem, PasswordInput, Progress, Radio, RadioGroup, Screen, SearchInput,
   Section, SegmentedControl, SegmentedControlItem, Switch, Tabs, TabsContent, TabsList,
   TabsTrigger, Text,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 
 describe('BeeUI component contracts', () => {
   it('exposes an accessible button and forwards presses', () => { const onPress = jest.fn(); const screen = render(<Button onPress={onPress}>Save changes</Button>); const button = screen.getByRole('button', { name: 'Save changes' }); expect(button.props.accessibilityState).toEqual({ disabled: false, busy: false }); fireEvent.press(button); expect(onPress).toHaveBeenCalledTimes(1); });

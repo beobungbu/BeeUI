@@ -1,11 +1,11 @@
-# ADR-012: Granular per-component subpath exports for `@beeui/ui`
+# ADR-012: Granular per-component subpath exports for `@beemvp/beeui-ui`
 
 Status: Accepted
 
 ## Context
 
 [#184](https://github.com/beobungbu/BeeUI/issues/184) (R5.6, parent #114) asks whether
-`@beeui/ui` should ship stable subpath exports (`@beeui/ui/button`, `@beeui/ui/dialog`, …)
+`@beemvp/beeui-ui` should ship stable subpath exports (`@beemvp/beeui-ui/button`, `@beemvp/beeui-ui/dialog`, …)
 alongside the existing barrel, evaluated against real tree-shaking data from
 [#183](https://github.com/beobungbu/BeeUI/issues/183). #184 explicitly gates
 [#201](https://github.com/beobungbu/BeeUI/issues/201) (R7.5, "harden package export maps"),
@@ -41,8 +41,8 @@ that unblocks #201; #201's implementation is described in its own PR, not re-lit
 
 ## Decision
 
-**#184 = yes.** `@beeui/ui` ships stable, granular per-public-component subpath exports
-(`@beeui/ui/button`, `@beeui/ui/dialog`, `@beeui/ui/select`, …) for every component the
+**#184 = yes.** `@beemvp/beeui-ui` ships stable, granular per-public-component subpath exports
+(`@beemvp/beeui-ui/button`, `@beemvp/beeui-ui/dialog`, `@beemvp/beeui-ui/select`, …) for every component the
 public barrel (`packages/ui/src/index.ts`) already re-exports, **additive** to the existing
 barrel `"."` export — the barrel is not removed, deprecated, or changed in shape. This is
 low-regret: existing barrel consumers see no change, and consumers who adopt subpaths get the
@@ -112,8 +112,8 @@ explicit, generated, per-component map with no wildcard is the only shape that k
   to accept an extensionless `source` target when a sibling platform/type variant exists on
   disk — the same probe Metro/`tsc` already perform — while still failing loudly on any
   target, extensionless or not, with no matching file at all.
-- `@beeui/core` and `@beeui/tokens` are unaffected: `@beeui/core`'s barrel has no public
-  sub-entries to split, and `@beeui/tokens`'s existing machine-readable subpaths
+- `@beemvp/beeui-core` and `@beemvp/beeui-tokens` are unaffected: `@beemvp/beeui-core`'s barrel has no public
+  sub-entries to split, and `@beemvp/beeui-tokens`'s existing machine-readable subpaths
   (`./tokens.json`, `./tokens.resolver.json`, `./lifecycle.json`, `./theme.css`,
   `./motion-runtime`) are untouched.
 - Every subpath is additive and versioned identically to the barrel (ADR-011 D6, lockstep
@@ -135,7 +135,7 @@ before the BeeUI 1.0 publish command (#254).
 - `scripts/__tests__/verify-ui-export-map.test.mjs`: end-to-end proof, using Node's own
   package-exports resolution algorithm from a real pnpm-linked consumer (`apps/showcase`),
   that (a) every public component resolves via its subpath under `import`/`require`, with a
-  types declaration on disk; (b) an internal deep import (`@beeui/ui/overlay-runtime`) fails
+  types declaration on disk; (b) an internal deep import (`@beemvp/beeui-ui/overlay-runtime`) fails
   with `ERR_PACKAGE_PATH_NOT_EXPORTED`; (c) the barrel `"."` still resolves; (d) no `"./*"`
   wildcard exists in the exports map.
 - `pnpm ui-exports:check` (wired into `pnpm typecheck`) fails CI on drift between the barrel
@@ -152,7 +152,7 @@ before the BeeUI 1.0 publish command (#254).
 
 Revisit if a consumer environment cannot honor the extensionless `source`-condition pattern
 for platform-only components (forcing per-platform subpath names instead, e.g.
-`@beeui/ui/date-picker.web`); if a future component needs a public subpath that is not a
+`@beemvp/beeui-ui/date-picker.web`); if a future component needs a public subpath that is not a
 1:1 mapping to a single `src/components/<name>` file (the generator's one-name-one-entry
 assumption would need to change); or if the owner decides the barrel alone is sufficient and
 withdraws the granular set before 1.0 publish.

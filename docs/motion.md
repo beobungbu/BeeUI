@@ -20,7 +20,7 @@ animate, and adding an intent does not animate anything on its own.
 - Generated artifacts: `packages/tokens/src/index.ts` (`motion`, `motionIntents`,
   `resolveMotion`) and `packages/tokens/src/theme.css` (`--motion-<intent>-*` plus
   `prefers-reduced-motion` overrides).
-- Native executable-plan adapter: `@beeui/tokens/motion-runtime`. It derives only from the
+- Native executable-plan adapter: `@beemvp/beeui-tokens/motion-runtime`. It derives only from the
   generated canonical `motion` object; it is not a second metadata source or preference
   store.
 
@@ -77,7 +77,7 @@ the semantic intent.
 For consumers that need an actual native animation configuration, use:
 
 ```ts
-import { resolveNativeMotion } from '@beeui/tokens/motion-runtime';
+import { resolveNativeMotion } from '@beemvp/beeui-tokens/motion-runtime';
 
 const plan = resolveNativeMotion('overlay-enter', { reducedMotion });
 ```

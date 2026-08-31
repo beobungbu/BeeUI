@@ -14,7 +14,7 @@ created: 2026-08-31
 Executes **[ADR-013](../../docs/decisions/013-production-demo-architecture.md)**. This plan
 is the task breakdown for the #237 integration epic; the architecture is already decided in
 ADR-013 and is **not** re-opened here. App lives at `apps/demo` (Expo SDK 57 / RN 0.86.2 /
-react-native-web 0.21.0), package-consumption of public `@beeui/*` only, Expo Router owned
+react-native-web 0.21.0), package-consumption of public `@beemvp/beeui-*` only, Expo Router owned
 by the app, feature-local state + a thin `services/` mock seam.
 
 **Scope guard:** this plan does NOT authorize scaffolding during #236. Scaffolding starts at
@@ -115,7 +115,7 @@ Quality gates after Phase 6: #238 (platform matrix) → #239 (engineering gate) 
   loading/empty/error/recovery reachable; no duplicate authority/private import.
 
 ## Cross-cutting acceptance (all phases)
-Strict TypeScript · no deep `@beeui/**/src` imports (lint-enforced) · public API only · no
+Strict TypeScript · no deep `@beemvp/beeui-**/src` imports (lint-enforced) · public API only · no
 duplicate theme/overlay/direction/Sheet runtime · deterministic tests · PRs unmerged, each
 independently reviewed · honest unpublished status (no npm claims).
 

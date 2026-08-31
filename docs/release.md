@@ -5,8 +5,8 @@ This document defines what a BeeUI `0.x` release candidate means and separates a
 ## Current distribution model
 
 BeeUI is not published to the public npm registry — no `npm publish` has been run. Per
-[ADR-011](decisions/011-distribution-architecture.md), `@beeui/core`, `@beeui/tokens`, and
-`@beeui/ui` manifests are publication-ready: `private: true` is removed, each carries public
+[ADR-011](decisions/011-distribution-architecture.md), `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and
+`@beemvp/beeui-ui` manifests are publication-ready: `private: true` is removed, each carries public
 package metadata (`repository`/`homepage`/`bugs`/`license`/`keywords`/`sideEffects`/
 `publishConfig`), and each ships a built `dist/` (dual ESM + CJS plus `.d.ts`, via
 `react-native-builder-bob`) as the primary artifact while `src` remains published for the

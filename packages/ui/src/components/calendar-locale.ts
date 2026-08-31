@@ -1,4 +1,4 @@
-import type { CalendarDate, CalendarWeekStartsOn } from '@beeui/core';
+import type { CalendarDate, CalendarWeekStartsOn } from '@beemvp/beeui-core';
 
 // Stateless `locale`/`weekStartsOn` resolver for `Calendar` (ADR-008, "Locale /
 // week-start ownership"), mirroring `use-direction.ts`'s shape exactly: explicit input,
@@ -81,7 +81,7 @@ function toFormattableUTCDate(date: CalendarDate): Date {
   // Formatting-only, discarded immediately: `timeZone: 'UTC'` is always passed alongside
   // this value so the `Date.UTC`-anchored instant is never reinterpreted in the host's
   // local timezone. This is not the sanctioned `CalendarDate` ⇄ `Date` boundary
-  // (`toLocalDate`/`fromLocalDate` in `@beeui/core`) — it never leaves this module.
+  // (`toLocalDate`/`fromLocalDate` in `@beemvp/beeui-core`) — it never leaves this module.
   return new Date(Date.UTC(date.year, date.month - 1, date.day));
 }
 

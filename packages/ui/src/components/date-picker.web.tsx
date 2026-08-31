@@ -1,4 +1,4 @@
-import { cn, type CalendarDate } from '@beeui/core';
+import { cn, type CalendarDate } from '@beemvp/beeui-core';
 import * as React from 'react';
 import { Pressable, View } from 'react-native';
 import { Calendar } from './calendar';
@@ -153,7 +153,7 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
         )?.querySelector?.('[role="cell"][tabindex="0"]');
         target?.focus?.();
         // `document` is a DOM-only global not declared in this package's `lib`
-        // (`tsconfig.base.json` intentionally omits `dom` — `@beeui/ui` is RN-first);
+        // (`tsconfig.base.json` intentionally omits `dom` — `@beemvp/beeui-ui` is RN-first);
         // reading it through `globalThis` keeps this Web-only check type-safe without
         // widening the whole package's ambient type surface.
         const globalDocument = (globalThis as { document?: { activeElement?: unknown } }).document;

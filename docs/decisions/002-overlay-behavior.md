@@ -24,8 +24,8 @@ BeeUI uses a separate non-Modal stack for trigger-positioned components.
 
 The accepted stack consists of:
 
-- a pure `@beeui/core` geometry resolver;
-- an internal `@beeui/ui` runtime under `BeeUIProvider` for transport, measurement, safe-area/keyboard environment, anchor remeasurement, and scoped dismissal;
+- a pure `@beemvp/beeui-core` geometry resolver;
+- an internal `@beemvp/beeui-ui` runtime under `BeeUIProvider` for transport, measurement, safe-area/keyboard environment, anchor remeasurement, and scoped dismissal;
 - public `Popover`;
 - public `DropdownMenu` with menu-specific selection/keyboard contracts.
 
@@ -99,7 +99,7 @@ Applicable overlay work must pass:
 6. bare Android native compilation;
 7. trusted iOS Simulator compilation for Expo Showcase and fresh bare RN consumer when scheduled;
 8. deterministic Chromium visual/browser integration where representative;
-9. no Expo runtime imports in `@beeui/core` / `@beeui/ui`.
+9. no Expo runtime imports in `@beemvp/beeui-core` / `@beemvp/beeui-ui`.
 
 Deterministic tests specifically pin semantic scope depth, host/anchor async latest-request-wins behavior, native Modal presentation props, and staged root-behind-modal Web Escape ordering.
 

@@ -174,7 +174,7 @@ The handoff is a raw-samples JSON contract, not a code import, because the
 harness is ESM (`.mjs`) and this app's Jest config runs `.ts(x)` through
 Babel/CommonJS with no ESM interop enabled:
 
-1. `pnpm --filter @beeui/showcase bench` runs
+1. `pnpm --filter @beemvp/beeui-showcase bench` runs
    `apps/showcase/__tests__/perf-render-commit.test.tsx`,
    `perf-overlay-latency.test.tsx` and `perf-theme-runtime.test.tsx`. Each
    mounts real components, times them with `apps/showcase/perf/sample-workload.ts`
@@ -219,7 +219,7 @@ It reports two honestly-separated things (see
 `docs/beeui-1.0-evidence-classes.md`):
 
 1. **Packed tarball sizes** — real `npm pack --dry-run --json --ignore-scripts`
-   output for `@beeui/core`, `@beeui/tokens`, `@beeui/ui` against whatever
+   output for `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui` against whatever
    `dist/` already exists on disk. `--ignore-scripts` is required: `npm pack`
    otherwise always runs the `prepack` lifecycle script (`pnpm run build`),
    which both rebuilds redundantly on every invocation and interleaves
@@ -227,10 +227,10 @@ It reports two honestly-separated things (see
    fails loudly (`assertBuilt()`) if `dist/module/index.js` is missing for any
    package, rather than silently packing a stale or empty tree.
 2. **Clean-consumer bundle contribution** — esbuild bundles of small synthetic
-   entry points that alias `@beeui/*` bare specifiers straight to the real
+   entry points that alias `@beemvp/beeui-*` bare specifiers straight to the real
    built `dist/module/index.js` (the exact file every `exports` condition that
    matters for a bundler — `react-native`, `import`, `browser`, `default` —
-   already resolves to) and mark every one of `@beeui/ui`'s peerDependencies
+   already resolves to) and mark every one of `@beemvp/beeui-ui`'s peerDependencies
    (required and optional) `external`, so the number is what BeeUI's own code
    contributes, not what the consumer's platform already supplies. This is an
    **esbuild-bundled proxy over real built output, not a real Metro/webpack/
@@ -246,7 +246,7 @@ Metro's platform-file convention) — not a real on-device or Metro-bundled
 number, exactly like `native/list-render`'s `deferred` honesty rule above.
 
 Scenarios also include **direct dist-module imports** that bypass the
-`@beeui/ui` barrel (e.g. `web/single-component-direct` imports
+`@beemvp/beeui-ui` barrel (e.g. `web/single-component-direct` imports
 `dist/module/components/button.js` directly). Today's public `exports` map
 has no per-component subpath — only `.` and `./package.json` — so these are
 not a resolvable import path for a real consumer yet; they exist to measure,
@@ -304,7 +304,7 @@ no noisy-runner case to guard against here — a percentage-of-baseline
 tolerance is the appropriate, and simpler, budget shape.
 
 `scripts/benchmark/footprint-budgets.mjs` records, for every package
-(`@beeui/core`/`tokens`/`ui`) and every bundle scenario in
+(`@beemvp/beeui-core`/`tokens`/`ui`) and every bundle scenario in
 `docs/bundle-footprint-baseline.md`, a `baselineGzipBytes` value copied
 verbatim from that committed baseline, plus a two-tier tolerance:
 
@@ -314,7 +314,7 @@ verbatim from that committed baseline, plus a two-tier tolerance:
   PR for every routine change.
 - `failPct: 0.20` — growth beyond 20% FAILS the check. This is chosen well
   above the ~1% organic drift actually observed rebuilding at the same
-  commit on a different host (`@beeui/ui` measured 500.0 KiB vs. the
+  commit on a different host (`@beemvp/beeui-ui` measured 500.0 KiB vs. the
   committed 495.3 KiB baseline — environment/dependency-resolution noise, not
   a regression), so it only trips on a materially sized regression: an
   accidentally un-externalized peer, a new always-bundled dependency, or the
@@ -355,7 +355,7 @@ budgets, since those are measured by `footprint.mjs`, not `cli.mjs`.
 `pnpm bench:test` also runs as part of `pnpm test`. The native lane requires an on-device runner to produce
 `measured` results; without one it deterministically reports `deferred`. The
 component lane's Jest suites (`perf-*.test.tsx`) also run as part of
-`pnpm --filter @beeui/showcase test` (and therefore `pnpm test`), since they are
+`pnpm --filter @beemvp/beeui-showcase test` (and therefore `pnpm test`), since they are
 deterministic pass/fail checks with no invented millisecond gate — only
 `pnpm bench:components`'s separate collection step, not the test run itself,
 produces the timing artifact.

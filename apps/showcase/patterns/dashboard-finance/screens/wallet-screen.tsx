@@ -1,4 +1,4 @@
-import { Button, Card, EmptyState, HStack, Text, VStack } from '@beeui/ui';
+import { Button, Card, EmptyState, HStack, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { BalanceCard } from '../components/balance-card';
 import { ScreenShell } from '../components/screen-shell';

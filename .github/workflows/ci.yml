@@ -205,13 +205,13 @@ jobs:
           retention-days: 14
 
       - name: Bundle showcase for web
-        run: pnpm --filter @beeui/showcase exec expo export --platform web --output-dir dist-web
+        run: pnpm --filter @beemvp/beeui-showcase exec expo export --platform web --output-dir dist-web
 
       - name: Bundle showcase for Android
-        run: pnpm --filter @beeui/showcase exec expo export --platform android --output-dir dist-android
+        run: pnpm --filter @beemvp/beeui-showcase exec expo export --platform android --output-dir dist-android
 
       - name: Bundle showcase for iOS
-        run: pnpm --filter @beeui/showcase exec expo export --platform ios --output-dir dist-ios
+        run: pnpm --filter @beemvp/beeui-showcase exec expo export --platform ios --output-dir dist-ios
 
   bare-native:
     needs: [classify]

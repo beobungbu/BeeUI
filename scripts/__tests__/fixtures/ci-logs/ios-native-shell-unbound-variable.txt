@@ -49,7 +49,7 @@ ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6
 ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6161770Z   ^[[0m
 ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.6975830Z ##[endgroup]
 ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:11.7000620Z ##[group]Pack BeeUI packages through the package boundary
-ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.0467470Z 📦  @beeui/core@0.1.0
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.0467470Z 📦  @beemvp/beeui-core@0.1.0
 ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.0468560Z Tarball Contents
 ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.0469540Z package.json
 ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.0470660Z src/index.ts
@@ -59,7 +59,7 @@ ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.0
 ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.0474970Z src/utils/overlay-runtime.ts
 ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.0476260Z Tarball Details
 ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.0477580Z /Users/runner/Library/Caches/BeeUI/bare-consumer/packages/beeui-core-0.1.0.tgz
-ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4043130Z 📦  @beeui/tokens@0.1.0
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4043130Z 📦  @beemvp/beeui-tokens@0.1.0
 ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4043660Z Tarball Contents
 ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4043990Z package.json
 ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4044320Z src/index.ts
@@ -73,7 +73,7 @@ ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4
 ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4053310Z tokens.json
 ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4053650Z Tarball Details
 ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.4054290Z /Users/runner/Library/Caches/BeeUI/bare-consumer/packages/beeui-tokens-0.1.0.tgz
-ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8202450Z 📦  @beeui/ui@0.1.0
+ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8202450Z 📦  @beemvp/beeui-ui@0.1.0
 ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8203000Z Tarball Contents
 ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8203320Z package.json
 ios-native	Prepare true bare React Native consumer for iOS	2026-08-30T14:27:12.8203630Z src/components/accordion.tsx

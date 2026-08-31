@@ -113,7 +113,7 @@ Density reuses the existing [#71 runtime-override mechanism](./theming.md) — t
 second override compiler and no density store:
 
 ```ts
-import { applyDensity } from '@beeui/tokens';
+import { applyDensity } from '@beemvp/beeui-tokens';
 import { Uniwind } from 'uniwind';
 
 applyDensity(Uniwind, 'light', 'compact');
@@ -171,7 +171,7 @@ cascade — no new propagation) — deferred until that evidence exists, and out
   (exact mode vocabulary, positive values, `rowHeight` hit-target minimum).
 - `pnpm tokens:test` — `scripts/__tests__/density-tokens.test.mjs` (codegen determinism,
   invariant rejection, adding a new metric group requires no generator edit).
-- `pnpm --filter @beeui/showcase test` —
+- `pnpm --filter @beemvp/beeui-showcase test` —
   `apps/showcase/__tests__/theme-density-v3.test.tsx` (runtime `applyDensity`/Uniwind
   integration, `ListItem`/`FormGroup`/`Field` consumption, component-size-prop
   independence, no scoped/store surface).

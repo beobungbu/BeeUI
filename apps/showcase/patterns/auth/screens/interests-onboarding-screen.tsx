@@ -1,4 +1,4 @@
-import { Button, Card, Chip, ChipGroup, HStack, Link, Text, VStack } from '@beeui/ui';
+import { Button, Card, Chip, ChipGroup, HStack, Link, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { AuthShell, OnboardingProgress } from '../components/auth-shared';
 import { authInterestOptions } from '../fixtures/auth-fixtures';

@@ -1,6 +1,6 @@
-import { defineThemeRegistry } from '@beeui/tokens';
+import { defineThemeRegistry } from '@beemvp/beeui-tokens';
 import * as BeeThemeScopeModule from '../../../packages/ui/src/components/theme-scope';
-import { BeeThemeScope } from '@beeui/ui';
+import { BeeThemeScope } from '@beemvp/beeui-ui';
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
 import { Pressable, Text, UIManager } from 'react-native';

@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
   Text,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import {
   containsFontScalingOptOut,
   countNumberOfLinesUsages,
@@ -37,7 +37,7 @@ import {
 // BeeUI 1.0 #143 — Dynamic Type / font-scaling contract.
 //
 // This suite proves the policy documented in docs/dynamic-type.md against the
-// current existing `@beeui/ui` public component surface:
+// current existing `@beemvp/beeui-ui` public component surface:
 //   1. no component ever disables OS/browser font scaling;
 //   2. every intentional single-line truncation point is deliberate and
 //      documented (docs/dynamic-type.md + helpers/dynamic-type.ts stay in
@@ -59,7 +59,7 @@ import {
 // currently accepted for #143.
 
 describe('Dynamic Type / font-scaling contract (#143)', () => {
-  it('never disables OS/browser font scaling on any @beeui/ui component', () => {
+  it('never disables OS/browser font scaling on any @beemvp/beeui-ui component', () => {
     const sources = readAllComponentSources();
     const offenders = Object.entries(sources)
       .filter(([, source]) => containsFontScalingOptOut(source))

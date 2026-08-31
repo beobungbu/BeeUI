@@ -26,10 +26,10 @@ importers:
 
   apps/demo:
     dependencies:
-      '@beeui/tokens':
+      '@beemvp/beeui-tokens':
         specifier: workspace:*
         version: link:../../packages/tokens
-      '@beeui/ui':
+      '@beemvp/beeui-ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@expo/metro-runtime':
@@ -124,10 +124,10 @@ importers:
 
   apps/showcase:
     dependencies:
-      '@beeui/tokens':
+      '@beemvp/beeui-tokens':
         specifier: workspace:*
         version: link:../../packages/tokens
-      '@beeui/ui':
+      '@beemvp/beeui-ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@expo/metro-runtime':
@@ -194,10 +194,10 @@ importers:
 
   apps/visual-regression:
     dependencies:
-      '@beeui/tokens':
+      '@beemvp/beeui-tokens':
         specifier: workspace:*
         version: link:../../packages/tokens
-      '@beeui/ui':
+      '@beemvp/beeui-ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@expo/metro-runtime':
@@ -253,10 +253,10 @@ importers:
 
   packages/ui:
     dependencies:
-      '@beeui/core':
+      '@beemvp/beeui-core':
         specifier: workspace:*
         version: link:../core
-      '@beeui/tokens':
+      '@beemvp/beeui-tokens':
         specifier: workspace:*
         version: link:../tokens
       class-variance-authority:

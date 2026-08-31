@@ -147,7 +147,7 @@ export function createThemeOverridesDefiner<Categories extends OverrideCategoryM
 /**
  * Structural shape of the subset of Uniwind's API `applyThemeOverrides` needs
  * (`Uniwind.updateCSSVariables` from the `uniwind` package). Declared
- * structurally rather than imported so `@beeui/tokens` never takes a hard
+ * structurally rather than imported so `@beemvp/beeui-tokens` never takes a hard
  * dependency on `uniwind` — the same boundary the package already keeps
  * (`packages/tokens` has no `uniwind` dependency; only `packages/ui` and
  * consuming apps do).

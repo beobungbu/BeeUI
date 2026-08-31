@@ -14,17 +14,17 @@
 - `apps/visual-regression/src/a11y-scenarios.ts` (modified) — additive `tooltip-open` axe scenario.
 - `apps/visual-regression/tests/tooltip-fixture.spec.ts` (new) — 6 real-Chromium Playwright tests + 1 baseline screenshot.
 
-## Key decision: not exported from `@beeui/ui` yet
+## Key decision: not exported from `@beemvp/beeui-ui` yet
 Confirmed empirically (not just per ADR text) that exporting `Tooltip` from `packages/ui/src/index.ts` right now would break `apps/showcase`'s iOS/Android Metro bundling — that shared barrel is consumed by `apps/showcase`, which builds for iOS/Android, and only a `.web.tsx` implementation exists (no native/generic fallback for Metro to resolve on other platforms). Additionally, `apps/showcase/__tests__/pattern-gallery.test.tsx`'s "keeps Showcase imports public and router-free" guard test forbids any Component-Gallery file from deep-importing `packages/ui/src/...` — so a Component Gallery demo was not a viable path either. Real hover/focus/Escape/timing evidence instead lives in `apps/visual-regression`, a genuinely Web-only Expo app (`build:web` only, no `ios`/`android` script), where a direct `tooltip.web.tsx` import is safe. This matches ADR-005's own sequencing (#155 owns barrel/registry export once #152-154 are green).
 
 ## Bug caught during self-review
 Initial `TooltipContent` used `Pressable` (needed for `onHoverIn`/`onHoverOut`) which defaults to `tabIndex={0}` on Web — making the tooltip bubble an unwanted, independent Tab stop, contradicting ADR-005's "no focus transfer into content." Caught via the real-browser Playwright test (`never becomes a Tab stop and never receives focus itself`), fixed with an explicit `tabIndex={-1}`, and pinned with a matching Jest assertion too.
 
 ## Tests status
-- `pnpm --filter @beeui/ui typecheck`: pass
-- `pnpm --filter @beeui/showcase typecheck`: pass
-- `pnpm --filter @beeui/visual-regression typecheck`: pass
-- `pnpm --filter @beeui/showcase test`: 59 suites / 617 tests pass (10 new; confirms Popover/#21, DropdownMenu, Select, overlay-runtime/#59 contracts all remain green)
+- `pnpm --filter @beemvp/beeui-ui typecheck`: pass
+- `pnpm --filter @beemvp/beeui-showcase typecheck`: pass
+- `pnpm --filter @beemvp/beeui-visual-regression typecheck`: pass
+- `pnpm --filter @beemvp/beeui-showcase test`: 59 suites / 617 tests pass (10 new; confirms Popover/#21, DropdownMenu, Select, overlay-runtime/#59 contracts all remain green)
 - `apps/visual-regression` `tooltip-fixture.spec.ts` (`desktop-light` project): 6/6 pass, stable across 2 reruns
 - `apps/visual-regression` a11y gate (`BEEUI_A11Y_AUDIT=1`, `a11y-audit` + `a11y-gate-regression` projects): 18/18 pass; `tooltip-open` scenario: 0 blocking/allowlisted/non-blocking axe violations
 - `apps/visual-regression` `showcase-integration` project (Select/overlay-context/showcase/dynamic-type/large-text): 33/33 pass (1 pre-existing unrelated skip)
@@ -35,4 +35,4 @@ https://github.com/beobungbu/BeeUI/pull/314 (head `139eddf`, base `80a113c`), li
 
 ## Concerns / follow-ups (for #153/#154/#155, not blocking this PR)
 - #153 should verify the shared timer state machine (`tooltip-shared.tsx`) needs no changes for long-press + merged `accessibilityHint` on native — only new `TooltipTrigger`/`TooltipContent` native implementations should be required.
-- #155 should switch `apps/visual-regression/App.tsx`'s Tooltip import from the deep `tooltip.web` path back to `@beeui/ui` once the barrel export lands, and should decide whether the `apps/visual-regression`-only fixture is retired in favor of a real Component Gallery demo at that point.
+- #155 should switch `apps/visual-regression/App.tsx`'s Tooltip import from the deep `tooltip.web` path back to `@beemvp/beeui-ui` once the barrel export lands, and should decide whether the `apps/visual-regression`-only fixture is retired in favor of a real Component Gallery demo at that point.

@@ -1,4 +1,4 @@
-import { AppHeader, Box, SafeArea, Screen } from '@beeui/ui';
+import { AppHeader, Box, SafeArea, Screen } from '@beemvp/beeui-ui';
 import { Slot, usePathname } from 'expo-router';
 import * as React from 'react';
 import { BottomTabBar } from './bottom-tab-bar';

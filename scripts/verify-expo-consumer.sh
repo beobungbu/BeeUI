@@ -8,10 +8,10 @@ set -euo pipefail
 # docs/decisions/011-distribution-architecture.md list Expo as one of the
 # three required clean-consumer rows alongside bare React Native and Web.
 #
-# Unlike apps/showcase (which is workspace-linked, `@beeui/ui: workspace:*`,
+# Unlike apps/showcase (which is workspace-linked, `@beemvp/beeui-ui: workspace:*`,
 # and deliberately reorders Metro's resolver conditions to resolve `src/`
 # directly — see its own metro.config.js comment), this app installs the
-# packed @beeui/core/@beeui/tokens/@beeui/ui tarballs like a real npm
+# packed @beemvp/beeui-core/@beemvp/beeui-tokens/@beemvp/beeui-ui tarballs like a real npm
 # consumer and never touches `unstable_conditionsByPlatform`, so Metro
 # resolves the packaged `dist/` output through its ordinary `react-native`/
 # `browser`/`default` conditions — the real, unmodified consumer contract.
@@ -73,13 +73,13 @@ pack_beeui() {
   mkdir -p "${PACKAGE_DIR}"
 
   cd "${ROOT_DIR}"
-  pnpm --filter @beeui/core pack --pack-destination "${PACKAGE_DIR}"
-  pnpm --filter @beeui/tokens pack --pack-destination "${PACKAGE_DIR}"
-  pnpm --filter @beeui/ui pack --pack-destination "${PACKAGE_DIR}"
+  pnpm --filter @beemvp/beeui-core pack --pack-destination "${PACKAGE_DIR}"
+  pnpm --filter @beemvp/beeui-tokens pack --pack-destination "${PACKAGE_DIR}"
+  pnpm --filter @beemvp/beeui-ui pack --pack-destination "${PACKAGE_DIR}"
 
-  CORE_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beeui-core-*.tgz' -print -quit)"
-  TOKENS_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beeui-tokens-*.tgz' -print -quit)"
-  UI_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beeui-ui-*.tgz' -print -quit)"
+  CORE_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beemvp-beeui-core-*.tgz' -print -quit)"
+  TOKENS_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beemvp-beeui-tokens-*.tgz' -print -quit)"
+  UI_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beemvp-beeui-ui-*.tgz' -print -quit)"
 
   test -n "${CORE_TARBALL}" && test -f "${CORE_TARBALL}"
   test -n "${TOKENS_TARBALL}" && test -f "${TOKENS_TARBALL}"
@@ -126,7 +126,7 @@ EOF
 
   # Deliberately does NOT reorder `unstable_conditionsByPlatform` the way
   # apps/showcase's metro.config.js does — that override exists only so the
-  # *workspace-linked* Showcase can resolve `@beeui/*` straight from `src/`
+  # *workspace-linked* Showcase can resolve `@beemvp/beeui-*` straight from `src/`
   # without a build step. This is a clean consumer of the packed tarballs, so
   # Metro must resolve through the ordinary `react-native`/`browser`/
   # `default` conditions straight to the packaged `dist/` output.
@@ -149,10 +149,10 @@ EOF
   cat > global.css <<'EOF'
 @import 'tailwindcss';
 @import 'uniwind';
-@import '@beeui/tokens/theme.css';
+@import '@beemvp/beeui-tokens/theme.css';
 
-@source '../node_modules/@beeui/core/src';
-@source '../node_modules/@beeui/ui/src';
+@source '../node_modules/@beemvp/beeui-core/src';
+@source '../node_modules/@beemvp/beeui-ui/src';
 EOF
 
   cat > tsconfig.json <<'EOF'
@@ -191,8 +191,8 @@ import {
   SafeArea,
   Screen,
   Text,
-} from '@beeui/ui';
-import { Badge } from '@beeui/ui/badge';
+} from '@beemvp/beeui-ui';
+import { Badge } from '@beemvp/beeui-ui/badge';
 import * as React from 'react';
 import { ScrollView } from 'react-native';
 
@@ -207,7 +207,7 @@ export default function App() {
           <ScrollView contentContainerStyle={{ padding: 24 }}>
             <Card className="gap-4">
               <Text variant="title">BeeUI Expo consumer smoke</Text>
-              <Badge>Granular subpath: @beeui/ui/badge</Badge>
+              <Badge>Granular subpath: @beemvp/beeui-ui/badge</Badge>
               <Input accessibilityLabel="Project name" placeholder="Project name" />
               <Checkbox checked={checked} label="Enable notifications" onCheckedChange={setChecked} />
               <ChipGroup onValueChange={(value) => setFilter(String(value))} value={filter}>
@@ -286,7 +286,7 @@ EOF
     cd "${APP_DIR}"
 
     echo "::group::Reinstall BeeUI tarballs into existing consumer"
-    rm -rf node_modules/@beeui
+    rm -rf node_modules/@beemvp
     npm install --save-exact --legacy-peer-deps \
       "${CORE_TARBALL}" \
       "${TOKENS_TARBALL}" \

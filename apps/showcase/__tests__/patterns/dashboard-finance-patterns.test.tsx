@@ -173,6 +173,6 @@ describe('dashboard + finance patterns', () => {
 
     visit(root);
     const source = files.map((file) => fs.readFileSync(file, 'utf8')).join('\n');
-    expect(source).not.toMatch(/from ['"]@beeui\/ui\//);
+    expect(source).not.toMatch(/from ['"]@beemvp\/beeui-ui\//);
   });
 });

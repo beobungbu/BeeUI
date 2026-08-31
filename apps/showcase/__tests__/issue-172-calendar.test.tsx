@@ -1,5 +1,5 @@
-import { type CalendarDate } from '@beeui/core';
-import { Calendar, type CalendarVisibleMonth } from '@beeui/ui';
+import { type CalendarDate } from '@beemvp/beeui-core';
+import { Calendar, type CalendarVisibleMonth } from '@beemvp/beeui-ui';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import * as React from 'react';
 import { Platform } from 'react-native';

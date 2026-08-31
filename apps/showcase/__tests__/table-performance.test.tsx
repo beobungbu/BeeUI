@@ -1,4 +1,4 @@
-import { Table, TableBody, TableCell, TableRow } from '@beeui/ui';
+import { Table, TableBody, TableCell, TableRow } from '@beemvp/beeui-ui';
 import { render } from '@testing-library/react-native';
 import * as React from 'react';
 

@@ -9,7 +9,7 @@ import {
   DialogTitle,
   SearchInput,
   Separator,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 
 describe('BeeUI issue #7 runtime and accessibility follow-ups', () => {
   it('announces primitive AlertBanner content on iOS with polite queueing', () => {

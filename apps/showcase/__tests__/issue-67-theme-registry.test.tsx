@@ -10,11 +10,11 @@ import {
   getBeeThemeSelection,
   isBeeDarkRuntimeTheme,
   resolveBeeRuntimeTheme,
-} from '@beeui/tokens';
-import { Button } from '@beeui/ui';
+} from '@beemvp/beeui-tokens';
+import { Button } from '@beemvp/beeui-ui';
 
 // A third brand defined the way an external consumer would: from the public
-// @beeui/tokens API, without editing any BeeUI package source.
+// @beemvp/beeui-tokens API, without editing any BeeUI package source.
 const acmeRegistry = defineThemeRegistry({
   bee: { light: 'light', dark: 'dark' },
   violet: { light: 'violet-light', dark: 'violet-dark' },

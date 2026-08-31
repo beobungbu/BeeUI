@@ -2,7 +2,7 @@ import { render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 import { Uniwind } from 'uniwind';
-import { BeeUIProvider, SafeArea, Text } from '@beeui/ui';
+import { BeeUIProvider, SafeArea, Text } from '@beemvp/beeui-ui';
 
 const TEST_INSETS = { top: 47, right: 0, bottom: 34, left: 0 };
 

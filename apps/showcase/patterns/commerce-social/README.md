@@ -1,6 +1,6 @@
 # Commerce + Social production patterns
 
-This pack stress-tests BeeUI by composing realistic consumer-mobile screens from the public `@beeui/ui` API. Domain UI stays local unless repeated evidence shows a generalized platform contract is missing.
+This pack stress-tests BeeUI by composing realistic consumer-mobile screens from the public `@beemvp/beeui-ui` API. Domain UI stays local unless repeated evidence shows a generalized platform contract is missing.
 
 ## Included screens
 

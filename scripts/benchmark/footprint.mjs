@@ -19,7 +19,7 @@
 // It measures, honestly and separately (see `docs/beeui-1.0-evidence-classes.md`):
 //
 //   1. Packed tarball sizes — real `npm pack --dry-run --json` output for every
-//      public package (`@beeui/core`, `@beeui/tokens`, `@beeui/ui`) against the
+//      public package (`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`) against the
 //      actual release-ready layout: `dist/` (module + commonjs + typescript)
 //      plus `src` (kept for the Registry/`beeui add` source-ownership path and
 //      for Metro/uniwind `@source` scanning per ADR-011 D4). Requires `dist/`
@@ -29,7 +29,7 @@
 //
 //   2. Clean-consumer bundle contribution — esbuild bundles of small,
 //      synthetic entry points that import only from the packages' real BUILT
-//      `dist/module` output (the exact file every one of `@beeui/*`'s `exports`
+//      `dist/module` output (the exact file every one of `@beemvp/beeui-*`'s `exports`
 //      conditions — `react-native`, `import`, `browser`, `default` — resolves
 //      to; only `require` differs, pointing at `dist/commonjs`), with every
 //      peerDependency (react, react-dom, react-native and every optional
@@ -49,7 +49,7 @@
 //
 // The "direct module import" scenarios below bundle a single component's
 // built `dist/module/components/<name>.js` file directly, bypassing the
-// `@beeui/ui` barrel. Today's public `exports` map has no per-component
+// `@beemvp/beeui-ui` barrel. Today's public `exports` map has no per-component
 // subpath (only `.` and `./package.json`), so these are not a resolvable
 // import path for a real consumer yet — they exist to measure what a future
 // granular subpath export (issue #184's decision) would cost, using the real
@@ -141,7 +141,7 @@ function collectPackageFootprints() {
   return footprints;
 }
 
-// Every peerDependency (required and optional) of @beeui/ui: these are what a
+// Every peerDependency (required and optional) of @beemvp/beeui-ui: these are what a
 // consumer's own app/platform already supplies, so they are marked external
 // in every bundle scenario below rather than counted as BeeUI's own footprint.
 function collectExternalPeers() {
@@ -149,7 +149,7 @@ function collectExternalPeers() {
   return Object.keys(uiPkg.peerDependencies ?? {});
 }
 
-// `@beeui/*` bare specifiers alias to the real built `dist/module/index.js` —
+// `@beemvp/beeui-*` bare specifiers alias to the real built `dist/module/index.js` —
 // exactly the file every one of the package's `exports` conditions that a
 // bundler would pick for this proxy (`react-native`, `import`, `browser`,
 // `default`) resolves to today (only `require` differs, at `dist/commonjs`).
@@ -157,10 +157,10 @@ function collectExternalPeers() {
 // and the clean-consumer scripts' job); it is pointing the byte-count proxy at
 // the same file those conditions already agree on.
 const ALIAS = {
-  '@beeui/ui': path.join(DIST_MODULE.ui, 'index.js'),
-  '@beeui/core': path.join(DIST_MODULE.core, 'index.js'),
-  '@beeui/tokens': path.join(DIST_MODULE.tokens, 'index.js'),
-  '@beeui/tokens/motion-runtime': path.join(DIST_MODULE.tokens, 'motion-runtime.js'),
+  '@beemvp/beeui-ui': path.join(DIST_MODULE.ui, 'index.js'),
+  '@beemvp/beeui-core': path.join(DIST_MODULE.core, 'index.js'),
+  '@beemvp/beeui-tokens': path.join(DIST_MODULE.tokens, 'index.js'),
+  '@beemvp/beeui-tokens/motion-runtime': path.join(DIST_MODULE.tokens, 'motion-runtime.js'),
 };
 
 const RESOLVE_EXTENSIONS = {
@@ -194,16 +194,16 @@ function buildScenarios(externalPeers) {
   return [
     {
       id: 'web/full-barrel',
-      title: 'Full `@beeui/ui` barrel (today’s only public export), built output',
+      title: 'Full `@beemvp/beeui-ui` barrel (today’s only public export), built output',
       platform: 'web',
-      entry: moduleImport('@beeui/ui'),
+      entry: moduleImport('@beemvp/beeui-ui'),
       external: externalPeers,
     },
     {
       id: 'web/single-component-via-barrel',
       title: 'Button imported through the barrel (today’s only import path), built output',
       platform: 'web',
-      entry: `export { Button } from '@beeui/ui';\n`,
+      entry: `export { Button } from '@beemvp/beeui-ui';\n`,
       external: externalPeers,
     },
     {
@@ -215,9 +215,9 @@ function buildScenarios(externalPeers) {
     },
     {
       id: 'web/core-tokens-baseline',
-      title: '@beeui/core + @beeui/tokens alone (shared foundation every component pays), built output',
+      title: '@beemvp/beeui-core + @beemvp/beeui-tokens alone (shared foundation every component pays), built output',
       platform: 'web',
-      entry: combinedImport(['@beeui/core', '@beeui/tokens']),
+      entry: combinedImport(['@beemvp/beeui-core', '@beemvp/beeui-tokens']),
       external: externalPeers,
     },
     {
@@ -243,9 +243,9 @@ function buildScenarios(externalPeers) {
     },
     {
       id: 'native/full-barrel',
-      title: 'Full `@beeui/ui` barrel, native-extension-priority proxy (not a real Metro build)',
+      title: 'Full `@beemvp/beeui-ui` barrel, native-extension-priority proxy (not a real Metro build)',
       platform: 'native',
-      entry: moduleImport('@beeui/ui'),
+      entry: moduleImport('@beemvp/beeui-ui'),
       external: externalPeers,
     },
     {

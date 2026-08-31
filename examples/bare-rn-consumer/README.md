@@ -11,7 +11,7 @@ committed" below).
 ## Unpublished status
 
 BeeUI is not published to npm (see `../README.md`). `setup.sh` packs
-`@beeui/core`, `@beeui/tokens`, and `@beeui/ui` with `pnpm pack` and installs
+`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` with `pnpm pack` and installs
 those tarballs with `npm install`, plus the same pinned native peers
 `scripts/verify-bare-consumer.sh` uses (uniwind, tailwindcss,
 react-native-safe-area-context, react-native-teleport,

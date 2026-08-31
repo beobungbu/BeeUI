@@ -1,7 +1,7 @@
 import { act, render } from '@testing-library/react-native';
 import * as React from 'react';
 import { Keyboard, Platform, TextInput, UIManager } from 'react-native';
-import { KeyboardAwareScreen, Text } from '@beeui/ui';
+import { KeyboardAwareScreen, Text } from '@beemvp/beeui-ui';
 
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');

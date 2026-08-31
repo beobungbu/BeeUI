@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import * as path from 'node:path';
-import { fromLocalDate, parseISODateString, toISODateString, toLocalDate, type CalendarDate, type ClockTime } from '@beeui/core';
+import { fromLocalDate, parseISODateString, toISODateString, toLocalDate, type CalendarDate, type ClockTime } from '@beemvp/beeui-core';
 import {
   getCalendarDayAccessibilityLabel,
   getCalendarMonthLabel,

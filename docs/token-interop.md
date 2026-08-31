@@ -1,6 +1,6 @@
 # DTCG interoperability: Style Dictionary, design-tool handoff, and round-trip ownership
 
-`packages/tokens/tokens.json` is already a conformant **DTCG 2025.10** Format document, and `packages/tokens/src/tokens.resolver.json` is already a conformant DTCG 2025.10 Resolver document — see [Canonical source and DTCG 2025.10](./theming.md#canonical-source-and-dtcg-202510) and [Package and generated artifacts](./theming.md#package-and-generated-artifacts). Both are published `@beeui/tokens` exports (`@beeui/tokens/tokens.json`, `@beeui/tokens/tokens.resolver.json`). This document is the interoperability companion to that architecture: worked examples for consuming those artifacts from external tooling, and the ownership contract that governs any change those tools propose.
+`packages/tokens/tokens.json` is already a conformant **DTCG 2025.10** Format document, and `packages/tokens/src/tokens.resolver.json` is already a conformant DTCG 2025.10 Resolver document — see [Canonical source and DTCG 2025.10](./theming.md#canonical-source-and-dtcg-202510) and [Package and generated artifacts](./theming.md#package-and-generated-artifacts). Both are published `@beemvp/beeui-tokens` exports (`@beemvp/beeui-tokens/tokens.json`, `@beemvp/beeui-tokens/tokens.resolver.json`). This document is the interoperability companion to that architecture: worked examples for consuming those artifacts from external tooling, and the ownership contract that governs any change those tools propose.
 
 Nothing here changes BeeUI's runtime, generator, or schema. Every code sample below runs in a **consumer's own project or design-tool session** — none of it is added to this repository's dependencies, scripts, or CI.
 
@@ -23,7 +23,7 @@ Style Dictionary v4+ has native support for the `$value`/`$type`/`$description` 
 import StyleDictionary from 'style-dictionary';
 
 const sd = new StyleDictionary({
-  source: ['node_modules/@beeui/tokens/tokens.json'],
+  source: ['node_modules/@beemvp/beeui-tokens/tokens.json'],
   usesDtcg: true,
 });
 ```
@@ -64,7 +64,7 @@ import { beeuiRefResolver } from './resolve-beeui-refs.mjs';
 StyleDictionary.registerPreprocessor(beeuiRefResolver);
 
 const sd = new StyleDictionary({
-  source: ['node_modules/@beeui/tokens/tokens.json'],
+  source: ['node_modules/@beemvp/beeui-tokens/tokens.json'],
   usesDtcg: true,
   preprocessors: ['beeui/resolve-refs'],
   platforms: {
@@ -92,7 +92,7 @@ delete dictionary.primitives;
 
 ### What this example is, and is not
 
-- It **transforms** the canonical file at build time inside the consumer's own project; it never copies `packages/tokens/tokens.json` into a second maintained file. Bumping the installed `@beeui/tokens` version is the only step needed to pick up new or changed tokens.
+- It **transforms** the canonical file at build time inside the consumer's own project; it never copies `packages/tokens/tokens.json` into a second maintained file. Bumping the installed `@beemvp/beeui-tokens` version is the only step needed to pick up new or changed tokens.
 - It is illustrative documentation, not a BeeUI-maintained integration. BeeUI ships and tests no `style-dictionary` config, and this example is not exercised by BeeUI's own CI.
 
 ## Tokens Studio / Figma handoff
@@ -112,7 +112,7 @@ Tokens Studio (the Figma plugin) and similar design tools can import `tokens.jso
 
 ### Workflow
 
-1. **Export from BeeUI.** Fetch the published `@beeui/tokens/tokens.json` (and `tokens.resolver.json` if the tool consumes DTCG Resolver documents) from the installed package version — via the npm registry or a checkout of this repository. Import it into the design tool's JSON import feature, or point a one-way GitHub sync at `packages/tokens/tokens.json`.
+1. **Export from BeeUI.** Fetch the published `@beemvp/beeui-tokens/tokens.json` (and `tokens.resolver.json` if the tool consumes DTCG Resolver documents) from the installed package version — via the npm registry or a checkout of this repository. Import it into the design tool's JSON import feature, or point a one-way GitHub sync at `packages/tokens/tokens.json`.
 2. **Review in the tool.** The design tool renders BeeUI's semantic groups (colors, chart, spacing, typography, motion, …) as browsable tokens/variables. Exclude `primitives` from anything published as a usable style.
 3. **Apply in design work.** Designers use the imported values/variables in Figma exactly like any other token source.
 4. **Propose, don't sync.** A designer may change a value or suggest a new token inside the tool. That is a **proposal**, not an update to BeeUI — see [Round-trip ownership and non-goals](#round-trip-ownership-and-non-goals) for what happens next.
@@ -127,12 +127,12 @@ Some design tools offer an automatic two-way GitHub sync (writing commits back t
 
 ### Workflow
 
-1. **Consume.** A Style Dictionary build or a design-tool import reads the published `@beeui/tokens/tokens.json` / `tokens.resolver.json`.
+1. **Consume.** A Style Dictionary build or a design-tool import reads the published `@beemvp/beeui-tokens/tokens.json` / `tokens.resolver.json`.
 2. **Propose.** A designer changes a value in Tokens Studio, or an integrator requests a new token or alias while wiring up Style Dictionary.
 3. **Return through the canonical source.** Someone edits `packages/tokens/tokens.json` by hand to carry the proposal forward — never by exporting a design tool's own file format over the canonical source, and never by hand-editing a generated artifact.
 4. **Regenerate.** `pnpm tokens:generate` recomputes every derived artifact (`packages/tokens/src/index.ts`, `packages/tokens/src/theme.css`, `packages/tokens/src/tokens.resolver.json`, `packages/tokens/src/lifecycle.json`) from the edited canonical source.
 5. **Review.** The change goes through the same gates as any other token edit — `pnpm tokens:check`, DTCG schema validation, and BeeUI's own contrast/completeness/alias-graph validation — described in [Extending BeeUI tokens](./theming.md#extending-beeui-tokens).
-6. **Publish.** Once merged, the next `@beeui/tokens` release carries the change back out to every external consumer of this document.
+6. **Publish.** Once merged, the next `@beemvp/beeui-tokens` release carries the change back out to every external consumer of this document.
 
 ### Non-goals (restated from issue #80)
 

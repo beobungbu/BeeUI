@@ -574,7 +574,7 @@ test('semantic tokens may only alias the private authoring layer', () => {
   assert.throws(() => generateTokenArtifacts(invalid), /private authoring primitive/);
 });
 
-test('reusable @beeui/ui components do not consume private primitive identifiers', () => {
+test('reusable @beemvp/beeui-ui components do not consume private primitive identifiers', () => {
   const uiSrc = path.join(ROOT_DIR, 'packages/ui/src');
   const files = [];
   const walk = (dir) => {
@@ -585,7 +585,7 @@ test('reusable @beeui/ui components do not consume private primitive identifiers
     }
   };
   walk(uiSrc);
-  assert.ok(files.length > 0, 'expected @beeui/ui component sources to scan');
+  assert.ok(files.length > 0, 'expected @beemvp/beeui-ui component sources to scan');
 
   const families = Object.keys(source.primitives).filter((name) => !name.startsWith('$'));
   const identifiers = [];

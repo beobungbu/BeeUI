@@ -1,17 +1,17 @@
-# @beeui/cli
+# @beemvp/beeui-cli
 
-BeeUI's source-ownership CLI: copies BeeUI component source and its transitive dependencies into a consumer project, rewriting `@beeui/core`/`@beeui/tokens` imports so the copied files compile and run standalone — the [`beeui add`](https://github.com/beobungbu/BeeUI/blob/main/docs/registry-cli.md) path described in ADR-011's D5 (centralized-vs-source-ownership coexistence).
+BeeUI's source-ownership CLI: copies BeeUI component source and its transitive dependencies into a consumer project, rewriting `@beemvp/beeui-core`/`@beemvp/beeui-tokens` imports so the copied files compile and run standalone — the [`beeui add`](https://github.com/beobungbu/BeeUI/blob/main/docs/registry-cli.md) path described in ADR-011's D5 (centralized-vs-source-ownership coexistence).
 
 ## Install
 
 ```bash
-npm install -g @beeui/cli
+npm install -g @beemvp/beeui-cli
 ```
 
 Or invoke it without installing:
 
 ```bash
-npx @beeui/cli add button
+npx @beemvp/beeui-cli add button
 ```
 
 ## Usage

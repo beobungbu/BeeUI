@@ -1,5 +1,5 @@
 import { fireEvent, render } from '@testing-library/react-native';
-import { BeeUIProvider } from '@beeui/ui';
+import { BeeUIProvider } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import type * as ReactTypes from 'react';
 import { View } from 'react-native';

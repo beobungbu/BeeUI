@@ -1,5 +1,5 @@
-import { cn } from '@beeui/core';
-import { layer } from '@beeui/tokens';
+import { cn } from '@beemvp/beeui-core';
+import { layer } from '@beemvp/beeui-tokens';
 import * as React from 'react';
 import { Pressable, StyleSheet, TextInput } from 'react-native';
 import { Button } from './button';

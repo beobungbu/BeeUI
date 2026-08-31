@@ -1,4 +1,4 @@
-import { Card, Text, VStack } from '@beeui/ui';
+import { Card, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 
 export type CheckoutSectionProps = {

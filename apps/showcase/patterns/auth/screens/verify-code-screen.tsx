@@ -1,4 +1,4 @@
-import { Button, Card, Field, HStack, Link, OTPInput, Text, VStack } from '@beeui/ui';
+import { Button, Card, Field, HStack, Link, OTPInput, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { AuthHeader, AuthShell, ServerError } from '../components/auth-shared';
 

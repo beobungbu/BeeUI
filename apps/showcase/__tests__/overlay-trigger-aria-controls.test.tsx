@@ -5,7 +5,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import { fireEvent, render } from '@testing-library/react-native';
 import * as React from 'react';
 import { Text, View } from 'react-native';

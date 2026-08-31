@@ -61,7 +61,7 @@ Gesture-Handler on Web, no drag-to-dismiss gesture claimed.
 
 ## Tests status
 - Type check (full workspace, 5 projects): **pass**.
-- `pnpm --filter @beeui/showcase test` (jest, 63 suites): **685/685 pass**, including the
+- `pnpm --filter @beemvp/beeui-showcase test` (jest, 63 suites): **685/685 pass**, including the
   pinned `issue-157-sheet-api.test.tsx` (untouched, still exercises native `sheet.tsx`).
 - Playwright `sheet-showcase.spec.ts`: **7/7 pass**, re-run 3× each (21/21) with no flakiness.
 - Playwright `component-gallery-sheet-overlay` axe scan: **0 blocking violations**.

@@ -1,5 +1,5 @@
-import { beeTokenReader, defineTokenReader } from '@beeui/tokens';
-import { BeeThemeScope, getBeeToken, useBeeToken } from '@beeui/ui';
+import { beeTokenReader, defineTokenReader } from '@beemvp/beeui-tokens';
+import { BeeThemeScope, getBeeToken, useBeeToken } from '@beemvp/beeui-ui';
 import * as UseBeeTokenModule from '../../../packages/ui/src/components/use-bee-token';
 import { act, render } from '@testing-library/react-native';
 import * as React from 'react';
@@ -8,9 +8,9 @@ import { __resetUniwindMockVariables, Uniwind } from 'uniwind';
 
 // Runtime tests for BeeUI issue #72 — typed runtime token readers for
 // non-className consumers. These exercise `useBeeToken`/`getBeeToken` from
-// `@beeui/ui` the way a consuming application would (SVG props, a chart/data
+// `@beemvp/beeui-ui` the way a consuming application would (SVG props, a chart/data
 // fixture, a React Navigation-style theme mapping, imperative platform-API
-// setup): no reusable @beeui/ui component source other than the reader itself
+// setup): no reusable @beemvp/beeui-ui component source other than the reader itself
 // is touched by any test in this file.
 
 afterEach(() => {
@@ -55,7 +55,7 @@ describe('issue #72 — path vocabulary is derived from canonical metadata', () 
     expect(() => beeTokenReader.resolve('colors.brand' as never)).toThrow(/unknown token path "colors.brand"/);
     // Private authoring primitives are never part of the public vocabulary at all.
     expect(() => beeTokenReader.resolve('colors.amber-500' as never)).toThrow(/unknown token path/);
-    // breakpoint is a build-time-only Tailwind/Uniwind constant (see @beeui/tokens'
+    // breakpoint is a build-time-only Tailwind/Uniwind constant (see @beemvp/beeui-tokens'
     // own JSDoc on `breakpoint`) — never a runtime-reader category.
     expect(() => beeTokenReader.resolve('breakpoint.medium' as never)).toThrow(/unknown token path/);
     expect(beeTokenReader.isValidPath('breakpoint.medium')).toBe(false);
@@ -266,8 +266,8 @@ describe('issue #72 — no second theme store/provider/context', () => {
     expect(Object.keys(UseBeeTokenModule).sort()).toEqual(['getBeeToken', 'useBeeToken']);
   });
 
-  it('@beeui/tokens exposes no provider/context/store name anywhere in its public surface', () => {
-    const tokensExports = require('@beeui/tokens') as Record<string, unknown>;
+  it('@beemvp/beeui-tokens exposes no provider/context/store name anywhere in its public surface', () => {
+    const tokensExports = require('@beemvp/beeui-tokens') as Record<string, unknown>;
     const suspiciousNames = Object.keys(tokensExports).filter((name) => /provider|context|store/i.test(name));
     expect(suspiciousNames).toEqual([]);
   });

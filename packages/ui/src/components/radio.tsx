@@ -1,4 +1,4 @@
-import { cn } from '@beeui/core';
+import { cn } from '@beemvp/beeui-core';
 import { cva } from 'class-variance-authority';
 import * as React from 'react';
 import { Pressable, View, type PressableProps, type ViewProps } from 'react-native';

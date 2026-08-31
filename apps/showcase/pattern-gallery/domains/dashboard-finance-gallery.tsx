@@ -1,4 +1,4 @@
-import { useToast } from '@beeui/ui';
+import { useToast } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import {
   AnalyticsScreen,

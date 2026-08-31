@@ -40,7 +40,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   type CalendarDate,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import * as React from 'react';
 
 /**
@@ -63,7 +63,7 @@ export function App() {
         <div style={{ padding: 24, maxWidth: 640, margin: '0 auto' }}>
           <Card className="gap-4">
             <Text variant="title">BeeUI Web consumer starter</Text>
-            <Text variant="body">Vite + react-native-web, consuming @beeui/ui as a packed package.</Text>
+            <Text variant="body">Vite + react-native-web, consuming @beemvp/beeui-ui as a packed package.</Text>
 
             <Input accessibilityLabel="Project name" placeholder="Project name" />
             <Checkbox checked={checked} label="Enable notifications" onCheckedChange={setChecked} />

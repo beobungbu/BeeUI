@@ -20,11 +20,11 @@ Environment: Node v24.13.1, pnpm 10.15.0, darwin/arm64.
 Updated at `7aeaf75370ba` (#202/#203/#204, R7.6-R7.8): the packed-inventory
 audit in `pnpm release:verify` found and fixed a real leak —
 `react-native-builder-bob`'s `module`/`commonjs` babel targets were also
-compiling `@beeui/ui`'s hand-written ambient `.d.ts` type shims (they match
+compiling `@beemvp/beeui-ui`'s hand-written ambient `.d.ts` type shims (they match
 the same `*.ts` glob), producing 20 dead `.d.js`/`.d.js.map` files with no
 consumer. `packages/ui/scripts/copy-type-shims.mjs` now prunes them after
 every build. Each package also gained a `README.md` (+1 packed file each; npm
-always includes it regardless of the `files` allowlist). Net for `@beeui/ui`:
+always includes it regardless of the `files` allowlist). Net for `@beemvp/beeui-ui`:
 824 → 805 files. The table below reflects the corrected, audited packed
 contents.
 
@@ -32,15 +32,15 @@ contents.
 
 | Package | Packed (gzip) | Unpacked | Files |
 | --- | ---: | ---: | ---: |
-| `@beeui/core` | 25.8 KiB | 147.1 KiB | 52 |
-| `@beeui/tokens` | 98.0 KiB | 546.5 KiB | 62 |
-| `@beeui/ui` | 501.6 KiB | 2.98 MiB | 805 |
+| `@beemvp/beeui-core` | 25.8 KiB | 147.1 KiB | 52 |
+| `@beemvp/beeui-tokens` | 98.0 KiB | 546.5 KiB | 62 |
+| `@beemvp/beeui-ui` | 501.6 KiB | 2.98 MiB | 805 |
 
 Every package now ships **three** copies of its source tree in the tarball —
 `dist/module` (ESM), `dist/commonjs` (CJS), `dist/typescript` (`.d.ts` +
 sourcemaps for both), plus `src` (kept for the Registry/`beeui add`
 source-ownership path and Metro/uniwind `@source` scanning, per ADR-011 D2/D4)
-— which is why `@beeui/ui`'s file count (824) and unpacked size (2.94 MiB) are
+— which is why `@beemvp/beeui-ui`'s file count (824) and unpacked size (2.94 MiB) are
 large in absolute terms: this is the honest cost of shipping dual
 module-format built output *and* source side by side, not bloat from any
 single format. The **packed (gzip)** column is the number that matters for
@@ -50,8 +50,8 @@ same component compresses similarly).
 
 Largest files packed today:
 
-- `@beeui/tokens`: `tokens.json` (64.1 KB raw), `dist/typescript/module/index.d.ts` (52.5 KB), `dist/typescript/commonjs/index.d.ts` (52.4 KB), `src/index.ts` (44.1 KB).
-- `@beeui/ui`: `src/components/overlay-runtime.tsx` (40.5 KB), `dist/commonjs/components/overlay-runtime.js` (35.8 KB), `dist/module/components/overlay-runtime.js` (34.0 KB), `src/components/select.tsx` (30.7 KB).
+- `@beemvp/beeui-tokens`: `tokens.json` (64.1 KB raw), `dist/typescript/module/index.d.ts` (52.5 KB), `dist/typescript/commonjs/index.d.ts` (52.4 KB), `src/index.ts` (44.1 KB).
+- `@beemvp/beeui-ui`: `src/components/overlay-runtime.tsx` (40.5 KB), `dist/commonjs/components/overlay-runtime.js` (35.8 KB), `dist/module/components/overlay-runtime.js` (34.0 KB), `src/components/select.tsx` (30.7 KB).
 
 `overlay-runtime` and `tokens`' own `index`/`token-reader` are the largest
 single owned files in both the tarball and the bundle scenarios below — they
@@ -60,14 +60,14 @@ genuinely shared foundation code rather than an accident.
 
 ## 2. Clean-consumer bundle contribution (esbuild proxy over real `dist/module`, peers externalized)
 
-Every `peerDependency` of `@beeui/ui` (react/react-dom/react-native and every
+Every `peerDependency` of `@beemvp/beeui-ui` (react/react-dom/react-native and every
 optional native peer: `@gorhom/bottom-sheet`, `@react-native-community/datetimepicker`,
 `react-native-gesture-handler`, `react-native-reanimated`,
 `react-native-safe-area-context`, `react-native-teleport`,
 `react-native-worklets`, `tailwindcss`, `uniwind`) is marked external in every
-scenario, so these bytes are what `@beeui/ui` (+ `@beeui/core` + `@beeui/tokens`,
+scenario, so these bytes are what `@beemvp/beeui-ui` (+ `@beemvp/beeui-core` + `@beemvp/beeui-tokens`,
 always bundled alongside it today) contributes on top of what the consumer's
-app already ships. Entry points alias `@beeui/*` straight to the real built
+app already ships. Entry points alias `@beemvp/beeui-*` straight to the real built
 `dist/module/index.js` — see the methodology doc for why that is a faithful,
 not approximated, target.
 
@@ -76,7 +76,7 @@ not approximated, target.
 | `full-barrel` | web | 176.5 KiB | 52.3 KiB | react, react-dom, react-native, react-native-safe-area-context, uniwind |
 | `single-component-via-barrel` (Button, through today's only export) | web | 172.3 KiB | 50.8 KiB | same as full-barrel |
 | `single-component-direct` (Button, hypothetical direct dist import) | web | 31.5 KiB | 10.2 KiB | react, react-native |
-| `core-tokens-baseline` (`@beeui/core`+`@beeui/tokens` alone) | web | 53.0 KiB | 17.0 KiB | none |
+| `core-tokens-baseline` (`@beemvp/beeui-core`+`@beemvp/beeui-tokens` alone) | web | 53.0 KiB | 17.0 KiB | none |
 | `sheet-direct` | web | 52.9 KiB | 17.6 KiB | react, react-dom, react-native, react-native-safe-area-context |
 | `table-direct` | web | 33.9 KiB | 11.0 KiB | react, react-native |
 | `date-controls-direct` (Calendar+DatePicker+DateTimePicker) | web | 74.3 KiB | 23.7 KiB | react, react-dom, react-native, react-native-safe-area-context |
@@ -127,17 +127,17 @@ compile-succeeds job, ADR-011); this baseline is the comparative-bytes number.
   bundled non-peer dependency set is stable: `class-variance-authority`
   (3.0 KB), `clsx` (0.4 KB), and `tailwind-merge` (105.6 KB pre-minify input,
   the largest single third-party input in the whole baseline). These are
-  `@beeui/core`'s only real `dependencies` (not peers), so every scenario that
+  `@beemvp/beeui-core`'s only real `dependencies` (not peers), so every scenario that
   touches `cn()` — which is nearly all of them, including `button-direct`
   and `table-direct` — pays `tailwind-merge`'s tree-shaken/minified share.
   This is not "accidental" (it is a declared, necessary dependency of the
   className-merge utility every component uses) but it is the one real
   transitive-size lever inside BeeUI's own dependency graph, worth flagging
-  for anyone auditing `@beeui/core`'s footprint independent of peer cost.
+  for anyone auditing `@beemvp/beeui-core`'s footprint independent of peer cost.
 - **No other accidental large transitive imports or assets were found.** The
   bundled third-party-dependency input bytes are the same
   ~105.9–109.0 KB set (`class-variance-authority` + `clsx` + `tailwind-merge`)
-  across every scenario that reaches `@beeui/core`; nothing else — no
+  across every scenario that reaches `@beemvp/beeui-core`; nothing else — no
   unexpected polyfill, no accidentally-bundled dev tooling, no stray asset —
   gets pulled in.
 

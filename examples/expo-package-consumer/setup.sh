@@ -25,7 +25,7 @@ RUNTIME_DEPS=(
   uniwind@1.10.1
 )
 
-echo "==> Packing @beeui/core, @beeui/tokens, @beeui/ui through the package boundary"
+echo "==> Packing @beemvp/beeui-core, @beemvp/beeui-tokens, @beemvp/beeui-ui through the package boundary"
 eval "$(node ../scripts/pack-beeui-packages.mjs --out .beeui-tarballs --packages core,tokens,ui)"
 
 echo "==> Installing BeeUI tarballs and Expo SDK 57 runtime dependencies (npm, no monorepo/pnpm fallback)"

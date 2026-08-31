@@ -86,7 +86,7 @@ export const LINKED_PATHS = [
 ];
 
 // Production pattern packs (README.md "Production pattern coverage"), living under
-// apps/showcase/patterns/**. Screens are executable Showcase inputs, not @beeui/ui exports.
+// apps/showcase/patterns/**. Screens are executable Showcase inputs, not @beemvp/beeui-ui exports.
 export const PATTERN_PACKS = [
   { name: 'Authentication + Onboarding', screens: 9 },
   { name: 'Dashboard + Finance', screens: 8 },
@@ -103,7 +103,7 @@ function readJson(relPath) {
 }
 
 // Parses `export { A, B, type C } from './components/x';` / `export type { … } from '…';`
-// blocks out of the @beeui/ui barrel, grouped by the module specifier they re-export from.
+// blocks out of the @beemvp/beeui-ui barrel, grouped by the module specifier they re-export from.
 export function parseBarrelExports(indexSource) {
   // Strip line comments so commented-out export illustrations never count as real exports.
   const withoutComments = indexSource.replace(/\/\/[^\n]*/g, '');
@@ -132,7 +132,7 @@ export function parseBarrelExports(indexSource) {
 }
 
 // Builds the derived data model shared by every file builder. Throws (fails generation)
-// if the registry's public component surface and the @beeui/ui barrel have drifted apart,
+// if the registry's public component surface and the @beemvp/beeui-ui barrel have drifted apart,
 // which is exactly the "stale exports/registry" condition the DoD requires machine-detected.
 export function buildModel({ registry, barrelSource, packages }) {
   const barrel = parseBarrelExports(barrelSource);
@@ -147,7 +147,7 @@ export function buildModel({ registry, barrelSource, packages }) {
     const exports = barrel.get(specifier);
     if (!exports) {
       throw new Error(
-        `registry item "${name}" is public but @beeui/ui barrel has no \`export … from '${specifier}'\` — ` +
+        `registry item "${name}" is public but @beemvp/beeui-ui barrel has no \`export … from '${specifier}'\` — ` +
           'registry/registry.json and packages/ui/src/index.ts have drifted.',
       );
     }
@@ -195,10 +195,10 @@ const HEADER_NOTE =
   'and packages/*/package.json. Do not edit by hand; run `pnpm llms:generate`.';
 
 const UNPUBLISHED_NOTE =
-  'STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beeui/*` package or CLI is on npm, no `v1.0.0` tag or ' +
+  'STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm, no `v1.0.0` tag or ' +
   'GitHub Release exists, and the repository is private by owner decision. Package/CLI names and install ' +
   'commands below are release-ready-but-not-published targets, not live registry commands. Do not tell a ' +
-  'user to `npm install @beeui/ui` or `npx @beeui/cli` yet — those resolve to nothing today. The working, ' +
+  'user to `npm install @beemvp/beeui-ui` or `npx @beemvp/beeui-cli` yet — those resolve to nothing today. The working, ' +
   'in-repo path is the source-ownership CLI (`pnpm beeui -- add <component>`).';
 
 function buildIndex(model) {
@@ -209,7 +209,7 @@ function buildIndex(model) {
 
 ${UNPUBLISHED_NOTE}
 
-BeeUI ships ${model.componentCount} public component modules from \`@beeui/ui\` plus a semantic design-token contract (\`@beeui/tokens\`) and engine-neutral helpers (\`@beeui/core\`). It owns UI only: no router, data-fetching, backend, auth, form-library, or chart framework. Two consumption models coexist — centralized packages and file-level source ownership.
+BeeUI ships ${model.componentCount} public component modules from \`@beemvp/beeui-ui\` plus a semantic design-token contract (\`@beemvp/beeui-tokens\`) and engine-neutral helpers (\`@beemvp/beeui-core\`). It owns UI only: no router, data-fetching, backend, auth, form-library, or chart framework. Two consumption models coexist — centralized packages and file-level source ownership.
 
 ## Packages
 - ${packageLine(packages.core)} ([packages/core/package.json](packages/core/package.json))
@@ -217,8 +217,8 @@ BeeUI ships ${model.componentCount} public component modules from \`@beeui/ui\` 
 - ${packageLine(packages.ui)} ([packages/ui/package.json](packages/ui/package.json))
 
 ## Install (both models, targets are unpublished)
-- Centralized (release-ready target, NOT yet on npm): \`npm i @beeui/ui @beeui/core @beeui/tokens\`, then \`import { Button } from '@beeui/ui'\` and wire the Web theme via \`@import '@beeui/tokens/theme.css'\`. See [docs/decisions/011-distribution-architecture.md](docs/decisions/011-distribution-architecture.md).
-- Source ownership (works today, repo-local): \`pnpm beeui -- add <component>\` copies component source into the consumer and rewrites \`@beeui/core\` imports. The published CLI target is \`@beeui/cli\` (binary \`beeui\`), invoked \`npx @beeui/cli add <component>\` once released — NOT \`npx beeui\`. See [docs/registry-cli.md](docs/registry-cli.md) and [docs/distribution-names.md](docs/distribution-names.md).
+- Centralized (release-ready target, NOT yet on npm): \`npm i @beemvp/beeui-ui @beemvp/beeui-core @beemvp/beeui-tokens\`, then \`import { Button } from '@beemvp/beeui-ui'\` and wire the Web theme via \`@import '@beemvp/beeui-tokens/theme.css'\`. See [docs/decisions/011-distribution-architecture.md](docs/decisions/011-distribution-architecture.md).
+- Source ownership (works today, repo-local): \`pnpm beeui -- add <component>\` copies component source into the consumer and rewrites \`@beemvp/beeui-core\` imports. The published CLI target is \`@beemvp/beeui-cli\` (binary \`beeui\`), invoked \`npx @beemvp/beeui-cli add <component>\` once released — NOT \`npx beeui\`. See [docs/registry-cli.md](docs/registry-cli.md) and [docs/distribution-names.md](docs/distribution-names.md).
 
 ## Start here
 - [README.md](README.md): project overview, quick start, safe-area/overlay/toast foundations.
@@ -270,18 +270,18 @@ function buildFull(model) {
 ${UNPUBLISHED_NOTE}
 
 ## What BeeUI is
-BeeUI is a reusable, mobile-first React Native UI foundation for long-lived client apps. The public component API stops at \`@beeui/ui\`; applications should not need to know the styling engine. Web support is additive and native ergonomics remain first-class. See [docs/architecture.md](docs/architecture.md).
+BeeUI is a reusable, mobile-first React Native UI foundation for long-lived client apps. The public component API stops at \`@beemvp/beeui-ui\`; applications should not need to know the styling engine. Web support is additive and native ergonomics remain first-class. See [docs/architecture.md](docs/architecture.md).
 
 ## Packages (all unpublished / pre-1.0, one lockstep version)
 - ${packageLine(packages.core)}
 - ${packageLine(packages.tokens)}
 - ${packageLine(packages.ui)}
 
-\`@beeui/core\`, \`@beeui/tokens\`, and \`@beeui/ui\` share one lockstep version and are released together (ADR-011 D6). Package manifests declare \`publishConfig.access=public\` + provenance but remain unpublished; \`exports\` maps ship dual ESM+CJS with \`.d.ts\`, a \`react-native\` condition for Metro, \`browser\`/\`default\` for Web, and \`@beeui/tokens/theme.css\` for the Web theme.
+\`@beemvp/beeui-core\`, \`@beemvp/beeui-tokens\`, and \`@beemvp/beeui-ui\` share one lockstep version and are released together (ADR-011 D6). Package manifests declare \`publishConfig.access=public\` + provenance but remain unpublished; \`exports\` maps ship dual ESM+CJS with \`.d.ts\`, a \`react-native\` condition for Metro, \`browser\`/\`default\` for Web, and \`@beemvp/beeui-tokens/theme.css\` for the Web theme.
 
 ## Consumption models
-1. Centralized packages (release-ready target, NOT on npm): \`npm i @beeui/ui\` pulls \`@beeui/core\` + \`@beeui/tokens\`; import components from \`@beeui/ui\`; wire Web theme with \`@import '@beeui/tokens/theme.css'\`.
-2. Source ownership (works today, repo-local): \`pnpm beeui -- add <component>\` copies component source in-tree and rewrites \`@beeui/core\` imports via \`rewrite-beeui-core-cn\` / \`rewrite-beeui-core-module\`. Run \`pnpm beeui -- list\` for the canonical component list (generated from registry/registry.json). Future published CLI: \`@beeui/cli\` (binary \`beeui\`), \`npx @beeui/cli add <component>\` — never \`npx beeui\` (the unscoped name is an npm tombstone; see [docs/distribution-names.md](docs/distribution-names.md)).
+1. Centralized packages (release-ready target, NOT on npm): \`npm i @beemvp/beeui-ui\` pulls \`@beemvp/beeui-core\` + \`@beemvp/beeui-tokens\`; import components from \`@beemvp/beeui-ui\`; wire Web theme with \`@import '@beemvp/beeui-tokens/theme.css'\`.
+2. Source ownership (works today, repo-local): \`pnpm beeui -- add <component>\` copies component source in-tree and rewrites \`@beemvp/beeui-core\` imports via \`rewrite-beeui-core-cn\` / \`rewrite-beeui-core-module\`. Run \`pnpm beeui -- list\` for the canonical component list (generated from registry/registry.json). Future published CLI: \`@beemvp/beeui-cli\` (binary \`beeui\`), \`npx @beemvp/beeui-cli add <component>\` — never \`npx beeui\` (the unscoped name is an npm tombstone; see [docs/distribution-names.md](docs/distribution-names.md)).
 
 See [docs/decisions/011-distribution-architecture.md](docs/decisions/011-distribution-architecture.md) and [docs/registry-cli.md](docs/registry-cli.md).
 
@@ -355,12 +355,12 @@ function buildComponents(model) {
 
   return `# BeeUI — component inventory
 
-> The ${model.componentCount} public component modules exported by \`@beeui/ui\`, derived from registry/registry.json and packages/ui/src/index.ts. Each line lists the module's exported runtime symbols and its source file. Full per-component behavior/accessibility contracts live in [docs/components.md](docs/components.md); this file is the token-efficient map from name to symbols to source.
+> The ${model.componentCount} public component modules exported by \`@beemvp/beeui-ui\`, derived from registry/registry.json and packages/ui/src/index.ts. Each line lists the module's exported runtime symbols and its source file. Full per-component behavior/accessibility contracts live in [docs/components.md](docs/components.md); this file is the token-efficient map from name to symbols to source.
 
 ${UNPUBLISHED_NOTE}
 
 ## How to read this
-- Import all listed symbols from \`@beeui/ui\` (centralized model) or copy the source file via \`pnpm beeui -- add <name>\` (source-ownership model). Type-only exports are omitted here for brevity; see the source file or [packages/ui/src/index.ts](packages/ui/src/index.ts) for \`Props\` and value-type exports.
+- Import all listed symbols from \`@beemvp/beeui-ui\` (centralized model) or copy the source file via \`pnpm beeui -- add <name>\` (source-ownership model). Type-only exports are omitted here for brevity; see the source file or [packages/ui/src/index.ts](packages/ui/src/index.ts) for \`Props\` and value-type exports.
 - "source" paths are repository files. Platform-split modules (e.g. \`date-picker\`, \`table\`, \`sheet\`, \`tooltip\`) resolve \`*.web.tsx\` / \`*.native.tsx\` at build time from the listed entry.
 - Every text-bearing component honors OS/browser font scaling (docs/dynamic-type.md via [docs/components.md](docs/components.md)); interactive components carry accessibility roles/states.
 
@@ -373,7 +373,7 @@ ${UNPUBLISHED_NOTE}
 ${lines.join('\n')}
 
 ## Public non-component surface
-- \`theme\` (registry type: theme) — the canonical Uniwind/Tailwind CSS at \`packages/tokens/src/theme.css\`, consumed on Web via \`@import '@beeui/tokens/theme.css'\`.
+- \`theme\` (registry type: theme) — the canonical Uniwind/Tailwind CSS at \`packages/tokens/src/theme.css\`, consumed on Web via \`@import '@beemvp/beeui-tokens/theme.css'\`.
 
 ## Internal utilities (not part of the public import surface)
 ${model.privateUtilities.map((name) => `- \`${name}\``).join('\n')}
@@ -392,7 +392,7 @@ function buildPatterns(model) {
 
   return `# BeeUI — production patterns
 
-> BeeUI's composition guidance and the production Pattern Gallery: ${model.patternScreenTotal} screens across ${PATTERN_PACKS.length} packs under apps/showcase/patterns/**. Patterns are executable Showcase evidence and examples — they import public \`@beeui/ui\` APIs and own local domain composition. They are NOT \`@beeui/ui\` exports and are NOT installable via the registry.
+> BeeUI's composition guidance and the production Pattern Gallery: ${model.patternScreenTotal} screens across ${PATTERN_PACKS.length} packs under apps/showcase/patterns/**. Patterns are executable Showcase evidence and examples — they import public \`@beemvp/beeui-ui\` APIs and own local domain composition. They are NOT \`@beemvp/beeui-ui\` exports and are NOT installable via the registry.
 
 ${UNPUBLISHED_NOTE}
 
@@ -402,7 +402,7 @@ ${packLines.join('\n')}
 The Showcase opens a local section chooser: Components (interactive playground) and Patterns (declarative Pattern Gallery over the four packs). No router or global store is required. See [README.md](README.md) and [docs/architecture.md](docs/architecture.md).
 
 ## Composition guidance for agents
-- Compose existing primitives first; keep domain-specific composition local to the app, not in \`@beeui/ui\`. Promote a shared primitive only after repeated or behaviorally complex evidence (the "Rule of Two", [docs/roadmap.md](docs/roadmap.md)).
+- Compose existing primitives first; keep domain-specific composition local to the app, not in \`@beemvp/beeui-ui\`. Promote a shared primitive only after repeated or behaviorally complex evidence (the "Rule of Two", [docs/roadmap.md](docs/roadmap.md)).
 - App shell: wrap in \`BeeUIProvider\`; own safe-area edges explicitly with \`SafeArea\` around \`AppHeader\` / content / \`BottomActionBar\`.
 - Forms: \`Field\` composes label/description/error for text entry; \`FormGroup\` owns structural legend/description/error for related controls without collapsing them into one accessibility element. Controlled selection controls need their change callback.
 - Overlays: use \`Dialog\`/\`AlertDialog\` for modal-class flows; \`Popover\`/\`DropdownMenu\`/\`Select\`/\`Tooltip\` for anchored non-modal content; \`Sheet\` for gesture bottom sheets (requires \`GestureHandlerRootView\` + \`BottomSheetModalProvider\` at the app root on native, ADR-006). \`useToast()\` for transient notifications.

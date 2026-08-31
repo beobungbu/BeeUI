@@ -53,7 +53,7 @@ cp src-overrides/index.js "${APP_DIR}/index.js"
 cp src-overrides/metro.config.js "${APP_DIR}/metro.config.js"
 cp src-overrides/global.css "${APP_DIR}/global.css"
 
-echo "==> Packing @beeui/core, @beeui/tokens, @beeui/ui through the package boundary"
+echo "==> Packing @beemvp/beeui-core, @beemvp/beeui-tokens, @beemvp/beeui-ui through the package boundary"
 eval "$(node ../scripts/pack-beeui-packages.mjs --out .beeui-tarballs --packages core,tokens,ui)"
 
 cd "${APP_DIR}"

@@ -15,7 +15,7 @@ summary. It mirrors the rigor `docs/native-verification.md` established for the
    `web-a11y.yml`/`visual-web.yml`'s real-Chromium Playwright runs against that export.
 2. **An independent Vite consumer** (`scripts/verify-web-consumer.sh`, wired into
    `web-consumer.yml`) — a non-Showcase, non-monorepo-fallback app. It packs
-   `@beeui/core`/`@beeui/tokens`/`@beeui/ui` with `pnpm pack`, scaffolds a fresh Vite +
+   `@beemvp/beeui-core`/`@beemvp/beeui-tokens`/`@beemvp/beeui-ui` with `pnpm pack`, scaffolds a fresh Vite +
    `react-native-web` app with no Expo and no workspace symlinks, installs the tarballs
    plus the exact pinned runtime versions from the [compatibility matrix](/compatibility/)
    (`react-native-web@0.21.0`, `react@19.2.3`, `tailwindcss@4.3.3`, `uniwind@1.10.1`),

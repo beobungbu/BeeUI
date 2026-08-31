@@ -62,9 +62,9 @@ figures (packed gzip, real release-ready `dist/` layout):
 
 | Package | Packed (gzip) |
 | --- | ---: |
-| `@beeui/core` | 25.1 KiB |
-| `@beeui/tokens` | 97.3 KiB |
-| `@beeui/ui` | 495.3 KiB |
+| `@beemvp/beeui-core` | 25.1 KiB |
+| `@beemvp/beeui-tokens` | 97.3 KiB |
+| `@beemvp/beeui-ui` | 495.3 KiB |
 
 Clean-consumer bundle contribution (esbuild proxy over real built output,
 peers externalized), Web:
@@ -92,7 +92,7 @@ scenario (16.4 KiB) DOES reference `@gorhom/bottom-sheet` +
 cost a native consumer's bundler will pull in, correctly kept out of BeeUI's
 own reported bytes. `tailwind-merge` (~105.6 KB pre-minify input) is the one
 non-trivial always-bundled third-party dependency across every scenario
-(`@beeui/core`'s `cn()` utility); see the baseline doc for the full
+(`@beemvp/beeui-core`'s `cn()` utility); see the baseline doc for the full
 attribution.
 
 **Regression budget.** `scripts/benchmark/footprint-budgets.mjs`, enforced by

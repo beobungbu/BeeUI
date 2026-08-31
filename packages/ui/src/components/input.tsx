@@ -1,4 +1,4 @@
-import { cn } from '@beeui/core';
+import { cn } from '@beemvp/beeui-core';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { TextInput, type TextInputProps } from 'react-native';

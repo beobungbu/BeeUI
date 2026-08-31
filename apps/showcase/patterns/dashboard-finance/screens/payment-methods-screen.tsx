@@ -1,4 +1,4 @@
-import { Badge, Button, Card, HStack, Text, VStack } from '@beeui/ui';
+import { Badge, Button, Card, HStack, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { ScreenShell } from '../components/screen-shell';
 import { SectionHeader } from '../components/section-header';

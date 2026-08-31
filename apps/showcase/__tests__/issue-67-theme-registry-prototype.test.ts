@@ -1,4 +1,4 @@
-import { defineThemeRegistry } from '@beeui/tokens';
+import { defineThemeRegistry } from '@beemvp/beeui-tokens';
 
 describe('issue #67 — registry prototype-key hardening', () => {
   it('treats prototype-looking consumer keys as ordinary frozen mapping data', () => {

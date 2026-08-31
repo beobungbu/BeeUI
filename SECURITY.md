@@ -52,7 +52,7 @@ repository is made public.
 
 - affected file(s)/component(s) and, if known, the exact commit SHA;
 - whether the issue affects generated component source that consumers copy, the
-  `@beeui/core`/`@beeui/tokens`/`@beeui/ui` workspace packages, the Registry/CLI
+  `@beemvp/beeui-core`/`@beemvp/beeui-tokens`/`@beemvp/beeui-ui` workspace packages, the Registry/CLI
   (`scripts/beeui.mjs`, `registry/registry.json`), or CI/release tooling;
 - minimal reproduction (code snippet, failing test, or steps);
 - impact assessment if you have one (data exposure, arbitrary code execution, supply-chain
@@ -110,6 +110,6 @@ security advisory affects a component you have already copied:
 - `pnpm beeui -- doctor` can help detect drift between your copy and the current registry
   source, but it does not itself apply a security fix.
 
-Consumers who instead depend on the workspace packages directly (`@beeui/core`,
-`@beeui/tokens`, `@beeui/ui`) once they are published should upgrade the package version
+Consumers who instead depend on the workspace packages directly (`@beemvp/beeui-core`,
+`@beemvp/beeui-tokens`, `@beemvp/beeui-ui`) once they are published should upgrade the package version
 named in the advisory.

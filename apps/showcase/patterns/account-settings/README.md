@@ -1,6 +1,6 @@
 # Account, Profile & Settings pattern pack
 
-Production-oriented account chrome built only from the public `@beeui/ui` API. The pack owns presentation and callback contracts; the host application owns routing, persistence, authentication, image picking/uploading, notification permissions, and destructive network actions.
+Production-oriented account chrome built only from the public `@beemvp/beeui-ui` API. The pack owns presentation and callback contracts; the host application owns routing, persistence, authentication, image picking/uploading, notification permissions, and destructive network actions.
 
 ## Screens
 

@@ -80,8 +80,8 @@ import {
   TooltipContent,
   TooltipTrigger,
   useBeeToken,
-} from '@beeui/ui';
-import { applyDensity, defaultDensityMode, densityModes, type DensityMode } from '@beeui/tokens';
+} from '@beemvp/beeui-ui';
+import { applyDensity, defaultDensityMode, densityModes, type DensityMode } from '@beemvp/beeui-tokens';
 import * as React from 'react';
 import { Uniwind } from 'uniwind';
 import {
@@ -561,7 +561,7 @@ function DropdownMenuOpenScenario() {
 
 // #77 finalization — a compact, deterministic reconstruction of
 // apps/showcase/patterns/auth's sign-in screen, built the same way every other
-// scenario in this file is: from @beeui/ui primitives only, with fixed
+// scenario in this file is: from @beemvp/beeui-ui primitives only, with fixed
 // content and no cross-app import. Representative of a real Pattern Gallery
 // screen (labeled fields, primary action, secondary link) rather than an
 // isolated component, so the accessibility axis is proven against composed

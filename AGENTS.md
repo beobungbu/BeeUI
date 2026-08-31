@@ -13,7 +13,7 @@ These rules apply to all generated or hand-written BeeUI code.
 - Keep stable behavior, semantic, and variant APIs independent from Uniwind, Expo, routers, storage, networking, and business logic.
 - `className` is an optional styling escape hatch tied to the current implementation; do not make application logic depend on it and do not treat it as a portability guarantee.
 - Engine-only bridge props such as `colorClassName`, `trackColorOnClassName`, or `placeholderTextColorClassName` must remain internal and must not appear in BeeUI component props.
-- `packages/ui` may depend on React Native primitives and `@beeui/core`; it must not import from `expo-*`.
+- `packages/ui` may depend on React Native primitives and `@beemvp/beeui-core`; it must not import from `expo-*`.
 - Treat Uniwind as a replaceable implementation detail behind BeeUI's stable component contracts.
 - Prefer semantic tokens (`bg-primary`, `text-foreground`, `border-border`) over palette or literal colors.
 - Do not introduce arbitrary color values in component source.

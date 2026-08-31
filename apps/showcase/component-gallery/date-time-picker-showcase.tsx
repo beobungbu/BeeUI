@@ -6,7 +6,7 @@ import {
   Text,
   VStack,
   type DateTimePickerValue,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import * as React from 'react';
 
 // BeeUI issue #174 (R4F.4, ADR-008 "DateTimePicker" contract). A minimal, representative

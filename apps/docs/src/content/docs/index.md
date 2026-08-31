@@ -34,8 +34,8 @@ follow-up content and say so explicitly.
 
 ## Current foundation
 
-BeeUI currently includes React Native + TypeScript packages (`@beeui/core`, `@beeui/tokens`,
-`@beeui/ui`), Uniwind + Tailwind CSS v4 styling, semantic light/dark design tokens, explicit
+BeeUI currently includes React Native + TypeScript packages (`@beemvp/beeui-core`, `@beemvp/beeui-tokens`,
+`@beemvp/beeui-ui`), Uniwind + Tailwind CSS v4 styling, semantic light/dark design tokens, explicit
 safe-area ownership, broad layout/typography/form/selection/navigation/disclosure/overlay/feedback
 coverage, and a repository-local Registry + source-ownership CLI.
 

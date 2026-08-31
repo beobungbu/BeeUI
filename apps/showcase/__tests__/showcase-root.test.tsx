@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fireEvent, render } from '@testing-library/react-native';
-import { BeeUIProvider } from '@beeui/ui';
+import { BeeUIProvider } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import type * as ReactTypes from 'react';
 import { ShowcaseRoot } from '../showcase-root';

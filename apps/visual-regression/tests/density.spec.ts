@@ -1,4 +1,4 @@
-import { densityModes, type DensityMode } from '@beeui/tokens';
+import { densityModes, type DensityMode } from '@beemvp/beeui-tokens';
 import { expect, test, type TestInfo } from '@playwright/test';
 import type { VisualProjectMetadata } from '../src/visual-contract';
 

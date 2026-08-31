@@ -4,8 +4,8 @@ import {
   type AnchoredOverlayCollisionPadding,
   type AnchoredOverlayDirection,
   type AnchoredOverlayPlacement,
-} from '@beeui/core';
-import { layer } from '@beeui/tokens';
+} from '@beemvp/beeui-core';
+import { layer } from '@beemvp/beeui-tokens';
 import * as React from 'react';
 import {
   Platform,

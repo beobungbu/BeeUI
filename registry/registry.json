@@ -704,7 +704,7 @@
         "use-direction"
       ],
       "dependencies": {
-        "@beeui/tokens": "0.1.0"
+        "@beemvp/beeui-tokens": "0.1.0"
       },
       "peerDependencies": {
         "react": ">=19 <20",
@@ -1163,7 +1163,7 @@
         "core-overlay"
       ],
       "dependencies": {
-        "@beeui/tokens": "0.1.0"
+        "@beemvp/beeui-tokens": "0.1.0"
       },
       "peerDependencies": {
         "react-dom": ">=19 <20",
@@ -1253,7 +1253,7 @@
         "use-direction"
       ],
       "dependencies": {
-        "@beeui/tokens": "0.1.0"
+        "@beemvp/beeui-tokens": "0.1.0"
       },
       "peerDependencies": {
         "react": ">=19 <20",
@@ -1476,7 +1476,7 @@
         "use-direction"
       ],
       "dependencies": {
-        "@beeui/tokens": "0.1.0"
+        "@beemvp/beeui-tokens": "0.1.0"
       },
       "peerDependencies": {
         "react": ">=19 <20",
@@ -1553,7 +1553,7 @@
         "theme"
       ],
       "dependencies": {
-        "@beeui/tokens": "0.1.0"
+        "@beemvp/beeui-tokens": "0.1.0"
       },
       "peerDependencies": {
         "@gorhom/bottom-sheet": ">=5.2 <6",
@@ -1918,7 +1918,7 @@
         "theme"
       ],
       "dependencies": {
-        "@beeui/tokens": "0.1.0"
+        "@beemvp/beeui-tokens": "0.1.0"
       },
       "peerDependencies": {
         "react": ">=19 <20",
@@ -1972,7 +1972,7 @@
         "theme"
       ],
       "dependencies": {
-        "@beeui/tokens": "0.1.0"
+        "@beemvp/beeui-tokens": "0.1.0"
       },
       "peerDependencies": {
         "react": ">=19 <20",
@@ -2033,7 +2033,7 @@
         "use-direction"
       ],
       "dependencies": {
-        "@beeui/tokens": "0.1.0"
+        "@beemvp/beeui-tokens": "0.1.0"
       },
       "peerDependencies": {
         "react": ">=19 <20",
@@ -2058,7 +2058,7 @@
         "theme"
       ],
       "dependencies": {
-        "@beeui/tokens": "0.1.0"
+        "@beemvp/beeui-tokens": "0.1.0"
       },
       "peerDependencies": {
         "react": ">=19 <20",

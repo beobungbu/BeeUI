@@ -1,4 +1,4 @@
-import { AlertBanner, Button, Checkbox, HStack, Radio, RadioGroup, Separator, Text, VStack } from '@beeui/ui';
+import { AlertBanner, Button, Checkbox, HStack, Radio, RadioGroup, Separator, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { cartItems, formatPrice } from '../fixtures/commerce-fixtures';
 import { CheckoutSection } from '../components/checkout-section';

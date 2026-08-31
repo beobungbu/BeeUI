@@ -5,7 +5,7 @@
 // resolution `TableRow`/`TableHead`/`TableCell` perform every render, plus the
 // column-label registry `Map` reads/writes each `TableHead`/`TableCell` does
 // (`table.tsx`'s `TableColumnLabelRegistry`) and the sort-glyph lookup a
-// sortable header performs. `cn` is imported from the real `@beeui/core`
+// sortable header performs. `cn` is imported from the real `@beemvp/beeui-core`
 // package (not reimplemented here), so `twMerge`/`clsx`'s actual cost is
 // measured, not simulated.
 //
@@ -44,7 +44,7 @@
 //     fraction of the full-table baseline rather than silently regressing to
 //     scale with total row count.
 
-// Direct relative import (not the `@beeui/core` package specifier): `scripts/`
+// Direct relative import (not the `@beemvp/beeui-core` package specifier): `scripts/`
 // has no `package.json` of its own and the harness deliberately stays a
 // dependency-free pure-Node tool (`docs/benchmark-harness.md` "The harness is
 // pure Node with no external dependencies"), so it reaches the real `cn()`

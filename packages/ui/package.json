@@ -1,7 +1,7 @@
 {
-  "name": "@beeui/ui",
+  "name": "@beemvp/beeui-ui",
   "version": "0.1.0",
-  "description": "Typed React Native + Web components built on @beeui/core and @beeui/tokens, styled through Uniwind/Tailwind.",
+  "description": "Typed React Native + Web components built on @beemvp/beeui-core and @beemvp/beeui-tokens, styled through Uniwind/Tailwind.",
   "license": "MIT",
   "author": {
     "name": "Trần Đức Lân",
@@ -948,8 +948,8 @@
     ]
   },
   "dependencies": {
-    "@beeui/core": "workspace:*",
-    "@beeui/tokens": "workspace:*",
+    "@beemvp/beeui-core": "workspace:*",
+    "@beemvp/beeui-tokens": "workspace:*",
     "class-variance-authority": "0.7.1"
   },
   "devDependencies": {

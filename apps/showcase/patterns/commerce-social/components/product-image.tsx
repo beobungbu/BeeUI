@@ -1,4 +1,4 @@
-import { Box, Text, VStack } from '@beeui/ui';
+import { Box, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { Image, type StyleProp, type ViewStyle } from 'react-native';
 

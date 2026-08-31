@@ -1,4 +1,4 @@
-import { cn } from '@beeui/core';
+import { cn } from '@beemvp/beeui-core';
 import * as React from 'react';
 import { View, type ViewProps } from 'react-native';
 

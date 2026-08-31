@@ -33,12 +33,12 @@ globalWithFrameClock.cancelAnimationFrame = () => undefined;
  * `packages/ui/src/index.ts`'s single barrel eagerly requires every component
  * module, including `./components/sheet` — which Jest's platform-extension
  * resolution now resolves to `sheet.native.tsx` (the #158 `@gorhom/bottom-sheet`
- * adapter) for every suite that imports from `@beeui/ui`, not just Sheet's own
+ * adapter) for every suite that imports from `@beemvp/beeui-ui`, not just Sheet's own
  * tests. `sheet.native.tsx` requires `@gorhom/bottom-sheet`, which requires the
  * real `react-native-reanimated`, which requires the real
  * `react-native-worklets` native module — none of which exist in this
  * JS-only Jest environment, so *every* suite that transitively imports
- * `@beeui/ui` would otherwise fail to load at all.
+ * `@beemvp/beeui-ui` would otherwise fail to load at all.
  *
  * `react-native-reanimated`'s own official `react-native-reanimated/mock`
  * still requires its real `./initializers`, which requires the real

@@ -1,4 +1,4 @@
-import { Box, Button, Card, Chip, ChipGroup, EmptyState, HStack, SearchInput, Skeleton, Text, VStack } from '@beeui/ui';
+import { Box, Button, Card, Chip, ChipGroup, EmptyState, HStack, SearchInput, Skeleton, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import type { Product } from '../fixtures/commerce-fixtures';
 import { products } from '../fixtures/commerce-fixtures';

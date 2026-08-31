@@ -6,7 +6,7 @@ import {
   type RegistryRuntimeTheme,
   type ThemeRegistry,
   type ThemeRegistryDefinition,
-} from '@beeui/tokens';
+} from '@beemvp/beeui-tokens';
 import * as React from 'react';
 import { ScopedTheme, type ThemeName } from 'uniwind';
 
@@ -15,7 +15,7 @@ import { ScopedTheme, type ThemeName } from 'uniwind';
  * component. Uniwind remains the sole runtime theme authority: this component
  * owns no React context, no state, and no propagation logic of its own — it only
  * maps a typed `{ brand, appearance }` selection (or an already-resolved
- * runtime-theme name) through a `@beeui/tokens` theme registry (see #67,
+ * runtime-theme name) through a `@beemvp/beeui-tokens` theme registry (see #67,
  * `defineThemeRegistry`) and forwards the resulting Uniwind runtime-theme name to
  * `<ScopedTheme theme={...}>`. Nesting, precedence, nested-scope, and
  * sibling-scope semantics are exactly whatever Uniwind's `ScopedTheme` defines;
@@ -184,7 +184,7 @@ export function BeeThemeScope<Def extends ThemeRegistryDefinition = typeof beeRu
   // only bridges that proven value into Uniwind's `ThemeName`, which a
   // consuming application can (optionally) narrow via ambient `UniwindConfig`
   // module augmentation to a project-specific literal union — a generic
-  // component authored once in `@beeui/ui` cannot know that app-specific union
+  // component authored once in `@beemvp/beeui-ui` cannot know that app-specific union
   // ahead of time. This mirrors the same, already-established bridge the
   // Showcase's `ThemeInspector` uses for `Uniwind.setTheme(...)`.
   return <ScopedTheme theme={runtimeTheme as ThemeName}>{props.children}</ScopedTheme>;

@@ -18,7 +18,7 @@ test('parsePublicComponentNames extracts unique names in first-seen order', () =
 });
 
 test('parsePublicComponentNames throws on a barrel with no component re-exports', () => {
-  assert.throws(() => parsePublicComponentNames("export type { Foo } from '@beeui/core';"));
+  assert.throws(() => parsePublicComponentNames("export type { Foo } from '@beemvp/beeui-core';"));
 });
 
 test('detectComponentKind: single-file component (e.g. button)', () => {

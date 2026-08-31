@@ -25,7 +25,7 @@ import {
 // which real native runtime acceptance (#160) owns.
 
 // `react-native-reanimated` is mocked globally in `jest.setup.ts` (needed by
-// every suite that imports `@beeui/ui`, not just this one — see that file's
+// every suite that imports `@beemvp/beeui-ui`, not just this one — see that file's
 // docblock) so this suite does not redeclare its own copy.
 
 type MockBackdropProps = { animatedIndex: { value: number } };

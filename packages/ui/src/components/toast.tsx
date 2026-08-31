@@ -1,4 +1,4 @@
-import { layer } from '@beeui/tokens';
+import { layer } from '@beemvp/beeui-tokens';
 import * as React from 'react';
 import {
   AccessibilityInfo,

@@ -18,7 +18,7 @@ export {
 } from './components/state-message';
 // commented illustration, must be ignored:
 // export { Ghost } from './components/ghost';
-export type { CalendarDate } from '@beeui/core';
+export type { CalendarDate } from '@beemvp/beeui-core';
 `;
 
 function sampleRegistry() {
@@ -46,9 +46,9 @@ function sampleRegistry() {
 
 function samplePackages() {
   return {
-    core: { name: '@beeui/core', version: '0.1.0', description: 'core', private: false },
-    tokens: { name: '@beeui/tokens', version: '0.1.0', description: 'tokens', private: false },
-    ui: { name: '@beeui/ui', version: '0.1.0', description: 'ui', private: false },
+    core: { name: '@beemvp/beeui-core', version: '0.1.0', description: 'core', private: false },
+    tokens: { name: '@beemvp/beeui-tokens', version: '0.1.0', description: 'tokens', private: false },
+    ui: { name: '@beemvp/beeui-ui', version: '0.1.0', description: 'ui', private: false },
   };
 }
 
@@ -62,7 +62,7 @@ test('parseBarrelExports groups value/type symbols by specifier and ignores comm
     values: ['EmptyState', 'ErrorState'],
     types: ['EmptyStateProps'],
   });
-  assert.deepEqual(parsed.get('@beeui/core'), { values: [], types: ['CalendarDate'] });
+  assert.deepEqual(parsed.get('@beemvp/beeui-core'), { values: [], types: ['CalendarDate'] });
   assert.equal(parsed.has('./components/ghost'), false);
 });
 
@@ -81,7 +81,7 @@ test('buildModel maps public components to their barrel symbols and source paths
 });
 
 // Load-bearing: this is the staleness guard the DoD requires. If a component becomes
-// public in the registry but is not exported from @beeui/ui (or vice versa), generation
+// public in the registry but is not exported from @beemvp/beeui-ui (or vice versa), generation
 // must fail rather than emit a silently-wrong inventory.
 test('buildModel throws when a public registry component is missing from the barrel', () => {
   const registry = sampleRegistry();
@@ -94,7 +94,7 @@ test('buildModel throws when a public registry component is missing from the bar
   });
   assert.throws(
     () => buildModel({ registry, barrelSource: SAMPLE_BARREL, packages: samplePackages() }),
-    /registry item "phantom" is public but @beeui\/ui barrel/,
+    /registry item "phantom" is public but @beemvp\/beeui-ui barrel/,
   );
 });
 

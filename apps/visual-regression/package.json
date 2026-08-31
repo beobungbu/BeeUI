@@ -1,22 +1,22 @@
 {
-  "name": "@beeui/visual-regression",
+  "name": "@beemvp/beeui-visual-regression",
   "version": "0.1.0",
   "private": true,
   "main": "index.ts",
   "scripts": {
     "build:web": "expo export --platform web --output-dir dist-web",
     "serve:web": "node ./scripts/serve.mjs",
-    "pretest": "pnpm --filter '@beeui/visual-regression...' --if-present run build",
+    "pretest": "pnpm --filter '@beemvp/beeui-visual-regression...' --if-present run build",
     "test": "pnpm build:web && playwright test",
-    "pretest:update": "pnpm --filter '@beeui/visual-regression...' --if-present run build",
+    "pretest:update": "pnpm --filter '@beemvp/beeui-visual-regression...' --if-present run build",
     "test:update": "pnpm build:web && playwright test --update-snapshots",
-    "pretest:a11y": "pnpm --filter '@beeui/visual-regression...' --if-present run build",
+    "pretest:a11y": "pnpm --filter '@beemvp/beeui-visual-regression...' --if-present run build",
     "test:a11y": "pnpm build:web && BEEUI_A11Y_AUDIT=1 playwright test --project=a11y-audit --project=a11y-gate-regression",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@beeui/tokens": "workspace:*",
-    "@beeui/ui": "workspace:*",
+    "@beemvp/beeui-tokens": "workspace:*",
+    "@beemvp/beeui-ui": "workspace:*",
     "@expo/metro-runtime": "~57.0.12",
     "expo": "~57.0.0",
     "react": "19.2.3",

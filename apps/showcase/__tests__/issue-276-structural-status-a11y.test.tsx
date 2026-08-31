@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react-native';
 import * as React from 'react';
-import { Button, ListGroup, ListGroupHeader, ListItem, Progress, SettingsItem, Spinner } from '@beeui/ui';
+import { Button, ListGroup, ListGroupHeader, ListItem, Progress, SettingsItem, Spinner } from '@beemvp/beeui-ui';
 
 describe('BeeUI #276 structural/status semantics (ListGroup list/listitem + Progress accessible name)', () => {
   describe('ListGroup / ListItem list-listitem contract', () => {

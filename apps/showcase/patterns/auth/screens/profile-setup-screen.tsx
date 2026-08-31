@@ -8,7 +8,7 @@ import {
   Link,
   Textarea,
   VStack,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { AuthShell, OnboardingProgress, ServerError } from '../components/auth-shared';
 

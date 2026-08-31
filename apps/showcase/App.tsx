@@ -1,6 +1,6 @@
 import './global.css';
 
-import { BeeUIProvider } from '@beeui/ui';
+import { BeeUIProvider } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { AppProviders } from './app-providers';
 import { ShowcaseRoot } from './showcase-root';

@@ -56,7 +56,7 @@ function assertBuilt(pkg) {
   if (!existsSync(distPath)) {
     throw new Error(
       `packages/${pkg}/${distHint} is missing. Run "pnpm build" (or, for the CLI, ` +
-        `"pnpm --filter @beeui/cli run build") from the repo root before packing.`,
+        `"pnpm --filter @beemvp/beeui-cli run build") from the repo root before packing.`,
     );
   }
 }
@@ -67,16 +67,16 @@ function packPackage(pkg, outDir) {
   // stdout: callers do `eval "$(node pack-beeui-packages.mjs ...)"`, so stdout
   // must contain only the `export NAME_TARBALL=...` lines. Route the child's
   // stdout to our stderr instead (still visible for debugging/build logs).
-  execFileSync('pnpm', ['--filter', `@beeui/${pkg}`, 'pack', '--pack-destination', outDir], {
+  execFileSync('pnpm', ['--filter', `@beemvp/beeui-${pkg}`, 'pack', '--pack-destination', outDir], {
     cwd: REPO_ROOT,
     // fd 2 (stderr) for both the child's stdout and stderr, so our own
     // stdout stays limited to the `export NAME_TARBALL=...` lines below.
     stdio: ['ignore', 2, 2],
   });
-  const prefix = `beeui-${pkg}-`;
+  const prefix = `beemvp-beeui-${pkg}-`;
   const match = readdirSync(outDir).find((file) => file.startsWith(prefix) && file.endsWith('.tgz'));
   if (!match) {
-    throw new Error(`Expected a ${prefix}*.tgz tarball in ${outDir} after packing @beeui/${pkg}`);
+    throw new Error(`Expected a ${prefix}*.tgz tarball in ${outDir} after packing @beemvp/beeui-${pkg}`);
   }
   return path.join(outDir, match);
 }

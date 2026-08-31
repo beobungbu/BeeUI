@@ -1,4 +1,4 @@
-import { resolveAnchoredOverlayPosition } from '@beeui/core';
+import { resolveAnchoredOverlayPosition } from '@beemvp/beeui-core';
 
 describe('BeeUI issue #17 anchored overlay geometry', () => {
   it('keeps a preferred bottom placement when it fits', () => {

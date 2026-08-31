@@ -108,7 +108,7 @@ import {
   TooltipTrigger,
   useToast,
   VStack,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { ScrollView, StatusBar } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
@@ -515,7 +515,7 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
         <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
           <Box className="mx-auto w-full max-w-3xl gap-10 px-5 py-8">
             <AlertBanner
-              description="Everything below is rendered from the public @beeui/ui API. Switch themes, open overlays, change form state, and resize the web window to exercise the same contracts used on native."
+              description="Everything below is rendered from the public @beemvp/beeui-ui API. Switch themes, open overlays, change form state, and resize the web window to exercise the same contracts used on native."
               title="Hands-on playground"
               variant="info"
             />
@@ -956,7 +956,7 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
                     <Stat className="min-w-32 flex-1">
                       <StatLabel>API surface</StatLabel>
                       <StatValue>Public</StatValue>
-                      <StatHelpText>Only @beeui/ui exports</StatHelpText>
+                      <StatHelpText>Only @beemvp/beeui-ui exports</StatHelpText>
                     </Stat>
                     <Stat className="min-w-32 flex-1">
                       <StatLabel>Verification</StatLabel>

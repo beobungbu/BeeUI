@@ -1,4 +1,4 @@
-import { Button, HStack, Text } from '@beeui/ui';
+import { Button, HStack, Text } from '@beemvp/beeui-ui';
 import * as React from 'react';
 
 export type QuantityControlProps = {

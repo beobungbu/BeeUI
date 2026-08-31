@@ -5,7 +5,7 @@ import type {
   AnchoredOverlayPlacement,
   CalendarDate,
   CalendarWeekStartsOn,
-} from '@beeui/core';
+} from '@beemvp/beeui-core';
 import * as React from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { useFieldContext } from './field-context';

@@ -1,4 +1,4 @@
-import { Badge, ListGroup, ListGroupHeader, Separator, SettingsItem, Switch } from '@beeui/ui';
+import { Badge, ListGroup, ListGroupHeader, Separator, SettingsItem, Switch } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { SettingsScreenShell } from '../components/settings-screen-shell';
 import { SettingsSection } from '../components/settings-section';

@@ -45,7 +45,7 @@ import {
   BottomActionBar,
   SafeArea,
   Screen,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 
 function AppShell() {
   return (

@@ -1,5 +1,5 @@
 {
-  "name": "@beeui/demo",
+  "name": "@beemvp/beeui-demo",
   "version": "0.1.0",
   "license": "MIT",
   "private": true,
@@ -16,8 +16,8 @@
     "test": "jest --runInBand"
   },
   "dependencies": {
-    "@beeui/tokens": "workspace:*",
-    "@beeui/ui": "workspace:*",
+    "@beemvp/beeui-tokens": "workspace:*",
+    "@beemvp/beeui-ui": "workspace:*",
     "@expo/metro-runtime": "~57.0.14",
     "@gorhom/bottom-sheet": "~5.2.14",
     "expo": "~57.0.0",
@@ -51,9 +51,9 @@
       "<rootDir>/jest.setup.ts"
     ],
     "moduleNameMapper": {
-      "^@beeui/core$": "<rootDir>/../../packages/core/src/index.ts",
-      "^@beeui/tokens$": "<rootDir>/../../packages/tokens/src/index.ts",
-      "^@beeui/ui$": "<rootDir>/../../packages/ui/src/index.ts",
+      "^@beemvp/beeui-core$": "<rootDir>/../../packages/core/src/index.ts",
+      "^@beemvp/beeui-tokens$": "<rootDir>/../../packages/tokens/src/index.ts",
+      "^@beemvp/beeui-ui$": "<rootDir>/../../packages/ui/src/index.ts",
       "^uniwind$": "<rootDir>/__mocks__/uniwind.ts"
     },
     "testMatch": [

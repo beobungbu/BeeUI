@@ -1,4 +1,4 @@
-import { BottomActionBar } from '@beeui/ui';
+import { BottomActionBar } from '@beemvp/beeui-ui';
 import { usePathname } from 'expo-router';
 import * as React from 'react';
 import { NavItem } from './nav-item';

@@ -9,7 +9,7 @@ import {
   Separator,
   Text,
   VStack,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import * as React from 'react';
 
 export type AuthShellProps = {

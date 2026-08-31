@@ -1,4 +1,4 @@
-import { Badge, Button, Card, Text, VStack } from '@beeui/ui';
+import { Badge, Button, Card, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { Pressable } from 'react-native';
 import type { Product } from '../fixtures/commerce-fixtures';

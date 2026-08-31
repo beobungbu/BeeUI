@@ -1,6 +1,6 @@
 # Authentication + Onboarding patterns
 
-Production-oriented application screens built with the current public `@beeui/ui` API. These patterns are intentionally app-level compositions: they demonstrate how BeeUI primitives can produce polished account flows without moving domain UI into the component library.
+Production-oriented application screens built with the current public `@beemvp/beeui-ui` API. These patterns are intentionally app-level compositions: they demonstrate how BeeUI primitives can produce polished account flows without moving domain UI into the component library.
 
 ## Included screens
 
@@ -20,7 +20,7 @@ The screens do not own authentication networking, routers, auth SDKs, analytics,
 
 ## Public BeeUI primitives used
 
-The pack imports BeeUI only from `@beeui/ui`. It composes:
+The pack imports BeeUI only from `@beemvp/beeui-ui`. It composes:
 
 - `AlertBanner`
 - `Avatar`
@@ -45,7 +45,7 @@ The pack imports BeeUI only from `@beeui/ui`. It composes:
 Temporarily import any screen into `apps/showcase/App.tsx`, render it with controlled fixture props, then run:
 
 ```bash
-pnpm --filter @beeui/showcase web
+pnpm --filter @beemvp/beeui-showcase web
 ```
 
 Recommended review sizes:
@@ -109,7 +109,7 @@ No anchored-overlay gap was investigated or changed here.
 Dedicated typecheck:
 
 ```bash
-pnpm --filter @beeui/showcase exec tsc -p patterns/auth/tsconfig.json --noEmit
+pnpm --filter @beemvp/beeui-showcase exec tsc -p patterns/auth/tsconfig.json --noEmit
 ```
 
 Repository verification:

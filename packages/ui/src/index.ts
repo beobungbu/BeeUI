@@ -56,12 +56,12 @@ export {
 // of the public barrel; `Calendar`, `DatePicker`, and `DateTimePicker` (#173/#174)
 // import it directly by relative path.
 export { Calendar, type CalendarProps, type CalendarVisibleMonth } from './components/calendar';
-// `CalendarDate`/`CalendarWeekStartsOn`/`ClockTime` are `@beeui/core` types (ADR-008),
+// `CalendarDate`/`CalendarWeekStartsOn`/`ClockTime` are `@beemvp/beeui-core` types (ADR-008),
 // re-exported here because `Calendar`'s/`DatePicker`'s/`DateTimePicker`'s own
 // controlled `value`/`weekStartsOn` props use them directly — the public component API
-// stops at `@beeui/ui` (`docs/architecture.md`), so a consumer must be able to type its
-// own controlled state without reaching into the internal `@beeui/core` package.
-export type { CalendarDate, CalendarWeekStartsOn, ClockTime } from '@beeui/core';
+// stops at `@beemvp/beeui-ui` (`docs/architecture.md`), so a consumer must be able to type its
+// own controlled state without reaching into the internal `@beemvp/beeui-core` package.
+export type { CalendarDate, CalendarWeekStartsOn, ClockTime } from '@beemvp/beeui-core';
 export { Card, cardVariants, type CardProps } from './components/card';
 export {
   Checkbox,

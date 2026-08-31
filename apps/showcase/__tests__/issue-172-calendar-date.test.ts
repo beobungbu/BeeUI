@@ -17,10 +17,10 @@ import {
   toISODateString,
   toLocalDate,
   type CalendarDate,
-} from '@beeui/core';
+} from '@beemvp/beeui-core';
 
 // BeeUI issue #172 (R4F.2, ADR-008 "Calendar" contract). Deterministic date-arithmetic
-// and adapter tests for the new `@beeui/core` calendar-date module: leap years,
+// and adapter tests for the new `@beemvp/beeui-core` calendar-date module: leap years,
 // month-grid generation across week starts, comparison/clamping, and — the ADR's
 // hard, non-negotiable requirement — proof that no date-only value shifts calendar
 // day through an implicit UTC/local timezone conversion.

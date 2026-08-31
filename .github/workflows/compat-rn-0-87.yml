@@ -48,10 +48,10 @@ env:
   # docs/compatibility-matrix.md.
   BEEUI_RN_VERSION: 0.87.1
   BEEUI_RN_CLI_VERSION: 20.2.0
-  # #131 decided (with real CI evidence) to EXCLUDE RN 0.87 from @beeui/ui's
+  # #131 decided (with real CI evidence) to EXCLUDE RN 0.87 from @beemvp/beeui-ui's
   # declared peerDependencies range (packages/ui/package.json stays
   # ">=0.86.0 <0.87.0"), so npm's strict peer resolution correctly refuses to
-  # install @beeui/ui into an RN 0.87 project. This workflow deliberately
+  # install @beemvp/beeui-ui into an RN 0.87 project. This workflow deliberately
   # tests an out-of-range line to gather/repeat that evidence, so it must
   # bypass strict peer resolution the same way a consumer forcing the
   # combination against BeeUI's advice would.

@@ -1,4 +1,4 @@
-import { isBeeDarkRuntimeTheme } from '@beeui/tokens';
+import { isBeeDarkRuntimeTheme } from '@beemvp/beeui-tokens';
 import {
   AppHeader,
   Badge,
@@ -10,7 +10,7 @@ import {
   Screen,
   Text,
   VStack,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { ScrollView, StatusBar } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
@@ -54,7 +54,7 @@ function ShowcaseBuildIdentity() {
         {identity}
       </Text>
       <Text variant="caption">
-        Unpublished preview. The @beeui/* packages and beeui CLI are not on npm yet; this
+        Unpublished preview. The @beemvp/beeui-* packages and beeui CLI are not on npm yet; this
         Showcase is built from in-repo source.
       </Text>
     </VStack>
