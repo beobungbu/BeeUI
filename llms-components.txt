@@ -1,0 +1,98 @@
+# BeeUI — component inventory
+
+> The 62 public component modules exported by `@beeui/ui`, derived from registry/registry.json and packages/ui/src/index.ts. Each line lists the module's exported runtime symbols and its source file. Full per-component behavior/accessibility contracts live in [docs/components.md](docs/components.md); this file is the token-efficient map from name to symbols to source.
+
+STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beeui/*` package or CLI is on npm, no `v1.0.0` tag or GitHub Release exists, and the repository is private by owner decision. Package/CLI names and install commands below are release-ready-but-not-published targets, not live registry commands. Do not tell a user to `npm install @beeui/ui` or `npx @beeui/cli` yet — those resolve to nothing today. The working, in-repo path is the source-ownership CLI (`pnpm beeui -- add <component>`).
+
+## How to read this
+- Import all listed symbols from `@beeui/ui` (centralized model) or copy the source file via `pnpm beeui -- add <name>` (source-ownership model). Type-only exports are omitted here for brevity; see the source file or [packages/ui/src/index.ts](packages/ui/src/index.ts) for `Props` and value-type exports.
+- "source" paths are repository files. Platform-split modules (e.g. `date-picker`, `table`, `sheet`, `tooltip`) resolve `*.web.tsx` / `*.native.tsx` at build time from the listed entry.
+- Every text-bearing component honors OS/browser font scaling (docs/dynamic-type.md via [docs/components.md](docs/components.md)); interactive components carry accessibility roles/states.
+
+## Platform behavior (summary)
+- Web: real HTML semantics where available (Table renders `<table>`/`<th scope>`/`aria-sort`), focus traps (Dialog, Sheet), listbox/menu/combobox keyboard + typeahead (Select, DropdownMenu), and `aria-*` relationships gated to mounted content.
+- Native: RN semantic roles (`radiogroup`, `progressbar`, `switch`), merged `accessibilityHint`/`accessibilityLabel` where no Web-equivalent role exists, and system pickers for DatePicker/DateTimePicker via `@react-native-community/datetimepicker`.
+- Shared anchored kernel: Popover, DropdownMenu, Select, Tooltip share geometry/flip/shift/collision/safe-area/dismiss; RTL via one `useDirection()` resolver (ADR-004).
+
+## Public component modules (62)
+- `accordion` → exports: Accordion, AccordionContent, AccordionItem, AccordionTrigger — source: [packages/ui/src/components/accordion.tsx](packages/ui/src/components/accordion.tsx) — notable peers: react, react-native
+- `alert-banner` → exports: AlertBanner, alertBannerVariants — source: [packages/ui/src/components/alert-banner.tsx](packages/ui/src/components/alert-banner.tsx) — notable peers: react, react-native
+- `alert-dialog` → exports: AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle, AlertDialogTrigger — source: [packages/ui/src/components/alert-dialog.tsx](packages/ui/src/components/alert-dialog.tsx) — notable peers: react, react-native
+- `app-header` → exports: AppHeader — source: [packages/ui/src/components/app-header.tsx](packages/ui/src/components/app-header.tsx) — notable peers: react, react-native
+- `avatar` → exports: Avatar, avatarFallbackVariants, avatarVariants — source: [packages/ui/src/components/avatar.tsx](packages/ui/src/components/avatar.tsx) — notable peers: react, react-native
+- `badge` → exports: Badge, badgeLabelVariants, badgeVariants — source: [packages/ui/src/components/badge.tsx](packages/ui/src/components/badge.tsx) — notable peers: react, react-native
+- `bottom-action-bar` → exports: BottomActionBar — source: [packages/ui/src/components/bottom-action-bar.tsx](packages/ui/src/components/bottom-action-bar.tsx) — notable peers: react, react-native
+- `box` → exports: Box — source: [packages/ui/src/components/box.tsx](packages/ui/src/components/box.tsx) — notable peers: react, react-native
+- `breadcrumb` → exports: Breadcrumb, BreadcrumbItem — source: [packages/ui/src/components/breadcrumb.tsx](packages/ui/src/components/breadcrumb.tsx) — notable peers: react, react-native
+- `button` → exports: Button, ButtonLabel, buttonLabelVariants, buttonVariants — source: [packages/ui/src/components/button.tsx](packages/ui/src/components/button.tsx) — notable peers: react, react-native
+- `calendar` → exports: Calendar — source: [packages/ui/src/components/calendar.tsx](packages/ui/src/components/calendar.tsx) — notable peers: react, react-native
+- `card` → exports: Card, cardVariants — source: [packages/ui/src/components/card.tsx](packages/ui/src/components/card.tsx) — notable peers: react, react-native
+- `checkbox` → exports: Checkbox, checkboxIndicatorVariants — source: [packages/ui/src/components/checkbox.tsx](packages/ui/src/components/checkbox.tsx) — notable peers: react, react-native
+- `chip` → exports: Chip, ChipGroup — source: [packages/ui/src/components/chip.tsx](packages/ui/src/components/chip.tsx) — notable peers: react, react-native
+- `collapsible` → exports: Collapsible, CollapsibleContent, CollapsibleTrigger — source: [packages/ui/src/components/collapsible.tsx](packages/ui/src/components/collapsible.tsx) — notable peers: react, react-native
+- `date-picker` → exports: DatePicker — source: [packages/ui/src/components/date-picker.native.tsx](packages/ui/src/components/date-picker.native.tsx) — notable peers: @react-native-community/datetimepicker, react, react-native
+- `date-time-picker` → exports: DateTimePicker — source: [packages/ui/src/components/date-time-picker.native.tsx](packages/ui/src/components/date-time-picker.native.tsx) — notable peers: @react-native-community/datetimepicker, react, react-native
+- `description-list` → exports: DescriptionItem, DescriptionList — source: [packages/ui/src/components/description-list.tsx](packages/ui/src/components/description-list.tsx) — notable peers: react, react-native
+- `dialog` → exports: Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle, DialogTrigger — source: [packages/ui/src/components/dialog.tsx](packages/ui/src/components/dialog.tsx) — notable peers: react, react-native
+- `dropdown-menu` → exports: DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger — source: [packages/ui/src/components/dropdown-menu.tsx](packages/ui/src/components/dropdown-menu.tsx) — notable peers: react, react-native
+- `field` → exports: Field — source: [packages/ui/src/components/field.tsx](packages/ui/src/components/field.tsx) — notable peers: react, react-native
+- `form-group` → exports: FormGroup — source: [packages/ui/src/components/form-group.tsx](packages/ui/src/components/form-group.tsx) — notable peers: react, react-native
+- `form-message` → exports: FormMessage, HelperText — source: [packages/ui/src/components/form-message.tsx](packages/ui/src/components/form-message.tsx) — notable peers: react, react-native
+- `icon-button` → exports: IconButton — source: [packages/ui/src/components/icon-button.tsx](packages/ui/src/components/icon-button.tsx) — notable peers: react, react-native
+- `input` → exports: Input, inputVariants — source: [packages/ui/src/components/input.tsx](packages/ui/src/components/input.tsx) — notable peers: react, react-native
+- `keyboard-aware-screen` → exports: KeyboardAwareScreen — source: [packages/ui/src/components/keyboard-aware-screen.tsx](packages/ui/src/components/keyboard-aware-screen.tsx) — notable peers: react, react-native
+- `label` → exports: Label — source: [packages/ui/src/components/label.tsx](packages/ui/src/components/label.tsx) — notable peers: react, react-native
+- `link` → exports: Link — source: [packages/ui/src/components/link.tsx](packages/ui/src/components/link.tsx) — notable peers: react, react-native
+- `list-group` → exports: ListGroup, ListGroupHeader — source: [packages/ui/src/components/list-group.tsx](packages/ui/src/components/list-group.tsx) — notable peers: react, react-native
+- `list-item` → exports: ListItem, SettingsItem — source: [packages/ui/src/components/list-item.tsx](packages/ui/src/components/list-item.tsx) — notable peers: react, react-native
+- `metadata-row` → exports: MetadataRow — source: [packages/ui/src/components/metadata-row.tsx](packages/ui/src/components/metadata-row.tsx) — notable peers: react, react-native
+- `otp-input` → exports: OTPInput — source: [packages/ui/src/components/otp-input.tsx](packages/ui/src/components/otp-input.tsx) — notable peers: react, react-native
+- `pagination` → exports: Pagination, PaginationItem — source: [packages/ui/src/components/pagination.tsx](packages/ui/src/components/pagination.tsx) — notable peers: react, react-native
+- `password-input` → exports: PasswordInput — source: [packages/ui/src/components/password-input.tsx](packages/ui/src/components/password-input.tsx) — notable peers: react, react-native
+- `popover` → exports: Popover, PopoverClose, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger — source: [packages/ui/src/components/popover.tsx](packages/ui/src/components/popover.tsx) — notable peers: react, react-native
+- `progress` → exports: Progress, progressVariants — source: [packages/ui/src/components/progress.tsx](packages/ui/src/components/progress.tsx) — notable peers: react, react-native
+- `radio` → exports: Radio, RadioGroup, radioIndicatorVariants — source: [packages/ui/src/components/radio.tsx](packages/ui/src/components/radio.tsx) — notable peers: react, react-native
+- `safe-area` → exports: BeeUIProvider, SafeArea — source: [packages/ui/src/components/safe-area.tsx](packages/ui/src/components/safe-area.tsx) — notable peers: react, react-native, react-native-safe-area-context, uniwind
+- `screen` → exports: Screen — source: [packages/ui/src/components/screen.tsx](packages/ui/src/components/screen.tsx) — notable peers: react, react-native
+- `search-input` → exports: SearchInput — source: [packages/ui/src/components/search-input.tsx](packages/ui/src/components/search-input.tsx) — notable peers: react, react-native
+- `section` → exports: Section — source: [packages/ui/src/components/section.tsx](packages/ui/src/components/section.tsx) — notable peers: react, react-native
+- `segmented-control` → exports: SegmentedControl, SegmentedControlItem — source: [packages/ui/src/components/segmented-control.tsx](packages/ui/src/components/segmented-control.tsx) — notable peers: react, react-native
+- `select` → exports: Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue — source: [packages/ui/src/components/select.tsx](packages/ui/src/components/select.tsx) — notable peers: react, react-native
+- `separator` → exports: Separator — source: [packages/ui/src/components/separator.tsx](packages/ui/src/components/separator.tsx) — notable peers: react, react-native
+- `sheet` → exports: Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHandle, SheetTitle, SheetTrigger — source: [packages/ui/src/components/sheet.tsx](packages/ui/src/components/sheet.tsx) — notable peers: @gorhom/bottom-sheet, react, react-native, react-native-gesture-handler, react-native-reanimated, react-native-worklets
+- `skeleton` → exports: Skeleton, skeletonVariants — source: [packages/ui/src/components/skeleton.tsx](packages/ui/src/components/skeleton.tsx) — notable peers: react, react-native
+- `spinner` → exports: Spinner — source: [packages/ui/src/components/spinner.tsx](packages/ui/src/components/spinner.tsx) — notable peers: react, react-native
+- `stack` → exports: HStack, Stack, VStack, stackVariants — source: [packages/ui/src/components/stack.tsx](packages/ui/src/components/stack.tsx) — notable peers: react, react-native
+- `stat` → exports: Stat, StatHelpText, StatLabel, StatValue — source: [packages/ui/src/components/stat.tsx](packages/ui/src/components/stat.tsx) — notable peers: react, react-native
+- `state-message` → exports: EmptyState, ErrorState — source: [packages/ui/src/components/state-message.tsx](packages/ui/src/components/state-message.tsx) — notable peers: react, react-native
+- `stepper` → exports: Stepper, StepperItem — source: [packages/ui/src/components/stepper.tsx](packages/ui/src/components/stepper.tsx) — notable peers: react, react-native
+- `switch` → exports: Switch — source: [packages/ui/src/components/switch.tsx](packages/ui/src/components/switch.tsx) — notable peers: react, react-native
+- `table` → exports: Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow — source: [packages/ui/src/components/table.tsx](packages/ui/src/components/table.tsx) — notable peers: react, react-native
+- `tabs` → exports: Tabs, TabsContent, TabsList, TabsTrigger — source: [packages/ui/src/components/tabs.tsx](packages/ui/src/components/tabs.tsx) — notable peers: react, react-native
+- `text` → exports: Text, textVariants — source: [packages/ui/src/components/text.tsx](packages/ui/src/components/text.tsx) — notable peers: react, react-native
+- `textarea` → exports: Textarea — source: [packages/ui/src/components/textarea.tsx](packages/ui/src/components/textarea.tsx) — notable peers: react, react-native
+- `theme-scope` → exports: BeeThemeScope — source: [packages/ui/src/components/theme-scope.tsx](packages/ui/src/components/theme-scope.tsx) — notable peers: react, uniwind
+- `timeline` → exports: Timeline, TimelineItem — source: [packages/ui/src/components/timeline.tsx](packages/ui/src/components/timeline.tsx) — notable peers: react, react-native
+- `toast` → exports: TOAST_DEFAULT_DURATION, TOAST_MAX_VISIBLE, useToast — source: [packages/ui/src/components/toast.tsx](packages/ui/src/components/toast.tsx) — notable peers: react, react-native, react-native-safe-area-context
+- `tooltip` → exports: Tooltip, TooltipContent, TooltipTrigger — source: [packages/ui/src/components/tooltip-shared.tsx](packages/ui/src/components/tooltip-shared.tsx) — notable peers: react, react-native
+- `use-bee-token` → exports: getBeeToken, useBeeToken — source: [packages/ui/src/components/use-bee-token.ts](packages/ui/src/components/use-bee-token.ts) — notable peers: react, uniwind
+- `visually-hidden` → exports: VisuallyHidden — source: [packages/ui/src/components/visually-hidden.tsx](packages/ui/src/components/visually-hidden.tsx) — notable peers: react, react-native
+
+## Public non-component surface
+- `theme` (registry type: theme) — the canonical Uniwind/Tailwind CSS at `packages/tokens/src/theme.css`, consumed on Web via `@import '@beeui/tokens/theme.css'`.
+
+## Internal utilities (not part of the public import surface)
+- `core-cn`
+- `core-overlay`
+- `field-context`
+- `form-group-context`
+- `overlay-runtime`
+- `use-direction`
+- `use-required-callback-warning`
+
+## Deep-dive contracts
+- Overlays (Popover/DropdownMenu/Select/Tooltip): [docs/anchored-overlays.md](docs/anchored-overlays.md), [ADR-002](docs/decisions/002-overlay-behavior.md), [ADR-005](docs/decisions/005-tooltip-contract.md), [ADR-010](docs/decisions/010-select-presentation-1-0-decision.md).
+- Sheet: [ADR-006](docs/decisions/006-sheet-gesture-engine.md). Table: [ADR-007](docs/decisions/007-table-datatable-architecture.md), [apps/docs/src/content/docs/components/table.md](apps/docs/src/content/docs/components/table.md).
+- Calendar/DatePicker/DateTimePicker: [ADR-008](docs/decisions/008-datetime-architecture.md), [apps/docs/src/content/docs/components/calendar-date-time.md](apps/docs/src/content/docs/components/calendar-date-time.md).
+
+Generated by scripts/generate-llms-txt.mjs from registry/registry.json, packages/ui/src/index.ts, and packages/*/package.json. Do not edit by hand; run `pnpm llms:generate`.

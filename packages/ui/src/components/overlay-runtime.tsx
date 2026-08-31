@@ -832,6 +832,89 @@ export function useOverlayDismissable({
   );
 }
 
+// `packages/ui` excludes the `dom` lib (see `use-direction.ts`'s
+// `WebDocumentLike` convention), so this reaches the DOM through a narrow
+// structural type rather than `lib.dom.d.ts`. Deliberately minimal: only the
+// surface `useOverlayEscapeKey` itself needs, not the full shape
+// `dialog.tsx`/`sheet.web.tsx` use for their own Tab focus-trap DOM queries.
+type WebOverlayKeyboardEvent = {
+  key?: string;
+  preventDefault?: () => void;
+  stopPropagation?: () => void;
+};
+
+type WebOverlayDocument = {
+  addEventListener: (
+    type: string,
+    listener: (event: WebOverlayKeyboardEvent) => void,
+    useCapture?: boolean,
+  ) => void;
+  removeEventListener: (
+    type: string,
+    listener: (event: WebOverlayKeyboardEvent) => void,
+    useCapture?: boolean,
+  ) => void;
+};
+
+function getWebOverlayDocument(): WebOverlayDocument | undefined {
+  if (Platform.OS !== 'web') return undefined;
+  return (globalThis as { document?: WebOverlayDocument }).document;
+}
+
+export type UseOverlayEscapeKeyOptions = {
+  /** From this overlay's own `useOverlayDismissable()` — preserves the exact
+   * same nested-overlay precedence the caller already established. */
+  isTopmost: () => boolean;
+  onDismiss: () => void;
+  open: boolean;
+};
+
+/**
+ * Shared Web-only capture-phase `Escape` dismissal for any overlay already
+ * registered into a dismiss scope via `useOverlayDismissable` (#318).
+ *
+ * BeeUI's cross-overlay Escape bridge (`overlay-dismiss-events.web.ts`)
+ * listens in the bubble phase at `window`. A focused text `Input` inside an
+ * overlay's content (search/filter forms, an editable field — a common
+ * shape for `Dialog`/`Sheet`/`Popover` content alike) stops that keydown's
+ * propagation before it bubbles that far, silently swallowing Escape for
+ * that overlay. `DialogContent` and `SheetContent` each already carried an
+ * identical capture-phase binding of their own (predating this hook, #146/
+ * #159); `Popover` had none and depended entirely on the bubble-phase
+ * bridge, so a focused Input inside `PopoverContent` reproduced the same
+ * silent-swallow defect. This lifts that one seam into `overlay-runtime.tsx`
+ * so every overlay — present and future — shares one implementation instead
+ * of a per-component copy.
+ *
+ * Capture fires on the way down, before the focused element's own bubble-
+ * phase handling runs, so it reaches this listener regardless of what a
+ * descendant does with the event afterwards. Callers supply their own
+ * `isTopmost()` so nested-overlay precedence (a `Popover` opened from inside
+ * a `Dialog` is dismissed child-first) is preserved exactly.
+ */
+export function useOverlayEscapeKey({ isTopmost, onDismiss, open }: UseOverlayEscapeKeyOptions) {
+  const onDismissRef = React.useRef(onDismiss);
+  onDismissRef.current = onDismiss;
+  const isTopmostRef = React.useRef(isTopmost);
+  isTopmostRef.current = isTopmost;
+
+  React.useEffect(() => {
+    if (!open) return undefined;
+    const doc = getWebOverlayDocument();
+    if (!doc) return undefined;
+
+    const handleKeyDown = (event: WebOverlayKeyboardEvent) => {
+      if (event.key !== 'Escape' || !isTopmostRef.current()) return;
+      event.preventDefault?.();
+      event.stopPropagation?.();
+      onDismissRef.current();
+    };
+
+    doc.addEventListener('keydown', handleKeyDown, true);
+    return () => doc.removeEventListener('keydown', handleKeyDown, true);
+  }, [open]);
+}
+
 export type OverlayDismissLayerProps = Omit<
   PressableProps,
   'accessibilityRole' | 'children' | 'onPress' | 'role' | 'style'

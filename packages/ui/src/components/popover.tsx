@@ -21,6 +21,7 @@ import {
   OverlayPortal,
   useAnchoredOverlayPosition,
   useOverlayDismissable,
+  useOverlayEscapeKey,
   useOverlayId,
   type OverlayMeasurableNode,
 } from './overlay-runtime';
@@ -227,6 +228,21 @@ export const PopoverContent = React.forwardRef<React.ComponentRef<typeof View>, 
       onDismiss: () => setOpen(false),
       open,
       overlayId,
+    });
+
+    // Web-only capture-phase Escape dismissal (#318): without this,
+    // `PopoverContent` depended entirely on BeeUI's shared bubble-phase
+    // Escape bridge (`overlay-dismiss-events.web.ts`), which a focused text
+    // `Input` inside the popover (e.g. a search/filter field) silently
+    // defeats by stopping the keydown's bubble phase before it reaches that
+    // bridge. `DialogContent`/`SheetContent` already had their own
+    // capture-phase binding for the same reason; this reuses the shared
+    // `useOverlayEscapeKey` (`overlay-runtime.tsx`) instead of duplicating
+    // it. A no-op on native (`useOverlayEscapeKey` only attaches on Web).
+    useOverlayEscapeKey({
+      isTopmost,
+      onDismiss: () => setOpen(false),
+      open,
     });
 
     const handleAnchorUnavailable = React.useCallback(() => {
