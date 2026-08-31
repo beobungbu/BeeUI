@@ -236,7 +236,8 @@
       "registryDependencies": [
         "core-cn",
         "text",
-        "theme"
+        "theme",
+        "use-direction"
       ],
       "dependencies": {},
       "peerDependencies": {
@@ -699,9 +700,12 @@
         "core-overlay",
         "overlay-runtime",
         "text",
-        "theme"
+        "theme",
+        "use-direction"
       ],
-      "dependencies": {},
+      "dependencies": {
+        "@beeui/tokens": "0.1.0"
+      },
       "peerDependencies": {
         "react": ">=19 <20",
         "react-native": ">=0.86.0 <0.87.0"
@@ -875,6 +879,7 @@
       "registryDependencies": [
         "core-cn",
         "field-context",
+        "text",
         "theme"
       ],
       "dependencies": {
@@ -1013,6 +1018,7 @@
       "registryDependencies": [
         "box",
         "core-cn",
+        "list-group",
         "text",
         "theme"
       ],
@@ -1156,7 +1162,9 @@
       "registryDependencies": [
         "core-overlay"
       ],
-      "dependencies": {},
+      "dependencies": {
+        "@beeui/tokens": "0.1.0"
+      },
       "peerDependencies": {
         "react-dom": ">=19 <20",
         "react-native-safe-area-context": ">=5 <6",
@@ -1182,7 +1190,8 @@
       "registryDependencies": [
         "core-cn",
         "text",
-        "theme"
+        "theme",
+        "use-direction"
       ],
       "dependencies": {},
       "peerDependencies": {
@@ -1240,9 +1249,12 @@
         "core-overlay",
         "overlay-runtime",
         "text",
-        "theme"
+        "theme",
+        "use-direction"
       ],
-      "dependencies": {},
+      "dependencies": {
+        "@beeui/tokens": "0.1.0"
+      },
       "peerDependencies": {
         "react": ">=19 <20",
         "react-native": ">=0.86.0 <0.87.0"
@@ -1460,9 +1472,12 @@
         "core-overlay",
         "overlay-runtime",
         "text",
-        "theme"
+        "theme",
+        "use-direction"
       ],
-      "dependencies": {},
+      "dependencies": {
+        "@beeui/tokens": "0.1.0"
+      },
       "peerDependencies": {
         "react": ">=19 <20",
         "react-native": ">=0.86.0 <0.87.0"
@@ -1537,7 +1552,9 @@
         "text",
         "theme"
       ],
-      "dependencies": {},
+      "dependencies": {
+        "@beeui/tokens": "0.1.0"
+      },
       "peerDependencies": {
         "@gorhom/bottom-sheet": ">=5.2 <6",
         "react": ">=19 <20",
@@ -1900,7 +1917,9 @@
       "registryDependencies": [
         "theme"
       ],
-      "dependencies": {},
+      "dependencies": {
+        "@beeui/tokens": "0.1.0"
+      },
       "peerDependencies": {
         "react": ">=19 <20",
         "uniwind": ">=1.10.1 <2"
@@ -1949,9 +1968,12 @@
         }
       ],
       "registryDependencies": [
+        "text",
         "theme"
       ],
-      "dependencies": {},
+      "dependencies": {
+        "@beeui/tokens": "0.1.0"
+      },
       "peerDependencies": {
         "react": ">=19 <20",
         "react-native": ">=0.86.0 <0.87.0",
@@ -2010,7 +2032,9 @@
         "theme",
         "use-direction"
       ],
-      "dependencies": {},
+      "dependencies": {
+        "@beeui/tokens": "0.1.0"
+      },
       "peerDependencies": {
         "react": ">=19 <20",
         "react-native": ">=0.86.0 <0.87.0"
@@ -2033,7 +2057,9 @@
       "registryDependencies": [
         "theme"
       ],
-      "dependencies": {},
+      "dependencies": {
+        "@beeui/tokens": "0.1.0"
+      },
       "peerDependencies": {
         "react": ">=19 <20",
         "uniwind": ">=1.10.1 <2"
