@@ -324,7 +324,7 @@ shared-authority source of truth for every row below; it is drift-checked by
 - #214 deterministic `init` policy.
 - #215 package-manager mutation policy.
 - #216 registry delivery/integrity strategy.
-- #217 complete stable 1.0 registry closure.
+- #217 complete stable 1.0 registry closure. **Gated by [#355](https://github.com/beobungbu/BeeUI/issues/355)** — the registry CLI must resolve/vendor/rewrite `@beeui/tokens` runtime imports (currently `private: true`, unpublished, and not vendored like `@beeui/core`) so copied source compiles in a clean consumer. Also fix the curated-file-list test gap that let affected files pass CI. #217 cannot be called production-ready until #355 is closed.
 - #218 packed CLI clean-consumer E2E.
 - #219 optional safe diff/update assistance or explicit defer.
 
