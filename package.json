@@ -58,6 +58,7 @@
     "beeui": "node ./scripts/beeui.mjs",
     "registry:verify": "node ./scripts/verify-registry.mjs",
     "registry:test": "node --test ./scripts/__tests__/beeui.test.mjs",
+    "cli:smoke": "pnpm --filter @beeui/cli run build && pnpm --filter @beeui/cli run smoke",
     "tokens:migration-report": "node ./scripts/generate-token-migration-report.mjs"
   },
   "devDependencies": {

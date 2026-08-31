@@ -16,6 +16,7 @@ const packageSpecs = [
   {
     name: '@beeui/core',
     dir: 'packages/core',
+    kind: 'library',
     requiredPackedFiles: [
       'package/src/index.ts',
       'package/src/utils/anchored-overlay.ts',
@@ -31,6 +32,7 @@ const packageSpecs = [
   {
     name: '@beeui/tokens',
     dir: 'packages/tokens',
+    kind: 'library',
     requiredPackedFiles: [
       'package/src/index.ts',
       'package/src/motion-runtime.ts',
@@ -53,6 +55,7 @@ const packageSpecs = [
   {
     name: '@beeui/ui',
     dir: 'packages/ui',
+    kind: 'library',
     requiredPackedFiles: [
       'package/src/index.ts',
       'package/src/components/popover.tsx',
@@ -87,6 +90,29 @@ const packageSpecs = [
       // path and tsc does not re-emit hand-written ambient .d.ts inputs.
       'package/dist/typescript/module/components/overlay-transport.d.ts',
       'package/dist/typescript/commonjs/components/overlay-transport.d.ts',
+    ],
+  },
+  {
+    name: '@beeui/cli',
+    dir: 'packages/cli',
+    kind: 'cli',
+    requiredPackedFiles: [
+      'package/src/beeui.mjs',
+      'package/src/registry-lib.mjs',
+      // #209 registry-data-shipping decision: the packed CLI bundles the
+      // canonical registry.json plus every file it can ever reference, so a
+      // standalone tarball install works with no monorepo tree present. Pin
+      // a couple of representative bundled sources (including the #355
+      // `@beeui/tokens`-affected `sheet` family) so a future build-script
+      // regression that silently stops bundling sources fails this check
+      // instead of shipping a broken CLI.
+      'package/dist/beeui.mjs',
+      'package/dist/registry-lib.mjs',
+      'package/dist/registry/registry.json',
+      'package/dist/registry/sources/packages/ui/src/components/button.tsx',
+      'package/dist/registry/sources/packages/ui/src/components/sheet.web.tsx',
+      'package/dist/registry/sources/packages/core/src/utils/cn.ts',
+      'package/dist/registry/sources/packages/tokens/src/theme.css',
     ],
   },
 ];
@@ -276,42 +302,59 @@ try {
       manifest.files?.join(', ') ?? 'missing',
     );
 
-    for (const field of ['main', 'module', 'types']) {
-      assert(typeof manifest[field] === 'string', `${spec.name} declares a top-level ${field} field`, manifest[field]);
+    if (spec.kind === 'cli') {
+      // The CLI is a bin-only package (no importable JS API), so it declares
+      // `bin` instead of `main`/`module`/`types`/`exports` — those library
+      // conditions (D3/D4) do not apply to it.
       assert(
-        fs.existsSync(path.join(packageDir, manifest[field])),
-        `${spec.name} top-level ${field} field resolves to a built file`,
-        manifest[field],
+        typeof manifest.bin?.beeui === 'string',
+        `${spec.name} declares the beeui bin entry`,
+        JSON.stringify(manifest.bin),
+      );
+      assert(
+        fs.existsSync(path.join(packageDir, manifest.bin.beeui)),
+        `${spec.name} bin entry resolves to a built file`,
+        manifest.bin.beeui,
+      );
+      assert(manifest.exports === undefined, `${spec.name} declares no import-time exports map (bin-only package)`);
+    } else {
+      for (const field of ['main', 'module', 'types']) {
+        assert(typeof manifest[field] === 'string', `${spec.name} declares a top-level ${field} field`, manifest[field]);
+        assert(
+          fs.existsSync(path.join(packageDir, manifest[field])),
+          `${spec.name} top-level ${field} field resolves to a built file`,
+          manifest[field],
+        );
+      }
+
+      const exportTargets = collectExportTargets(manifest.exports);
+      assert(exportTargets.length > 0, `${spec.name} declares package exports`);
+      for (const target of exportTargets) {
+        assert(target.startsWith('./'), `${spec.name} export is package-relative`, target);
+        assert(exportTargetExists(packageDir, target), `${spec.name} export target exists`, target);
+      }
+
+      // D3/D4: every subpath's "." export must expose the conditions consumers
+      // and bundlers rely on — types for TypeScript, source for the
+      // monorepo/source-ownership path, react-native for Metro, import/require
+      // for dual ESM+CJS, and browser/default for generic bundlers.
+      const dotExport = manifest.exports?.['.'];
+      const requiredConditions = ['source', 'react-native', 'import', 'require', 'browser', 'default'];
+      for (const condition of requiredConditions) {
+        assert(
+          Object.hasOwn(dotExport ?? {}, condition),
+          `${spec.name} exports['.'] declares the ${condition} condition`,
+        );
+      }
+      assert(
+        typeof dotExport.import === 'object' && typeof dotExport.import.types === 'string',
+        `${spec.name} exports['.'].import declares its own types`,
+      );
+      assert(
+        typeof dotExport.require === 'object' && typeof dotExport.require.types === 'string',
+        `${spec.name} exports['.'].require declares its own types`,
       );
     }
-
-    const exportTargets = collectExportTargets(manifest.exports);
-    assert(exportTargets.length > 0, `${spec.name} declares package exports`);
-    for (const target of exportTargets) {
-      assert(target.startsWith('./'), `${spec.name} export is package-relative`, target);
-      assert(exportTargetExists(packageDir, target), `${spec.name} export target exists`, target);
-    }
-
-    // D3/D4: every subpath's "." export must expose the conditions consumers
-    // and bundlers rely on — types for TypeScript, source for the
-    // monorepo/source-ownership path, react-native for Metro, import/require
-    // for dual ESM+CJS, and browser/default for generic bundlers.
-    const dotExport = manifest.exports?.['.'];
-    const requiredConditions = ['source', 'react-native', 'import', 'require', 'browser', 'default'];
-    for (const condition of requiredConditions) {
-      assert(
-        Object.hasOwn(dotExport ?? {}, condition),
-        `${spec.name} exports['.'] declares the ${condition} condition`,
-      );
-    }
-    assert(
-      typeof dotExport.import === 'object' && typeof dotExport.import.types === 'string',
-      `${spec.name} exports['.'].import declares its own types`,
-    );
-    assert(
-      typeof dotExport.require === 'object' && typeof dotExport.require.types === 'string',
-      `${spec.name} exports['.'].require declares its own types`,
-    );
   }
 
   const uiManifest = manifests.get('@beeui/ui');
@@ -435,6 +478,16 @@ try {
   }
 
   assert(!fs.existsSync(path.join(consumerDir, 'node_modules', 'expo')), 'release package smoke does not pull the Expo runtime');
+
+  // #209: prove the packed @beeui/cli tarball is actually executable once
+  // installed standalone into a clean consumer (no monorepo tree present),
+  // not just that its files exist in the tarball.
+  const cliBin = path.join(consumerDir, 'node_modules', '.bin', 'beeui');
+  assert(fs.existsSync(cliBin), '@beeui/cli installs its beeui bin link into a clean consumer');
+  const helpOutput = run(cliBin, ['help'], { cwd: consumerDir });
+  assert(/BeeUI source ownership CLI/.test(helpOutput), '@beeui/cli packed bin executes help from a clean consumer');
+  const listOutput = run(cliBin, ['list'], { cwd: consumerDir });
+  assert(/^button$/m.test(listOutput), '@beeui/cli packed bin lists the button component from a clean consumer');
 
   writeReport('pass');
   console.log(`\nRelease verification passed. Report: ${path.relative(ROOT_DIR, REPORT_PATH)}`);
