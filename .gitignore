@@ -15,10 +15,14 @@ apps/showcase/dist-gallery-qa/
 apps/showcase/dist-web/
 apps/showcase/dist-ios/
 apps/showcase/dist-android/
+apps/demo/dist-web/
+apps/demo/dist-ios/
+apps/demo/dist-android/
 .env
 .env.*
 !.env.example
 apps/showcase/uniwind-types.d.ts
+apps/demo/uniwind-types.d.ts
 
 # Local .claude config/state (per-machine); the shared agent-memory below IS tracked
 .claude/settings.local.json

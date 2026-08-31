@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "BeeUI Demo",
+    "slug": "beeui-demo",
+    "version": "0.1.0",
+    "scheme": "beeuidemo",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.beeui.demo",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.beeui.demo",
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
