@@ -55,7 +55,7 @@ async function main() {
   await rm(DIST_DIR, { recursive: true, force: true });
   await mkdir(DIST_DIR, { recursive: true });
 
-  const entrySourceFiles = ['beeui.mjs', 'registry-lib.mjs'];
+  const entrySourceFiles = ['beeui.mjs', 'registry-lib.mjs', 'semver-lite.mjs', 'detect.mjs', 'dependency-diagnostics.mjs'];
   for (const file of entrySourceFiles) {
     await cp(path.join(SRC_DIR, file), path.join(DIST_DIR, file));
   }
