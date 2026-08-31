@@ -1,0 +1,86 @@
+# BeeUI — full agent context
+
+> Expanded stable-API, setup, compatibility, and architecture-contract detail for coding agents. Companion to llms.txt (compact index), llms-components.txt (component inventory), and llms-patterns.txt (patterns).
+
+STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beeui/*` package or CLI is on npm, no `v1.0.0` tag or GitHub Release exists, and the repository is private by owner decision. Package/CLI names and install commands below are release-ready-but-not-published targets, not live registry commands. Do not tell a user to `npm install @beeui/ui` or `npx @beeui/cli` yet — those resolve to nothing today. The working, in-repo path is the source-ownership CLI (`pnpm beeui -- add <component>`).
+
+## What BeeUI is
+BeeUI is a reusable, mobile-first React Native UI foundation for long-lived client apps. The public component API stops at `@beeui/ui`; applications should not need to know the styling engine. Web support is additive and native ergonomics remain first-class. See [docs/architecture.md](docs/architecture.md).
+
+## Packages (all unpublished / pre-1.0, one lockstep version)
+- `@beeui/core` v0.1.0 — Engine-neutral utilities (class-name merging, anchored-overlay geometry) shared by @beeui/ui. No React, React Native, or Expo dependency. [unpublished (publishConfig.access=public prepared)]
+- `@beeui/tokens` v0.1.0 — BeeUI's design-token system: semantic color/spacing/typography/motion contracts and the canonical Uniwind/Tailwind theme CSS. [unpublished (publishConfig.access=public prepared)]
+- `@beeui/ui` v0.1.0 — Typed React Native + Web components built on @beeui/core and @beeui/tokens, styled through Uniwind/Tailwind. [unpublished (publishConfig.access=public prepared)]
+
+`@beeui/core`, `@beeui/tokens`, and `@beeui/ui` share one lockstep version and are released together (ADR-011 D6). Package manifests declare `publishConfig.access=public` + provenance but remain unpublished; `exports` maps ship dual ESM+CJS with `.d.ts`, a `react-native` condition for Metro, `browser`/`default` for Web, and `@beeui/tokens/theme.css` for the Web theme.
+
+## Consumption models
+1. Centralized packages (release-ready target, NOT on npm): `npm i @beeui/ui` pulls `@beeui/core` + `@beeui/tokens`; import components from `@beeui/ui`; wire Web theme with `@import '@beeui/tokens/theme.css'`.
+2. Source ownership (works today, repo-local): `pnpm beeui -- add <component>` copies component source in-tree and rewrites `@beeui/core` imports via `rewrite-beeui-core-cn` / `rewrite-beeui-core-module`. Run `pnpm beeui -- list` for the canonical component list (generated from registry/registry.json). Future published CLI: `@beeui/cli` (binary `beeui`), `npx @beeui/cli add <component>` — never `npx beeui` (the unscoped name is an npm tombstone; see [docs/distribution-names.md](docs/distribution-names.md)).
+
+See [docs/decisions/011-distribution-architecture.md](docs/decisions/011-distribution-architecture.md) and [docs/registry-cli.md](docs/registry-cli.md).
+
+## Quick start (repository)
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+pnpm showcase   # then press i (iOS), a (Android), or w (Web)
+```
+Verification: `pnpm check` (typecheck + tests), `pnpm release:verify` (package gate), `pnpm --dir apps/visual-regression test` (browser QA). See [README.md](README.md).
+
+## Provider and safe-area setup
+Wrap the app root in `BeeUIProvider` (installs safe-area measurement, the Toast runtime, and the shared anchored-overlay runtime). `SafeArea` assigns explicit `top`/`bottom`/`left`/`right` edge ownership; `Screen`, `AppHeader`, and `BottomActionBar` never add insets themselves. See [apps/docs/src/content/docs/getting-started/provider-safe-area.md](apps/docs/src/content/docs/getting-started/provider-safe-area.md).
+
+## Architecture invariants (do not violate)
+- Stable behavior/semantic/variant APIs are independent of Uniwind, Expo, routers, storage, networking, and business logic.
+- Components consume semantic tokens (`bg-primary`, `text-foreground`, `border-border`); never literal brand colors. Every semantic token exists in every theme.
+- `className` is an optional current-engine escape hatch, not a portability guarantee; engine-only bridge props stay internal.
+- No duplicate theme, overlay, focus, direction, or state authority. One application-root overlay runtime; nested providers reuse it.
+- Tailwind/Uniwind utilities must be statically discoverable — never construct `bg-${x}` dynamically.
+- Controlled primitives (Checkbox, Radio, RadioGroup, Switch, Tabs, SegmentedControl, and others) require their change callback; enabled usage without it warns in development.
+- Accessibility, RTL/logical direction, large text, high contrast, and reduced motion are part of component correctness.
+See [AGENTS.md](AGENTS.md) and [docs/architecture.md](docs/architecture.md).
+
+## Non-goals (explicit)
+BeeUI does not build or bundle a styling compiler, router, backend, state library, form framework, chart framework, data-grid, or virtualization engine to match another ecosystem's feature list. It owns no fetching, navigation, auth, or persistence. Timezone/business-calendar rules stay with the application (ADR-008). Table is a primitive family, not a data grid (ADR-007). Select has no Sheet mode or virtualization for 1.0 (ADR-010).
+
+## Overlay model (summary)
+- Modal-class `Dialog`/`AlertDialog` use React Native core `Modal`. `DialogContent` defaults to `overFullScreen` (transparent); `fullScreen`/`pageSheet`/`formSheet` are non-transparent so RN honors the presentation.
+- Anchored `Popover`/`DropdownMenu`/`Select`/`Tooltip` share one non-modal geometry/runtime/portal/dismiss kernel installed by `BeeUIProvider`.
+- Portal transport: Web `ReactDOM.createPortal`; native New Architecture `react-native-teleport`; defensive legacy fallback (does not preserve consumer context).
+- Global dismissal targets the deepest active scope via semantic depth, independent of React effect order. Native measurement uses latest-request-wins generation guards.
+- `Toast` is a separate transient-notification runtime (not modal, not anchored).
+See [docs/anchored-overlays.md](docs/anchored-overlays.md).
+
+## Platform / compatibility boundaries
+- Targets React Native first: Expo, Expo prebuild/dev builds, bare RN, and documented RN Web. Expo-specific APIs live in apps/adapters, never core packages.
+- Pinned/tested versions (React, React Native, Expo SDK, react-native-web, Tailwind, Uniwind, safe-area-context, teleport) are the authority in [docs/compatibility-matrix.md](docs/compatibility-matrix.md); Web support boundaries in [docs/web-support-contract.md](docs/web-support-contract.md).
+- iOS `pageSheet`/`formSheet` presentation is EXPERIMENTAL for 1.0 (compile + deterministic evidence only; live placement/swipe is a device gate). Compilation/browser evidence never proves full native runtime behavior.
+
+## Accessibility
+Accessibility roles/names/states/focus/keyboard are component correctness, not an add-on. Web gets real focus traps (Dialog/Sheet), listbox/menu keyboard semantics, and `aria-*` relationships; native uses RN semantic roles and merged hints where no equivalent role exists. VoiceOver/TalkBack claims require device evidence. See [docs/accessibility-contract.md](docs/accessibility-contract.md).
+
+## Architecture decision records
+- [ADR-001 styling-engine](docs/decisions/001-styling-engine.md): Uniwind + Tailwind v4 as the current, replaceable styling engine behind stable APIs.
+- [ADR-002 overlay-behavior](docs/decisions/002-overlay-behavior.md): Modal-class vs anchored overlays use different behavior primitives.
+- [ADR-003 native-measurement-timeout](docs/decisions/003-native-measurement-timeout.md): Bounded native measurement completion and deterministic fallback.
+- [ADR-004 direction-architecture](docs/decisions/004-direction-architecture.md): One stateless LTR/RTL resolver; BeeUI reads ambient direction, never writes it.
+- [ADR-005 tooltip-contract](docs/decisions/005-tooltip-contract.md): Tooltip is a non-interactive contextual disclosure, not a click menu.
+- [ADR-006 sheet-gesture-engine](docs/decisions/006-sheet-gesture-engine.md): Sheet: @gorhom/bottom-sheet on native, BeeUI Web overlay on Web; no drag-parity claim.
+- [ADR-007 table-datatable-architecture](docs/decisions/007-table-datatable-architecture.md): Table is a composable primitive family, not a data-driven grid.
+- [ADR-008 datetime-architecture](docs/decisions/008-datetime-architecture.md): Timezone-free, Intl-driven, single-date-selection value contracts.
+- [ADR-009 slider-1-0-decision](docs/decisions/009-slider-1-0-decision.md): Slider scope decision for 1.0.
+- [ADR-010 select-presentation-1-0-decision](docs/decisions/010-select-presentation-1-0-decision.md): Select presentation scope for 1.0 (no Sheet mode / virtualization).
+- [ADR-011 distribution-architecture](docs/decisions/011-distribution-architecture.md): Public distribution model: three scoped packages + source-ownership CLI, prepared not published.
+
+## Registry / source ownership
+[registry/registry.json](registry/registry.json) is the machine-readable source of 70 items: 62 public components, 1 public theme, and internal utilities (core-cn, core-overlay, field-context, form-group-context, overlay-runtime, use-direction, use-required-callback-warning). Each item declares source files, transforms, registry dependencies, and peer dependencies. Component-to-symbol mapping is verified against [packages/ui/src/index.ts](packages/ui/src/index.ts) at generation time.
+
+## Documentation map
+- Authority index: [docs/README.md](docs/README.md)
+- Getting started: [Expo](apps/docs/src/content/docs/getting-started/expo.md) · [bare RN](apps/docs/src/content/docs/getting-started/bare-react-native.md) · [Web](apps/docs/src/content/docs/getting-started/web.md)
+- CLI: [apps/docs/src/content/docs/cli/index.md](apps/docs/src/content/docs/cli/index.md)
+- Components site: [apps/docs/src/content/docs/components/index.md](apps/docs/src/content/docs/components/index.md) (deep dives: [Table](apps/docs/src/content/docs/components/table.md), [Calendar/DatePicker](apps/docs/src/content/docs/components/calendar-date-time.md))
+- Release policy: [docs/release.md](docs/release.md) · Changelog: [CHANGELOG.md](CHANGELOG.md) · License: [LICENSE](LICENSE) (MIT)
+
+Generated by scripts/generate-llms-txt.mjs from registry/registry.json, packages/ui/src/index.ts, and packages/*/package.json. Do not edit by hand; run `pnpm llms:generate`.
