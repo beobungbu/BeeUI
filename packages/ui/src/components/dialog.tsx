@@ -14,6 +14,7 @@ import { Button, type ButtonProps } from './button';
 import {
   ModalOverlayHost,
   useOverlayDismissable,
+  useOverlayEscapeKey,
   useOverlayId,
   type ModalOverlayDismissScope,
 } from './overlay-runtime';
@@ -225,13 +226,16 @@ function useReducedMotionPreference(enabled: boolean): boolean {
  * fade), a keyboard user's Escape keypress can land before that internal
  * flip happens; RNW's own listener then silently no-ops on that keypress —
  * this Dialog never closes for it. This mirrors `sheet.web.tsx`'s
- * `SheetEscapeBinding` exactly: a BeeUI-owned **capture-phase** `document`
- * `keydown` listener attached synchronously as soon as `open` is true, with
- * the same `isTopmost()` nested-overlay precedence (a `Popover` opened from
- * inside this `Dialog` is dismissed child-first, the `Dialog` stays open).
- * Capture phase also survives a focused text `Input` inside the panel (this
- * showcase's own "Project settings" dialog has one) stopping the bubble
- * phase before a bubble-phase listener would see the event.
+ * `SheetEscapeBinding`'s original approach exactly: a BeeUI-owned
+ * **capture-phase** `document` `keydown` listener attached synchronously as
+ * soon as `open` is true, with the same `isTopmost()` nested-overlay
+ * precedence (a `Popover` opened from inside this `Dialog` is dismissed
+ * child-first, the `Dialog` stays open). Capture phase also survives a
+ * focused text `Input` inside the panel (this showcase's own "Project
+ * settings" dialog has one) stopping the bubble phase before a bubble-phase
+ * listener would see the event (#318) — the actual capture-phase listener
+ * now lives in `overlay-runtime.tsx`'s `useOverlayEscapeKey`, shared with
+ * `SheetContent` and `PopoverContent` instead of duplicated per component.
  */
 function DialogEscapeBinding({
   onDismiss,
@@ -243,25 +247,7 @@ function DialogEscapeBinding({
   overlayId: string;
 }) {
   const { isTopmost } = useOverlayDismissable({ onDismiss, open, overlayId });
-  const onDismissRef = React.useRef(onDismiss);
-  onDismissRef.current = onDismiss;
-
-  React.useEffect(() => {
-    if (!open) return undefined;
-    const doc = getWebFocusDocument();
-    if (!doc) return undefined;
-
-    const handleKeyDown = (event: WebFocusKeyboardEvent) => {
-      if (event.key !== 'Escape' || !isTopmost()) return;
-      event.preventDefault?.();
-      event.stopPropagation?.();
-      onDismissRef.current();
-    };
-
-    doc.addEventListener('keydown', handleKeyDown, true);
-    return () => doc.removeEventListener('keydown', handleKeyDown, true);
-  }, [isTopmost, open]);
-
+  useOverlayEscapeKey({ isTopmost, onDismiss, open });
   return null;
 }
 

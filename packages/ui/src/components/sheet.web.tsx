@@ -15,6 +15,7 @@ import {
   ModalOverlayHost,
   OverlayPortal,
   useOverlayDismissable,
+  useOverlayEscapeKey,
   useOverlayId,
 } from './overlay-runtime';
 import { Text, type TextProps } from './text';
@@ -462,12 +463,13 @@ function playSheetMotion(
  * dismissed first by BeeUI's existing LIFO dismiss stack, matching Dialog's
  * documented nested-overlay Escape precedence exactly.
  *
- * Also attaches its own **capture-phase** `document` Escape listener. BeeUI's
- * shared cross-overlay Escape bridge (`overlay-dismiss-events.web.ts`)
- * listens in the bubble phase at the window; a focused text `Input` inside
- * the panel (a common Sheet content shape — search/filter forms) stops that
- * event's propagation before it bubbles that far, silently swallowing
- * Escape. Capture fires on the way down, before the focused element's own
+ * Also attaches its own **capture-phase** `document` Escape listener via the
+ * shared `useOverlayEscapeKey` (`overlay-runtime.tsx`, #318). BeeUI's shared
+ * cross-overlay Escape bridge (`overlay-dismiss-events.web.ts`) listens in
+ * the bubble phase at the window; a focused text `Input` inside the panel (a
+ * common Sheet content shape — search/filter forms) stops that event's
+ * propagation before it bubbles that far, silently swallowing Escape.
+ * Capture fires on the way down, before the focused element's own
  * bubble-phase handling runs, so it reaches this listener regardless. The
  * `isTopmost()` guard preserves the exact same nested-overlay precedence:
  * this only actually dismisses the Sheet when nothing registered later in
@@ -483,25 +485,7 @@ function SheetEscapeBinding({
   overlayId: string;
 }) {
   const { isTopmost } = useOverlayDismissable({ onDismiss, open, overlayId });
-  const onDismissRef = React.useRef(onDismiss);
-  onDismissRef.current = onDismiss;
-
-  React.useEffect(() => {
-    if (!open) return undefined;
-    const doc = getWebDocument();
-    if (!doc) return undefined;
-
-    const handleKeyDown = (event: WebKeyboardEventLike) => {
-      if (event.key !== 'Escape' || !isTopmost()) return;
-      event.preventDefault?.();
-      event.stopPropagation?.();
-      onDismissRef.current();
-    };
-
-    doc.addEventListener('keydown', handleKeyDown, true);
-    return () => doc.removeEventListener('keydown', handleKeyDown, true);
-  }, [isTopmost, open]);
-
+  useOverlayEscapeKey({ isTopmost, onDismiss, open });
   return null;
 }
 

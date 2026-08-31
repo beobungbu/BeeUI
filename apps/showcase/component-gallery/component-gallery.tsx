@@ -150,11 +150,16 @@ function PlacementPopover({ placement }: { placement: 'top' | 'right' | 'bottom'
       <PopoverTrigger size="sm" variant="outline">
         {placement}
       </PopoverTrigger>
-      <PopoverContent placement={placement}>
+      <PopoverContent placement={placement} testID={`popover-${placement}-content`}>
         <PopoverTitle>{`${placement[0].toUpperCase()}${placement.slice(1)} placement`}</PopoverTitle>
         <PopoverDescription>
           This surface is positioned by the shared anchored-overlay geometry kernel.
         </PopoverDescription>
+        {placement === 'bottom' ? (
+          <Field label="Note">
+            <Input accessibilityLabel="Popover note" testID="popover-demo-input" />
+          </Field>
+        ) : null}
         <PopoverClose size="sm" variant="ghost">
           Close
         </PopoverClose>
