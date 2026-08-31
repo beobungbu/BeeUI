@@ -124,7 +124,7 @@ Critical sequencing rules:
 - **R0.3** #117 — synchronize current-state documentation. **Done.**
 - **R0.4** #114 — single BeeUI 1.0 tracker. **Open by design** — the program tracker stays open for the life of the drive; not counted as a closable R0 item.
 - **R0.5** #118 — 1.0 labels/milestone taxonomy. **Done** — planning taxonomy created: labels `1.0:blocker`/`1.0:p0`/`1.0:p1`/`1.0:stretch` + `area:*` (runtime, a11y, compatibility, distribution, docs, release, components, performance, ai-agent, demo-app) and milestone `BeeUI 1.0`.
-- **R0.6** #119 — protect `main` and release paths using actual workflow/check names. **Owner-declined** — the repository owner explicitly closed #119 as not_planned/deferred; `main`/release branch protection is intentionally **not configured at this time** and may be revisited only by a future explicit owner decision.
+- **R0.6** #119 — protect `main` and release paths using actual workflow/check names. **Closed not_planned at the time**, but later **superseded by #196** (merged 2026-08-31, owner-authorized): `main`/release branch protection and tag/release rulesets are now configured. See #196 in R6 and [docs/release-ruleset.md](release-ruleset.md).
 
 # R1 — Runtime hardening
 
@@ -296,7 +296,7 @@ shared-authority source of truth for every row below; it is drift-checked by
 - #192 issue/PR templates.
 - #193 Actions/fork/self-hosted-runner hardening.
 - #194 dependency/security automation.
-- #195 repository-public preflight; actual visibility action is owner-gated. **Visibility mutation owner-declined** — the repository owner has explicitly rejected the visibility change (recorded on #195); BeeUI remains a **private** repository and will not be made public autonomously. #195 stays open only for its optional non-mutating preflight audit; only a future explicit owner instruction could authorize the actual change. #254 publication remains a separate owner gate regardless.
+- #195 repository-public preflight + visibility action. **Closed (COMPLETED)** — the repository owner changed visibility to **public** on 2026-08-30 after the #187 pre-publication audit came back clean (no secrets/keys/private data in tree or history). This reversed the owner's earlier 2026-08-29 "remain private" decision. #254 stable publication remains a separate owner gate regardless. Open owner follow-up: confirm GitHub private security advisories are enabled.
 - #196 final branch/tag/release ruleset. **Closed** — `main` branch ruleset requires the always-run gating checks (`classify`, `verify`, `web-a11y`, `visual-web-report`, `web-consumer`), 0 required approvals (single-owner), linear history, no force-push/deletion; `v*` tag ruleset blocks tag creation/update/deletion + requires signatures; a `release` environment gates future publish (#254) behind explicit owner approval. Admin bypass retained as the owner escape valve. Contract + rollback documented in [docs/release-ruleset.md](release-ruleset.md), pinned by `scripts/check-release-ruleset.mjs`.
 
 # R7 — Packages — publication-ready only, DO NOT publish
