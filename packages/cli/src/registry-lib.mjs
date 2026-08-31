@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { lstat, mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -23,14 +24,27 @@ import { fileURLToPath } from 'node:url';
 // `detectRoots()` distinguishes the two by checking whether a bundled
 // `registry/registry.json` exists next to this file. Nothing else in this
 // module (or in `beeui.mjs`) needs to know which mode is active.
+//
+// Registry delivery + integrity strategy (#216): the packed/bundled mode also
+// ships a `registry/integrity.json` checksum manifest (written by
+// `packages/cli/scripts/build.mjs`) alongside `registry.json` and
+// `registry/sources/`. In bundled mode `loadRegistry()` verifies the bundled
+// `registry.json` against that manifest before parsing it, and `buildAddPlan()`
+// verifies each bundled source file's checksum immediately before it is copied
+// into a consumer project — a tampered or corrupted installed package fails
+// loudly instead of silently shipping mismatched/untrusted component source.
+// Dev mode has no manifest and is not checksum-verified: the live monorepo
+// tree is already under git provenance and changes on every commit.
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
 
 function detectRoots() {
   const bundledRegistryPath = path.join(MODULE_DIR, 'registry', 'registry.json');
   if (existsSync(bundledRegistryPath)) {
     return {
+      mode: 'bundled',
       registryPath: bundledRegistryPath,
       sourcesRoot: path.join(MODULE_DIR, 'registry', 'sources'),
+      integrityPath: path.join(MODULE_DIR, 'registry', 'integrity.json'),
     };
   }
   // Repository-local dev mode: this file always lives at
@@ -38,8 +52,10 @@ function detectRoots() {
   // the monorepo root.
   const repoRoot = path.resolve(MODULE_DIR, '..', '..', '..');
   return {
+    mode: 'dev',
     registryPath: path.join(repoRoot, 'registry', 'registry.json'),
     sourcesRoot: repoRoot,
+    integrityPath: null,
   };
 }
 
@@ -52,6 +68,8 @@ const DEFAULT_ROOTS = detectRoots();
 // instead, which is not "the repo root" in any useful sense.
 export const REPO_ROOT = DEFAULT_ROOTS.sourcesRoot;
 export const REGISTRY_PATH = DEFAULT_ROOTS.registryPath;
+export const REGISTRY_MODE = DEFAULT_ROOTS.mode;
+export const REGISTRY_INTEGRITY_PATH = DEFAULT_ROOTS.integrityPath;
 
 export const CONFIG_FILENAME = 'beeui.config.json';
 export const DEFAULT_CONFIG = Object.freeze({
@@ -219,12 +237,89 @@ export async function validateRegistry(registry, { repoRoot = REPO_ROOT, checkSo
   return registry;
 }
 
-export async function loadRegistry({ repoRoot = REPO_ROOT, registryPath = REGISTRY_PATH } = {}) {
+const SHA256_HEX_RE = /^[0-9a-f]{64}$/;
+
+function sha256Hex(content) {
+  return createHash('sha256').update(content, 'utf8').digest('hex');
+}
+
+function validateIntegrityManifestShape(manifest, label) {
+  invariant(isPlainObject(manifest), `${label} must be an object`);
+  invariant(manifest.schemaVersion === 1, `${label} has unsupported schemaVersion '${manifest.schemaVersion}'`);
+  invariant(manifest.algorithm === 'sha256', `${label} has unsupported algorithm '${manifest.algorithm}'`);
+  invariant(typeof manifest.registry === 'string' && SHA256_HEX_RE.test(manifest.registry), `${label}.registry must be a sha256 hex digest`);
+  invariant(isPlainObject(manifest.sources), `${label}.sources must be an object`);
+  for (const [name, digest] of Object.entries(manifest.sources)) {
+    invariant(typeof digest === 'string' && SHA256_HEX_RE.test(digest), `${label}.sources.${name} must be a sha256 hex digest`);
+  }
+  return manifest;
+}
+
+// Loads and validates the bundled checksum manifest. Returns `null` only when
+// no manifest is expected at all (`integrityPath` itself is falsy, i.e. dev
+// mode). If the caller expects one (a non-null path was supplied or detected)
+// but the file is absent or unreadable, this fails loudly rather than
+// silently skipping verification — a bundled `registry/registry.json` without
+// its accompanying `integrity.json` is itself a build/install defect.
+async function loadIntegrityManifest(integrityPath) {
+  if (!integrityPath) return null;
+  let raw;
+  try {
+    raw = await readFile(integrityPath, 'utf8');
+  } catch (error) {
+    throw new Error(
+      `bundled registry integrity manifest is missing or unreadable at ${integrityPath} (${error.message}); ` +
+        'the installed @beeui/cli package may be corrupted — reinstall the package',
+    );
+  }
+  let manifest;
+  try {
+    manifest = JSON.parse(raw);
+  } catch (error) {
+    throw new Error(`malformed registry integrity manifest at ${integrityPath}: ${error.message}`);
+  }
+  return validateIntegrityManifestShape(manifest, `registry integrity manifest (${integrityPath})`);
+}
+
+function verifySourceChecksum(relativeSource, content, manifest) {
+  // No manifest means dev mode (live monorepo tree, no bundled checksum data
+  // to compare against) — nothing to verify.
+  if (!manifest) return;
+  const expected = manifest.sources[relativeSource];
+  invariant(
+    typeof expected === 'string',
+    `registry integrity manifest has no checksum recorded for bundled source '${relativeSource}' ` +
+      '(registry/build drift) — rebuild @beeui/cli',
+  );
+  const digest = sha256Hex(content);
+  invariant(
+    digest === expected,
+    `registry integrity check failed: bundled source '${relativeSource}' checksum mismatch ` +
+      `(expected ${expected}, computed ${digest}); the installed @beeui/cli package may be corrupted ` +
+      'or tampered — reinstall the package',
+  );
+}
+
+export async function loadRegistry({
+  repoRoot = REPO_ROOT,
+  registryPath = REGISTRY_PATH,
+  integrityPath = REGISTRY_INTEGRITY_PATH,
+} = {}) {
   let raw;
   try {
     raw = await readFile(registryPath, 'utf8');
   } catch (error) {
     throw new Error(`unable to read registry: ${error.message}`);
+  }
+  if (integrityPath) {
+    const manifest = await loadIntegrityManifest(integrityPath);
+    const digest = sha256Hex(raw);
+    invariant(
+      digest === manifest.registry,
+      `registry integrity check failed: bundled registry.json checksum mismatch ` +
+        `(expected ${manifest.registry}, computed ${digest}); the installed @beeui/cli package may be corrupted ` +
+        'or tampered — reinstall the package',
+    );
   }
   let registry;
   try {
@@ -233,6 +328,25 @@ export async function loadRegistry({ repoRoot = REPO_ROOT, registryPath = REGIST
     throw new Error(`malformed registry JSON: ${error.message}`);
   }
   return validateRegistry(registry, { repoRoot, checkSources: true });
+}
+
+// Machine check for #216: sweeps every unique source file referenced by the
+// registry (not just the ones a particular `add` request touches) and proves
+// each one still matches its recorded checksum. Used by `beeui doctor`/`verify`
+// so a consumer (or CI) can detect a tampered/corrupted installed package
+// without first running `add`. Returns `{ mode: 'dev', verifiedCount: 0 }`
+// when no bundled manifest applies (nothing to verify, by design).
+export async function verifyRegistrySourceIntegrity(registry, { sourcesRoot = REPO_ROOT, integrityPath = REGISTRY_INTEGRITY_PATH } = {}) {
+  if (!integrityPath) return { mode: 'dev', verifiedCount: 0 };
+  const manifest = await loadIntegrityManifest(integrityPath);
+  const uniqueSources = [...new Set(registry.items.flatMap((item) => item.files.map((file) => file.source)))].sort();
+  for (const relativeSource of uniqueSources) {
+    const absolute = resolveInside(sourcesRoot, relativeSource, `bundled source '${relativeSource}'`);
+    await assertNoSymlinkPath(sourcesRoot, absolute, `bundled source '${relativeSource}'`);
+    const content = await readFile(absolute, 'utf8');
+    verifySourceChecksum(relativeSource, content, manifest);
+  }
+  return { mode: 'bundled', verifiedCount: uniqueSources.length };
 }
 
 export function validateConfig(config) {
@@ -423,9 +537,18 @@ async function consumerPackageDeclarations(projectRoot) {
   return declarations;
 }
 
-export async function buildAddPlan({ projectRoot, registry, config, requestedItems, overwrite = false, sourcesRoot = REPO_ROOT }) {
+export async function buildAddPlan({
+  projectRoot,
+  registry,
+  config,
+  requestedItems,
+  overwrite = false,
+  sourcesRoot = REPO_ROOT,
+  integrityPath = REGISTRY_INTEGRITY_PATH,
+}) {
   validateConfig(config);
   const items = resolveRegistryItems(registry, requestedItems);
+  const integrityManifest = await loadIntegrityManifest(integrityPath);
   const planned = [];
   const destinations = new Map();
 
@@ -443,6 +566,7 @@ export async function buildAddPlan({ projectRoot, registry, config, requestedIte
       const sourceStat = await statIfExists(source);
       invariant(sourceStat?.isFile(), `source file is missing for '${item.name}': ${file.source}`);
       const raw = await readFile(source, 'utf8');
+      verifySourceChecksum(file.source, raw, integrityManifest);
       const content = applyTransforms(raw, file.transforms, { destination, projectRoot, config, registry });
       const destinationStat = await statIfExists(destination);
       let action = 'create';

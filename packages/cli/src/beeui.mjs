@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { realpathSync } from 'node:fs';
-import { pathToFileURL } from 'node:url';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   CONFIG_FILENAME,
   availableItems,
@@ -12,33 +14,62 @@ import {
   publicItems,
   readConfig,
   validateConfiguredProjectPaths,
+  verifyRegistrySourceIntegrity,
 } from './registry-lib.mjs';
+
+// This file always ships one directory below the package root, both in
+// repository-local dev mode (`packages/cli/src/beeui.mjs`) and in the built
+// package (`<packageRoot>/dist/beeui.mjs`, installed standalone as
+// `@beeui/cli`) — `package.json` is always the published tarball's own
+// manifest, never read over the network. `version` reports it directly so
+// `beeui version`/`--version` never drifts from the actual installed package.
+const PACKAGE_JSON_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'package.json');
+
+async function readOwnPackageInfo() {
+  const raw = await readFile(PACKAGE_JSON_PATH, 'utf8');
+  const pkg = JSON.parse(raw);
+  return { name: pkg.name, version: pkg.version };
+}
 
 const HELP = `BeeUI source ownership CLI
 
 Usage:
   beeui help
+  beeui version
   beeui init
   beeui list
   beeui add <items...>
+  beeui add --all
   beeui add --dry-run <items...>
   beeui add --overwrite <items...>
   beeui doctor
 
 Commands:
   help                 Show this help.
+  version              Print the installed @beeui/cli name and version.
   init                 Create ${CONFIG_FILENAME} without overwriting an existing config.
   list                 List supported public registry components in stable order.
   add <items...>       Preflight and copy source plus transitive BeeUI dependencies.
-  doctor               Validate the canonical registry and local BeeUI config.
+  doctor               Validate the canonical registry, local BeeUI config, and bundled
+                       registry integrity (see "registry delivery" below).
   verify               Alias for doctor.
 
 Add options:
+  --all                Add the complete stable public registry surface (same set as
+                       'beeui list'), instead of naming items explicitly.
   --dry-run            Show the deterministic plan without filesystem mutation.
   --overwrite          Explicitly replace differing destination files after preflight.
 
+Exit codes:
+  0                    Success.
+  1                    Any usage error, validation failure, or runtime error. The
+                       failure reason is always written to stderr.
+
 This CLI copies BeeUI component source into your project. It does not install
-npm packages and does not fetch or execute remote code.
+npm packages (see #215 for a future, separately-gated package-manager mutation
+policy) and does not fetch or execute remote code. The registry it reads from
+is bundled with this package (never fetched over the network); 'doctor'
+reports whether that bundled data has a verified checksum.
 `;
 
 // Only Node 24 has ever run this CLI in CI or in this repository's own
@@ -71,6 +102,7 @@ function assertNoArgs(args, command) {
 function parseAddArgs(args) {
   let dryRun = false;
   let overwrite = false;
+  let all = false;
   const items = [];
   for (const arg of args) {
     if (arg === '--dry-run') {
@@ -81,11 +113,16 @@ function parseAddArgs(args) {
       overwrite = true;
       continue;
     }
+    if (arg === '--all') {
+      all = true;
+      continue;
+    }
     if (arg.startsWith('-')) throw new Error(`unknown add option '${arg}'`);
     items.push(arg);
   }
-  if (items.length === 0) throw new Error("'add' requires at least one component name");
-  return { dryRun, overwrite, items };
+  if (all && items.length > 0) throw new Error("'add --all' does not accept explicit item names");
+  if (!all && items.length === 0) throw new Error("'add' requires at least one component name, or use --all");
+  return { dryRun, overwrite, all, items };
 }
 
 function printRequirements(stdout, requirements) {
@@ -132,6 +169,13 @@ export async function main(argv = process.argv.slice(2), options = {}) {
       return 0;
     }
 
+    if (command === 'version' || command === '--version' || command === '-v') {
+      assertNoArgs(args, command);
+      const { name, version } = await readOwnPackageInfo();
+      write(stdout, `${name} ${version}`);
+      return 0;
+    }
+
     const registry = await loadRegistry();
 
     if (command === 'list') {
@@ -157,15 +201,24 @@ export async function main(argv = process.argv.slice(2), options = {}) {
       assertNoArgs(args, command);
       const config = await readConfig(projectRoot);
       await validateConfiguredProjectPaths(projectRoot, config);
-      write(stdout, `BeeUI doctor OK: registry schema v${registry.schemaVersion}, ${publicItems(registry).length} public components, valid ${CONFIG_FILENAME}.`);
+      const integrity = await verifyRegistrySourceIntegrity(registry);
+      const integrityDetail = integrity.mode === 'bundled'
+        ? `bundled (${integrity.verifiedCount} source checksums verified)`
+        : 'dev (live monorepo source tree, no bundled checksum manifest)';
+      write(
+        stdout,
+        `BeeUI doctor OK: registry schema v${registry.schemaVersion}, ${publicItems(registry).length} public components, ` +
+          `valid ${CONFIG_FILENAME}, registry delivery: ${integrityDetail}.`,
+      );
       return 0;
     }
 
     if (command === 'add') {
-      const { dryRun, overwrite, items } = parseAddArgs(args);
+      const { dryRun, overwrite, all, items } = parseAddArgs(args);
       const config = await readConfig(projectRoot);
       await validateConfiguredProjectPaths(projectRoot, config);
-      const plan = await buildAddPlan({ projectRoot, registry, config, requestedItems: items, overwrite });
+      const requestedItems = all ? availableItems(registry) : items;
+      const plan = await buildAddPlan({ projectRoot, registry, config, requestedItems, overwrite });
       printPlan(stdout, plan, { dryRun });
       if (!dryRun) {
         await executeAddPlan(projectRoot, plan);
