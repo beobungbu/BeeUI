@@ -162,6 +162,35 @@ function collectExportTargets(value) {
   return [];
 }
 
+// #202 packed-inventory audit: patterns that must never appear in a packed
+// tarball. Each maps to one of ADR-011's "Reject" categories — generated
+// build junk (the babel-compiled `.d.js`/`.d.js.map` misfire pruned by
+// packages/ui/scripts/copy-type-shims.mjs), test fixtures never intended for
+// distribution, and stray OS/editor/env metadata.
+const FORBIDDEN_PACKED_PATTERNS = [
+  { pattern: /\.d\.js(\.map)?$/, label: 'a babel-compiled .d.js/.d.js.map artifact (generated build junk)' },
+  { pattern: /(^|\/)__tests__\//, label: 'a __tests__ directory (test fixture not intended for distribution)' },
+  { pattern: /(^|\/)__typetests__\//, label: 'a __typetests__ directory (test fixture not intended for distribution)' },
+  { pattern: /\.(test|spec)\.[cm]?[jt]sx?$/, label: 'a .test/.spec source file (test fixture not intended for distribution)' },
+  { pattern: /\.log$/, label: 'a log file (generated build junk)' },
+  { pattern: /(^|\/)\.DS_Store$/, label: 'a macOS .DS_Store file (repository-private metadata)' },
+  { pattern: /(^|\/)\.env(\..*)?$/, label: 'a dotenv file (repository-private config)' },
+  { pattern: /(^|\/)tsconfig.*\.json$/, label: 'a tsconfig file (repository-private config; not a runtime asset)' },
+];
+
+// Reverse of exportTargetExists: proves a package's declared export target is
+// not merely present on disk pre-pack but actually shipped inside the real
+// tarball produced by `npm pack`/`pnpm pack` — the #202 DoD's "granular
+// subpath targets all resolve to real packed files".
+function exportTargetPacked(packedFiles, target) {
+  const packedPath = `package/${target.slice(2)}`;
+  const hasExtension = /\.[a-z0-9]+$/i.test(path.basename(target));
+  if (hasExtension) return packedFiles.includes(packedPath);
+
+  const prefix = `${packedPath}.`;
+  return packedFiles.some((file) => file === packedPath || file.startsWith(prefix));
+}
+
 // A "source" condition target may intentionally omit an extension (#201,
 // `docs/decisions/012-granular-subpath-exports.md`): components with
 // platform-only implementations (e.g. `date-picker`, `tooltip` — no base
@@ -379,6 +408,44 @@ try {
 
     for (const requiredFile of spec.requiredPackedFiles) {
       assert(packedFiles.includes(requiredFile), `${spec.name} tarball contains ${requiredFile}`);
+    }
+
+    // #202: npm always includes LICENSE regardless of the `files` allowlist,
+    // but that only holds if the file actually exists in the package
+    // directory — assert it landed in the real tarball, not just on disk.
+    assert(packedFiles.includes('package/LICENSE'), `${spec.name} tarball includes LICENSE`);
+    assert(packedFiles.includes('package/README.md'), `${spec.name} tarball includes README.md`);
+
+    // #202 Reject list: no generated build junk, test fixtures, or
+    // repository-private config leaks into the tarball a consumer installs.
+    for (const { pattern, label } of FORBIDDEN_PACKED_PATTERNS) {
+      const offender = packedFiles.find((file) => pattern.test(file));
+      assert(!offender, `${spec.name} tarball excludes ${label}`, offender ?? 'clean');
+    }
+
+    // #202: every granular subpath (and the barrel) declared in `exports`
+    // must resolve to a file that is actually inside this tarball, not just
+    // present on the repo's disk pre-pack.
+    const packedExportTargets = collectExportTargets(manifests.get(spec.name).exports);
+    for (const target of packedExportTargets) {
+      assert(
+        exportTargetPacked(packedFiles, target),
+        `${spec.name} tarball ships its declared export target`,
+        target,
+      );
+    }
+
+    // #202: spot-check that a representative source map keeps paths relative
+    // (ADR-011 Reject list: "source maps containing sensitive paths if not
+    // intentional"). `src/` is intentionally packed alongside `dist/` (D2),
+    // so a relative reference back into it is the desired shape; an absolute
+    // filesystem path would leak the machine/CI workspace layout instead.
+    const sampleMapEntry = packedFiles.find((file) => file === 'package/dist/module/index.js.map');
+    if (sampleMapEntry) {
+      const sampleMap = JSON.parse(run('tar', ['-xOzf', tarball, sampleMapEntry]));
+      const mapPaths = [sampleMap.sourceRoot, ...(sampleMap.sources ?? [])].filter(Boolean);
+      const absoluteOffender = mapPaths.find((entry) => entry.startsWith('/'));
+      assert(!absoluteOffender, `${spec.name} source map uses relative paths only`, absoluteOffender ?? 'clean');
     }
 
     if (spec.name === '@beeui/ui') {
