@@ -115,8 +115,24 @@ appId: com.beeui.showcase
       - assertNotVisible:
           id: "runtime-popover-content"
 
+# Keep the baseline Menu check independent of transient development chrome at
+# the bottom edge (for example LogBox warnings on Android CI). Edge/collision
+# pressure is covered by the dedicated #126 runtime-stress fixture instead.
+# Centering also gives the anchored content time and space to complete its
+# asynchronous measure -> position -> accessibility-visible transition.
+- scrollUntilVisible:
+    element:
+      id: "runtime-menu-trigger"
+    direction: DOWN
+    visibilityPercentage: 100
+    centerElement: true
+- waitForAnimationToEnd
 - tapOn:
     id: "runtime-menu-trigger"
+- extendedWaitUntil:
+    timeout: 15000
+    visible:
+      id: "runtime-menu-content"
 - assertVisible:
     id: "runtime-menu-content"
 - waitForAnimationToEnd
