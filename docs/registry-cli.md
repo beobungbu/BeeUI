@@ -134,9 +134,13 @@ Internal transitive entries (not directly addable, but resolved automatically):
 }
 ```
 
-The config is versioned and deterministic. Configured paths must be project-relative forward-slash paths. Absolute paths, `..`, empty path segments, Windows absolute paths, and traversal outside the project root are rejected.
+The config is versioned and deterministic. Configured paths must be project-relative forward-slash paths. Absolute paths, `..`, empty path segments, Windows absolute paths, and traversal outside the project root are rejected. This exact shape (`schemaVersion`/`componentsDir`/`libDir`/`themeFile`, no other fields) is the stable, locked `init` contract (#214): the same clean-Expo/bare-RN/Web/monorepo fixture always produces the same config, `init` never proposes a path that escapes the project root, and it never guesses application-specific paths beyond the fixed defaults above — a consumer who wants different paths hand-edits the file after `init` creates it (the config format is deliberately simple enough that this is safe).
 
-`init` never silently replaces an existing config. If a valid config already exists it reports that nothing changed. A malformed or unsupported existing config fails non-zero.
+`init` never silently replaces an existing config: repeat `init` runs are idempotent (same input, same file, same "nothing changed" report), and a malformed existing config, or one from an unsupported `schemaVersion`, fails non-zero with an explicit message rather than being guessed at or migrated automatically — there is no schema migration path yet. A config with `schemaVersion` other than `1` (a future CLI version's format, or a hand-corrupted file) must be hand-edited to match schema `v1` or removed and regenerated with `init`; only the exact JSON shape above is accepted.
+
+`init`'s command output is deterministic, line-oriented `key: value` text (`componentsDir: ...`, `libDir: ...`, `themeFile: ...`, plus the detected-project summary line described below) rather than free-form prose specifically so both a human and a script/agent invoking `beeui init` can parse it reliably without a dedicated `--json` flag — the #210 command contract is locked and this deliberately does not add a new flag to it.
+
+After creating (or validating) the config, `init` also runs the same project detection `doctor` uses (#213, documented in full under "Project detection and dependency diagnostics" below) and prints the detected project kind plus a short, generic list of manual next steps (importing the theme CSS, wrapping the app root with `BeeUIProvider` for a native project, aliasing `react-native` to `react-native-web` for a Web project). This is purely informational — detection never changes which paths `init` writes, and an ambiguous/unknown detection prints an explicit fallback note instead of a guess, never a wrong assumption silently acted on.
 
 ## Registry schema
 
@@ -210,7 +214,18 @@ core-cn -> theme -> text -> button
 
 For multiple requests, BeeUI resolves the union once. Shared dependencies are copied only once.
 
-External packages are not mutated automatically. The CLI reports required package names/ranges and whether each package name is already declared in the consumer's `package.json`. It does not currently perform semver satisfaction analysis and does not run npm, pnpm, yarn, bun, or another package manager.
+External packages are not mutated automatically and no package manager is ever run (no npm, pnpm, yarn, or bun invocation of any kind). The CLI reports required package names/ranges and, for each one, a semver-aware classification of the consumer's own declaration (#212):
+
+| Status | Meaning |
+| --- | --- |
+| `satisfied` | The declared range overlaps BeeUI's required range. |
+| `missing` | The package is required and not declared anywhere in `package.json`. |
+| `incompatible` | A declared range exists and is well-formed, but does not overlap the required range. |
+| `malformed` | The declared value is not a recognizable version, range, protocol, or dist-tag — fix the string in `package.json`. |
+| `unverifiable` | The declared value is a package-manager protocol (`workspace:`, `catalog:`, `npm:`, `file:`, `link:`, a git/http(s) URL) or a dist-tag (`latest`, `next`, ...); its resolved version cannot be known statically. |
+| `optional-not-declared` | The package is one of BeeUI's optional native adapters (see below) and simply has not been opted into yet — not an error. |
+
+`add`'s per-plan report appends the status in parentheses after the existing `[declared in ... as ...]`/`[missing from package.json]` detail, e.g. `peer react@>=19 <20 [declared in dependencies as ^18.2.0] (incompatible)`. This is presence-plus-semver-range-overlap analysis against the consumer's *declared* `package.json` value — it never resolves or inspects `node_modules`, so it is correct before `npm install` has ever run and never executes a package manager to find out what actually got installed.
 
 Depending on the requested items, reported requirements can include:
 
@@ -332,6 +347,60 @@ Repository maintainers can validate the canonical registry independently of any 
 ```sh
 pnpm registry:verify
 ```
+
+### Project detection and dependency diagnostics (#212, #213)
+
+After the registry/config/integrity checks above, `doctor` additionally detects the
+consumer's project kind and platform, and prints a semver-aware compatibility report for
+the peers relevant to that platform — entirely informational, never blocking:
+
+```text
+Detected project: expo (platforms: native), package manager: pnpm, TypeScript: yes, monorepo: no.
+  OK            node@v24.13.1 — satisfies the CLI's required >=24
+Dependency diagnostics (semver compatibility against BeeUI-supported ranges, informational only):
+  OK            react@>=19 <20 — ok
+  OK            react-native@>=0.86.0 <0.87.0 — ok
+  INCOMPATIBLE  uniwind@>=1.10.1 <2 — declared ^1.0.0 in dependencies does not satisfy required >=1.10.1 <2; update uniwind to a version within >=1.10.1 <2
+  MISSING       tailwindcss@>=4 <5 — not declared; install tailwindcss@>=4 <5
+```
+
+Detection (`detectProject`, `packages/cli/src/detect.mjs`) reads only the consumer's
+`package.json` and a small fixed set of root-level marker files
+(`tsconfig.json`, `pnpm-workspace.yaml`, lockfiles) — never `node_modules`, never a parent
+directory outside the project root, and never anything that would let it silently rewrite
+application configuration (#213's own policy). It classifies the project as one of:
+
+- `expo` — an `expo` dependency is declared.
+- `bare-react-native` — a `react-native` dependency is declared without `expo`.
+- `web` — a `react-dom` or `react-native-web` dependency is declared without `react-native`.
+- `unknown` — none of the above; `doctor`/`init` print an explicit fallback note (never a
+  guess) explaining what to check or install first.
+
+It also reports platform capabilities (`native`/`web`, independently — a project can be
+both), the package manager (from the `packageManager` field, falling back to lockfile
+presence), TypeScript presence (`tsconfig.json` or a declared `typescript` dependency), and
+whether the project is a monorepo (`workspaces` field or `pnpm-workspace.yaml`).
+
+The dependency diagnostics list is scoped to what is actually relevant to the detected
+project, not BeeUI's entire external-dependency universe:
+
+- `react`, `tailwindcss`, and `uniwind` are always checked — every public component depends
+  on them.
+- `react-native`, `react-native-safe-area-context`, and `react-native-teleport` are checked
+  only when a native platform (`expo`/`react-native`) is detected.
+- `react-dom` is checked only when a Web platform (`react-dom`/`react-native-web`) is
+  detected.
+- `expo` itself is checked (against the Expo SDK line this repository tests, see
+  `docs/compatibility-matrix.md`) only for a detected Expo project.
+- Every optional native adapter (`@gorhom/bottom-sheet`, `react-native-reanimated`,
+  `react-native-gesture-handler`, `react-native-worklets`,
+  `@react-native-community/datetimepicker`) is checked only if the consumer has already
+  declared it — an undeclared optional peer is not a diagnostic, it simply is not needed
+  yet.
+
+`doctor` never fails the command and never mutates the project because of a diagnostic
+finding (the same non-blocking posture `add`'s own dependency reporting already uses) —
+it is a report, not a gate.
 
 ## Registry delivery and integrity (#216)
 
@@ -461,6 +530,17 @@ Generated/copied source contains no timestamps or machine-specific absolute path
 - registry/source checksum integrity (`#216`): matching and mismatched checksums for both
   the registry file and a bundled source file, a missing integrity manifest where one is
   expected, and the full-registry `doctor` sweep
+- semver-aware dependency diagnostics (`#212`): exact/caret/tilde/comparator/wildcard range
+  parsing and comparison, standard prerelease-exclusion semantics, package-manager protocol
+  and dist-tag declarations classified as unverifiable (never as incompatible or missing),
+  malformed declarations flagged distinctly, and multi-component requests that share a
+  dependency reporting one consistent status
+- project/platform detection (`#213`): Expo, bare-RN, Web, monorepo, and ambiguous-project
+  fixtures, package-manager and TypeScript detection, and the explicit fallback note an
+  unknown/absent `package.json` produces instead of a guess
+- `init`'s finalized configuration policy (`#214`): the unsupported-`schemaVersion`
+  error's exact non-migrating message, and that `init`'s detected-project guidance never
+  mutates the consumer's own `package.json`
 
 `pnpm cli:smoke` additionally builds the real packed `dist/` artifact and, beyond its
 existing end-to-end `add`/import-resolution checks, tampers with a bundled source file and
@@ -485,12 +565,24 @@ integrity strategy) are addressed above: the command/flag/exit-code contract is 
 pinned by tests, the security invariants are preserved and extended with adversarial tests
 (malicious item names, symlink races on both destinations and the config file, malformed
 registry/config JSON, tampered bundled checksums), and registry delivery is bundled with a
-sha256 integrity manifest verified at runtime. Remaining follow-on CLI tranche items
-(#212–#219) can still:
+sha256 integrity manifest verified at runtime.
 
-1. add semver-aware external dependency checks and, only with a separate explicit contract,
-   safe package-manager mutation (`#215`, an owner-gated decision this tranche intentionally
-   does not implement — `add`'s package-requirement reporting stays read-only until then);
+`#212` (semver-aware external dependency diagnostics), `#213` (project/platform detection),
+and `#214` (finalized `init` configuration policy) are addressed above too: `add`'s
+dependency report and `doctor`'s new project-wide diagnostics both classify declared
+consumer ranges against BeeUI's supported ranges (satisfied/missing/incompatible/
+malformed/unverifiable/optional-not-declared — see "Dependency resolution" and "Project
+detection and dependency diagnostics" above); `detectProject` gives `init`/`doctor` a
+deterministic, non-guessing read on Expo/bare-RN/Web/monorepo/ambiguous consumer projects;
+and `init`'s `beeui.config.json` shape, defaults, idempotence, and non-migrating
+schema-version error are the locked, documented 1.0 contract. `#215` (package-manager
+mutation) remains explicitly out of scope — an owner-gated decision this tranche
+intentionally does not implement; `add`'s and `doctor`'s reporting stay read-only, never
+invoking npm/pnpm/yarn/bun on the consumer's behalf. Remaining follow-on CLI tranche items
+can still:
+
+1. decide safe package-manager mutation under a separate explicit contract (`#215`,
+   owner-gated);
 2. expand source transforms only when each transform has drift/error tests;
 3. decide safe diff/update assistance, or explicitly defer it (`#219`).
 

@@ -15,6 +15,16 @@ import {
   validateRegistry,
   verifyRegistrySourceIntegrity,
 } from '../registry-lib.mjs';
+import { detectProject } from '../../packages/cli/src/detect.mjs';
+import { EXPO_SDK_SUPPORTED_RANGE, diagnoseProjectDependencies, formatDetectionSummary, formatDiagnosticLine } from '../../packages/cli/src/dependency-diagnostics.mjs';
+import {
+  classifyDeclaredRange,
+  compareVersions,
+  isProtocolDeclaration,
+  parseRange,
+  parseVersion,
+  versionSatisfiesRange,
+} from '../../packages/cli/src/semver-lite.mjs';
 
 function sha256Hex(content) {
   return createHash('sha256').update(content, 'utf8').digest('hex');
@@ -991,4 +1001,347 @@ test('verifyRegistrySourceIntegrity detects a tampered bundled source outside of
     () => verifyRegistrySourceIntegrity(registry, { sourcesRoot: fixture.dir, integrityPath: fixture.integrityPath }),
     /registry integrity check failed: bundled source 'demo\.tsx' checksum mismatch/,
   );
+});
+
+// ---------------------------------------------------------------------------
+// #212: semver-lite — parsing, comparison, and declared-vs-required
+// classification
+// ---------------------------------------------------------------------------
+
+test('parseVersion accepts full, partial, and prerelease tokens and rejects garbage', () => {
+  assert.deepEqual(parseVersion('19.2.3'), { major: 19, minor: 2, patch: 3, prerelease: [], precision: 3 });
+  assert.deepEqual(parseVersion('v19.2.3'), { major: 19, minor: 2, patch: 3, prerelease: [], precision: 3 });
+  assert.deepEqual(parseVersion('19'), { major: 19, minor: 0, patch: 0, prerelease: [], precision: 1 });
+  assert.deepEqual(parseVersion('1.10'), { major: 1, minor: 10, patch: 0, prerelease: [], precision: 2 });
+  assert.deepEqual(parseVersion('19.0.0-rc.1'), { major: 19, minor: 0, patch: 0, prerelease: ['rc', '1'], precision: 3 });
+  assert.equal(parseVersion('not-a-version'), null);
+  assert.equal(parseVersion(''), null);
+  assert.equal(parseVersion(undefined), null);
+});
+
+test('compareVersions orders numerically and ranks any prerelease below its release', () => {
+  const a = parseVersion('1.2.3');
+  const b = parseVersion('1.2.4');
+  assert.ok(compareVersions(a, b) < 0);
+  assert.ok(compareVersions(b, a) > 0);
+  assert.equal(compareVersions(a, parseVersion('1.2.3')), 0);
+  assert.ok(compareVersions(parseVersion('1.0.0-alpha'), parseVersion('1.0.0')) < 0);
+  assert.ok(compareVersions(parseVersion('1.0.0-alpha'), parseVersion('1.0.0-alpha.1')) < 0);
+  assert.ok(compareVersions(parseVersion('1.0.0-alpha.2'), parseVersion('1.0.0-alpha.10')) < 0, 'numeric prerelease identifiers compare numerically, not lexically');
+});
+
+test('isProtocolDeclaration recognizes package-manager protocols and dist-tags, not real ranges', () => {
+  for (const protocol of ['workspace:*', 'catalog:', 'catalog:react19', 'npm:react@19.2.3', 'file:../local-react', 'link:../react', 'git+https://example.com/react.git', 'https://example.com/react.tgz', 'latest', 'next']) {
+    assert.equal(isProtocolDeclaration(protocol), true, protocol);
+  }
+  for (const real of ['19.2.3', '^19.0.0', '~1.2.3', '>=19 <20', '*', 'x']) {
+    assert.equal(isProtocolDeclaration(real), false, real);
+  }
+});
+
+test('parseRange expands caret/tilde and comparator lists into equivalent intervals', () => {
+  assert.equal(versionSatisfiesRange(parseVersion('19.2.3'), '>=19 <20'), true);
+  assert.equal(versionSatisfiesRange(parseVersion('20.0.0'), '>=19 <20'), false);
+  assert.equal(versionSatisfiesRange(parseVersion('0.1.5'), '^0.1.0'), true);
+  assert.equal(versionSatisfiesRange(parseVersion('0.2.0'), '^0.1.0'), false, '^0.x.y only allows patch-level changes');
+  assert.equal(versionSatisfiesRange(parseVersion('1.2.9'), '~1.2.3'), true);
+  assert.equal(versionSatisfiesRange(parseVersion('1.3.0'), '~1.2.3'), false);
+  assert.equal(versionSatisfiesRange(parseVersion('0.10.1'), '>=0.10 <1'), true);
+  assert.equal(versionSatisfiesRange(parseVersion('4.9.9'), '*'), true);
+  assert.equal(parseRange('not a range at all !!'), null);
+});
+
+test('classifyDeclaredRange: satisfied, incompatible, and multi-component-shared ranges', () => {
+  assert.equal(classifyDeclaredRange('19.2.3', '>=19 <20'), 'satisfied');
+  assert.equal(classifyDeclaredRange('^19.0.0', '>=19 <20'), 'satisfied');
+  assert.equal(classifyDeclaredRange('^18.2.0', '>=19 <20'), 'incompatible');
+  assert.equal(classifyDeclaredRange('0.86.2', '>=0.86.0 <0.87.0'), 'satisfied');
+  assert.equal(classifyDeclaredRange('0.87.1', '>=0.86.0 <0.87.0'), 'incompatible');
+});
+
+// Per standard semver precedence, a prerelease version only satisfies a
+// range when the range itself references a prerelease of the same
+// major.minor.patch — a bare `>=19 <20` comparator range does not, so a
+// declared 19.x prerelease is honestly reported as not satisfying it rather
+// than silently treated as compatible.
+test('classifyDeclaredRange: prerelease exclusion is honest, not silently permissive', () => {
+  assert.equal(classifyDeclaredRange('19.0.0-rc.1', '>=19 <20'), 'incompatible');
+  assert.equal(classifyDeclaredRange('19.2.3', '>=19 <20'), 'satisfied');
+});
+
+test('classifyDeclaredRange: workspace/catalog/npm/file/link/git protocols are unverifiable, not incompatible', () => {
+  for (const declared of ['workspace:*', 'catalog:', 'catalog:react19', 'npm:react@19.2.3', 'file:../local-react', 'link:../react', 'git+https://example.com/react.git', 'latest']) {
+    assert.equal(classifyDeclaredRange(declared, '>=19 <20'), 'unverifiable', declared);
+  }
+});
+
+test('classifyDeclaredRange: malformed declarations are flagged distinctly from missing/incompatible', () => {
+  assert.equal(classifyDeclaredRange('this-is-not-a-version', '>=19 <20'), 'malformed');
+  assert.equal(classifyDeclaredRange('>=', '>=19 <20'), 'malformed');
+  assert.equal(classifyDeclaredRange('19..2', '>=19 <20'), 'malformed');
+});
+
+// ---------------------------------------------------------------------------
+// #213: project + platform detection
+// ---------------------------------------------------------------------------
+
+async function writeConsumerPackageJson(root, contents) {
+  await writeFile(path.join(root, 'package.json'), JSON.stringify(contents, null, 2), 'utf8');
+}
+
+test('detectProject identifies an Expo project and its native platform', async (t) => {
+  const root = await project(t);
+  await writeConsumerPackageJson(root, { name: 'consumer', dependencies: { expo: '~57.0.0', react: '19.2.3' } });
+  const detection = await detectProject(root);
+  assert.equal(detection.kind, 'expo');
+  assert.deepEqual(detection.platforms, { native: true, web: false });
+  assert.equal(detection.packageJsonFound, true);
+  assert.deepEqual(detection.notes, []);
+});
+
+test('detectProject identifies a bare React Native project (react-native without expo)', async (t) => {
+  const root = await project(t);
+  await writeConsumerPackageJson(root, { name: 'consumer', dependencies: { 'react-native': '0.86.2', react: '19.2.3' } });
+  const detection = await detectProject(root);
+  assert.equal(detection.kind, 'bare-react-native');
+  assert.deepEqual(detection.platforms, { native: true, web: false });
+});
+
+test('detectProject identifies a Web project (react-dom/react-native-web, no react-native)', async (t) => {
+  const root = await project(t);
+  await writeConsumerPackageJson(root, { name: 'consumer', dependencies: { 'react-dom': '19.2.3', 'react-native-web': '0.21.0', react: '19.2.3' } });
+  const detection = await detectProject(root);
+  assert.equal(detection.kind, 'web');
+  assert.deepEqual(detection.platforms, { native: false, web: true });
+});
+
+test('detectProject flags a monorepo independently of project kind', async (t) => {
+  const root = await project(t);
+  await writeConsumerPackageJson(root, { name: 'consumer', workspaces: ['packages/*'], dependencies: { expo: '~57.0.0' } });
+  const detection = await detectProject(root);
+  assert.equal(detection.isMonorepo, true);
+
+  const pnpmRoot = await project(t);
+  await writeConsumerPackageJson(pnpmRoot, { name: 'consumer' });
+  await writeFile(path.join(pnpmRoot, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n", 'utf8');
+  assert.equal((await detectProject(pnpmRoot)).isMonorepo, true);
+});
+
+test('detectProject produces an explicit fallback note for an ambiguous project instead of guessing', async (t) => {
+  const root = await project(t);
+  await writeConsumerPackageJson(root, { name: 'consumer', dependencies: {} });
+  const detection = await detectProject(root);
+  assert.equal(detection.kind, 'unknown');
+  assert.equal(detection.notes.length, 1);
+  assert.match(detection.notes[0], /could not detect a React Native or Web project/);
+});
+
+test('detectProject reports no package.json explicitly rather than guessing a project kind', async (t) => {
+  const root = await project(t);
+  const detection = await detectProject(root);
+  assert.equal(detection.packageJsonFound, false);
+  assert.equal(detection.kind, 'unknown');
+  assert.match(detection.notes[0], /no package\.json found/);
+});
+
+test('detectProject reads the packageManager field, falling back to lockfile presence', async (t) => {
+  const withField = await project(t);
+  await writeConsumerPackageJson(withField, { name: 'consumer', packageManager: 'yarn@3.6.0' });
+  assert.equal((await detectProject(withField)).packageManager, 'yarn');
+
+  const withLockfile = await project(t);
+  await writeConsumerPackageJson(withLockfile, { name: 'consumer' });
+  await writeFile(path.join(withLockfile, 'pnpm-lock.yaml'), 'lockfileVersion: 9\n', 'utf8');
+  assert.equal((await detectProject(withLockfile)).packageManager, 'pnpm');
+
+  const withNeither = await project(t);
+  await writeConsumerPackageJson(withNeither, { name: 'consumer' });
+  assert.equal((await detectProject(withNeither)).packageManager, 'unknown');
+});
+
+test('detectProject detects TypeScript via tsconfig.json or a declared devDependency', async (t) => {
+  const viaTsconfig = await project(t);
+  await writeConsumerPackageJson(viaTsconfig, { name: 'consumer' });
+  await writeFile(path.join(viaTsconfig, 'tsconfig.json'), '{}', 'utf8');
+  assert.equal((await detectProject(viaTsconfig)).hasTypeScript, true);
+
+  const viaDependency = await project(t);
+  await writeConsumerPackageJson(viaDependency, { name: 'consumer', devDependencies: { typescript: '~5.9.2' } });
+  assert.equal((await detectProject(viaDependency)).hasTypeScript, true);
+
+  const neither = await project(t);
+  await writeConsumerPackageJson(neither, { name: 'consumer' });
+  assert.equal((await detectProject(neither)).hasTypeScript, false);
+});
+
+test('detectProject rejects a malformed consumer package.json rather than guessing', async (t) => {
+  const root = await project(t);
+  await writeFile(path.join(root, 'package.json'), '{not json', 'utf8');
+  await assert.rejects(() => detectProject(root), /malformed package\.json/);
+});
+
+// ---------------------------------------------------------------------------
+// #212 + #213: doctor's project-wide dependency diagnostics
+// ---------------------------------------------------------------------------
+
+test('diagnoseProjectDependencies scopes peers to detected platforms and skips undeclared optional peers', async (t) => {
+  const root = await project(t);
+  await writeConsumerPackageJson(root, { name: 'consumer', dependencies: { 'react-native': '0.86.2' } });
+  const registry = await loadRegistry({ repoRoot: REPO_ROOT });
+  const detection = await detectProject(root);
+  const rows = diagnoseProjectDependencies({ registry, detection });
+  const names = rows.map((row) => row.name);
+
+  for (const expected of ['react', 'tailwindcss', 'uniwind', 'react-native', 'react-native-safe-area-context', 'react-native-teleport']) {
+    assert.ok(names.includes(expected), `expected ${expected} to be diagnosed for a native-only project`);
+  }
+  assert.ok(!names.includes('react-dom'), 'react-dom is Web-only and this project has no Web platform signal');
+  assert.ok(!names.includes('@gorhom/bottom-sheet'), 'an undeclared optional peer must not be reported as a diagnostic');
+
+  const react = rows.find((row) => row.name === 'react');
+  assert.equal(react.status, 'missing');
+});
+
+test('diagnoseProjectDependencies classifies a declared, already-opted-into optional peer', async (t) => {
+  const root = await project(t);
+  await writeConsumerPackageJson(root, {
+    name: 'consumer',
+    dependencies: { 'react-native': '0.86.2', '@gorhom/bottom-sheet': '^5.2.14' },
+  });
+  const registry = await loadRegistry({ repoRoot: REPO_ROOT });
+  const detection = await detectProject(root);
+  const rows = diagnoseProjectDependencies({ registry, detection });
+  const gorhom = rows.find((row) => row.name === '@gorhom/bottom-sheet');
+  assert.ok(gorhom, 'a declared optional peer must be diagnosed once opted into');
+  assert.equal(gorhom.status, 'satisfied');
+});
+
+test('diagnoseProjectDependencies reports an incompatible declared range with the required range in the same row', async (t) => {
+  const root = await project(t);
+  await writeConsumerPackageJson(root, { name: 'consumer', dependencies: { react: '^18.2.0', 'react-native': '0.86.2' } });
+  const registry = await loadRegistry({ repoRoot: REPO_ROOT });
+  const detection = await detectProject(root);
+  const rows = diagnoseProjectDependencies({ registry, detection });
+  const react = rows.find((row) => row.name === 'react');
+  assert.equal(react.status, 'incompatible');
+  const line = formatDiagnosticLine(react);
+  assert.match(line, /react@>=19 <20/);
+  assert.match(line, /\^18\.2\.0/);
+});
+
+test('diagnoseProjectDependencies checks the Expo SDK range only for a detected Expo project', async (t) => {
+  const registry = await loadRegistry({ repoRoot: REPO_ROOT });
+
+  const expoRoot = await project(t);
+  await writeConsumerPackageJson(expoRoot, { name: 'consumer', dependencies: { expo: '57.0.12' } });
+  const expoDetection = await detectProject(expoRoot);
+  const expoRows = diagnoseProjectDependencies({ registry, detection: expoDetection });
+  const expoRow = expoRows.find((row) => row.name === 'expo');
+  assert.ok(expoRow, 'expo must be diagnosed for a detected Expo project');
+  assert.equal(expoRow.status, 'satisfied');
+
+  const bareRoot = await project(t);
+  await writeConsumerPackageJson(bareRoot, { name: 'consumer', dependencies: { 'react-native': '0.86.2' } });
+  const bareDetection = await detectProject(bareRoot);
+  const bareRows = diagnoseProjectDependencies({ registry, detection: bareDetection });
+  assert.ok(!bareRows.some((row) => row.name === 'expo'), 'expo is not diagnosed for a non-Expo project');
+});
+
+test('formatDetectionSummary reports kind, platforms, package manager, TypeScript, and monorepo deterministically', async (t) => {
+  const root = await project(t);
+  await writeConsumerPackageJson(root, { name: 'consumer', dependencies: { expo: '~57.0.0' } });
+  const detection = await detectProject(root);
+  const summary = formatDetectionSummary(detection);
+  assert.match(summary, /^Detected project: expo \(platforms: native\), package manager: unknown, TypeScript: no, monorepo: no\.$/);
+});
+
+// EXPO_SDK_SUPPORTED_RANGE is deliberately duplicated data (Expo is not a
+// `@beeui/ui` peerDependency, so it cannot be derived from registry.json —
+// see dependency-diagnostics.mjs's own header comment). This guards against
+// silent drift from docs/compatibility-matrix.md's machine-checked
+// `expoSdkRange`, the same way scripts/check-compatibility-matrix.mjs guards
+// every other pinned-version fact in that file.
+test('EXPO_SDK_SUPPORTED_RANGE matches compatibility-matrix.md\'s machine-checked expoSdkRange', async () => {
+  const matrixDoc = await readFile(path.join(REPO_ROOT, 'docs/compatibility-matrix.md'), 'utf8');
+  const match = /```json compatibility-matrix\n([\s\S]*?)\n```/.exec(matrixDoc);
+  assert.ok(match, 'expected a machine-checked compatibility-matrix JSON block');
+  const snapshot = JSON.parse(match[1]);
+  assert.equal(EXPO_SDK_SUPPORTED_RANGE, snapshot.expoSdkRange);
+});
+
+// ---------------------------------------------------------------------------
+// #212/#213/#214: CLI-level integration — doctor/init/add wiring
+// ---------------------------------------------------------------------------
+
+test('doctor reports detected project kind and semver-aware dependency diagnostics', async (t) => {
+  const root = await init(t);
+  await writeConsumerPackageJson(root, { name: 'consumer', dependencies: { react: '^18.2.0', 'react-native': '0.86.2' } });
+  const result = await run(root, ['doctor']);
+  assert.equal(result.code, 0, result.stderr);
+  assert.match(result.stdout, /Detected project: bare-react-native \(platforms: native\)/);
+  assert.match(result.stdout, /Dependency diagnostics/);
+  assert.match(result.stdout, /INCOMPATIBLE\s+react@>=19 <20/);
+  assert.match(result.stdout, /OK\s+react-native@>=0\.86\.0 <0\.87\.0/);
+  // doctor is advisory only: an incompatible peer never fails the command or
+  // mutates the project, matching `add`'s existing non-blocking posture.
+  assert.equal(await exists(path.join(root, 'src')), false);
+});
+
+test('init prints detected project guidance without any additional filesystem mutation', async (t) => {
+  const root = await project(t);
+  await writeConsumerPackageJson(root, { name: 'consumer', dependencies: { expo: '~57.0.0' } });
+  const before = await readFile(path.join(root, 'package.json'), 'utf8');
+  const result = await run(root, ['init']);
+  assert.equal(result.code, 0, result.stderr);
+  assert.match(result.stdout, /Detected project: expo/);
+  assert.match(result.stdout, /BeeUIProvider/);
+  assert.equal(await readFile(path.join(root, 'package.json'), 'utf8'), before, 'init must never touch the consumer package.json');
+});
+
+test('init reports an ambiguous project with an explicit fallback note instead of a guess', async (t) => {
+  const root = await project(t);
+  const result = await run(root, ['init']);
+  assert.equal(result.code, 0, result.stderr);
+  assert.match(result.stdout, /Detected project: unknown/);
+  assert.match(result.stdout, /Note: no package\.json found/);
+});
+
+test("add reports a semver status alongside each dependency row without repeating optional peer names", async (t) => {
+  const root = await init(t);
+  await writeConsumerPackageJson(root, { name: 'consumer', dependencies: { react: '^18.2.0' } });
+  const result = await run(root, ['add', 'button']);
+  assert.equal(result.code, 0, result.stderr);
+  assert.match(result.stdout, /react@>=19 <20 \[declared in dependencies as \^18\.2\.0\] \(incompatible\)/);
+  assert.match(result.stdout, /react-native@>=0\.86\.0 <0\.87\.0 \[missing from package\.json\] \(missing\)/);
+});
+
+test('a malformed declared version is reported distinctly from a missing or incompatible one', async (t) => {
+  const root = await init(t);
+  await writeConsumerPackageJson(root, { name: 'consumer', dependencies: { react: 'not-a-version' } });
+  const result = await run(root, ['add', 'button']);
+  assert.equal(result.code, 0, result.stderr);
+  assert.match(result.stdout, /react@>=19 <20 \[declared in dependencies as not-a-version\] \(malformed\)/);
+});
+
+test('a workspace-protocol declaration is reported as unverifiable, not incompatible or missing', async (t) => {
+  const root = await init(t);
+  await writeConsumerPackageJson(root, { name: 'consumer', dependencies: { react: 'workspace:*' } });
+  const result = await run(root, ['add', 'button']);
+  assert.equal(result.code, 0, result.stderr);
+  assert.match(result.stdout, /react@>=19 <20 \[declared in dependencies as workspace:\*\] \(unverifiable\)/);
+});
+
+// #214: schema version migration/error behavior is explicit and actionable —
+// this repeats a class of check `readConfig`'s existing malformed-JSON test
+// already covers, extended to an out-of-range (but well-formed) schema.
+test('an unsupported config schemaVersion fails with an explicit, non-migrating error', async (t) => {
+  const root = await project(t);
+  await writeFile(
+    path.join(root, CONFIG_FILENAME),
+    JSON.stringify({ schemaVersion: 2, componentsDir: 'src/components/beeui', libDir: 'src/lib/beeui', themeFile: 'src/beeui/theme.css' }),
+  );
+  const result = await run(root, ['doctor']);
+  assert.equal(result.code, 1);
+  assert.match(result.stderr, /unsupported beeui\.config\.json schemaVersion '2'/);
+  assert.match(result.stderr, /no automatic migration yet/);
 });

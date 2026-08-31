@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { lstat, mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { classifyDeclaredRange } from './semver-lite.mjs';
 
 // This module is the single shared BeeUI registry/source-ownership engine.
 // It is used two ways from two different physical file locations, and it
@@ -349,9 +350,21 @@ export async function verifyRegistrySourceIntegrity(registry, { sourcesRoot = RE
   return { mode: 'bundled', verifiedCount: uniqueSources.length };
 }
 
+// The one supported `beeui.config.json` `schemaVersion`. There is no
+// automatic migration path yet (#214): a config from a future CLI version
+// (`schemaVersion > 1`) or a hand-edited/foreign one is rejected outright
+// rather than guessed at, so a consumer always gets an explicit, actionable
+// error instead of the CLI silently reinterpreting an unknown shape.
+export const SUPPORTED_CONFIG_SCHEMA_VERSION = 1;
+
 export function validateConfig(config) {
   invariant(isPlainObject(config), 'config must be an object');
-  invariant(config.schemaVersion === 1, `unsupported config schemaVersion '${config.schemaVersion}'`);
+  invariant(
+    config.schemaVersion === SUPPORTED_CONFIG_SCHEMA_VERSION,
+    `unsupported ${CONFIG_FILENAME} schemaVersion '${config.schemaVersion}' (this CLI supports schemaVersion ` +
+      `${SUPPORTED_CONFIG_SCHEMA_VERSION} only; there is no automatic migration yet — hand-edit the config to match ` +
+      `schema v${SUPPORTED_CONFIG_SCHEMA_VERSION}, or remove it and run 'beeui init' to regenerate a default one)`,
+  );
   const allowed = new Set(['schemaVersion', 'componentsDir', 'libDir', 'themeFile']);
   for (const key of Object.keys(config)) invariant(allowed.has(key), `unknown config field '${key}'`);
   validateRelativePath(config.componentsDir, 'config.componentsDir');
@@ -496,7 +509,47 @@ export function applyTransforms(source, transforms, { destination, projectRoot, 
   return output;
 }
 
-function mergeRequirements(items) {
+// External peers that are only required for a specific optional native
+// feature slice (Sheet's `@gorhom/bottom-sheet`/Reanimated/Gesture-Handler/
+// Worklets stack, DatePicker/DateTimePicker's native picker module). Mirrors
+// `peerDependenciesMeta`'s `optional: true` set in `packages/ui/package.json`
+// (docs/registry-cli.md's "Supported registry entries" section documents the
+// same list in prose). Declared here — not read from `packages/ui/package.json`
+// at runtime — because a packed/published `@beeui/cli` tarball never ships
+// the monorepo's `packages/ui` tree (see this file's own header comment on
+// bundled vs dev mode); this small, rarely-changing set is duplicated
+// data, the same tradeoff docs/registry-cli.md already accepts for the
+// version ranges themselves.
+export const OPTIONAL_EXTERNAL_PACKAGES = Object.freeze(
+  new Set([
+    '@gorhom/bottom-sheet',
+    '@react-native-community/datetimepicker',
+    'react-dom',
+    'react-native-gesture-handler',
+    'react-native-reanimated',
+    'react-native-worklets',
+  ]),
+);
+
+// Classifies one already-resolved requirement row (`{ name, range, declared }`,
+// `declared` being `null` or `{ section, range }` from the consumer's
+// package.json) into the #212 semver-aware status vocabulary:
+//   - 'satisfied'              — declared range overlaps the required range.
+//   - 'incompatible'           — declared range is well-formed but does not
+//                                overlap the required range.
+//   - 'unverifiable'           — declared value is a package-manager protocol
+//                                or dist-tag; cannot be checked statically.
+//   - 'malformed'              — declared value is not a recognizable
+//                                version/range/protocol/dist-tag.
+//   - 'missing'                — required and not declared at all.
+//   - 'optional-not-declared'  — optional (see `OPTIONAL_EXTERNAL_PACKAGES`)
+//                                and not declared; not an error.
+export function classifyRequirement({ name, range, declared }) {
+  if (!declared) return OPTIONAL_EXTERNAL_PACKAGES.has(name) ? 'optional-not-declared' : 'missing';
+  return classifyDeclaredRange(declared.range, range);
+}
+
+export function mergeRequirements(items) {
   const groups = { dependencies: new Map(), peerDependencies: new Map() };
   for (const item of items) {
     for (const groupName of Object.keys(groups)) {
@@ -515,7 +568,7 @@ function mergeRequirements(items) {
   );
 }
 
-async function consumerPackageDeclarations(projectRoot) {
+export async function consumerPackageDeclarations(projectRoot) {
   const packagePath = path.join(projectRoot, 'package.json');
   await assertNoSymlinkPath(projectRoot, packagePath, 'package.json');
   const stat = await statIfExists(packagePath);
@@ -590,7 +643,10 @@ export async function buildAddPlan({
   const requirements = mergeRequirements(items);
   const declarations = await consumerPackageDeclarations(projectRoot);
   for (const group of Object.values(requirements)) {
-    for (const requirement of group) requirement.declared = declarations.get(requirement.name) ?? null;
+    for (const requirement of group) {
+      requirement.declared = declarations.get(requirement.name) ?? null;
+      requirement.status = classifyRequirement(requirement);
+    }
   }
 
   return {

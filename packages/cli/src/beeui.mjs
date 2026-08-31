@@ -16,6 +16,8 @@ import {
   validateConfiguredProjectPaths,
   verifyRegistrySourceIntegrity,
 } from './registry-lib.mjs';
+import { detectProject } from './detect.mjs';
+import { diagnoseProjectDependencies, formatDetectionSummary, formatDiagnosticLine } from './dependency-diagnostics.mjs';
 
 // This file always ships one directory below the package root, both in
 // repository-local dev mode (`packages/cli/src/beeui.mjs`) and in the built
@@ -136,9 +138,37 @@ function printRequirements(stdout, requirements) {
     const state = row.declared
       ? `declared in ${row.declared.section} as ${row.declared.range}`
       : 'missing from package.json';
-    write(stdout, `  ${row.kind.padEnd(10)} ${row.name}@${row.range} [${state}]`);
+    // `(${row.status})` never repeats `row.name`: a symlink/name-occurrence
+    // test elsewhere in the suite counts exact package-name occurrences
+    // across a full `add` invocation's stdout, so per-row remediation prose
+    // that restates the name lives only in `doctor`'s richer report
+    // (dependency-diagnostics.mjs's `formatDiagnosticLine`), not here.
+    write(stdout, `  ${row.kind.padEnd(10)} ${row.name}@${row.range} [${state}] (${row.status})`);
   }
-  write(stdout, 'No package manager was run. Presence is checked; version-range satisfaction is not inferred.');
+  write(
+    stdout,
+    'No package manager was run. Presence is checked, and — where the declared value is a parseable semver ' +
+      'range — compatibility with the required range above is checked too; package-manager protocols ' +
+      '(workspace:/catalog:/npm:/file:/link:/git) and dist-tags cannot be verified statically.',
+  );
+}
+
+// #214: after `init` creates (or validates) `beeui.config.json`, print
+// detected-project-specific next steps. This is informational only — no
+// file is written beyond what `initConfig` already wrote/validated, so a
+// wrong or ambiguous detection never has a destructive consequence.
+function printInitGuidance(stdout, detection) {
+  write(stdout, formatDetectionSummary(detection));
+  for (const note of detection.notes) write(stdout, `Note: ${note}`);
+  write(stdout, 'Next steps:');
+  write(stdout, '  - Import the configured themeFile from your Tailwind/Uniwind CSS entry (never done automatically).');
+  if (detection.kind === 'expo' || detection.kind === 'bare-react-native') {
+    write(stdout, '  - Wrap your app root with BeeUIProvider before using overlay/toast components (see docs/components.md).');
+  }
+  if (detection.platforms.web) {
+    write(stdout, "  - Ensure your bundler aliases 'react-native' to 'react-native-web' for Web builds (see docs/registry-cli.md's Web support contract).");
+  }
+  write(stdout, "Run 'beeui doctor' any time for a semver-aware compatibility report against your declared dependencies.");
 }
 
 function printPlan(stdout, plan, { dryRun }) {
@@ -194,6 +224,8 @@ export async function main(argv = process.argv.slice(2), options = {}) {
       write(stdout, `componentsDir: ${result.config.componentsDir}`);
       write(stdout, `libDir: ${result.config.libDir}`);
       write(stdout, `themeFile: ${result.config.themeFile}`);
+      const detection = await detectProject(projectRoot);
+      printInitGuidance(stdout, detection);
       return 0;
     }
 
@@ -210,6 +242,15 @@ export async function main(argv = process.argv.slice(2), options = {}) {
         `BeeUI doctor OK: registry schema v${registry.schemaVersion}, ${publicItems(registry).length} public components, ` +
           `valid ${CONFIG_FILENAME}, registry delivery: ${integrityDetail}.`,
       );
+      const detection = await detectProject(projectRoot);
+      write(stdout, formatDetectionSummary(detection));
+      write(stdout, `  OK            node@${process.version} — satisfies the CLI's required >=${MIN_SUPPORTED_NODE_MAJOR}`);
+      for (const note of detection.notes) write(stdout, `Note: ${note}`);
+      const diagnostics = diagnoseProjectDependencies({ registry, detection });
+      if (diagnostics.length > 0) {
+        write(stdout, 'Dependency diagnostics (semver compatibility against BeeUI-supported ranges, informational only):');
+        for (const row of diagnostics) write(stdout, formatDiagnosticLine(row));
+      }
       return 0;
     }
 
