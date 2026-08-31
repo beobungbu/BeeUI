@@ -301,10 +301,10 @@ shared-authority source of truth for every row below; it is drift-checked by
 
 # R7 — Packages — publication-ready only, DO NOT publish
 
-- #197 distribution architecture ADR. See [ADR-011](decisions/011-distribution-architecture.md).
-- #198 package/CLI names and permissions; owner/admin gate where required.
-- #199 package metadata.
-- #200 package output format.
+- #197 distribution architecture ADR. **Closed** — see [ADR-011](decisions/011-distribution-architecture.md).
+- #198 package/CLI names and permissions; owner/admin gate where required. **Preflight done** ([docs/distribution-names.md](distribution-names.md)): `@beeui/*` scope + `@beeui/cli` verified available; CLI recommended `@beeui/cli` (bare `beeui` is a taken tombstone). **Issue stays open for the OWNER action**: create the `@beeui` npm org + reserve names + grant release-workflow permissions (ties to #205).
+- #199 package metadata. **Closed** — `private` removed; repository/homepage/keywords/author/`publishConfig` (access public + provenance) on all three; via PR #371.
+- #200 package output format. **Closed** — dual ESM+CJS+`.d.ts` under `dist/` (react-native-builder-bob), conditional `exports` (source/react-native/browser/import/require), `src` retained for source-ownership; internal apps resolve `source` (baselines byte-identical); native + web CI green. Via PR #371.
 - #201 final export maps after #184.
 - #202 packed file inventory.
 - #203 prerelease-equivalent retained artifacts.
