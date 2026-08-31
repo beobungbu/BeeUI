@@ -56,6 +56,9 @@ export const LINKED_PATHS = [
   'docs/registry-cli.md',
   'docs/distribution-names.md',
   'docs/agent-execution-contract.md',
+  'docs/benchmark-harness.md',
+  'docs/bundle-footprint-baseline.md',
+  'docs/performance-baseline-report.md',
   'docs/decisions/001-styling-engine.md',
   'docs/decisions/002-overlay-behavior.md',
   'docs/decisions/003-native-measurement-timeout.md',
@@ -78,6 +81,7 @@ export const LINKED_PATHS = [
   'apps/docs/src/content/docs/components/table.md',
   'apps/docs/src/content/docs/components/calendar-date-time.md',
   'apps/docs/src/content/docs/patterns/index.md',
+  'apps/docs/src/content/docs/performance/index.md',
 ];
 
 // Production pattern packs (README.md "Production pattern coverage"), living under
@@ -330,6 +334,7 @@ ${adrs.map(([slug, note]) => `- [ADR-${slug.slice(0, 3)} ${slug.slice(4)}](docs/
 - Getting started: [Expo](apps/docs/src/content/docs/getting-started/expo.md) · [bare RN](apps/docs/src/content/docs/getting-started/bare-react-native.md) · [Web](apps/docs/src/content/docs/getting-started/web.md)
 - CLI: [apps/docs/src/content/docs/cli/index.md](apps/docs/src/content/docs/cli/index.md)
 - Components site: [apps/docs/src/content/docs/components/index.md](apps/docs/src/content/docs/components/index.md) (deep dives: [Table](apps/docs/src/content/docs/components/table.md), [Calendar/DatePicker](apps/docs/src/content/docs/components/calendar-date-time.md))
+- Performance: methodology [docs/benchmark-harness.md](docs/benchmark-harness.md) · baseline report [docs/performance-baseline-report.md](docs/performance-baseline-report.md) · package/bundle footprint [docs/bundle-footprint-baseline.md](docs/bundle-footprint-baseline.md) · docs site [apps/docs/src/content/docs/performance/index.md](apps/docs/src/content/docs/performance/index.md)
 - Release policy: [docs/release.md](docs/release.md) · Changelog: [CHANGELOG.md](CHANGELOG.md) · License: [LICENSE](LICENSE) (MIT)
 
 ${HEADER_NOTE}

@@ -23,6 +23,9 @@
 //     `candidate` is the real `cn()`-based resolution; `baseline` is the same
 //     output via naive string concatenation (no twMerge/clsx), the same
 //     methodology `web/variant-class-resolution.mjs` established.
+//     `budget.maxOverheadRatio: 15` (#185, R5.7) gates `cn()`'s real
+//     resolution cost staying a bounded multiple of the naive baseline —
+//     see the scenario definition for the observed-range rationale.
 //   - `web/table-row-update` — the issue's "row selection/sort update should
 //     not catastrophically rerender unrelated content" requirement, in two
 //     complementary parts. `Table` is a thin compositional layer (ADR-007: it
@@ -168,6 +171,15 @@ function defineTableRenderScenario(rowCount) {
     iterations: rowCount >= 500 ? 5 : 20,
     candidate: { label: 'cn-resolution', run: () => renderTablePass(rows, resolveRowWithRealCn) },
     baseline: { label: 'concat-resolution', run: () => renderTablePass(rows, resolveRowWithConcat) },
+    // #185 (R5.7) regression budget: real `cn()`/twMerge resolution over naive
+    // concatenation. Repeated local runs on a representative dev host land
+    // consistently in the ~8-9.5x range at both 100 and 500 rows (the ratio
+    // is dominated by twMerge's conflict resolution, not row count, so it is
+    // stable across scale). 15x leaves generous headroom above that observed
+    // ceiling while still catching a real regression (e.g. a `cn()`/twMerge
+    // change that materially increases its per-call cost) rather than
+    // flaking on this host's normal run-to-run variance.
+    budget: { maxOverheadRatio: 15 },
   });
 }
 
