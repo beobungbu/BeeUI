@@ -4,7 +4,13 @@ This document defines what a BeeUI `0.x` release candidate means and separates a
 
 ## Current distribution model
 
-BeeUI is not publicly published to npm. `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` remain `private: true` while pre-1.0 distribution is productized.
+BeeUI is not published to the public npm registry — no `npm publish` has been run. Per
+[ADR-011](decisions/011-distribution-architecture.md), `@beeui/core`, `@beeui/tokens`, and
+`@beeui/ui` manifests are publication-ready: `private: true` is removed, each carries public
+package metadata (`repository`/`homepage`/`bugs`/`license`/`keywords`/`sideEffects`/
+`publishConfig`), and each ships a built `dist/` (dual ESM + CJS plus `.d.ts`, via
+`react-native-builder-bob`) as the primary artifact while `src` remains published for the
+source-ownership path.
 
 Current consumption/verification modes:
 
@@ -12,11 +18,14 @@ Current consumption/verification modes:
 2. packed tarballs for package-boundary verification and controlled/internal consumer testing;
 3. the implemented phase-1 repository-local Registry + source-ownership CLI.
 
-Packed tarballs are verification artifacts, not a public npm claim. Public CLI/package naming, broader registry coverage, compatibility guarantees, release automation, and the final public package/source-ownership support model remain roadmap work.
+Packed tarballs are verification artifacts, not a public npm claim. Actual publish to npm,
+provenance/OIDC trusted publishing, and the `release` environment are owner-gated and land at
+#254/#205 per ADR-011's owner guard. Public CLI naming, broader registry coverage, and the
+final public source-ownership support model remain roadmap work.
 
 ### Web transport resolution scope
 
-The anchored-overlay transport ships as platform files (`overlay-transport.web.tsx`, `.native.tsx`, `.d.ts`). The current proven Web environment is **Expo Web / current Metro**, whose resolver includes `web` platform files. Arbitrary React Native Web/generic bundlers and public npm conditional exports are not yet guaranteed.
+The anchored-overlay transport ships as platform files (`overlay-transport.web.tsx`, `.native.tsx`, `.d.ts`). The current proven Web environment is **Expo Web / current Metro**, whose resolver includes `web` platform files. Package `exports` now declare `react-native`/`browser`/`default`/`import`/`require`/`types`/`source` conditions at each package's root entry (#200); finalizing conditional exports across every subpath (including per-component platform resolution) is #201.
 
 ## Versioning policy
 
