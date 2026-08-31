@@ -9,6 +9,7 @@ import {
   REPO_ROOT,
   buildAddPlan,
   loadRegistry,
+  publicItems,
   readConfig,
   validateRegistry,
 } from '../registry-lib.mjs';
@@ -284,21 +285,89 @@ test('deterministic plan is independent of requested item order', async (t) => {
   assert.deepEqual(compact(a), compact(b));
 });
 
-test('copied source contains no workspace references or BeeUI monorepo imports', async (t) => {
+// Regression for #355: this check used to run against a curated file list that
+// happened to exclude every file affected by the `@beeui/tokens` runtime-import
+// gap (sheet, popover, dropdown-menu, select, toast, tooltip, theme-scope,
+// use-bee-token, overlay-runtime), so the gap shipped undetected through CI for
+// every one of those already-public items. It now resolves and inspects *every*
+// public registry item (which transitively pulls in every internal utility item
+// too, e.g. core-cn/core-overlay/overlay-runtime/use-direction), so no future
+// item can skip this invariant by not being named in a hand-picked list.
+//
+// `@beeui/core` and `workspace:*`/monorepo-relative-path references must never
+// survive into copied source (ADR-011 D5: `@beeui/core` is vendored-by-transform).
+// `@beeui/tokens` is the one intentional exception — ADR-011 D5 resolves it by
+// declaring `@beeui/tokens` as a consumer dependency instead of vendoring it, so
+// a bare `@beeui/tokens` specifier is expected to remain; the CLI recording it as
+// a consumer dependency is proven separately below.
+test('copied source contains no @beeui/core, workspace:*, or monorepo-relative-path leaks across the full registry', async (t) => {
   const root = await init(t);
-  const result = await run(root, ['add', 'button', 'input', 'badge', 'card', 'separator']);
+  const registry = await loadRegistry({ repoRoot: REPO_ROOT });
+  const config = await readConfig(root);
+  const plan = await buildAddPlan({ projectRoot: root, registry, config, requestedItems: publicItems(registry) });
+  const inspected = plan.files.filter((file) => /\.(?:tsx?|mjs|cjs)$/.test(file.targetRelative));
+  assert.ok(inspected.length > 0, 'expected at least one copied source file to inspect');
+  // Scoped to actual import/require specifiers (quoted module strings), not prose —
+  // several files reference `@beeui/core` in JSDoc/comments (e.g. calendar-locale.ts
+  // documents its relationship to `@beeui/core`'s CalendarDate boundary) without
+  // importing it, which is not a workspace leak.
+  const importSpecifier = /(?:from|require\()\s*['"]([^'"]+)['"]/g;
+  for (const file of inspected) {
+    for (const match of file.content.matchAll(importSpecifier)) {
+      const specifier = match[1];
+      assert.notEqual(specifier, 'workspace:*', `${file.targetRelative}: ${specifier}`);
+      assert.doesNotMatch(specifier, /^@beeui\/core(?:\/|$)/, `${file.targetRelative}: ${specifier}`);
+      assert.doesNotMatch(specifier, /packages\//, `${file.targetRelative}: ${specifier}`);
+    }
+  }
+});
+
+// Closure proof for #355 (ADR-011 D5): `@beeui/tokens` is a published package
+// (D1), so the fix is to *record* it as a consumer dependency rather than
+// vendor a subset of it into the copied source the way `@beeui/core` is
+// vendored-by-transform. This performs a real `beeui add` of one single-file
+// affected item (`dropdown-menu`) and one multi-platform affected item with a
+// deep subpath import (`sheet`, which also imports `@beeui/tokens/motion-runtime`)
+// into a clean temp consumer, and proves both halves of the fix together:
+// the copied source keeps the resolvable `@beeui/tokens` import (no vendoring,
+// no dangling/rewritten specifier, no `@beeui/core` or workspace leak), and the
+// CLI plan actually reports `@beeui/tokens` as a consumer dependency
+// requirement rather than silently dropping it.
+test('#355: beeui add records @beeui/tokens as a consumer dependency for every affected item', async (t) => {
+  const root = await init(t);
+  const result = await run(root, ['add', 'dropdown-menu', 'sheet']);
   assert.equal(result.code, 0, result.stderr);
-  const files = [
-    'badge.tsx', 'button.tsx', 'card.tsx', 'field-context.ts', 'input.tsx', 'separator.tsx', 'text.tsx',
-  ];
-  for (const file of files) {
-    const source = await readFile(path.join(root, 'src/components/beeui', file), 'utf8');
+
+  const dropdownMenu = await readFile(path.join(root, 'src/components/beeui/dropdown-menu.tsx'), 'utf8');
+  assert.match(dropdownMenu, /from '@beeui\/tokens'/, 'dropdown-menu must keep its resolvable @beeui/tokens import');
+  assert.doesNotMatch(dropdownMenu, /@beeui\/core/);
+
+  const sheetWeb = await readFile(path.join(root, 'src/components/beeui/sheet.web.tsx'), 'utf8');
+  assert.match(sheetWeb, /from '@beeui\/tokens'/);
+  assert.match(sheetWeb, /from '@beeui\/tokens\/motion-runtime'/);
+  assert.doesNotMatch(sheetWeb, /@beeui\/core/);
+
+  const sheetNative = await readFile(path.join(root, 'src/components/beeui/sheet.native.tsx'), 'utf8');
+  assert.match(sheetNative, /from '@beeui\/tokens'/);
+  assert.doesNotMatch(sheetNative, /@beeui\/core/);
+
+  for (const source of [dropdownMenu, sheetWeb, sheetNative]) {
     assert.doesNotMatch(source, /workspace:\*/);
-    assert.doesNotMatch(source, /@beeui\//);
     assert.doesNotMatch(source, /\.\.\/.*packages\//);
   }
-  const cn = await readFile(path.join(root, 'src/lib/beeui/cn.ts'), 'utf8');
-  assert.doesNotMatch(cn, /workspace:\*|@beeui\/|\.\.\/.*packages\//);
+
+  assert.match(result.stdout, /@beeui\/tokens@0\.1\.0 \[missing from package\.json\]/);
+});
+
+test('#355: the CLI detects an already-declared @beeui/tokens consumer dependency', async (t) => {
+  const root = await init(t);
+  await writeFile(
+    path.join(root, 'package.json'),
+    JSON.stringify({ name: 'consumer', dependencies: { '@beeui/tokens': '^0.1.0' } }, null, 2),
+  );
+  const result = await run(root, ['add', 'popover']);
+  assert.equal(result.code, 0, result.stderr);
+  assert.match(result.stdout, /@beeui\/tokens@0\.1\.0 \[declared in dependencies as \^0\.1\.0\]/);
 });
 
 test('copied TypeScript/TSX passes transpile syntax smoke when TypeScript is installed', async (t) => {
