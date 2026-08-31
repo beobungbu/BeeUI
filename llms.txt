@@ -27,6 +27,7 @@ BeeUI ships 62 public component modules from `@beeui/ui` plus a semantic design-
 - [llms-patterns.txt](llms-patterns.txt): production pattern catalog and composition guidance.
 
 ## For contributing agents
+- [docs/ai-agent-cookbook.md](docs/ai-agent-cookbook.md): AI-agent development contract + task-oriented prompt cookbook (how to consume/build/contribute; unpublished-status rules; ownership boundaries).
 - [AGENTS.md](AGENTS.md): code rules (semantic-token-only styling, engine-boundary, accessibility).
 - [CONTRIBUTING.md](CONTRIBUTING.md): local setup, required gates, review discipline.
 - [docs/agent-execution-contract.md](docs/agent-execution-contract.md): implementation-agent protocol for BeeUI 1.0.
