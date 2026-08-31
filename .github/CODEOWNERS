@@ -1,0 +1,12 @@
+# Documents critical-path ownership ahead of a future second maintainer
+# (see docs/release-ruleset.md, issue #196). `require_code_owner_reviews`
+# is deliberately OFF on the main branch ruleset: BeeUI has a single owner
+# today, and the sole owner cannot satisfy a review requirement on their
+# own pull request. This file exists so ownership is already documented and
+# takes effect automatically the day a second maintainer gets write access,
+# without another ruleset change.
+
+/packages/          @beobungbu
+/.github/workflows/ @beobungbu
+/scripts/           @beobungbu
+/registry/          @beobungbu
