@@ -310,9 +310,9 @@ shared-authority source of truth for every row below; it is drift-checked by
 - #203 prerelease-equivalent retained artifacts.
 - #204 clean consumers from packed artifacts.
 - #205 trusted publishing/provenance preparation; account/environment changes gated.
-- #206 dist-tag/prerelease policy only.
+- #206 dist-tag/prerelease policy only. **Policy authored** ([docs/dist-tag-policy.md](dist-tag-policy.md), docs only, no publish): `latest`/`next` dist-tag semantics, `1.0.0-rc.N` prerelease naming (opt-in via `@next`), lockstep version + CLI alignment, atomic `latest`-promotion-last plan (fail safe), dist-tag correction/deprecation and partial-publication recovery. Pinned by `scripts/check-distribution-policy.mjs`.
 - #207 integrity/provenance verification path.
-- #208 package consumer compatibility report.
+- #208 package consumer compatibility report. **Report authored** ([docs/consumer-compatibility-report.md](consumer-compatibility-report.md)): per-consumer React/RN/Expo/Node/Uniwind/Tailwind/Web + native-peer rows, each tied to a real clean-consumer script/CI gate/matrix row and its evidence class; version pins and peer promises machine-checked against `docs/compatibility-matrix.md` and `packages/ui` so a claim cannot exceed a tested row. Pinned by `scripts/check-distribution-policy.mjs`.
 
 # R8 — CLI/source ownership — publication-ready only, DO NOT publish
 
