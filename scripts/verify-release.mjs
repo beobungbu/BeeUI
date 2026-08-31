@@ -162,6 +162,28 @@ function collectExportTargets(value) {
   return [];
 }
 
+// A "source" condition target may intentionally omit an extension (#201,
+// `docs/decisions/012-granular-subpath-exports.md`): components with
+// platform-only implementations (e.g. `date-picker`, `tooltip` — no base
+// `.tsx`, only `.native.tsx`/`.web.tsx` plus a `.d.ts` type shim) cannot name
+// a single literal source file, so their `source`/`react-native`/`browser`
+// targets rely on Metro's and TypeScript's own platform-extension probing —
+// the exact mechanism `packages/ui/src/index.ts`'s own extensionless
+// `./components/<name>` re-exports already depend on. For an extensionless
+// target this checks that at least one platform/type variant exists on disk
+// (still failing loudly on a typo'd or deleted component); every
+// extension-bearing target (the common case) is still required to exist
+// exactly as named.
+function exportTargetExists(packageDir, target) {
+  const hasExtension = /\.[a-z0-9]+$/i.test(path.basename(target));
+  if (hasExtension) return fs.existsSync(path.join(packageDir, target));
+
+  const absoluteDir = path.join(packageDir, path.dirname(target));
+  if (!fs.existsSync(absoluteDir)) return false;
+  const base = path.basename(target);
+  return fs.readdirSync(absoluteDir).some((entry) => entry === base || entry.startsWith(`${base}.`));
+}
+
 function writeReport(status, error = null) {
   fs.mkdirSync(ARTIFACT_DIR, { recursive: true });
   fs.writeFileSync(
@@ -267,7 +289,7 @@ try {
     assert(exportTargets.length > 0, `${spec.name} declares package exports`);
     for (const target of exportTargets) {
       assert(target.startsWith('./'), `${spec.name} export is package-relative`, target);
-      assert(fs.existsSync(path.join(packageDir, target)), `${spec.name} export target exists`, target);
+      assert(exportTargetExists(packageDir, target), `${spec.name} export target exists`, target);
     }
 
     // D3/D4: every subpath's "." export must expose the conditions consumers
