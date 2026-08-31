@@ -1,4 +1,4 @@
-import { applyDensity, defaultDensityMode, type DensityMode } from '@beeui/tokens';
+import { applyDensity, defaultDensityMode, type DensityMode } from '@beemvp/beeui-tokens';
 import * as React from 'react';
 import { I18nManager, Platform } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
@@ -6,7 +6,7 @@ import { Uniwind, useUniwind } from 'uniwind';
 /**
  * App-owned preferences context (ADR-013 D4/D6). This is a thin preference
  * holder — it wires theme/density/direction/text-scale to BeeUI's *existing*
- * runtimes (Uniwind + `@beeui/tokens`'s `applyDensity` + the platform's own
+ * runtimes (Uniwind + `@beemvp/beeui-tokens`'s `applyDensity` + the platform's own
  * ambient direction authority). It is not a second theme/direction/overlay
  * runtime: BeeUI never gets a parallel implementation here, only a single
  * small piece of application state that decides *which* value those existing

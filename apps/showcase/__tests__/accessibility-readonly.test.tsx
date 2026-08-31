@@ -9,7 +9,7 @@ import {
   Label,
   Text,
   VisuallyHidden,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 
 describe('BeeUI accessibility and read-only contracts', () => {
   it('keeps visually hidden assistive content rendered while removing it from visual layout', () => {

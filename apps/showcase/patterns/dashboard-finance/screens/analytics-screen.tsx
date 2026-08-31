@@ -1,4 +1,4 @@
-import { Card, EmptyState, HStack, Progress, Stat, StatLabel, StatValue, Tabs, TabsList, TabsTrigger, Text, VStack } from '@beeui/ui';
+import { Card, EmptyState, HStack, Progress, Stat, StatLabel, StatValue, Tabs, TabsList, TabsTrigger, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { MiniBarChart, type MiniBarDatum } from '../components/mini-bar-chart';
 import { ScreenShell } from '../components/screen-shell';

@@ -1,4 +1,4 @@
-import { Box, Button, Card, HStack, Text, VStack } from '@beeui/ui';
+import { Box, Button, Card, HStack, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { AuthShell } from '../components/auth-shared';
 

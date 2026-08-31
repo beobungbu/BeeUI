@@ -15,5 +15,5 @@ with every entry linking to its executable, typechecked source in the Pattern Ga
 - `docs/pattern-library.md` — the generated production pattern library.
 - `apps/showcase/patterns/**` — the executable Showcase screen sources.
 
-The patterns are original BeeUI compositions built only from public `@beeui/ui`
+The patterns are original BeeUI compositions built only from public `@beemvp/beeui-ui`
 components; BeeUI owns no routing, data, or backend behind them.

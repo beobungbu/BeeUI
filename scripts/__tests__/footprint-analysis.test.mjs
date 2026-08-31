@@ -9,7 +9,7 @@ import {
 
 function fakePackEntry(overrides = {}) {
   return {
-    name: '@beeui/ui',
+    name: '@beemvp/beeui-ui',
     version: '0.1.0',
     size: 129306,
     unpackedSize: 567807,
@@ -25,7 +25,7 @@ function fakePackEntry(overrides = {}) {
 
 test('summarizePackEntry normalizes fields and sorts files by size descending', () => {
   const summary = summarizePackEntry(fakePackEntry());
-  assert.equal(summary.name, '@beeui/ui');
+  assert.equal(summary.name, '@beemvp/beeui-ui');
   assert.equal(summary.packedGzipBytes, 129306);
   assert.equal(summary.unpackedBytes, 567807);
   assert.deepEqual(
@@ -46,7 +46,7 @@ function fakeMetafile() {
         bytes: 1000,
         imports: [
           { path: 'react', external: true },
-          { path: '@beeui/core', external: false },
+          { path: '@beemvp/beeui-core', external: false },
           // A fully type-only import (e.g. `import { type X } from './shared'`)
           // is TS-erased and esbuild still tags it `external: true` in the
           // metafile as bookkeeping — it is not a real runtime dependency and

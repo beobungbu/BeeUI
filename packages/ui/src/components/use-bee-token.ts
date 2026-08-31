@@ -1,4 +1,4 @@
-import { beeTokenReader, readTokenValue, type BeeTokenPath, type BeeTokenValue } from '@beeui/tokens';
+import { beeTokenReader, readTokenValue, type BeeTokenPath, type BeeTokenValue } from '@beemvp/beeui-tokens';
 import { Uniwind, useCSSVariable } from 'uniwind';
 
 /**
@@ -14,7 +14,7 @@ import { Uniwind, useCSSVariable } from 'uniwind';
  * context/provider. Both functions below are thin, stateless adapters over
  * Uniwind's own public read APIs (`useCSSVariable` / `Uniwind.getCSSVariable`
  * from the `uniwind` package) — see that package's exports for the exact
- * primitives this file wraps. `@beeui/tokens`'s `beeTokenReader` only derives
+ * primitives this file wraps. `@beemvp/beeui-tokens`'s `beeTokenReader` only derives
  * *which* CSS variable to ask Uniwind for and *how* to normalize whatever
  * Uniwind returns (see `packages/tokens/src/token-reader.ts`); it never reads
  * Uniwind itself and holds no state. Uniwind remains the sole runtime theme
@@ -46,7 +46,7 @@ import { Uniwind, useCSSVariable } from 'uniwind';
  *   are structurally unreachable through any `BeeTokenPath` — there is no
  *   `'colors.amber-500'` to construct, typed or otherwise.
  * - **Rejected: build-time-only values** — `breakpoint` is a Tailwind/Uniwind
- *   build-time constant (see its JSDoc in `@beeui/tokens`); it is not part of
+ *   build-time constant (see its JSDoc in `@beemvp/beeui-tokens`); it is not part of
  *   `beeTokenReaderCategories`, so `'breakpoint.medium'` is neither a valid
  *   type nor a resolvable runtime path. Import `breakpoint` directly instead.
  * - **Rejected: metadata-only / theme-invariant values** — `spacing`,
@@ -56,7 +56,7 @@ import { Uniwind, useCSSVariable } from 'uniwind';
  *   geometry are identical across every runtime theme and never
  *   runtime-overridable. Reading them through Uniwind would add indirection
  *   and a platform-representation mismatch for a value that never changes —
- *   import the already-typed constant from `@beeui/tokens` directly (see
+ *   import the already-typed constant from `@beemvp/beeui-tokens` directly (see
  *   `docs/data-typography.md`'s "Runtime-reader note").
  *
  * ## Value normalization

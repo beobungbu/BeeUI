@@ -19,8 +19,8 @@ import {
   TabsList,
   TabsTrigger,
   Text,
-} from '@beeui/ui';
-import { spacing } from '@beeui/tokens';
+} from '@beemvp/beeui-ui';
+import { spacing } from '@beemvp/beeui-tokens';
 
 describe('BeeUI issue #7 remaining hardening', () => {
   afterEach(() => {

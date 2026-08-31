@@ -1,4 +1,4 @@
-import { Popover, PopoverContent, PopoverTrigger } from '@beeui/ui';
+import { Popover, PopoverContent, PopoverTrigger } from '@beemvp/beeui-ui';
 import { render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
 import { Text, View } from 'react-native';

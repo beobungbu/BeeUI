@@ -1,4 +1,4 @@
-import type { CalendarDate } from '@beeui/core';
+import type { CalendarDate } from '@beemvp/beeui-core';
 import { DEFAULT_CALENDAR_LOCALE } from './calendar-locale';
 
 // Formatted-display helper for `DatePicker` (ADR-008, #173). Mirrors
@@ -6,7 +6,7 @@ import { DEFAULT_CALENDAR_LOCALE } from './calendar-locale';
 // `timeZone: 'UTC'` is always passed alongside a `Date.UTC`-anchored instant that never
 // leaves this function, so the display string is never reinterpreted in the host's local
 // timezone. This is a formatting-only helper, not the sanctioned `CalendarDate` ⇄ `Date`
-// boundary (`toLocalDate`/`fromLocalDate` in `@beeui/core`).
+// boundary (`toLocalDate`/`fromLocalDate` in `@beemvp/beeui-core`).
 
 function toFormattableUTCDate(date: CalendarDate): Date {
   return new Date(Date.UTC(date.year, date.month - 1, date.day));

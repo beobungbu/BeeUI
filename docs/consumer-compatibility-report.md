@@ -4,7 +4,7 @@
 > package set was verified against each supported consumer row and **what evidence class
 > passed**.
 > **Snapshot:** 2026-08-31
-> **Packages under test:** `@beeui/core`, `@beeui/tokens`, `@beeui/ui` (one lockstep group;
+> **Packages under test:** `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui` (one lockstep group;
 > candidate version `0.1.0` today — the eventual `1.0.0` candidate is owner-gated at
 > [#254](https://github.com/beobungbu/BeeUI/issues/254)).
 
@@ -27,7 +27,7 @@ the gap is called out, not hidden.
 ## No publication
 
 This report describes verification against **packed tarballs** and workspace/starter
-consumers only. No `npm publish` has run; no dist-tag exists; `@beeui/*` is unpublished
+consumers only. No `npm publish` has run; no dist-tag exists; `@beemvp/beeui-*` is unpublished
 ([docs/distribution-names.md](distribution-names.md)). Public-package releases will
 additionally need proof of actual published artifacts in clean consumers
 ([docs/release.md](release.md) release-candidate checklist); that evidence does not exist yet
@@ -45,10 +45,10 @@ rows exist, one per ADR-011 D7 target:
 | Clean consumer | Script | CI workflow | Proves |
 | --- | --- | --- | --- |
 | Bare React Native | `scripts/verify-bare-consumer.sh` | `ci.yml` (`bare-native`), `ios-native` | RN-CLI app outside the monorepo; tarball install; strict-`tsconfig`; Metro Android/iOS bundle; bare Android native compile; iOS Simulator `xcodebuild` compile; provider/overlay/token smoke fixture |
-| Web (Vite + react-native-web) | `scripts/verify-web-consumer.sh` | `web-consumer.yml` (`web-consumer`) | isolated Vite app; tarball install; `@import '@beeui/tokens/theme.css'`; real Chromium interaction (Playwright) + axe scan; `vite build` |
+| Web (Vite + react-native-web) | `scripts/verify-web-consumer.sh` | `web-consumer.yml` (`web-consumer`) | isolated Vite app; tarball install; `@import '@beemvp/beeui-tokens/theme.css'`; real Chromium interaction (Playwright) + axe scan; `vite build` |
 | Expo SDK 57 | `scripts/verify-expo-consumer.sh` | R7.8 ([#204](https://github.com/beobungbu/BeeUI/issues/204)) | isolated Expo app; tarball install; Metro resolves packaged `dist/` through ordinary `react-native`/`browser`/`default` conditions (no `unstable_conditionsByPlatform` reorder) |
 
-The showcase app (`apps/showcase`) is workspace-linked (`@beeui/ui: workspace:*`) and is the
+The showcase app (`apps/showcase`) is workspace-linked (`@beemvp/beeui-ui: workspace:*`) and is the
 source of the native runtime smoke and Web-export browser evidence; it is not a clean consumer
 but it exercises the same source. Bundle/footprint numbers are
 [docs/bundle-footprint-baseline.md](bundle-footprint-baseline.md).
@@ -67,10 +67,10 @@ decision and its issue.
 | React Native — floor | `0.86.2` (lowest ever built) | `>=0.86.0 <0.87.0` | — (no evidence for `0.85.x`) | n/a | `0.85` dropped from the promise, not deferred (matrix: RN minimum-candidate row, #132). |
 | React Native — 0.86.x | `0.86.2` exact | `>=0.86.0 <0.87.0` | Native runtime + clean-consumer + bundle/compile | `verify-bare-consumer.sh`; `ci.yml` `bare-native`/`ios-native`; `runtime-native.yml` smoke | Reproduces outside the monorepo; confirmed (matrix: RN 0.86 row, #130). |
 | React Native — 0.87.x | `0.87.1` tested | `>=0.86.0 <0.87.0` (excluded) | Bundle/compile — **real Android compile failure** | `compat-rn-0-87.yml` (opt-in) | **Excluded on real evidence**: `react-native-safe-area-context@5.7.0` Kotlin does not build against RN 0.87 (`Unresolved reference 'uiImplementation'`). Not a BeeUI defect (matrix: RN 0.87 row, #131). |
-| Expo SDK | `~57.0.0` (`@expo/metro-runtime ~57.0.12`) | not a `@beeui/ui` peer (app-level) | Bundle/compile + native runtime smoke | `expo export` (web/android/ios), `expo prebuild --clean`, iOS `xcodebuild` in `ci.yml`; `verify-expo-consumer.sh` | SDK 57 is the only tested Expo line (matrix: Expo SDK row). |
+| Expo SDK | `~57.0.0` (`@expo/metro-runtime ~57.0.12`) | not a `@beemvp/beeui-ui` peer (app-level) | Bundle/compile + native runtime smoke | `expo export` (web/android/ios), `expo prebuild --clean`, iOS `xcodebuild` in `ci.yml`; `verify-expo-consumer.sh` | SDK 57 is the only tested Expo line (matrix: Expo SDK row). |
 | Node — toolchain | `24.13.1` exact | `engines.node: "24.13.1"` (root) | Deterministic contract | `Verify JavaScript toolchain` CI step; `.nvmrc`; `engine-strict=true` | The one Node version the repo builds/tests/releases with (matrix: Node toolchain row). |
 | Node — CLI | `24.13.1` only | CLI `engines.node: ">=24"` (#209) | Deterministic contract (Node-24 guard) + packed-artifact | `pnpm release:verify`, `pnpm cli:smoke`; `scripts/__tests__/beeui.test.mjs` | Node 22 has no evidence; narrowed to Node 24 only (matrix: Node/CLI row, #134). CLI unpublished. |
-| `react-native-web` | `0.21.0` exact | not a `@beeui/ui` peer (Web bundler aliases `react-native`) | Bundle/compile + browser interaction | Expo Web export + Vite (`web-consumer.yml`); Playwright/axe on both | Only `0.21.0`, through two independent bundlers (matrix: react-native-web row, #136). |
+| `react-native-web` | `0.21.0` exact | not a `@beemvp/beeui-ui` peer (Web bundler aliases `react-native`) | Bundle/compile + browser interaction | Expo Web export + Vite (`web-consumer.yml`); Playwright/axe on both | Only `0.21.0`, through two independent bundlers (matrix: react-native-web row, #136). |
 | Tailwind CSS | `4.3.3` exact | `>=4 <5` | Bundle/compile + deterministic contract | `tokens:check`, semantic-layer/theme-scope/override/token-reader/density tests; Web/Metro export | Only the `4.3.3` point release; range capped `>=4 <5` (matrix: Tailwind row, #135). |
 | Uniwind | `1.10.1` exact | `>=1.10.1 <2` | Bundle/compile (real) + deterministic/mock (unit) | Metro/Web/native bundling; Jest via `__mocks__/uniwind.ts`; Vite `uniwind/vite` in the Web consumer | Only the exact floor `1.10.1`; range stays `>=1.10.1 <2` (matrix: Uniwind row, #135). |
 | `react-native-safe-area-context` | `5.7.0` exact | `>=5 <6` | Bundle/compile + native runtime smoke (RN 0.86) | `verify-bare-consumer.sh`; `runtime-native.yml` | Only `5.7.x`, only vs RN `0.86.2`; **fails RN 0.87** (root cause of the RN 0.87 exclusion). Matrix: safe-area-context row. |
@@ -121,7 +121,7 @@ This is what mechanically prevents a peer claim here from exceeding a tested row
 ```json consumer-compatibility
 {
   "published": false,
-  "packageSet": ["@beeui/core", "@beeui/tokens", "@beeui/ui"],
+  "packageSet": ["@beemvp/beeui-core", "@beemvp/beeui-tokens", "@beemvp/beeui-ui"],
   "candidateVersion": "0.1.0",
   "cleanConsumerScripts": [
     "scripts/verify-bare-consumer.sh",

@@ -61,8 +61,8 @@ test('the cookbook exists and carries a machine-checked component manifest', () 
   assert.ok(Array.isArray(manifest) && manifest.length > 0, 'manifest block must be present and non-empty');
 });
 
-// Load-bearing: if a cited component symbol is renamed/removed from @beeui/ui, this fails.
-test('every manifest component symbol is a real @beeui/ui value export', () => {
+// Load-bearing: if a cited component symbol is renamed/removed from @beemvp/beeui-ui, this fails.
+test('every manifest component symbol is a real @beemvp/beeui-ui value export', () => {
   const values = readBarrelValueExports();
   const hallucinated = extractComponentManifest(readCookbook()).filter((sym) => !values.has(sym));
   assert.deepEqual(hallucinated, [], `hallucinated symbols: ${hallucinated.join(', ')}`);

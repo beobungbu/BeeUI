@@ -9,7 +9,7 @@ CI-only ephemeral fixture.
 ## Unpublished status
 
 BeeUI is not published to npm (see `../README.md`). `setup.sh` packs
-`@beeui/core`, `@beeui/tokens`, and `@beeui/ui` with `pnpm pack` and installs
+`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` with `pnpm pack` and installs
 those tarballs with `npm install`.
 
 ## Run it
@@ -26,7 +26,7 @@ npm run preview   # optional: serve the production build locally
 
 ## What it demonstrates
 
-`BeeUIProvider`, the semantic theme (`@import '@beeui/tokens/theme.css'`),
+`BeeUIProvider`, the semantic theme (`@import '@beemvp/beeui-tokens/theme.css'`),
 forms (`Input`/`Checkbox`), anchored overlays (`Popover`/`Select`/`Tooltip`/`Dialog`),
 the Web `Sheet` path, `Table`, and `Calendar` — see `src/App.tsx`.
 

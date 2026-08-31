@@ -1,4 +1,4 @@
-import { Badge, Button, Card, HStack, Separator, Text, Timeline, TimelineItem, VStack } from '@beeui/ui';
+import { Badge, Button, Card, HStack, Separator, Text, Timeline, TimelineItem, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import type { Order } from '../fixtures/commerce-fixtures';
 import { formatPrice, orders } from '../fixtures/commerce-fixtures';

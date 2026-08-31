@@ -29,17 +29,17 @@ BeeUI 1.0 uses exactly two npm dist-tags. No other floating tag is published for
 
 | Dist-tag | Consumer opt-in | Points at | Constraint |
 | --- | --- | --- | --- |
-| `latest` | default — `npm i @beeui/ui` | the current **stable** release (`x.y.z`, no prerelease identifier) | never points at a prerelease version |
-| `next` | explicit — `npm i @beeui/ui@next` | the newest **prerelease** (`1.0.0-rc.N`) | never used as a resolution default; only an opt-in channel |
+| `latest` | default — `npm i @beemvp/beeui-ui` | the current **stable** release (`x.y.z`, no prerelease identifier) | never points at a prerelease version |
+| `next` | explicit — `npm i @beemvp/beeui-ui@next` | the newest **prerelease** (`1.0.0-rc.N`) | never used as a resolution default; only an opt-in channel |
 
-- A default install (`npm i @beeui/ui`) resolves `latest`. Because semver ranges exclude
+- A default install (`npm i @beemvp/beeui-ui`) resolves `latest`. Because semver ranges exclude
   prerelease identifiers unless a prerelease is requested explicitly, a consumer on a normal
   caret/tilde range **never** receives a `1.0.0-rc.N` build by accident. Prereleases are
   reachable only via `@next` or an exact `@1.0.0-rc.N` request. This is the mechanism by
   which consumers "opt into prereleases only after publication is authorized" (#206 DoD).
 - `latest` is only ever promoted to a stable version. The first `latest` BeeUI ever
   publishes is `1.0.0` (owner-gated at #254). Until then, `latest` does not exist for
-  `@beeui/*` — the scope is unpublished ([docs/distribution-names.md](distribution-names.md)).
+  `@beemvp/beeui-*` — the scope is unpublished ([docs/distribution-names.md](distribution-names.md)).
 
 ## Prerelease versioning
 
@@ -62,16 +62,16 @@ public prerelease.
 
 ## Lockstep version and CLI alignment
 
-- `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` share **one lockstep version** and are
+- `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` share **one lockstep version** and are
   released together as a fixed group (ADR-011 D6; [docs/release.md](release.md) versioning
   policy). A prerelease bumps all three to the same `1.0.0-rc.N`; the stable release bumps
   all three to `1.0.0`. Package versions must not drift, and packed manifests must not expose
   unresolved `workspace:*` ranges — `pnpm release:verify` enforces both.
-- The CLI (recommended name `@beeui/cli`, binary `beeui` —
+- The CLI (recommended name `@beemvp/beeui-cli`, binary `beeui` —
   [docs/distribution-names.md](distribution-names.md); packaged under the R8 tranche,
   [#209](https://github.com/beobungbu/BeeUI/issues/209)) uses the **same** `latest`/`next`
-  dist-tag scheme. A given `@beeui/cli` `latest` (or `next`) must target the matching library
-  `latest` (or `next`) line: the registry snapshot the CLI bundles, and the `@beeui/tokens`
+  dist-tag scheme. A given `@beemvp/beeui-cli` `latest` (or `next`) must target the matching library
+  `latest` (or `next`) line: the registry snapshot the CLI bundles, and the `@beemvp/beeui-tokens`
   runtime dependency it records into a consumer for the source-ownership path (ADR-011 D5),
   must resolve to library versions compatible with that CLI. A `next` CLI scaffolds against
   the `next` libraries; a `latest` CLI scaffolds against the `latest` libraries.
@@ -85,7 +85,7 @@ release to `latest` consumers (#206 DoD).
 1. **Compute one plan.** Pick the single lockstep version for the candidate (`1.0.0-rc.N` or
    `1.0.0`) from an exact SHA. Validate changelog/migration/version inputs
    ([docs/release.md](release.md) release-candidate checklist; #203 inputs).
-2. **Upload dependency order.** Publish `@beeui/core` and `@beeui/tokens` before `@beeui/ui`
+2. **Upload dependency order.** Publish `@beemvp/beeui-core` and `@beemvp/beeui-tokens` before `@beemvp/beeui-ui`
    (ui depends on both). A prerelease uploads with `--tag next`; a stable upload uses no
    promotion yet (see step 4). npm version content is **immutable**: an already-published
    version cannot be overwritten.
@@ -110,10 +110,10 @@ never `latest`.
 Dist-tag moves are metadata-only and reversible; published version **content** is immutable.
 
 - **Wrong version tagged `latest`.** Re-point `latest` to the last-good stable for all three
-  packages atomically (`npm dist-tag add @beeui/core@<good> latest`, same for `tokens`/`ui`).
+  packages atomically (`npm dist-tag add @beemvp/beeui-core@<good> latest`, same for `tokens`/`ui`).
   Because the move is metadata-only, this is an immediate, reversible correction — no
   republish, no version change.
-- **Bad published version.** Use `npm deprecate @beeui/<pkg>@<bad> "<reason + upgrade path>"`
+- **Bad published version.** Use `npm deprecate @beemvp/beeui-<pkg>@<bad> "<reason + upgrade path>"`
   to warn installers. Deprecation is additive metadata; it does not remove the version.
 - **Do not unpublish.** Unpublishing creates a tombstone that cannot be cleanly reclaimed and
   carries dependency-confusion/trust baggage — the exact failure mode that makes the bare
@@ -142,7 +142,7 @@ this policy cannot silently drift from reality: `published` must stay `false` an
   "prereleaseDistTag": "next",
   "stableDistTag": "latest",
   "atomicPromotionTag": "latest",
-  "lockstepPackages": ["@beeui/core", "@beeui/tokens", "@beeui/ui"],
+  "lockstepPackages": ["@beemvp/beeui-core", "@beemvp/beeui-tokens", "@beemvp/beeui-ui"],
   "releaseEnvironment": "release"
 }
 ```

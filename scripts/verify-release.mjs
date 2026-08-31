@@ -14,7 +14,7 @@ const VERIFY_SHA = process.env.BEEUI_VERIFY_SHA ?? null;
 
 const packageSpecs = [
   {
-    name: '@beeui/core',
+    name: '@beemvp/beeui-core',
     dir: 'packages/core',
     kind: 'library',
     requiredPackedFiles: [
@@ -30,7 +30,7 @@ const packageSpecs = [
     ],
   },
   {
-    name: '@beeui/tokens',
+    name: '@beemvp/beeui-tokens',
     dir: 'packages/tokens',
     kind: 'library',
     requiredPackedFiles: [
@@ -45,7 +45,7 @@ const packageSpecs = [
       'package/dist/typescript/module/index.d.ts',
       'package/dist/typescript/commonjs/index.d.ts',
       // CSS/JSON assets must stay consumable unbuilt (D4): theme.css is
-      // imported directly by consumers (`@beeui/tokens/theme.css`), never
+      // imported directly by consumers (`@beemvp/beeui-tokens/theme.css`), never
       // through the JS module graph, so it is copied into dist verbatim
       // rather than compiled.
       'package/dist/module/theme.css',
@@ -53,7 +53,7 @@ const packageSpecs = [
     ],
   },
   {
-    name: '@beeui/ui',
+    name: '@beemvp/beeui-ui',
     dir: 'packages/ui',
     kind: 'library',
     requiredPackedFiles: [
@@ -93,7 +93,7 @@ const packageSpecs = [
     ],
   },
   {
-    name: '@beeui/cli',
+    name: '@beemvp/beeui-cli',
     dir: 'packages/cli',
     kind: 'cli',
     requiredPackedFiles: [
@@ -103,7 +103,7 @@ const packageSpecs = [
       // canonical registry.json plus every file it can ever reference, so a
       // standalone tarball install works with no monorepo tree present. Pin
       // a couple of representative bundled sources (including the #355
-      // `@beeui/tokens`-affected `sheet` family) so a future build-script
+      // `@beemvp/beeui-tokens`-affected `sheet` family) so a future build-script
       // regression that silently stops bundling sources fails this check
       // instead of shipping a broken CLI.
       'package/dist/beeui.mjs',
@@ -324,7 +324,7 @@ try {
     );
 
     // #200 output format: dist/ (built) ships alongside src/ (source-ownership).
-    const expectedFiles = spec.name === '@beeui/tokens' ? ['dist', 'src', 'tokens.json'] : ['dist', 'src'];
+    const expectedFiles = spec.name === '@beemvp/beeui-tokens' ? ['dist', 'src', 'tokens.json'] : ['dist', 'src'];
     assert(
       Array.isArray(manifest.files) && expectedFiles.every((entry) => manifest.files.includes(entry)) && manifest.files.length === expectedFiles.length,
       `${spec.name} packs its built output and its source surface`,
@@ -386,8 +386,8 @@ try {
     }
   }
 
-  const uiManifest = manifests.get('@beeui/ui');
-  assert(uiManifest.dependencies?.['@beeui/core'] === 'workspace:*', '@beeui/ui uses the workspace protocol internally for @beeui/core');
+  const uiManifest = manifests.get('@beemvp/beeui-ui');
+  assert(uiManifest.dependencies?.['@beemvp/beeui-core'] === 'workspace:*', '@beemvp/beeui-ui uses the workspace protocol internally for @beemvp/beeui-core');
 
   const expectedUiPeers = {
     react: '>=19 <20',
@@ -398,9 +398,9 @@ try {
     uniwind: '>=1.10.1 <2',
   };
   for (const [peer, range] of Object.entries(expectedUiPeers)) {
-    assert(uiManifest.peerDependencies?.[peer] === range, `@beeui/ui peer range is explicit for ${peer}`, range);
+    assert(uiManifest.peerDependencies?.[peer] === range, `@beemvp/beeui-ui peer range is explicit for ${peer}`, range);
   }
-  // @beeui/ui itself only reaches for react-dom in its web (createPortal)
+  // @beemvp/beeui-ui itself only reaches for react-dom in its web (createPortal)
   // transport, so its own direct peer stays optional. Note this is not the whole
   // package-manager story: react-native-teleport declares react-dom as one of its
   // peers, so a strict resolver may still require a matching react-dom even in a
@@ -409,12 +409,12 @@ try {
   // contract stays optional here.
   assert(
     uiManifest.peerDependencies?.['react-dom'] === '>=19 <20',
-    '@beeui/ui declares the react-dom (web) peer range',
+    '@beemvp/beeui-ui declares the react-dom (web) peer range',
     uiManifest.peerDependencies?.['react-dom'],
   );
   assert(
     uiManifest.peerDependenciesMeta?.['react-dom']?.optional === true,
-    '@beeui/ui marks its own react-dom peer optional (web-only for BeeUI)',
+    '@beemvp/beeui-ui marks its own react-dom peer optional (web-only for BeeUI)',
   );
 
   const forbiddenExpoImport = /(?:from\s+|require\s*\(\s*|import\s*\(\s*|import\s+)['"]expo(?:\/[^'"]*)?['"]/;
@@ -491,11 +491,11 @@ try {
       assert(!absoluteOffender, `${spec.name} source map uses relative paths only`, absoluteOffender ?? 'clean');
     }
 
-    if (spec.name === '@beeui/ui') {
+    if (spec.name === '@beemvp/beeui-ui') {
       assert(
-        packedManifest.dependencies?.['@beeui/core'] === rootVersion,
-        '@beeui/ui packed dependency on @beeui/core resolves to the release version',
-        packedManifest.dependencies?.['@beeui/core'] ?? 'missing',
+        packedManifest.dependencies?.['@beemvp/beeui-core'] === rootVersion,
+        '@beemvp/beeui-ui packed dependency on @beemvp/beeui-core resolves to the release version',
+        packedManifest.dependencies?.['@beemvp/beeui-core'] ?? 'missing',
       );
     }
 
@@ -546,15 +546,15 @@ try {
 
   assert(!fs.existsSync(path.join(consumerDir, 'node_modules', 'expo')), 'release package smoke does not pull the Expo runtime');
 
-  // #209: prove the packed @beeui/cli tarball is actually executable once
+  // #209: prove the packed @beemvp/beeui-cli tarball is actually executable once
   // installed standalone into a clean consumer (no monorepo tree present),
   // not just that its files exist in the tarball.
   const cliBin = path.join(consumerDir, 'node_modules', '.bin', 'beeui');
-  assert(fs.existsSync(cliBin), '@beeui/cli installs its beeui bin link into a clean consumer');
+  assert(fs.existsSync(cliBin), '@beemvp/beeui-cli installs its beeui bin link into a clean consumer');
   const helpOutput = run(cliBin, ['help'], { cwd: consumerDir });
-  assert(/BeeUI source ownership CLI/.test(helpOutput), '@beeui/cli packed bin executes help from a clean consumer');
+  assert(/BeeUI source ownership CLI/.test(helpOutput), '@beemvp/beeui-cli packed bin executes help from a clean consumer');
   const listOutput = run(cliBin, ['list'], { cwd: consumerDir });
-  assert(/^button$/m.test(listOutput), '@beeui/cli packed bin lists the button component from a clean consumer');
+  assert(/^button$/m.test(listOutput), '@beemvp/beeui-cli packed bin lists the button component from a clean consumer');
 
   writeReport('pass');
   console.log(`\nRelease verification passed. Report: ${path.relative(ROOT_DIR, REPORT_PATH)}`);

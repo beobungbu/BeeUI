@@ -10,7 +10,7 @@ import {
   Stepper,
   StepperItem,
   Text,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 
 describe('BeeUI issue #7 state edge cases', () => {
   it('emits OTP completion once per completed value and can complete again after becoming incomplete', () => {

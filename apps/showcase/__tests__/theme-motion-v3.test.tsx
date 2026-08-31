@@ -7,8 +7,8 @@ import {
   resolveMotion,
   type MotionIntent,
   type MotionReducedMotionPolicy,
-} from '@beeui/tokens';
-import { resolveNativeMotion } from '@beeui/tokens/motion-runtime';
+} from '@beemvp/beeui-tokens';
+import { resolveNativeMotion } from '@beemvp/beeui-tokens/motion-runtime';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as React from 'react';

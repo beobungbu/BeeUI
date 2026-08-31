@@ -1,5 +1,5 @@
 {
-  "name": "@beeui/cli",
+  "name": "@beemvp/beeui-cli",
   "version": "0.1.0",
   "description": "BeeUI's source-ownership CLI: copies BeeUI component source and its transitive dependencies into a consumer project.",
   "license": "MIT",

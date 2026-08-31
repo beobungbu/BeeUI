@@ -1,6 +1,6 @@
-import { cn } from '@beeui/core';
-import { resolveMotion, spacing } from '@beeui/tokens';
-import { resolveNativeMotion } from '@beeui/tokens/motion-runtime';
+import { cn } from '@beemvp/beeui-core';
+import { resolveMotion, spacing } from '@beemvp/beeui-tokens';
+import { resolveNativeMotion } from '@beemvp/beeui-tokens/motion-runtime';
 import * as React from 'react';
 import {
   Animated,

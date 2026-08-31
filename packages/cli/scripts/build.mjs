@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Builds the publishable @beeui/cli package.
+// Builds the publishable @beemvp/beeui-cli package.
 //
 // Registry-data-shipping decision (#209): the registry engine copies BeeUI
 // component source into a consumer project by reading files off disk at
@@ -85,7 +85,7 @@ async function main() {
     algorithm: 'sha256',
     // Version pairing (#216): the checksum manifest, the registry snapshot,
     // and the bundled sources are all written by this single build step from
-    // the same commit, so a given @beeui/cli version can never observe a
+    // the same commit, so a given @beemvp/beeui-cli version can never observe a
     // registry/source pairing other than the one it shipped with.
     cliVersion: packageManifest.version,
     registry: sha256Hex(rawRegistry),
@@ -98,12 +98,12 @@ async function main() {
   );
 
   process.stdout.write(
-    `@beeui/cli build: bundled registry schema v${registry.schemaVersion}, ${registry.items.length} registry items, ` +
+    `@beemvp/beeui-cli build: bundled registry schema v${registry.schemaVersion}, ${registry.items.length} registry items, ` +
       `${uniqueSources.length} unique source files + sha256 integrity manifest into dist/registry/.\n`,
   );
 }
 
 main().catch((error) => {
-  process.stderr.write(`@beeui/cli build failed: ${error.message}\n`);
+  process.stderr.write(`@beemvp/beeui-cli build failed: ${error.message}\n`);
   process.exitCode = 1;
 });

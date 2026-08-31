@@ -12,9 +12,9 @@ import {
 // ---- fixtures mirroring the real repository state ----
 
 const PACKAGE_VERSIONS = {
-  '@beeui/core': '0.1.0',
-  '@beeui/tokens': '0.1.0',
-  '@beeui/ui': '0.1.0',
+  '@beemvp/beeui-core': '0.1.0',
+  '@beemvp/beeui-tokens': '0.1.0',
+  '@beemvp/beeui-ui': '0.1.0',
 };
 const RELEASE_ENVIRONMENT = 'release';
 const ROOT_VERSION = '0.1.0';
@@ -54,13 +54,13 @@ const GOOD_POLICY = {
   prereleaseDistTag: 'next',
   stableDistTag: 'latest',
   atomicPromotionTag: 'latest',
-  lockstepPackages: ['@beeui/core', '@beeui/tokens', '@beeui/ui'],
+  lockstepPackages: ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui'],
   releaseEnvironment: 'release',
 };
 
 const GOOD_REPORT = {
   published: false,
-  packageSet: ['@beeui/core', '@beeui/tokens', '@beeui/ui'],
+  packageSet: ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui'],
   candidateVersion: '0.1.0',
   cleanConsumerScripts: [
     'scripts/verify-bare-consumer.sh',
@@ -145,7 +145,7 @@ test('releaseEnvironment must match the ruleset', () => {
 test('a package already at the stable candidate is rejected', () => {
   const v = collectDistTagPolicyViolations({
     policy: GOOD_POLICY,
-    packageVersions: { '@beeui/core': '1.0.0', '@beeui/tokens': '1.0.0', '@beeui/ui': '1.0.0' },
+    packageVersions: { '@beemvp/beeui-core': '1.0.0', '@beemvp/beeui-tokens': '1.0.0', '@beemvp/beeui-ui': '1.0.0' },
     releaseEnvironment: RELEASE_ENVIRONMENT,
     existsSync: alwaysExists,
   });

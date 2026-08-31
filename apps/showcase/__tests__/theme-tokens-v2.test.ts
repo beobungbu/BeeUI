@@ -30,7 +30,7 @@ import {
   type BeeRuntimeThemeName,
   type SemanticColorOverrides,
   type SemanticColorToken,
-} from '@beeui/tokens';
+} from '@beemvp/beeui-tokens';
 
 const themeCss = fs.readFileSync(
   path.resolve(__dirname, '../../../packages/tokens/src/theme.css'),

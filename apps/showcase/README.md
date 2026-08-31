@@ -1,7 +1,7 @@
-# @beeui/showcase
+# @beemvp/beeui-showcase
 
 The executable BeeUI demo surface. One Expo app renders the **real** BeeUI public
-contract — the same `@beeui/ui` components a consumer receives — across Web, iOS, and
+contract — the same `@beemvp/beeui-ui` components a consumer receives — across Web, iOS, and
 Android from a single source tree. It is the app referenced throughout the docs and the
 one BeeUI dogfoods.
 
@@ -19,9 +19,9 @@ the app owns no router):
   native-oriented fixtures used for simulator/emulator smoke and evidence capture. These
   render on Web too, but they exist for native runtime QA.
 
-> **Unpublished status.** BeeUI is pre-1.0 and unpublished. No `@beeui/*` package or the
+> **Unpublished status.** BeeUI is pre-1.0 and unpublished. No `@beemvp/beeui-*` package or the
 > `beeui` CLI is on npm, and there is no `v1.0.0` tag or GitHub Release yet. This app is
-> built from in-repo workspace source; it never runs `npm install @beeui/ui`. The home
+> built from in-repo workspace source; it never runs `npm install @beemvp/beeui-ui`. The home
 > screen shows this status inline alongside the build identity.
 
 ## Prerequisites
@@ -39,10 +39,10 @@ export deployable to any static host.
 
 ```bash
 # Static production export → apps/showcase/dist-web/
-pnpm --filter @beeui/showcase build:web
+pnpm --filter @beemvp/beeui-showcase build:web
 
 # Local iterative development (Metro dev server on the Web target)
-pnpm --filter @beeui/showcase web
+pnpm --filter @beemvp/beeui-showcase web
 ```
 
 `build:web` runs `expo export --platform web` and writes a self-contained
@@ -64,7 +64,7 @@ env var and defaults to a `local build` label when unset:
 
 ```bash
 EXPO_PUBLIC_BUILD_SHA=$(git rev-parse --short HEAD) \
-  pnpm --filter @beeui/showcase build:web
+  pnpm --filter @beemvp/beeui-showcase build:web
 ```
 
 ## Native preview path
@@ -75,7 +75,7 @@ matches your environment.
 ### 1. Expo Go / dev server + QR (fastest, no native build)
 
 ```bash
-pnpm --filter @beeui/showcase start
+pnpm --filter @beemvp/beeui-showcase start
 ```
 
 Metro prints a QR code. Scan it with the Expo Go app (Android) or the Camera app (iOS) on
@@ -91,8 +91,8 @@ Builds and installs a native debug app; requires the platform toolchain (Xcode f
 Android Studio/SDK for Android).
 
 ```bash
-pnpm --filter @beeui/showcase ios       # iOS Simulator (macOS + Xcode)
-pnpm --filter @beeui/showcase android    # Android emulator or attached device
+pnpm --filter @beemvp/beeui-showcase ios       # iOS Simulator (macOS + Xcode)
+pnpm --filter @beemvp/beeui-showcase android    # Android emulator or attached device
 ```
 
 These run `expo run:ios` / `expo run:android`, which invoke `expo prebuild` to generate
@@ -105,8 +105,8 @@ Proves the exact source bundles for each native platform without a device or the
 toolchain — the reusable release-acceptance evidence path:
 
 ```bash
-pnpm --filter @beeui/showcase bundle:ios       # → dist-ios/  (Hermes bytecode bundle)
-pnpm --filter @beeui/showcase bundle:android    # → dist-android/
+pnpm --filter @beemvp/beeui-showcase bundle:ios       # → dist-ios/  (Hermes bytecode bundle)
+pnpm --filter @beemvp/beeui-showcase bundle:android    # → dist-android/
 ```
 
 Each runs `expo export` for that platform and emits a Hermes `.hbc` bundle plus

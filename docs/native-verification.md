@@ -8,7 +8,7 @@ BeeUI's automated verification proves package integrity, cross-platform bundling
 
 Instead, the script:
 
-1. packs `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` with `pnpm pack`;
+1. packs `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` with `pnpm pack`;
 2. installs those tarballs through the consumer's normal `node_modules` boundary;
 3. installs the declared styling/native peer runtime;
 4. creates production Metro bundles for Android and iOS;
@@ -27,7 +27,7 @@ This is intentionally stronger than a workspace import or vendored-source smoke 
 - explicit packed source surfaces;
 - declared export targets;
 - expected peer dependency contracts;
-- no Expo runtime imports from `@beeui/core` / `@beeui/ui`;
+- no Expo runtime imports from `@beemvp/beeui-core` / `@beemvp/beeui-ui`;
 - `pnpm pack` output with no unresolved `workspace:` protocol;
 - rewritten packed dependency relationships;
 - clean package installation without Expo leakage.
@@ -82,7 +82,7 @@ with no `continue-on-error`); the Android bare-consumer compile currently **fail
 `react-native-safe-area-context@5.7.0` does not build against RN 0.87's native surface, so RN
 0.87 is excluded from the peer promise on this real evidence (not merely deferred) — see the
 "React Native — 0.87.x" row in `docs/compatibility-matrix.md` for the exact error and run links.
-Because `@beeui/ui`'s own peer range now excludes `0.87.1`, a plain `npm install` into the bare
+Because `@beemvp/beeui-ui`'s own peer range now excludes `0.87.1`, a plain `npm install` into the bare
 consumer would fail fast on `ERESOLVE` before ever reaching a build step; this workflow installs
 with `--legacy-peer-deps` (`BEEUI_BARE_NPM_INSTALL_FLAGS`) so it still exercises the real
 Metro/native-compile evidence, and the Android job runs with `continue-on-error: true` since its

@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react-native';
-import { AppHeader, Button } from '@beeui/ui';
+import { AppHeader, Button } from '@beemvp/beeui-ui';
 import * as React from 'react';
 
 // #284 — AppHeader large-text collapse: deterministic class-contract guard.

@@ -1,4 +1,4 @@
-import { Box, VStack } from '@beeui/ui';
+import { Box, VStack } from '@beemvp/beeui-ui';
 import { usePathname } from 'expo-router';
 import * as React from 'react';
 import { NavItem } from './nav-item';

@@ -8,7 +8,7 @@ import {
   Input,
   Textarea,
   VStack,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { SettingsScreenShell } from '../components/settings-screen-shell';
 

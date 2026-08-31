@@ -7,7 +7,7 @@ import {
   DialogContent,
   PasswordInput,
   SettingsItem,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 
 describe('BeeUI issue #7 high-confidence hardening', () => {
   it('keeps a malformed controlled Dialog dismissable at runtime', () => {

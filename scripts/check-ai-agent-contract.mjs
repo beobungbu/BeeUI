@@ -10,7 +10,7 @@
 //   - every `pnpm beeui -- <sub>` subcommand must be a real CLI subcommand;
 //   - every `pnpm beeui -- add <item>` must name a real PUBLIC registry component;
 //   - every `pnpm <script>` must be a real package.json script;
-//   - every component symbol in the machine-checked manifest must be a real @beeui/ui export;
+//   - every component symbol in the machine-checked manifest must be a real @beemvp/beeui-ui export;
 //   - the cookbook must cross-link the whole llms.txt family (and those files must exist);
 //   - any "NN public component" claim must match the real public-component count;
 //   - the unpublished-status rules must be present and no false "published/on npm" claim.
@@ -175,14 +175,14 @@ export function runChecks(rootDir = ROOT_DIR) {
   const badScripts = extractPnpmScripts(text).filter((s) => !scripts.has(s));
   add('pnpm scripts are real package.json scripts', badScripts.length === 0, badScripts.length ? `unknown: ${badScripts.join(', ')}` : '');
 
-  // Component manifest symbols are real @beeui/ui exports.
+  // Component manifest symbols are real @beemvp/beeui-ui exports.
   const manifest = extractComponentManifest(text);
   const values = readBarrelValueExports(rootDir);
   if (!manifest) {
     add('component manifest present', false, 'missing <!-- ai-contract:components ... --> block');
   } else {
     const hallucinated = manifest.filter((sym) => !values.has(sym));
-    add('component manifest symbols are real @beeui/ui exports', hallucinated.length === 0, hallucinated.length ? `not exported: ${hallucinated.join(', ')}` : `${manifest.length} symbols checked`);
+    add('component manifest symbols are real @beemvp/beeui-ui exports', hallucinated.length === 0, hallucinated.length ? `not exported: ${hallucinated.join(', ')}` : `${manifest.length} symbols checked`);
   }
 
   // Cross-links the whole llms.txt family, and the files exist.

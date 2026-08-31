@@ -1,7 +1,7 @@
 # Accessibility documentation contract
 
 BeeUI 1.0 issue [#150](https://github.com/beobungbu/BeeUI/issues/150). This document is
-the consolidated accessibility contract for the current public `@beeui/ui` component
+the consolidated accessibility contract for the current public `@beemvp/beeui-ui` component
 surface: what each component guarantees for roles/states, labels/descriptions, keyboard
 behavior, iOS/Android/Web differences, RTL, Dynamic Type/large text, reduced motion, and
 assistive-technology (AT) expectations, plus the exact evidence that backs each claim and

@@ -1,4 +1,4 @@
-import { Button, Card, HStack, Text, VStack } from '@beeui/ui';
+import { Button, Card, HStack, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { TrendIndicator, type TrendDirection } from './trend-indicator';
 

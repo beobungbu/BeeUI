@@ -23,13 +23,13 @@ test('isIdentifier accepts JS identifiers and rejects placeholders', () => {
 
 test('findHallucinatedSymbols ignores placeholders and flags unknown symbols', () => {
   const valid = new Set(['Button', 'Card']);
-  const src = "import { Button, … } from '@beeui/ui';\nimport { Nope } from '@beeui/ui';";
+  const src = "import { Button, … } from '@beemvp/beeui-ui';\nimport { Nope } from '@beemvp/beeui-ui';";
   assert.deepEqual(findHallucinatedSymbols(src, valid), ['Nope']);
 });
 
 test('findHallucinatedSymbols passes when all imports are real', () => {
   const valid = new Set(['Button', 'Card']);
-  const src = "import { Button, Card } from '@beeui/ui';";
+  const src = "import { Button, Card } from '@beemvp/beeui-ui';";
   assert.deepEqual(findHallucinatedSymbols(src, valid), []);
 });
 

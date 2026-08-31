@@ -30,7 +30,7 @@ import {
   SelectValue,
   Text,
   VStack,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { Keyboard, ScrollView, type TextInput } from 'react-native';
 

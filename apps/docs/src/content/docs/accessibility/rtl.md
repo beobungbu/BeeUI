@@ -6,7 +6,7 @@ description: Right-to-left layout and localized/long-content behavior.
 BeeUI resolves right-to-left (RTL) layout from one shared, stateless direction resolver
 rather than each component reading the platform independently. This is [ADR-004:
 Direction architecture](https://github.com/beobungbu/BeeUI/blob/main/docs/decisions/004-direction-architecture.md)
-in the source repository, implemented in `use-direction.ts` (`@beeui/ui`).
+in the source repository, implemented in `use-direction.ts` (`@beemvp/beeui-ui`).
 
 ## How direction is resolved
 

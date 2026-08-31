@@ -31,12 +31,12 @@ promise are reproducible **outside** this monorepo, the same bar
 
 The script does **not** copy BeeUI source into the consumer. Instead it:
 
-1. packs `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` with `pnpm pack`;
+1. packs `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` with `pnpm pack`;
 2. scaffolds a fresh Vite + `react-native-web` app (no Expo, no workspace symlinks);
 3. installs the tarballs plus the exact pinned runtime versions
    `docs/compatibility-matrix.md` already claims (`react-native-web@0.21.0`,
    `react@19.2.3`, `tailwindcss@4.3.3`, `uniwind@1.10.1`, and the same optional-native-peer
-   set `@beeui/ui` declares) through the consumer's normal `node_modules` boundary;
+   set `@beemvp/beeui-ui` declares) through the consumer's normal `node_modules` boundary;
 4. wires Web-bundler tooling this repo has not needed before: `vite-plugin-rnw` (aliases
    `react-native` → `react-native-web` and prioritizes `.web.tsx`/`.web.ts` resolution),
    `uniwind/vite` (the Vite-path equivalent of `apps/showcase/metro.config.js`'s

@@ -1,5 +1,5 @@
-import { cn } from '@beeui/core';
-import { spacing } from '@beeui/tokens';
+import { cn } from '@beemvp/beeui-core';
+import { spacing } from '@beemvp/beeui-tokens';
 import * as React from 'react';
 import {
   Modal,

@@ -1,4 +1,4 @@
-import { Avatar, Badge, Button, Card, EmptyState, HStack, Text, VStack } from '@beeui/ui';
+import { Avatar, Badge, Button, Card, EmptyState, HStack, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { Pressable } from 'react-native';
 import type { SocialNotification } from '../fixtures/social-fixtures';

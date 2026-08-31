@@ -1,4 +1,4 @@
-import { SettingsItem, Switch } from '@beeui/ui';
+import { SettingsItem, Switch } from '@beemvp/beeui-ui';
 import * as React from 'react';
 
 export type PreferenceRowProps = {

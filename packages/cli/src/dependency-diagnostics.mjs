@@ -19,7 +19,7 @@ const NATIVE_ONLY_PEERS = new Set(['react-native', 'react-native-safe-area-conte
 const WEB_ONLY_PEERS = new Set(['react-dom']);
 
 // Mirrors docs/compatibility-matrix.md's machine-checked `expoSdkRange`
-// (`"~57.0.0"`). Expo is not a `@beeui/ui` peerDependency (it is a
+// (`"~57.0.0"`). Expo is not a `@beemvp/beeui-ui` peerDependency (it is a
 // Showcase/app-level concern per that doc), so this floor is not derivable
 // from `registry/registry.json` the way the other rows are — it is
 // intentionally duplicated data, kept honest by

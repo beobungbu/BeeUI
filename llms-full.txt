@@ -2,21 +2,21 @@
 
 > Expanded stable-API, setup, compatibility, and architecture-contract detail for coding agents. Companion to llms.txt (compact index), llms-components.txt (component inventory), and llms-patterns.txt (patterns).
 
-STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beeui/*` package or CLI is on npm, no `v1.0.0` tag or GitHub Release exists, and the repository is private by owner decision. Package/CLI names and install commands below are release-ready-but-not-published targets, not live registry commands. Do not tell a user to `npm install @beeui/ui` or `npx @beeui/cli` yet — those resolve to nothing today. The working, in-repo path is the source-ownership CLI (`pnpm beeui -- add <component>`).
+STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm, no `v1.0.0` tag or GitHub Release exists, and the repository is private by owner decision. Package/CLI names and install commands below are release-ready-but-not-published targets, not live registry commands. Do not tell a user to `npm install @beemvp/beeui-ui` or `npx @beemvp/beeui-cli` yet — those resolve to nothing today. The working, in-repo path is the source-ownership CLI (`pnpm beeui -- add <component>`).
 
 ## What BeeUI is
-BeeUI is a reusable, mobile-first React Native UI foundation for long-lived client apps. The public component API stops at `@beeui/ui`; applications should not need to know the styling engine. Web support is additive and native ergonomics remain first-class. See [docs/architecture.md](docs/architecture.md).
+BeeUI is a reusable, mobile-first React Native UI foundation for long-lived client apps. The public component API stops at `@beemvp/beeui-ui`; applications should not need to know the styling engine. Web support is additive and native ergonomics remain first-class. See [docs/architecture.md](docs/architecture.md).
 
 ## Packages (all unpublished / pre-1.0, one lockstep version)
-- `@beeui/core` v0.1.0 — Engine-neutral utilities (class-name merging, anchored-overlay geometry) shared by @beeui/ui. No React, React Native, or Expo dependency. [unpublished (publishConfig.access=public prepared)]
-- `@beeui/tokens` v0.1.0 — BeeUI's design-token system: semantic color/spacing/typography/motion contracts and the canonical Uniwind/Tailwind theme CSS. [unpublished (publishConfig.access=public prepared)]
-- `@beeui/ui` v0.1.0 — Typed React Native + Web components built on @beeui/core and @beeui/tokens, styled through Uniwind/Tailwind. [unpublished (publishConfig.access=public prepared)]
+- `@beemvp/beeui-core` v0.1.0 — Engine-neutral utilities (class-name merging, anchored-overlay geometry) shared by @beemvp/beeui-ui. No React, React Native, or Expo dependency. [unpublished (publishConfig.access=public prepared)]
+- `@beemvp/beeui-tokens` v0.1.0 — BeeUI's design-token system: semantic color/spacing/typography/motion contracts and the canonical Uniwind/Tailwind theme CSS. [unpublished (publishConfig.access=public prepared)]
+- `@beemvp/beeui-ui` v0.1.0 — Typed React Native + Web components built on @beemvp/beeui-core and @beemvp/beeui-tokens, styled through Uniwind/Tailwind. [unpublished (publishConfig.access=public prepared)]
 
-`@beeui/core`, `@beeui/tokens`, and `@beeui/ui` share one lockstep version and are released together (ADR-011 D6). Package manifests declare `publishConfig.access=public` + provenance but remain unpublished; `exports` maps ship dual ESM+CJS with `.d.ts`, a `react-native` condition for Metro, `browser`/`default` for Web, and `@beeui/tokens/theme.css` for the Web theme.
+`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` share one lockstep version and are released together (ADR-011 D6). Package manifests declare `publishConfig.access=public` + provenance but remain unpublished; `exports` maps ship dual ESM+CJS with `.d.ts`, a `react-native` condition for Metro, `browser`/`default` for Web, and `@beemvp/beeui-tokens/theme.css` for the Web theme.
 
 ## Consumption models
-1. Centralized packages (release-ready target, NOT on npm): `npm i @beeui/ui` pulls `@beeui/core` + `@beeui/tokens`; import components from `@beeui/ui`; wire Web theme with `@import '@beeui/tokens/theme.css'`.
-2. Source ownership (works today, repo-local): `pnpm beeui -- add <component>` copies component source in-tree and rewrites `@beeui/core` imports via `rewrite-beeui-core-cn` / `rewrite-beeui-core-module`. Run `pnpm beeui -- list` for the canonical component list (generated from registry/registry.json). Future published CLI: `@beeui/cli` (binary `beeui`), `npx @beeui/cli add <component>` — never `npx beeui` (the unscoped name is an npm tombstone; see [docs/distribution-names.md](docs/distribution-names.md)).
+1. Centralized packages (release-ready target, NOT on npm): `npm i @beemvp/beeui-ui` pulls `@beemvp/beeui-core` + `@beemvp/beeui-tokens`; import components from `@beemvp/beeui-ui`; wire Web theme with `@import '@beemvp/beeui-tokens/theme.css'`.
+2. Source ownership (works today, repo-local): `pnpm beeui -- add <component>` copies component source in-tree and rewrites `@beemvp/beeui-core` imports via `rewrite-beeui-core-cn` / `rewrite-beeui-core-module`. Run `pnpm beeui -- list` for the canonical component list (generated from registry/registry.json). Future published CLI: `@beemvp/beeui-cli` (binary `beeui`), `npx @beemvp/beeui-cli add <component>` — never `npx beeui` (the unscoped name is an npm tombstone; see [docs/distribution-names.md](docs/distribution-names.md)).
 
 See [docs/decisions/011-distribution-architecture.md](docs/decisions/011-distribution-architecture.md) and [docs/registry-cli.md](docs/registry-cli.md).
 

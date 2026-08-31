@@ -3,7 +3,7 @@ import type {
   AnchoredOverlayCollisionPadding,
   AnchoredOverlayDirection,
   AnchoredOverlayPlacement,
-} from '@beeui/core';
+} from '@beemvp/beeui-core';
 import * as React from 'react';
 import type { PressableProps, StyleProp, ViewStyle } from 'react-native';
 import type { ButtonProps } from './button';

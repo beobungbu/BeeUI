@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fireEvent, render } from '@testing-library/react-native';
-import { BeeUIProvider } from '@beeui/ui';
+import { BeeUIProvider } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import type * as ReactTypes from 'react';
 import { Dimensions } from 'react-native';
@@ -223,7 +223,7 @@ describe('Showcase Pattern Gallery', () => {
     ];
     const source = files.map((file) => fs.readFileSync(file, 'utf8')).join('\n');
 
-    expect(source).not.toMatch(/from ['"]@beeui\/ui\//);
+    expect(source).not.toMatch(/from ['"]@beemvp\/beeui-ui\//);
     expect(source).not.toMatch(/packages\/(?:ui|core)\/src\//);
     expect(source).not.toMatch(/overlay-runtime/);
     expect(source).not.toMatch(/from ['"](?:expo-router|@react-navigation|react-router)/);

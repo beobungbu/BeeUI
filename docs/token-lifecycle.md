@@ -89,7 +89,7 @@ This makes the boolean's meaning precise: it controls replacement-alias serializ
 
 ## Machine-readable lifecycle metadata and migration report
 
-- `packages/tokens/src/lifecycle.json` is generated from canonical metadata. It reports the version/stability posture, the status vocabulary, the alias-kind distinction, a summary count by status, and the list of non-stable tokens (with replacement and removal target for deprecated ones). It is exported as `@beeui/tokens/lifecycle.json`.
+- `packages/tokens/src/lifecycle.json` is generated from canonical metadata. It reports the version/stability posture, the status vocabulary, the alias-kind distinction, a summary count by status, and the list of non-stable tokens (with replacement and removal target for deprecated ones). It is exported as `@beemvp/beeui-tokens/lifecycle.json`.
 - `pnpm tokens:migration-report` prints a deterministic Markdown migration/deprecation report from the same canonical metadata (use `--out <file>` to write it). It is generated, never hand-maintained, so release notes cannot drift from the source.
 
 ## Minimum compatibility window (pre-1.0)
@@ -127,7 +127,7 @@ Lifecycle metadata rides the existing DTCG 2025.10 model: the standard `$depreca
 When a token is deprecated, a consumer importing it sees the guidance directly:
 
 ```ts
-import { radius } from '@beeui/tokens';
+import { radius } from '@beemvp/beeui-tokens';
 
 // Editor shows: (property) "xs": number  — @deprecated Use `radius.sm`. Renamed for scale clarity.
 const r = radius['xs']; // strikethrough + tsserver deprecation hint

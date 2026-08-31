@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 @import 'uniwind';
-@import '@beeui/tokens/theme.css';
+@import '@beemvp/beeui-tokens/theme.css';
 
-@source '../node_modules/@beeui/core/src';
-@source '../node_modules/@beeui/ui/src';
+@source '../node_modules/@beemvp/beeui-core/src';
+@source '../node_modules/@beemvp/beeui-ui/src';

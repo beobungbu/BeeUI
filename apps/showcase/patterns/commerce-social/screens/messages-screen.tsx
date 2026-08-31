@@ -1,4 +1,4 @@
-import { EmptyState, SearchInput, Text, VStack } from '@beeui/ui';
+import { EmptyState, SearchInput, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import type { Conversation } from '../fixtures/social-fixtures';
 import { conversations } from '../fixtures/social-fixtures';

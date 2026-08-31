@@ -11,9 +11,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@beeui/core": "file:.beeui-tarballs/beeui-core-0.1.0.tgz",
-    "@beeui/tokens": "file:.beeui-tarballs/beeui-tokens-0.1.0.tgz",
-    "@beeui/ui": "file:.beeui-tarballs/beeui-ui-0.1.0.tgz",
+    "@beemvp/beeui-core": "file:.beeui-tarballs/beeui-core-0.1.0.tgz",
+    "@beemvp/beeui-tokens": "file:.beeui-tarballs/beeui-tokens-0.1.0.tgz",
+    "@beemvp/beeui-ui": "file:.beeui-tarballs/beeui-ui-0.1.0.tgz",
     "@gorhom/bottom-sheet": "5.2.14",
     "@react-native-community/datetimepicker": "9.1.0",
     "class-variance-authority": "0.7.1",

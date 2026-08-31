@@ -14,7 +14,7 @@ the authority for R7 (packages), R8 (CLI/source ownership), and R11 (release).
 
 Today all three packages are pre-publication. `packages/core/package.json`,
 `packages/tokens/package.json`, and `packages/ui/package.json` are each
-`"name": "@beeui/*"`, `"version": "0.1.0"`, `"private": true`, `"type": "module"`, and
+`"name": "@beemvp/beeui-*"`, `"version": "0.1.0"`, `"private": true`, `"type": "module"`, and
 their `exports` map points at raw TypeScript source (`"./src/index.ts"`, plus the token
 subpaths `./motion-runtime`, `./theme.css`, `./tokens.json`, `./tokens.resolver.json`,
 `./lifecycle.json`). `docs/release.md` records the current model plainly: "BeeUI is not
@@ -27,17 +27,17 @@ Two consumption models already coexist in the repository:
   and `scripts/verify-web-consumer.sh`, which `pnpm pack` all three packages
   (`beeui-core-*.tgz`, `beeui-tokens-*.tgz`, `beeui-ui-*.tgz`) and install them into an
   isolated bare-RN app and a Vite + react-native-web app with no monorepo fallback. The Web
-  consumer wires the theme through `@import '@beeui/tokens/theme.css'` in `src/global.css`.
+  consumer wires the theme through `@import '@beemvp/beeui-tokens/theme.css'` in `src/global.css`.
 - **Source ownership** — the Registry + `beeui add` CLI (`registry/registry.json`,
   `scripts/registry-lib.mjs`), which copies component source into the consumer project and
-  rewrites its `@beeui/core` imports via the two known transforms
+  rewrites its `@beemvp/beeui-core` imports via the two known transforms
   (`KNOWN_TRANSFORMS = { 'rewrite-beeui-core-cn', 'rewrite-beeui-core-module' }`).
 
 The source-ownership model has a known systemic gap,
 [#355](https://github.com/beobungbu/BeeUI/issues/355): copied component source imports
-runtime values from `@beeui/tokens` via bare specifiers (`import { spacing } from '@beeui/tokens'`,
-`import { resolveNativeMotion } from '@beeui/tokens/motion-runtime'`, `import { layer } from '@beeui/tokens'`),
-but `@beeui/tokens` is `private: true`, unpublished, and — unlike `@beeui/core` — has **no**
+runtime values from `@beemvp/beeui-tokens` via bare specifiers (`import { spacing } from '@beemvp/beeui-tokens'`,
+`import { resolveNativeMotion } from '@beemvp/beeui-tokens/motion-runtime'`, `import { layer } from '@beemvp/beeui-tokens'`),
+but `@beemvp/beeui-tokens` is `private: true`, unpublished, and — unlike `@beemvp/beeui-core` — has **no**
 registry item and **no** rewrite transform. The copied files therefore neither resolve
 (no npm package) nor vendor (no registry item), so a clean consumer of `sheet`, `popover`,
 `dropdown-menu`, `select`, `toast`, `tooltip`, `theme-scope`, `use-bee-token`, or the
@@ -67,13 +67,13 @@ downstream issue that implements it.
 
 ### D1 — Public package set: publish all three scoped packages
 
-`@beeui/core`, `@beeui/tokens`, and `@beeui/ui` are all published as **public** scoped
-packages. `@beeui/tokens` is promoted from private alongside the other two; it is not kept
+`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` are all published as **public** scoped
+packages. `@beemvp/beeui-tokens` is promoted from private alongside the other two; it is not kept
 private, because both the centralized model (the Web consumer's
-`@import '@beeui/tokens/theme.css'`) and the #355 fix (D5) depend on `@beeui/tokens` being
+`@import '@beemvp/beeui-tokens/theme.css'`) and the #355 fix (D5) depend on `@beemvp/beeui-tokens` being
 resolvable by name in a clean consumer.
 
-- **Rests on:** all three already carry `@beeui/*` names and `MIT` license
+- **Rests on:** all three already carry `@beemvp/beeui-*` names and `MIT` license
   (`packages/*/package.json`); the bare and Web consumer scripts already pack and install
   all three tarballs.
 - **Implemented by:** removing `"private": true` and finalizing publishable metadata is
@@ -118,7 +118,7 @@ Resolution is governed by the `exports` conditional map:
 - a **`react-native`** condition for Metro so native platform files resolve;
 - **Web** resolution (react-native-web) through the `browser` / `default` conditions;
 - a Metro-resolvable primary entry;
-- the Web theme delivered as a CSS subpath, `@beeui/tokens/theme.css`, exactly as
+- the Web theme delivered as a CSS subpath, `@beemvp/beeui-tokens/theme.css`, exactly as
   `scripts/verify-bare-consumer.sh` already imports it;
 - the `source` condition retained where it is useful (e.g. so Metro/uniwind `@source`
   scanning and the source-ownership path can still see `src`).
@@ -140,26 +140,26 @@ Resolution is governed by the `exports` conditional map:
 Both consumption models are supported and kept in **lockstep** so a component behaves
 identically whether installed or copied:
 
-- **(a) Centralized:** `npm i @beeui/ui` pulls `@beeui/core` and `@beeui/tokens` as normal
+- **(a) Centralized:** `npm i @beemvp/beeui-ui` pulls `@beemvp/beeui-core` and `@beemvp/beeui-tokens` as normal
   dependencies; the consumer imports from the published packages.
 - **(b) Source ownership:** `beeui add <component>` copies component source, rewrites its
-  `@beeui/core` imports via the existing `rewrite-beeui-core-cn` / `rewrite-beeui-core-module`
-  transforms, and — **the #355 fix** — resolves each copied file's `@beeui/tokens` runtime
-  imports by **declaring `@beeui/tokens` as a consumer dependency the CLI adds and records**,
+  `@beemvp/beeui-core` imports via the existing `rewrite-beeui-core-cn` / `rewrite-beeui-core-module`
+  transforms, and — **the #355 fix** — resolves each copied file's `@beemvp/beeui-tokens` runtime
+  imports by **declaring `@beemvp/beeui-tokens` as a consumer dependency the CLI adds and records**,
   rather than leaving a dangling bare specifier. This is now possible precisely because
-  D1 publishes `@beeui/tokens`: an installed, versioned `@beeui/tokens` is a resolvable
+  D1 publishes `@beemvp/beeui-tokens`: an installed, versioned `@beemvp/beeui-tokens` is a resolvable
   runtime dependency, so the copied source keeps importing `spacing`, `resolveMotion`,
-  `resolveNativeMotion`, and `layer` from `@beeui/tokens` and the CLI ensures that package
+  `resolveNativeMotion`, and `layer` from `@beemvp/beeui-tokens` and the CLI ensures that package
   is present in the consumer.
 
 This supersedes #355's originally-suggested acceptance — a new `core-tokens`-style registry
 item plus a `rewrite-beeui-tokens-module` transform that vendors a subset of
 `packages/tokens/src` into the consumer. That vendoring route existed only because
-`@beeui/tokens` was unpublished; once D1 publishes it, treating tokens as a declared runtime
+`@beemvp/beeui-tokens` was unpublished; once D1 publishes it, treating tokens as a declared runtime
 dependency is simpler and avoids fragmenting the token package (color/typography/spacing/
-motion resolvers, DTCG-derived constants, theme registry) across copied projects. `@beeui/core`
+motion resolvers, DTCG-derived constants, theme registry) across copied projects. `@beemvp/beeui-core`
 remains vendored-by-transform because it is the small utility surface (`cn`, module
-re-exports) the source-ownership model is designed to inline; `@beeui/tokens` is the shared
+re-exports) the source-ownership model is designed to inline; `@beemvp/beeui-tokens` is the shared
 design-token runtime and is better carried as a dependency than copied.
 
 The closure must also fix the **test gap**: the `beeui.test.mjs` "copied source contains no
@@ -179,7 +179,7 @@ skip CI again.
 
 All three packages share **one version** and are released together as a fixed/locked group
 (e.g. via Changesets configured as a fixed package group). The BeeUI 1.0.0 candidate is a
-single coordinated version bump across `@beeui/core`, `@beeui/tokens`, and `@beeui/ui`.
+single coordinated version bump across `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui`.
 
 - **Rests on:** `docs/release.md` already mandates one lockstep version matching the
   workspace root and forbids version drift; all three are `0.1.0` today.
@@ -220,14 +220,14 @@ Downstream gates this ADR authorizes but does not execute:
 | #200 | No | package output format (built ESM+CJS+`.d.ts`) |
 | #201 | No | final `exports` maps after #184 |
 | #205 | Yes (account/environment) | trusted-publishing / provenance account + `release` environment |
-| #217 (+#355) | No | registry CLI closure: `@beeui/tokens` resolution + test-gap fix |
+| #217 (+#355) | No | registry CLI closure: `@beemvp/beeui-tokens` resolution + test-gap fix |
 | #254 | Yes | the actual 1.0 publish command |
 
 ## Consequences
 
 - R7/R8/R11 issues inherit these seven decisions as settled architecture; they implement,
   they do not re-decide. Conflicts are raised against this ADR, not resolved silently.
-- `@beeui/tokens` stops being an internal-only package: D1 makes it public and D5 makes the
+- `@beemvp/beeui-tokens` stops being an internal-only package: D1 makes it public and D5 makes the
   source-ownership CLI depend on that. Reverting tokens to private would reopen #355.
 - The centralized packages gain a build step (D2/D3) and explicit conditional `exports`
   (D4); the raw-`src` export shape changes for the centralized path while `src` remains
@@ -250,5 +250,18 @@ Revisit if: a target consumer environment cannot honor conditional `exports` (fo
 different resolution contract under D4); npm trusted publishing / OIDC provenance is
 unavailable for the chosen account (changing D7's provenance mechanism); or the
 source-ownership model needs token *vendoring* after all (e.g. a consumer profile that must
-avoid a runtime `@beeui/tokens` dependency), which would reopen the D5 vendor-vs-depend
+avoid a runtime `@beemvp/beeui-tokens` dependency), which would reopen the D5 vendor-vs-depend
 choice that #355 originally raised.
+
+## Addendum (2026-08-30): npm scope changed from `@beeui` to `@beemvp` (model B)
+
+Owner decision: the public npm scope is **`@beemvp`** (Hive Enterprise's public-company org,
+the same pattern as `@shopify/polaris`), superseding the earlier model-A candidate of a
+`beeui`-only scope. D1's three libraries and D5/D6's CLI keep their package identity — only
+the scope prefix moved to `@beemvp`, with the former bare package name folded in as the
+`beeui-` name segment (e.g. the tokens library is now `@beemvp/beeui-tokens`). Subpath
+exports, the `beeui` binary name, and the internal `rewrite-beeui-core-*` transform ids are
+unaffected — this is a scope rename only, not a change to D1–D7's shape. The #198 owner action
+is now **reserve the npm org `@beemvp`** (superseding the earlier `beeui`-scope plan); see
+[docs/distribution-names.md](../distribution-names.md) for the updated availability evidence
+(all four `@beemvp/beeui-*` names verified 404/available).

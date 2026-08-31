@@ -8,7 +8,7 @@ import {
   SelectValue,
   type SelectContentProps,
   type SelectLabelProps,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
 import { Platform, Pressable, StyleSheet, UIManager, View } from 'react-native';

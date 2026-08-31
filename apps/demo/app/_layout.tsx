@@ -1,6 +1,6 @@
 import '../global.css';
 
-import { BeeUIProvider } from '@beeui/ui';
+import { BeeUIProvider } from '@beemvp/beeui-ui';
 import { Stack } from 'expo-router';
 import * as React from 'react';
 import { AppProviders } from '../src/providers/app-providers';

@@ -1,4 +1,4 @@
-import { Box, HStack, ListGroup, Separator, SettingsItem, Text, VStack } from '@beeui/ui';
+import { Box, HStack, ListGroup, Separator, SettingsItem, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { ProfileHeader } from '../components/profile-header';
 import { SettingsScreenShell } from '../components/settings-screen-shell';

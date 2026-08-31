@@ -1,4 +1,4 @@
-import { clockTimeFromLocalDate, cn, fromLocalDate, toLocalDate } from '@beeui/core';
+import { clockTimeFromLocalDate, cn, fromLocalDate, toLocalDate } from '@beemvp/beeui-core';
 import * as React from 'react';
 import NativeDateTimePicker, {
   DateTimePickerAndroid,

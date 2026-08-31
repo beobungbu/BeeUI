@@ -307,7 +307,7 @@ are covered by #176 and #177.
 ```
 
 **Value model**: `CalendarDate` (`{ year, month, day }`, `month` 1–12) and `ClockTime`
-(`{ hour, minute }`, `hour` 0–23) are plain, timezone-free objects (`@beeui/core`'s
+(`{ hour, minute }`, `hour` 0–23) are plain, timezone-free objects (`@beemvp/beeui-core`'s
 `calendar-date.ts`) — neither type carries a timezone field, so neither can express (and
 therefore cannot silently reintroduce) the classic `new Date('2026-01-15')`
 UTC-midnight day-shift bug. `Calendar`/`DatePicker` are controlled on

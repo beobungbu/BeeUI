@@ -17,7 +17,7 @@ import { classifyDeclaredRange } from './semver-lite.mjs';
 //    `<packageRoot>/dist/registry-lib.mjs` and additionally writes a
 //    self-contained snapshot of the registry plus every referenced source
 //    file into a sibling `<packageRoot>/dist/registry/` directory. A
-//    published `@beeui/cli` tarball never has access to the monorepo tree
+//    published `@beemvp/beeui-cli` tarball never has access to the monorepo tree
 //    (it is installed standalone into a consumer's node_modules), so at
 //    runtime it must resolve registry data and sources from that bundled
 //    snapshot instead.
@@ -270,7 +270,7 @@ async function loadIntegrityManifest(integrityPath) {
   } catch (error) {
     throw new Error(
       `bundled registry integrity manifest is missing or unreadable at ${integrityPath} (${error.message}); ` +
-        'the installed @beeui/cli package may be corrupted — reinstall the package',
+        'the installed @beemvp/beeui-cli package may be corrupted — reinstall the package',
     );
   }
   let manifest;
@@ -290,13 +290,13 @@ function verifySourceChecksum(relativeSource, content, manifest) {
   invariant(
     typeof expected === 'string',
     `registry integrity manifest has no checksum recorded for bundled source '${relativeSource}' ` +
-      '(registry/build drift) — rebuild @beeui/cli',
+      '(registry/build drift) — rebuild @beemvp/beeui-cli',
   );
   const digest = sha256Hex(content);
   invariant(
     digest === expected,
     `registry integrity check failed: bundled source '${relativeSource}' checksum mismatch ` +
-      `(expected ${expected}, computed ${digest}); the installed @beeui/cli package may be corrupted ` +
+      `(expected ${expected}, computed ${digest}); the installed @beemvp/beeui-cli package may be corrupted ` +
       'or tampered — reinstall the package',
   );
 }
@@ -318,7 +318,7 @@ export async function loadRegistry({
     invariant(
       digest === manifest.registry,
       `registry integrity check failed: bundled registry.json checksum mismatch ` +
-        `(expected ${manifest.registry}, computed ${digest}); the installed @beeui/cli package may be corrupted ` +
+        `(expected ${manifest.registry}, computed ${digest}); the installed @beemvp/beeui-cli package may be corrupted ` +
         'or tampered — reinstall the package',
     );
   }
@@ -477,7 +477,7 @@ function coreCnDestination(projectRoot, config, registry) {
 
 function coreOverlayDestination(projectRoot, config, registry) {
   const core = registry.items.find((item) => item.name === 'core-overlay');
-  invariant(core, "registry requires internal 'core-overlay' item for @beeui/core module rewriting");
+  invariant(core, "registry requires internal 'core-overlay' item for @beemvp/beeui-core module rewriting");
   const indexFile = core.files.find(
     (file) => file.target.root === 'lib' && file.target.path === 'core/index.ts',
   );
@@ -489,17 +489,17 @@ export function applyTransforms(source, transforms, { destination, projectRoot, 
   let output = source;
   for (const transform of transforms) {
     if (transform === 'rewrite-beeui-core-cn') {
-      const needle = "import { cn } from '@beeui/core';";
+      const needle = "import { cn } from '@beemvp/beeui-core';";
       const count = output.split(needle).length - 1;
-      invariant(count === 1, `transform '${transform}' expected exactly one @beeui/core cn import in ${path.relative(projectRoot, destination)}`);
+      invariant(count === 1, `transform '${transform}' expected exactly one @beemvp/beeui-core cn import in ${path.relative(projectRoot, destination)}`);
       const importPath = toImportSpecifier(destination, coreCnDestination(projectRoot, config, registry));
       output = output.replace(needle, `import { cn } from '${importPath}';`);
       continue;
     }
     if (transform === 'rewrite-beeui-core-module') {
-      const needle = "from '@beeui/core'";
+      const needle = "from '@beemvp/beeui-core'";
       const count = output.split(needle).length - 1;
-      invariant(count === 1, `transform '${transform}' expected exactly one @beeui/core module specifier in ${path.relative(projectRoot, destination)}`);
+      invariant(count === 1, `transform '${transform}' expected exactly one @beemvp/beeui-core module specifier in ${path.relative(projectRoot, destination)}`);
       const importPath = toImportSpecifier(destination, coreOverlayDestination(projectRoot, config, registry));
       output = output.replace(needle, `from '${importPath}'`);
       continue;
@@ -515,7 +515,7 @@ export function applyTransforms(source, transforms, { destination, projectRoot, 
 // `peerDependenciesMeta`'s `optional: true` set in `packages/ui/package.json`
 // (docs/registry-cli.md's "Supported registry entries" section documents the
 // same list in prose). Declared here — not read from `packages/ui/package.json`
-// at runtime — because a packed/published `@beeui/cli` tarball never ships
+// at runtime — because a packed/published `@beemvp/beeui-cli` tarball never ships
 // the monorepo's `packages/ui` tree (see this file's own header comment on
 // bundled vs dev mode); this small, rarely-changing set is duplicated
 // data, the same tradeoff docs/registry-cli.md already accepts for the

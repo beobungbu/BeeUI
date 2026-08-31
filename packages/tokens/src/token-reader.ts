@@ -18,7 +18,7 @@
 //   derivation, validation, and CSS-variable-name resolution only. It holds
 //   no mutable state, subscribes to nothing, and performs no I/O.
 // - The actual runtime read (Uniwind's `useCSSVariable` hook / the imperative
-//   `Uniwind.getCSSVariable()`) happens one layer up, in `@beeui/ui`
+//   `Uniwind.getCSSVariable()`) happens one layer up, in `@beemvp/beeui-ui`
 //   (`use-bee-token.ts`), which is the only place this feature touches
 //   `uniwind`. This module only tells that layer *which* CSS variable to ask
 //   Uniwind for and *how* to normalize whatever Uniwind returns — it never
@@ -31,7 +31,7 @@
 //   value is identical across every runtime theme and never runtime-mutable
 //   (spacing, typography, control/icon/avatar sizes, elevation, layer,
 //   focus-ring geometry, responsive layout) are intentionally not readable
-//   here — they are already ordinary typed exports in `@beeui/tokens`, correct
+//   here — they are already ordinary typed exports in `@beemvp/beeui-tokens`, correct
 //   to import directly (see `docs/data-typography.md`'s "Runtime-reader note").
 //   Private authoring primitives and build-time-only/invariant tokens (e.g.
 //   `breakpoint`) are simply never given a category entry, so they are

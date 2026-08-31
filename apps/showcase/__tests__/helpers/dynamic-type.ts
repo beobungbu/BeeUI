@@ -58,7 +58,7 @@ export function stressText(label: string, repeat = 6): string {
   return Array.from({ length: repeat }, () => label).join(' ');
 }
 
-/** Every `@beeui/ui` component source file, for source-level contract scans. */
+/** Every `@beemvp/beeui-ui` component source file, for source-level contract scans. */
 export const UI_COMPONENT_SOURCE_FILES = fs
   .readdirSync(COMPONENTS_DIR)
   .filter((name) => name.endsWith('.tsx') || name.endsWith('.ts'));
@@ -73,7 +73,7 @@ export function readAllComponentSources(): Record<string, string> {
 
 /**
  * Every intentional `numberOfLines` truncation point on the current public
- * `@beeui/ui` surface, with the product rationale. `occurrences` is the exact
+ * `@beemvp/beeui-ui` surface, with the product rationale. `occurrences` is the exact
  * count of `numberOfLines=` matches (`countNumberOfLinesUsages`) this file is
  * reviewed and expected to contain right now.
  *
@@ -105,7 +105,7 @@ export const INTENTIONAL_TRUNCATION_POINTS: Record<
 };
 
 /**
- * Every text-bearing `@beeui/ui` control whose row uses a fixed (`h-*`)
+ * Every text-bearing `@beemvp/beeui-ui` control whose row uses a fixed (`h-*`)
  * height class instead of a growable (`min-h-*`) one, with the rationale for
  * why that control is exempt from the "rows grow with scaled text" default.
  *

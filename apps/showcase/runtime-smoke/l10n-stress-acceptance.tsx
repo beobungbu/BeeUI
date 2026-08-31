@@ -35,7 +35,7 @@ import {
   TooltipTrigger,
   VStack,
   useToast,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { ScrollView } from 'react-native';
 import {

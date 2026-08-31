@@ -1,19 +1,19 @@
-# @beeui/ui
+# @beemvp/beeui-ui
 
-Typed React Native + Web components built on [`@beeui/core`](https://www.npmjs.com/package/@beeui/core) and [`@beeui/tokens`](https://www.npmjs.com/package/@beeui/tokens), styled through Uniwind/Tailwind CSS v4. Layout, typography, actions, forms, selection, navigation, disclosure, data-display, feedback, state, and application-pattern coverage — see [`docs/components.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/components.md) for the canonical inventory.
+Typed React Native + Web components built on [`@beemvp/beeui-core`](https://www.npmjs.com/package/@beemvp/beeui-core) and [`@beemvp/beeui-tokens`](https://www.npmjs.com/package/@beemvp/beeui-tokens), styled through Uniwind/Tailwind CSS v4. Layout, typography, actions, forms, selection, navigation, disclosure, data-display, feedback, state, and application-pattern coverage — see [`docs/components.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/components.md) for the canonical inventory.
 
 ## Install
 
 ```bash
-npm install @beeui/ui
+npm install @beemvp/beeui-ui
 ```
 
-`@beeui/core` and `@beeui/tokens` install automatically as dependencies. See [`docs/compatibility-matrix.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/compatibility-matrix.md) for the exact tested `react`/`react-native`/`uniwind`/`tailwindcss` peer ranges.
+`@beemvp/beeui-core` and `@beemvp/beeui-tokens` install automatically as dependencies. See [`docs/compatibility-matrix.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/compatibility-matrix.md) for the exact tested `react`/`react-native`/`uniwind`/`tailwindcss` peer ranges.
 
 ## Usage
 
 ```tsx
-import { BeeUIProvider, Button, Card, Text } from '@beeui/ui';
+import { BeeUIProvider, Button, Card, Text } from '@beemvp/beeui-ui';
 
 export function Example() {
   return (
@@ -30,7 +30,7 @@ export function Example() {
 Every public component also ships a granular subpath export, additive to the barrel above, for consumers who want a smaller bundle (~80% gzip reduction for a single-component import — see [ADR-012](https://github.com/beobungbu/BeeUI/blob/main/docs/decisions/012-granular-subpath-exports.md)):
 
 ```tsx
-import { Button } from '@beeui/ui/button';
+import { Button } from '@beemvp/beeui-ui/button';
 ```
 
 ## Package contents

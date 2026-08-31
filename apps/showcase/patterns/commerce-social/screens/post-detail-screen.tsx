@@ -1,4 +1,4 @@
-import { Avatar, Button, Card, HStack, Input, Separator, Text, VStack } from '@beeui/ui';
+import { Avatar, Button, Card, HStack, Input, Separator, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import type { SocialPost } from '../fixtures/social-fixtures';
 import { comments, posts } from '../fixtures/social-fixtures';

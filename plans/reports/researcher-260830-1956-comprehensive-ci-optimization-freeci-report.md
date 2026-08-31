@@ -277,11 +277,11 @@ runs:
 verify job runs:
 ```yaml
 - name: Bundle showcase for web
-  run: pnpm --filter @beeui/showcase exec expo export --platform web --output-dir dist-web
+  run: pnpm --filter @beemvp/beeui-showcase exec expo export --platform web --output-dir dist-web
 - name: Bundle showcase for Android
-  run: pnpm --filter @beeui/showcase exec expo export --platform android --output-dir dist-android
+  run: pnpm --filter @beemvp/beeui-showcase exec expo export --platform android --output-dir dist-android
 - name: Bundle showcase for iOS
-  run: pnpm --filter @beeui/showcase exec expo export --platform ios --output-dir dist-ios
+  run: pnpm --filter @beemvp/beeui-showcase exec expo export --platform ios --output-dir dist-ios
 ```
 
 These bundles (~50-100MB each, ~90-120s total) are:
@@ -327,7 +327,7 @@ Breakdown (from package.json):
 - tokens:test (token-lifecycle, etc.)
 - compat:test (compat matrix)
 - bench:test (benchmark sampler)
-- @beeui/showcase test (unit tests in showcase)
+- @beemvp/beeui-showcase test (unit tests in showcase)
 - registry:verify + registry:test (registry validation)
 
 **Total duration:** ~30-60s (estimated from prior runs; exact timing uncertain).
@@ -343,7 +343,7 @@ Checked Node 24 docs and release notes:
 
 1. **File-based glob split** (per-package jobs):
    - Job 1: `pnpm tokens:test && pnpm compat:test`
-   - Job 2: `pnpm bench:test && pnpm --filter @beeui/showcase test`
+   - Job 2: `pnpm bench:test && pnpm --filter @beemvp/beeui-showcase test`
    - Job 3: `pnpm registry:verify && pnpm registry:test`
    - Per-job overhead: ~10-15s (pnpm install already done via cache)
    - **Problem:** If any one script is slow, that job becomes bottleneck (no fine-grained parallelism)

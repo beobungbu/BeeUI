@@ -41,7 +41,7 @@ import {
   TooltipTrigger,
   type CalendarDate,
   type DateTimePickerValue,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { BackHandler, ScrollView } from 'react-native';
 

@@ -289,7 +289,7 @@ dependency at all.
    `sheet.native.tsx` wraps `@gorhom/bottom-sheet`'s `BottomSheet`/`BottomSheetModal`
    internally. `@gorhom/bottom-sheet`, `react-native-reanimated`, and
    `react-native-gesture-handler` become **optional** peer dependencies of
-   `@beeui/ui`, declared with `peerDependenciesMeta.optional: true` exactly like
+   `@beemvp/beeui-ui`, declared with `peerDependenciesMeta.optional: true` exactly like
    `react-dom` today, and reported by the registry CLI only for the `sheet` entry and
    anything that transitively depends on it — no other component's dependency set
    changes.
@@ -359,7 +359,7 @@ honestly-scoped compatibility-matrix row.
   reduced-motion policy table.
 - **#158 (native implementation)** must: add `@gorhom/bottom-sheet`,
   `react-native-reanimated`, and `react-native-gesture-handler` as optional peer
-  dependencies of `@beeui/ui`; wire `overrideReduceMotion` to BeeUI's existing
+  dependencies of `@beemvp/beeui-ui`; wire `overrideReduceMotion` to BeeUI's existing
   `AccessibilityInfo.isReduceMotionEnabled()` read; configure the adapter against
   BeeUI's existing `react-native-safe-area-context` peer; assert BeeUI's own
   accessibility contract on top of gorhom's defaults; and add the first

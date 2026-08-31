@@ -1,4 +1,4 @@
-import { Box, Screen, Text, VStack } from '@beeui/ui';
+import { Box, Screen, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { ScrollView } from 'react-native';
 

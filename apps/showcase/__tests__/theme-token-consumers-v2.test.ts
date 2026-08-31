@@ -1,6 +1,6 @@
-import { cn } from '@beeui/core';
-import { lineHeight } from '@beeui/tokens';
-import { buttonLabelVariants, buttonVariants, inputVariants, textVariants } from '@beeui/ui';
+import { cn } from '@beemvp/beeui-core';
+import { lineHeight } from '@beemvp/beeui-tokens';
+import { buttonLabelVariants, buttonVariants, inputVariants, textVariants } from '@beemvp/beeui-ui';
 import { getTextareaWebMinHeight } from '../../../packages/ui/src/components/textarea';
 import * as fs from 'node:fs';
 import * as path from 'node:path';

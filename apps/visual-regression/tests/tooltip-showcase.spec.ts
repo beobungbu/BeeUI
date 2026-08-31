@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 // BeeUI 1.0 #154 (R4A.4) — real-browser Tooltip evidence against the Showcase
 // Component Gallery's own "Tooltip" demo (`apps/showcase/component-gallery/
-// component-gallery.tsx`), now that Tooltip is on the public `@beeui/ui` barrel
+// component-gallery.tsx`), now that Tooltip is on the public `@beemvp/beeui-ui` barrel
 // (#155). The exact open/close-delay boundary, hoverable/dismissible/persistent
 // state machine, and Web accessibility-relationship wiring are already pinned
 // deterministically (fake timers, no real waits) by

@@ -1,4 +1,4 @@
-import { Button, Card, EmptyState, ErrorState, SearchInput, Tabs, TabsList, TabsTrigger, Text, VStack } from '@beeui/ui';
+import { Button, Card, EmptyState, ErrorState, SearchInput, Tabs, TabsList, TabsTrigger, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { ScreenShell } from '../components/screen-shell';
 import { TransactionRow, type TransactionRowData } from '../components/transaction-row';

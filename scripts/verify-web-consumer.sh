@@ -77,13 +77,13 @@ pack_beeui() {
   mkdir -p "${PACKAGE_DIR}"
 
   cd "${ROOT_DIR}"
-  pnpm --filter @beeui/core pack --pack-destination "${PACKAGE_DIR}"
-  pnpm --filter @beeui/tokens pack --pack-destination "${PACKAGE_DIR}"
-  pnpm --filter @beeui/ui pack --pack-destination "${PACKAGE_DIR}"
+  pnpm --filter @beemvp/beeui-core pack --pack-destination "${PACKAGE_DIR}"
+  pnpm --filter @beemvp/beeui-tokens pack --pack-destination "${PACKAGE_DIR}"
+  pnpm --filter @beemvp/beeui-ui pack --pack-destination "${PACKAGE_DIR}"
 
-  CORE_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beeui-core-*.tgz' -print -quit)"
-  TOKENS_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beeui-tokens-*.tgz' -print -quit)"
-  UI_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beeui-ui-*.tgz' -print -quit)"
+  CORE_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beemvp-beeui-core-*.tgz' -print -quit)"
+  TOKENS_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beemvp-beeui-tokens-*.tgz' -print -quit)"
+  UI_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beemvp-beeui-ui-*.tgz' -print -quit)"
 
   test -n "${CORE_TARBALL}" && test -f "${CORE_TARBALL}"
   test -n "${TOKENS_TARBALL}" && test -f "${TOKENS_TARBALL}"
@@ -135,10 +135,10 @@ EOF
   cat > src/global.css <<'EOF'
 @import 'tailwindcss';
 @import 'uniwind';
-@import '@beeui/tokens/theme.css';
+@import '@beemvp/beeui-tokens/theme.css';
 
-@source '../node_modules/@beeui/core/src';
-@source '../node_modules/@beeui/ui/src';
+@source '../node_modules/@beemvp/beeui-core/src';
+@source '../node_modules/@beemvp/beeui-ui/src';
 EOF
 
   cat > src/main.tsx <<'EOF'
@@ -206,12 +206,12 @@ import {
   TooltipContent,
   TooltipTrigger,
   type CalendarDate,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 // #204: proves a granular per-component subpath (ADR-012,
 // docs/decisions/012-granular-subpath-exports.md) resolves through Vite +
-// react-native-web from the packed @beeui/ui tarball, not just the barrel
+// react-native-web from the packed @beemvp/beeui-ui tarball, not just the barrel
 // import above.
-import { Badge } from '@beeui/ui/badge';
+import { Badge } from '@beemvp/beeui-ui/badge';
 import * as React from 'react';
 
 export function App() {
@@ -225,7 +225,7 @@ export function App() {
         <div style={{ padding: 24, maxWidth: 640, margin: '0 auto' }}>
           <Card className="gap-4">
             <Text variant="title">BeeUI Vite + react-native-web consumer smoke</Text>
-            <Badge>Granular subpath: @beeui/ui/badge</Badge>
+            <Badge>Granular subpath: @beemvp/beeui-ui/badge</Badge>
 
             <Input accessibilityLabel="Project name" placeholder="Project name" />
             <Checkbox checked={checked} label="Enable notifications" onCheckedChange={setChecked} />
@@ -315,10 +315,10 @@ page.on('console', (m) => {
 await page.goto(base, { waitUntil: 'networkidle' });
 await page.waitForSelector('text=BeeUI Vite + react-native-web consumer smoke');
 
-// #204: the granular @beeui/ui/badge subpath import actually rendered, not
+// #204: the granular @beemvp/beeui-ui/badge subpath import actually rendered, not
 // just compiled — proves ADR-012's subpath exports resolve end to end from
 // the packed tarball.
-await page.waitForSelector('text=Granular subpath: @beeui/ui/badge');
+await page.waitForSelector('text=Granular subpath: @beemvp/beeui-ui/badge');
 
 // Form control.
 await page.getByPlaceholder('Project name').fill('Hive Enterprise');
@@ -433,7 +433,7 @@ EOF
     cd "${APP_DIR}"
 
     echo "::group::Reinstall BeeUI tarballs into existing consumer"
-    rm -rf node_modules/@beeui
+    rm -rf node_modules/@beemvp
     npm install --save-exact \
       "${CORE_TARBALL}" \
       "${TOKENS_TARBALL}" \

@@ -4,8 +4,8 @@ import {
   getSafeAreaCollisionPadding,
   mergeOverlayCollisionPadding,
   windowRectToHostRect,
-} from '@beeui/core';
-import { BeeUIProvider } from '@beeui/ui';
+} from '@beemvp/beeui-core';
+import { BeeUIProvider } from '@beemvp/beeui-ui';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
 import { Text, View } from 'react-native';

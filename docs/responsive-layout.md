@@ -24,7 +24,7 @@ The set is deliberately minimal and evidence-based. Across the Showcase and all 
 
 ### Web-only, build-time constants
 
-Breakpoints are classified `web-responsive` / `build-time-constant` / `runtimeOverridable: false`. Tailwind compiles them into responsive variants at build time, so they cannot be a runtime override surface — a runtime-mutable breakpoint API is out of scope (that concern belongs to #71). The generated `breakpoint` TypeScript constant is a *readable* semantic value (`breakpoint.medium`, `breakpoint.expanded`) but is not an override path, and it must not be used to build a parallel media-query engine on native. `responsiveLayoutClassification` in `@beeui/tokens` records this classification.
+Breakpoints are classified `web-responsive` / `build-time-constant` / `runtimeOverridable: false`. Tailwind compiles them into responsive variants at build time, so they cannot be a runtime override surface — a runtime-mutable breakpoint API is out of scope (that concern belongs to #71). The generated `breakpoint` TypeScript constant is a *readable* semantic value (`breakpoint.medium`, `breakpoint.expanded`) but is not an override path, and it must not be used to build a parallel media-query engine on native. `responsiveLayoutClassification` in `@beemvp/beeui-tokens` records this classification.
 
 Generated web artifact (`packages/tokens/src/theme.css`):
 
@@ -37,7 +37,7 @@ This is intentionally a semantic-to-engine binding: TypeScript/application vocab
 
 ## Page gutters
 
-Semantic horizontal page-edge padding. Cross-platform: on web via the generated `--spacing-page-gutter-*` Tailwind utility (`px-page-gutter-compact`, …); on React Native via the `pageGutter` constant from `@beeui/tokens`.
+Semantic horizontal page-edge padding. Cross-platform: on web via the generated `--spacing-page-gutter-*` Tailwind utility (`px-page-gutter-compact`, …); on React Native via the `pageGutter` constant from `@beemvp/beeui-tokens`.
 
 | Token | Value | Intent |
 | --- | --- | --- |

@@ -1,7 +1,7 @@
-# @beeui/demo
+# @beemvp/beeui-demo
 
 The production reference application (ADR-013, `docs/decisions/013-production-demo-
-architecture.md`) — one coherent, routed, multi-screen Expo app proving `@beeui/ui` in a
+architecture.md`) — one coherent, routed, multi-screen Expo app proving `@beemvp/beeui-ui` in a
 realistic application flow, not a component catalog. Unlike `apps/showcase` (which
 deliberately "owns no router"), this app owns its own navigation, mock data/service layer,
 and application state — exactly what a BeeUI consumer app would.
@@ -11,22 +11,22 @@ functional screens are separate, parallel lanes (#259 dashboard, #260 records ta
 record detail/edit, #262 scheduling, #263 settings + final integration) that fill in the
 placeholder routes this shell already wires up.
 
-> **Unpublished status.** BeeUI is pre-1.0 and unpublished — no `@beeui/*` package or the
+> **Unpublished status.** BeeUI is pre-1.0 and unpublished — no `@beemvp/beeui-*` package or the
 > `beeui` CLI is on npm. This app dogfoods the **published package shape** (public
-> `@beeui/ui`/`@beeui/tokens` barrel imports only, never `packages/**/src/**` deep paths)
+> `@beemvp/beeui-ui`/`@beemvp/beeui-tokens` barrel imports only, never `packages/**/src/**` deep paths)
 > resolved through the pnpm workspace during development, exactly like `apps/showcase`.
 
 ## Architecture (owned by #258)
 
 - **Consumption model.** Package-consumption only (ADR-013 D1) — imports come from
-  `@beeui/ui`/`@beeui/tokens` public exports.
+  `@beemvp/beeui-ui`/`@beemvp/beeui-tokens` public exports.
 - **Navigation.** App-owned [Expo Router](https://docs.expo.dev/router/introduction/)
   (ADR-013 D3). BeeUI supplies chrome only (`Screen`, `SafeArea`, `AppHeader`,
   `BottomActionBar`, `Box`/`VStack`); the tab bar/side-rail items, routing, and the
   responsive layout switch are application-owned (`src/shell/**`).
 - **Responsive shell.** Compact (`< 768px`) renders a bottom tab bar; `medium`/`expanded`
   promote to a persistent side rail — the single documented native/Web width-switch
-  pattern from `docs/responsive-layout.md`, driven by `@beeui/tokens`' `breakpoint` values
+  pattern from `docs/responsive-layout.md`, driven by `@beemvp/beeui-tokens`' `breakpoint` values
   (`src/shell/responsive-nav.ts`), never a literal or a second media-query engine.
 - **State & data.** No global store framework. `src/services/**` is the thin, replaceable
   mock-service seam (`mockFetch`) plus the shared `useAsync` idle/loading/success/empty/

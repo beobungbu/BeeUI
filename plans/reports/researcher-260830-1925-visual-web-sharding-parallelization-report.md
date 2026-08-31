@@ -303,7 +303,7 @@ jobs:
           corepack prepare "pnpm@${PNPM_VERSION}" --activate
           pnpm install --frozen-lockfile --prefer-offline
       - name: Bundle showcase for ${{ matrix.platform }}
-        run: pnpm --filter @beeui/showcase exec expo export --platform ${{ matrix.platform }} --output-dir dist-${{ matrix.platform }}
+        run: pnpm --filter @beemvp/beeui-showcase exec expo export --platform ${{ matrix.platform }} --output-dir dist-${{ matrix.platform }}
 ```
 
 **Risks:**

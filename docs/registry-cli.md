@@ -3,8 +3,8 @@
 ## Status
 
 This is BeeUI's pre-1.0 source-ownership workflow. The CLI engine now lives in the
-publishable `packages/cli` (`@beeui/cli`) package (#209), but it is **not published to
-npm**: do not describe it as `npx @beeui/cli` yet. Publication waits for the owner-gated
+publishable `packages/cli` (`@beemvp/beeui-cli`) package (#209), but it is **not published to
+npm**: do not describe it as `npx @beemvp/beeui-cli` yet. Publication waits for the owner-gated
 1.0 release (`docs/beeui-1.0-owner-gates.md` #254).
 
 Current repository-local entry points (unchanged for contributors — `pnpm beeui` delegates
@@ -33,7 +33,7 @@ is exactly:
 | Command | Arguments | Purpose |
 | --- | --- | --- |
 | `help` / `--help` / `-h` | none | Print usage. |
-| `version` / `--version` / `-v` | none | Print the installed `@beeui/cli` name and version. |
+| `version` / `--version` / `-v` | none | Print the installed `@beemvp/beeui-cli` name and version. |
 | `list` | none | Print the full addable public registry surface, sorted, one per line. |
 | `init` | none | Create `beeui.config.json` (never overwrites an existing valid config). |
 | `add <items...>` | one or more registry item names | Preflight and copy source plus transitive BeeUI dependencies. |
@@ -74,8 +74,8 @@ Two thin entry points call the same engine:
 - `scripts/beeui.mjs` (repo root) re-exports `packages/cli/src/beeui.mjs` directly, so
   `pnpm beeui -- <command>` keeps working with no build step, against the live monorepo
   registry and component source.
-- The publishable `@beeui/cli` package's `bin` (`packages/cli/dist/beeui.mjs`, produced by
-  `pnpm --filter @beeui/cli run build`) runs the same engine standalone.
+- The publishable `@beemvp/beeui-cli` package's `bin` (`packages/cli/dist/beeui.mjs`, produced by
+  `pnpm --filter @beemvp/beeui-cli run build`) runs the same engine standalone.
 
 **Registry-data-shipping decision:** `registry/registry.json` records component sources as
 monorepo-relative paths (e.g. `packages/ui/src/components/button.tsx`), which only resolve
@@ -105,21 +105,21 @@ Registry coverage has expanded from the initial 6-component slice to the full st
 
 Internal transitive entries (not directly addable, but resolved automatically):
 
-- `core-cn` — the `cn` helper required by most components (single-symbol `@beeui/core` import)
+- `core-cn` — the `cn` helper required by most components (single-symbol `@beemvp/beeui-core` import)
 - `field-context` — the field context required by `input`/`field`
 - `form-group-context` — the form-group context required by `form-group`/`radio`
 - `use-required-callback-warning` — the dev-mode controlled-usage warning shared by `checkbox`, `radio`, `segmented-control`, `switch`, `tabs`, `table`
-- `core-overlay` — a copy of `@beeui/core`'s cn/anchored-overlay/calendar-date/overlay-runtime utilities, used by components whose `@beeui/core` import mixes `cn` with anchored-overlay types/functions (`popover`, `dropdown-menu`, `select`, `tooltip`, and the `overlay-runtime`/`use-direction` utilities themselves) or with `calendar-date` functions/types (`calendar`, `date-picker`, `date-time-picker`, #178)
+- `core-overlay` — a copy of `@beemvp/beeui-core`'s cn/anchored-overlay/calendar-date/overlay-runtime utilities, used by components whose `@beemvp/beeui-core` import mixes `cn` with anchored-overlay types/functions (`popover`, `dropdown-menu`, `select`, `tooltip`, and the `overlay-runtime`/`use-direction` utilities themselves) or with `calendar-date` functions/types (`calendar`, `date-picker`, `date-time-picker`, #178)
 - `overlay-runtime` — the shared anchored-overlay runtime/transport kernel (`overlay-runtime.tsx` plus its platform transport/dismiss-event files), required by `dialog`, `popover`, `dropdown-menu`, `select`, `tooltip`, and `safe-area`
 - `use-direction` — the single stateless logical-direction resolver (ADR-004, `use-direction.ts`) required by every component that defaults a `direction` prop from ambient RTL/LTR state: `breadcrumb`, `calendar`, `dropdown-menu`, `pagination`, `popover`, `select`, `table`, and `tooltip` all declare it as an explicit registry dependency (#319 closed the gap where `breadcrumb`/`dropdown-menu`/`pagination`/`popover`/`select` imported the module at the source level without declaring it here)
 
-**Resolved — `@beeui/tokens` runtime imports (#355):** `dropdown-menu`, `overlay-runtime`, `popover`, `select`, `sheet`/`sheet.web`/`sheet.native`, `theme-scope`, `toast`, `tooltip.web`/`tooltip.native`, and `use-bee-token` import runtime values (`layer`, `spacing`, `resolveMotion`, `resolveNativeMotion`, and others) directly from `@beeui/tokens`. Unlike `@beeui/core`, this import is **not vendored**: per [ADR-011](decisions/011-distribution-architecture.md) D5, `@beeui/tokens` is now a published package (#199/#200), so each affected registry item declares `@beeui/tokens` in its `dependencies` map instead. `beeui add` reports it the same way it reports any other external package requirement (`pnpm beeui -- add sheet` prints `dependency @beeui/tokens@<range> [declared in dependencies as <range> | missing from package.json]`) — the copied source keeps its resolvable `@beeui/tokens` import, and the consumer installs the package like any other declared dependency.
+**Resolved — `@beemvp/beeui-tokens` runtime imports (#355):** `dropdown-menu`, `overlay-runtime`, `popover`, `select`, `sheet`/`sheet.web`/`sheet.native`, `theme-scope`, `toast`, `tooltip.web`/`tooltip.native`, and `use-bee-token` import runtime values (`layer`, `spacing`, `resolveMotion`, `resolveNativeMotion`, and others) directly from `@beemvp/beeui-tokens`. Unlike `@beemvp/beeui-core`, this import is **not vendored**: per [ADR-011](decisions/011-distribution-architecture.md) D5, `@beemvp/beeui-tokens` is now a published package (#199/#200), so each affected registry item declares `@beemvp/beeui-tokens` in its `dependencies` map instead. `beeui add` reports it the same way it reports any other external package requirement (`pnpm beeui -- add sheet` prints `dependency @beemvp/beeui-tokens@<range> [declared in dependencies as <range> | missing from package.json]`) — the copied source keeps its resolvable `@beemvp/beeui-tokens` import, and the consumer installs the package like any other declared dependency.
 
-`button` remains a representative vertical slice. Adding it resolves and copies `core-cn`, `theme`, `text`, and `button` in deterministic dependency order. The resulting Button source imports the copied consumer-local `cn` helper rather than `@beeui/core`.
+`button` remains a representative vertical slice. Adding it resolves and copies `core-cn`, `theme`, `text`, and `button` in deterministic dependency order. The resulting Button source imports the copied consumer-local `cn` helper rather than `@beemvp/beeui-core`.
 
-`popover` (or `dropdown-menu`/`select`) is the representative anchored-overlay slice: it resolves `core-cn -> theme -> text -> button -> core-overlay -> overlay-runtime -> popover`, and its `@beeui/core` import is rewritten to point at the copied `core-overlay` barrel (`lib/core/index`) via the `rewrite-beeui-core-module` transform (see below).
+`popover` (or `dropdown-menu`/`select`) is the representative anchored-overlay slice: it resolves `core-cn -> theme -> text -> button -> core-overlay -> overlay-runtime -> popover`, and its `@beemvp/beeui-core` import is rewritten to point at the copied `core-overlay` barrel (`lib/core/index`) via the `rewrite-beeui-core-module` transform (see below).
 
-`sheet` is the representative optional-native-adapter slice: it resolves `core-cn -> theme -> text -> button -> core-overlay -> overlay-runtime -> sheet` (its `sheet.tsx`/`sheet.web.tsx`/`sheet.native.tsx` files use the single-symbol `import { cn } from '@beeui/core'` form, so they use `rewrite-beeui-core-cn`, not `rewrite-beeui-core-module`), and reports the four `@gorhom/bottom-sheet`/Reanimated/Gesture-Handler/Worklets optional native peers described above only because `sheet` itself was requested.
+`sheet` is the representative optional-native-adapter slice: it resolves `core-cn -> theme -> text -> button -> core-overlay -> overlay-runtime -> sheet` (its `sheet.tsx`/`sheet.web.tsx`/`sheet.native.tsx` files use the single-symbol `import { cn } from '@beemvp/beeui-core'` form, so they use `rewrite-beeui-core-cn`, not `rewrite-beeui-core-module`), and reports the four `@gorhom/bottom-sheet`/Reanimated/Gesture-Handler/Worklets optional native peers described above only because `sheet` itself was requested.
 
 ## Configuration
 
@@ -257,16 +257,16 @@ Two narrow source transforms are supported: `rewrite-beeui-core-cn` and `rewrite
 Most component source contains the exact single-symbol import:
 
 ```ts
-import { cn } from '@beeui/core';
+import { cn } from '@beemvp/beeui-core';
 ```
 
 `rewrite-beeui-core-cn` rewrites that exact import to the relative path of the copied `core-cn` destination in the consumer project. The transform fails if the expected import appears zero times or more than once, which makes upstream source drift visible instead of applying a broad regex heuristic.
 
-A smaller set of files (`popover`, `dropdown-menu`, `select`, `tooltip`, and the internal `overlay-runtime`/`use-direction` utilities) import multiple symbols from `@beeui/core` in one statement, or a type-only symbol on its own — `cn` alongside anchored-overlay types/functions, or anchored-overlay types/functions alone. `rewrite-beeui-core-module` rewrites only the `'@beeui/core'` module specifier itself (not the imported symbol list) to the relative path of the copied `core-overlay` barrel (`lib/core/index`), which re-exports the same `cn`/anchored-overlay/overlay-runtime surface from mirrored, self-contained copied source. The transform fails the same way if the specifier appears zero times or more than once in the file.
+A smaller set of files (`popover`, `dropdown-menu`, `select`, `tooltip`, and the internal `overlay-runtime`/`use-direction` utilities) import multiple symbols from `@beemvp/beeui-core` in one statement, or a type-only symbol on its own — `cn` alongside anchored-overlay types/functions, or anchored-overlay types/functions alone. `rewrite-beeui-core-module` rewrites only the `'@beemvp/beeui-core'` module specifier itself (not the imported symbol list) to the relative path of the copied `core-overlay` barrel (`lib/core/index`), which re-exports the same `cn`/anchored-overlay/overlay-runtime surface from mirrored, self-contained copied source. The transform fails the same way if the specifier appears zero times or more than once in the file.
 
 Other imports are copied unchanged. Relative component imports such as `./text` and `./field-context` remain valid because those dependencies are explicitly represented in the registry and copied into the same configured components directory.
 
-Copied output is tested to contain no `workspace:*` references, no `@beeui/*` runtime imports, and no references back into monorepo `packages/` paths.
+Copied output is tested to contain no `workspace:*` references, no `@beemvp/beeui-*` runtime imports, and no references back into monorepo `packages/` paths.
 
 ## Theme/token contract
 
@@ -404,21 +404,21 @@ it is a report, not a gate.
 
 ## Registry delivery and integrity (#216)
 
-**Delivery strategy: bundled, not remote.** `@beeui/cli` ships its own frozen registry
+**Delivery strategy: bundled, not remote.** `@beemvp/beeui-cli` ships its own frozen registry
 snapshot inside the published tarball (`dist/registry/registry.json` + `dist/registry/sources/`,
 built by `packages/cli/scripts/build.mjs`, see "CLI packaging" above). There is no remote
 registry endpoint, no version-negotiation network call, and no "fetch the latest registry"
 behavior of any kind. This is a deliberate choice over a versioned static remote registry or
 a hybrid: it makes the CLI fully offline-capable (no network access is ever required for
 `init`/`list`/`add`/`doctor`) and it makes "which component source will `add button` copy"
-a question with exactly one answer per installed `@beeui/cli` version — there is no
+a question with exactly one answer per installed `@beemvp/beeui-cli` version — there is no
 separate remote registry version to fall out of sync with the installed CLI.
 
 **Version pairing.** The registry snapshot, its bundled sources, and the checksum manifest
 below are all written by the same build step from the same commit, and all ship inside the
-same npm tarball as the `beeui` binary itself. A given installed `@beeui/cli` version can
+same npm tarball as the `beeui` binary itself. A given installed `@beemvp/beeui-cli` version can
 therefore never observe a registry/source pairing other than the one it was built and
-published with; `npm install @beeui/cli@x.y.z` always pins all three together.
+published with; `npm install @beemvp/beeui-cli@x.y.z` always pins all three together.
 
 **Integrity/checksum controls.** The build writes `dist/registry/integrity.json`: a sha256
 digest of `registry.json` itself, plus a sha256 digest of every unique bundled source file,
@@ -449,8 +449,8 @@ already prove it for the repository-local dev-mode registry (see "Tests" below).
 
 **Compatibility with source-ownership updates and the 1.0 freeze.** Because delivery is
 bundle-per-release rather than a mutable remote source, a consumer who has already copied
-BeeUI source into their project is never affected by a later `@beeui/cli` release changing
-what a fresh `add` would produce — they would have to explicitly upgrade `@beeui/cli` and
+BeeUI source into their project is never affected by a later `@beemvp/beeui-cli` release changing
+what a fresh `add` would produce — they would have to explicitly upgrade `@beemvp/beeui-cli` and
 re-run `add`. Until the owner-gated 1.0 release (`docs/beeui-1.0-owner-gates.md` #254),
 this package is not published at all, so no compatibility promise is made yet beyond what
 this document and its tests already prove against packed artifacts.
@@ -513,7 +513,7 @@ Generated/copied source contains no timestamps or machine-specific absolute path
 - duplicate targets
 - registry source traversal
 - deterministic request normalization/plan
-- no `workspace:*` / `@beeui/*` / monorepo package imports in copied output
+- no `workspace:*` / `@beemvp/beeui-*` / monorepo package imports in copied output
 - TypeScript/TSX transpile syntax smoke
 - copied relative-import graph resolution
 - no partial writes after preflight collision
@@ -549,14 +549,14 @@ unit-tested engine — refuses tampered bundled data.
 
 The root `pnpm test` command also runs `pnpm registry:verify` and `pnpm registry:test` after the existing showcase test suite.
 
-## Why there is no public `npx @beeui/cli` yet
+## Why there is no public `npx @beemvp/beeui-cli` yet
 
-`packages/cli` (`@beeui/cli`) now exists as a publication-ready, packed artifact (#209):
+`packages/cli` (`@beemvp/beeui-cli`) now exists as a publication-ready, packed artifact (#209):
 it packs and installs standalone, its `beeui` bin runs end-to-end against a bundled
 registry snapshot with no monorepo tree present, and `pnpm release:verify` proves this on
 every run. It is still **not published to npm**. No package or CLI is published until the
 owner explicitly commands the 1.0 release (`docs/beeui-1.0-owner-gates.md` #254); until
-then, do not document or advertise `npx @beeui/cli` as available.
+then, do not document or advertise `npx @beemvp/beeui-cli` as available.
 
 ## Roadmap
 

@@ -1,4 +1,4 @@
-import { EmptyState, KeyboardAwareScreen } from '@beeui/ui';
+import { EmptyState, KeyboardAwareScreen } from '@beemvp/beeui-ui';
 import * as React from 'react';
 
 export type RoutePlaceholderProps = {

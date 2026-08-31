@@ -137,11 +137,11 @@ export function buildGuardRules(source) {
         const category = namespace ? namespace.readerCategory : undefined;
         const helperName = namespace ? namespace.helperName : undefined;
         const readerGuidance = category
-          ? `use \`useBeeToken('${category}.<key>')\`/\`getBeeToken('${category}.<key>')\` from @beeui/ui`
-          : 'use the typed BeeUI runtime-token reader (useBeeToken/getBeeToken) from @beeui/ui';
+          ? `use \`useBeeToken('${category}.<key>')\`/\`getBeeToken('${category}.<key>')\` from @beemvp/beeui-ui`
+          : 'use the typed BeeUI runtime-token reader (useBeeToken/getBeeToken) from @beemvp/beeui-ui';
         const utilityGuidance = category === 'colors' ? ', the generated Tailwind semantic utility class,' : '';
         const helperGuidance = helperName
-          ? ` or the \`${helperName}()\` helper from @beeui/tokens if you need the variable name as a string`
+          ? ` or the \`${helperName}()\` helper from @beemvp/beeui-tokens if you need the variable name as a string`
           : '';
         return (
           `unsupported raw CSS custom-property access "${match}". A typed BeeUI path already ` +
@@ -172,7 +172,7 @@ export function buildGuardRules(source) {
           "variable name, bypassing BeeUI's typed reader. Use " +
           `\`useBeeToken('${category}.<key>')\` (inside a hook/component) or ` +
           `\`getBeeToken('${category}.<key>')\` (imperative, global-theme-only) from ` +
-          '@beeui/ui instead — see packages/ui/src/components/use-bee-token.ts and ' +
+          '@beemvp/beeui-ui instead — see packages/ui/src/components/use-bee-token.ts and ' +
           'docs/token-consumption-guard.md.'
         );
       },

@@ -15,9 +15,9 @@ Application / domain UI
 production patterns / Showcase adapters
         |
         v
-@beeui/ui                 typed React Native components
+@beemvp/beeui-ui                 typed React Native components
         |
-        +---- @beeui/core engine-neutral helpers
+        +---- @beemvp/beeui-core engine-neutral helpers
         |
         +---- semantic class contract
         v
@@ -28,21 +28,21 @@ Uniwind OSS + Tailwind v4 (current implementation)
 React Native primitives
 ```
 
-The public component API stops at `@beeui/ui`. Applications should not need to know which styling engine implements a BeeUI component.
+The public component API stops at `@beemvp/beeui-ui`. Applications should not need to know which styling engine implements a BeeUI component.
 
 ## Package and application responsibilities
 
-### `@beeui/tokens`
+### `@beemvp/beeui-tokens`
 
 Owns the design vocabulary: semantic color names, spacing/radius contracts, and the canonical CSS theme consumed by the current Uniwind implementation.
 
 Theme Tokens v3 is shipped: canonical DTCG token source/codegen, a typed theme registry/scoping system, runtime overrides/readers, density, high contrast, semantic data-viz, and motion/layout/typography/lifecycle contracts, enforced by strict semantic-consumption guardrails (see `docs/roadmap.md`). Future extensions to this semantic layer, such as expanded branding/focus contracts, should preserve those guardrails rather than leak styling-engine APIs into components.
 
-### `@beeui/core`
+### `@beemvp/beeui-core`
 
 Owns small engine-neutral utilities such as anchored-overlay geometry. It must not import Expo or application code.
 
-### `@beeui/ui`
+### `@beemvp/beeui-ui`
 
 Owns reusable React Native components. Components preserve native props, add typed variants/behavior, and apply semantic styling.
 
@@ -71,9 +71,9 @@ The Gallery layer uses structural assertions and in-memory screenshots. It does 
 ### `registry/` + `packages/cli`
 
 Own the current source-ownership distribution path. The engine is a single shared
-implementation in `packages/cli/src/` (`@beeui/cli`, #209), used both as the repo-local
+implementation in `packages/cli/src/` (`@beemvp/beeui-cli`, #209), used both as the repo-local
 `pnpm beeui -- <command>` and as a publication-ready packed CLI (`docs/registry-cli.md`).
-It is implemented and tested, but not yet a public `npx @beeui/cli` or remote registry
+It is implemented and tested, but not yet a public `npx @beemvp/beeui-cli` or remote registry
 product.
 
 ## Theme contract
@@ -137,19 +137,19 @@ Toast v1 is separate from modal and anchored overlays. The provider-local Toast 
 
 ## Anchored overlay geometry contract
 
-The first anchored-overlay layer is pure `@beeui/core` geometry. It has no React, RN, Expo, DOM, portal, gesture, or keyboard dependency.
+The first anchored-overlay layer is pure `@beemvp/beeui-core` geometry. It has no React, RN, Expo, DOM, portal, gesture, or keyboard dependency.
 
 `resolveAnchoredOverlayPosition()` accepts measured anchor/overlay/viewport geometry plus preferred placement, alignment, direction, offsets, and collision padding. It supports four sides and logical alignment with deterministic flip/shift, finite normalization, and RTL rules. The geometry layer does not own rendering, measurement, dismissal, focus, portal behavior, or state.
 
 ## Logical direction contract
 
-Direction (LTR/RTL) resolves through one stateless resolver in `@beeui/ui` (`components/use-direction.ts`), per ADR-004. There is no direction context, store, or observer. `resolveDirection(explicit?)` applies a single precedence order — an explicit per-component value, then the platform ambient authority (`I18nManager.isRTL` on native, `document.documentElement.dir` on Web), then an `'ltr'` fallback — reading the ambient authority fresh on every call rather than subscribing to it. `Popover`, `DropdownMenu`, and `Select` default their `direction` prop through this one resolver instead of each duplicating an inline `I18nManager.isRTL` read; any future anchored-geometry component that needs JS-level direction resolution consumes the same resolver. BeeUI only reads these authorities and never writes them: applying an ambient RTL/LTR mode (native `I18nManager.forceRTL()` + reload, or setting the DOM `dir`) stays the host application's responsibility, and the host owns triggering the re-render (Web) or reload (native) when direction changes.
+Direction (LTR/RTL) resolves through one stateless resolver in `@beemvp/beeui-ui` (`components/use-direction.ts`), per ADR-004. There is no direction context, store, or observer. `resolveDirection(explicit?)` applies a single precedence order — an explicit per-component value, then the platform ambient authority (`I18nManager.isRTL` on native, `document.documentElement.dir` on Web), then an `'ltr'` fallback — reading the ambient authority fresh on every call rather than subscribing to it. `Popover`, `DropdownMenu`, and `Select` default their `direction` prop through this one resolver instead of each duplicating an inline `I18nManager.isRTL` read; any future anchored-geometry component that needs JS-level direction resolution consumes the same resolver. BeeUI only reads these authorities and never writes them: applying an ambient RTL/LTR mode (native `I18nManager.forceRTL()` + reload, or setting the DOM `dir`) stays the host application's responsibility, and the host owns triggering the re-render (Web) or reload (native) when direction changes.
 
 Component-level `start`/`end` semantics resolve against that same value. Logical spacing/alignment utilities (e.g. `pe-*`, `text-end`) and logical child slots (`leading`/`trailing`) mirror through React Native's own Yoga `direction` on the enclosing `View` subtree — BeeUI relies on that platform mechanism rather than reimplementing it. Directional default glyphs that encode logical navigation (pagination previous/next chevrons, the breadcrumb separator) flip with the resolved direction; inherently directional content (numerals, media-transport glyphs) stays physical.
 
 ## Anchored overlay runtime contract
 
-The second layer lives internally in `@beeui/ui` and is installed by `BeeUIProvider`.
+The second layer lives internally in `@beemvp/beeui-ui` and is installed by `BeeUIProvider`.
 
 One application runtime owns:
 
@@ -232,7 +232,7 @@ Current paths are workspace links, `pnpm pack` tarballs for boundary verificatio
 
 ## Pattern architecture
 
-Production screens under `apps/showcase/patterns/**` are product-driven stress tests/examples, not `@beeui/ui` exports. They import public BeeUI APIs, own local domain composition, remain backend/router neutral where practical, and provide evidence for reusable gaps. Because the executable Showcase reaches them, pattern implementation files are native-sensitive; test-only pattern files remain outside native bundles.
+Production screens under `apps/showcase/patterns/**` are product-driven stress tests/examples, not `@beemvp/beeui-ui` exports. They import public BeeUI APIs, own local domain composition, remain backend/router neutral where practical, and provide evidence for reusable gaps. Because the executable Showcase reaches them, pattern implementation files are native-sensitive; test-only pattern files remain outside native bundles.
 
 ## Verification architecture
 
@@ -262,7 +262,7 @@ Compilation/browser/deterministic contracts do not prove all native runtime beha
 
 ## Versioning direction
 
-`@beeui/core`, `@beeui/tokens`, `@beeui/ui`, and the workspace root use one lockstep version. `0.x` may evolve documented APIs; intentional breaking changes require changelog/migration notes.
+`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`, and the workspace root use one lockstep version. `0.x` may evolve documented APIs; intentional breaking changes require changelog/migration notes.
 
 Current 1.0 exit criteria are canonical in `docs/roadmap.md` and include expanded theming/tokens, context-preserving anchored transport, production-ready remaining components, integrated pattern regression, protected runtime simulator/device verification, accessibility/RTL/large-text coverage, compatibility policy, public distribution/release automation, and consumer-grade docs/demo.
 

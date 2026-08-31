@@ -5,8 +5,8 @@ Status: Accepted
 ## Context
 
 BeeUI 1.0 (#114) has three shipped anchored-overlay components — `Popover`, `DropdownMenu`,
-and `Select` — all built on the same accepted kernels: the pure `@beeui/core` geometry
-resolver (`resolveAnchoredOverlayPosition()`), the `@beeui/ui` overlay runtime
+and `Select` — all built on the same accepted kernels: the pure `@beemvp/beeui-core` geometry
+resolver (`resolveAnchoredOverlayPosition()`), the `@beemvp/beeui-ui` overlay runtime
 (`overlay-runtime.tsx`: portal transport, scope/dismiss stack, latest-request-wins
 measurement with the ADR-003 completion budget), and the direction resolver
 (`use-direction.ts`, ADR-004). `docs/anchored-overlays.md` and ADR-002
@@ -38,7 +38,7 @@ technology on native, where there is no RN equivalent of `aria-describedby`.
   interaction model where the platforms genuinely differ.
 - **Reuse, don't duplicate, existing kernels**: this ADR must not introduce a new geometry
   resolver, a second portal/runtime, or a second direction read. It reuses
-  `resolveAnchoredOverlayPosition()`, the existing `@beeui/ui` overlay runtime
+  `resolveAnchoredOverlayPosition()`, the existing `@beemvp/beeui-ui` overlay runtime
   (`useAnchoredOverlayPosition`, `useOverlayId`, `OverlayPortal`, `useOverlayDismissable`),
   and `resolveDirection()`/`useDirection()` (ADR-004) exactly as `Popover`/`DropdownMenu`
   already do.

@@ -1,4 +1,4 @@
-import type { ClockTime } from '@beeui/core';
+import type { ClockTime } from '@beemvp/beeui-core';
 import { DEFAULT_CALENDAR_LOCALE } from './calendar-locale';
 import type { DateTimePickerValue } from './date-time-picker-shared';
 
@@ -8,7 +8,7 @@ import type { DateTimePickerValue } from './date-time-picker-shared';
 // `Date.UTC`-anchored instant that never leaves this module, so the display string is
 // never reinterpreted in the host's local timezone. This is formatting-only — not the
 // sanctioned `CalendarDate`/`ClockTime` ⇄ `Date` boundary (`toLocalDate`/`fromLocalDate`/
-// `clockTimeFromLocalDate` in `@beeui/core`).
+// `clockTimeFromLocalDate` in `@beemvp/beeui-core`).
 //
 // 12/24h display policy and AM/PM labels use `Intl` exclusively (ADR-008's "no huge
 // locale database" constraint, #175) — no bundled locale table.

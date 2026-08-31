@@ -1,4 +1,4 @@
-import { HStack, Text } from '@beeui/ui';
+import { HStack, Text } from '@beemvp/beeui-ui';
 import * as React from 'react';
 
 export type RatingSummaryProps = {

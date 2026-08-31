@@ -9,7 +9,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import { act, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
 import { BackHandler, Modal, Platform, Text, UIManager } from 'react-native';

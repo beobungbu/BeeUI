@@ -1,4 +1,4 @@
-import { Button, Card, Field, PasswordInput, VStack } from '@beeui/ui';
+import { Button, Card, Field, PasswordInput, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import {
   AuthHeader,

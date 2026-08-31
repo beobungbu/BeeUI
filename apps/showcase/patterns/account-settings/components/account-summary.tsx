@@ -1,4 +1,4 @@
-import { Badge, ListGroup, ListGroupHeader, SettingsItem } from '@beeui/ui';
+import { Badge, ListGroup, ListGroupHeader, SettingsItem } from '@beemvp/beeui-ui';
 import * as React from 'react';
 
 export type AccountSummaryProps = {

@@ -12,7 +12,7 @@ the [Web contract](/compatibility/web/).
 1. **Expo Showcase** (`apps/showcase`) — the app BeeUI itself ships and dogfoods.
 2. **Package-boundary bare consumer** (`scripts/verify-bare-consumer.sh`) — a fresh React
    Native `0.86.2` app created with the React Native Community CLI. It never copies BeeUI
-   source: it packs `@beeui/core`/`@beeui/tokens`/`@beeui/ui` with `pnpm pack`, installs
+   source: it packs `@beemvp/beeui-core`/`@beemvp/beeui-tokens`/`@beemvp/beeui-ui` with `pnpm pack`, installs
    the tarballs through the consumer's normal `node_modules` boundary, then bundles Metro
    for Android/iOS, compiles an Android debug APK, and — on the trusted macOS runner —
    compiles the generated iOS app with `xcodebuild` against a generic iOS Simulator
@@ -44,8 +44,8 @@ on). Those gates are tracked separately in `docs/release.md` and
   compile passes; the **Android bare-consumer compile fails** because
   `react-native-safe-area-context@5.7.0`'s Kotlin source does not build against RN
   `0.87`'s native surface (`Unresolved reference 'uiImplementation'` in
-  `SafeAreaView.kt`) — an upstream/peer incompatibility, not a `@beeui/ui`/`@beeui/core`
-  defect. Because `@beeui/ui`'s declared peer range (`>=0.86.0 <0.87.0`) already excludes
+  `SafeAreaView.kt`) — an upstream/peer incompatibility, not a `@beemvp/beeui-ui`/`@beemvp/beeui-core`
+  defect. Because `@beemvp/beeui-ui`'s declared peer range (`>=0.86.0 <0.87.0`) already excludes
   `0.87.1`, a plain `npm install` into that consumer fails fast on `ERESOLVE` before ever
   reaching a build step — the contract enforcing itself. This row is not required on
   every pull request; it runs nightly and on `workflow_dispatch`/the `ci:rn-0.87` PR
@@ -55,7 +55,7 @@ on). Those gates are tracked separately in `docs/release.md` and
 
 `pnpm release:verify` checks lockstep BeeUI package versions, explicit packed source
 surfaces, declared export targets, expected peer dependency contracts, absence of Expo
-runtime imports from `@beeui/core`/`@beeui/ui`, clean `pnpm pack` output with no
+runtime imports from `@beemvp/beeui-core`/`@beemvp/beeui-ui`, clean `pnpm pack` output with no
 unresolved `workspace:` protocol, and clean installation without Expo leakage. A
 successful run writes `.artifacts/release-verification.json` for the exact commit under
 review.

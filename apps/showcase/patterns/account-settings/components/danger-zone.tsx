@@ -1,4 +1,4 @@
-import { Box, Button, Text, VStack } from '@beeui/ui';
+import { Box, Button, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 
 export type DangerZoneProps = {

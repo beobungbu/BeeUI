@@ -2,7 +2,7 @@ import { render as rtlRender } from '@testing-library/react-native';
 import * as React from 'react';
 import { Pressable, View } from 'react-native';
 import { OverlayRuntimeProvider } from '../../../../packages/ui/src/components/overlay-runtime';
-import { Select, SelectTrigger } from '@beeui/ui';
+import { Select, SelectTrigger } from '@beemvp/beeui-ui';
 
 /**
  * Deterministic anchor/host-measurement seam for Wave-2A Select contract tests.
@@ -92,7 +92,7 @@ function ensureInstalled(): void {
   }
 
   // Patch the exact prototype used by production components: the inner View
-  // behind a real SelectTrigger instance rendered through @beeui/ui itself.
+  // behind a real SelectTrigger instance rendered through @beemvp/beeui-ui itself.
   const uiRef = React.createRef<unknown>();
   const uiScreen = rtlRender(
     <OverlayRuntimeProvider hostRectOverride={{ x: 0, y: 0, width: 390, height: 844 }}>

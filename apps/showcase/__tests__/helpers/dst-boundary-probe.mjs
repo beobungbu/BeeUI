@@ -15,7 +15,7 @@
 // Usage: TZ=<IANA zone> node dst-boundary-probe.mjs <year> <month> <day> <hour> <minute>
 // Prints exactly one JSON line: {"date":<CalendarDate>,"time":<ClockTime>} —
 // the round trip of the given date-only + wall-clock time through the exact
-// `@beeui/core` `toLocalDate`/`fromLocalDate`/`clockTimeFromLocalDate` public
+// `@beemvp/beeui-core` `toLocalDate`/`fromLocalDate`/`clockTimeFromLocalDate` public
 // adapters (imported directly, not reimplemented), so this is evidence about
 // the real adapter, not a parallel implementation of it.
 

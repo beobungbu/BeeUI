@@ -22,7 +22,7 @@ import { diagnoseProjectDependencies, formatDetectionSummary, formatDiagnosticLi
 // This file always ships one directory below the package root, both in
 // repository-local dev mode (`packages/cli/src/beeui.mjs`) and in the built
 // package (`<packageRoot>/dist/beeui.mjs`, installed standalone as
-// `@beeui/cli`) — `package.json` is always the published tarball's own
+// `@beemvp/beeui-cli`) — `package.json` is always the published tarball's own
 // manifest, never read over the network. `version` reports it directly so
 // `beeui version`/`--version` never drifts from the actual installed package.
 const PACKAGE_JSON_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'package.json');
@@ -48,7 +48,7 @@ Usage:
 
 Commands:
   help                 Show this help.
-  version              Print the installed @beeui/cli name and version.
+  version              Print the installed @beemvp/beeui-cli name and version.
   init                 Create ${CONFIG_FILENAME} without overwriting an existing config.
   list                 List supported public registry components in stable order.
   add <items...>       Preflight and copy source plus transitive BeeUI dependencies.
@@ -276,7 +276,7 @@ export async function main(argv = process.argv.slice(2), options = {}) {
 }
 
 // `npm`/`pnpm` install the `beeui` bin as a symlink (e.g.
-// `node_modules/.bin/beeui -> ../@beeui/cli/dist/beeui.mjs`). Node's default
+// `node_modules/.bin/beeui -> ../@beemvp/beeui-cli/dist/beeui.mjs`). Node's default
 // ESM loader resolves `import.meta.url` to the symlink's realpath, but
 // `process.argv[1]` stays the invoked (symlinked) path, so a literal
 // string comparison between the two never matches once this file is run

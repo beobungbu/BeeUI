@@ -1,4 +1,4 @@
-import { AlertBanner, Box, Button, Field, HStack, PasswordInput, Text, VStack } from '@beeui/ui';
+import { AlertBanner, Box, Button, Field, HStack, PasswordInput, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { SettingsScreenShell } from '../components/settings-screen-shell';
 

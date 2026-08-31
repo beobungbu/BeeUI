@@ -985,8 +985,8 @@ export const beeTokenReaderCategories = {
  * BeeUI's #72 typed runtime-token reader. Pure and stateless: only derives
  * valid `category.key` paths and their Uniwind CSS-variable name from
  * canonical metadata (see `token-reader.ts`). It never reads Uniwind itself --
- * `useBeeToken`/`getBeeToken` in `@beeui/ui` (`use-bee-token.ts`) are the only
- * place this feature actually calls into Uniwind, so `@beeui/tokens` keeps
+ * `useBeeToken`/`getBeeToken` in `@beemvp/beeui-ui` (`use-bee-token.ts`) are the only
+ * place this feature actually calls into Uniwind, so `@beemvp/beeui-tokens` keeps
  * zero dependency on `uniwind` or React, exactly like `beeThemeRegistry` and
  * `defineThemeOverrides` above.
  */

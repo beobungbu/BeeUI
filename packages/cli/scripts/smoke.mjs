@@ -1,17 +1,17 @@
 #!/usr/bin/env node
-// End-to-end smoke test for the packed @beeui/cli package (#209 acceptance).
+// End-to-end smoke test for the packed @beemvp/beeui-cli package (#209 acceptance).
 //
 // Builds dist/ (if missing) and then runs the built dist/beeui.mjs binary —
 // not the packages/cli/src dev source, and not the monorepo — as a child
 // process against a throwaway consumer directory, proving the *published
 // artifact* (bundled registry + bundled sources) works standalone:
 //   - `init` creates a config,
-//   - `add sheet` (a #355-affected item with a deep @beeui/tokens subpath
+//   - `add sheet` (a #355-affected item with a deep @beemvp/beeui-tokens subpath
 //     import, per docs/registry-cli.md) copies its full dependency closure,
-//   - the copied source keeps a resolvable `@beeui/tokens` import and
+//   - the copied source keeps a resolvable `@beemvp/beeui-tokens` import and
 //     reports it as a missing consumer dependency (the #355 regression this
 //     CLI must not reintroduce),
-//   - no `@beeui/core` or `workspace:*` leaks survive into copied source,
+//   - no `@beemvp/beeui-core` or `workspace:*` leaks survive into copied source,
 //   - every relative import in the copied file set resolves to a real file
 //     on disk in the consumer fixture.
 import assert from 'node:assert/strict';
@@ -75,7 +75,7 @@ async function main() {
 
     const addOutput = runCli(['add', 'sheet'], consumerRoot);
     assert.match(addOutput, /core-cn -> theme -> text -> button -> core-overlay -> overlay-runtime -> sheet/);
-    assert.match(addOutput, /@beeui\/tokens@0\.1\.0 \[missing from package\.json\]/);
+    assert.match(addOutput, /@beemvp\/beeui-tokens@0\.1\.0 \[missing from package\.json\]/);
 
     const dir = path.join(consumerRoot, 'src/components/beeui');
     const requiredFiles = [
@@ -91,9 +91,9 @@ async function main() {
     }
 
     const sheetWeb = await readFile(path.join(dir, 'sheet.web.tsx'), 'utf8');
-    assert.match(sheetWeb, /from '@beeui\/tokens'/, 'sheet.web.tsx must keep its resolvable @beeui/tokens import');
-    assert.match(sheetWeb, /from '@beeui\/tokens\/motion-runtime'/);
-    assert.doesNotMatch(sheetWeb, /@beeui\/core/);
+    assert.match(sheetWeb, /from '@beemvp\/beeui-tokens'/, 'sheet.web.tsx must keep its resolvable @beemvp/beeui-tokens import');
+    assert.match(sheetWeb, /from '@beemvp\/beeui-tokens\/motion-runtime'/);
+    assert.doesNotMatch(sheetWeb, /@beemvp\/beeui-core/);
     assert.doesNotMatch(sheetWeb, /workspace:\*/);
 
     // Import-resolution check is scoped to the requested item's own files
@@ -142,7 +142,7 @@ async function main() {
   await runIntegrityTamperChecks();
 
   process.stdout.write(
-    '@beeui/cli smoke: PASS (packed dist/beeui.mjs end-to-end add + import resolution + #355 @beeui/tokens closure ' +
+    '@beemvp/beeui-cli smoke: PASS (packed dist/beeui.mjs end-to-end add + import resolution + #355 @beemvp/beeui-tokens closure ' +
       '+ #216 tampered-bundle rejection)\n',
   );
 }
@@ -197,6 +197,6 @@ async function runIntegrityTamperChecks() {
 }
 
 main().catch((error) => {
-  process.stderr.write(`@beeui/cli smoke: FAIL\n${error.stack ?? error}\n`);
+  process.stderr.write(`@beemvp/beeui-cli smoke: FAIL\n${error.stack ?? error}\n`);
   process.exitCode = 1;
 });

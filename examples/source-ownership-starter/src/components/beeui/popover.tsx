@@ -5,7 +5,7 @@ import {
   type AnchoredOverlayDirection,
   type AnchoredOverlayPlacement,
 } from '../../lib/beeui/core/index';
-import { layer } from '@beeui/tokens';
+import { layer } from '@beemvp/beeui-tokens';
 import * as React from 'react';
 import {
   Pressable,

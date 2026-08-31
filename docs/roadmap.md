@@ -64,7 +64,7 @@ BeeUI is not **1.0-ready** until one exact immutable candidate proves:
 
 Do not re-plan these as future work unless a regression is found:
 
-- React Native + TypeScript packages `@beeui/core`, `@beeui/tokens`, `@beeui/ui`;
+- React Native + TypeScript packages `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`;
 - Theme Tokens v3 canonical DTCG source/codegen/lifecycle, semantic-consumption guard, scoped themes, runtime overrides/readers, density, high contrast, dataviz and motion contracts;
 - broad stable component surface including Select;
 - context-preserving anchored-overlay architecture used by Popover/DropdownMenu/Select;
@@ -74,7 +74,7 @@ Do not re-plan these as future work unless a regression is found:
 - native runtime-smoke foundation;
 - repository-local source-ownership registry/CLI covering the current stable public surface.
 
-**Regression closed:** [#355](https://github.com/beobungbu/BeeUI/issues/355) — the source-ownership registry CLI copied `sheet`, `popover`, `dropdown-menu`, `select`, `toast`, `tooltip`, `theme-scope`, `use-bee-token` and `overlay-runtime` with unresolved `@beeui/tokens` runtime imports. Per [ADR-011](decisions/011-distribution-architecture.md) D5, resolved by declaring `@beeui/tokens` as a consumer dependency each affected registry item records (not vendoring, since `@beeui/tokens` is now published per #199/#200); landed as part of R8 registry closure (#217).
+**Regression closed:** [#355](https://github.com/beobungbu/BeeUI/issues/355) — the source-ownership registry CLI copied `sheet`, `popover`, `dropdown-menu`, `select`, `toast`, `tooltip`, `theme-scope`, `use-bee-token` and `overlay-runtime` with unresolved `@beemvp/beeui-tokens` runtime imports. Per [ADR-011](decisions/011-distribution-architecture.md) D5, resolved by declaring `@beemvp/beeui-tokens` as a consumer dependency each affected registry item records (not vendoring, since `@beemvp/beeui-tokens` is now published per #199/#200); landed as part of R8 registry closure (#217).
 
 ---
 
@@ -302,7 +302,7 @@ shared-authority source of truth for every row below; it is drift-checked by
 # R7 — Packages — publication-ready only, DO NOT publish
 
 - #197 distribution architecture ADR. **Closed** — see [ADR-011](decisions/011-distribution-architecture.md).
-- #198 package/CLI names and permissions; owner/admin gate where required. **Preflight done** ([docs/distribution-names.md](distribution-names.md)): `@beeui/*` scope + `@beeui/cli` verified available; CLI recommended `@beeui/cli` (bare `beeui` is a taken tombstone). **Issue stays open for the OWNER action**: create the `@beeui` npm org + reserve names + grant release-workflow permissions (ties to #205).
+- #198 package/CLI names and permissions; owner/admin gate where required. **Preflight done** ([docs/distribution-names.md](distribution-names.md)): `@beemvp/beeui-*` scope + `@beemvp/beeui-cli` verified available; CLI recommended `@beemvp/beeui-cli` (bare `beeui` is a taken tombstone). **Issue stays open for the OWNER action**: create the `@beemvp` npm org + reserve names + grant release-workflow permissions (ties to #205).
 - #199 package metadata. **Closed** — `private` removed; repository/homepage/keywords/author/`publishConfig` (access public + provenance) on all three; via PR #371.
 - #200 package output format. **Closed** — dual ESM+CJS+`.d.ts` under `dist/` (react-native-builder-bob), conditional `exports` (source/react-native/browser/import/require), `src` retained for source-ownership; internal apps resolve `source` (baselines byte-identical); native + web CI green. Via PR #371.
 - #201 final export maps after #184.
@@ -324,7 +324,7 @@ shared-authority source of truth for every row below; it is drift-checked by
 - #214 deterministic `init` policy.
 - #215 package-manager mutation policy.
 - #216 registry delivery/integrity strategy.
-- #217 complete stable 1.0 registry closure. **Closed** — [#355](https://github.com/beobungbu/BeeUI/issues/355) resolved (`@beeui/tokens` is declared as a consumer dependency on every affected registry item instead of left unresolved; the curated-file-list test gap that let affected files skip CI is fixed); [#319](https://github.com/beobungbu/BeeUI/issues/319) resolved (`use-direction` declared on every component that imports it); full registry-dependency-graph audit closed two additional latent gaps (`input`/`toast` missing `text`, `list-item` missing `list-group`).
+- #217 complete stable 1.0 registry closure. **Closed** — [#355](https://github.com/beobungbu/BeeUI/issues/355) resolved (`@beemvp/beeui-tokens` is declared as a consumer dependency on every affected registry item instead of left unresolved; the curated-file-list test gap that let affected files skip CI is fixed); [#319](https://github.com/beobungbu/BeeUI/issues/319) resolved (`use-direction` declared on every component that imports it); full registry-dependency-graph audit closed two additional latent gaps (`input`/`toast` missing `text`, `list-item` missing `list-group`).
 - #218 packed CLI clean-consumer E2E.
 - #219 optional safe diff/update assistance or explicit defer.
 

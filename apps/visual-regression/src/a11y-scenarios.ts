@@ -136,7 +136,7 @@ export const a11yScenarios: A11yScenario[] = [
     // `navigate` ignores `baseUrl` (the showcase app, `openComponentGallery`'s
     // target): this scenario deliberately stays on the dedicated, Web-only
     // `apps/visual-regression` fixture app (`App.tsx`'s `TooltipFixture`) even
-    // though Tooltip is now on the `@beeui/ui` public barrel (#155) — it proves
+    // though Tooltip is now on the `@beemvp/beeui-ui` public barrel (#155) — it proves
     // the isolated open/close/delay contract with a fixed, minimal DOM, while
     // `component-gallery-tooltip-overlay` (above) proves the same relationship
     // against the real, composed Showcase app instance. Both dev servers are

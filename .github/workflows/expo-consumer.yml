@@ -1,7 +1,7 @@
 name: expo-consumer
 
 # #204 (R7.8, parent #114): the independent, clean Expo SDK 57 consumer —
-# installs only the packed @beeui/core/@beeui/tokens/@beeui/ui tarballs (no
+# installs only the packed @beemvp/beeui-core/@beemvp/beeui-tokens/@beemvp/beeui-ui tarballs (no
 # workspace link, no repository source fallback), proves TypeScript
 # typechecking plus a Metro bundle/export for Web/Android/iOS from those
 # tarballs, and exercises the provider/theme/forms/overlays surface through

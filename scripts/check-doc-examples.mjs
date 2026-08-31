@@ -3,16 +3,16 @@
 // Executable / non-drifting documentation examples check (#222).
 //
 // Documentation snippets rot silently: an example can keep importing a symbol
-// that was renamed or removed, or cite a `@beeui/showcase` fixture that no longer
+// that was renamed or removed, or cite a `@beemvp/beeui-showcase` fixture that no longer
 // exists, and nothing fails. This check pins the docs' code examples to the real,
 // machine-derived surface so API drift breaks CI instead of misleading a reader:
 //
-//   - every symbol a doc imports from '@beeui/ui' must be a real barrel export
+//   - every symbol a doc imports from '@beemvp/beeui-ui' must be a real barrel export
 //     (value or type) — hand-written examples cannot reference dead APIs;
 //   - every `pnpm beeui -- add <item>` in the docs must name a real PUBLIC component;
-//   - every `@beeui/showcase` file the generated references cite as an executable
+//   - every `@beemvp/beeui-showcase` file the generated references cite as an executable
 //     example must resolve to a real file (the fixtures themselves are typechecked
-//     by `pnpm --filter @beeui/showcase typecheck`, so a resolving link is a
+//     by `pnpm --filter @beemvp/beeui-showcase typecheck`, so a resolving link is a
 //     compiling example);
 //   - the generated references must not present the unpublished packages as live
 //     on npm.
@@ -28,7 +28,7 @@ import { fileURLToPath } from 'node:url';
 import { parseBarrelExports } from './generate-llms-txt.mjs';
 import { ROOT_DIR, extractBeeuiImports, listSourceFiles } from './component-docs-lib.mjs';
 
-// Documentation roots scanned for @beeui/ui example imports.
+// Documentation roots scanned for @beemvp/beeui-ui example imports.
 export const DOC_ROOTS = ['docs', 'apps/docs/src/content'];
 export const DOC_EXTENSIONS = ['.md', '.mdx'];
 
@@ -83,7 +83,7 @@ function listDocFilesRecursive(absDir) {
   return out;
 }
 
-// @beeui/ui symbols imported by a doc that are NOT real exports. Placeholder
+// @beemvp/beeui-ui symbols imported by a doc that are NOT real exports. Placeholder
 // tokens (`…`, `<X>`, comments) are not valid identifiers and are ignored.
 export function findHallucinatedSymbols(source, validSymbols) {
   const imported = [...extractBeeuiImports(source)].filter(isIdentifier);
@@ -122,7 +122,7 @@ export function runChecks(rootDir = ROOT_DIR) {
   const validSymbols = readBarrelSymbols(rootDir);
   const publicAddTargets = readPublicAddTargets(rootDir);
 
-  // 1. Every @beeui/ui symbol imported by any doc is a real export.
+  // 1. Every @beemvp/beeui-ui symbol imported by any doc is a real export.
   const hallucinated = [];
   for (const rel of listDocFiles(rootDir)) {
     const source = fs.readFileSync(path.join(rootDir, rel), 'utf8');
@@ -130,7 +130,7 @@ export function runChecks(rootDir = ROOT_DIR) {
       hallucinated.push(`${rel} :: ${symbol}`);
     }
   }
-  add('doc @beeui/ui imports are real exports', hallucinated.length === 0, hallucinated.length ? hallucinated.slice(0, 12).join(', ') : `scanned ${listDocFiles(rootDir).length} docs`);
+  add('doc @beemvp/beeui-ui imports are real exports', hallucinated.length === 0, hallucinated.length ? hallucinated.slice(0, 12).join(', ') : `scanned ${listDocFiles(rootDir).length} docs`);
 
   // 2. Every `pnpm beeui -- add <item>` names a real public component.
   const badAdds = new Set();
@@ -157,7 +157,7 @@ export function runChecks(rootDir = ROOT_DIR) {
   }
   add('generated references cite real showcase fixtures', brokenLinks.length === 0, brokenLinks.length ? brokenLinks.slice(0, 12).join(', ') : '');
 
-  // 4. Every cited showcase fixture actually imports from @beeui/ui (is a real fixture).
+  // 4. Every cited showcase fixture actually imports from @beemvp/beeui-ui (is a real fixture).
   const knownShowcase = new Set(listSourceFiles(path.join(rootDir, 'apps/showcase')).map((abs) => path.relative(rootDir, abs).split(path.sep).join('/')));
   const nonFixture = [];
   for (const rel of GENERATED_REFERENCES) {
@@ -171,7 +171,7 @@ export function runChecks(rootDir = ROOT_DIR) {
       }
     }
   }
-  add('cited showcase fixtures import @beeui/ui', nonFixture.length === 0, nonFixture.length ? nonFixture.slice(0, 12).join(', ') : '');
+  add('cited showcase fixtures import @beemvp/beeui-ui', nonFixture.length === 0, nonFixture.length ? nonFixture.slice(0, 12).join(', ') : '');
 
   // 5. The generated references never claim availability on npm.
   const falseClaims = [];

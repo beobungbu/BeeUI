@@ -9,7 +9,7 @@ Behavioral, accessibility, contract, native compile, and release-package verific
 
 ## Phase 1 component pixel scope
 
-The deterministic visual fixture lives in `apps/visual-regression` instead of the interactive Showcase. It imports BeeUI only through the public `@beeui/ui` and `@beeui/tokens` package surfaces.
+The deterministic visual fixture lives in `apps/visual-regression` instead of the interactive Showcase. It imports BeeUI only through the public `@beemvp/beeui-ui` and `@beemvp/beeui-tokens` package surfaces.
 
 Phase 1 covers representative states rather than every public component:
 

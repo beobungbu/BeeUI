@@ -8,7 +8,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
 import { Modal, Platform, StyleSheet, Text, UIManager, View } from 'react-native';

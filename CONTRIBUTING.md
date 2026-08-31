@@ -77,7 +77,7 @@ wrong, open an issue proposing the change instead of reversing it inside an unre
 
 - **Semantic tokens, brand-blind components.** Reusable components consume the generated
   semantic token layer (`useBeeToken`/`getBeeToken`, generated Tailwind semantic utility
-  classes, `@beeui/tokens` variable helpers) — never raw hex/brand literals, raw
+  classes, `@beemvp/beeui-tokens` variable helpers) — never raw hex/brand literals, raw
   `var(--color-*)` CSS custom properties for a namespace that already has a typed reader,
   or branching on a brand name (`brand === 'violet'`). `pnpm tokens:consumption-check`
   enforces this; see [`docs/token-consumption-guard.md`](docs/token-consumption-guard.md)
@@ -92,7 +92,7 @@ wrong, open an issue proposing the change instead of reversing it inside an unre
   proposal" issue template.
 - **No duplicate runtime authority.** One theme engine, one overlay/portal runtime, one
   focus/dismiss stack, one direction resolver (`useDirection()`), one global state engine.
-  New anchored-overlay-geometry work reuses the existing `@beeui/core` resolver and
+  New anchored-overlay-geometry work reuses the existing `@beemvp/beeui-core` resolver and
   `overlay-runtime.tsx`, it does not reinvent them (ADR-002, ADR-004).
 - **Controlled-only where established.** `Checkbox`, `Radio`, `RadioGroup`, `Switch`,
   `Tabs`, `SegmentedControl`, `Pagination`, and similar do not invent hidden uncontrolled

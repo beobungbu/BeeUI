@@ -185,7 +185,7 @@ export function collectCompatibilityReportViolations({ report, matrixSnapshot, u
     violations.push(`${label}: "published" must be false — no npm artifact exists.`);
   }
 
-  const expectedPackages = ['@beeui/core', '@beeui/tokens', '@beeui/ui'];
+  const expectedPackages = ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui'];
   if (
     !Array.isArray(report.packageSet) ||
     report.packageSet.length !== expectedPackages.length ||

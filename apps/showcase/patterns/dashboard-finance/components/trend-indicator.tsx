@@ -1,4 +1,4 @@
-import { Text } from '@beeui/ui';
+import { Text } from '@beemvp/beeui-ui';
 import * as React from 'react';
 
 export type TrendDirection = 'up' | 'down' | 'flat';

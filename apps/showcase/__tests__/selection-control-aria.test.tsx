@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
   Switch,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import { render } from '@testing-library/react-native';
 import * as React from 'react';
 import { Platform, Switch as RNSwitch } from 'react-native';
@@ -75,7 +75,7 @@ const SELECT_HOST_RECT = { x: 0, y: 0, width: 320, height: 240 };
 //
 // `packages/ui` and `apps/showcase` each resolve their own `react-native`
 // peer-dependency instance under pnpm, so the `Pressable` reference the
-// test imports is not `===` the one `@beeui/ui` renders with -- matching
+// test imports is not `===` the one `@beemvp/beeui-ui` renders with -- matching
 // by type reference silently finds nothing. Match by the stable
 // `displayName`/`name` instead, which is identical across both instances.
 function isPressableInstance(node: ReactTestInstance): boolean {

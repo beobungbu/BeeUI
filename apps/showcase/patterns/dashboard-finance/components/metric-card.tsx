@@ -1,4 +1,4 @@
-import { Card, Stat, StatHelpText, StatLabel, StatValue } from '@beeui/ui';
+import { Card, Stat, StatHelpText, StatLabel, StatValue } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { TrendIndicator, type TrendDirection } from './trend-indicator';
 

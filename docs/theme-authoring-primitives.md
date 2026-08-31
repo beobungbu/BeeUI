@@ -2,7 +2,7 @@
 
 BeeUI keeps two distinct token layers in `packages/tokens/tokens.json`:
 
-- **Public semantic tokens** — the reusable component contract (`primary`, `destructive`, `control-border`, `focus-ring`, …). Components and reusable `@beeui/ui` source consume only these.
+- **Public semantic tokens** — the reusable component contract (`primary`, `destructive`, `control-border`, `focus-ring`, …). Components and reusable `@beemvp/beeui-ui` source consume only these.
 - **Private authoring primitives** — reusable brand/neutral palette values that theme authors and the generator use to keep repeated colors governed in one place. They are **not** a component API.
 
 Semantic tokens may *alias* primitives with standard DTCG references. The generator resolves those references deterministically, so every generated artifact still contains concrete runtime values.

@@ -1,4 +1,4 @@
-import { cn, fromLocalDate, type CalendarDate, type ClockTime } from '@beeui/core';
+import { cn, fromLocalDate, type CalendarDate, type ClockTime } from '@beemvp/beeui-core';
 import * as React from 'react';
 import { Pressable, View } from 'react-native';
 import { Button } from './button';

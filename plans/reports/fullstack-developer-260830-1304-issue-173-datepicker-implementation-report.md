@@ -21,7 +21,7 @@ New:
 - apps/visual-regression/tests/date-picker-showcase.spec.ts — real Chromium Playwright spec (4 tests)
 
 Modified:
-- packages/ui/src/index.ts — barrel export for DatePicker + re-export of CalendarDate/CalendarWeekStartsOn (previously missing from #172, needed so consumers can type controlled state without reaching into @beeui/core)
+- packages/ui/src/index.ts — barrel export for DatePicker + re-export of CalendarDate/CalendarWeekStartsOn (previously missing from #172, needed so consumers can type controlled state without reaching into @beemvp/beeui-core)
 - packages/ui/package.json — @react-native-community/datetimepicker devDependency (9.1.0 exact) + optional ranged peerDependency (>=9.1 <10)
 - apps/showcase/package.json — same dependency (~9.1.0), needed since gallery fixture bundles into native Showcase builds
 - registry/registry.json — new "date-picker" entry

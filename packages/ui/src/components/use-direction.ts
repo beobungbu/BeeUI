@@ -1,7 +1,7 @@
-import type { AnchoredOverlayDirection } from '@beeui/core';
+import type { AnchoredOverlayDirection } from '@beemvp/beeui-core';
 import { I18nManager, Platform } from 'react-native';
 
-// Single stateless logical-direction resolver for `@beeui/ui` (ADR-004).
+// Single stateless logical-direction resolver for `@beemvp/beeui-ui` (ADR-004).
 //
 // Before this file, `Popover`, `DropdownMenu`, and `Select` each duplicated the
 // identical inline expression `I18nManager.isRTL ? 'rtl' : 'ltr'` to default their
@@ -41,7 +41,7 @@ export type DirectionAmbientInputs = {
   webDocumentDir?: string | null;
 };
 
-// Minimal structural view of the one DOM surface this resolver reads. `@beeui/ui`
+// Minimal structural view of the one DOM surface this resolver reads. `@beemvp/beeui-ui`
 // targets React Native and does not include the DOM lib, so we reach the Web
 // ambient authority through `globalThis` with a narrow type instead of the global
 // `document` (which is absent on native and untyped here).

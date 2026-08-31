@@ -1,14 +1,14 @@
-# @beeui/core
+# @beemvp/beeui-core
 
-Small, framework-light utility surface shared by [`@beeui/ui`](https://www.npmjs.com/package/@beeui/ui): the class-name merge helper (`cn`), calendar-date primitives, and the anchored-overlay/overlay-runtime geometry that powers `Popover`/`DropdownMenu`. It has no styling-engine or React Native version opinions of its own — see [ADR-001](https://github.com/beobungbu/BeeUI/blob/main/docs/decisions/001-styling-engine.md).
+Small, framework-light utility surface shared by [`@beemvp/beeui-ui`](https://www.npmjs.com/package/@beemvp/beeui-ui): the class-name merge helper (`cn`), calendar-date primitives, and the anchored-overlay/overlay-runtime geometry that powers `Popover`/`DropdownMenu`. It has no styling-engine or React Native version opinions of its own — see [ADR-001](https://github.com/beobungbu/BeeUI/blob/main/docs/decisions/001-styling-engine.md).
 
 ## Install
 
 ```bash
-npm install @beeui/core
+npm install @beemvp/beeui-core
 ```
 
-`@beeui/core` is normally pulled in transitively as a dependency of `@beeui/ui`; installing it directly is only needed for the utilities above in isolation.
+`@beemvp/beeui-core` is normally pulled in transitively as a dependency of `@beemvp/beeui-ui`; installing it directly is only needed for the utilities above in isolation.
 
 ## Package contents
 

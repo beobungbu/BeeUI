@@ -8,7 +8,7 @@ import {
   Timeline,
   TimelineItem,
   VStack,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 
 describe('BeeUI navigation and data pattern contracts', () => {
   it('renders Stack aliases without owning application state', () => {

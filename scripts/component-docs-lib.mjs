@@ -9,7 +9,7 @@
 //   - the public component inventory, source paths, registry dependencies and
 //     peer dependencies come from registry/registry.json;
 //   - the exported runtime symbols per component come from packages/ui/src/index.ts;
-//   - "used in" executable examples come from scanning the @beeui/showcase app for
+//   - "used in" executable examples come from scanning the @beemvp/beeui-showcase app for
 //     real imports of each component's exported symbols.
 //
 // The generators (generate-component-reference.mjs, generate-pattern-library.mjs)
@@ -31,7 +31,7 @@ export function readJson(relPath, rootDir = ROOT_DIR) {
   return JSON.parse(readText(relPath, rootDir));
 }
 
-// Registry-relative source directory of the @beeui/showcase app that holds the
+// Registry-relative source directory of the @beemvp/beeui-showcase app that holds the
 // executable, typechecked fixtures the docs cite as canonical examples.
 export const SHOWCASE_DIR = 'apps/showcase';
 
@@ -69,7 +69,7 @@ export function isProviderRequired(name, registryDependencies) {
   return (registryDependencies ?? []).some((dep) => OVERLAY_RUNTIME_MARKERS.has(dep));
 }
 
-// The public component inventory, joined against the @beeui/ui barrel. Throws if
+// The public component inventory, joined against the @beemvp/beeui-ui barrel. Throws if
 // the registry and barrel have drifted (same invariant generate-llms-txt enforces),
 // so a public component that lost its export cannot silently produce empty docs.
 export function getPublicComponents(rootDir = ROOT_DIR) {
@@ -83,7 +83,7 @@ export function getPublicComponents(rootDir = ROOT_DIR) {
       const exports = barrel.get(specifier);
       if (!exports) {
         throw new Error(
-          `registry item "${item.name}" is public but @beeui/ui barrel has no ` +
+          `registry item "${item.name}" is public but @beemvp/beeui-ui barrel has no ` +
             `\`export … from '${specifier}'\` — registry.json and index.ts have drifted.`,
         );
       }
@@ -104,13 +104,13 @@ export function getPublicComponents(rootDir = ROOT_DIR) {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-// --- @beeui/ui import scanning (shared by example check + usage index) -------
+// --- @beemvp/beeui-ui import scanning (shared by example check + usage index) -------
 
-// Extracts the set of symbols imported from '@beeui/ui' in a source file.
-// Handles `import { A, B, type C } from '@beeui/ui';` across multiple lines.
+// Extracts the set of symbols imported from '@beemvp/beeui-ui' in a source file.
+// Handles `import { A, B, type C } from '@beemvp/beeui-ui';` across multiple lines.
 export function extractBeeuiImports(source) {
   const symbols = new Set();
-  const re = /import\s+(?:type\s+)?\{([\s\S]*?)\}\s*from\s*['"]@beeui\/ui['"]/g;
+  const re = /import\s+(?:type\s+)?\{([\s\S]*?)\}\s*from\s*['"]@beemvp\/beeui-ui['"]/g;
   let match;
   while ((match = re.exec(source))) {
     for (const raw of match[1].split(',')) {

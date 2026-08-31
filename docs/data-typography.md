@@ -8,9 +8,9 @@ custom font.
 
 Everything here is authored in the canonical source
 (`packages/tokens/tokens.json`) and emitted by `scripts/generate-tokens.mjs`. The
-generated, typed values live in `@beeui/tokens` (`numericVariants`,
+generated, typed values live in `@beemvp/beeui-tokens` (`numericVariants`,
 `monoFontFamily`, `fontFamily.mono`) and the CSS utilities in
-`@beeui/tokens/theme.css`. Nothing here is hand-edited.
+`@beemvp/beeui-tokens/theme.css`. Nothing here is hand-edited.
 
 ## The two axes
 
@@ -124,7 +124,7 @@ accessibility controls.
 ## Runtime-reader note
 
 The numeric/mono semantics are emitted as ordinary typed exports
-(`numericVariants`, `monoFontFamily`) in `@beeui/tokens`. Non-`className`
+(`numericVariants`, `monoFontFamily`) in `@beemvp/beeui-tokens`. Non-`className`
 consumers read the web utility class, the CSS property/value, and the native
 `fontVariant`/`fontFamily` values directly from that canonical metadata. These
 values are theme-invariant (identical across every runtime theme) and never

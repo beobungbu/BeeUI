@@ -6,7 +6,7 @@ BeeUI treats anchored overlays as a different behavior class from modal surfaces
 
 ## Layer 1 — geometry kernel
 
-`@beeui/core` owns pure `resolveAnchoredOverlayPosition()` geometry. It has no React, React Native, Expo, DOM, portal, gesture, or keyboard dependency.
+`@beemvp/beeui-core` owns pure `resolveAnchoredOverlayPosition()` geometry. It has no React, React Native, Expo, DOM, portal, gesture, or keyboard dependency.
 
 The resolver accepts:
 
@@ -36,7 +36,7 @@ Non-finite values normalize to finite safe values. Negative sizes/collision padd
 
 ## Layer 2 — shared host/runtime
 
-The accepted runtime layer is internal to `@beeui/ui` and installed by `BeeUIProvider`.
+The accepted runtime layer is internal to `@beemvp/beeui-ui` and installed by `BeeUIProvider`.
 
 ### Application-root host
 
@@ -103,7 +103,7 @@ The legacy fallback preserves portal insertion order across independent content 
 
 #### `react-native-teleport` and the `react-dom` peer
 
-`react-native-teleport` is a peer dependency of `@beeui/ui`. Preserving context on native requires a native rebuild and `expo prebuild --clean` after adding the dependency so the native host codegen is registered.
+`react-native-teleport` is a peer dependency of `@beemvp/beeui-ui`. Preserving context on native requires a native rebuild and `expo prebuild --clean` after adding the dependency so the native host codegen is registered.
 
 BeeUI's own runtime imports `react-dom` only in the web transport, so BeeUI marks its direct `react-dom` peer optional. `react-native-teleport` itself peers on `react-dom`, however, so strict package managers may still require a matching installation even in a native-only consumer; the bare-native smoke installs one for that reason.
 

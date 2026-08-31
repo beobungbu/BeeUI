@@ -9,7 +9,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import { render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
 import { OverlayRuntimeProvider } from '../../../packages/ui/src/components/overlay-runtime';

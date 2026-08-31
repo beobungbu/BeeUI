@@ -1,6 +1,6 @@
-import { cn } from '@beeui/core';
-import { fontFamily, fontSize, lineHeight, monoFontFamily, numericVariants } from '@beeui/tokens';
-import { Text, textVariants } from '@beeui/ui';
+import { cn } from '@beemvp/beeui-core';
+import { fontFamily, fontSize, lineHeight, monoFontFamily, numericVariants } from '@beemvp/beeui-tokens';
+import { Text, textVariants } from '@beemvp/beeui-ui';
 import { render } from '@testing-library/react-native';
 import * as React from 'react';
 import { Platform, StyleSheet } from 'react-native';
@@ -46,7 +46,7 @@ describe('data typography semantics', () => {
       </Text>,
     );
     const node = screen.getByText('$1,111.00');
-    // The component output must equal the canonical @beeui/tokens metadata so the
+    // The component output must equal the canonical @beemvp/beeui-tokens metadata so the
     // inlined (standalone-portable) values can never drift from the source of truth.
     expect(node.props.className).toContain(numericVariants.tabular.webUtilityClass);
     expect(node.props.className).toContain('text-[length:var(--text-body)]');

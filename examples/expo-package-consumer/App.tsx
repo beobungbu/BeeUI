@@ -40,7 +40,7 @@ import {
   TooltipTrigger,
   useToast,
   type CalendarDate,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { ScrollView, useColorScheme, useWindowDimensions } from 'react-native';
 
@@ -84,7 +84,7 @@ export default function App() {
             <Card className="gap-4">
               <Text variant="title">BeeUI Expo package consumer</Text>
               <Text variant="body">
-                Consuming @beeui/ui via packed tarballs. Color scheme: {colorScheme ?? 'unknown'}. Layout:{' '}
+                Consuming @beemvp/beeui-ui via packed tarballs. Color scheme: {colorScheme ?? 'unknown'}. Layout:{' '}
                 {isWide ? 'wide' : 'narrow'}.
               </Text>
 

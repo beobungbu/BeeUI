@@ -14,7 +14,7 @@ BeeUI currently includes:
 - Expo SDK 57 Showcase on React Native 0.86.2 / React 19.2.3;
 - Uniwind OSS 1.10.1 + Tailwind CSS 4.3.3;
 - semantic light/dark design tokens;
-- reusable `@beeui/core`, `@beeui/tokens`, and `@beeui/ui` packages;
+- reusable `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` packages;
 - explicit safe-area ownership through `BeeUIProvider` + `SafeArea`;
 - broad layout, typography, action, form, selection, navigation, disclosure, data-display, feedback, state, and application-pattern coverage;
 - React Native core `Modal` behavior for `Dialog` and `AlertDialog`;
@@ -83,7 +83,7 @@ BEEUI_FULL_PATTERN_GALLERY_QA=1 pnpm --dir apps/visual-regression test
 
 BeeUI packages and the CLI are release-preparation only and remain unpublished: `private: true`, not published to npm, no `v1.0.0` release or tag exists. The GitHub repository itself also remains private by explicit owner decision, and will not be made public autonomously.
 
-The repository supports workspace package consumption, packed tarballs for package-boundary/controlled consumer testing, and a Registry + source-ownership CLI available both as `pnpm beeui -- <command>` (repo-local) and as the publication-ready `packages/cli` (`@beeui/cli`) package (#209). This is not yet a public `npx @beeui/cli` distribution contract.
+The repository supports workspace package consumption, packed tarballs for package-boundary/controlled consumer testing, and a Registry + source-ownership CLI available both as `pnpm beeui -- <command>` (repo-local) and as the publication-ready `packages/cli` (`@beemvp/beeui-cli`) package (#209). This is not yet a public `npx @beemvp/beeui-cli` distribution contract.
 
 ## Safe-area foundation
 
@@ -96,7 +96,7 @@ import {
   BottomActionBar,
   SafeArea,
   Screen,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 
 function AppShell() {
   return (

@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "R10.2 (#231) — source-ownership starter proving the packed @beeui/cli end-to-end: `beeui init` + `beeui add` copy component source into this app, including the #355 @beeui/tokens runtime-dependency resolution.",
+  "description": "R10.2 (#231) — source-ownership starter proving the packed @beemvp/beeui-cli end-to-end: `beeui init` + `beeui add` copy component source into this app, including the #355 @beemvp/beeui-tokens runtime-dependency resolution.",
   "scripts": {
     "setup": "bash ./setup.sh",
     "dev": "vite",
@@ -11,7 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@beeui/tokens": "file:.beeui-tarballs/beeui-tokens-0.1.0.tgz",
+    "@beemvp/beeui-tokens": "file:.beeui-tarballs/beeui-tokens-0.1.0.tgz",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "react": "19.2.3",

@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { act, render } from '@testing-library/react-native';
-import { BeeThemeScope, getBeeToken, useBeeToken } from '@beeui/ui';
+import { BeeThemeScope, getBeeToken, useBeeToken } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { Text, View } from 'react-native';
 import { __resetUniwindMockVariables, Uniwind } from 'uniwind';
@@ -12,7 +12,7 @@ import {
   chartContrastContract,
   semanticColorTokens,
   type SemanticChartToken,
-} from '@beeui/tokens';
+} from '@beemvp/beeui-tokens';
 
 // #78 — semantic data-visualization (chart) color tokens: a small, function-based
 // vocabulary (categorical series, positive/negative delta, neutral, highlight, grid,

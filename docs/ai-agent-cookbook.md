@@ -37,13 +37,13 @@ Stat, Timeline, Badge, Avatar, DescriptionList, useToast
 BeeUI is **pre-1.0 and UNPUBLISHED**. This is the single most important fact for an agent,
 because the natural instinct — "install the library from npm" — is wrong today.
 
-- There is **no `@beeui/*` package on npm**, **no `@beeui/cli`**, **no `v1.0.0` tag**, and
+- There is **no `@beemvp/beeui-*` package on npm**, **no `@beemvp/beeui-cli`**, **no `v1.0.0` tag**, and
   **no GitHub Release**. The repository is private by owner decision.
-- The names `@beeui/core`, `@beeui/tokens`, `@beeui/ui`, and `@beeui/cli` are
+- The names `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`, and `@beemvp/beeui-cli` are
   **release-ready-but-not-published targets**. They are reserved intent, not live registry
   entries. See [docs/distribution-names.md](distribution-names.md) and
   [ADR-011](decisions/011-distribution-architecture.md).
-- **Never** tell a user to run `npm install @beeui/ui`, `npx @beeui/cli add ...`, or
+- **Never** tell a user to run `npm install @beemvp/beeui-ui`, `npx @beemvp/beeui-cli add ...`, or
   `npx beeui ...`. Those resolve to nothing today (`beeui` unscoped is an unrelated
   unpublish tombstone — do not claim it).
 - **Never** describe BeeUI as published or as being installable from npm. "Release-ready"
@@ -64,9 +64,9 @@ BeeUI deliberately supports two models. Pick per the consumer's needs.
 
 | | Centralized packages | Source ownership |
 | --- | --- | --- |
-| Command | `npm i @beeui/ui @beeui/core @beeui/tokens` (**target, not yet on npm**) | `pnpm beeui -- add <component>` (**works today, repo-local**) |
-| Consumer gets | a dependency on `@beeui/*` | copied component **source files it now owns** |
-| Import | `import { Button } from '@beeui/ui'` | imports rewritten to consumer-local copies (e.g. `@beeui/core` → copied `cn`) |
+| Command | `npm i @beemvp/beeui-ui @beemvp/beeui-core @beemvp/beeui-tokens` (**target, not yet on npm**) | `pnpm beeui -- add <component>` (**works today, repo-local**) |
+| Consumer gets | a dependency on `@beemvp/beeui-*` | copied component **source files it now owns** |
+| Import | `import { Button } from '@beemvp/beeui-ui'` | imports rewritten to consumer-local copies (e.g. `@beemvp/beeui-core` → copied `cn`) |
 | Upgrades | bump the package | re-run `add`, or hand-maintain the owned copy |
 | Available now | no (release-gated, #254) | yes |
 
@@ -85,7 +85,7 @@ The source-ownership CLI:
   mutation. Prefer this first when reasoning about impact.
 - `pnpm beeui -- doctor` — validate the registry and local config.
 
-Copied source may declare external peers/dependencies (e.g. `@beeui/tokens`, and for `sheet`
+Copied source may declare external peers/dependencies (e.g. `@beemvp/beeui-tokens`, and for `sheet`
 the `@gorhom/bottom-sheet` / Reanimated / Gesture-Handler / Worklets native stack). The CLI
 prints those requirements; the consumer installs them like any other dependency. Source-owned
 code must **never** leak `workspace:*`, private monorepo imports, or undeclared dependencies.
@@ -95,10 +95,10 @@ code must **never** leak `workspace:*`, private monorepo imports, or undeclared 
 BeeUI owns **UI only**: typed, accessible React Native + Web components plus a semantic
 design-token contract. It intentionally does **not** own routers, data fetching, backend,
 auth, payment, a form-management library, or a chart framework. Do not add those into
-`@beeui/ui`, and do not expect BeeUI to provide them. See [docs/architecture.md](architecture.md).
+`@beemvp/beeui-ui`, and do not expect BeeUI to provide them. See [docs/architecture.md](architecture.md).
 
-The public surface is **62 public component modules** exported from `@beeui/ui`, plus
-`@beeui/core` (engine-neutral helpers) and `@beeui/tokens` (semantic tokens + theme CSS).
+The public surface is **62 public component modules** exported from `@beemvp/beeui-ui`, plus
+`@beemvp/beeui-core` (engine-neutral helpers) and `@beemvp/beeui-tokens` (semantic tokens + theme CSS).
 The authoritative inventory is [llms-components.txt](../llms-components.txt), generated from
 [packages/ui/src/index.ts](../packages/ui/src/index.ts) and
 [registry/registry.json](../registry/registry.json). The per-component contract table is
@@ -107,11 +107,11 @@ The authoritative inventory is [llms-components.txt](../llms-components.txt), ge
 ### 4. Component selection and the Rule of Two
 
 - **Compose existing primitives first.** Keep domain-specific composition local to the
-  consumer app, not in `@beeui/ui`.
+  consumer app, not in `@beemvp/beeui-ui`.
 - **Rule of Two**: promote a shared primitive only after repeated (or behaviorally complex)
   evidence — do not generalize on the first use. See [docs/roadmap.md](roadmap.md).
 - Use [llms-patterns.txt](../llms-patterns.txt) and the executable Pattern Gallery
-  (`apps/showcase/patterns/**`) as composition examples. Patterns import public `@beeui/ui`
+  (`apps/showcase/patterns/**`) as composition examples. Patterns import public `@beemvp/beeui-ui`
   APIs and own local domain composition; they are **not** exports and are **not**
   installable via the registry.
 
@@ -192,9 +192,9 @@ must do:
 
 | Symptom | Cause | Recovery |
 | --- | --- | --- |
-| `npm install @beeui/ui` fails / 404 | package is unpublished | Use `pnpm beeui -- add <component>` (source ownership). Do not invent a registry. |
+| `npm install @beemvp/beeui-ui` fails / 404 | package is unpublished | Use `pnpm beeui -- add <component>` (source ownership). Do not invent a registry. |
 | `npx beeui add ...` does nothing / wrong package | `beeui` unscoped is a tombstone; CLI is repo-local | Use `pnpm beeui -- add ...` inside the repo. |
-| Copied component fails to resolve `@beeui/core` | expected — imports are rewritten to a local copy | Ensure `pnpm beeui -- add` ran fully; it copies `core-cn`/`core-overlay` and rewrites imports. |
+| Copied component fails to resolve `@beemvp/beeui-core` | expected — imports are rewritten to a local copy | Ensure `pnpm beeui -- add` ran fully; it copies `core-cn`/`core-overlay` and rewrites imports. |
 | `Sheet` throws at runtime on native | missing gesture/bottom-sheet providers | Add `GestureHandlerRootView` + `BottomSheetModalProvider` at the app root (ADR-006) and install the native peers the CLI reported. |
 | Overlay renders in the wrong place / no dismiss | second overlay authority introduced | Use the shared anchored-overlay contract; do not add a parallel portal. |
 | Dates shift by a day across timezones | expecting BeeUI to own timezones | It does not (ADR-008). Do the timezone conversion in the app. |
@@ -216,7 +216,7 @@ The canonical dispatcher prompt these align with is
 ### Shared preamble (prepend to any recipe)
 
 > Read [llms.txt](../llms.txt) first, then the specific docs it links. BeeUI is pre-1.0 and
-> UNPUBLISHED: never use `npm install @beeui/*` or `npx @beeui/cli`; the working path is
+> UNPUBLISHED: never use `npm install @beemvp/beeui-*` or `npx @beemvp/beeui-cli`; the working path is
 > `pnpm beeui -- add <component>`. Derive the current base with `git fetch` + record the
 > `origin/main` SHA. Prefer semantic tokens; keep domain composition in the app. Stop and
 > report `BLOCKED_BY_DEPENDENCY` or `OWNER_ACTION_REQUIRED` rather than guessing.
@@ -226,7 +226,7 @@ The canonical dispatcher prompt these align with is
 > Goal: add `<component>` to `<consumer app>` using BeeUI source ownership. Steps: run
 > `pnpm beeui -- add --dry-run <component>` and show me the plan; then `pnpm beeui -- add
 > <component>`; wire the app shell with `BeeUIProvider` + `SafeArea`; import from the copied
-> local path (not `@beeui/ui`, which is unpublished). Install any external peers the CLI
+> local path (not `@beemvp/beeui-ui`, which is unpublished). Install any external peers the CLI
 > reports. Do not add a router, data layer, or form library.
 
 ### Recipe B — Build a responsive form
@@ -263,9 +263,9 @@ The canonical dispatcher prompt these align with is
 ### Recipe F — Apply theme and density
 
 > Goal: apply a `<brand>` theme and `<comfortable|compact>` density. Make brand/density
-> changes in tokens/themes only (`@beeui/tokens`), never in component source. Keep every
+> changes in tokens/themes only (`@beemvp/beeui-tokens`), never in component source. Keep every
 > semantic color token defined in every theme and verify light and dark. Wire the Web theme
-> via `@import '@beeui/tokens/theme.css'`. Reference [docs/theming.md](theming.md) and
+> via `@import '@beemvp/beeui-tokens/theme.css'`. Reference [docs/theming.md](theming.md) and
 > [docs/density.md](density.md).
 
 ### Recipe G — Satisfy RTL and accessibility rules
@@ -278,7 +278,7 @@ The canonical dispatcher prompt these align with is
 
 ### Recipe H — Diagnose an intentional setup error
 
-> Goal: a consumer reports `<error>` (e.g. `Cannot find module '@beeui/ui'`, or `Sheet`
+> Goal: a consumer reports `<error>` (e.g. `Cannot find module '@beemvp/beeui-ui'`, or `Sheet`
 > throwing on native). Diagnose from the failure-recovery table in
 > [docs/ai-agent-cookbook.md](ai-agent-cookbook.md) §9: identify whether the root cause is the
 > unpublished-package assumption, missing source-ownership `add`, missing native

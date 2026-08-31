@@ -5,7 +5,7 @@
 // express — and therefore cannot silently reintroduce — the classic
 // `new Date('2026-01-15')` UTC-midnight day-shift bug. Every function in this module is
 // pure and zero-dependency (no React/React Native/DOM import), consistent with
-// `@beeui/core`'s existing purity boundary (`anchored-overlay.ts`).
+// `@beemvp/beeui-core`'s existing purity boundary (`anchored-overlay.ts`).
 //
 // Implementation guardrail (ADR-008): any internal arithmetic implemented via `Date`
 // must exclusively use UTC-anchored construction (`Date.UTC(y, m - 1, d)`), never the

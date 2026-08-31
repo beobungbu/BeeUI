@@ -9,8 +9,8 @@ import {
   PopoverTrigger,
   useToast,
   type ToastApi,
-} from '@beeui/ui';
-import { layer, layerVariable } from '@beeui/tokens';
+} from '@beemvp/beeui-ui';
+import { layer, layerVariable } from '@beemvp/beeui-tokens';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -112,13 +112,13 @@ describe('reusable components consume the semantic layer contract (#73)', () => 
 
   it('routes anchored overlay surfaces through layer.overlay', () => {
     for (const src of [overlayRuntime, popover, select, dropdown]) {
-      expect(src).toContain("import { layer } from '@beeui/tokens';");
+      expect(src).toContain("import { layer } from '@beemvp/beeui-tokens';");
       expect(src).toContain('zIndex: layer.overlay');
     }
   });
 
   it('routes the toast viewport through layer.toast for both zIndex and Android draw order', () => {
-    expect(toast).toContain("import { layer } from '@beeui/tokens';");
+    expect(toast).toContain("import { layer } from '@beemvp/beeui-tokens';");
     expect(toast).toContain('zIndex: layer.toast');
     expect(toast).toContain('elevation: layer.toast');
   });

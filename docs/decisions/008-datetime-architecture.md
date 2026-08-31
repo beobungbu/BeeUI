@@ -37,8 +37,8 @@ BeeUI already has two directly reusable, accepted precedents this ADR must not
 duplicate rather than reinvent:
 
 - **Anchored-overlay geometry/runtime** (`docs/anchored-overlays.md`,
-  `docs/architecture.md:134-217`): `@beeui/core`'s pure `resolveAnchoredOverlayPosition()`
-  plus `@beeui/ui`'s `Popover`/`DropdownMenu`/`overlay-runtime.tsx` already solve
+  `docs/architecture.md:134-217`): `@beemvp/beeui-core`'s pure `resolveAnchoredOverlayPosition()`
+  plus `@beemvp/beeui-ui`'s `Popover`/`DropdownMenu`/`overlay-runtime.tsx` already solve
   trigger-anchored measurement, flip/shift, safe-area/keyboard collision, dismiss-stack
   ordering, and portal transport. A picker calendar surface is exactly this problem
   shape.
@@ -81,9 +81,9 @@ three are new decisions this ADR must make, not existing behavior to preserve.
 - **Reuse, don't duplicate, existing overlay/direction/Field authorities**: geometry,
   dismissal, portal transport, RTL resolution, and Field/validation wiring are already
   solved; this ADR must route through them, not reimplement them.
-- **Package boundary** (`docs/architecture.md:41-47`): `@beeui/core` has zero React/
+- **Package boundary** (`docs/architecture.md:41-47`): `@beemvp/beeui-core` has zero React/
   React Native dependency and must stay that way; any RN-specific or `Intl`-ambient-
-  platform-read code belongs in `@beeui/ui`.
+  platform-read code belongs in `@beemvp/beeui-ui`.
 - **Dependency discipline** (`docs/compatibility-matrix.md`): any new runtime dependency
   must be bounded, justified, and later given its own tested-version row — this ADR may
   decide *that* a dependency is introduced, but the exact tested version/compatibility
@@ -157,7 +157,7 @@ three are new decisions this ADR must make, not existing behavior to preserve.
   and `ClockTime = { hour: number /* 0–23 */; minute: number /* 0–59 */ }`.
   `Calendar`/`DatePicker` use `CalendarDate | null`. `DateTimePicker` uses
   `{ date: CalendarDate; time: ClockTime } | null`. Conversion to/from ISO strings and
-  to/from `Date` are explicit, documented adapter functions in `@beeui/core`, never
+  to/from `Date` are explicit, documented adapter functions in `@beemvp/beeui-core`, never
   implicit.
 - **Benefits**: the "no time zone" property is structural — the type itself has no field
   that could carry an offset, so it is impossible to accidentally serialize/deserialize
@@ -174,7 +174,7 @@ three are new decisions this ADR must make, not existing behavior to preserve.
   existing `Date`-based app state) — treated as a benefit here (forces the timezone
   decision to be visible), but it is more code than "just use `Date`".
 - **Web/iOS/Android implications**: symmetric; the type has no platform dependency
-  (lives in `@beeui/core`, zero React/RN dependency, consistent with
+  (lives in `@beemvp/beeui-core`, zero React/RN dependency, consistent with
   `docs/architecture.md:41-47`).
 - **Dependency/package/registry impact**: none — no new runtime dependency for the type
   itself; pure data + pure functions.
@@ -316,7 +316,7 @@ three are new decisions this ADR must make, not existing behavior to preserve.
   `DatePicker`/`DateTimePicker` presentation layer only; `Calendar` itself has zero
   platform divergence.
 - **Dependency/package/registry impact**: one new peer dependency
-  (`@react-native-community/datetimepicker`) in `@beeui/ui`, following the exact
+  (`@react-native-community/datetimepicker`) in `@beemvp/beeui-ui`, following the exact
   existing pattern for `react-native-safe-area-context`/`react-native-teleport`
   (`packages/ui/package.json`): exact-pinned `devDependency`, ranged `peerDependency`,
   new compatibility-matrix row owned by the implementing issue (#172/#173), not this
@@ -393,7 +393,7 @@ BeeUI 1.0 adopts, for `Calendar`, `DatePicker`, and `DateTimePicker`:
 
 ### Primitive split and shared internals
 
-- **`@beeui/core`** (new module, e.g. `packages/core/src/utils/calendar-date.ts`, zero
+- **`@beemvp/beeui-core`** (new module, e.g. `packages/core/src/utils/calendar-date.ts`, zero
   React/RN/DOM dependency, mirroring `anchored-overlay.ts`'s existing purity) owns:
   - the `CalendarDate`/`ClockTime` types (see below);
   - pure Gregorian calendar arithmetic: month-grid generation (given a month/year and a
@@ -406,7 +406,7 @@ BeeUI 1.0 adopts, for `Calendar`, `DatePicker`, and `DateTimePicker`:
     local-timezone `Date` constructor or parse an ISO string for calendar arithmetic —
     the one adapter function documented below is the sole place a date-only value may
     become a local-timezone-bearing `Date`.
-- **`@beeui/ui`** owns:
+- **`@beemvp/beeui-ui`** owns:
   - `Calendar` — one cross-platform (no platform-file split) custom grid: rendering,
     keyboard/a11y, RTL, theming, month navigation, today/disabled/selected states.
   - Stateless `locale`/`weekStartsOn` resolvers (e.g. co-located with `Calendar`,
@@ -437,12 +437,12 @@ BeeUI 1.0 adopts, for `Calendar`, `DatePicker`, and `DateTimePicker`:
 - `DateTimePicker`'s controlled value is `{ date: CalendarDate; time: ClockTime } | null`
   — one coherent object, not two independently-controlled props, satisfying #174's "one
   coherent controlled value model".
-- **Serialization adapter** (`@beeui/core`): `toISODateString(date: CalendarDate):
+- **Serialization adapter** (`@beemvp/beeui-core`): `toISODateString(date: CalendarDate):
   string` / `parseISODateString(iso: string): CalendarDate | null` for interop with
   backends/forms that expect `"YYYY-MM-DD"`. `parseISODateString` splits the string on
   `-` and constructs the `CalendarDate` fields directly — it never calls `new
   Date(iso)`/`Date.parse`, so it cannot inherit the UTC-midnight parsing bug.
-- **`Date` interop adapter** (`@beeui/core`, explicit and opt-in only): `toLocalDate
+- **`Date` interop adapter** (`@beemvp/beeui-core`, explicit and opt-in only): `toLocalDate
   (date: CalendarDate, time?: ClockTime): Date` constructs via the local-timezone `Date`
   constructor (`new Date(year, month - 1, day, time?.hour ?? 0, time?.minute ?? 0)`),
   never `Date.UTC`/ISO-`Z` parsing — so a date-only value converted for interop always
@@ -489,7 +489,7 @@ outside BeeUI" boundary, extended here to timezone/business-calendar ownership.
 - `Calendar` is always BeeUI's own custom grid, on every platform, for every use
   (standalone and inside `DatePicker`'s Web presentation).
 - `DatePicker`/`DateTimePicker` on iOS/Android delegate actual selection UI to
-  `@react-native-community/datetimepicker` (new peer dependency of `@beeui/ui`,
+  `@react-native-community/datetimepicker` (new peer dependency of `@beemvp/beeui-ui`,
   following the exact existing `react-native-safe-area-context`/`react-native-teleport`
   pattern: exact-pinned `devDependency`, ranged `peerDependency`; its own
   compatibility-matrix row, Expo-compatibility evidence, and native compile/runtime
@@ -522,8 +522,8 @@ outside BeeUI" boundary, extended here to timezone/business-calendar ownership.
 ### Dependency / date-library policy
 
 - **No third-party pure-JS date-arithmetic library** (`date-fns`/`dayjs`/`luxon`/etc.).
-  `@beeui/core` implements the minimal Gregorian arithmetic BeeUI actually needs, kept
-  small and dependency-free — consistent with `@beeui/core`'s existing two-dependency
+  `@beemvp/beeui-core` implements the minimal Gregorian arithmetic BeeUI actually needs, kept
+  small and dependency-free — consistent with `@beemvp/beeui-core`'s existing two-dependency
   footprint (`clsx`, `tailwind-merge`) and `docs/architecture.md`'s "must not import
   Expo or application code" boundary.
 - **`Intl` (built into the JS engine) for all locale-sensitive display/week-start
@@ -601,8 +601,8 @@ ways to express the same constraint).
 ## Implementation consequences
 
 - **#172 (Calendar API)** must: introduce `CalendarDate`/`ClockTime` and the pure
-  arithmetic/adapter functions in `@beeui/core`; build the cross-platform custom grid in
-  `@beeui/ui` with the keyboard/RTL/a11y contract above; add the stateless `locale`/
+  arithmetic/adapter functions in `@beemvp/beeui-core`; build the cross-platform custom grid in
+  `@beemvp/beeui-ui` with the keyboard/RTL/a11y contract above; add the stateless `locale`/
   `weekStartsOn` resolvers; ship deterministic tests for month-grid generation,
   comparison, clamping, and leap-year/month-length edges.
 - **#173 (DatePicker API)** must: add `@react-native-community/datetimepicker` as a new

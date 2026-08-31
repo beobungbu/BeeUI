@@ -1,5 +1,5 @@
 {
-  "name": "@beeui/tokens",
+  "name": "@beemvp/beeui-tokens",
   "version": "0.1.0",
   "description": "BeeUI's design-token system: semantic color/spacing/typography/motion contracts and the canonical Uniwind/Tailwind theme CSS.",
   "license": "MIT",

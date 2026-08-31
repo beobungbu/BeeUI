@@ -15,14 +15,14 @@ FINGERPRINT_FILE="${WORK_ROOT}/.beeui-bare-fingerprint"
 CLI_VERSION="${BEEUI_RN_CLI_VERSION:-20.2.0}"
 RN_VERSION="${BEEUI_RN_VERSION:-0.86.2}"
 # Extra npm flags for the tarball install, e.g. "--legacy-peer-deps" when a
-# caller deliberately tests an RN line outside @beeui/ui's current declared
+# caller deliberately tests an RN line outside @beemvp/beeui-ui's current declared
 # peerDependencies range (see .github/workflows/compat-rn-0-87.yml, which
 # tests an RN line the peer range excludes and needs to bypass npm's strict
 # peer resolution to still gather real bundle/compile evidence). Left empty
 # for the default in-range consumer, where strict resolution should hold.
 NPM_INSTALL_FLAGS="${BEEUI_BARE_NPM_INSTALL_FLAGS:-}"
 
-# @beeui/ui peers on react-native-teleport for its native context-preserving
+# @beemvp/beeui-ui peers on react-native-teleport for its native context-preserving
 # overlay host; teleport in turn peers on react-dom, so pin react-dom to the
 # app's react version to keep strict peer resolution clean.
 # DatePicker's native file (date-picker.native.tsx) hard-imports
@@ -68,13 +68,13 @@ pack_beeui() {
   mkdir -p "${PACKAGE_DIR}"
 
   cd "${ROOT_DIR}"
-  pnpm --filter @beeui/core pack --pack-destination "${PACKAGE_DIR}"
-  pnpm --filter @beeui/tokens pack --pack-destination "${PACKAGE_DIR}"
-  pnpm --filter @beeui/ui pack --pack-destination "${PACKAGE_DIR}"
+  pnpm --filter @beemvp/beeui-core pack --pack-destination "${PACKAGE_DIR}"
+  pnpm --filter @beemvp/beeui-tokens pack --pack-destination "${PACKAGE_DIR}"
+  pnpm --filter @beemvp/beeui-ui pack --pack-destination "${PACKAGE_DIR}"
 
-  CORE_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beeui-core-*.tgz' -print -quit)"
-  TOKENS_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beeui-tokens-*.tgz' -print -quit)"
-  UI_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beeui-ui-*.tgz' -print -quit)"
+  CORE_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beemvp-beeui-core-*.tgz' -print -quit)"
+  TOKENS_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beemvp-beeui-tokens-*.tgz' -print -quit)"
+  UI_TARBALL="$(find "${PACKAGE_DIR}" -maxdepth 1 -type f -name 'beemvp-beeui-ui-*.tgz' -print -quit)"
 
   test -n "${CORE_TARBALL}" && test -f "${CORE_TARBALL}"
   test -n "${TOKENS_TARBALL}" && test -f "${TOKENS_TARBALL}"
@@ -137,7 +137,7 @@ prepare_consumer() {
     # a same-version reinstall; force it by clearing the scope first so new
     # tarball content is always picked up. The rest of node_modules and
     # ios/Pods are left intact for incremental installs/builds.
-    rm -rf node_modules/@beeui
+    rm -rf node_modules/@beemvp
     # shellcheck disable=SC2206 # NPM_INSTALL_FLAGS is a controlled, space-separated flag list.
     extra_flags=(${NPM_INSTALL_FLAGS})
     # Expand a possibly-empty array safely under `set -u`: on bash 3.2 (the macOS
@@ -173,10 +173,10 @@ EOF
   cat > src/global.css <<'EOF'
 @import 'tailwindcss';
 @import 'uniwind';
-@import '@beeui/tokens/theme.css';
+@import '@beemvp/beeui-tokens/theme.css';
 
-@source '../node_modules/@beeui/core/src';
-@source '../node_modules/@beeui/ui/src';
+@source '../node_modules/@beemvp/beeui-core/src';
+@source '../node_modules/@beemvp/beeui-ui/src';
 EOF
 
   cat > App.tsx <<'EOF'
@@ -200,11 +200,11 @@ import {
   SafeArea,
   Screen,
   Text,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 // #204: proves a granular per-component subpath (ADR-012,
 // docs/decisions/012-granular-subpath-exports.md) resolves through Metro
-// from the packed @beeui/ui tarball, not just the barrel import above.
-import { Badge } from '@beeui/ui/badge';
+// from the packed @beemvp/beeui-ui tarball, not just the barrel import above.
+import { Badge } from '@beemvp/beeui-ui/badge';
 import * as React from 'react';
 import { ScrollView } from 'react-native';
 
@@ -219,7 +219,7 @@ export default function App() {
           <ScrollView contentContainerStyle={{ padding: 24 }}>
             <Card className="gap-4">
               <Text variant="title">BeeUI bare React Native smoke</Text>
-              <Badge>Granular subpath: @beeui/ui/badge</Badge>
+              <Badge>Granular subpath: @beemvp/beeui-ui/badge</Badge>
               <Input accessibilityLabel="Project name" placeholder="Project name" />
               <Checkbox checked={checked} label="Enable notifications" onCheckedChange={setChecked} />
               <ChipGroup onValueChange={(value) => setFilter(String(value))} value={filter}>

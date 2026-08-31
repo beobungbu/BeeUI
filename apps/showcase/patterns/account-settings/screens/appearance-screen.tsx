@@ -1,4 +1,4 @@
-import { Box, HStack, SegmentedControl, SegmentedControlItem, Text, VStack } from '@beeui/ui';
+import { Box, HStack, SegmentedControl, SegmentedControlItem, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { SettingsScreenShell } from '../components/settings-screen-shell';
 import { SettingsSection } from '../components/settings-section';

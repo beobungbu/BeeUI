@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // Derives `packages/ui/package.json`'s per-component subpath `exports`
-// (`@beeui/ui/<name>`) from the single source of truth for "what is public":
+// (`@beemvp/beeui-ui/<name>`) from the single source of truth for "what is public":
 // `packages/ui/src/index.ts`'s own `from './components/<name>'` re-exports.
 //
 // This is a leak guard by construction, not by curation: a component only
@@ -87,7 +87,7 @@ function genericTarget(name, kind, dir, ext) {
 }
 
 /**
- * Builds one `@beeui/ui/<name>` exports entry, carrying the same condition
+ * Builds one `@beemvp/beeui-ui/<name>` exports entry, carrying the same condition
  * shape as the barrel's `"."` entry (source/react-native/import{types,default}
  * /require{types,default}/browser/default) so every documented component
  * resolves identically to how it already resolves through the barrel today.
@@ -178,7 +178,7 @@ export function writeOrCheckUiExports({ check = false, rootDir = ROOT_DIR } = {}
         `${path.relative(rootDir, packageJsonPath)} exports are stale for ${names.length} public component(s).\nRun: node ${GENERATOR_PATH}`,
       );
     }
-    console.log(`@beeui/ui exports are current (${names.length} public component subpaths).`);
+    console.log(`@beemvp/beeui-ui exports are current (${names.length} public component subpaths).`);
     return exportsField;
   }
 
@@ -186,7 +186,7 @@ export function writeOrCheckUiExports({ check = false, rootDir = ROOT_DIR } = {}
     fs.writeFileSync(packageJsonPath, nextJson, 'utf8');
     console.log(`generated ${names.length} public component subpath(s) into ${path.relative(rootDir, packageJsonPath)}`);
   } else {
-    console.log(`@beeui/ui exports already current (${names.length} public component subpaths).`);
+    console.log(`@beemvp/beeui-ui exports already current (${names.length} public component subpaths).`);
   }
   return exportsField;
 }

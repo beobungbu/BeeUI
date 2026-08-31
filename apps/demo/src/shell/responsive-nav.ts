@@ -1,4 +1,4 @@
-import { breakpoint } from '@beeui/tokens';
+import { breakpoint } from '@beemvp/beeui-tokens';
 import { useWindowDimensions } from 'react-native';
 
 /**

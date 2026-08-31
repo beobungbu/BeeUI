@@ -1,5 +1,5 @@
-import { applyDensity, densityPresets } from '@beeui/tokens';
-import { BeeThemeScope, Button, ListItem, getBeeToken, useBeeToken } from '@beeui/ui';
+import { applyDensity, densityPresets } from '@beemvp/beeui-tokens';
+import { BeeThemeScope, Button, ListItem, getBeeToken, useBeeToken } from '@beemvp/beeui-ui';
 import { act, render } from '@testing-library/react-native';
 import * as React from 'react';
 import { Uniwind } from 'uniwind';

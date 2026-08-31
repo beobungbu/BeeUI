@@ -1,5 +1,5 @@
-import { type CalendarDate } from '@beeui/core';
-import { Field } from '@beeui/ui';
+import { type CalendarDate } from '@beemvp/beeui-core';
+import { Field } from '@beemvp/beeui-ui';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
 import { View } from 'react-native';
@@ -9,7 +9,7 @@ import { OverlayRuntimeProvider } from '../../../packages/ui/src/components/over
 // RN/`jest-expo` platform resolution picks the `.native.tsx` sibling for an
 // extensionless `./date-time-picker` import, so exercising the Web presentation
 // deterministically requires importing this exact file rather than going through the
-// `@beeui/ui` barrel.
+// `@beemvp/beeui-ui` barrel.
 import { DateTimePicker } from '../../../packages/ui/src/components/date-time-picker.web';
 import type { DateTimePickerValue } from '../../../packages/ui/src/components/date-time-picker-shared';
 

@@ -12,7 +12,7 @@ import {
   type AnchoredOverlayDirection,
   type CalendarDate,
   type CalendarWeekStartsOn,
-} from '@beeui/core';
+} from '@beemvp/beeui-core';
 import * as React from 'react';
 import { Platform, Pressable, View, type ViewProps } from 'react-native';
 import {

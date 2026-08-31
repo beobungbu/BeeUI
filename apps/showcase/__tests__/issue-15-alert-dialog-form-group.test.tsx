@@ -12,7 +12,7 @@ import {
   FormGroup,
   Radio,
   RadioGroup,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 
 describe('BeeUI issue #15 alert dialog and form grouping', () => {
   afterEach(() => {

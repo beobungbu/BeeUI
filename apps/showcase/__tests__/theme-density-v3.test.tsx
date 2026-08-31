@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react-native';
 import * as React from 'react';
 import { Uniwind } from 'uniwind';
-import { Button, Field, FormGroup, ListItem } from '@beeui/ui';
+import { Button, Field, FormGroup, ListItem } from '@beemvp/beeui-ui';
 import {
   applyDensity,
   beeRuntimeThemeNames,
@@ -15,12 +15,12 @@ import {
   themeOverrideClassification,
   type CompiledThemeOverrides,
   type DensityMode,
-} from '@beeui/tokens';
+} from '@beemvp/beeui-tokens';
 
 // Runtime tests for BeeUI issue #74 — application density semantics.
 //
-// These exercise `@beeui/tokens`'s generated density surface the same way a consuming
-// application would, and prove the two `@beeui/ui` reusable components that consume it
+// These exercise `@beemvp/beeui-tokens`'s generated density surface the same way a consuming
+// application would, and prove the two `@beemvp/beeui-ui` reusable components that consume it
 // (ListItem, FormGroup/Field) render unchanged in the default (comfortable) mode.
 
 describe('issue #74 — application density semantics', () => {
@@ -79,7 +79,7 @@ describe('issue #74 — application density semantics', () => {
   });
 
   it('exposes no additional React density provider/store — only codegen data + a thin apply helper', () => {
-    const tokensExports = require('@beeui/tokens') as Record<string, unknown>;
+    const tokensExports = require('@beemvp/beeui-tokens') as Record<string, unknown>;
     const suspiciousNames = Object.keys(tokensExports).filter(
       (name) => /provider|context|store/i.test(name) && /density/i.test(name),
     );
@@ -97,8 +97,8 @@ describe('issue #74 — application density semantics', () => {
     }
   });
 
-  it('@beeui/ui exports no scoped density component — density has no subtree scoping surface in this release', () => {
-    const uiExports = require('@beeui/ui') as Record<string, unknown>;
+  it('@beemvp/beeui-ui exports no scoped density component — density has no subtree scoping surface in this release', () => {
+    const uiExports = require('@beemvp/beeui-ui') as Record<string, unknown>;
     expect(Object.keys(uiExports)).not.toContain('BeeDensityScope');
     const suspiciousNames = Object.keys(uiExports).filter((name) => /density/i.test(name));
     expect(suspiciousNames).toEqual([]);

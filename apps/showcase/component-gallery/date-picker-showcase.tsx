@@ -1,4 +1,4 @@
-import { Card, DatePicker, Field, Section, Text, VStack, type CalendarDate } from '@beeui/ui';
+import { Card, DatePicker, Field, Section, Text, VStack, type CalendarDate } from '@beemvp/beeui-ui';
 import * as React from 'react';
 
 // BeeUI issue #173 (R4F.3, ADR-008 "DatePicker" contract). A minimal, representative

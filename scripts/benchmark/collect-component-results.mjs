@@ -12,7 +12,7 @@
 // script never fabricates a number it did not receive.
 //
 // Usage:
-//   pnpm --filter @beeui/showcase bench   # writes .artifacts/benchmark/raw/*.json
+//   pnpm --filter @beemvp/beeui-showcase bench   # writes .artifacts/benchmark/raw/*.json
 //   node scripts/benchmark/collect-component-results.mjs
 //
 // This script performs no measurement itself: it reads the raw per-scenario
@@ -78,7 +78,7 @@ export function main() {
   if (!fs.existsSync(RAW_DIR)) {
     process.stderr.write(
       `no raw component samples at ${path.relative(ROOT_DIR, RAW_DIR)} — run ` +
-        '"pnpm --filter @beeui/showcase bench" first\n',
+        '"pnpm --filter @beemvp/beeui-showcase bench" first\n',
     );
     return 1;
   }

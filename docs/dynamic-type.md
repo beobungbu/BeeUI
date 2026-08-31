@@ -1,7 +1,7 @@
 # Dynamic Type / font-scaling contract
 
 BeeUI 1.0 issue [#143](https://github.com/beobungbu/BeeUI/issues/143). This document is
-the canonical policy for how `@beeui/ui` behaves under OS/browser text-size scaling —
+the canonical policy for how `@beemvp/beeui-ui` behaves under OS/browser text-size scaling —
 iOS/Android Dynamic Type on native, browser zoom/OS text size on Web — across the current
 public component surface (`packages/ui/src/components/*`).
 

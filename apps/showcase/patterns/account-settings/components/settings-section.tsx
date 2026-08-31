@@ -1,4 +1,4 @@
-import { Text, VStack } from '@beeui/ui';
+import { Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 
 export type SettingsSectionProps = {

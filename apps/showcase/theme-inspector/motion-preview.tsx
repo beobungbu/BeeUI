@@ -1,6 +1,6 @@
-import { motion, motionIntents, resolveMotion, type MotionIntent } from '@beeui/tokens';
-import { resolveNativeMotion } from '@beeui/tokens/motion-runtime';
-import { Badge, Box, Button, Card, HStack, Text, VStack } from '@beeui/ui';
+import { motion, motionIntents, resolveMotion, type MotionIntent } from '@beemvp/beeui-tokens';
+import { resolveNativeMotion } from '@beemvp/beeui-tokens/motion-runtime';
+import { Badge, Box, Button, Card, HStack, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { AccessibilityInfo, Animated, Easing } from 'react-native';
 

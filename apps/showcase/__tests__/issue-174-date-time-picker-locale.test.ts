@@ -1,4 +1,4 @@
-import { clockTimeFromLocalDate, toLocalDate, type ClockTime } from '@beeui/core';
+import { clockTimeFromLocalDate, toLocalDate, type ClockTime } from '@beemvp/beeui-core';
 import {
   clampClockTime,
   fromDisplayHour,
@@ -9,7 +9,7 @@ import {
 } from '../../../packages/ui/src/components/date-time-picker-locale';
 
 // BeeUI issue #174 (R4F.4, ADR-008 "DateTimePicker" contract). Deterministic unit tests
-// for the pure `@beeui/core` time boundary addition and the `@beeui/ui` locale/format
+// for the pure `@beemvp/beeui-core` time boundary addition and the `@beemvp/beeui-ui` locale/format
 // helpers this component introduces: the date-only day-shift guardrail extended to
 // hour/minute, 12/24h display policy precedence, locale-derived AM/PM labels, and the
 // 12h<->24h hour conversion used by the Web time control.

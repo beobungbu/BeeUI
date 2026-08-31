@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
   Text,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 import { fireEvent, render, within } from '@testing-library/react-native';
 import * as React from 'react';
 import { I18nManager, Pressable } from 'react-native';

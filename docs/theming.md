@@ -2,7 +2,7 @@
 
 BeeUI's theme contract is semantic. Components ask for intent such as `surface`, `foreground`, `primary`, `destructive`, `focus-ring`, or `disabled`; applications change the values behind those contracts instead of branching component source by brand.
 
-The runtime implementation remains **Uniwind + Tailwind CSS v4**. `@beeui/tokens` owns the design-token vocabulary and generated artifacts; it is not a second runtime styling engine, CSS-in-JS layer, mutable theme store, or component-theme object system.
+The runtime implementation remains **Uniwind + Tailwind CSS v4**. `@beemvp/beeui-tokens` owns the design-token vocabulary and generated artifacts; it is not a second runtime styling engine, CSS-in-JS layer, mutable theme store, or component-theme object system.
 
 ## Canonical source and DTCG 2025.10
 
@@ -23,7 +23,7 @@ DTCG token/group names cannot contain `.`. The canonical spacing token historica
 
 ## Package and generated artifacts
 
-The canonical `packages/tokens/tokens.json` is also the distributable `@beeui/tokens/tokens.json` export. Exporting the canonical file directly avoids a second machine-readable copy that could drift while preserving the single-source contract.
+The canonical `packages/tokens/tokens.json` is also the distributable `@beemvp/beeui-tokens/tokens.json` export. Exporting the canonical file directly avoids a second machine-readable copy that could drift while preserving the single-source contract.
 
 The deterministic build-time generator is `scripts/generate-tokens.mjs`. It commits four derived consumer-ready outputs:
 
@@ -110,7 +110,7 @@ BeeUI's dashboard/finance patterns (`apps/showcase/patterns/dashboard-finance`) 
 
 **Completeness.** Exactly like `colors`, every shipped runtime theme — the primary Bee/Violet brand themes and the #77 accessibility high-contrast themes alike — defines the complete, exact `chart` token set. Charts are a general-purpose UI feature, not scoped to a subset of themes, so there is no runtime theme this vocabulary does not apply to.
 
-**Contrast.** `chartContrastContract` (exported from `@beeui/tokens`, canonical source `$extensions["com.beeui"].chartContrastContract`) is the data-viz counterpart to `contrastContract` (see [The contrast-relationship contract](#the-contrast-relationship-contract)): every series/`positive`/`negative`/`neutral`/`highlight`/`axis` role must reach at least 3:1 against every realistic chart backdrop (`surface`, `surface-muted`, `surface-raised`) in every runtime theme, checked against the resolved colors at generation time. `grid` is a documented exception (`category: "decorative"`), matching `border`'s own exception — a gridline is a structural aid, never the sole means of conveying required information.
+**Contrast.** `chartContrastContract` (exported from `@beemvp/beeui-tokens`, canonical source `$extensions["com.beeui"].chartContrastContract`) is the data-viz counterpart to `contrastContract` (see [The contrast-relationship contract](#the-contrast-relationship-contract)): every series/`positive`/`negative`/`neutral`/`highlight`/`axis` role must reach at least 3:1 against every realistic chart backdrop (`surface`, `surface-muted`, `surface-raised`) in every runtime theme, checked against the resolved colors at generation time. `grid` is a documented exception (`category: "decorative"`), matching `border`'s own exception — a gridline is a structural aid, never the sole means of conveying required information.
 
 **Color is not the only signal.** `chart-positive`/`chart-negative` differentiate financial meaning by color, but a consumer must still pair them with a non-color cue (a `+`/`−` sign, an arrow glyph, a label, a pattern) wherever that meaning is critical — color alone is never an accessibility guarantee. See `apps/showcase/__tests__/theme-tokens-v3-chart.test.tsx`'s `DeltaRow` fixture for a minimal example (sign + arrow + accessible label, independent of the rendered color), and `apps/visual-regression`'s `dataviz` scenario for a rendered fixture.
 
@@ -140,7 +140,7 @@ The default family is the platform system font. BeeUI does not force a font-fami
 
 Weights are `regular` 400, `medium` 500, `semibold` 600, and `bold` 700. Tracking is `normal` 0 and `tight` -0.2 px; the CSS generator deterministically emits `-0.0125em` at BeeUI's accepted 16 px reference.
 
-The six roles remain the entire size hierarchy. Technical/numeric content composes **orthogonal features** onto a role rather than adding new roles or a numeric type scale: `numeric="tabular"` for equal-width figures (aligned amount columns, KPIs, timers, reference digits) and `family="mono"` for reference codes/IDs. Both are canonical, typed (`numericVariants`, `monoFontFamily`, `fontFamily.mono` in `@beeui/tokens`), and platform-honest — web utilities (`bee-tabular-nums`, `font-mono`) and native `fontVariant`/`fontFamily` styles. BeeUI bundles no font and forces no global custom font. See [`data-typography.md`](./data-typography.md).
+The six roles remain the entire size hierarchy. Technical/numeric content composes **orthogonal features** onto a role rather than adding new roles or a numeric type scale: `numeric="tabular"` for equal-width figures (aligned amount columns, KPIs, timers, reference digits) and `family="mono"` for reference codes/IDs. Both are canonical, typed (`numericVariants`, `monoFontFamily`, `fontFamily.mono` in `@beemvp/beeui-tokens`), and platform-honest — web utilities (`bee-tabular-nums`, `font-mono`) and native `fontVariant`/`fontFamily` styles. BeeUI bundles no font and forces no global custom font. See [`data-typography.md`](./data-typography.md).
 
 ## Sizing and touch targets
 
@@ -260,7 +260,7 @@ The brand/appearance-to-runtime mapping is BeeUI runtime metadata under `$extens
 Use the typed mapping instead of branching component source:
 
 ```ts
-import { resolveBeeRuntimeTheme } from '@beeui/tokens';
+import { resolveBeeRuntimeTheme } from '@beemvp/beeui-tokens';
 import { Uniwind } from 'uniwind';
 
 Uniwind.setTheme(resolveBeeRuntimeTheme('violet', 'dark'));
@@ -270,12 +270,12 @@ Uniwind remains the runtime theme authority. Code generation changes build-time 
 
 ### Extensible theme registry
 
-`resolveBeeRuntimeTheme` and the `bee | violet` union are convenient but closed: they hard-code the shipped example brands. `defineThemeRegistry` opens that boundary so an application can add its own brand from an ordinary TypeScript project, using only the public `@beeui/tokens` API and without editing BeeUI source.
+`resolveBeeRuntimeTheme` and the `bee | violet` union are convenient but closed: they hard-code the shipped example brands. `defineThemeRegistry` opens that boundary so an application can add its own brand from an ordinary TypeScript project, using only the public `@beemvp/beeui-tokens` API and without editing BeeUI source.
 
 A registry is **typed mapping metadata only**. It is not a React context, state store, provider, or mutable singleton, and constructing one never mutates Uniwind or any global state. It simply records `brand -> appearance -> Uniwind runtime-theme name` and derives typed, deterministic lookups from it.
 
 ```ts
-import { defineThemeRegistry } from '@beeui/tokens';
+import { defineThemeRegistry } from '@beemvp/beeui-tokens';
 import { Uniwind } from 'uniwind';
 
 // Brand, appearance, and runtime-theme unions are inferred from this object.
@@ -317,7 +317,7 @@ Unknown brands and unknown appearances passed to `resolve` are compile-time erro
 Uniwind may update registered CSS variables at runtime. Keep overrides semantic and typed:
 
 ```ts
-import { defineSemanticColorOverrides } from '@beeui/tokens';
+import { defineSemanticColorOverrides } from '@beemvp/beeui-tokens';
 import { Uniwind } from 'uniwind';
 
 const overrides = defineSemanticColorOverrides({
@@ -335,7 +335,7 @@ Applications own contrast validation when overriding runtime values. `defineSema
 `defineThemeOverrides` widens the typed override surface from colors-only to every **runtime-overridable public** token category, without inventing a second theme store or a second token-path schema:
 
 ```ts
-import { applyThemeOverrides, defineThemeOverrides } from '@beeui/tokens';
+import { applyThemeOverrides, defineThemeOverrides } from '@beemvp/beeui-tokens';
 import { Uniwind } from 'uniwind';
 
 const overrides = defineThemeOverrides({
@@ -367,7 +367,7 @@ Issue #74's application-density axis (`applyDensity`) reuses this exact mechanis
 
 ### Typed runtime token readers (#72)
 
-`useBeeToken`/`getBeeToken` (from `@beeui/ui`) let JS/TS consumers that cannot use `className` — SVG props, chart libraries, a React Navigation theme object, `StatusBar`/platform APIs, canvas, imperative animation/configuration — read a resolved BeeUI semantic value without spelling `--color-*`/`--radius-*`/`--motion-duration-*` by hand:
+`useBeeToken`/`getBeeToken` (from `@beemvp/beeui-ui`) let JS/TS consumers that cannot use `className` — SVG props, chart libraries, a React Navigation theme object, `StatusBar`/platform APIs, canvas, imperative animation/configuration — read a resolved BeeUI semantic value without spelling `--color-*`/`--radius-*`/`--motion-duration-*` by hand:
 
 ```ts
 // Hook form: live, scope-aware, re-renders on theme change or a #71 override.
@@ -383,7 +383,7 @@ const navigationTheme = {
 };
 ```
 
-**A read adapter, not a store.** Both functions are thin, stateless wrappers over Uniwind's own public read APIs — `useCSSVariable` and `Uniwind.getCSSVariable` from the `uniwind` package. `@beeui/tokens`'s `beeTokenReader` only derives *which* CSS variable to ask Uniwind for and *how* to normalize whatever it returns; it never reads Uniwind itself, holds no cache, and adds no React context/provider. Uniwind remains the sole runtime theme authority.
+**A read adapter, not a store.** Both functions are thin, stateless wrappers over Uniwind's own public read APIs — `useCSSVariable` and `Uniwind.getCSSVariable` from the `uniwind` package. `@beemvp/beeui-tokens`'s `beeTokenReader` only derives *which* CSS variable to ask Uniwind for and *how* to normalize whatever it returns; it never reads Uniwind itself, holds no cache, and adds no React context/provider. Uniwind remains the sole runtime theme authority.
 
 **Path vocabulary.** A `BeeTokenPath` is a `"category.key"` string derived from canonical token metadata: `colors.<SemanticColorToken>`, `chart.<SemanticChartToken>` (#78), `radius.<RadiusName>`, or `motion.<MotionDurationName>`. `colors`/`radius`/`motion` are the same three categories `defineThemeOverrides` (#71) exposes; `chart` (#78's data-visualization vocabulary) is reader-only — it is real-runtime-reactive the same way `colors` is (theme/appearance/scope-dependent) but is not part of the #71 runtime-override surface. Everything else is rejected by construction: private #70 authoring primitives are never part of `semanticColorTokens`/`chartColorTokens`, so there is no `'colors.amber-500'` or `'chart.amber-500'` path to construct; `breakpoint` is a build-time-only Tailwind/Uniwind constant and has no reader category; theme-invariant groups (`spacing`, typography, `controlSize`/`iconSize`/`avatarSize`, `contentWidth`/`pageGutter`, `elevation`, `motionEasing`, `layer`, `focusRing`) never change at runtime, so they stay ordinary typed exports — import them directly instead of reading them through Uniwind (see the "Runtime-reader note" in `docs/data-typography.md`).
 
@@ -401,7 +401,7 @@ See `packages/tokens/src/token-reader.ts` and `packages/ui/src/components/use-be
 
 Every registered runtime theme — the primary Bee/Violet themes and the accessibility high-contrast themes below — must implement the exact same semantic-color vocabulary. Adding or removing a role is rejected unless all runtime themes move together.
 
-Contrast relationships are no longer a small, ad-hoc list of assertions in test code: they are centralized, machine-tested metadata exported as `contrastContract` from `@beeui/tokens` (canonical source: `$extensions["com.beeui"].contrastContract` in `packages/tokens/tokens.json`). See [Accessibility (high-contrast) theme path](#accessibility-high-contrast-theme-path--77) for the full contract and how it is validated. The 44 px native touch-target minimum and web keyboard-focus policy remain part of the accessibility contract.
+Contrast relationships are no longer a small, ad-hoc list of assertions in test code: they are centralized, machine-tested metadata exported as `contrastContract` from `@beemvp/beeui-tokens` (canonical source: `$extensions["com.beeui"].contrastContract` in `packages/tokens/tokens.json`). See [Accessibility (high-contrast) theme path](#accessibility-high-contrast-theme-path--77) for the full contract and how it is validated. The 44 px native touch-target minimum and web keyboard-focus policy remain part of the accessibility contract.
 
 These deterministic checks do not replace VoiceOver/TalkBack or physical-device acceptance testing.
 
@@ -413,14 +413,14 @@ BeeUI ships a documented, machine-tested **Bee high-contrast** accessibility app
 
 High contrast is **not** an additional appearance on `beeThemeRegistry`. `defineThemeRegistry` requires every brand in one registry to define exactly the same appearance set (its completeness rule) — adding `high-contrast-light`/`high-contrast-dark` as appearances there would force Violet to define a high-contrast pair too, immediately, which the accepted scope explicitly rejects ("Bee high-contrast light/dark is the required first implementation... do not automatically add Violet high-contrast without evidence").
 
-Instead, `@beeui/tokens` exports a **second registry built from the identical `defineThemeRegistry` primitive**, scoped only to the brands that have shipped a certified accessibility appearance:
+Instead, `@beemvp/beeui-tokens` exports a **second registry built from the identical `defineThemeRegistry` primitive**, scoped only to the brands that have shipped a certified accessibility appearance:
 
 ```ts
 import {
   beeAccessibilityThemeRegistry, // defineThemeRegistry({ bee: { light: 'high-contrast-light', dark: 'high-contrast-dark' } })
   resolveBeeAccessibilityRuntimeTheme,
   getBeeAccessibilityThemeSelection,
-} from '@beeui/tokens';
+} from '@beemvp/beeui-tokens';
 import { Uniwind } from 'uniwind';
 
 Uniwind.setTheme(resolveBeeAccessibilityRuntimeTheme('bee', 'dark')); // 'high-contrast-dark'
@@ -438,7 +438,7 @@ This satisfies every criterion the registry docs above set out for the eventual 
 ### Applying it
 
 ```tsx
-import { resolveBeeAccessibilityRuntimeTheme } from '@beeui/tokens';
+import { resolveBeeAccessibilityRuntimeTheme } from '@beemvp/beeui-tokens';
 import { Uniwind } from 'uniwind';
 
 function useBeeHighContrast(mode: 'light' | 'dark') {

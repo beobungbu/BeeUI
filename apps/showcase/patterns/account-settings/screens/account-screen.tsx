@@ -1,4 +1,4 @@
-import { ListGroup, Separator, SettingsItem, Text, VStack } from '@beeui/ui';
+import { ListGroup, Separator, SettingsItem, Text, VStack } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { AccountSummary } from '../components/account-summary';
 import { DangerZone } from '../components/danger-zone';

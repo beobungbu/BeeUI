@@ -13,7 +13,7 @@ import {
   StatValue,
   Stepper,
   StepperItem,
-} from '@beeui/ui';
+} from '@beemvp/beeui-ui';
 
 describe('BeeUI application primitive contracts', () => {
   it('exposes Link semantics and preserves caller accessibility state', () => {

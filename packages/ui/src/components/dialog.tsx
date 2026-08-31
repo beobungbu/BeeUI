@@ -1,4 +1,4 @@
-import { cn } from '@beeui/core';
+import { cn } from '@beemvp/beeui-core';
 import * as React from 'react';
 import {
   AccessibilityInfo,
@@ -37,7 +37,7 @@ import { Text, type TextProps } from './text';
 // repo's established "duplicate the platform-neutral logic" convention
 // documented in `sheet.web.tsx`'s module docblock).
 //
-// `@beeui/ui` targets React Native and excludes the DOM lib, so this reaches
+// `@beemvp/beeui-ui` targets React Native and excludes the DOM lib, so this reaches
 // the DOM through narrow structural types instead of `lib.dom.d.ts`, exactly
 // like `use-direction.ts`'s `WebDocumentLike` convention.
 type WebFocusableElement = {

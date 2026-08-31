@@ -8,7 +8,7 @@ export const visualScenarios = [
   { id: 'dropdown-menu-open', label: 'DropdownMenu open' },
   // #77 finalization — one representative Pattern Gallery screen (a compact
   // reconstruction of apps/showcase/patterns/auth's sign-in screen, built the
-  // same way every other scenario here is: from @beeui/ui primitives only, no
+  // same way every other scenario here is: from @beemvp/beeui-ui primitives only, no
   // cross-app import) so the accessibility axis is proven against a realistic
   // composed screen, not just isolated components.
   { id: 'pattern-sign-in', label: 'Pattern: sign in' },

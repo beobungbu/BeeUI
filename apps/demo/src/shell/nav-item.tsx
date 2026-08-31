@@ -1,4 +1,4 @@
-import { Text } from '@beeui/ui';
+import { Text } from '@beemvp/beeui-ui';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
 import { Pressable } from 'react-native';

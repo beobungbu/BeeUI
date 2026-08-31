@@ -1,5 +1,5 @@
-import { type CalendarDate } from '@beeui/core';
-import { Field } from '@beeui/ui';
+import { type CalendarDate } from '@beemvp/beeui-core';
+import { Field } from '@beemvp/beeui-ui';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
 import { View } from 'react-native';
@@ -9,7 +9,7 @@ import { OverlayRuntimeProvider } from '../../../packages/ui/src/components/over
 // `overlay-dismiss-events.web` import): Jest's default RN/`jest-expo` platform
 // resolution picks the `.native.tsx` sibling for an extensionless `./date-picker`
 // import, so exercising the Web presentation deterministically requires importing
-// this exact file rather than going through the `@beeui/ui` barrel.
+// this exact file rather than going through the `@beemvp/beeui-ui` barrel.
 import { DatePicker } from '../../../packages/ui/src/components/date-picker.web';
 
 // BeeUI issue #173 (R4F.3, ADR-008 "DatePicker" contract). Deterministic

@@ -33,7 +33,7 @@ DEV_DEPS=(
   typescript@5.9.3
 )
 
-echo "==> Packing @beeui/core, @beeui/tokens, @beeui/ui through the package boundary"
+echo "==> Packing @beemvp/beeui-core, @beemvp/beeui-tokens, @beemvp/beeui-ui through the package boundary"
 eval "$(node ../scripts/pack-beeui-packages.mjs --out .beeui-tarballs --packages core,tokens,ui)"
 
 echo "==> Installing BeeUI tarballs and Web runtime/tooling dependencies (npm, no monorepo/pnpm fallback)"

@@ -14,9 +14,9 @@ simulator, or emulator:
 corepack enable
 pnpm install --frozen-lockfile
 
-pnpm --filter @beeui/showcase start      # Expo dev server + QR (Expo Go, over the air)
-pnpm --filter @beeui/showcase ios        # iOS Simulator (macOS + Xcode)
-pnpm --filter @beeui/showcase android     # Android emulator or attached device
+pnpm --filter @beemvp/beeui-showcase start      # Expo dev server + QR (Expo Go, over the air)
+pnpm --filter @beemvp/beeui-showcase ios        # iOS Simulator (macOS + Xcode)
+pnpm --filter @beemvp/beeui-showcase android     # Android emulator or attached device
 ```
 
 `start` prints a QR code you can scan with Expo Go without any native toolchain. See
