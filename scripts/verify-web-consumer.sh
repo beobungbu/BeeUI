@@ -207,6 +207,11 @@ import {
   TooltipTrigger,
   type CalendarDate,
 } from '@beeui/ui';
+// #204: proves a granular per-component subpath (ADR-012,
+// docs/decisions/012-granular-subpath-exports.md) resolves through Vite +
+// react-native-web from the packed @beeui/ui tarball, not just the barrel
+// import above.
+import { Badge } from '@beeui/ui/badge';
 import * as React from 'react';
 
 export function App() {
@@ -220,6 +225,7 @@ export function App() {
         <div style={{ padding: 24, maxWidth: 640, margin: '0 auto' }}>
           <Card className="gap-4">
             <Text variant="title">BeeUI Vite + react-native-web consumer smoke</Text>
+            <Badge>Granular subpath: @beeui/ui/badge</Badge>
 
             <Input accessibilityLabel="Project name" placeholder="Project name" />
             <Checkbox checked={checked} label="Enable notifications" onCheckedChange={setChecked} />
@@ -308,6 +314,11 @@ page.on('console', (m) => {
 
 await page.goto(base, { waitUntil: 'networkidle' });
 await page.waitForSelector('text=BeeUI Vite + react-native-web consumer smoke');
+
+// #204: the granular @beeui/ui/badge subpath import actually rendered, not
+// just compiled — proves ADR-012's subpath exports resolve end to end from
+// the packed tarball.
+await page.waitForSelector('text=Granular subpath: @beeui/ui/badge');
 
 // Form control.
 await page.getByPlaceholder('Project name').fill('Hive Enterprise');
