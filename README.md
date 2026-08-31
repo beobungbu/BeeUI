@@ -83,7 +83,7 @@ BEEUI_FULL_PATTERN_GALLERY_QA=1 pnpm --dir apps/visual-regression test
 
 BeeUI packages and the CLI are release-preparation only and remain unpublished: `private: true`, not published to npm, no `v1.0.0` release or tag exists. The GitHub repository itself also remains private by explicit owner decision, and will not be made public autonomously.
 
-The repository supports workspace package consumption, packed tarballs for package-boundary/controlled consumer testing, and a phase-1 repository-local Registry + source-ownership CLI. This is not yet a public `npx beeui` distribution contract.
+The repository supports workspace package consumption, packed tarballs for package-boundary/controlled consumer testing, and a Registry + source-ownership CLI available both as `pnpm beeui -- <command>` (repo-local) and as the publication-ready `packages/cli` (`@beeui/cli`) package (#209). This is not yet a public `npx @beeui/cli` distribution contract.
 
 ## Safe-area foundation
 

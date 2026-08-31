@@ -68,9 +68,13 @@ Owns both browser evidence layers:
 
 The Gallery layer uses structural assertions and in-memory screenshots. It does not create a 37 × viewport × theme baseline set.
 
-### `registry/` + repository-local CLI
+### `registry/` + `packages/cli`
 
-Own the current phase-1 source-ownership distribution path. It is implemented and tested, but not yet a public `npx beeui` or remote registry product.
+Own the current source-ownership distribution path. The engine is a single shared
+implementation in `packages/cli/src/` (`@beeui/cli`, #209), used both as the repo-local
+`pnpm beeui -- <command>` and as a publication-ready packed CLI (`docs/registry-cli.md`).
+It is implemented and tested, but not yet a public `npx @beeui/cli` or remote registry
+product.
 
 ## Theme contract
 

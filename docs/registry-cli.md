@@ -2,9 +2,13 @@
 
 ## Status
 
-This is BeeUI's first pre-1.0, repository-local source-ownership workflow. It is intentionally not a published npm CLI and must not be described as `npx beeui` yet.
+This is BeeUI's pre-1.0 source-ownership workflow. The CLI engine now lives in the
+publishable `packages/cli` (`@beeui/cli`) package (#209), but it is **not published to
+npm**: do not describe it as `npx @beeui/cli` yet. Publication waits for the owner-gated
+1.0 release (`docs/beeui-1.0-owner-gates.md` #254).
 
-Current repository-local entry points:
+Current repository-local entry points (unchanged for contributors — `pnpm beeui` delegates
+to the same engine as the packed CLI, see "CLI packaging" below):
 
 ```sh
 pnpm beeui -- help
@@ -18,6 +22,39 @@ pnpm registry:test
 ```
 
 The workflow copies supported BeeUI source into a consumer project. The consumer then owns those copied files. It does not create a dependency from the consumer back to this monorepo, does not install packages automatically, and does not fetch executable remote code.
+
+## CLI packaging (#209)
+
+The CLI engine (command parsing, registry validation, dependency resolution, transforms,
+collision/overwrite policy) is a single shared implementation at `packages/cli/src/`
+(`beeui.mjs` + `registry-lib.mjs`) — there is no repo-local fork and no published fork.
+Two thin entry points call the same engine:
+
+- `scripts/beeui.mjs` (repo root) re-exports `packages/cli/src/beeui.mjs` directly, so
+  `pnpm beeui -- <command>` keeps working with no build step, against the live monorepo
+  registry and component source.
+- The publishable `@beeui/cli` package's `bin` (`packages/cli/dist/beeui.mjs`, produced by
+  `pnpm --filter @beeui/cli run build`) runs the same engine standalone.
+
+**Registry-data-shipping decision:** `registry/registry.json` records component sources as
+monorepo-relative paths (e.g. `packages/ui/src/components/button.tsx`), which only resolve
+inside this checkout. A published tarball is installed standalone into a consumer's
+`node_modules` with no monorepo tree present, so `packages/cli`'s build step (
+`packages/cli/scripts/build.mjs`) **bundles** a self-contained snapshot rather than
+generating one on first run: it copies the canonical `registry.json` plus every unique
+source file it references into `packages/cli/dist/registry/` (`registry.json` alongside a
+`sources/` tree that mirrors each file's original repo-relative path). The shared engine
+auto-detects which mode it is running in — monorepo dev mode or bundled/packed mode — by
+checking whether a `registry/` directory exists next to its own file at runtime; no caller
+configuration is required either way (see the header comment in
+`packages/cli/src/registry-lib.mjs`).
+
+Verify the packed artifact end-to-end (builds `packages/cli/dist/`, then runs the built
+`beeui.mjs` as a subprocess against a throwaway consumer directory):
+
+```sh
+pnpm cli:smoke
+```
 
 ## Supported registry entries
 
@@ -304,20 +341,23 @@ Generated/copied source contains no timestamps or machine-specific absolute path
 
 The root `pnpm test` command also runs `pnpm registry:verify` and `pnpm registry:test` after the existing showcase test suite.
 
-## Why there is no public `npx beeui` yet
+## Why there is no public `npx @beeui/cli` yet
 
-This tranche intentionally avoids creating `packages/cli`, publishing a fourth package, or changing the current release contract. The CLI remains an internal/pre-1.0 repository tool while the registry/data model, source transforms, security behavior, and consumer workflow stabilize.
-
-Do not document or advertise `npx beeui` as available until a later release tranche owns package naming, npm publication, binary metadata, versioning, distribution, and release verification.
+`packages/cli` (`@beeui/cli`) now exists as a publication-ready, packed artifact (#209):
+it packs and installs standalone, its `beeui` bin runs end-to-end against a bundled
+registry snapshot with no monorepo tree present, and `pnpm release:verify` proves this on
+every run. It is still **not published to npm**. No package or CLI is published until the
+owner explicitly commands the 1.0 release (`docs/beeui-1.0-owner-gates.md` #254); until
+then, do not document or advertise `npx @beeui/cli` as available.
 
 ## Roadmap
 
-A later CLI publication tranche can:
+Follow-on CLI tranche items (#210–#219) can still:
 
-1. decide the publishable CLI package/binary name and release contract;
-2. move the stable engine behind that package without changing registry semantics;
-3. add semver-aware external dependency checks and, only with a separate explicit contract, safe package-manager mutation;
-4. define remote registry distribution with integrity/version controls if BeeUI needs it;
-5. expand source transforms only when each transform has drift/error tests.
+1. harden the required command contract and security posture further (#210, #211);
+2. add semver-aware external dependency checks and, only with a separate explicit contract, safe package-manager mutation;
+3. define remote registry distribution with integrity/version controls if BeeUI needs it;
+4. expand source transforms only when each transform has drift/error tests;
+5. decide safe diff/update assistance, or explicitly defer it (#219).
 
 The registry should stay in lockstep with the stable public component-module surface. `pnpm registry:verify` enforces that invariant; new components must declare their exact source files, internal registry dependencies, external packages, peer expectations, and required transforms before their public export can land. Components with more complex native dependencies or provider/context behavior still need consumer verification appropriate to their runtime contract.
