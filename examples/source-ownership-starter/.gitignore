@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.beeui-tarballs/
+src/uniwind-types.d.ts
+package-lock.json
+
+# Note: beeui.config.json, src/components/beeui/, src/lib/beeui/, and
+# src/beeui/theme.css are produced by `beeui add` (see setup.sh) but are
+# intentionally NOT ignored — source ownership means the consumer commits
+# and owns these files, exactly like a real BeeUI source-ownership consumer
+# would. setup.sh reproduces them deterministically (`beeui add` is
+# idempotent: identical content reports UNCHANGED, see docs/registry-cli.md).

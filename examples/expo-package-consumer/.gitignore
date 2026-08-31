@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.expo/
+.beeui-tarballs/
+uniwind-types.d.ts
+package-lock.json

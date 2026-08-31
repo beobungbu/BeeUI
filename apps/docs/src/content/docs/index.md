@@ -11,15 +11,16 @@ Stable behavior, semantic, and variant APIs do not require callers to know the
 underlying styling engine.
 
 :::caution[Site status]
-This site is currently **infrastructure only** (navigation, theming, and framework
-setup). Per-component API reference, executable examples, production pattern docs,
-and the Web Showcase/native preview integration land in follow-up work. Pages
-without full content say so explicitly.
+This site is being filled in incrementally. Per-component API reference, executable
+examples, the production pattern library, and the Web Showcase/native preview workflow are
+in place (see [Showcase & preview](/showcase/)); some pages remain stubs pending their
+follow-up content and say so explicitly.
 :::
 
 ## Where to start
 
 - **[Getting started](/getting-started/)** — install BeeUI and choose your platform: Expo, bare React Native, or Web.
+- **[Showcase & preview](/showcase/)** — run the real component and pattern surface on Web, and preview it natively on iOS and Android.
 - **[Theming](/theming/)** — tokens, branding, and density.
 - **[Components](/components/)** — the component catalog, including Table and Calendar/date-time.
 - **[Patterns](/patterns/)** — production screen patterns built from BeeUI primitives.

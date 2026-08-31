@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "BeeUI Expo Package Consumer",
+    "slug": "beeui-expo-package-consumer",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.beeui.examples.expoconsumer",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.beeui.examples.expoconsumer",
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

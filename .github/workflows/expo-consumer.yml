@@ -1,0 +1,317 @@
+name: expo-consumer
+
+# #204 (R7.8, parent #114): the independent, clean Expo SDK 57 consumer —
+# installs only the packed @beeui/core/@beeui/tokens/@beeui/ui tarballs (no
+# workspace link, no repository source fallback), proves TypeScript
+# typechecking plus a Metro bundle/export for Web/Android/iOS from those
+# tarballs, and exercises the provider/theme/forms/overlays surface through
+# both the public barrel and a granular per-component subpath import
+# (ADR-012). Mirrors web-consumer.yml's structure/gating; native
+# prebuild+compile runs as a separate, heavier job gated the same way
+# ci.yml's bare-native/ios-native jobs are, since it needs the Android
+# SDK/Xcode toolchains, not just Node/pnpm.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  push:
+    branches:
+      - main
+  # Weekly recurring re-verification even on weeks with no PR/push activity
+  # touching this row, offset from the other nightly compatibility crons
+  # (ci.yml 47 2 * * *, runtime-native.yml 17 3 * * *,
+  # compat-rn-0-87.yml 52 3 * * *, web-consumer.yml 22 4 * * 1).
+  schedule:
+    - cron: '5 5 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+# Least-privilege default: only reads source and uploads its own job
+# artifacts (via the runner's ACTIONS_RUNTIME_TOKEN, not this token's scope).
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 24.13.1
+  PNPM_VERSION: 10.15.0
+
+jobs:
+  bundle:
+    # Fork PRs must never run on our self-hosted runner: the attacker-
+    # controlled checkout would execute arbitrary code directly on our
+    # infrastructure regardless of GITHUB_TOKEN scope. Push/schedule events
+    # are always same-repo.
+    if: >
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+
+      - name: Record exact compatibility-row SHA
+        run: |
+          {
+            echo "### Compatibility row: independent Expo SDK 57 consumer (#204)"
+            echo "- Exact checked-out SHA: \`$(git rev-parse HEAD)\`"
+            echo "- Trigger: \`${{ github.event_name }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pnpm via Corepack
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+      - name: Verify JavaScript toolchain
+        run: |
+          test "$(node --version)" = "v${NODE_VERSION}"
+          test "$(pnpm --version)" = "${PNPM_VERSION}"
+
+      - name: pnpm store dir
+        run: pnpm config set store-dir "$HOME/.pnpm-store"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v6
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare the independent Expo consumer
+        env:
+          BEEUI_EXPO_CONSUMER_WORK_ROOT: ${{ runner.temp }}/beeui-expo-consumer
+          BEEUI_EXPO_CONSUMER_CLEAN: '1'
+        run: bash scripts/verify-expo-consumer.sh prepare
+
+      - name: Typecheck the independent Expo consumer
+        env:
+          BEEUI_EXPO_CONSUMER_WORK_ROOT: ${{ runner.temp }}/beeui-expo-consumer
+        run: bash scripts/verify-expo-consumer.sh typecheck
+
+      - name: Bundle the independent Expo consumer for Web/Android/iOS
+        env:
+          BEEUI_EXPO_CONSUMER_WORK_ROOT: ${{ runner.temp }}/beeui-expo-consumer
+        run: bash scripts/verify-expo-consumer.sh bundle
+
+      - name: Upload consumer export output
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: expo-consumer-dist-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            ${{ runner.temp }}/beeui-expo-consumer/app/dist-web
+            ${{ runner.temp }}/beeui-expo-consumer/app/dist-android
+            ${{ runner.temp }}/beeui-expo-consumer/app/dist-ios
+          if-no-files-found: warn
+          retention-days: 3
+
+  android-native:
+    needs: [bundle]
+    # Native prebuild + Gradle compile is heavier than the bundle job above,
+    # so it only runs on push/schedule/dispatch or an explicit `ci:native`
+    # label — the same trigger shape as ci.yml's bare-native Android leg.
+    if: >
+      github.event_name == 'push' ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (
+        contains(github.event.pull_request.labels.*.name, 'ci:native') &&
+        github.event.pull_request.head.repo.full_name == github.repository
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pnpm via Corepack
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+      - name: pnpm store dir
+        run: pnpm config set store-dir "$HOME/.pnpm-store"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v6
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - name: Cache Gradle
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-expo-${{ runner.os }}-${{ hashFiles('**/*.gradle*','**/gradle-wrapper.properties') }}
+          restore-keys: gradle-expo-${{ runner.os }}-
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Java
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.0
+
+      - name: Install Android build dependencies
+        run: |
+          sdkmanager "platform-tools" \
+            "platforms;android-35" \
+            "platforms;android-36" \
+            "build-tools;35.0.0" \
+            "build-tools;36.0.0" \
+            "ndk;27.1.12297006" \
+            "cmake;3.22.1"
+
+      - name: Prepare the independent Expo consumer
+        env:
+          BEEUI_EXPO_CONSUMER_WORK_ROOT: ${{ runner.temp }}/beeui-expo-consumer
+        run: bash scripts/verify-expo-consumer.sh prepare
+
+      - name: Compile Expo consumer Android debug APK
+        env:
+          BEEUI_EXPO_CONSUMER_WORK_ROOT: ${{ runner.temp }}/beeui-expo-consumer
+        run: bash scripts/verify-expo-consumer.sh android-build
+
+  ios-native:
+    needs: [bundle]
+    # Same trigger shape as ci.yml's ios-native job: push/schedule/dispatch,
+    # or a same-repo PR (fork PRs still cannot execute on the self-hosted
+    # Mac).
+    if: >
+      github.event_name == 'push' ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: macos-latest
+    timeout-minutes: 90
+    env:
+      XCODE_MIN_VERSION: "26.4"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+
+      - name: Select Xcode ${{ env.XCODE_MIN_VERSION }}+
+        run: |
+          set -euo pipefail
+
+          selected_developer_dir=""
+          selected_version=""
+
+          version_is_supported() {
+            local version="$1" min_version="$2"
+            local major minor min_major min_minor
+            IFS='.' read -r major minor _ <<< "$version"
+            IFS='.' read -r min_major min_minor _ <<< "$min_version"
+            (( ${major:-0} > ${min_major:-0} || \
+               (${major:-0} == ${min_major:-0} && ${minor:-0} >= ${min_minor:-0}) ))
+          }
+
+          for app in $(ls -d /Applications/Xcode*.app 2>/dev/null | sort -rV); do
+            [ -d "$app/Contents/Developer" ] || continue
+            candidate="$app/Contents/Developer"
+            version="$(DEVELOPER_DIR="$candidate" /usr/bin/xcodebuild -version | awk 'NR == 1 { print $2 }')"
+            echo "Found $app -> Xcode $version"
+            if version_is_supported "$version" "$XCODE_MIN_VERSION"; then
+              selected_developer_dir="$candidate"
+              selected_version="$version"
+              break
+            fi
+          done
+
+          if [ -z "$selected_developer_dir" ]; then
+            active_version="$(/usr/bin/xcodebuild -version | awk 'NR == 1 { print $2 }')"
+            echo "::error::expo-consumer requires Xcode ${XCODE_MIN_VERSION}+. Active Xcode is ${active_version}."
+            exit 1
+          fi
+
+          echo "DEVELOPER_DIR=$selected_developer_dir" >> "$GITHUB_ENV"
+          export DEVELOPER_DIR="$selected_developer_dir"
+          echo "Using Xcode $selected_version at $DEVELOPER_DIR"
+          /usr/bin/xcodebuild -version
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pnpm via Corepack
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+      - name: pnpm store dir
+        run: pnpm config set store-dir "$HOME/.pnpm-store"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v6
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cocoapods
+            ~/Library/Caches/CocoaPods
+          key: pods-expo-consumer-macos-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pods-expo-consumer-macos-
+
+      - name: Install darwin-arm64 workspace dependencies
+        run: >
+          pnpm install --frozen-lockfile --prefer-offline
+          --store-dir "$HOME/.pnpm-store/beeui-v10"
+
+      - name: Prepare the independent Expo consumer
+        env:
+          BEEUI_EXPO_CONSUMER_WORK_ROOT: ${{ runner.temp }}/beeui-expo-consumer
+        run: bash scripts/verify-expo-consumer.sh prepare
+
+      - name: Compile Expo consumer for iOS Simulator
+        env:
+          BEEUI_EXPO_CONSUMER_WORK_ROOT: ${{ runner.temp }}/beeui-expo-consumer
+        run: |
+          set -euo pipefail
+          log="$RUNNER_TEMP/beeui-expo-consumer-ios-xcodebuild.log"
+          bash scripts/verify-expo-consumer.sh ios-build 2>&1 | tee "$log"
+
+      - name: Upload Expo consumer iOS xcodebuild log
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: expo-consumer-ios-xcodebuild-log-${{ github.run_id }}
+          path: ${{ runner.temp }}/beeui-expo-consumer-ios-xcodebuild.log
+          if-no-files-found: warn
+          retention-days: 2

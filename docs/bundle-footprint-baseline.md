@@ -17,13 +17,24 @@ against **that** real release-ready layout.
 Base commit: `f385b3fb9a1e` (`main`, before this PR's own commits).
 Environment: Node v24.13.1, pnpm 10.15.0, darwin/arm64.
 
+Updated at `7aeaf75370ba` (#202/#203/#204, R7.6-R7.8): the packed-inventory
+audit in `pnpm release:verify` found and fixed a real leak —
+`react-native-builder-bob`'s `module`/`commonjs` babel targets were also
+compiling `@beeui/ui`'s hand-written ambient `.d.ts` type shims (they match
+the same `*.ts` glob), producing 20 dead `.d.js`/`.d.js.map` files with no
+consumer. `packages/ui/scripts/copy-type-shims.mjs` now prunes them after
+every build. Each package also gained a `README.md` (+1 packed file each; npm
+always includes it regardless of the `files` allowlist). Net for `@beeui/ui`:
+824 → 805 files. The table below reflects the corrected, audited packed
+contents.
+
 ## 1. Packed tarball sizes (`npm pack --dry-run`, real `dist/` + `src/`)
 
 | Package | Packed (gzip) | Unpacked | Files |
 | --- | ---: | ---: | ---: |
-| `@beeui/core` | 25.1 KiB | 145.7 KiB | 51 |
-| `@beeui/tokens` | 97.3 KiB | 544.8 KiB | 61 |
-| `@beeui/ui` | 495.3 KiB | 2.94 MiB | 824 |
+| `@beeui/core` | 25.8 KiB | 147.1 KiB | 52 |
+| `@beeui/tokens` | 98.0 KiB | 546.5 KiB | 62 |
+| `@beeui/ui` | 501.6 KiB | 2.98 MiB | 805 |
 
 Every package now ships **three** copies of its source tree in the tarball —
 `dist/module` (ESM), `dist/commonjs` (CJS), `dist/typescript` (`.d.ts` +
