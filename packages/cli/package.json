@@ -1,0 +1,48 @@
+{
+  "name": "@beeui/cli",
+  "version": "0.1.0",
+  "description": "BeeUI's source-ownership CLI: copies BeeUI component source and its transitive dependencies into a consumer project.",
+  "license": "MIT",
+  "author": {
+    "name": "Trần Đức Lân",
+    "email": "lantranduc@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beobungbu/BeeUI.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/beobungbu/BeeUI#readme",
+  "bugs": {
+    "url": "https://github.com/beobungbu/BeeUI/issues"
+  },
+  "keywords": [
+    "beeui",
+    "cli",
+    "react-native",
+    "react",
+    "design-system",
+    "source-ownership"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "type": "module",
+  "bin": {
+    "beeui": "./dist/beeui.mjs"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "node ./scripts/build.mjs",
+    "prepack": "pnpm run build",
+    "smoke": "node ./scripts/smoke.mjs"
+  }
+}
