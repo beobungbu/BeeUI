@@ -16,7 +16,12 @@ import { ScrollView, StatusBar } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
 import { ComponentGallery } from './component-gallery';
 import { PatternGallery } from './pattern-gallery';
-import { DynamicTypeAcceptance, L10nStressAcceptance, RuntimeAcceptance } from './runtime-smoke';
+import {
+  DynamicTypeAcceptance,
+  L10nStressAcceptance,
+  RuntimeAcceptance,
+  RuntimeStressAcceptance,
+} from './runtime-smoke';
 import { ThemeInspector } from './theme-inspector';
 
 type ShowcaseSection =
@@ -26,6 +31,7 @@ type ShowcaseSection =
   | 'l10n-stress'
   | 'patterns'
   | 'runtime'
+  | 'runtime-stress'
   | 'tokens';
 
 function ShowcaseThemeControl() {
@@ -63,6 +69,10 @@ export function ShowcaseRoot() {
 
   if (section === 'runtime') {
     return <RuntimeAcceptance onBack={() => setSection('home')} />;
+  }
+
+  if (section === 'runtime-stress') {
+    return <RuntimeStressAcceptance onBack={() => setSection('home')} />;
   }
 
   if (section === 'dynamic-type') {
@@ -181,6 +191,26 @@ trailing={<ShowcaseThemeControl />}
         variant="outline"
       >
         Open runtime acceptance
+      </Button>
+    </Card>
+
+    <Card className="min-w-[260px] flex-1 gap-5" padding="lg" variant="raised">
+      <VStack gap="sm">
+        <HStack align="start" justify="between" wrap>
+          <Text variant="heading">Runtime stress</Text>
+          <Badge variant="info">QA</Badge>
+        </HStack>
+        <Text tone="muted">
+          Isolated #126 native movement/scroll/keyboard stress: root Select, Popover movement coherence, and modal-local child overlays under a real keyboard.
+        </Text>
+      </VStack>
+      <Button
+        accessibilityLabel="Open Runtime Stress fixture"
+        onPress={() => setSection('runtime-stress')}
+        testID="showcase-open-runtime-stress"
+        variant="outline"
+      >
+        Open Runtime Stress fixture
       </Button>
     </Card>
 

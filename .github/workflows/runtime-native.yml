@@ -203,6 +203,14 @@ jobs:
             echo "BEEUI_ANDROID_ACCEL=off" >> "$GITHUB_ENV"
           fi
 
+      - name: Install Android SDK packages
+        run: |
+          sdkmanager "platform-tools" "emulator" \
+            "platforms;android-35" "platforms;android-36" \
+            "build-tools;35.0.0" "build-tools;36.0.0" \
+            "ndk;27.1.12297006" "cmake;3.22.1" \
+            "system-images;android-36;google_apis;x86_64"
+
       - name: Enable pnpm via Corepack
         run: |
           npm install -g corepack@0.33.0
@@ -239,10 +247,8 @@ jobs:
       - name: Cache Android AVD
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-31-${{ runner.os }}
+          path: ~/.android/avd/*
+          key: avd-api36-google_apis-x86_64-pixel_7-v2-${{ runner.os }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -251,7 +257,17 @@ jobs:
         run: bash ./scripts/runtime-smoke/install-maestro.sh
 
       - name: Run Android Emulator smoke
-        run: bash ./scripts/runtime-smoke/android.sh
+        uses: reactivecircus/android-emulator-runner@0a638108440efd5c7f980e6ba145dbcdd8f32009 # v2.37.0
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          avd-name: beeui-runtime-api36
+          profile: pixel_7
+          force-avd-creation: false
+          disable-animations: true
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -camera-back none -camera-front none -accel ${{ env.BEEUI_ANDROID_ACCEL }} -memory 4096 -cores 4 -no-snapshot
+          script: bash ./scripts/runtime-smoke/android.sh
 
       - name: Upload Android runtime evidence
         if: always()

@@ -19,7 +19,7 @@ export MAESTRO_DRIVER_STARTUP_TIMEOUT="${MAESTRO_DRIVER_STARTUP_TIMEOUT:-60000}"
 
 mkdir -p "$ARTIFACT_DIR"
 
-for cmd in node pnpm adb sdkmanager avdmanager maestro; do
+for cmd in node pnpm adb maestro; do
   command -v "$cmd" >/dev/null 2>&1 || { echo "Missing required command: $cmd" >&2; exit 1; }
 done
 
@@ -58,7 +58,6 @@ socket.on("error", (error) => {
   exit 1
 fi
 
-EMULATOR_PID=""
 METRO_PID=""
 SERIAL=""
 ORIGINAL_WM_SIZE=""
@@ -93,80 +92,49 @@ cleanup() {
   fi
   if [ -n "$SERIAL" ]; then
     adb_for_device shell am force-stop "$APP_ID" >/dev/null 2>&1 || true
-    adb_for_device emu kill >/dev/null 2>&1 || true
   fi
-  if [ -n "$EMULATOR_PID" ]; then
-    wait "$EMULATOR_PID" >/dev/null 2>&1 || true
-  fi
+  # Emulator shutdown is owned by reactivecircus/android-emulator-runner.
   exit "$status"
 }
 trap cleanup EXIT INT TERM
 
-sdkmanager "platform-tools" "emulator" \
-  "platforms;android-35" "platforms;android-36" \
-  "build-tools;35.0.0" "build-tools;36.0.0" \
-  "ndk;27.1.12297006" "cmake;3.22.1" \
-  "$SYSTEM_IMAGE"
-
-command -v emulator >/dev/null 2>&1 || { echo "Android emulator was not installed by sdkmanager" >&2; exit 1; }
-
-if ! avdmanager list avd | grep -q "Name: $AVD_NAME"; then
-  echo no | avdmanager create avd --force --name "$AVD_NAME" --package "$SYSTEM_IMAGE" --device "pixel_7"
+# Emulator create/boot/teardown and adb-server ownership belong to the
+# reactivecircus action. Restarting adb here races the action-owned transport
+# and previously produced deterministic `device offline` failures.
+SERIAL="$(adb devices | awk 'NR>1 && $1 ~ /^emulator-/ {print $1; exit}')"
+if [ -z "$SERIAL" ]; then
+  echo "No Android emulator device found; expected the CI action to boot one before this script runs." >&2
+  adb devices >&2 || true
+  exit 1
 fi
-
-adb kill-server >/dev/null 2>&1 || true
-adb start-server >/dev/null
-
-if [ "$ANDROID_ACCEL" = "off" ]; then
-  BOOT_ATTEMPTS=450
-  echo "Starting Android emulator with software CPU emulation (-accel off)."
-else
-  BOOT_ATTEMPTS=120
-  echo "Starting Android emulator with acceleration mode: $ANDROID_ACCEL"
-fi
-
-emulator "@$AVD_NAME" \
-  -no-window \
-  -no-audio \
-  -no-boot-anim \
-  -gpu swiftshader_indirect \
-  -camera-back none \
-  -camera-front none \
-  -accel "$ANDROID_ACCEL" \
-  -memory 4096 \
-  -cores 4 \
-  -wipe-data \
-  > "$ARTIFACT_DIR/emulator.log" 2>&1 &
-EMULATOR_PID=$!
-
-for _ in $(seq 1 "$BOOT_ATTEMPTS"); do
-  SERIAL="$(adb devices | awk 'NR>1 && $2=="device" && $1 ~ /^emulator-/ {print $1; exit}')"
-  if [ -n "$SERIAL" ] && [ "$(adb_for_device shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; then
+adb -s "$SERIAL" wait-for-device
+BOOT_WAIT_ATTEMPTS=60
+for _ in $(seq 1 "$BOOT_WAIT_ATTEMPTS"); do
+  if [ "$(adb_for_device shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; then
     break
-  fi
-  if ! kill -0 "$EMULATOR_PID" >/dev/null 2>&1; then
-    echo "Android emulator exited before boot completed" >&2
-    tail -n 100 "$ARTIFACT_DIR/emulator.log" >&2 || true
-    exit 1
   fi
   sleep 2
 done
-
-if [ -z "$SERIAL" ] || [ "$(adb_for_device shell getprop sys.boot_completed | tr -d '\r')" != "1" ]; then
-  echo "Android emulator did not boot before timeout" >&2
-  if [ "$ANDROID_ACCEL" = "off" ]; then
-    echo "Acceleration is OFF: TCG software emulation of an API 36 image is impractically slow." >&2
-    echo "Enable KVM so the workflow picks hardware acceleration: load kvm_intel/kvm_amd on the host" >&2
-    echo "and, if this runner is containerized, map the device with --device /dev/kvm." >&2
-  fi
-  tail -n 100 "$ARTIFACT_DIR/emulator.log" >&2 || true
+if [ "$(adb_for_device shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]; then
+  echo "Android emulator device $SERIAL did not report boot_completed within the timeout." >&2
   exit 1
 fi
 
 adb_for_device shell input keyevent 82 >/dev/null 2>&1 || true
-adb_for_device shell settings put global window_animation_scale 0
-adb_for_device shell settings put global transition_animation_scale 0
-adb_for_device shell settings put global animator_duration_scale 0
+# The baseline runtime suite must run with normal system motion. The emulator
+# action may disable animations before invoking this script; leaving the scales
+# at zero makes Reanimated enter Reduced Motion in development mode and opens a
+# LogBox warning that can intercept native evidence taps. Reduced-motion behavior
+# has its own acceptance coverage and must not contaminate this baseline.
+adb_for_device shell settings put global window_animation_scale 1.0
+adb_for_device shell settings put global transition_animation_scale 1.0
+adb_for_device shell settings put global animator_duration_scale 1.0
+WINDOW_ANIMATION_SCALE="$(adb_for_device shell settings get global window_animation_scale | tr -d '\r')"
+TRANSITION_ANIMATION_SCALE="$(adb_for_device shell settings get global transition_animation_scale | tr -d '\r')"
+ANIMATOR_DURATION_SCALE="$(adb_for_device shell settings get global animator_duration_scale | tr -d '\r')"
+test "$WINDOW_ANIMATION_SCALE" = "1.0"
+test "$TRANSITION_ANIMATION_SCALE" = "1.0"
+test "$ANIMATOR_DURATION_SCALE" = "1.0"
 ORIGINAL_WM_SIZE="$(adb_for_device shell wm size | tr -d '\r')"
 
 cat > "$ARTIFACT_DIR/metadata.txt" <<EOF_META
@@ -182,6 +150,10 @@ maestro=$(maestro --version)
 wm_size=$ORIGINAL_WM_SIZE
 acceleration=$ANDROID_ACCEL
 system_image=$SYSTEM_IMAGE
+avd_name=$AVD_NAME
+window_animation_scale=$WINDOW_ANIMATION_SCALE
+transition_animation_scale=$TRANSITION_ANIMATION_SCALE
+animator_duration_scale=$ANIMATOR_DURATION_SCALE
 EOF_META
 
 (
@@ -282,6 +254,10 @@ real_back() {
 }
 
 run_maestro common "$MAESTRO_FLOW/common.yaml"
+
+# #126 — dismiss -> independent scroll -> coherent reopen plus modal-local
+# Select/keyboard coherence. No invalid same-gesture responder handoff test.
+run_maestro runtime-stress "$MAESTRO_FLOW/runtime-stress.yaml"
 
 run_inline_maestro reset <<'EOF_FLOW'
 - launchApp:
@@ -470,6 +446,93 @@ run_inline_maestro a5-assert <<'EOF_FLOW'
           id: "runtime-alert-cancel"
       - assertNotVisible:
           id: "runtime-alert-content"
+EOF_FLOW
+
+# A7 — real keyboard + hardware Back ordering on the dedicated stress screen.
+run_inline_maestro reset-before-a7 <<'EOF_FLOW'
+- launchApp:
+    clearState: true
+- retry:
+    maxRetries: 4
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: "showcase-open-runtime-stress"
+          direction: DOWN
+          timeout: 40000
+      - tapOn:
+          id: "showcase-open-runtime-stress"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-stress-ready"
+          timeout: 12000
+EOF_FLOW
+run_inline_maestro a7-open <<'EOF_FLOW'
+- scrollUntilVisible:
+    element:
+      id: "runtime-stress-dialog-trigger"
+    direction: DOWN
+- waitForAnimationToEnd
+- tapOn:
+    id: "runtime-stress-dialog-trigger"
+- assertVisible:
+    id: "runtime-stress-dialog-content"
+- tapOn:
+    id: "runtime-stress-dialog-popover-trigger"
+- assertVisible:
+    id: "runtime-stress-dialog-popover-content"
+- tapOn:
+    id: "runtime-stress-dialog-popover-keyboard-toggle"
+- extendedWaitUntil:
+    visible:
+      text: "keyboard: shown"
+    timeout: 10000
+- waitForAnimationToEnd
+- assertVisible:
+    id: "runtime-stress-dialog-popover-content"
+EOF_FLOW
+real_back "A7 Back #1 (keyboard dismiss, IME-owned)"
+run_inline_maestro a7-keyboard-assert <<'EOF_FLOW'
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: "keyboard: hidden"
+    timeout: 10000
+- assertVisible:
+    id: "runtime-stress-dialog-popover-content"
+EOF_FLOW
+real_back "A7 Back #2 (child Popover close)"
+run_inline_maestro a7-popover-assert <<'EOF_FLOW'
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "runtime-stress-dialog-popover-content"
+- assertVisible:
+    id: "runtime-stress-dialog-content"
+EOF_FLOW
+real_back "A7 Back #3 (Dialog close)"
+run_inline_maestro a7-dialog-assert <<'EOF_FLOW'
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "runtime-stress-dialog-content"
+EOF_FLOW
+
+run_inline_maestro reset-after-a7 <<'EOF_FLOW'
+- launchApp:
+    clearState: true
+- retry:
+    maxRetries: 4
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: "showcase-open-runtime"
+          direction: DOWN
+          timeout: 40000
+      - tapOn:
+          id: "showcase-open-runtime"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-ready"
+          timeout: 12000
 EOF_FLOW
 
 adb_for_device exec-out screencap -p > "$ARTIFACT_DIR/full-height.png"

@@ -223,6 +223,17 @@ fi
 set +e
 (
   cd "$ROOT"
+  maestro --device "$SIM_UDID" test "$MAESTRO_FLOW/runtime-stress.yaml"
+) 2>&1 | tee "$ARTIFACT_DIR/maestro-runtime-stress.log"
+stress_status=${PIPESTATUS[0]}
+set -e
+if [ "$stress_status" -ne 0 ]; then
+  exit "$stress_status"
+fi
+
+set +e
+(
+  cd "$ROOT"
   maestro --device "$SIM_UDID" test "$MAESTRO_FLOW/ios-sheets.yaml"
 ) 2>&1 | tee "$ARTIFACT_DIR/maestro-ios-sheets.log"
 sheet_status=${PIPESTATUS[0]}
