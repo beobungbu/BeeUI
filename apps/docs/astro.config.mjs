@@ -28,6 +28,10 @@ export default defineConfig({
           ],
         },
         {
+          label: 'Showcase & preview',
+          items: [{ label: 'Web & native preview', slug: 'showcase' }],
+        },
+        {
           label: 'Theming',
           items: [
             { label: 'Overview', slug: 'theming' },

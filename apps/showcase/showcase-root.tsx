@@ -14,6 +14,7 @@ import {
 import * as React from 'react';
 import { ScrollView, StatusBar } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
+import appConfig from './app.json';
 import { ComponentGallery } from './component-gallery';
 import { PatternGallery } from './pattern-gallery';
 import {
@@ -33,6 +34,32 @@ type ShowcaseSection =
   | 'runtime'
   | 'runtime-stress'
   | 'tokens';
+
+// Build identity for preview/release evidence (#224/#225). The version is the
+// single source in app.json; the commit SHA is injected at export time via the
+// Expo public env var (`EXPO_PUBLIC_BUILD_SHA=$(git rev-parse --short HEAD)`).
+// When the SHA is unset (local dev, jest) the row still shows the version and
+// the honest unpublished-status note, so no environment is assumed.
+const SHOWCASE_VERSION = appConfig.expo.version;
+const SHOWCASE_BUILD_SHA = process.env.EXPO_PUBLIC_BUILD_SHA ?? '';
+
+function ShowcaseBuildIdentity() {
+  const identity = SHOWCASE_BUILD_SHA
+    ? `BeeUI Showcase v${SHOWCASE_VERSION} · build ${SHOWCASE_BUILD_SHA}`
+    : `BeeUI Showcase v${SHOWCASE_VERSION} · local build`;
+
+  return (
+    <VStack gap="xs">
+      <Text testID="showcase-build-identity" variant="caption">
+        {identity}
+      </Text>
+      <Text variant="caption">
+        Unpublished preview. The @beeui/* packages and beeui CLI are not on npm yet; this
+        Showcase is built from in-repo source.
+      </Text>
+    </VStack>
+  );
+}
 
 function ShowcaseThemeControl() {
   const { hasAdaptiveThemes, theme } = useUniwind();
@@ -254,6 +281,8 @@ trailing={<ShowcaseThemeControl />}
       </Button>
     </Card>
   </Box>
+
+  <ShowcaseBuildIdentity />
 </Box>
         </ScrollView>
       </SafeArea>
