@@ -6,7 +6,7 @@
 > **Program base at creation:** `fe8733345ee09720808ec0f6a4db93be9ff4a78f`  
 > **Worker model:** one atomic issue = one branch/PR; mandatory self-test + self-review; independent review; no self-merge.
 
-**Owner decision (2026-08-30): the R1–R5 drive stops here, short of the R7-gated performance tail.** Current closed-issue state: R0 5/5 · R1 8/9 (#126 PR #315 merged, open only for owner-deferred device validation) · R2 10/10 · R3 12/12 · R4 28/28 · R5 4/8 (#183–#186 open, blocked on R7 packaging) · R6 10/10 (governance complete) — **78/148 child issues closed**. R7–R11 are unstarted future work, not part of this drive. Infra landed alongside the drive: CI fully migrated to GitHub-hosted parallel + sharded runners, the Mars self-hosted runner retired, `main` is flake-free.
+**Owner-authorized (2026-08-31): drive resumed through R7–R10, stopping only at genuine owner-gates.** Current closed-issue state: R0 5/5 · R1 8/9 (#126 device-gated) · R2 10/10 · R3 12/12 · R4 28/28 · **R5 8/8 ✅** · R6 10/10 · **R7 in progress** (#197 ADR, #199/#200 build+metadata, #201 granular exports done; #198 preflight done, npm reservation owner-gated; #202–#208 next) · **R8 registry closure done** (#217/#319/#355; CLI extract #209 + #210–#219 next) · **R9 AI-native done** (#226 llms.txt, #227 cookbook/contract, #228 regression suite; #220 docs-site; #221–#225 docs next). Remaining owner-gates: #198/#205 npm account, #254 publish, #234/#253 external, #248/#249 real-device, #229 MCP. Infra: CI GitHub-hosted parallel+sharded, `main` flake-free, rulesets live (#196), repo PUBLIC.
 
 This file is the BeeUI 1.0 **product-scope and issue-map authority**. It does not duplicate every child issue's implementation details.
 
