@@ -21,3 +21,6 @@ apps/showcase/uniwind-types.d.ts
 .claude/settings.local.json
 .claude/*.local.json
 .claude/worktrees/
+
+# local visual-regression snapshot scratch (shard blob downloads)
+regen/
