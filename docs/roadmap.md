@@ -6,7 +6,7 @@
 > **Program base at creation:** `fe8733345ee09720808ec0f6a4db93be9ff4a78f`  
 > **Worker model:** one atomic issue = one branch/PR; mandatory self-test + self-review; independent review; no self-merge.
 
-**Owner decision (2026-08-30): the R1–R5 drive stops here, short of the R7-gated performance tail.** Current closed-issue state: R0 5/5 · R1 8/9 (#126 parked) · R2 10/10 · R3 12/12 · R4 28/28 · R5 4/8 (#183–#186 open, blocked on R7 packaging) · R6 10/10 (governance complete) — **78/148 child issues closed**. R7–R11 are unstarted future work, not part of this drive. Infra landed alongside the drive: CI fully migrated to GitHub-hosted parallel + sharded runners, the Mars self-hosted runner retired, `main` is flake-free.
+**Owner decision (2026-08-30): the R1–R5 drive stops here, short of the R7-gated performance tail.** Current closed-issue state: R0 5/5 · R1 8/9 (#126 PR #315 merged, open only for owner-deferred device validation) · R2 10/10 · R3 12/12 · R4 28/28 · R5 4/8 (#183–#186 open, blocked on R7 packaging) · R6 10/10 (governance complete) — **78/148 child issues closed**. R7–R11 are unstarted future work, not part of this drive. Infra landed alongside the drive: CI fully migrated to GitHub-hosted parallel + sharded runners, the Mars self-hosted runner retired, `main` is flake-free.
 
 This file is the BeeUI 1.0 **product-scope and issue-map authority**. It does not duplicate every child issue's implementation details.
 
@@ -134,7 +134,7 @@ Critical sequencing rules:
 - **R1.4** #123 — anchor-unavailable completion/cleanup.
 - **R1.5** #124 — development diagnostics.
 - **R1.6** #125 — load-bearing race/fallback/ABA/unmount regression matrix.
-- **R1.7** #126 — real iOS/Android runtime stress. **Open, parked by owner (2026-08-30).** See below.
+- **R1.7** #126 — real iOS/Android runtime stress. **PR #315 merged 2026-08-31 (emulator/simulator DoD green); issue open only for owner-deferred physical-device validation.** See below.
 - **R1.8** #127 — independent final review and closure of #59. **Reviewed — deterministic remediation confirmed complete; #59 closure not yet fully evidenced.** See below.
 - **R1.9** #128 — explicit #62 `pageSheet`/`formSheet` support/quarantine policy. **Policy decided — status: EXPERIMENTAL; #62 remains open as a known RN-Modal/headless-sim limitation.** See below.
 
@@ -160,7 +160,7 @@ Critical sequencing rules:
 
 ### #126 disposition (owner decision, 2026-08-30)
 
-#120–#125 and #127's deterministic remediation is accepted (see the review above). #126's real-device/Simulator runtime-stress work was **parked by the owner** at PR #315 (WIP, unmerged, head `934963d`) after hitting a real headless-CI-simulator limitation, not a BeeUI kernel defect: post-scroll popover reopen on the iOS headless Simulator blanks the Fabric render even when the popover is closed during the scroll, so mid-gesture dismiss-layer unmount is not the only trigger. That failure mode is now filed and tracked separately as [#349](https://github.com/beobungbu/BeeUI/issues/349) (iOS headless-Simulator Fabric blank-render). #126 stays **open** and blocks nothing else in R1–R5; it is not scheduled under this drive.
+#120–#125 and #127's deterministic remediation is accepted (see the review above). #126's runtime-stress work **merged via PR #315 (2026-08-31)** with green emulator/simulator DoD (ci / visual-web / web-consumer / web-a11y / native-runtime-smoke all pass at head `a96aa4d`). During that work the iOS headless Simulator surfaced a real CI-environment limitation, not a BeeUI kernel defect: post-scroll popover reopen blanks the Fabric render even when the popover is closed during the scroll, so mid-gesture dismiss-layer unmount is not the only trigger. That failure mode is filed and tracked separately as [#349](https://github.com/beobungbu/BeeUI/issues/349) (iOS headless-Simulator Fabric blank-render). #126 stays **open only for owner-deferred physical-device validation** and blocks nothing else in R1–R5.
 
 # R2 — Compatibility
 
