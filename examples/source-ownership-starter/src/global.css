@@ -1,0 +1,6 @@
+@import 'tailwindcss';
+@import 'uniwind';
+@import './beeui/theme.css';
+
+@source './components/beeui';
+@source './lib/beeui';

@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "componentsDir": "src/components/beeui",
+  "libDir": "src/lib/beeui",
+  "themeFile": "src/beeui/theme.css"
+}

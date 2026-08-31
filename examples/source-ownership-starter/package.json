@@ -1,0 +1,33 @@
+{
+  "name": "beeui-source-ownership-starter",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "R10.2 (#231) — source-ownership starter proving the packed @beeui/cli end-to-end: `beeui init` + `beeui add` copy component source into this app, including the #355 @beeui/tokens runtime-dependency resolution.",
+  "scripts": {
+    "setup": "bash ./setup.sh",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@beeui/tokens": "file:.beeui-tarballs/beeui-tokens-0.1.0.tgz",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.2",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-teleport": "1.1.13",
+    "react-native-web": "0.21.0",
+    "tailwind-merge": "3.6.0",
+    "tailwindcss": "4.3.3",
+    "uniwind": "1.10.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "typescript": "5.9.3",
+    "vite": "8.2.2",
+    "vite-plugin-rnw": "0.0.12"
+  }
+}

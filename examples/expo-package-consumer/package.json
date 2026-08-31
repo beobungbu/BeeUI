@@ -1,0 +1,32 @@
+{
+  "name": "beeui-expo-package-consumer",
+  "private": true,
+  "version": "0.0.0",
+  "description": "R10.1 (#230) — minimal Expo SDK 57 starter consuming @beeui/ui through packed release-ready packages (BeeUI is unpublished; see README.md).",
+  "main": "index.js",
+  "scripts": {
+    "setup": "bash ./setup.sh",
+    "start": "expo start",
+    "bundle": "bash ./bundle.sh"
+  },
+  "dependencies": {
+    "@beeui/core": "file:.beeui-tarballs/beeui-core-0.1.0.tgz",
+    "@beeui/tokens": "file:.beeui-tarballs/beeui-tokens-0.1.0.tgz",
+    "@beeui/ui": "file:.beeui-tarballs/beeui-ui-0.1.0.tgz",
+    "@expo/metro-runtime": "57.0.14",
+    "@gorhom/bottom-sheet": "5.2.14",
+    "@react-native-community/datetimepicker": "9.1.0",
+    "expo": "57.0.18",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.2",
+    "react-native-gesture-handler": "2.32.0",
+    "react-native-reanimated": "4.5.5",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-teleport": "1.1.13",
+    "react-native-web": "0.21.0",
+    "react-native-worklets": "0.10.4",
+    "tailwindcss": "4.3.3",
+    "uniwind": "1.10.1"
+  }
+}
