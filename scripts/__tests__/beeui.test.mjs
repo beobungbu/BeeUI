@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { mkdtemp, mkdir, readdir, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -12,7 +13,67 @@ import {
   publicItems,
   readConfig,
   validateRegistry,
+  verifyRegistrySourceIntegrity,
 } from '../registry-lib.mjs';
+
+function sha256Hex(content) {
+  return createHash('sha256').update(content, 'utf8').digest('hex');
+}
+
+// Builds a minimal, self-contained "bundled mode" fixture (registry.json +
+// one source file + a matching sha256 integrity.json) in a fresh temp
+// directory, mirroring the shape `packages/cli/scripts/build.mjs` produces
+// for a real published package. Used to unit-test the #216 integrity
+// verification path without requiring a full `pnpm --filter @beeui/cli run
+// build` (that end-to-end path is covered separately by `pnpm cli:smoke`).
+async function integrityFixture(t) {
+  // Canonicalize: on macOS, os.tmpdir() paths often cross a symlinked segment
+  // (e.g. `/var` -> `/private/var`), and validateRegistry()'s source-realpath
+  // check compares this directory against the *realpath* of files inside it —
+  // an un-canonicalized `dir` would spuriously look like it "escapes" itself.
+  const dir = await realpath(await mkdtemp(path.join(os.tmpdir(), 'beeui-integrity-')));
+  t.after(async () => rm(dir, { recursive: true, force: true }));
+
+  const sourceRelative = 'demo.tsx';
+  const sourceContent = 'export const Demo = 1;\n';
+  await writeFile(path.join(dir, sourceRelative), sourceContent, 'utf8');
+
+  const registry = {
+    schemaVersion: 1,
+    items: [
+      {
+        name: 'demo',
+        type: 'component',
+        public: true,
+        files: [
+          {
+            source: sourceRelative,
+            target: { root: 'components', path: 'demo.tsx' },
+            transforms: [],
+          },
+        ],
+        registryDependencies: [],
+        dependencies: {},
+        peerDependencies: {},
+      },
+    ],
+  };
+  const registryPath = path.join(dir, 'registry.json');
+  const rawRegistry = `${JSON.stringify(registry, null, 2)}\n`;
+  await writeFile(registryPath, rawRegistry, 'utf8');
+
+  const integrityPath = path.join(dir, 'integrity.json');
+  const manifest = {
+    schemaVersion: 1,
+    algorithm: 'sha256',
+    cliVersion: '0.0.0-fixture',
+    registry: sha256Hex(rawRegistry),
+    sources: { [sourceRelative]: sha256Hex(sourceContent) },
+  };
+  await writeFile(integrityPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+
+  return { dir, registryPath, integrityPath, sourceRelative, sourceContent, manifest, rawRegistry };
+}
 
 function capture() {
   let value = '';
@@ -671,4 +732,263 @@ test('doctor validates config and registry without mutating the project', async 
   assert.match(result.stdout, /BeeUI doctor OK/);
   assert.equal(await readFile(path.join(root, CONFIG_FILENAME), 'utf8'), before);
   assert.equal(await exists(path.join(root, 'src')), false);
+});
+
+// #210: doctor reports its registry delivery mode explicitly. In this test
+// harness the CLI always runs in repository-local dev mode (no bundled
+// integrity.json exists next to packages/cli/src/registry-lib.mjs), so it
+// must say so rather than silently omitting the fact. The bundled/"integrity
+// verified" branch is exercised end-to-end against the real built artifact by
+// `pnpm cli:smoke` (packages/cli/scripts/smoke.mjs), and at the unit level by
+// the `verifyRegistrySourceIntegrity` fixture tests below.
+test('doctor reports dev-mode registry delivery when no bundled manifest exists', async (t) => {
+  const root = await init(t);
+  const result = await run(root, ['doctor']);
+  assert.equal(result.code, 0, result.stderr);
+  assert.match(result.stdout, /registry delivery: dev \(live monorepo source tree, no bundled checksum manifest\)/);
+});
+
+// ---------------------------------------------------------------------------
+// #210: command contract
+// ---------------------------------------------------------------------------
+
+test('version/--version/-v print the installed package name and version and accept no arguments', async (t) => {
+  const root = await project(t);
+  for (const flag of ['version', '--version', '-v']) {
+    // eslint-disable-next-line no-await-in-loop -- sequential CLI invocations, clarity over throughput
+    const result = await run(root, [flag]);
+    assert.equal(result.code, 0, result.stderr);
+    assert.match(result.stdout.trim(), /^@beeui\/cli \d+\.\d+\.\d+/);
+  }
+  const withArgs = await run(root, ['version', 'extra']);
+  assert.equal(withArgs.code, 1);
+  assert.match(withArgs.stderr, /'version' does not accept arguments/);
+});
+
+test('help/--help/-h produce identical, stable usage text listing the full command contract', async (t) => {
+  const root = await project(t);
+  const [help, longFlag, shortFlag] = await Promise.all([
+    run(root, ['help']),
+    run(root, ['--help']),
+    run(root, ['-h']),
+  ]);
+  assert.equal(help.code, 0);
+  assert.equal(help.stdout, longFlag.stdout);
+  assert.equal(help.stdout, shortFlag.stdout);
+  for (const needle of ['beeui version', 'beeui add --all', 'beeui doctor', '--dry-run', '--overwrite', 'Exit codes:']) {
+    assert.ok(help.stdout.includes(needle), `help output missing '${needle}'`);
+  }
+});
+
+test('unknown top-level command fails clearly without mutation', async (t) => {
+  const root = await project(t);
+  const result = await run(root, ['nuke']);
+  assert.equal(result.code, 1);
+  assert.match(result.stderr, /unknown command 'nuke'/);
+});
+
+test('add requires either explicit items or --all, and rejects combining both', async (t) => {
+  const root = await init(t);
+  const neither = await run(root, ['add']);
+  assert.equal(neither.code, 1);
+  assert.match(neither.stderr, /requires at least one component name, or use --all/);
+
+  const both = await run(root, ['add', '--all', 'button']);
+  assert.equal(both.code, 1);
+  assert.match(both.stderr, /does not accept explicit item names/);
+  assert.equal(await exists(path.join(root, 'src')), false);
+});
+
+test('unknown add option fails clearly without mutation', async (t) => {
+  const root = await init(t);
+  const result = await run(root, ['add', '--bogus', 'button']);
+  assert.equal(result.code, 1);
+  assert.match(result.stderr, /unknown add option '--bogus'/);
+  assert.equal(await exists(path.join(root, 'src')), false);
+});
+
+test('add --all resolves and copies the complete public registry surface', async (t) => {
+  const root = await init(t);
+  const registry = await loadRegistry({ repoRoot: REPO_ROOT });
+  const dryRunResult = await run(root, ['add', '--all', '--dry-run']);
+  assert.equal(dryRunResult.code, 0, dryRunResult.stderr);
+  assert.ok(publicItems(registry).length > 0, 'sanity: registry has public components to compare against');
+  // The requested-item set for --all must equal 'list' exactly (every
+  // directly-addable public item, not only public *components*).
+  const listResult = await run(root, ['list']);
+  const listedNames = listResult.stdout.trim().split('\n').sort();
+  const requestedLine = dryRunResult.stdout.split('\n').find((line) => line.startsWith('Requested: '));
+  const requestedNames = requestedLine.replace('Requested: ', '').split(', ').sort();
+  assert.deepEqual(requestedNames, listedNames);
+  assert.equal(await exists(path.join(root, 'src')), false, '--dry-run must not mutate the filesystem');
+
+  const applied = await run(root, ['add', '--all']);
+  assert.equal(applied.code, 0, applied.stderr);
+  for (const relative of [
+    'src/components/beeui/button.tsx',
+    'src/components/beeui/table.tsx',
+    'src/components/beeui/sheet.web.tsx',
+    'src/beeui/theme.css',
+  ]) assert.equal(await exists(path.join(root, relative)), true, relative);
+});
+
+// ---------------------------------------------------------------------------
+// #211: adversarial / public-threat security tests
+// ---------------------------------------------------------------------------
+
+test('hostile add item-name arguments are rejected before any filesystem mutation', async (t) => {
+  const root = await init(t);
+  for (const hostile of ['../../etc/passwd', '/etc/passwd', 'button/../../evil', 'button\0evil', 'BUTTON', '']) {
+    // eslint-disable-next-line no-await-in-loop -- each case must independently prove no mutation occurred
+    const result = await run(root, ['add', hostile]);
+    assert.equal(result.code, 1, `expected '${hostile}' to be rejected`);
+    assert.match(result.stderr, /invalid registry item name|unknown or unsupported registry item/, `'${hostile}'`);
+    // eslint-disable-next-line no-await-in-loop -- see above
+    assert.equal(await exists(path.join(root, 'src')), false, `'${hostile}' must not write any files`);
+  }
+});
+
+test('add refuses to write through a symlinked componentsDir segment (destination symlink race)', async (t) => {
+  const root = await init(t);
+  const outsideDir = await mkdtemp(path.join(os.tmpdir(), 'beeui-outside-'));
+  t.after(async () => rm(outsideDir, { recursive: true, force: true }));
+
+  await mkdir(path.join(root, 'src/components'), { recursive: true });
+  await symlink(outsideDir, path.join(root, 'src/components/beeui'), 'dir');
+
+  const result = await run(root, ['add', 'button']);
+  assert.equal(result.code, 1);
+  assert.match(result.stderr, /symbolic link|escapes the project root/);
+  assert.deepEqual(await readdir(outsideDir), [], 'no files may be written through the symlink into the outside directory');
+});
+
+test('a symlinked beeui.config.json is rejected rather than followed', async (t) => {
+  const root = await project(t);
+  const outsideDir = await mkdtemp(path.join(os.tmpdir(), 'beeui-outside-cfg-'));
+  t.after(async () => rm(outsideDir, { recursive: true, force: true }));
+  const outsideConfig = path.join(outsideDir, 'evil.json');
+  await writeFile(
+    outsideConfig,
+    JSON.stringify({
+      schemaVersion: 1,
+      componentsDir: 'src/components/beeui',
+      libDir: 'src/lib/beeui',
+      themeFile: 'src/beeui/theme.css',
+    }),
+  );
+  await symlink(outsideConfig, path.join(root, CONFIG_FILENAME), 'file');
+
+  const result = await run(root, ['doctor']);
+  assert.equal(result.code, 1);
+  assert.match(result.stderr, /config crosses symbolic link/);
+});
+
+test('loadRegistry rejects malformed registry JSON', async (t) => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'beeui-registry-json-'));
+  t.after(async () => rm(dir, { recursive: true, force: true }));
+  const registryPath = path.join(dir, 'registry.json');
+  await writeFile(registryPath, '{not valid json');
+  await assert.rejects(() => loadRegistry({ repoRoot: REPO_ROOT, registryPath }), /malformed registry JSON/);
+});
+
+// ---------------------------------------------------------------------------
+// #216: registry delivery + integrity strategy
+// ---------------------------------------------------------------------------
+
+test('loadRegistry accepts a bundled registry whose checksum matches its integrity manifest', async (t) => {
+  const fixture = await integrityFixture(t);
+  const registry = await loadRegistry({
+    repoRoot: fixture.dir,
+    registryPath: fixture.registryPath,
+    integrityPath: fixture.integrityPath,
+  });
+  assert.equal(registry.items[0].name, 'demo');
+});
+
+test('loadRegistry rejects a bundled registry.json whose checksum does not match the integrity manifest', async (t) => {
+  const fixture = await integrityFixture(t);
+  await writeFile(fixture.registryPath, `${fixture.rawRegistry}\n// tampered`, 'utf8');
+  await assert.rejects(
+    () =>
+      loadRegistry({
+        repoRoot: fixture.dir,
+        registryPath: fixture.registryPath,
+        integrityPath: fixture.integrityPath,
+      }),
+    /registry integrity check failed: bundled registry\.json checksum mismatch/,
+  );
+});
+
+test('loadRegistry requires an integrity manifest when a bundled one is expected but missing', async (t) => {
+  const fixture = await integrityFixture(t);
+  await assert.rejects(
+    () =>
+      loadRegistry({
+        repoRoot: fixture.dir,
+        registryPath: fixture.registryPath,
+        integrityPath: path.join(fixture.dir, 'does-not-exist.json'),
+      }),
+    /integrity manifest is missing or unreadable/,
+  );
+});
+
+test('buildAddPlan rejects a bundled source file whose content does not match its recorded checksum', async (t) => {
+  const fixture = await integrityFixture(t);
+  await writeFile(path.join(fixture.dir, fixture.sourceRelative), `${fixture.sourceContent}// tampered\n`, 'utf8');
+
+  const registry = await validateRegistry(JSON.parse(fixture.rawRegistry), { repoRoot: fixture.dir, checkSources: true });
+  const projectRoot = await init(t);
+  const config = await readConfig(projectRoot);
+  await assert.rejects(
+    () =>
+      buildAddPlan({
+        projectRoot,
+        registry,
+        config,
+        requestedItems: ['demo'],
+        sourcesRoot: fixture.dir,
+        integrityPath: fixture.integrityPath,
+      }),
+    /registry integrity check failed: bundled source 'demo\.tsx' checksum mismatch/,
+  );
+  assert.equal(await exists(path.join(projectRoot, 'src/components/beeui/demo.tsx')), false);
+});
+
+test('buildAddPlan succeeds for a bundled source file whose checksum matches', async (t) => {
+  const fixture = await integrityFixture(t);
+  const registry = await validateRegistry(JSON.parse(fixture.rawRegistry), { repoRoot: fixture.dir, checkSources: true });
+  const projectRoot = await init(t);
+  const config = await readConfig(projectRoot);
+  const plan = await buildAddPlan({
+    projectRoot,
+    registry,
+    config,
+    requestedItems: ['demo'],
+    sourcesRoot: fixture.dir,
+    integrityPath: fixture.integrityPath,
+  });
+  assert.equal(plan.files[0].action, 'create');
+});
+
+test('verifyRegistrySourceIntegrity reports dev mode when no bundled manifest applies', async () => {
+  const registry = await loadRegistry({ repoRoot: REPO_ROOT });
+  const result = await verifyRegistrySourceIntegrity(registry, { sourcesRoot: REPO_ROOT, integrityPath: null });
+  assert.deepEqual(result, { mode: 'dev', verifiedCount: 0 });
+});
+
+test('verifyRegistrySourceIntegrity sweeps and verifies every bundled source checksum', async (t) => {
+  const fixture = await integrityFixture(t);
+  const registry = await validateRegistry(JSON.parse(fixture.rawRegistry), { repoRoot: fixture.dir, checkSources: true });
+  const result = await verifyRegistrySourceIntegrity(registry, { sourcesRoot: fixture.dir, integrityPath: fixture.integrityPath });
+  assert.deepEqual(result, { mode: 'bundled', verifiedCount: 1 });
+});
+
+test('verifyRegistrySourceIntegrity detects a tampered bundled source outside of any add request', async (t) => {
+  const fixture = await integrityFixture(t);
+  await writeFile(path.join(fixture.dir, fixture.sourceRelative), `${fixture.sourceContent}// tampered\n`, 'utf8');
+  const registry = await validateRegistry(JSON.parse(fixture.rawRegistry), { repoRoot: fixture.dir, checkSources: true });
+  await assert.rejects(
+    () => verifyRegistrySourceIntegrity(registry, { sourcesRoot: fixture.dir, integrityPath: fixture.integrityPath }),
+    /registry integrity check failed: bundled source 'demo\.tsx' checksum mismatch/,
+  );
 });

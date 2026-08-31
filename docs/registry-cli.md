@@ -12,6 +12,7 @@ to the same engine as the packed CLI, see "CLI packaging" below):
 
 ```sh
 pnpm beeui -- help
+pnpm beeui -- version
 pnpm beeui -- init
 pnpm beeui -- list
 pnpm beeui -- add button
@@ -19,9 +20,49 @@ pnpm beeui -- add --dry-run button
 pnpm beeui -- doctor
 pnpm registry:verify
 pnpm registry:test
+pnpm beeui -- add --all
 ```
 
 The workflow copies supported BeeUI source into a consumer project. The consumer then owns those copied files. It does not create a dependency from the consumer back to this monorepo, does not install packages automatically, and does not fetch executable remote code.
+
+## Required command contract (#210)
+
+The stable, release-ready public command surface — locked so it cannot silently change —
+is exactly:
+
+| Command | Arguments | Purpose |
+| --- | --- | --- |
+| `help` / `--help` / `-h` | none | Print usage. |
+| `version` / `--version` / `-v` | none | Print the installed `@beeui/cli` name and version. |
+| `list` | none | Print the full addable public registry surface, sorted, one per line. |
+| `init` | none | Create `beeui.config.json` (never overwrites an existing valid config). |
+| `add <items...>` | one or more registry item names | Preflight and copy source plus transitive BeeUI dependencies. |
+| `add --all` | none (mutually exclusive with explicit item names) | Add the complete stable public registry surface — the same set `list` prints, i.e. every item with `public: true` in the registry. Never includes internal/transitive-only entries (`core-cn`, `overlay-runtime`, `use-direction`, etc.), which are never `public`. |
+| `add --dry-run [...]` | combinable with `<items...>` or `--all` | Compute and print the full plan; write-plan parity with a real `add` (same resolution, transforms, collision preflight, package-requirement report) but no filesystem mutation. |
+| `add --overwrite [...]` | combinable with `<items...>` or `--all` | Explicitly replace differing destination files, only after the whole operation passes preflight. |
+| `doctor` / `verify` | none (aliases of each other) | Validate the canonical registry, the local config, configured path boundaries, and (see "Registry delivery and integrity" below) the bundled registry's checksum integrity. Never mutates the project. |
+
+Any other top-level command, any unrecognized `add` option (anything starting with `-`
+that is not `--all`/`--dry-run`/`--overwrite`), and any unrecognized registry item name
+all fail with a non-zero exit code and a specific stderr message before any filesystem
+mutation happens — never a silent no-op and never a partial write.
+
+**Exit codes:** `0` on success, `1` for every usage error, validation failure, or runtime
+error (unsupported Node version, unknown command/option/item, malformed config/registry,
+collision without `--overwrite`, integrity check failure, etc). This binary contract is
+deliberate — deterministic, easy for both a human and an agent/script to branch on
+(`if beeui add button; then …`), and it avoids inventing a wider code space without a
+concrete consumer need. stdout carries plan/status output only; every error message is
+written to stderr, never stdout, so scripts can separate the two reliably.
+
+`scripts/__tests__/beeui.test.mjs` pins this contract with tests for the full command
+list (including negative cases: unknown command, unknown option, unknown item, `--all`
+combined with explicit items, `add` with neither items nor `--all`).
+
+External package installation (running npm/pnpm/yarn/bun on the consumer's behalf) is
+explicitly out of this contract's scope; it is a separate, owner-gated decision tracked in
+issue #215. `add` only reports required package names/ranges and whether they are already
+declared — it never invokes a package manager.
 
 ## CLI packaging (#209)
 
@@ -272,13 +313,83 @@ pnpm beeui -- doctor
 pnpm beeui -- verify
 ```
 
-This validates the canonical registry, the local `beeui.config.json`, configured path boundaries, and practical symlink constraints. It does not add components.
+This validates the canonical registry, the local `beeui.config.json`, configured path boundaries, practical symlink constraints, and — in a packed/published install — the bundled registry's checksum integrity (see "Registry delivery and integrity" below). It does not add components.
+
+`doctor`'s output line names its registry delivery mode explicitly, e.g.:
+
+```text
+BeeUI doctor OK: registry schema v1, 63 public components, valid beeui.config.json, registry delivery: bundled (187 source checksums verified).
+```
+
+or, in repository-local dev mode (no bundled manifest to check against):
+
+```text
+BeeUI doctor OK: registry schema v1, 63 public components, valid beeui.config.json, registry delivery: dev (live monorepo source tree, no bundled checksum manifest).
+```
 
 Repository maintainers can validate the canonical registry independently of any consumer project with:
 
 ```sh
 pnpm registry:verify
 ```
+
+## Registry delivery and integrity (#216)
+
+**Delivery strategy: bundled, not remote.** `@beeui/cli` ships its own frozen registry
+snapshot inside the published tarball (`dist/registry/registry.json` + `dist/registry/sources/`,
+built by `packages/cli/scripts/build.mjs`, see "CLI packaging" above). There is no remote
+registry endpoint, no version-negotiation network call, and no "fetch the latest registry"
+behavior of any kind. This is a deliberate choice over a versioned static remote registry or
+a hybrid: it makes the CLI fully offline-capable (no network access is ever required for
+`init`/`list`/`add`/`doctor`) and it makes "which component source will `add button` copy"
+a question with exactly one answer per installed `@beeui/cli` version — there is no
+separate remote registry version to fall out of sync with the installed CLI.
+
+**Version pairing.** The registry snapshot, its bundled sources, and the checksum manifest
+below are all written by the same build step from the same commit, and all ship inside the
+same npm tarball as the `beeui` binary itself. A given installed `@beeui/cli` version can
+therefore never observe a registry/source pairing other than the one it was built and
+published with; `npm install @beeui/cli@x.y.z` always pins all three together.
+
+**Integrity/checksum controls.** The build writes `dist/registry/integrity.json`: a sha256
+digest of `registry.json` itself, plus a sha256 digest of every unique bundled source file,
+alongside the `cliVersion` that produced them. At runtime:
+
+- `loadRegistry()` verifies the bundled `registry.json`'s digest against the manifest
+  before parsing it (every command that touches the registry runs this).
+- `add`'s planning step (`buildAddPlan`) verifies each bundled source file's digest
+  immediately before it is read/copied into the consumer project — a source file is never
+  copied without being checked first.
+- `doctor`/`verify` additionally sweeps and verifies **every** unique source file the
+  registry can reference (not only the ones a particular `add` request touches), so a
+  consumer or CI can detect a tampered/corrupted install without running `add` first.
+
+A checksum mismatch, or a missing/malformed integrity manifest where a bundled registry is
+present, fails loudly with a specific error (never a silent fallback, never a partial
+plan) and instructs the caller to reinstall the package. This is the "machine check" that
+proves the packed artifact cannot silently ship or apply mismatched/untrusted component
+source. Repository-local dev mode has no manifest (`registry delivery: dev` above) and is
+not checksum-verified — the live monorepo tree is already under git provenance and by
+definition changes every commit, so a static checksum would provide no signal there.
+
+**No arbitrary executable registry payload.** The bundled registry is JSON; the bundled
+sources are `.tsx`/`.ts`/`.css` component source copied byte-for-byte (subject only to the
+two narrow, named import-rewrite transforms below) — never executed, never `eval`'d, never
+passed to a shell. This is unchanged by bundling and is exercised by the same tests that
+already prove it for the repository-local dev-mode registry (see "Tests" below).
+
+**Compatibility with source-ownership updates and the 1.0 freeze.** Because delivery is
+bundle-per-release rather than a mutable remote source, a consumer who has already copied
+BeeUI source into their project is never affected by a later `@beeui/cli` release changing
+what a fresh `add` would produce — they would have to explicitly upgrade `@beeui/cli` and
+re-run `add`. Until the owner-gated 1.0 release (`docs/beeui-1.0-owner-gates.md` #254),
+this package is not published at all, so no compatibility promise is made yet beyond what
+this document and its tests already prove against packed artifacts.
+
+**Stable public repository/source URLs.** `packages/cli/package.json` declares
+`repository`, `homepage`, and `bugs` URLs pointing at
+`github.com/beobungbu/BeeUI`/`packages/cli`; `scripts/verify-release.mjs` asserts these on
+every release-verification run.
 
 ## Security boundaries
 
@@ -288,9 +399,11 @@ The current repository-local workflow deliberately keeps the trust surface small
 - Registry data is JSON, not executable code.
 - No `eval`, `Function`, shell-string interpolation, arbitrary registry commands, telemetry, auth, or remote code fetch exists.
 - Registry and config paths reject absolute paths and traversal.
-- Existing symlink path segments are rejected for consumer destinations and canonical registry sources.
-- Registry source realpaths are checked to remain within the repository.
-- Consumer destinations are resolved and checked to remain within the selected project root.
+- Existing symlink path segments are rejected for consumer destinations, canonical registry sources, and the config file itself (a symlinked `beeui.config.json` is rejected outright, never followed).
+- Registry source realpaths are checked to remain within the repository (dev mode) or the bundled sources directory (packed mode).
+- Consumer destinations are resolved and checked to remain within the selected project root, including when an intermediate path segment (e.g. a configured `componentsDir`) is itself a symlink planted to redirect writes outside the project.
+- Registry item names are validated against a strict lowercase-kebab-case pattern before any lookup, so a hostile `add` argument (path traversal, absolute path, embedded control character) is rejected by pattern match, not by filesystem behavior.
+- A published/packed install additionally verifies bundled registry and source checksums before trusting them (see "Registry delivery and integrity" above) — tampering with an installed package's bundled files is detected, not silently applied.
 - Unknown commands, options, items, malformed JSON, invalid dependencies, and cycles fail non-zero before writes.
 
 No path validator can replace operating-system permissions or protect against an actively hostile process racing filesystem changes concurrently. The CLI re-checks destination symlink boundaries immediately before writes to narrow that risk.
@@ -337,7 +450,22 @@ Generated/copied source contains no timestamps or machine-specific absolute path
 - no partial writes after preflight collision
 - anchored-overlay module rewrite via Popover
 - Table's `use-direction`/`use-required-callback-warning` dependency closure
-- doctor behavior
+- doctor behavior, including its reported registry delivery mode
+- `version`/`--version`/`-v` output and the full command/flag/exit-code contract (`#210`)
+- `add --all` (equivalence with the full public surface, and its mutual exclusivity with
+  explicit item names)
+- adversarial/public-threat cases (`#211`): hostile `add` item-name arguments (path
+  traversal, absolute paths, control characters), a symlinked `componentsDir` segment
+  redirecting writes outside the project, a symlinked `beeui.config.json`, and malformed
+  registry JSON fed directly to `loadRegistry`
+- registry/source checksum integrity (`#216`): matching and mismatched checksums for both
+  the registry file and a bundled source file, a missing integrity manifest where one is
+  expected, and the full-registry `doctor` sweep
+
+`pnpm cli:smoke` additionally builds the real packed `dist/` artifact and, beyond its
+existing end-to-end `add`/import-resolution checks, tampers with a bundled source file and
+with the bundled `registry.json` after the build to prove the packed binary — not just the
+unit-tested engine — refuses tampered bundled data.
 
 The root `pnpm test` command also runs `pnpm registry:verify` and `pnpm registry:test` after the existing showcase test suite.
 
@@ -352,12 +480,18 @@ then, do not document or advertise `npx @beeui/cli` as available.
 
 ## Roadmap
 
-Follow-on CLI tranche items (#210–#219) can still:
+`#210` (command contract), `#211` (security invariants), and `#216` (registry delivery +
+integrity strategy) are addressed above: the command/flag/exit-code contract is locked and
+pinned by tests, the security invariants are preserved and extended with adversarial tests
+(malicious item names, symlink races on both destinations and the config file, malformed
+registry/config JSON, tampered bundled checksums), and registry delivery is bundled with a
+sha256 integrity manifest verified at runtime. Remaining follow-on CLI tranche items
+(#212–#219) can still:
 
-1. harden the required command contract and security posture further (#210, #211);
-2. add semver-aware external dependency checks and, only with a separate explicit contract, safe package-manager mutation;
-3. define remote registry distribution with integrity/version controls if BeeUI needs it;
-4. expand source transforms only when each transform has drift/error tests;
-5. decide safe diff/update assistance, or explicitly defer it (#219).
+1. add semver-aware external dependency checks and, only with a separate explicit contract,
+   safe package-manager mutation (`#215`, an owner-gated decision this tranche intentionally
+   does not implement — `add`'s package-requirement reporting stays read-only until then);
+2. expand source transforms only when each transform has drift/error tests;
+3. decide safe diff/update assistance, or explicitly defer it (`#219`).
 
 The registry should stay in lockstep with the stable public component-module surface. `pnpm registry:verify` enforces that invariant; new components must declare their exact source files, internal registry dependencies, external packages, peer expectations, and required transforms before their public export can land. Components with more complex native dependencies or provider/context behavior still need consumer verification appropriate to their runtime contract.
