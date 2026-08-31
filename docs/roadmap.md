@@ -74,7 +74,7 @@ Do not re-plan these as future work unless a regression is found:
 - native runtime-smoke foundation;
 - repository-local source-ownership registry/CLI covering the current stable public surface.
 
-**Known regression tracked, not yet fixed:** [#355](https://github.com/beobungbu/BeeUI/issues/355) — the source-ownership registry CLI copies `sheet`, `popover`, `dropdown-menu`, `select`, `toast`, `tooltip`, `theme-scope`, `use-bee-token` and `overlay-runtime` with unresolved `@beeui/tokens` runtime imports. This is a systemic registry-copy gap, not a per-component defect; closing it belongs to R8 registry closure (#217), out of scope for this drive.
+**Regression closed:** [#355](https://github.com/beobungbu/BeeUI/issues/355) — the source-ownership registry CLI copied `sheet`, `popover`, `dropdown-menu`, `select`, `toast`, `tooltip`, `theme-scope`, `use-bee-token` and `overlay-runtime` with unresolved `@beeui/tokens` runtime imports. Per [ADR-011](decisions/011-distribution-architecture.md) D5, resolved by declaring `@beeui/tokens` as a consumer dependency each affected registry item records (not vendoring, since `@beeui/tokens` is now published per #199/#200); landed as part of R8 registry closure (#217).
 
 ---
 
@@ -324,7 +324,7 @@ shared-authority source of truth for every row below; it is drift-checked by
 - #214 deterministic `init` policy.
 - #215 package-manager mutation policy.
 - #216 registry delivery/integrity strategy.
-- #217 complete stable 1.0 registry closure. **Gated by [#355](https://github.com/beobungbu/BeeUI/issues/355)** — the registry CLI must resolve/vendor/rewrite `@beeui/tokens` runtime imports (currently `private: true`, unpublished, and not vendored like `@beeui/core`) so copied source compiles in a clean consumer. Also fix the curated-file-list test gap that let affected files pass CI. #217 cannot be called production-ready until #355 is closed.
+- #217 complete stable 1.0 registry closure. **Closed** — [#355](https://github.com/beobungbu/BeeUI/issues/355) resolved (`@beeui/tokens` is declared as a consumer dependency on every affected registry item instead of left unresolved; the curated-file-list test gap that let affected files skip CI is fixed); [#319](https://github.com/beobungbu/BeeUI/issues/319) resolved (`use-direction` declared on every component that imports it); full registry-dependency-graph audit closed two additional latent gaps (`input`/`toast` missing `text`, `list-item` missing `list-group`).
 - #218 packed CLI clean-consumer E2E.
 - #219 optional safe diff/update assistance or explicit defer.
 
