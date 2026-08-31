@@ -6,7 +6,7 @@
 > **Program base at creation:** `fe8733345ee09720808ec0f6a4db93be9ff4a78f`  
 > **Worker model:** one atomic issue = one branch/PR; mandatory self-test + self-review; independent review; no self-merge.
 
-**Owner decision (2026-08-30): the R1–R5 drive stops here, short of the R7-gated performance tail.** Current closed-issue state: R0 5/5 · R1 8/9 (#126 parked) · R2 10/10 · R3 12/12 · R4 28/28 · R5 4/8 (#183–#186 open, blocked on R7 packaging) · R6 10/10 (governance complete) — **78/148 child issues closed**. R7–R11 are unstarted future work, not part of this drive. Infra landed alongside the drive: CI fully migrated to GitHub-hosted parallel + sharded runners, the Mars self-hosted runner retired, `main` is flake-free.
+**Owner decision (2026-08-30): the R1–R5 drive stops here, short of the R7-gated performance tail.** Current closed-issue state: R0 5/5 · R1 8/9 (#126 PR #315 merged, open only for owner-deferred device validation) · R2 10/10 · R3 12/12 · R4 28/28 · R5 4/8 (#183–#186 open, blocked on R7 packaging) · R6 10/10 (governance complete) — **78/148 child issues closed**. R7–R11 are unstarted future work, not part of this drive. Infra landed alongside the drive: CI fully migrated to GitHub-hosted parallel + sharded runners, the Mars self-hosted runner retired, `main` is flake-free.
 
 This file is the BeeUI 1.0 **product-scope and issue-map authority**. It does not duplicate every child issue's implementation details.
 
@@ -124,7 +124,7 @@ Critical sequencing rules:
 - **R0.3** #117 — synchronize current-state documentation. **Done.**
 - **R0.4** #114 — single BeeUI 1.0 tracker. **Open by design** — the program tracker stays open for the life of the drive; not counted as a closable R0 item.
 - **R0.5** #118 — 1.0 labels/milestone taxonomy. **Done** — planning taxonomy created: labels `1.0:blocker`/`1.0:p0`/`1.0:p1`/`1.0:stretch` + `area:*` (runtime, a11y, compatibility, distribution, docs, release, components, performance, ai-agent, demo-app) and milestone `BeeUI 1.0`.
-- **R0.6** #119 — protect `main` and release paths using actual workflow/check names. **Owner-declined** — the repository owner explicitly closed #119 as not_planned/deferred; `main`/release branch protection is intentionally **not configured at this time** and may be revisited only by a future explicit owner decision.
+- **R0.6** #119 — protect `main` and release paths using actual workflow/check names. **Closed not_planned at the time**, but later **superseded by #196** (merged 2026-08-31, owner-authorized): `main`/release branch protection and tag/release rulesets are now configured. See #196 in R6 and [docs/release-ruleset.md](release-ruleset.md).
 
 # R1 — Runtime hardening
 
@@ -134,7 +134,7 @@ Critical sequencing rules:
 - **R1.4** #123 — anchor-unavailable completion/cleanup.
 - **R1.5** #124 — development diagnostics.
 - **R1.6** #125 — load-bearing race/fallback/ABA/unmount regression matrix.
-- **R1.7** #126 — real iOS/Android runtime stress. **Open, parked by owner (2026-08-30).** See below.
+- **R1.7** #126 — real iOS/Android runtime stress. **PR #315 merged 2026-08-31 (emulator/simulator DoD green); issue open only for owner-deferred physical-device validation.** See below.
 - **R1.8** #127 — independent final review and closure of #59. **Reviewed — deterministic remediation confirmed complete; #59 closure not yet fully evidenced.** See below.
 - **R1.9** #128 — explicit #62 `pageSheet`/`formSheet` support/quarantine policy. **Policy decided — status: EXPERIMENTAL; #62 remains open as a known RN-Modal/headless-sim limitation.** See below.
 
@@ -160,7 +160,7 @@ Critical sequencing rules:
 
 ### #126 disposition (owner decision, 2026-08-30)
 
-#120–#125 and #127's deterministic remediation is accepted (see the review above). #126's real-device/Simulator runtime-stress work was **parked by the owner** at PR #315 (WIP, unmerged, head `934963d`) after hitting a real headless-CI-simulator limitation, not a BeeUI kernel defect: post-scroll popover reopen on the iOS headless Simulator blanks the Fabric render even when the popover is closed during the scroll, so mid-gesture dismiss-layer unmount is not the only trigger. That failure mode is now filed and tracked separately as [#349](https://github.com/beobungbu/BeeUI/issues/349) (iOS headless-Simulator Fabric blank-render). #126 stays **open** and blocks nothing else in R1–R5; it is not scheduled under this drive.
+#120–#125 and #127's deterministic remediation is accepted (see the review above). #126's runtime-stress work **merged via PR #315 (2026-08-31)** with green emulator/simulator DoD (ci / visual-web / web-consumer / web-a11y / native-runtime-smoke all pass at head `a96aa4d`). During that work the iOS headless Simulator surfaced a real CI-environment limitation, not a BeeUI kernel defect: post-scroll popover reopen blanks the Fabric render even when the popover is closed during the scroll, so mid-gesture dismiss-layer unmount is not the only trigger. That failure mode is filed and tracked separately as [#349](https://github.com/beobungbu/BeeUI/issues/349) (iOS headless-Simulator Fabric blank-render). #126 stays **open only for owner-deferred physical-device validation** and blocks nothing else in R1–R5.
 
 # R2 — Compatibility
 
@@ -296,7 +296,7 @@ shared-authority source of truth for every row below; it is drift-checked by
 - #192 issue/PR templates.
 - #193 Actions/fork/self-hosted-runner hardening.
 - #194 dependency/security automation.
-- #195 repository-public preflight; actual visibility action is owner-gated. **Visibility mutation owner-declined** — the repository owner has explicitly rejected the visibility change (recorded on #195); BeeUI remains a **private** repository and will not be made public autonomously. #195 stays open only for its optional non-mutating preflight audit; only a future explicit owner instruction could authorize the actual change. #254 publication remains a separate owner gate regardless.
+- #195 repository-public preflight + visibility action. **Closed (COMPLETED)** — the repository owner changed visibility to **public** on 2026-08-30 after the #187 pre-publication audit came back clean (no secrets/keys/private data in tree or history). This reversed the owner's earlier 2026-08-29 "remain private" decision. #254 stable publication remains a separate owner gate regardless. Open owner follow-up: confirm GitHub private security advisories are enabled.
 - #196 final branch/tag/release ruleset. **Closed** — `main` branch ruleset requires the always-run gating checks (`classify`, `verify`, `web-a11y`, `visual-web-report`, `web-consumer`), 0 required approvals (single-owner), linear history, no force-push/deletion; `v*` tag ruleset blocks tag creation/update/deletion + requires signatures; a `release` environment gates future publish (#254) behind explicit owner approval. Admin bypass retained as the owner escape valve. Contract + rollback documented in [docs/release-ruleset.md](release-ruleset.md), pinned by `scripts/check-release-ruleset.mjs`.
 
 # R7 — Packages — publication-ready only, DO NOT publish
