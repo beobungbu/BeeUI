@@ -301,7 +301,7 @@ shared-authority source of truth for every row below; it is drift-checked by
 
 # R7 — Packages — publication-ready only, DO NOT publish
 
-- #197 distribution architecture ADR.
+- #197 distribution architecture ADR. See [ADR-011](decisions/011-distribution-architecture.md).
 - #198 package/CLI names and permissions; owner/admin gate where required.
 - #199 package metadata.
 - #200 package output format.
