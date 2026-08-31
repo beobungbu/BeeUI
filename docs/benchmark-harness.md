@@ -196,6 +196,63 @@ contract only settles asynchronously (anchored-overlay positioning) or where a
 real device/browser distinction genuinely matters, the scenario file's own
 comments say so.
 
+## Bundle & package footprint baseline (R5.5, #183)
+
+`scripts/benchmark/footprint.mjs` is a **separate script**, not a registered
+scenario: it measures *bytes* for a fixed, real point-in-time layout, not
+*time* across warm-up/sample iterations, so none of the sampler/statistics
+machinery above applies. It reuses this harness's git-provenance helper
+(`lib/metadata.mjs`) and its JSON+summary dual-output convention, and its pure
+analysis helpers live in `lib/footprint-analysis.mjs` (unit-tested in
+`scripts/__tests__/footprint-analysis.test.mjs`, run as part of `bench:test`).
+
+It measures the **release-ready package layout** landed by #200 (dual
+ESM/CJS + `.d.ts` `dist/` output, conditional `exports`, `src/` kept for the
+Registry source-ownership path) — not raw TypeScript source. Run it with:
+
+```bash
+pnpm bench:footprint   # chains `pnpm build` first, then measures
+```
+
+It reports two honestly-separated things (see
+`docs/beeui-1.0-evidence-classes.md`):
+
+1. **Packed tarball sizes** — real `npm pack --dry-run --json --ignore-scripts`
+   output for `@beeui/core`, `@beeui/tokens`, `@beeui/ui` against whatever
+   `dist/` already exists on disk. `--ignore-scripts` is required: `npm pack`
+   otherwise always runs the `prepack` lifecycle script (`pnpm run build`),
+   which both rebuilds redundantly on every invocation and interleaves
+   build-tool log lines with stdout ahead of the JSON payload. The script
+   fails loudly (`assertBuilt()`) if `dist/module/index.js` is missing for any
+   package, rather than silently packing a stale or empty tree.
+2. **Clean-consumer bundle contribution** — esbuild bundles of small synthetic
+   entry points that alias `@beeui/*` bare specifiers straight to the real
+   built `dist/module/index.js` (the exact file every `exports` condition that
+   matters for a bundler — `react-native`, `import`, `browser`, `default` —
+   already resolves to) and mark every one of `@beeui/ui`'s peerDependencies
+   (required and optional) `external`, so the number is what BeeUI's own code
+   contributes, not what the consumer's platform already supplies. This is an
+   **esbuild-bundled proxy over real built output, not a real Metro/webpack/
+   Vite build** — it is reported as such. A real Metro/Vite compile-succeeds
+   proof for an actual npm-installed clean consumer is
+   `scripts/verify-bare-consumer.sh` / `scripts/verify-web-consumer.sh`'s job
+   (ADR-011); this script's job is comparative bytes, not re-proving
+   resolution.
+
+A `native/*`-labeled scenario is a **native-extension-priority proxy**
+(`resolveExtensions` prefers `*.native.js` before plain `*.js`, mirroring
+Metro's platform-file convention) — not a real on-device or Metro-bundled
+number, exactly like `native/list-render`'s `deferred` honesty rule above.
+
+Scenarios also include **direct dist-module imports** that bypass the
+`@beeui/ui` barrel (e.g. `web/single-component-direct` imports
+`dist/module/components/button.js` directly). Today's public `exports` map
+has no per-component subpath — only `.` and `./package.json` — so these are
+not a resolvable import path for a real consumer yet; they exist to measure,
+with real built bytes, what a future granular subpath export (#184's
+decision) would cost against the barrel. The recorded baseline is
+`docs/bundle-footprint-baseline.md`.
+
 ## CI
 
 The harness is pure Node with no external dependencies, so `pnpm bench:web` and
