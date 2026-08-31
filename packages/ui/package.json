@@ -53,6 +53,874 @@
       "browser": "./dist/module/index.js",
       "default": "./dist/module/index.js"
     },
+    "./accordion": {
+      "source": "./src/components/accordion",
+      "react-native": "./dist/module/components/accordion.js",
+      "import": {
+        "types": "./dist/typescript/module/components/accordion.d.ts",
+        "default": "./dist/module/components/accordion.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/accordion.d.ts",
+        "default": "./dist/commonjs/components/accordion.js"
+      },
+      "browser": "./dist/module/components/accordion.js",
+      "default": "./dist/module/components/accordion.js"
+    },
+    "./alert-banner": {
+      "source": "./src/components/alert-banner",
+      "react-native": "./dist/module/components/alert-banner.js",
+      "import": {
+        "types": "./dist/typescript/module/components/alert-banner.d.ts",
+        "default": "./dist/module/components/alert-banner.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/alert-banner.d.ts",
+        "default": "./dist/commonjs/components/alert-banner.js"
+      },
+      "browser": "./dist/module/components/alert-banner.js",
+      "default": "./dist/module/components/alert-banner.js"
+    },
+    "./alert-dialog": {
+      "source": "./src/components/alert-dialog",
+      "react-native": "./dist/module/components/alert-dialog.js",
+      "import": {
+        "types": "./dist/typescript/module/components/alert-dialog.d.ts",
+        "default": "./dist/module/components/alert-dialog.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/alert-dialog.d.ts",
+        "default": "./dist/commonjs/components/alert-dialog.js"
+      },
+      "browser": "./dist/module/components/alert-dialog.js",
+      "default": "./dist/module/components/alert-dialog.js"
+    },
+    "./app-header": {
+      "source": "./src/components/app-header",
+      "react-native": "./dist/module/components/app-header.js",
+      "import": {
+        "types": "./dist/typescript/module/components/app-header.d.ts",
+        "default": "./dist/module/components/app-header.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/app-header.d.ts",
+        "default": "./dist/commonjs/components/app-header.js"
+      },
+      "browser": "./dist/module/components/app-header.js",
+      "default": "./dist/module/components/app-header.js"
+    },
+    "./avatar": {
+      "source": "./src/components/avatar",
+      "react-native": "./dist/module/components/avatar.js",
+      "import": {
+        "types": "./dist/typescript/module/components/avatar.d.ts",
+        "default": "./dist/module/components/avatar.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/avatar.d.ts",
+        "default": "./dist/commonjs/components/avatar.js"
+      },
+      "browser": "./dist/module/components/avatar.js",
+      "default": "./dist/module/components/avatar.js"
+    },
+    "./badge": {
+      "source": "./src/components/badge",
+      "react-native": "./dist/module/components/badge.js",
+      "import": {
+        "types": "./dist/typescript/module/components/badge.d.ts",
+        "default": "./dist/module/components/badge.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/badge.d.ts",
+        "default": "./dist/commonjs/components/badge.js"
+      },
+      "browser": "./dist/module/components/badge.js",
+      "default": "./dist/module/components/badge.js"
+    },
+    "./bottom-action-bar": {
+      "source": "./src/components/bottom-action-bar",
+      "react-native": "./dist/module/components/bottom-action-bar.js",
+      "import": {
+        "types": "./dist/typescript/module/components/bottom-action-bar.d.ts",
+        "default": "./dist/module/components/bottom-action-bar.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/bottom-action-bar.d.ts",
+        "default": "./dist/commonjs/components/bottom-action-bar.js"
+      },
+      "browser": "./dist/module/components/bottom-action-bar.js",
+      "default": "./dist/module/components/bottom-action-bar.js"
+    },
+    "./box": {
+      "source": "./src/components/box",
+      "react-native": "./dist/module/components/box.js",
+      "import": {
+        "types": "./dist/typescript/module/components/box.d.ts",
+        "default": "./dist/module/components/box.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/box.d.ts",
+        "default": "./dist/commonjs/components/box.js"
+      },
+      "browser": "./dist/module/components/box.js",
+      "default": "./dist/module/components/box.js"
+    },
+    "./breadcrumb": {
+      "source": "./src/components/breadcrumb",
+      "react-native": "./dist/module/components/breadcrumb.js",
+      "import": {
+        "types": "./dist/typescript/module/components/breadcrumb.d.ts",
+        "default": "./dist/module/components/breadcrumb.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/breadcrumb.d.ts",
+        "default": "./dist/commonjs/components/breadcrumb.js"
+      },
+      "browser": "./dist/module/components/breadcrumb.js",
+      "default": "./dist/module/components/breadcrumb.js"
+    },
+    "./button": {
+      "source": "./src/components/button",
+      "react-native": "./dist/module/components/button.js",
+      "import": {
+        "types": "./dist/typescript/module/components/button.d.ts",
+        "default": "./dist/module/components/button.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/button.d.ts",
+        "default": "./dist/commonjs/components/button.js"
+      },
+      "browser": "./dist/module/components/button.js",
+      "default": "./dist/module/components/button.js"
+    },
+    "./calendar": {
+      "source": "./src/components/calendar",
+      "react-native": "./dist/module/components/calendar.js",
+      "import": {
+        "types": "./dist/typescript/module/components/calendar.d.ts",
+        "default": "./dist/module/components/calendar.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/calendar.d.ts",
+        "default": "./dist/commonjs/components/calendar.js"
+      },
+      "browser": "./dist/module/components/calendar.js",
+      "default": "./dist/module/components/calendar.js"
+    },
+    "./card": {
+      "source": "./src/components/card",
+      "react-native": "./dist/module/components/card.js",
+      "import": {
+        "types": "./dist/typescript/module/components/card.d.ts",
+        "default": "./dist/module/components/card.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/card.d.ts",
+        "default": "./dist/commonjs/components/card.js"
+      },
+      "browser": "./dist/module/components/card.js",
+      "default": "./dist/module/components/card.js"
+    },
+    "./checkbox": {
+      "source": "./src/components/checkbox",
+      "react-native": "./dist/module/components/checkbox.js",
+      "import": {
+        "types": "./dist/typescript/module/components/checkbox.d.ts",
+        "default": "./dist/module/components/checkbox.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/checkbox.d.ts",
+        "default": "./dist/commonjs/components/checkbox.js"
+      },
+      "browser": "./dist/module/components/checkbox.js",
+      "default": "./dist/module/components/checkbox.js"
+    },
+    "./chip": {
+      "source": "./src/components/chip",
+      "react-native": "./dist/module/components/chip.js",
+      "import": {
+        "types": "./dist/typescript/module/components/chip.d.ts",
+        "default": "./dist/module/components/chip.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/chip.d.ts",
+        "default": "./dist/commonjs/components/chip.js"
+      },
+      "browser": "./dist/module/components/chip.js",
+      "default": "./dist/module/components/chip.js"
+    },
+    "./collapsible": {
+      "source": "./src/components/collapsible",
+      "react-native": "./dist/module/components/collapsible.js",
+      "import": {
+        "types": "./dist/typescript/module/components/collapsible.d.ts",
+        "default": "./dist/module/components/collapsible.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/collapsible.d.ts",
+        "default": "./dist/commonjs/components/collapsible.js"
+      },
+      "browser": "./dist/module/components/collapsible.js",
+      "default": "./dist/module/components/collapsible.js"
+    },
+    "./date-picker": {
+      "source": "./src/components/date-picker",
+      "react-native": "./dist/module/components/date-picker.native.js",
+      "import": {
+        "types": "./dist/typescript/module/components/date-picker.d.ts",
+        "default": "./dist/module/components/date-picker.web.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/date-picker.d.ts",
+        "default": "./dist/commonjs/components/date-picker.web.js"
+      },
+      "browser": "./dist/module/components/date-picker.web.js",
+      "default": "./dist/module/components/date-picker.web.js"
+    },
+    "./date-time-picker": {
+      "source": "./src/components/date-time-picker",
+      "react-native": "./dist/module/components/date-time-picker.native.js",
+      "import": {
+        "types": "./dist/typescript/module/components/date-time-picker.d.ts",
+        "default": "./dist/module/components/date-time-picker.web.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/date-time-picker.d.ts",
+        "default": "./dist/commonjs/components/date-time-picker.web.js"
+      },
+      "browser": "./dist/module/components/date-time-picker.web.js",
+      "default": "./dist/module/components/date-time-picker.web.js"
+    },
+    "./description-list": {
+      "source": "./src/components/description-list",
+      "react-native": "./dist/module/components/description-list.js",
+      "import": {
+        "types": "./dist/typescript/module/components/description-list.d.ts",
+        "default": "./dist/module/components/description-list.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/description-list.d.ts",
+        "default": "./dist/commonjs/components/description-list.js"
+      },
+      "browser": "./dist/module/components/description-list.js",
+      "default": "./dist/module/components/description-list.js"
+    },
+    "./dialog": {
+      "source": "./src/components/dialog",
+      "react-native": "./dist/module/components/dialog.js",
+      "import": {
+        "types": "./dist/typescript/module/components/dialog.d.ts",
+        "default": "./dist/module/components/dialog.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/dialog.d.ts",
+        "default": "./dist/commonjs/components/dialog.js"
+      },
+      "browser": "./dist/module/components/dialog.js",
+      "default": "./dist/module/components/dialog.js"
+    },
+    "./dropdown-menu": {
+      "source": "./src/components/dropdown-menu",
+      "react-native": "./dist/module/components/dropdown-menu.js",
+      "import": {
+        "types": "./dist/typescript/module/components/dropdown-menu.d.ts",
+        "default": "./dist/module/components/dropdown-menu.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/dropdown-menu.d.ts",
+        "default": "./dist/commonjs/components/dropdown-menu.js"
+      },
+      "browser": "./dist/module/components/dropdown-menu.js",
+      "default": "./dist/module/components/dropdown-menu.js"
+    },
+    "./field": {
+      "source": "./src/components/field",
+      "react-native": "./dist/module/components/field.js",
+      "import": {
+        "types": "./dist/typescript/module/components/field.d.ts",
+        "default": "./dist/module/components/field.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/field.d.ts",
+        "default": "./dist/commonjs/components/field.js"
+      },
+      "browser": "./dist/module/components/field.js",
+      "default": "./dist/module/components/field.js"
+    },
+    "./form-group": {
+      "source": "./src/components/form-group",
+      "react-native": "./dist/module/components/form-group.js",
+      "import": {
+        "types": "./dist/typescript/module/components/form-group.d.ts",
+        "default": "./dist/module/components/form-group.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/form-group.d.ts",
+        "default": "./dist/commonjs/components/form-group.js"
+      },
+      "browser": "./dist/module/components/form-group.js",
+      "default": "./dist/module/components/form-group.js"
+    },
+    "./form-message": {
+      "source": "./src/components/form-message",
+      "react-native": "./dist/module/components/form-message.js",
+      "import": {
+        "types": "./dist/typescript/module/components/form-message.d.ts",
+        "default": "./dist/module/components/form-message.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/form-message.d.ts",
+        "default": "./dist/commonjs/components/form-message.js"
+      },
+      "browser": "./dist/module/components/form-message.js",
+      "default": "./dist/module/components/form-message.js"
+    },
+    "./icon-button": {
+      "source": "./src/components/icon-button",
+      "react-native": "./dist/module/components/icon-button.js",
+      "import": {
+        "types": "./dist/typescript/module/components/icon-button.d.ts",
+        "default": "./dist/module/components/icon-button.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/icon-button.d.ts",
+        "default": "./dist/commonjs/components/icon-button.js"
+      },
+      "browser": "./dist/module/components/icon-button.js",
+      "default": "./dist/module/components/icon-button.js"
+    },
+    "./input": {
+      "source": "./src/components/input",
+      "react-native": "./dist/module/components/input.js",
+      "import": {
+        "types": "./dist/typescript/module/components/input.d.ts",
+        "default": "./dist/module/components/input.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/input.d.ts",
+        "default": "./dist/commonjs/components/input.js"
+      },
+      "browser": "./dist/module/components/input.js",
+      "default": "./dist/module/components/input.js"
+    },
+    "./keyboard-aware-screen": {
+      "source": "./src/components/keyboard-aware-screen",
+      "react-native": "./dist/module/components/keyboard-aware-screen.js",
+      "import": {
+        "types": "./dist/typescript/module/components/keyboard-aware-screen.d.ts",
+        "default": "./dist/module/components/keyboard-aware-screen.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/keyboard-aware-screen.d.ts",
+        "default": "./dist/commonjs/components/keyboard-aware-screen.js"
+      },
+      "browser": "./dist/module/components/keyboard-aware-screen.js",
+      "default": "./dist/module/components/keyboard-aware-screen.js"
+    },
+    "./label": {
+      "source": "./src/components/label",
+      "react-native": "./dist/module/components/label.js",
+      "import": {
+        "types": "./dist/typescript/module/components/label.d.ts",
+        "default": "./dist/module/components/label.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/label.d.ts",
+        "default": "./dist/commonjs/components/label.js"
+      },
+      "browser": "./dist/module/components/label.js",
+      "default": "./dist/module/components/label.js"
+    },
+    "./link": {
+      "source": "./src/components/link",
+      "react-native": "./dist/module/components/link.js",
+      "import": {
+        "types": "./dist/typescript/module/components/link.d.ts",
+        "default": "./dist/module/components/link.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/link.d.ts",
+        "default": "./dist/commonjs/components/link.js"
+      },
+      "browser": "./dist/module/components/link.js",
+      "default": "./dist/module/components/link.js"
+    },
+    "./list-group": {
+      "source": "./src/components/list-group",
+      "react-native": "./dist/module/components/list-group.js",
+      "import": {
+        "types": "./dist/typescript/module/components/list-group.d.ts",
+        "default": "./dist/module/components/list-group.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/list-group.d.ts",
+        "default": "./dist/commonjs/components/list-group.js"
+      },
+      "browser": "./dist/module/components/list-group.js",
+      "default": "./dist/module/components/list-group.js"
+    },
+    "./list-item": {
+      "source": "./src/components/list-item",
+      "react-native": "./dist/module/components/list-item.js",
+      "import": {
+        "types": "./dist/typescript/module/components/list-item.d.ts",
+        "default": "./dist/module/components/list-item.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/list-item.d.ts",
+        "default": "./dist/commonjs/components/list-item.js"
+      },
+      "browser": "./dist/module/components/list-item.js",
+      "default": "./dist/module/components/list-item.js"
+    },
+    "./metadata-row": {
+      "source": "./src/components/metadata-row",
+      "react-native": "./dist/module/components/metadata-row.js",
+      "import": {
+        "types": "./dist/typescript/module/components/metadata-row.d.ts",
+        "default": "./dist/module/components/metadata-row.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/metadata-row.d.ts",
+        "default": "./dist/commonjs/components/metadata-row.js"
+      },
+      "browser": "./dist/module/components/metadata-row.js",
+      "default": "./dist/module/components/metadata-row.js"
+    },
+    "./otp-input": {
+      "source": "./src/components/otp-input",
+      "react-native": "./dist/module/components/otp-input.js",
+      "import": {
+        "types": "./dist/typescript/module/components/otp-input.d.ts",
+        "default": "./dist/module/components/otp-input.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/otp-input.d.ts",
+        "default": "./dist/commonjs/components/otp-input.js"
+      },
+      "browser": "./dist/module/components/otp-input.js",
+      "default": "./dist/module/components/otp-input.js"
+    },
+    "./pagination": {
+      "source": "./src/components/pagination",
+      "react-native": "./dist/module/components/pagination.js",
+      "import": {
+        "types": "./dist/typescript/module/components/pagination.d.ts",
+        "default": "./dist/module/components/pagination.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/pagination.d.ts",
+        "default": "./dist/commonjs/components/pagination.js"
+      },
+      "browser": "./dist/module/components/pagination.js",
+      "default": "./dist/module/components/pagination.js"
+    },
+    "./password-input": {
+      "source": "./src/components/password-input",
+      "react-native": "./dist/module/components/password-input.js",
+      "import": {
+        "types": "./dist/typescript/module/components/password-input.d.ts",
+        "default": "./dist/module/components/password-input.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/password-input.d.ts",
+        "default": "./dist/commonjs/components/password-input.js"
+      },
+      "browser": "./dist/module/components/password-input.js",
+      "default": "./dist/module/components/password-input.js"
+    },
+    "./popover": {
+      "source": "./src/components/popover",
+      "react-native": "./dist/module/components/popover.js",
+      "import": {
+        "types": "./dist/typescript/module/components/popover.d.ts",
+        "default": "./dist/module/components/popover.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/popover.d.ts",
+        "default": "./dist/commonjs/components/popover.js"
+      },
+      "browser": "./dist/module/components/popover.js",
+      "default": "./dist/module/components/popover.js"
+    },
+    "./progress": {
+      "source": "./src/components/progress",
+      "react-native": "./dist/module/components/progress.js",
+      "import": {
+        "types": "./dist/typescript/module/components/progress.d.ts",
+        "default": "./dist/module/components/progress.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/progress.d.ts",
+        "default": "./dist/commonjs/components/progress.js"
+      },
+      "browser": "./dist/module/components/progress.js",
+      "default": "./dist/module/components/progress.js"
+    },
+    "./radio": {
+      "source": "./src/components/radio",
+      "react-native": "./dist/module/components/radio.js",
+      "import": {
+        "types": "./dist/typescript/module/components/radio.d.ts",
+        "default": "./dist/module/components/radio.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/radio.d.ts",
+        "default": "./dist/commonjs/components/radio.js"
+      },
+      "browser": "./dist/module/components/radio.js",
+      "default": "./dist/module/components/radio.js"
+    },
+    "./safe-area": {
+      "source": "./src/components/safe-area",
+      "react-native": "./dist/module/components/safe-area.js",
+      "import": {
+        "types": "./dist/typescript/module/components/safe-area.d.ts",
+        "default": "./dist/module/components/safe-area.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/safe-area.d.ts",
+        "default": "./dist/commonjs/components/safe-area.js"
+      },
+      "browser": "./dist/module/components/safe-area.js",
+      "default": "./dist/module/components/safe-area.js"
+    },
+    "./screen": {
+      "source": "./src/components/screen",
+      "react-native": "./dist/module/components/screen.js",
+      "import": {
+        "types": "./dist/typescript/module/components/screen.d.ts",
+        "default": "./dist/module/components/screen.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/screen.d.ts",
+        "default": "./dist/commonjs/components/screen.js"
+      },
+      "browser": "./dist/module/components/screen.js",
+      "default": "./dist/module/components/screen.js"
+    },
+    "./search-input": {
+      "source": "./src/components/search-input",
+      "react-native": "./dist/module/components/search-input.js",
+      "import": {
+        "types": "./dist/typescript/module/components/search-input.d.ts",
+        "default": "./dist/module/components/search-input.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/search-input.d.ts",
+        "default": "./dist/commonjs/components/search-input.js"
+      },
+      "browser": "./dist/module/components/search-input.js",
+      "default": "./dist/module/components/search-input.js"
+    },
+    "./select": {
+      "source": "./src/components/select",
+      "react-native": "./dist/module/components/select.js",
+      "import": {
+        "types": "./dist/typescript/module/components/select.d.ts",
+        "default": "./dist/module/components/select.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/select.d.ts",
+        "default": "./dist/commonjs/components/select.js"
+      },
+      "browser": "./dist/module/components/select.js",
+      "default": "./dist/module/components/select.js"
+    },
+    "./segmented-control": {
+      "source": "./src/components/segmented-control",
+      "react-native": "./dist/module/components/segmented-control.js",
+      "import": {
+        "types": "./dist/typescript/module/components/segmented-control.d.ts",
+        "default": "./dist/module/components/segmented-control.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/segmented-control.d.ts",
+        "default": "./dist/commonjs/components/segmented-control.js"
+      },
+      "browser": "./dist/module/components/segmented-control.js",
+      "default": "./dist/module/components/segmented-control.js"
+    },
+    "./section": {
+      "source": "./src/components/section",
+      "react-native": "./dist/module/components/section.js",
+      "import": {
+        "types": "./dist/typescript/module/components/section.d.ts",
+        "default": "./dist/module/components/section.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/section.d.ts",
+        "default": "./dist/commonjs/components/section.js"
+      },
+      "browser": "./dist/module/components/section.js",
+      "default": "./dist/module/components/section.js"
+    },
+    "./separator": {
+      "source": "./src/components/separator",
+      "react-native": "./dist/module/components/separator.js",
+      "import": {
+        "types": "./dist/typescript/module/components/separator.d.ts",
+        "default": "./dist/module/components/separator.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/separator.d.ts",
+        "default": "./dist/commonjs/components/separator.js"
+      },
+      "browser": "./dist/module/components/separator.js",
+      "default": "./dist/module/components/separator.js"
+    },
+    "./sheet": {
+      "source": "./src/components/sheet",
+      "react-native": "./dist/module/components/sheet.native.js",
+      "import": {
+        "types": "./dist/typescript/module/components/sheet.d.ts",
+        "default": "./dist/module/components/sheet.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/sheet.d.ts",
+        "default": "./dist/commonjs/components/sheet.js"
+      },
+      "browser": "./dist/module/components/sheet.web.js",
+      "default": "./dist/module/components/sheet.js"
+    },
+    "./skeleton": {
+      "source": "./src/components/skeleton",
+      "react-native": "./dist/module/components/skeleton.js",
+      "import": {
+        "types": "./dist/typescript/module/components/skeleton.d.ts",
+        "default": "./dist/module/components/skeleton.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/skeleton.d.ts",
+        "default": "./dist/commonjs/components/skeleton.js"
+      },
+      "browser": "./dist/module/components/skeleton.js",
+      "default": "./dist/module/components/skeleton.js"
+    },
+    "./spinner": {
+      "source": "./src/components/spinner",
+      "react-native": "./dist/module/components/spinner.js",
+      "import": {
+        "types": "./dist/typescript/module/components/spinner.d.ts",
+        "default": "./dist/module/components/spinner.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/spinner.d.ts",
+        "default": "./dist/commonjs/components/spinner.js"
+      },
+      "browser": "./dist/module/components/spinner.js",
+      "default": "./dist/module/components/spinner.js"
+    },
+    "./stack": {
+      "source": "./src/components/stack",
+      "react-native": "./dist/module/components/stack.js",
+      "import": {
+        "types": "./dist/typescript/module/components/stack.d.ts",
+        "default": "./dist/module/components/stack.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/stack.d.ts",
+        "default": "./dist/commonjs/components/stack.js"
+      },
+      "browser": "./dist/module/components/stack.js",
+      "default": "./dist/module/components/stack.js"
+    },
+    "./stat": {
+      "source": "./src/components/stat",
+      "react-native": "./dist/module/components/stat.js",
+      "import": {
+        "types": "./dist/typescript/module/components/stat.d.ts",
+        "default": "./dist/module/components/stat.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/stat.d.ts",
+        "default": "./dist/commonjs/components/stat.js"
+      },
+      "browser": "./dist/module/components/stat.js",
+      "default": "./dist/module/components/stat.js"
+    },
+    "./state-message": {
+      "source": "./src/components/state-message",
+      "react-native": "./dist/module/components/state-message.js",
+      "import": {
+        "types": "./dist/typescript/module/components/state-message.d.ts",
+        "default": "./dist/module/components/state-message.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/state-message.d.ts",
+        "default": "./dist/commonjs/components/state-message.js"
+      },
+      "browser": "./dist/module/components/state-message.js",
+      "default": "./dist/module/components/state-message.js"
+    },
+    "./stepper": {
+      "source": "./src/components/stepper",
+      "react-native": "./dist/module/components/stepper.js",
+      "import": {
+        "types": "./dist/typescript/module/components/stepper.d.ts",
+        "default": "./dist/module/components/stepper.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/stepper.d.ts",
+        "default": "./dist/commonjs/components/stepper.js"
+      },
+      "browser": "./dist/module/components/stepper.js",
+      "default": "./dist/module/components/stepper.js"
+    },
+    "./switch": {
+      "source": "./src/components/switch",
+      "react-native": "./dist/module/components/switch.js",
+      "import": {
+        "types": "./dist/typescript/module/components/switch.d.ts",
+        "default": "./dist/module/components/switch.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/switch.d.ts",
+        "default": "./dist/commonjs/components/switch.js"
+      },
+      "browser": "./dist/module/components/switch.js",
+      "default": "./dist/module/components/switch.js"
+    },
+    "./table": {
+      "source": "./src/components/table",
+      "react-native": "./dist/module/components/table.js",
+      "import": {
+        "types": "./dist/typescript/module/components/table.d.ts",
+        "default": "./dist/module/components/table.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/table.d.ts",
+        "default": "./dist/commonjs/components/table.js"
+      },
+      "browser": "./dist/module/components/table.web.js",
+      "default": "./dist/module/components/table.js"
+    },
+    "./tabs": {
+      "source": "./src/components/tabs",
+      "react-native": "./dist/module/components/tabs.js",
+      "import": {
+        "types": "./dist/typescript/module/components/tabs.d.ts",
+        "default": "./dist/module/components/tabs.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/tabs.d.ts",
+        "default": "./dist/commonjs/components/tabs.js"
+      },
+      "browser": "./dist/module/components/tabs.js",
+      "default": "./dist/module/components/tabs.js"
+    },
+    "./text": {
+      "source": "./src/components/text",
+      "react-native": "./dist/module/components/text.js",
+      "import": {
+        "types": "./dist/typescript/module/components/text.d.ts",
+        "default": "./dist/module/components/text.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/text.d.ts",
+        "default": "./dist/commonjs/components/text.js"
+      },
+      "browser": "./dist/module/components/text.js",
+      "default": "./dist/module/components/text.js"
+    },
+    "./textarea": {
+      "source": "./src/components/textarea",
+      "react-native": "./dist/module/components/textarea.js",
+      "import": {
+        "types": "./dist/typescript/module/components/textarea.d.ts",
+        "default": "./dist/module/components/textarea.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/textarea.d.ts",
+        "default": "./dist/commonjs/components/textarea.js"
+      },
+      "browser": "./dist/module/components/textarea.js",
+      "default": "./dist/module/components/textarea.js"
+    },
+    "./theme-scope": {
+      "source": "./src/components/theme-scope",
+      "react-native": "./dist/module/components/theme-scope.js",
+      "import": {
+        "types": "./dist/typescript/module/components/theme-scope.d.ts",
+        "default": "./dist/module/components/theme-scope.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/theme-scope.d.ts",
+        "default": "./dist/commonjs/components/theme-scope.js"
+      },
+      "browser": "./dist/module/components/theme-scope.js",
+      "default": "./dist/module/components/theme-scope.js"
+    },
+    "./use-bee-token": {
+      "source": "./src/components/use-bee-token",
+      "react-native": "./dist/module/components/use-bee-token.js",
+      "import": {
+        "types": "./dist/typescript/module/components/use-bee-token.d.ts",
+        "default": "./dist/module/components/use-bee-token.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/use-bee-token.d.ts",
+        "default": "./dist/commonjs/components/use-bee-token.js"
+      },
+      "browser": "./dist/module/components/use-bee-token.js",
+      "default": "./dist/module/components/use-bee-token.js"
+    },
+    "./timeline": {
+      "source": "./src/components/timeline",
+      "react-native": "./dist/module/components/timeline.js",
+      "import": {
+        "types": "./dist/typescript/module/components/timeline.d.ts",
+        "default": "./dist/module/components/timeline.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/timeline.d.ts",
+        "default": "./dist/commonjs/components/timeline.js"
+      },
+      "browser": "./dist/module/components/timeline.js",
+      "default": "./dist/module/components/timeline.js"
+    },
+    "./toast": {
+      "source": "./src/components/toast",
+      "react-native": "./dist/module/components/toast.js",
+      "import": {
+        "types": "./dist/typescript/module/components/toast.d.ts",
+        "default": "./dist/module/components/toast.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/toast.d.ts",
+        "default": "./dist/commonjs/components/toast.js"
+      },
+      "browser": "./dist/module/components/toast.js",
+      "default": "./dist/module/components/toast.js"
+    },
+    "./tooltip": {
+      "source": "./src/components/tooltip",
+      "react-native": "./dist/module/components/tooltip.native.js",
+      "import": {
+        "types": "./dist/typescript/module/components/tooltip.d.ts",
+        "default": "./dist/module/components/tooltip.web.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/tooltip.d.ts",
+        "default": "./dist/commonjs/components/tooltip.web.js"
+      },
+      "browser": "./dist/module/components/tooltip.web.js",
+      "default": "./dist/module/components/tooltip.web.js"
+    },
+    "./visually-hidden": {
+      "source": "./src/components/visually-hidden",
+      "react-native": "./dist/module/components/visually-hidden.js",
+      "import": {
+        "types": "./dist/typescript/module/components/visually-hidden.d.ts",
+        "default": "./dist/module/components/visually-hidden.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/visually-hidden.d.ts",
+        "default": "./dist/commonjs/components/visually-hidden.js"
+      },
+      "browser": "./dist/module/components/visually-hidden.js",
+      "default": "./dist/module/components/visually-hidden.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {

@@ -142,10 +142,11 @@ so shared result sets are stable across runs.
   lookup) at the accepted 100-row/500-row scale envelope
   (`docs/decisions/007-table-datatable-architecture.md`). A full render pass
   measures well under 1ms at both scales on a representative dev host (see
-  `docs/components/table.md`'s Performance section for the recorded numbers) —
-  comfortably inside a 16ms frame budget — which is the evidence this ADR's
-  virtualization decision gates on: no default/adapter virtualization is
-  currently justified.
+  `apps/docs/src/content/docs/components/table.md`'s Performance section for
+  the recorded numbers) — comfortably inside a 16ms frame budget — which is
+  the evidence this ADR's virtualization decision gates on: no default/adapter
+  virtualization is currently justified. Both scenarios also carry a
+  `budget.maxOverheadRatio` regression gate — see "Regression budgets" below.
 - `web/table-row-update` (issue #168) — contrasts the cost floor an optimized/
   memoized consumer gets for a single row's selection/sort-driven recompute
   against a full 100-row recompute, budgeted so a regression that makes a
@@ -253,11 +254,105 @@ with real built bytes, what a future granular subpath export (#184's
 decision) would cost against the barrel. The recorded baseline is
 `docs/bundle-footprint-baseline.md`.
 
+## Regression budgets (R5.7, #185)
+
+Turning measured baseline data into a pass/fail gate uses two separate
+mechanisms, chosen per #185's rule to not invent thresholds before data
+exists and to avoid brittle absolute-millisecond gates on a noisy host. Both
+are machine-checkable config, not judgment calls made at review time.
+
+### Timing scenarios: relative overhead-ratio budgets
+
+Any registered scenario with a `candidate`/`baseline` pair (see "Overhead vs
+a baseline" above) can declare `budget: { maxOverheadRatio: N }`. This is the
+ONLY budget shape used for wall-clock timing, and deliberately so: because
+`candidate` and `baseline` run on the same host in the same process in the
+same invocation, their ratio self-normalizes away host speed differences —
+it is a controlled relative comparison, not an absolute millisecond gate on a
+possibly-noisy runner.
+
+Two scenarios currently carry this budget:
+
+- `web/table-row-update`: `maxOverheadRatio: 0.2` — a single memoized row's
+  update must stay under 20% of a full 100-row recompute (it is 1/100th of
+  the table ideally; 0.2 leaves generous headroom while still catching a
+  regression that makes a single-row update scale with total row count).
+- `web/table-render-100` / `web/table-render-500`: `maxOverheadRatio: 15` —
+  real `cn()`/twMerge resolution vs. naive string concatenation. Repeated
+  local runs on a representative dev host land consistently in the ~8-9.5x
+  range at both scales (the ratio tracks twMerge's per-call cost, not row
+  count); 15x is comfortably above that observed ceiling.
+
+The harness's own component-render/overlay-latency/theme-runtime scenarios
+(`apps/showcase/__tests__/perf-*.test.tsx`) are deliberately **not** budgeted
+this way today: they measure a single workload with no baseline pair (e.g.
+"mount 500 Buttons"), and a real run on this repo's dev host recorded
+coefficients of variation up to 227% for some overlay/render scenarios under
+Jest + `@testing-library/react-native` — exactly the noisy-runner case #185
+says to avoid gating on with an absolute number. Adding a budget to one of
+these needs either a controlled baseline pair (so the ratio can self-
+normalize, as above) or materially reduced host noise; neither exists yet, so
+per #185's "do not invent thresholds before data exists," none is added. This
+is a scope decision, not an oversight — see
+`docs/performance-baseline-report.md` for the recorded numbers and CVs.
+
+### Package/bundle footprint: percentage-of-baseline budgets with a two-tier policy
+
+Bytes are not wall-clock timing: the same source, `esbuild`, and `npm`
+versions produce the same packed/bundled byte counts on any host, so there is
+no noisy-runner case to guard against here — a percentage-of-baseline
+tolerance is the appropriate, and simpler, budget shape.
+
+`scripts/benchmark/footprint-budgets.mjs` records, for every package
+(`@beeui/core`/`tokens`/`ui`) and every bundle scenario in
+`docs/bundle-footprint-baseline.md`, a `baselineGzipBytes` value copied
+verbatim from that committed baseline, plus a two-tier tolerance:
+
+- `warnPct: 0.10` — growth beyond 10% is reported as an informational WARN;
+  it does not fail the check. This covers legitimate small growth (a new
+  prop, variant, or patch-level dependency bump) without demanding a budget
+  PR for every routine change.
+- `failPct: 0.20` — growth beyond 20% FAILS the check. This is chosen well
+  above the ~1% organic drift actually observed rebuilding at the same
+  commit on a different host (`@beeui/ui` measured 500.0 KiB vs. the
+  committed 495.3 KiB baseline — environment/dependency-resolution noise, not
+  a regression), so it only trips on a materially sized regression: an
+  accidentally un-externalized peer, a new always-bundled dependency, or the
+  barrel/tree-shaking behavior regressing.
+
+`scripts/benchmark/lib/budget-evaluator.mjs` is the pure comparison function
+(unit-tested in `scripts/__tests__/budget-evaluator.test.mjs`, run as part of
+`bench:test`); `scripts/benchmark/budget-check.mjs` is the I/O wrapper that
+reads the most recent `pnpm bench:footprint` output and reports pass/warn/fail
+per package and scenario. Run both with:
+
+```bash
+pnpm bench:budget   # chains `pnpm bench:footprint`, then checks it
+```
+
+Exit code is non-zero only on an actual FAIL row; a WARN-only run still exits
+0, per #185's rule to treat severe regressions separately from informational
+drift. A scenario measured but absent from the budget config is reported as
+`unbudgeted` (visible, never failing) rather than silently ungated or
+silently blocking — this matters when a future issue (e.g. #184's granular
+exports) adds new scenarios to `footprint.mjs`.
+
+**Updating a budget.** Bump `baselineGzipBytes` in the same PR that
+intentionally grows a package or scenario's real footprint, with fresh
+`pnpm bench:footprint` numbers in the PR description and
+`docs/bundle-footprint-baseline.md` updated to match — the same review bar as
+any other public-contract change. A budget must never be raised just to
+silence a failure without that evidence attached.
+
 ## CI
 
-The harness is pure Node with no external dependencies, so `pnpm bench:web` and
-`pnpm bench:test` are callable in any Node CI job. `pnpm bench:test` also runs as
-part of `pnpm test`. The native lane requires an on-device runner to produce
+The harness is pure Node with no external dependencies, so `pnpm bench:web`,
+`pnpm bench:test` and `pnpm bench:budget` are callable in any Node CI job.
+`pnpm bench:web`/`pnpm bench:native` already exit non-zero on their own
+`maxOverheadRatio` budget failures (see "Regression budgets" above);
+`pnpm bench:budget` is the separate check for the package/bundle footprint
+budgets, since those are measured by `footprint.mjs`, not `cli.mjs`.
+`pnpm bench:test` also runs as part of `pnpm test`. The native lane requires an on-device runner to produce
 `measured` results; without one it deterministically reports `deferred`. The
 component lane's Jest suites (`perf-*.test.tsx`) also run as part of
 `pnpm --filter @beeui/showcase test` (and therefore `pnpm test`), since they are
