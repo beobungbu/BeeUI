@@ -10,6 +10,11 @@ AVD_NAME="${BEEUI_ANDROID_AVD_NAME:-beeui-runtime-api36}"
 SYSTEM_IMAGE="${BEEUI_ANDROID_SYSTEM_IMAGE:-system-images;android-36;google_apis;x86_64}"
 ANDROID_ACCEL="${BEEUI_ANDROID_ACCEL:-auto}"
 
+# Maestro's UIAutomator driver handshake (device-side server bring-up, not
+# per-command element-wait timeouts — Maestro 2.7.0 has no global override
+# for those) defaults to 15s. That's tight on a cold, resource-strapped
+# runner, so give it more room here. This is a defense-in-depth addition on
+# top of the per-command flow hardening below, not a substitute for it.
 export MAESTRO_DRIVER_STARTUP_TIMEOUT="${MAESTRO_DRIVER_STARTUP_TIMEOUT:-60000}"
 
 mkdir -p "$ARTIFACT_DIR"
@@ -33,11 +38,17 @@ if [ -n "$EXPECTED_BASE" ]; then
   fi
 fi
 
+# The Android emulator binds its modem chardev to [::1]; on runners with IPv6
+# disabled at the kernel level qemu dies before boot ("Unable to connect
+# character device modem: address resolution failed for ::1:<port>: Name or
+# service not known"). /etc/hosts or `ip` can still claim ::1 exists, so test
+# the actual socket capability through node (already a hard requirement).
 if ! node -e '
 const net = require("node:net");
 const socket = net.createConnection({ host: "::1", port: 1 });
 socket.on("connect", () => { socket.destroy(); process.exit(0); });
 socket.on("error", (error) => {
+  // ECONNREFUSED means the IPv6 loopback stack works and nothing listens.
   process.exit(error.code === "ECONNREFUSED" || error.code === "ETIMEDOUT" ? 0 : 1);
 });
 '; then
@@ -182,7 +193,7 @@ for _ in $(seq 1 60); do
     echo "Metro exited before becoming ready" >&2
     exit 1
   fi
-  sleep 1
+  sleep 1 # infrastructure-startup polling only
 done
 
 if [ -z "$METRO_BASE_URL" ]; then
@@ -192,6 +203,8 @@ if [ -z "$METRO_BASE_URL" ]; then
 fi
 curl -fsS "$METRO_BASE_URL/status" | tee "$ARTIFACT_DIR/metro-status.txt"
 
+# Warm the RN bundle so the first launch renders immediately; otherwise the
+# app shows the "Bundling N%..." screen while Maestro's first assertion runs.
 if ! curl -fsS "$METRO_BASE_URL/.expo/.virtual-metro-entry.bundle?platform=android&dev=true" -o /dev/null; then
   echo "::warning::Bundle warm-up request failed; the first Maestro assertion must absorb cold bundling." >&2
 fi
@@ -235,6 +248,10 @@ run_maestro runtime-stress "$MAESTRO_FLOW/runtime-stress.yaml"
 run_inline_maestro reset <<'EOF_FLOW'
 - launchApp:
     clearState: true
+# Cold relaunch (clearState) leaves the app cold-bundling; retry the whole
+# open-runtime navigation (scroll + tap) with a generous scroll timeout until
+# the runtime screen is ready, so a slow first bundle on a fresh/cold runner
+# does not flake the smoke.
 - retry:
     maxRetries: 4
     commands:
@@ -315,6 +332,10 @@ EOF_FLOW
 run_inline_maestro reset-before-a4 <<'EOF_FLOW'
 - launchApp:
     clearState: true
+# Cold relaunch (clearState) leaves the app cold-bundling; retry the whole
+# open-runtime navigation (scroll + tap) with a generous scroll timeout until
+# the runtime screen is ready, so a slow first bundle on a fresh/cold runner
+# does not flake the smoke.
 - retry:
     maxRetries: 4
     commands:
@@ -364,6 +385,10 @@ EOF_FLOW
 run_inline_maestro reset-before-a5 <<'EOF_FLOW'
 - launchApp:
     clearState: true
+# Cold relaunch (clearState) leaves the app cold-bundling; retry the whole
+# open-runtime navigation (scroll + tap) with a generous scroll timeout until
+# the runtime screen is ready, so a slow first bundle on a fresh/cold runner
+# does not flake the smoke.
 - retry:
     maxRetries: 4
     commands:
@@ -501,6 +526,10 @@ adb_for_device shell wm size 1080x1400
 run_inline_maestro reduced-height <<'EOF_FLOW'
 - launchApp:
     clearState: true
+# Cold relaunch (clearState) leaves the app cold-bundling; retry the whole
+# open-runtime navigation (scroll + tap) with a generous scroll timeout until
+# the runtime screen is ready, so a slow first bundle on a fresh/cold runner
+# does not flake the smoke.
 - retry:
     maxRetries: 4
     commands:

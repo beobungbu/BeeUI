@@ -200,6 +200,8 @@ if [ -z "$METRO_BASE_URL" ]; then
 fi
 curl -fsS "$METRO_BASE_URL/status" | tee "$ARTIFACT_DIR/metro-status.txt"
 
+# Warm the RN bundle so the first launch renders immediately; otherwise the
+# app shows the "Bundling N%..." screen while Maestro's first assertion runs.
 if ! curl -fsS "$METRO_BASE_URL/.expo/.virtual-metro-entry.bundle?platform=ios&dev=true" -o /dev/null; then
   echo "::warning::Bundle warm-up request failed; the first Maestro assertion must absorb cold bundling." >&2
 fi
