@@ -20,6 +20,12 @@ const packageSpecs = [
       'package/src/index.ts',
       'package/src/utils/anchored-overlay.ts',
       'package/src/utils/overlay-runtime.ts',
+      // Built output (D2/D3): dual ESM + CJS + .d.ts is the primary artifact;
+      // src stays packed alongside it for the source-ownership path.
+      'package/dist/module/index.js',
+      'package/dist/commonjs/index.js',
+      'package/dist/typescript/module/index.d.ts',
+      'package/dist/typescript/commonjs/index.d.ts',
     ],
   },
   {
@@ -32,6 +38,16 @@ const packageSpecs = [
       'package/tokens.json',
       'package/src/tokens.resolver.json',
       'package/src/lifecycle.json',
+      'package/dist/module/index.js',
+      'package/dist/commonjs/index.js',
+      'package/dist/typescript/module/index.d.ts',
+      'package/dist/typescript/commonjs/index.d.ts',
+      // CSS/JSON assets must stay consumable unbuilt (D4): theme.css is
+      // imported directly by consumers (`@beeui/tokens/theme.css`), never
+      // through the JS module graph, so it is copied into dist verbatim
+      // rather than compiled.
+      'package/dist/module/theme.css',
+      'package/dist/commonjs/theme.css',
     ],
   },
   {
@@ -54,6 +70,23 @@ const packageSpecs = [
       'package/src/components/overlay-transport.native.tsx',
       'package/src/components/overlay-transport.web.tsx',
       'package/src/components/toast.tsx',
+      'package/dist/module/index.js',
+      'package/dist/commonjs/index.js',
+      'package/dist/typescript/module/index.d.ts',
+      'package/dist/typescript/commonjs/index.d.ts',
+      // D4: the platform-selected transport files must keep their
+      // `.native`/`.web` suffix through the build so Metro's platform
+      // extension resolution still works against the compiled package.
+      'package/dist/module/components/overlay-transport.native.js',
+      'package/dist/module/components/overlay-transport.web.js',
+      'package/dist/commonjs/components/overlay-transport.native.js',
+      'package/dist/commonjs/components/overlay-transport.web.js',
+      // The `.d.ts` platform-shadow shim (see that file's own header comment)
+      // must be copied into the compiled type tree too, since other emitted
+      // declarations (e.g. overlay-runtime.d.ts) still import it by relative
+      // path and tsc does not re-emit hand-written ambient .d.ts inputs.
+      'package/dist/typescript/module/components/overlay-transport.d.ts',
+      'package/dist/typescript/commonjs/components/overlay-transport.d.ts',
     ],
   },
 ];
@@ -160,6 +193,14 @@ try {
   assert(rootPackage.private === true, 'workspace root remains private');
   assert(typeof rootVersion === 'string' && /^0\.\d+\.\d+$/.test(rootVersion), 'workspace uses a pre-1.0 semver version', rootVersion);
 
+  // D2/D3 (ADR-011): the built dist/ output is the primary published artifact,
+  // so it must exist on disk before the exports/packed-file checks below can
+  // assert anything about it. `pnpm pack` also runs each package's own
+  // `prepack` (which rebuilds), so this just makes local/CI runs of this
+  // script deterministic without relying on stale dist/ from a prior build.
+  run('pnpm', ['--filter', './packages/*', 'run', 'build']);
+  record('packages built (dist/ ESM + CJS + .d.ts) before packing');
+
   const manifests = new Map();
 
   for (const spec of packageSpecs) {
@@ -170,14 +211,57 @@ try {
 
     assert(manifest.name === spec.name, `${spec.name} package name matches directory contract`);
     assert(manifest.version === rootVersion, `${spec.name} stays on lockstep version`, manifest.version);
-    assert(manifest.private === true, `${spec.name} remains private before the distribution workflow is enabled`);
-    assert(manifest.type === 'module', `${spec.name} remains an ESM source package`);
-    const expectedFiles = spec.name === '@beeui/tokens' ? ['src', 'tokens.json'] : ['src'];
+    assert(manifest.private === undefined, `${spec.name} is publication-ready (no private flag)`);
+    assert(manifest.type === 'module', `${spec.name} remains an ESM package`);
+
+    // #199 publishable metadata.
+    assert(manifest.license === 'MIT', `${spec.name} declares the MIT license`);
+    assert(Boolean(manifest.author), `${spec.name} declares an author`);
     assert(
-      Array.isArray(manifest.files) && JSON.stringify(manifest.files) === JSON.stringify(expectedFiles),
-      `${spec.name} packs only its declared source surface`,
+      manifest.repository?.type === 'git' &&
+        manifest.repository?.url === 'git+https://github.com/beobungbu/BeeUI.git' &&
+        manifest.repository?.directory === spec.dir,
+      `${spec.name} declares its repository/directory`,
+      JSON.stringify(manifest.repository),
+    );
+    assert(
+      typeof manifest.homepage === 'string' && manifest.homepage.includes('github.com/beobungbu/BeeUI'),
+      `${spec.name} declares a homepage`,
+      manifest.homepage,
+    );
+    assert(
+      typeof manifest.bugs?.url === 'string' && manifest.bugs.url.includes('github.com/beobungbu/BeeUI'),
+      `${spec.name} declares a bugs URL`,
+      manifest.bugs?.url,
+    );
+    assert(
+      Array.isArray(manifest.keywords) && manifest.keywords.length > 0,
+      `${spec.name} declares keywords`,
+      manifest.keywords?.join(', '),
+    );
+    assert(manifest.sideEffects === false, `${spec.name} declares sideEffects: false`);
+    assert(
+      manifest.publishConfig?.access === 'public' && manifest.publishConfig?.provenance === true,
+      `${spec.name} publishConfig requests public access + provenance`,
+      JSON.stringify(manifest.publishConfig),
+    );
+
+    // #200 output format: dist/ (built) ships alongside src/ (source-ownership).
+    const expectedFiles = spec.name === '@beeui/tokens' ? ['dist', 'src', 'tokens.json'] : ['dist', 'src'];
+    assert(
+      Array.isArray(manifest.files) && expectedFiles.every((entry) => manifest.files.includes(entry)) && manifest.files.length === expectedFiles.length,
+      `${spec.name} packs its built output and its source surface`,
       manifest.files?.join(', ') ?? 'missing',
     );
+
+    for (const field of ['main', 'module', 'types']) {
+      assert(typeof manifest[field] === 'string', `${spec.name} declares a top-level ${field} field`, manifest[field]);
+      assert(
+        fs.existsSync(path.join(packageDir, manifest[field])),
+        `${spec.name} top-level ${field} field resolves to a built file`,
+        manifest[field],
+      );
+    }
 
     const exportTargets = collectExportTargets(manifest.exports);
     assert(exportTargets.length > 0, `${spec.name} declares package exports`);
@@ -185,6 +269,27 @@ try {
       assert(target.startsWith('./'), `${spec.name} export is package-relative`, target);
       assert(fs.existsSync(path.join(packageDir, target)), `${spec.name} export target exists`, target);
     }
+
+    // D3/D4: every subpath's "." export must expose the conditions consumers
+    // and bundlers rely on — types for TypeScript, source for the
+    // monorepo/source-ownership path, react-native for Metro, import/require
+    // for dual ESM+CJS, and browser/default for generic bundlers.
+    const dotExport = manifest.exports?.['.'];
+    const requiredConditions = ['source', 'react-native', 'import', 'require', 'browser', 'default'];
+    for (const condition of requiredConditions) {
+      assert(
+        Object.hasOwn(dotExport ?? {}, condition),
+        `${spec.name} exports['.'] declares the ${condition} condition`,
+      );
+    }
+    assert(
+      typeof dotExport.import === 'object' && typeof dotExport.import.types === 'string',
+      `${spec.name} exports['.'].import declares its own types`,
+    );
+    assert(
+      typeof dotExport.require === 'object' && typeof dotExport.require.types === 'string',
+      `${spec.name} exports['.'].require declares its own types`,
+    );
   }
 
   const uiManifest = manifests.get('@beeui/ui');
