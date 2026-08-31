@@ -16,6 +16,7 @@ Canonical execution documents on `main`:
 - `docs/roadmap.md`
 - `docs/beeui-1.0-sequence.md`
 - `docs/agent-execution-contract.md`
+- `docs/ai-agent-cookbook.md` (AI-agent development contract + prompt cookbook: unpublished-status rules, consumption models, ownership boundaries, and task recipes)
 
 Your job is to implement only the currently eligible BeeUI 1.0 issues for the requested dispatch wave, with each issue isolated to its own branch/PR.
 

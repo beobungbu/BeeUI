@@ -56,6 +56,7 @@ export const LINKED_PATHS = [
   'docs/registry-cli.md',
   'docs/distribution-names.md',
   'docs/agent-execution-contract.md',
+  'docs/ai-agent-cookbook.md',
   'docs/benchmark-harness.md',
   'docs/bundle-footprint-baseline.md',
   'docs/performance-baseline-report.md',
@@ -231,6 +232,7 @@ BeeUI ships ${model.componentCount} public component modules from \`@beeui/ui\` 
 - [llms-patterns.txt](llms-patterns.txt): production pattern catalog and composition guidance.
 
 ## For contributing agents
+- [docs/ai-agent-cookbook.md](docs/ai-agent-cookbook.md): AI-agent development contract + task-oriented prompt cookbook (how to consume/build/contribute; unpublished-status rules; ownership boundaries).
 - [AGENTS.md](AGENTS.md): code rules (semantic-token-only styling, engine-boundary, accessibility).
 - [CONTRIBUTING.md](CONTRIBUTING.md): local setup, required gates, review discipline.
 - [docs/agent-execution-contract.md](docs/agent-execution-contract.md): implementation-agent protocol for BeeUI 1.0.
@@ -330,6 +332,7 @@ ${adrs.map(([slug, note]) => `- [ADR-${slug.slice(0, 3)} ${slug.slice(4)}](docs/
 [registry/registry.json](registry/registry.json) is the machine-readable source of ${model.registryItemCount} items: ${model.componentCount} public components, 1 public theme, and internal utilities (${model.privateUtilities.join(', ')}). Each item declares source files, transforms, registry dependencies, and peer dependencies. Component-to-symbol mapping is verified against [packages/ui/src/index.ts](packages/ui/src/index.ts) at generation time.
 
 ## Documentation map
+- AI-agent contract + prompt cookbook: [docs/ai-agent-cookbook.md](docs/ai-agent-cookbook.md)
 - Authority index: [docs/README.md](docs/README.md)
 - Getting started: [Expo](apps/docs/src/content/docs/getting-started/expo.md) · [bare RN](apps/docs/src/content/docs/getting-started/bare-react-native.md) · [Web](apps/docs/src/content/docs/getting-started/web.md)
 - CLI: [apps/docs/src/content/docs/cli/index.md](apps/docs/src/content/docs/cli/index.md)
