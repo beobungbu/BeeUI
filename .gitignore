@@ -12,6 +12,9 @@ apps/visual-regression/dist-web/
 apps/visual-regression/test-results/
 apps/visual-regression/playwright-report/
 apps/showcase/dist-gallery-qa/
+apps/showcase/dist-web/
+apps/showcase/dist-ios/
+apps/showcase/dist-android/
 .env
 .env.*
 !.env.example

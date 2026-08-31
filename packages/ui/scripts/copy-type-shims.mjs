@@ -15,6 +15,17 @@
 // typescript build variants, mirroring its path relative to src/. Generic by
 // design: it does not hardcode which files are shims, so it keeps working if
 // more platform-shadowing `.d.ts` files are added later.
+//
+// It also prunes a related build artifact (#202 packed-inventory audit): bob's
+// "module"/"commonjs" babel targets glob every `*.ts`/`*.tsx` file under src/,
+// which also matches these same ambient `*.d.ts` shims (a `.d.ts` file's name
+// still ends in `.ts`). Babel has no types to strip from a type-only module,
+// so it "compiles" each shim into a near-empty `<name>.d.js` (+ `.d.js.map`)
+// under dist/module and dist/commonjs — dead output nothing imports (the real
+// runtime resolution for these components is their `.native`/`.web` sibling,
+// never the shim) that only exists because of this glob overlap. Left in
+// place it would ship as unreviewable junk in every packed tarball, so it is
+// deleted here, after the real typescript-target shim copy above.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -26,6 +37,7 @@ const TYPESCRIPT_OUTPUT_DIRS = [
   path.join(PACKAGE_DIR, 'dist', 'typescript', 'commonjs'),
   path.join(PACKAGE_DIR, 'dist', 'typescript', 'module'),
 ];
+const BABEL_OUTPUT_DIRS = [path.join(PACKAGE_DIR, 'dist', 'commonjs'), path.join(PACKAGE_DIR, 'dist', 'module')];
 
 function findDeclarationFiles(dir) {
   const results = [];
@@ -58,4 +70,24 @@ for (const typesDir of TYPESCRIPT_OUTPUT_DIRS) {
 
 console.log(
   `copy-type-shims: copied ${shims.length} hand-written .d.ts file(s) into dist/typescript/{commonjs,module}.`,
+);
+
+let pruned = 0;
+for (const babelDir of BABEL_OUTPUT_DIRS) {
+  if (!fs.existsSync(babelDir)) continue;
+  for (const shim of shims) {
+    const relativeDts = path.relative(SRC_DIR, shim);
+    const relativeStem = relativeDts.slice(0, -'.d.ts'.length);
+    for (const suffix of ['.d.js', '.d.js.map']) {
+      const junkPath = path.join(babelDir, `${relativeStem}${suffix}`);
+      if (fs.existsSync(junkPath)) {
+        fs.rmSync(junkPath);
+        pruned += 1;
+      }
+    }
+  }
+}
+
+console.log(
+  `copy-type-shims: pruned ${pruned} babel-compiled .d.js/.d.js.map artifact(s) from dist/{commonjs,module}.`,
 );
