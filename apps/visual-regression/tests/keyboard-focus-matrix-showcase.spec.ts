@@ -322,3 +322,65 @@ test.describe('AlertDialog — focus-trap and intentional non-dismissal by Escap
     await expect(trigger).toBeFocused();
   });
 });
+
+test.describe('Overlay — Escape/Tab from a focused Input inside Dialog and Popover (#318)', () => {
+  // #318 root cause: BeeUI's shared cross-overlay Escape bridge
+  // (`overlay-dismiss-events.web.ts`) listens for `keydown` in the bubble
+  // phase at `window`. A focused text `Input` inside an overlay's content
+  // stops that event's bubble-phase propagation before it reaches the
+  // bridge, silently swallowing Escape. `DialogContent`/`SheetContent`
+  // already carried their own capture-phase Escape binding (#146/#159);
+  // `Popover` had none, so a focused `Input` inside `PopoverContent`
+  // reproduced the swallow. The fix lifts one shared capture-phase binding
+  // (`useOverlayEscapeKey`, `overlay-runtime.tsx`) into all three.
+
+  test('Dialog: Escape closes it while its own Input still holds real DOM focus', async ({ page }) => {
+    await openComponentGallery(page);
+    await page.getByRole('button', { name: 'Open Dialog' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Project settings' });
+    const input = dialog.getByRole('textbox');
+    // Dialog's own Tab focus-trap already moves initial focus onto this
+    // input (#146) — assert that precondition explicitly before proving
+    // Escape still reaches the dialog from it.
+    await expect(input).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+  });
+
+  test('Popover: Escape closes it while a focused Input inside holds real DOM focus', async ({ page }) => {
+    await openComponentGallery(page);
+    const trigger = page.getByRole('button', { name: 'bottom', exact: true });
+    await trigger.scrollIntoViewIfNeeded();
+    await trigger.click();
+    const content = page.getByTestId('popover-bottom-content');
+    await content.waitFor({ state: 'visible' });
+    const input = page.getByTestId('popover-demo-input');
+    await input.click();
+    await expect(input).toBeFocused();
+
+    await page.keyboard.press('Escape');
+    await expect(content).toBeHidden();
+  });
+
+  test('Popover: Tab moves focus out of a focused Input without being swallowed', async ({ page }) => {
+    await openComponentGallery(page);
+    const trigger = page.getByRole('button', { name: 'bottom', exact: true });
+    await trigger.scrollIntoViewIfNeeded();
+    await trigger.click();
+    const content = page.getByTestId('popover-bottom-content');
+    await content.waitFor({ state: 'visible' });
+    const input = page.getByTestId('popover-demo-input');
+    const close = content.getByRole('button', { name: 'Close' });
+    await input.click();
+    await expect(input).toBeFocused();
+
+    // Popover is intentionally non-modal (no Tab focus-trap, no aria-modal —
+    // see `docs/components.md` "Popover"); Tab must therefore keep moving
+    // focus forward exactly as it would with no listener installed at all,
+    // proving the new capture-phase Escape binding does not also intercept
+    // Tab.
+    await page.keyboard.press('Tab');
+    await expect(close).toBeFocused();
+    await expect(content).toBeVisible();
+  });
+});
