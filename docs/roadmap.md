@@ -6,7 +6,7 @@
 > **Program base at creation:** `fe8733345ee09720808ec0f6a4db93be9ff4a78f`  
 > **Worker model:** one atomic issue = one branch/PR; mandatory self-test + self-review; independent review; no self-merge.
 
-**Owner decision (2026-08-30): the R1–R5 drive stops here, short of the R7-gated performance tail.** Current closed-issue state: R0 5/5 · R1 8/9 (#126 parked) · R2 10/10 · R3 12/12 · R4 28/28 · R5 4/8 (#183–#186 open, blocked on R7 packaging) — **77/148 child issues closed**. R6–R11 are unstarted future work, not part of this drive. Infra landed alongside the drive: CI fully migrated to GitHub-hosted parallel + sharded runners, the Mars self-hosted runner retired, `main` is flake-free.
+**Owner decision (2026-08-30): the R1–R5 drive stops here, short of the R7-gated performance tail.** Current closed-issue state: R0 5/5 · R1 8/9 (#126 parked) · R2 10/10 · R3 12/12 · R4 28/28 · R5 4/8 (#183–#186 open, blocked on R7 packaging) · R6 10/10 (governance complete) — **78/148 child issues closed**. R7–R11 are unstarted future work, not part of this drive. Infra landed alongside the drive: CI fully migrated to GitHub-hosted parallel + sharded runners, the Mars self-hosted runner retired, `main` is flake-free.
 
 This file is the BeeUI 1.0 **product-scope and issue-map authority**. It does not duplicate every child issue's implementation details.
 
@@ -286,7 +286,7 @@ shared-authority source of truth for every row below; it is drift-checked by
 
 # R6 — OSS, security & repository governance
 
-**R6 status: 9/10 closed.** #196 is the sole remaining open item; not in scope for this drive.
+**R6 status: 10/10 closed.** All governance items landed.
 
 - #187 secret/history/asset audit.
 - #188 license decision packet; final choice owner-gated where required.
@@ -297,7 +297,7 @@ shared-authority source of truth for every row below; it is drift-checked by
 - #193 Actions/fork/self-hosted-runner hardening.
 - #194 dependency/security automation.
 - #195 repository-public preflight; actual visibility action is owner-gated. **Visibility mutation owner-declined** — the repository owner has explicitly rejected the visibility change (recorded on #195); BeeUI remains a **private** repository and will not be made public autonomously. #195 stays open only for its optional non-mutating preflight audit; only a future explicit owner instruction could authorize the actual change. #254 publication remains a separate owner gate regardless.
-- #196 final branch/tag/release ruleset. **Open** — last remaining R6 item; not scheduled under this drive.
+- #196 final branch/tag/release ruleset. **Closed** — `main` branch ruleset requires the always-run gating checks (`classify`, `verify`, `web-a11y`, `visual-web-report`, `web-consumer`), 0 required approvals (single-owner), linear history, no force-push/deletion; `v*` tag ruleset blocks tag creation/update/deletion + requires signatures; a `release` environment gates future publish (#254) behind explicit owner approval. Admin bypass retained as the owner escape valve. Contract + rollback documented in [docs/release-ruleset.md](release-ruleset.md), pinned by `scripts/check-release-ruleset.mjs`.
 
 # R7 — Packages — publication-ready only, DO NOT publish
 
