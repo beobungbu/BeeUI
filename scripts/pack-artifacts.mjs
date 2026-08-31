@@ -23,8 +23,10 @@ const MANIFEST_PATH = path.join(ARTIFACT_DIR, 'manifest.json');
 // Lockstep order matches scripts/verify-release.mjs's packageSpecs (D6,
 // docs/decisions/011-distribution-architecture.md): @beeui/ui depends on the
 // other two, but pack order does not matter for `npm pack` itself, only for
-// readable manifest output.
-const PACKAGE_NAMES = ['@beeui/core', '@beeui/tokens', '@beeui/ui'];
+// readable manifest output. `@beeui/cli` (#209) is a standalone bin-only
+// package with no runtime dependency on the other three, but it is still
+// part of the same lockstep-versioned release surface (ADR-011 D6).
+const PACKAGE_NAMES = ['@beeui/core', '@beeui/tokens', '@beeui/ui', '@beeui/cli'];
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
