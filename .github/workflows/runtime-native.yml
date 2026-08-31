@@ -101,14 +101,14 @@ jobs:
         run: pnpm config set store-dir "$HOME/.pnpm-store"
 
       - name: Cache pnpm store
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.pnpm-store
           key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pnpm-${{ runner.os }}-
 
       - name: Cache CocoaPods
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cocoapods
@@ -117,14 +117,14 @@ jobs:
           restore-keys: pods-macos-
 
       - name: Cache Xcode DerivedData
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/Library/Developer/Xcode/DerivedData
           key: dd-macos-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: dd-macos-
 
       - name: Cache Maestro CLI
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.maestro
           key: maestro-${{ runner.os }}-${{ hashFiles('scripts/runtime-smoke/install-maestro.sh') }}
@@ -215,14 +215,14 @@ jobs:
         run: pnpm config set store-dir "$HOME/.pnpm-store"
 
       - name: Cache pnpm store
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.pnpm-store
           key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pnpm-${{ runner.os }}-
 
       - name: Cache Gradle
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.gradle/caches
@@ -231,13 +231,13 @@ jobs:
           restore-keys: gradle-${{ runner.os }}-
 
       - name: Cache Maestro CLI
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.maestro
           key: maestro-${{ runner.os }}-${{ hashFiles('scripts/runtime-smoke/install-maestro.sh') }}
 
       - name: Cache Android AVD
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.android/avd/*
