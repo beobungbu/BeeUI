@@ -17,6 +17,13 @@ export type ActivityEntry = {
   detail: string;
   meta: string;
   status: ActivityStatus;
+  /**
+   * The ticket this activity entry refers to (a real id in `tickets-data.ts`),
+   * so the dashboard can deep-link straight into the records/detail flow
+   * (#237's "dashboard -> record -> edit -> schedule" realistic flow) instead
+   * of only offering a generic "view all tickets" action.
+   */
+  ticketId: string;
 };
 
 export type DashboardSummary = {
@@ -41,13 +48,15 @@ const SUMMARY_FIXTURE: DashboardSummary = {
       detail: 'Repeated 502s reported by three enterprise accounts on the billing export endpoint.',
       meta: '12 minutes ago · Priya Natarajan',
       status: 'escalated',
+      ticketId: 'TCK-10482',
     },
     {
       id: 'act-2',
-      title: 'TCK-10399 resolved',
+      title: 'TCK-10418 resolved',
       detail: 'Password reset email deliverability restored after DNS record correction.',
       meta: '38 minutes ago · Marcus Villanueva',
       status: 'resolved',
+      ticketId: 'TCK-10418',
     },
     {
       id: 'act-3',
@@ -55,13 +64,15 @@ const SUMMARY_FIXTURE: DashboardSummary = {
       detail: 'Customer disputes a duplicate charge on invoice INV-88213; needs refund review.',
       meta: '1 hour ago · Ada Lovelace',
       status: 'reassigned',
+      ticketId: 'TCK-10475',
     },
     {
       id: 'act-4',
-      title: 'TCK-10501 opened',
-      detail: 'Enterprise customer requests SSO metadata refresh ahead of a compliance audit.',
+      title: 'TCK-10430 reassigned to Alan Turing',
+      detail: 'Enterprise customer needs a refreshed SAML metadata document ahead of a compliance audit.',
       meta: '2 hours ago · Grace Hopper',
-      status: 'opened',
+      status: 'reassigned',
+      ticketId: 'TCK-10430',
     },
   ],
 };

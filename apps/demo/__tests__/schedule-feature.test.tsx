@@ -17,6 +17,18 @@ import { DemoScenarioProvider, type DemoScenario } from '../src/state/demo-scena
 
 const mockShow = jest.fn();
 
+/**
+ * Mutable route-param stub for the record-detail -> schedule handoff test
+ * below. Defaults to no params so the rest of this file's tests (which never
+ * arrive via that handoff) see the same empty `useLocalSearchParams()` result
+ * `expo-router` would return for a plain `/schedule` navigation.
+ */
+let mockScheduleRouteParams: { ticketId?: string; title?: string; attendee?: string } = {};
+
+jest.mock('expo-router', () => ({
+  useLocalSearchParams: () => mockScheduleRouteParams,
+}));
+
 jest.mock('@beemvp/beeui-ui', () => {
   const actual = jest.requireActual('@beemvp/beeui-ui');
   return {
@@ -136,5 +148,43 @@ describe('ScheduleScreen (#262)', () => {
     expect(mockShow).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'Appointment cancelled' }),
     );
+  });
+});
+
+describe('ScheduleScreen cross-flow handoff (#237 record -> schedule flow)', () => {
+  beforeEach(() => {
+    mockShow.mockClear();
+    resetAppointmentFixtures();
+  });
+
+  afterEach(() => {
+    mockScheduleRouteParams = {};
+  });
+
+  it('opens the new-appointment dialog pre-filled from a record-detail handoff', async () => {
+    mockScheduleRouteParams = {
+      ticketId: 'TCK-10482',
+      title: 'Follow-up: Repeated 502s on the billing export endpoint',
+      attendee: 'Grace Hopper',
+    };
+
+    renderSchedule();
+
+    expect(await screen.findByTestId('schedule-followup-hint')).toBeTruthy();
+    expect(screen.getByText('Following up on TCK-10482.')).toBeTruthy();
+    expect(screen.getByDisplayValue('Follow-up: Repeated 502s on the billing export endpoint')).toBeTruthy();
+  });
+
+  it('ignores an unrecognized attendee from the handoff and keeps the default', async () => {
+    mockScheduleRouteParams = {
+      ticketId: 'TCK-10387',
+      title: 'Follow-up: Webhook retries are not honoring the configured exponential backoff',
+      attendee: 'Someone Not On The Team',
+    };
+
+    renderSchedule();
+
+    await screen.findByTestId('schedule-followup-hint');
+    expect(screen.getByText('Ada Lovelace')).toBeTruthy();
   });
 });

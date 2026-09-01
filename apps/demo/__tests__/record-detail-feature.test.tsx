@@ -96,6 +96,22 @@ describe('RecordDetailScreen (#261)', () => {
     expect(screen.getByText('Updated subject for regression test')).toBeTruthy();
   });
 
+  it('routes to the schedule flow with the ticket context prefilled (#237 record -> schedule flow)', async () => {
+    renderDetail();
+    await screen.findByTestId('record-detail-view');
+
+    fireEvent.press(screen.getByText('Schedule follow-up'));
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/schedule',
+      params: {
+        ticketId: originalTicket.id,
+        title: `Follow-up: ${originalTicket.subject}`,
+        attendee: originalTicket.assignee,
+      },
+    });
+  });
+
   it('asks for discard confirmation when cancelling with unsaved changes', async () => {
     renderDetail();
     await screen.findByTestId('record-detail-view');
