@@ -8,6 +8,18 @@ BeeUI packages are `0.x` with `publishConfig.access = public` but remain unpubli
 
 The canonical source records this posture under `$extensions["com.beeui"].lifecyclePolicy` (package version, `pre-1.0` stability, default status, status vocabulary, minimum compatibility window, and governed scope).
 
+### 1.0 freeze status
+
+The **token vocabulary** (the governed categories and names) and its lifecycle state are
+**frozen for BeeUI 1.0** at commit `a1efd48e6b0dbcdb058fe5ed3ffd3328900890dd` (snapshot
+2026-09-02): 106 governed tokens, all `stable` (0 experimental, 0 deprecated). The frozen
+inventory, the freeze rule, and the post-freeze release-blocker governance are recorded in
+[docs/token-freeze.md](token-freeze.md) (#244), the companion of the public API freeze
+[docs/api-freeze.md](api-freeze.md) (#243). This *policy* document is unchanged by the freeze —
+it continues to define how tokens are marked, deprecated, and removed; the freeze locks the
+concrete vocabulary that policy now governs for 1.0. Frozen is not published: the `1.0.0`
+release remains owner-gated at #254, and `lifecycle.json` still reports `pre-1.0` stability.
+
 ## What is a public token
 
 Governed public tokens are:
