@@ -4,7 +4,7 @@ This document defines how BeeUI marks the maturity of public design tokens, how 
 
 ## Current stability posture
 
-BeeUI packages are `0.x` and `private: true`. This is a pre-1.0 project: the token vocabulary is stabilizing but not frozen, and BeeUI does not claim full semantic-versioning stability or a "never breaking" guarantee. The lifecycle contract exists to make the changes that do happen legible and mechanically checkable, not to promise permanence the project has not adopted.
+BeeUI packages are `0.x` with `publishConfig.access = public` but remain unpublished pending owner-gated release (#254); `private: true` was removed per [ADR-011](decisions/011-distribution-architecture.md) D1. This is a pre-1.0 project: the token vocabulary is stabilizing but not frozen, and BeeUI does not claim full semantic-versioning stability or a "never breaking" guarantee. The lifecycle contract exists to make the changes that do happen legible and mechanically checkable, not to promise permanence the project has not adopted.
 
 The canonical source records this posture under `$extensions["com.beeui"].lifecyclePolicy` (package version, `pre-1.0` stability, default status, status vocabulary, minimum compatibility window, and governed scope).
 
