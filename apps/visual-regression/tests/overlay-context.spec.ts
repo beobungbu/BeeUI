@@ -13,6 +13,27 @@ async function openComponentGallery(page: import('@playwright/test').Page) {
   await page.getByTestId('component-gallery').waitFor({ state: 'visible' });
 }
 
+// #403 — Dialog's own focus trap (`useDialogFocusTrap` in `packages/ui/src/
+// components/dialog.tsx`) moves focus to the panel's first focusable
+// descendant on a deferred macrotask (`setTimeout(focusInitialTarget, 0)`)
+// after the Dialog opens. A test that clicks the Dialog trigger and then
+// immediately `.focus()`es a different element inside the panel (the nested
+// Tooltip trigger, below) races that deferred steal: if the timer fires
+// after the explicit `.focus()` call lands, it silently moves focus back
+// off the Tooltip trigger, blurring it and closing the Tooltip before the
+// assertion observes it open. This is a pure test-timing race — the trap
+// itself is correct and single-shot per open — so waiting for the trap's
+// own initial focus target to land first (any focus inside the dialog
+// panel) fully resolves it without an arbitrary sleep.
+async function waitForDialogFocusTrapSettled(
+  page: import('@playwright/test').Page,
+  dialogAccessibleName: string,
+) {
+  await expect(
+    page.getByRole('dialog', { name: dialogAccessibleName }).locator(':focus'),
+  ).toHaveCount(1);
+}
+
 test('preserves consumer context inside a web Popover', async ({ page }) => {
   test.setTimeout(90_000);
   await openComponentGallery(page);
@@ -52,6 +73,7 @@ test('preserves consumer context inside a Tooltip nested in a Dialog', async ({ 
   test.setTimeout(90_000);
   await openComponentGallery(page);
   await page.getByTestId('overlay-context-dialog-trigger').click();
+  await waitForDialogFocusTrapSettled(page, 'Dialog with a nested overlay');
   await page.getByTestId('overlay-context-dialog-tooltip-trigger').focus();
   await expect(page.getByTestId('overlay-context-dialog-tooltip-value')).toHaveText(
     'context: preserved',
@@ -68,6 +90,7 @@ test('Web Escape is scope-aware: closes a dialog-nested Tooltip, Dialog stays op
   test.setTimeout(90_000);
   await openComponentGallery(page);
   await page.getByTestId('overlay-context-dialog-trigger').click();
+  await waitForDialogFocusTrapSettled(page, 'Dialog with a nested overlay');
   await page.getByTestId('overlay-context-dialog-tooltip-trigger').focus();
   await expect(page.getByTestId('overlay-context-dialog-tooltip-value')).toHaveText(
     'context: preserved',
