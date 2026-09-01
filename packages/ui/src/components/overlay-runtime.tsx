@@ -841,6 +841,7 @@ type WebOverlayKeyboardEvent = {
   key?: string;
   preventDefault?: () => void;
   stopPropagation?: () => void;
+  stopImmediatePropagation?: () => void;
 };
 
 type WebOverlayDocument = {
@@ -888,15 +889,49 @@ export type UseOverlayEscapeKeyOptions = {
  *
  * Capture fires on the way down, before the focused element's own bubble-
  * phase handling runs, so it reaches this listener regardless of what a
- * descendant does with the event afterwards. Callers supply their own
- * `isTopmost()` so nested-overlay precedence (a `Popover` opened from inside
- * a `Dialog` is dismissed child-first) is preserved exactly.
+ * descendant does with the event afterwards.
+ *
+ * Every open overlay that carries this binding (Dialog, Popover, Sheet)
+ * installs its OWN capture-phase `document` listener, and — because
+ * `stopPropagation()` never suppresses *other* listeners already registered
+ * on the same node (only `stopImmediatePropagation()` does) — all of them
+ * fire for a single physical Escape keydown, each with its own `isTopmost()`
+ * scoped only to its OWN nearest dismiss stack. A root-level, non-modal
+ * overlay (e.g. a `Popover` rendered outside any `ModalOverlayHost`) is
+ * always alone in the root stack, so its LOCAL `isTopmost()` is trivially
+ * true regardless of what is open in a deeper, unrelated modal scope. Left
+ * unchecked, that overlay would call its own `onDismiss` and
+ * `stopPropagation()` — which, because capture always precedes the bubble
+ * phase, permanently prevents the event from ever reaching
+ * `overlay-dismiss-events.web.ts`'s `window` bubble listener, i.e. the ONE
+ * mechanism (`OverlayActiveScopeCoordinator.dispatchTop`) that actually knows
+ * how to compare scopes by modal depth. The result: a later- or
+ * earlier-registered shallow overlay can silently steal Escape from a
+ * deeper, genuinely topmost modal overlay (proven by the visual-regression
+ * "Web Escape CASE C" fixture).
+ *
+ * The fix: `isTopmost()` still gates whether THIS instance is even a
+ * candidate to act (preserving existing nested-overlay precedence within one
+ * scope, e.g. a `Popover` opened from inside a `Dialog` is dismissed
+ * child-first), but the actual dismissal is delegated to the SAME
+ * depth-aware `dispatchTop` the platform-dismiss bridge and bubble-phase
+ * fallback already use, instead of this instance's own `onDismiss`. That
+ * always resolves to the topmost entry of the deepest ACTIVE modal scope —
+ * which may be a different overlay than the one whose listener happened to
+ * fire — so a shallow overlay's own trivially-true local `isTopmost()` can
+ * no longer hijack an Escape meant for a deeper nested overlay.
+ * `stopImmediatePropagation()` additionally stops the other same-node
+ * capture listeners from redundantly re-dispatching once one has already
+ * resolved the event.
  */
 export function useOverlayEscapeKey({ isTopmost, onDismiss, open }: UseOverlayEscapeKeyOptions) {
   const onDismissRef = React.useRef(onDismiss);
   onDismissRef.current = onDismiss;
   const isTopmostRef = React.useRef(isTopmost);
   isTopmostRef.current = isTopmost;
+  const coordinator = React.useContext(OverlayActiveScopeContext);
+  const coordinatorRef = React.useRef(coordinator);
+  coordinatorRef.current = coordinator;
 
   React.useEffect(() => {
     if (!open) return undefined;
@@ -905,9 +940,21 @@ export function useOverlayEscapeKey({ isTopmost, onDismiss, open }: UseOverlayEs
 
     const handleKeyDown = (event: WebOverlayKeyboardEvent) => {
       if (event.key !== 'Escape' || !isTopmostRef.current()) return;
+      const activeCoordinator = coordinatorRef.current;
+      let dismissed: boolean;
+      if (activeCoordinator) {
+        dismissed = activeCoordinator.dispatchTop('escape');
+      } else {
+        // No coordinator available (a minimal test harness without the full
+        // runtime provider): fall back to the pre-existing local decision
+        // rather than silently doing nothing.
+        onDismissRef.current();
+        dismissed = true;
+      }
+      if (!dismissed) return;
       event.preventDefault?.();
       event.stopPropagation?.();
-      onDismissRef.current();
+      event.stopImmediatePropagation?.();
     };
 
     doc.addEventListener('keydown', handleKeyDown, true);
