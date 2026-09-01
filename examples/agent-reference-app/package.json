@@ -1,0 +1,38 @@
+{
+  "name": "beeui-agent-reference-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "R10.6 (#235) — reference app built from AI-agent-only BeeUI context (llms.txt family + docs/ai-agent-cookbook.md). A small 'Access Requests' review console: BeeUIProvider + theme switching, a form flow, Dialog/AlertDialog overlays, a Sheet, a caller-owned Table, Calendar, and Toast — all from real @beemvp/beeui-ui exports.",
+  "scripts": {
+    "setup": "bash ./setup.sh",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@beemvp/beeui-core": "file:.beeui-tarballs/beemvp-beeui-core-0.1.0.tgz",
+    "@beemvp/beeui-tokens": "file:.beeui-tarballs/beemvp-beeui-tokens-0.1.0.tgz",
+    "@beemvp/beeui-ui": "file:.beeui-tarballs/beemvp-beeui-ui-0.1.0.tgz",
+    "@gorhom/bottom-sheet": "5.2.14",
+    "@react-native-community/datetimepicker": "9.1.0",
+    "class-variance-authority": "0.7.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.2",
+    "react-native-gesture-handler": "2.32.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-teleport": "1.1.13",
+    "react-native-web": "0.21.0",
+    "react-native-worklets": "0.10.1",
+    "tailwindcss": "4.3.3",
+    "uniwind": "1.10.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "typescript": "5.9.3",
+    "vite": "8.2.2",
+    "vite-plugin-rnw": "0.0.12"
+  }
+}

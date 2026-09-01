@@ -47,6 +47,15 @@ describe('DashboardScreen (#259)', () => {
     expect(mockPush).toHaveBeenCalledWith('/records');
   });
 
+  it('deep-links an activity entry straight to its ticket (#237 dashboard -> record flow)', async () => {
+    renderDashboard();
+    await screen.findByTestId('dashboard-activity-timeline');
+
+    fireEvent.press(screen.getByLabelText('Open TCK-10482'));
+
+    expect(mockPush).toHaveBeenCalledWith('/records/TCK-10482');
+  });
+
   it('renders an EmptyState for a freshly seeded workspace', async () => {
     renderDashboard('empty');
 

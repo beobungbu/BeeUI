@@ -15,6 +15,15 @@ production demo is tracked separately (#236/#258–263). Each one proves a
 distinct, real consumption path builds cleanly; none of them are a
 substitute for the full Showcase.
 
+Alongside the starters, [`agent-reference-app/`](agent-reference-app/)
+([#235](https://github.com/beobungbu/BeeUI/issues/235)) is a small reference
+*application* (an "Access Requests" console) built **only from BeeUI's
+AI-agent-facing context** (the `llms.txt` family + `docs/ai-agent-cookbook.md`),
+to validate that those docs are enough for a fresh agent to build a real BeeUI
+app. Its [`AGENT-BUILD-NOTES.md`](agent-reference-app/AGENT-BUILD-NOTES.md)
+records the doc gaps found along the way. It consumes the same `pnpm pack`
+tarball boundary as the Web starter.
+
 ## Unpublished status (read this first)
 
 BeeUI is **not published to npm**. Per ADR-011's owner guard, no package or
