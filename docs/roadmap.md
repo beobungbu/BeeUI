@@ -2,11 +2,11 @@
 
 > **Target:** BeeUI `1.0.0`  
 > **Program tracker:** [#114](https://github.com/beobungbu/BeeUI/issues/114)  
-> **Snapshot:** 2026-08-31  
+> **Snapshot:** 2026-09-02  
 > **Program base at creation:** `fe8733345ee09720808ec0f6a4db93be9ff4a78f`  
 > **Worker model:** one atomic issue = one branch/PR; mandatory self-test + self-review; independent review; no self-merge.
 
-**Owner-authorized (2026-08-31): drive resumed through R7–R10, stopping only at genuine owner-gates.** Current closed-issue state (39 open): R0–R4 ✅ (R1 #126 device-gated) · **R5 8/8 ✅** · R6 10/10 ✅ · **R7 done** except owner-gated #198/#205/#207 (ADR/metadata/build/exports/packed-verify/prerelease-artifacts/clean-consumers/dist-tag-policy/compat-report all landed) · **R8 nearly done** (registry closure #217/#319/#355, CLI extract+hardening #209/#210/#211/#212/#213/#214/#216; #218/#219 next; #215 owner-decision) · **R9 done** (docs-site #220, llms.txt #226, AI cookbook+regression #227/#228, per-component doc contract #221/#222/#223, Showcase+native-preview #224/#225; #229 owner-decision) · **R10 in progress** (consumer starters #230-233 ✅, demo architecture ADR-013 #236 ✅; demo screens #258-263 + #237/#238-242 next; #234/#235 next). **R11 freeze/RC (#243-256) pending** after R10. Owner-gates: #198/#205 npm account, #254 publish, #234/#253 external, #248/#249 real-device, #215/#229 product decisions. Infra: CI GitHub-hosted parallel+sharded, `main` flake-free, rulesets live (#196), repo PUBLIC.
+**Owner-authorized (2026-08-31): drive resumed through R7–R10, stopping only at genuine owner-gates.** Current closed-issue state (38 open): R0–R4 ✅ (R1 #126 device-gated) · **R5 8/8 ✅** · R6 10/10 ✅ · **R7 done** except owner-gated #198/#205/#207 (ADR/metadata/build/exports/packed-verify/prerelease-artifacts/clean-consumers/dist-tag-policy/compat-report all landed) · **R8 nearly done** (registry closure #217/#319/#355, CLI extract+hardening #209/#210/#211/#212/#213/#214/#216; #218/#219 in flight; #215 owner-decision) · **R9 done** (docs-site #220, llms.txt #226, AI cookbook+regression #227/#228, per-component doc contract #221/#222/#223, Showcase+native-preview #224/#225; #229 owner-decision) · **R10 in progress** (consumer starters #230-233 ✅, demo architecture ADR-013 #236 ✅, demo shell #258 ✅; demo screens #259-263 + integration epic #237 + #238-242 next; #234/#235 next). **R11 freeze/RC (#243-256) pending** after R10. Owner-gates: #198/#205 npm account, #254 publish, #234/#253 external, #248/#249 real-device, #215/#229 product decisions. Infra: CI GitHub-hosted parallel+sharded, `main` flake-free, rulesets live (#196), repo PUBLIC.
 
 This file is the BeeUI 1.0 **product-scope and issue-map authority**. It does not duplicate every child issue's implementation details.
 
@@ -273,16 +273,16 @@ shared-authority source of truth for every row below; it is drift-checked by
 
 # R5 — Performance & footprint
 
-**R5 status: 4/8.** #179–#182 closed (Done). #183–#186 are **open**, gated on the R7 package-distribution chain below (`#197 → #198 → (#199 + #200) → #183 → #184 → #185 → #186`). **Owner decision (2026-08-30): this drive stops before R7, so #183–#186 stay open and tracked, not scheduled here.**
+**R5 status: 8/8 closed (Done).** #179–#182 and #183–#186 all landed once the R7 package-distribution chain (`#197 → #198 → (#199 + #200) → #183 → #184 → #185 → #186`) resolved.
 
 - #179 reproducible benchmark harness. **Done.**
 - #180 render/update stress after Table/date exist. **Done.**
 - #181 overlay/Tooltip/Sheet latency after runtime/components stabilize. **Done.**
 - #182 Theme Tokens v3 runtime performance. **Done.**
-- #183 packed package/Web/Metro footprint after package output shape exists. **Open — gated on R7 (#197–#200); not scheduled under this drive.**
-- #184 measured granular-export decision. **Open — gated on #183; not scheduled under this drive.**
-- #185 evidence-based regression budgets. **Open — gated on #183/#184; not scheduled under this drive.**
-- #186 reproducible methodology/baseline report. **Open — gated on #183–#185; not scheduled under this drive.**
+- #183 packed package/Web/Metro footprint after package output shape exists. **Done.**
+- #184 measured granular-export decision. **Done.**
+- #185 evidence-based regression budgets. **Done.**
+- #186 reproducible methodology/baseline report. **Done.**
 
 # R6 — OSS, security & repository governance
 
@@ -301,78 +301,88 @@ shared-authority source of truth for every row below; it is drift-checked by
 
 # R7 — Packages — publication-ready only, DO NOT publish
 
+**R7 status: 9/12 closed — done except the owner-gated npm-account/provenance items #198/#205/#207.**
+
 - #197 distribution architecture ADR. **Closed** — see [ADR-011](decisions/011-distribution-architecture.md).
 - #198 package/CLI names and permissions; owner/admin gate where required. **Preflight done** ([docs/distribution-names.md](distribution-names.md)): `@beemvp/beeui-*` scope + `@beemvp/beeui-cli` verified available; CLI recommended `@beemvp/beeui-cli` (bare `beeui` is a taken tombstone). **Issue stays open for the OWNER action**: create the `@beemvp` npm org + reserve names + grant release-workflow permissions (ties to #205).
 - #199 package metadata. **Closed** — `private` removed; repository/homepage/keywords/author/`publishConfig` (access public + provenance) on all three; via PR #371.
 - #200 package output format. **Closed** — dual ESM+CJS+`.d.ts` under `dist/` (react-native-builder-bob), conditional `exports` (source/react-native/browser/import/require), `src` retained for source-ownership; internal apps resolve `source` (baselines byte-identical); native + web CI green. Via PR #371.
-- #201 final export maps after #184.
-- #202 packed file inventory.
-- #203 prerelease-equivalent retained artifacts.
-- #204 clean consumers from packed artifacts.
-- #205 trusted publishing/provenance preparation; account/environment changes gated.
-- #206 dist-tag/prerelease policy only. **Policy authored** ([docs/dist-tag-policy.md](dist-tag-policy.md), docs only, no publish): `latest`/`next` dist-tag semantics, `1.0.0-rc.N` prerelease naming (opt-in via `@next`), lockstep version + CLI alignment, atomic `latest`-promotion-last plan (fail safe), dist-tag correction/deprecation and partial-publication recovery. Pinned by `scripts/check-distribution-policy.mjs`.
-- #207 integrity/provenance verification path.
-- #208 package consumer compatibility report. **Report authored** ([docs/consumer-compatibility-report.md](consumer-compatibility-report.md)): per-consumer React/RN/Expo/Node/Uniwind/Tailwind/Web + native-peer rows, each tied to a real clean-consumer script/CI gate/matrix row and its evidence class; version pins and peer promises machine-checked against `docs/compatibility-matrix.md` and `packages/ui` so a claim cannot exceed a tested row. Pinned by `scripts/check-distribution-policy.mjs`.
+- #201 final export maps after #184. **Closed.**
+- #202 packed file inventory. **Closed.**
+- #203 prerelease-equivalent retained artifacts. **Closed.**
+- #204 clean consumers from packed artifacts. **Closed.**
+- #205 trusted publishing/provenance preparation; account/environment changes gated. **Open — owner action (ties to #198).**
+- #206 dist-tag/prerelease policy only. **Closed** — policy authored ([docs/dist-tag-policy.md](dist-tag-policy.md), docs only, no publish): `latest`/`next` dist-tag semantics, `1.0.0-rc.N` prerelease naming (opt-in via `@next`), lockstep version + CLI alignment, atomic `latest`-promotion-last plan (fail safe), dist-tag correction/deprecation and partial-publication recovery. Pinned by `scripts/check-distribution-policy.mjs`.
+- #207 integrity/provenance verification path. **Open — owner-gated (depends on #203/#205).**
+- #208 package consumer compatibility report. **Closed** — report authored ([docs/consumer-compatibility-report.md](consumer-compatibility-report.md)): per-consumer React/RN/Expo/Node/Uniwind/Tailwind/Web + native-peer rows, each tied to a real clean-consumer script/CI gate/matrix row and its evidence class; version pins and peer promises machine-checked against `docs/compatibility-matrix.md` and `packages/ui` so a claim cannot exceed a tested row. Pinned by `scripts/check-distribution-policy.mjs`.
 
 # R8 — CLI/source ownership — publication-ready only, DO NOT publish
 
-- #209 publication-ready packed CLI.
-- #210 required command contract.
-- #211 security invariants.
-- #212 semver-aware dependency diagnostics.
-- #213 project/platform detection.
-- #214 deterministic `init` policy.
-- #215 package-manager mutation policy.
-- #216 registry delivery/integrity strategy.
+**R8 status: 8/11 closed — CLI extracted, hardened and diagnostics/detection/`init` landed; #218 clean-consumer E2E and #219 diff/update in flight; #215 owner decision.**
+
+- #209 publication-ready packed CLI. **Closed.**
+- #210 required command contract. **Closed.**
+- #211 security invariants. **Closed.**
+- #212 semver-aware dependency diagnostics. **Closed.**
+- #213 project/platform detection. **Closed.**
+- #214 deterministic `init` policy. **Closed.**
+- #215 package-manager mutation policy. **Open — owner decision.**
+- #216 registry delivery/integrity strategy. **Closed.**
 - #217 complete stable 1.0 registry closure. **Closed** — [#355](https://github.com/beobungbu/BeeUI/issues/355) resolved (`@beemvp/beeui-tokens` is declared as a consumer dependency on every affected registry item instead of left unresolved; the curated-file-list test gap that let affected files skip CI is fixed); [#319](https://github.com/beobungbu/BeeUI/issues/319) resolved (`use-direction` declared on every component that imports it); full registry-dependency-graph audit closed two additional latent gaps (`input`/`toast` missing `text`, `list-item` missing `list-group`).
-- #218 packed CLI clean-consumer E2E.
-- #219 optional safe diff/update assistance or explicit defer.
+- #218 packed CLI clean-consumer E2E. **Open — in flight.**
+- #219 optional safe diff/update assistance or explicit defer. **Open — in flight.**
 
 # R9 — Docs, Showcase & AI-native development — hard 1.0
 
-- #220 public docs site.
-- #221 final per-component docs contract after stable component/registry surface.
-- #222 executable/typechecked canonical examples.
-- #223 production pattern docs.
-- #224 release-ready Web Showcase.
-- #225 native preview.
-- #226 canonical `llms.txt`, `llms-full.txt`, `llms-components.txt`, `llms-patterns.txt`.
-- #227 agent-development contract + prompt cookbook.
-- #228 repeatable fresh-agent regression suite.
-- #229 optional MCP decision; may defer.
+**R9 status: 9/10 closed (Done).** #229 optional MCP is an owner decision.
+
+- #220 public docs site. **Closed.**
+- #221 final per-component docs contract after stable component/registry surface. **Closed.**
+- #222 executable/typechecked canonical examples. **Closed.**
+- #223 production pattern docs. **Closed.**
+- #224 release-ready Web Showcase. **Closed.**
+- #225 native preview. **Closed.**
+- #226 canonical `llms.txt`, `llms-full.txt`, `llms-components.txt`, `llms-patterns.txt`. **Closed.**
+- #227 agent-development contract + prompt cookbook. **Closed.**
+- #228 repeatable fresh-agent regression suite. **Closed.**
+- #229 optional MCP decision; may defer. **Open — owner decision.**
 
 Hard AI-native chain: `#226 → #227 → #228`.
 
 # R10 — Independent consumers & production demo — hard 1.0
 
+**R10 status: 6/19 closed — in progress.** Consumer starters #230–#233, demo architecture #236 and demo shell #258 are accepted; demo screens #259–#263, integration epic #237, demo acceptance #238–#242 and external/agent proof #234/#235 remain (#234 owner access, #253 downstream).
+
 ## Independent consumers
 
-- #230 Expo package-consumption starter.
-- #231 source-ownership starter.
-- #232 bare RN starter.
-- #233 independent Web consumer.
-- #234 real-world external consumer; owner selection/access when private.
-- #235 fresh-agent reference app from canonical context only.
+- #230 Expo package-consumption starter. **Closed.**
+- #231 source-ownership starter. **Closed.**
+- #232 bare RN starter. **Closed.**
+- #233 independent Web consumer. **Closed.**
+- #234 real-world external consumer; owner selection/access when private. **Open — owner action if private.**
+- #235 fresh-agent reference app from canonical context only. **Open.**
 
 ## Production demo
 
-- #236 architecture/spec.
-- #237 functional integration epic.
-  - #258 shell + mobile-first responsive navigation.
-  - #259 dashboard/data overview.
-  - #260 searchable/filterable Table/DataTable flow.
-  - #261 detail/edit-form flow.
-  - #262 scheduling/date-time flow.
-  - #263 settings/accessibility preferences + integrated states/E2E.
-- #238 final iOS/Android/Web platform/runtime quality matrix.
-- #239 production engineering quality gate.
-- #240 real rendered visual/product polish review.
-- #241 fresh-agent extend/fix test on accepted demo.
-- #242 classify all consumer/demo/agent findings before freeze.
+- #236 architecture/spec. **Closed** — ADR-013.
+- #237 functional integration epic. **Open — closes only after #258–#263 are accepted and integrated E2E passes.**
+  - #258 shell + mobile-first responsive navigation. **Closed** — establishes the shared demo shell/navigation authority.
+  - #259 dashboard/data overview. **Open.**
+  - #260 searchable/filterable Table/DataTable flow. **Open.**
+  - #261 detail/edit-form flow. **Open.**
+  - #262 scheduling/date-time flow. **Open.**
+  - #263 settings/accessibility preferences + integrated states/E2E. **Open.**
+- #238 final iOS/Android/Web platform/runtime quality matrix. **Open.**
+- #239 production engineering quality gate. **Open.**
+- #240 real rendered visual/product polish review. **Open.**
+- #241 fresh-agent extend/fix test on accepted demo. **Open.**
+- #242 classify all consumer/demo/agent findings before freeze. **Open.**
 
 The demo must be a coherent production-grade multi-screen app, not a component catalog, and must prove mobile-first responsive behavior across supported screen/form-factor classes.
 
 # R11 — Freeze, immutable candidate & owner-gated release
+
+**R11 status: 0/14 — pending; begins only after R10 acceptance.**
 
 Execution order is intentionally different from numeric identifier order:
 
