@@ -74,6 +74,21 @@ Details: [docs/registry-cli.md](registry-cli.md), [docs/distribution-names.md](d
 [ADR-011](decisions/011-distribution-architecture.md). The machine-readable registry that
 drives `add` is [registry/registry.json](../registry/registry.json).
 
+**Consuming the centralized packages before release (tarballs).** The package-model row
+above is a target, but a **new, standalone** app can consume it today without npm — as
+local tarballs, the exact package boundary CI's `scripts/verify-web-consumer.sh` and the
+checked-in starters already prove (never a `workspace:*` link or a hand-copied `dist/`).
+Build the packages once (`pnpm build`), pack `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and
+`@beemvp/beeui-ui` into `*.tgz` files (the starters do this with
+[examples/scripts/pack-beeui-packages.mjs](../examples/scripts/pack-beeui-packages.mjs)), then
+`npm install --save-exact <core.tgz> <tokens.tgz> <ui.tgz>` so the app depends on them as
+`file:….tgz`. This resolves the real package `exports` and Web theme CSS exactly as a
+published install would, with no invented npm entry. Worked reference:
+[examples/web-consumer](../examples/web-consumer) and [examples/README.md](../examples/README.md);
+expanded in [llms-full.txt](../llms-full.txt) ("Consuming the packages before release").
+This is distinct from source ownership: use tarballs when you want the centralized
+package dependency; use `pnpm beeui -- add` when you want to own the copied source.
+
 The source-ownership CLI:
 
 - `pnpm beeui -- init` — create `beeui.config.json` in the consumer.
@@ -133,6 +148,14 @@ The authoritative inventory is [llms-components.txt](../llms-components.txt), ge
   BeeUI's stable contracts. `className` is an optional escape hatch, not a portability
   guarantee; never build application logic on it, and never construct utility names
   dynamically (`bg-${x}` is forbidden — map state to complete literal class strings).
+- **Web bundling is more than the theme `@import`.** A from-scratch Vite +
+  react-native-web app also needs the `vite-plugin-rnw` + `@tailwindcss/vite` +
+  `uniwind/vite` plugin stack and a `global.css` that `@import`s Tailwind/Uniwind and
+  declares `@source` globs over the installed BeeUI packages' `src`. Without the `@source`
+  globs the app builds but ships **unstyled** (Tailwind/Uniwind only emit statically
+  discoverable classes). Full recipe: [llms-full.txt](../llms-full.txt) ("Web bundling (Vite
+  + react-native-web)") and the buildable [examples/web-consumer](../examples/web-consumer);
+  pinned versions in [docs/compatibility-matrix.md](compatibility-matrix.md).
 
 ### 6. Ownership boundaries you must not cross
 
@@ -238,6 +261,17 @@ The canonical dispatcher prompt these align with is
 > must receive their change callback. Keep the layout responsive with semantic spacing
 > tokens. Reference [llms-patterns.txt](../llms-patterns.txt).
 
+Concrete shape: `Field` takes `label` / `description` / `error` as **props** and the control
+as its single child (likewise `DescriptionItem` takes `label` / `value` as props, not children):
+
+```tsx
+import { Field, Input } from '@beemvp/beeui-ui';
+
+<Field label="Email" description="Work address" error={emailError}>
+  <Input value={email} onChangeText={setEmail} keyboardType="email-address" />
+</Field>
+```
+
 ### Recipe C — Build a Table / DataTable screen
 
 > Goal: build a `<domain>` table screen. Use the `Table` family (`Table`, `TableRow`,
@@ -267,6 +301,29 @@ The canonical dispatcher prompt these align with is
 > semantic color token defined in every theme and verify light and dark. Wire the Web theme
 > via `@import '@beemvp/beeui-tokens/theme.css'`. Reference [docs/theming.md](theming.md) and
 > [docs/density.md](density.md).
+
+Runtime light/dark switching is **app-owned** and goes through Uniwind, not a BeeUI
+component: call `Uniwind.setTheme(name)` to change the active theme globally and read the
+current one with `useUniwind()` (both from the `uniwind` package). Valid names are exported
+from `@beemvp/beeui-tokens` as `beeRuntimeThemeNames` (`light`, `dark`, `violet-light`,
+`violet-dark`):
+
+```tsx
+import { Button } from '@beemvp/beeui-ui';
+import { Uniwind, useUniwind } from 'uniwind';
+
+function ThemeToggle() {
+  const { theme } = useUniwind();
+  const next = theme === 'dark' ? 'light' : 'dark';
+  return <Button title={`Theme: ${theme}`} onPress={() => Uniwind.setTheme(next)} />;
+}
+```
+
+This is one small piece of app state choosing *which* theme BeeUI's existing runtime uses —
+not a second theme authority (density re-applies per resolved theme via `applyDensity`, see
+[docs/density.md](density.md)). To theme a single subtree independently of the app theme, use
+the `BeeThemeScope` component (a public `@beemvp/beeui-ui` export) instead of another
+`setTheme` path.
 
 ### Recipe G — Satisfy RTL and accessibility rules
 
