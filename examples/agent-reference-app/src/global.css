@@ -1,0 +1,10 @@
+@import 'tailwindcss';
+@import 'uniwind';
+@import '@beemvp/beeui-tokens/theme.css';
+
+/* Uniwind/Tailwind must statically discover the utility classes BeeUI's
+ * component source emits, so the copied package source is added as a @source.
+ * The @import of the token theme is documented in llms.txt; these @source globs
+ * are not — see AGENT-BUILD-NOTES.md (gap G1). */
+@source '../node_modules/@beemvp/beeui-core/src';
+@source '../node_modules/@beemvp/beeui-ui/src';
