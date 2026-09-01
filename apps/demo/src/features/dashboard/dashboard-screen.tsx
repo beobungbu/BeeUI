@@ -153,7 +153,16 @@ export function DashboardScreen() {
                         </Badge>
                       }
                       status={ACTIVITY_STATUS_TONE[entry.status]}
-                      title={entry.title}
+                      title={
+                        <Button
+                          accessibilityLabel={`Open ${entry.ticketId}`}
+                          className="h-auto justify-start self-start px-0 py-0"
+                          onPress={() => router.push(`/records/${entry.ticketId}`)}
+                          variant="ghost"
+                        >
+                          {entry.title}
+                        </Button>
+                      }
                     />
                   ))}
                 </Timeline>

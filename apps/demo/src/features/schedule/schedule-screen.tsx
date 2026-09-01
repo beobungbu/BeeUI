@@ -29,6 +29,7 @@ import {
   type CalendarDate,
   type DateTimePickerValue,
 } from '@beemvp/beeui-ui';
+import { useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { useAsync } from '../../services';
 import { useDemoScenario } from '../../state/demo-scenario';
@@ -52,9 +53,15 @@ function ScheduleSkeleton() {
   );
 }
 
+/** Reads a possibly-array route param as a single optional string. */
+function firstParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export function ScheduleScreen() {
   const toast = useToast();
   const { scenario } = useDemoScenario();
+  const params = useLocalSearchParams<{ ticketId?: string; title?: string; attendee?: string }>();
   const { data, error, retry, status } = useAsync(() => listAppointments(scenario), [scenario], {
     isEmpty: (appointments) => appointments.length === 0,
   });
@@ -76,6 +83,29 @@ export function ScheduleScreen() {
   const [titleError, setTitleError] = React.useState<string | undefined>();
   const [formError, setFormError] = React.useState<string | undefined>();
   const [saving, setSaving] = React.useState(false);
+  const [followUpTicketId, setFollowUpTicketId] = React.useState<string | undefined>();
+
+  // Cross-flow handoff (#237 "record detail -> schedule" realistic flow):
+  // `RecordDetailScreen`'s "Schedule follow-up" action routes here with a
+  // pre-filled title/attendee. Applied at most once per navigation (a ref
+  // guard, not a second data-fetching framework) so re-renders never re-open
+  // a dialog the reviewer already dismissed.
+  const appliedHandoffRef = React.useRef(false);
+  React.useEffect(() => {
+    if (appliedHandoffRef.current) return;
+    const paramTitle = firstParam(params.title);
+    if (!paramTitle) return;
+    appliedHandoffRef.current = true;
+
+    const paramAttendee = firstParam(params.attendee);
+    setTitle(paramTitle);
+    if (paramAttendee && (ATTENDEES as readonly string[]).includes(paramAttendee)) {
+      setAttendee(paramAttendee);
+    }
+    setFollowUpTicketId(firstParam(params.ticketId));
+    setDateTime({ date: today(), time: { hour: 9, minute: 0 } });
+    setDialogOpen(true);
+  }, [params.attendee, params.ticketId, params.title]);
 
   const visibleAppointments = React.useMemo(() => {
     const scoped = selectedDate
@@ -91,6 +121,7 @@ export function ScheduleScreen() {
     setNotes('');
     setTitleError(undefined);
     setFormError(undefined);
+    setFollowUpTicketId(undefined);
   }
 
   function openDialog() {
@@ -217,6 +248,12 @@ export function ScheduleScreen() {
           <DialogContent>
             <DialogTitle>New appointment</DialogTitle>
             <DialogDescription>Schedule a follow-up call or team appointment.</DialogDescription>
+
+            {followUpTicketId ? (
+              <Text testID="schedule-followup-hint" tone="muted" variant="caption">
+                {`Following up on ${followUpTicketId}.`}
+              </Text>
+            ) : null}
 
             {formError ? (
               <Text role="alert" testID="schedule-form-error" tone="destructive" variant="caption">

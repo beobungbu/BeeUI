@@ -296,7 +296,24 @@ export function RecordDetailScreen() {
                   {ticket.id}
                 </Text>
               </VStack>
-              <Button onPress={startEditing}>Edit</Button>
+              <VStack className="flex-row" gap="sm">
+                <Button
+                  onPress={() =>
+                    router.push({
+                      pathname: '/schedule',
+                      params: {
+                        ticketId: ticket.id,
+                        title: `Follow-up: ${ticket.subject}`,
+                        attendee: ticket.assignee,
+                      },
+                    })
+                  }
+                  variant="outline"
+                >
+                  Schedule follow-up
+                </Button>
+                <Button onPress={startEditing}>Edit</Button>
+              </VStack>
             </VStack>
 
             <VStack className="flex-row" gap="sm">
