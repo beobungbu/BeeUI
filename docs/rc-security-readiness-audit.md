@@ -5,23 +5,29 @@
 > "published".
 > **Snapshot:** 2026-09-02.
 > **Audited head:** `7f9decb95fc2336340819626e507420f6e63a1fc` (`main`).
+> **Re-affirmed against frozen candidate:** `1.0.0-rc-ready.1` = SHA
+> `5cb061f60df312e04036c1f6108ef0f099307bd9` (see F-11).
 
-## Candidate-binding caveat (affects go/no-go)
+## Candidate-binding caveat (resolved — bound to the frozen candidate)
 
 The immutable `1.0.0-rc-ready.1` candidate ([#246](https://github.com/beobungbu/BeeUI/issues/246))
-is **OPEN — not yet frozen** at this snapshot. The #251 DoD requires the audit to be "tied to
-exact candidate SHA/artifact hashes." This audit is therefore tied to the current `main` head
-above; **it must be re-affirmed against the frozen `1.0.0-rc-ready.N` candidate manifest and its
-tarball checksums once #246 produces them.** That is the single open readiness dependency (see
-Go/No-Go), not a security defect.
+is now **FROZEN** at SHA `5cb061f60df312e04036c1f6108ef0f099307bd9`
+([docs/rc-candidate.md](rc-candidate.md)). The #251 DoD requires the audit to be "tied to exact
+candidate SHA/artifact hashes"; this audit is re-affirmed against that frozen SHA and its four
+tarball checksums (F-11). Every security-relevant surface below is **unchanged** between the
+audited head and the candidate: the only diffs on the path `7f9decb…5cb061f` are documentation,
+the web-only overlay-Escape fix (#402), CLI E2E tooling, and a `visual-web` report-shard guard —
+none of which touch workflow permissions, the fork guard, `publishConfig`, the packed `files`
+allowlist, or the release ruleset. This is no longer an open readiness dependency.
 
 ## Summary
 
 No unresolved release-blocking security or supply-chain issue was found. The no-publication
 invariant holds structurally: **no workflow, script, or package manifest can execute
 `npm publish` or mutate a dist-tag**, and the future publish path (#254) is gated behind the
-owner-only `release` environment. One LOW hardening observation (action pinning) and the
-candidate-binding caveat above are the only follow-ups.
+owner-only `release` environment. The candidate-binding dependency (F-11) is now **resolved** —
+this audit is bound to the frozen `1.0.0-rc-ready.1` candidate (`5cb061f`) and its tarball
+checksums — leaving one LOW hardening observation (action pinning) as the only follow-up.
 
 | # | Area | Severity | Finding |
 | --- | --- | --- | --- |
@@ -35,7 +41,7 @@ candidate-binding caveat above are the only follow-ups.
 | F-8 | Branch/tag/release ruleset | None | `main` + `v*` rulesets live; `release` env owner-gated (#196) |
 | F-9 | Community / policy files | None | LICENSE, SECURITY.md, CODEOWNERS, CONTRIBUTING, CoC all present |
 | F-10 | Incident runbook (#256) | None | CLOSED, actionable, tabletop dry-run recorded |
-| F-11 | Candidate binding (#246) | Info | Candidate not yet frozen — re-affirm audit against frozen SHA/hashes |
+| F-11 | Candidate binding (#246) | None (resolved) | Bound to frozen `1.0.0-rc-ready.1` = `5cb061f` + its 4 tarball checksums; security surface unchanged from audited head |
 
 ## Findings
 
@@ -135,24 +141,44 @@ deprecation windows + never-rewrite rules), and records a **no-publication table
 #251 sequence prerequisite ("#256 runbook is actionable and linked"). The runbook itself asks to
 re-run its tabletop against the exact frozen candidate as part of #251 — see F-11.
 
-### F-11 — Candidate binding (Info — the one open dependency)
+### F-11 — Candidate binding (None — resolved)
 
-#246 has not frozen `1.0.0-rc-ready.1`, so no candidate manifest / tarball checksum set exists to
-bind this audit to. Once #246 freezes: (a) re-run the Web a11y gate
-([docs/rc-web-a11y-acceptance.md](rc-web-a11y-acceptance.md)) and this audit against that exact
-SHA; (b) re-run the runbook tabletop against the frozen artifact; (c) attach candidate tarball
-hashes here.
+#246 has frozen `1.0.0-rc-ready.1` at SHA `5cb061f60df312e04036c1f6108ef0f099307bd9`
+([docs/rc-candidate.md](rc-candidate.md)). This audit is bound to that exact candidate and its
+four packed tarball checksums (`sha256`, from `.artifacts/pack/manifest.json`, reproducible from
+the SHA — see [docs/rc-candidate.md](rc-candidate.md)):
+
+| Package | Tarball | sha256 | Bytes |
+| --- | --- | --- | --- |
+| `@beemvp/beeui-core` | `beemvp-beeui-core-0.1.0.tgz` | `b509450efa80dc318ec64021efca37ac92b36b4bdda9d940a3e6fa86f9cebb33` | 26630 |
+| `@beemvp/beeui-tokens` | `beemvp-beeui-tokens-0.1.0.tgz` | `b0dbbed94b7fe5fc702975556f39acb41d5d0641e7feaf3ab632e2c963cbe1b9` | 101012 |
+| `@beemvp/beeui-ui` | `beemvp-beeui-ui-0.1.0.tgz` | `e87eebc9b4db55efd0def4abcd8c7fd824c4912ee1be13d29d2206f78fd2dc4c` | 525103 |
+| `@beemvp/beeui-cli` | `beemvp-beeui-cli-0.1.0.tgz` | `f38f064288528cb55af93ea20622da0632c41ce63f5bfe6d006295b00da7e4a3` | 189248 |
+
+The candidate manifest records `publish: { executed: false, registry: null, distTag: null }` —
+the machine-checkable form of the no-publication invariant (F-2). The security-relevant surface
+is **unchanged** between the audited head and the candidate (see the Candidate-binding caveat
+above): no workflow permission, fork guard, `publishConfig`, packed `files` allowlist, or release
+ruleset differs on `7f9decb…5cb061f`, so findings F-1…F-10 carry over unchanged. The automated
+Web a11y gate ([docs/rc-web-a11y-acceptance.md](rc-web-a11y-acceptance.md)) and the rest of the
+automated matrix are re-affirmed on the exact candidate SHA in
+[docs/rc-ci-matrix.md](rc-ci-matrix.md) (#247); the runbook tabletop
+([docs/rollback-runbook.md](rollback-runbook.md)) is a no-publication dry run whose result is
+independent of the candidate SHA and remains valid.
 
 ## Go / No-Go for RC
 
-**GO for release-readiness on security & supply-chain grounds, CONDITIONAL on candidate binding.**
+**GO for release-readiness on security & supply-chain grounds.** The candidate-binding condition
+is now satisfied.
 
 - No release-blocking security or supply-chain issue (F-1…F-10).
 - No-publication invariant proven structurally: nothing in-tree can publish; #254 remains a
   non-existent, owner-gated future job (F-2, F-8).
-- **Blocking condition before final RC sign-off:** the frozen `1.0.0-rc-ready.N` candidate (#246)
-  must exist, and this audit + the a11y acceptance + the runbook tabletop must be re-affirmed
-  against its exact SHA and artifact hashes (F-11). This is a sequencing gate, not a defect.
+- **Candidate binding satisfied (F-11):** the frozen `1.0.0-rc-ready.1` candidate (#246) exists at
+  SHA `5cb061f`, this audit is bound to it and its four tarball checksums, the a11y acceptance and
+  the rest of the automated matrix are re-affirmed on that exact SHA
+  ([docs/rc-ci-matrix.md](rc-ci-matrix.md)), and the runbook tabletop (no-publication) holds. The
+  security surface is unchanged from the audited head.
 - **Recommended (non-blocking):** SHA-pin `actions/cache` (F-5); confirm GitHub private security
   advisories enabled (F-9).
 
