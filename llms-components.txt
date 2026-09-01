@@ -13,6 +13,7 @@ STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is
 - Web: real HTML semantics where available (Table renders `<table>`/`<th scope>`/`aria-sort`), focus traps (Dialog, Sheet), listbox/menu/combobox keyboard + typeahead (Select, DropdownMenu), and `aria-*` relationships gated to mounted content.
 - Native: RN semantic roles (`radiogroup`, `progressbar`, `switch`), merged `accessibilityHint`/`accessibilityLabel` where no Web-equivalent role exists, and system pickers for DatePicker/DateTimePicker via `@react-native-community/datetimepicker`.
 - Shared anchored kernel: Popover, DropdownMenu, Select, Tooltip share geometry/flip/shift/collision/safe-area/dismiss; RTL via one `useDirection()` resolver (ADR-004).
+- Native-only: `DatePicker` / `DateTimePicker` are the system pickers and ship **only** as `*.native.tsx` (no `date-picker.web.tsx`) — on Web they render nothing usable. Use `Calendar`, which is the cross-platform date primitive (native + Web), for date selection on Web (ADR-008).
 
 ## Public component modules (62)
 - `accordion` → exports: Accordion, AccordionContent, AccordionItem, AccordionTrigger — source: [packages/ui/src/components/accordion.tsx](packages/ui/src/components/accordion.tsx) — notable peers: react, react-native

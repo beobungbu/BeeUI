@@ -83,6 +83,10 @@ export const LINKED_PATHS = [
   'apps/docs/src/content/docs/components/calendar-date-time.md',
   'apps/docs/src/content/docs/patterns/index.md',
   'apps/docs/src/content/docs/performance/index.md',
+  'examples/README.md',
+  'examples/scripts/pack-beeui-packages.mjs',
+  'examples/web-consumer/vite.config.ts',
+  'examples/web-consumer/src/global.css',
 ];
 
 // Production pattern packs (README.md "Production pattern coverage"), living under
@@ -285,6 +289,9 @@ BeeUI is a reusable, mobile-first React Native UI foundation for long-lived clie
 
 See [docs/decisions/011-distribution-architecture.md](docs/decisions/011-distribution-architecture.md) and [docs/registry-cli.md](docs/registry-cli.md).
 
+### Consuming the packages before release (pnpm pack tarballs)
+The centralized model above is a target, but a new, standalone external app can already consume it **today** without npm — as local tarballs, the same package boundary CI's \`scripts/verify-web-consumer.sh\` / \`scripts/verify-bare-consumer.sh\` and the checked-in starters use (never a \`workspace:*\` link or a hand-copied \`dist/\`). Steps: (1) build the packages once from the repo root (\`pnpm build\`); (2) pack \`@beemvp/beeui-core\`, \`@beemvp/beeui-tokens\`, and \`@beemvp/beeui-ui\` into \`*.tgz\` files — the starters do this with [examples/scripts/pack-beeui-packages.mjs](examples/scripts/pack-beeui-packages.mjs), which runs \`pnpm pack\` per package; (3) install the tarballs into the consumer with \`npm install --save-exact <core.tgz> <tokens.tgz> <ui.tgz>\`, which pins them as \`"@beemvp/beeui-ui": "file:….tgz"\` dependencies. This resolves the real package \`exports\` maps and the Web theme CSS exactly as a published install would, so no fictional npm entry is needed. Worked, buildable reference: [examples/web-consumer](examples/web-consumer) and [examples/README.md](examples/README.md).
+
 ## Quick start (repository)
 \`\`\`bash
 corepack enable
@@ -295,6 +302,22 @@ Verification: \`pnpm check\` (typecheck + tests), \`pnpm release:verify\` (packa
 
 ## Provider and safe-area setup
 Wrap the app root in \`BeeUIProvider\` (installs safe-area measurement, the Toast runtime, and the shared anchored-overlay runtime). \`SafeArea\` assigns explicit \`top\`/\`bottom\`/\`left\`/\`right\` edge ownership; \`Screen\`, \`AppHeader\`, and \`BottomActionBar\` never add insets themselves. See [apps/docs/src/content/docs/getting-started/provider-safe-area.md](apps/docs/src/content/docs/getting-started/provider-safe-area.md).
+
+## Web bundling (Vite + react-native-web)
+\`@import '@beemvp/beeui-tokens/theme.css'\` supplies the semantic tokens but is not, by itself, a Web build. A from-scratch Vite + react-native-web app needs a specific plugin stack and a Tailwind/Uniwind CSS entry; get it wrong and the app either fails to resolve \`react-native\` or builds **unstyled**. The tested stack:
+- \`vite.config.ts\` — three plugins, in this order: \`rnw()\` from \`vite-plugin-rnw\` (resolves \`react-native\` → \`react-native-web\`), \`tailwindcss()\` from \`@tailwindcss/vite\`, and \`uniwind()\` from \`uniwind/vite\` (passed \`cssEntryFile\` + \`dtsFile\`).
+- A CSS entry (e.g. \`src/global.css\`) imported once from the app entry, declaring in order:
+\`\`\`css
+@import 'tailwindcss';
+@import 'uniwind';
+@import '@beemvp/beeui-tokens/theme.css';
+@source '../node_modules/@beemvp/beeui-core/src';
+@source '../node_modules/@beemvp/beeui-ui/src';
+\`\`\`
+The \`@source\` globs are **required**: Tailwind/Uniwind only emit utility classes they can statically discover, and BeeUI's classes live inside the installed packages' \`src\`. Omit them and the build succeeds but ships with no BeeUI styling. Pinned/tested versions for every dependency in this stack are in [docs/compatibility-matrix.md](docs/compatibility-matrix.md); the complete buildable reference is [examples/web-consumer](examples/web-consumer) ([vite.config.ts](examples/web-consumer/vite.config.ts), [src/global.css](examples/web-consumer/src/global.css)). Web support boundaries: [docs/web-support-contract.md](docs/web-support-contract.md).
+
+## Runtime theme switching (app-owned light/dark)
+Brand and density live in tokens (\`@import\` the theme, ADR-001), but the **app-level** switch between light and dark at runtime is owned by the application and driven through Uniwind — not a BeeUI component. Import from the \`uniwind\` package: \`Uniwind.setTheme(name)\` changes the active theme globally, and \`useUniwind()\` reads the current \`{ theme }\` (and \`hasAdaptiveThemes\`) so the app re-renders. The valid runtime-theme names are exported from \`@beemvp/beeui-tokens\` as \`beeRuntimeThemeNames\` (\`light\`, \`dark\`, \`violet-light\`, \`violet-dark\`); \`Uniwind.setTheme('light')\` / \`Uniwind.setTheme('dark')\` is the common case. This is a single small piece of app state deciding *which* value BeeUI's existing theme runtime uses — not a second theme authority. To theme one subtree independently of the app theme, use the \`BeeThemeScope\` component (a public \`@beemvp/beeui-ui\` export) instead of a second \`setTheme\` path. See [docs/theming.md](docs/theming.md) and the cookbook's Recipe F in [docs/ai-agent-cookbook.md](docs/ai-agent-cookbook.md).
 
 ## Architecture invariants (do not violate)
 - Stable behavior/semantic/variant APIs are independent of Uniwind, Expo, routers, storage, networking, and business logic.
@@ -368,6 +391,7 @@ ${UNPUBLISHED_NOTE}
 - Web: real HTML semantics where available (Table renders \`<table>\`/\`<th scope>\`/\`aria-sort\`), focus traps (Dialog, Sheet), listbox/menu/combobox keyboard + typeahead (Select, DropdownMenu), and \`aria-*\` relationships gated to mounted content.
 - Native: RN semantic roles (\`radiogroup\`, \`progressbar\`, \`switch\`), merged \`accessibilityHint\`/\`accessibilityLabel\` where no Web-equivalent role exists, and system pickers for DatePicker/DateTimePicker via \`@react-native-community/datetimepicker\`.
 - Shared anchored kernel: Popover, DropdownMenu, Select, Tooltip share geometry/flip/shift/collision/safe-area/dismiss; RTL via one \`useDirection()\` resolver (ADR-004).
+- Native-only: \`DatePicker\` / \`DateTimePicker\` are the system pickers and ship **only** as \`*.native.tsx\` (no \`date-picker.web.tsx\`) — on Web they render nothing usable. Use \`Calendar\`, which is the cross-platform date primitive (native + Web), for date selection on Web (ADR-008).
 
 ## Public component modules (${model.componentCount})
 ${lines.join('\n')}
