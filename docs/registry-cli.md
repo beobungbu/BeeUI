@@ -41,11 +41,15 @@ is exactly:
 | `add --dry-run [...]` | combinable with `<items...>` or `--all` | Compute and print the full plan; write-plan parity with a real `add` (same resolution, transforms, collision preflight, package-requirement report) but no filesystem mutation. |
 | `add --overwrite [...]` | combinable with `<items...>` or `--all` | Explicitly replace differing destination files, only after the whole operation passes preflight. |
 | `doctor` / `verify` | none (aliases of each other) | Validate the canonical registry, the local config, configured path boundaries, and (see "Registry delivery and integrity" below) the bundled registry's checksum integrity. Never mutates the project. |
+| `diff [items...]` | zero or more registry item names (#219) | Compare previously-added source against the current registry. With no arguments, diffs every item `add` has already synced at least one file for. Never mutates the project. |
+| `update [items...]` | zero or more registry item names (#219) | Re-sync previously-added files whose upstream source changed since the last sync. Never overwrites a file with local edits unless `--force` is also given. |
+| `update --force [...]` | combinable with `<items...>` | Also overwrite files where both local and upstream content changed since the last sync, discarding the local edit. Never applied without this flag. |
+| `update --dry-run [...]` | combinable with `<items...>` or `--force` | Compute and print the update plan without filesystem mutation. |
 
-Any other top-level command, any unrecognized `add` option (anything starting with `-`
-that is not `--all`/`--dry-run`/`--overwrite`), and any unrecognized registry item name
-all fail with a non-zero exit code and a specific stderr message before any filesystem
-mutation happens — never a silent no-op and never a partial write.
+Any other top-level command, any unrecognized `add`/`update` option (anything starting
+with `-` that is not one of the flags listed above for that command), and any unrecognized
+registry item name all fail with a non-zero exit code and a specific stderr message before
+any filesystem mutation happens — never a silent no-op and never a partial write.
 
 **Exit codes:** `0` on success, `1` for every usage error, validation failure, or runtime
 error (unsupported Node version, unknown command/option/item, malformed config/registry,
@@ -57,7 +61,9 @@ written to stderr, never stdout, so scripts can separate the two reliably.
 
 `scripts/__tests__/beeui.test.mjs` pins this contract with tests for the full command
 list (including negative cases: unknown command, unknown option, unknown item, `--all`
-combined with explicit items, `add` with neither items nor `--all`).
+combined with explicit items, `add` with neither items nor `--all`); `diff`/`update`'s own
+contract is pinned separately by `scripts/__tests__/beeui-diff-update.test.mjs` (see
+"Source-owned update/diff assistance" and "Tests" below).
 
 External package installation (running npm/pnpm/yarn/bun on the consumer's behalf) is
 explicitly out of this contract's scope; it is a separate, owner-gated decision tracked in
@@ -67,8 +73,9 @@ declared — it never invokes a package manager.
 ## CLI packaging (#209)
 
 The CLI engine (command parsing, registry validation, dependency resolution, transforms,
-collision/overwrite policy) is a single shared implementation at `packages/cli/src/`
-(`beeui.mjs` + `registry-lib.mjs`) — there is no repo-local fork and no published fork.
+collision/overwrite policy, and — #219 — diff/update assistance) is a single shared
+implementation at `packages/cli/src/` (`beeui.mjs` + `registry-lib.mjs` + `update-lib.mjs`)
+— there is no repo-local fork and no published fork.
 Two thin entry points call the same engine:
 
 - `scripts/beeui.mjs` (repo root) re-exports `packages/cli/src/beeui.mjs` directly, so
@@ -96,6 +103,58 @@ Verify the packed artifact end-to-end (builds `packages/cli/dist/`, then runs th
 ```sh
 pnpm cli:smoke
 ```
+
+## End-to-end clean-consumer matrix (#218)
+
+`pnpm cli:smoke` proves one representative packed-artifact scenario end-to-end. `pnpm
+cli:matrix` (`packages/cli/scripts/matrix.mjs`) runs the same packed `dist/beeui.mjs`
+binary — never the monorepo/dev-mode source tree — as a subprocess across a matrix of
+throwaway "clean consumer" `package.json` fixtures shaped like the projects `detectProject`
+classifies (Expo, bare React Native, Web, and a project with a deliberately out-of-range
+peer to exercise `doctor`'s `INCOMPATIBLE` diagnostic), proving for each one, in sequence:
+
+- `init`/`doctor` detect the right project kind and report the bundled registry's verified
+  checksum count;
+- a preflight collision leaves zero partial writes, and `--overwrite` is the only way past
+  it (#211);
+- `add --all --dry-run` mutates nothing, `add --all` copies the complete public surface,
+  and repeating it is idempotent;
+- the complex anchored-overlay/native-adapter closures (`popover`, `select`, `sheet`,
+  `table`, `calendar`, `date-time-picker`) resolve together in one request;
+- `diff` reports a clean sync immediately after `add --all`;
+- a local-only edit is classified `LOCAL` and survives `update`, `--force` or not (#219);
+- a simulated upstream change (a stale recorded manifest baseline — the same technique
+  `scripts/__tests__/beeui-diff-update.test.mjs` uses) becomes a `CONFLICT` that `update`
+  refuses without `--force` and correctly re-syncs with it.
+
+It also looks for a Node 22 install via `nvm` on the machine running it and, when found,
+proves the CLI's own `checkNodeVersion` gate refuses a real (not mocked) Node 22
+interpreter with an explicit, actionable error rather than running with unverified
+behavior — Node 22 is not a supported CLI runtime yet (`docs/compatibility-matrix.md`), so
+"refused clearly" is the correct outcome to prove, not a fabricated pass. When no Node 22
+install is found, that step is reported as skipped, never as a silent pass.
+
+```sh
+pnpm cli:matrix
+```
+
+**Scope note.** This matrix proves the CLI engine's own contract — file copy, dependency
+resolution, collision/overwrite safety, idempotency, dry-run parity, and diff/update
+assistance — against clean consumer fixtures. It deliberately does not drive a real Metro/
+Gradle/Xcode build: that heavier, CI-only, native-toolchain proof already exists in
+`scripts/verify-expo-consumer.sh` / `scripts/verify-bare-consumer.sh` /
+`scripts/verify-web-consumer.sh`. "Builds cleanly" is proven here at the level this CLI
+actually controls — every copied TypeScript/TSX file transpiles and every relative import
+between copied files resolves on disk, the same checks
+`scripts/__tests__/beeui.test.mjs` already runs against the dev-mode engine — applied here
+against the packed artifact instead. `pnpm cli:matrix` is not wired into any required CI
+gate (`pnpm cli:smoke` already gates the packed artifact on every run); it is a
+developer/release-time tool, run locally or from an optional, non-required CI job.
+
+Artifacts (each profile's ordered step log, pass/fail per step) are written as JSON to a
+timestamped directory under the OS temp root and the path is printed at the end of the run
+— never committed to the repository, the same convention this repo's other throwaway
+consumer fixtures already follow.
 
 ## Supported registry entries
 
@@ -141,6 +200,11 @@ The config is versioned and deterministic. Configured paths must be project-rela
 `init`'s command output is deterministic, line-oriented `key: value` text (`componentsDir: ...`, `libDir: ...`, `themeFile: ...`, plus the detected-project summary line described below) rather than free-form prose specifically so both a human and a script/agent invoking `beeui init` can parse it reliably without a dedicated `--json` flag — the #210 command contract is locked and this deliberately does not add a new flag to it.
 
 After creating (or validating) the config, `init` also runs the same project detection `doctor` uses (#213, documented in full under "Project detection and dependency diagnostics" below) and prints the detected project kind plus a short, generic list of manual next steps (importing the theme CSS, wrapping the app root with `BeeUIProvider` for a native project, aliasing `react-native` to `react-native-web` for a Web project). This is purely informational — detection never changes which paths `init` writes, and an ambiguous/unknown detection prints an explicit fallback note instead of a guess, never a wrong assumption silently acted on.
+
+`init` does not create `beeui.manifest.json` — that file only exists once at least one
+non-dry-run `add` has run, since it records what was actually copied. See "Source-owned
+update/diff assistance (#219)" below for its shape and how `beeui diff`/`beeui update` use
+it.
 
 ## Registry schema
 
@@ -320,6 +384,70 @@ pnpm beeui -- add --dry-run button input
 
 Dry-run performs the same registry/config validation, dependency resolution, transform calculation, package requirement inspection, symlink/path checks, and collision preflight as a real add. It prints the deterministic plan but creates or changes no destination files.
 
+## Source-owned update/diff assistance (#219)
+
+`add` copies source into the consumer project once; the consumer owns it outright from
+that point on — BeeUI never touches it again on its own. `beeui diff`/`beeui update` give
+a source-owning consumer a safe, read-first way to see what changed upstream since their
+last sync, without ever silently overwriting a local edit.
+
+**Source identity.** Registry items carry no semantic version of their own — the registry
+is content-addressed, not semver-tagged, the same tradeoff `#216`'s integrity manifest
+already makes (a sha256 digest cannot drift from the actual bytes; a version number can).
+Every non-dry-run `add`/`update` writes (and keeps in lockstep) `beeui.manifest.json` next
+to `beeui.config.json` in the project root, recording, for every managed destination path,
+the exact registry item name, source path, and sha256 digest of the content last written
+there. This file is itself part of the consumer's source-owned project (commit it alongside
+the copied source) — it is the only thing that lets a later `diff`/`update` distinguish "you
+edited this" from "upstream moved this" instead of guessing from a single snapshot.
+
+```sh
+pnpm beeui -- diff
+pnpm beeui -- diff button
+```
+
+For each file in the requested (or, with no arguments, every previously-added) item's
+dependency closure, `diff` compares three sha256 digests — the recorded baseline, the
+current local file on disk, and the content the registry would produce right now — and
+reports one of:
+
+| Status | Meaning |
+| --- | --- |
+| `UNCHANGED` | Matches both the baseline and current upstream. Nothing to do. |
+| `UPSTREAM` | Local file untouched since the last sync; upstream changed. Safe to fast-forward. |
+| `LOCAL` | Local file diverged from the baseline; upstream did not change. The only difference is the consumer's own edit. |
+| `SYNCED` | Local file diverged from the baseline, but by coincidence (or a manual merge) it now matches current upstream exactly. |
+| `CONFLICT` | Both local and upstream diverged from the baseline, and disagree with each other. |
+| `NEW` | Never copied into this project (no baseline, nothing on disk). |
+| `MISSING` | Previously synced, but the file is now gone from disk. |
+| `UNTRACKED` | A file already exists at this destination with no recorded baseline (predates the manifest, or an unrelated pre-existing file) and differs from current upstream content. |
+
+`diff` also prints a compact, context-trimmed unified diff (local vs. current upstream
+content) under every status where that comparison is informative (`UPSTREAM`, `LOCAL`,
+`CONFLICT`, `UNTRACKED`) — deterministic and line-oriented so both a human and an
+agent/script can parse the exact change, not just the classification.
+
+```sh
+pnpm beeui -- update
+pnpm beeui -- update button
+pnpm beeui -- update --dry-run
+pnpm beeui -- update --force button
+```
+
+`update` re-syncs files using the same classification: `UPSTREAM`, `NEW`, and `MISSING`
+files are always safe to write (nothing local is at risk), so `update` applies them without
+any flag. `LOCAL` files are never touched, `--force` or not — there is no upstream change to
+apply there, so "updating" one would just discard the consumer's only edit for no functional
+reason. `CONFLICT` and `UNTRACKED` files are left untouched and reported as needing
+`--force` — the one and only destructive path in this command, and it must be requested
+explicitly every time; there is no "always force" configuration. `--dry-run` computes and
+prints the same plan (including which files still need `--force`) without writing anything.
+
+`update` also handles dependency-closure changes: if a later registry version adds a new
+file to an already-added item's dependency closure, that file has no manifest entry yet, so
+it classifies as `NEW` and `update` adds it like a normal, safe `add` — the consumer does
+not have to remember which specific new transitive file appeared.
+
 ## Doctor / verify
 
 ```sh
@@ -468,7 +596,7 @@ The current repository-local workflow deliberately keeps the trust surface small
 - Registry data is JSON, not executable code.
 - No `eval`, `Function`, shell-string interpolation, arbitrary registry commands, telemetry, auth, or remote code fetch exists.
 - Registry and config paths reject absolute paths and traversal.
-- Existing symlink path segments are rejected for consumer destinations, canonical registry sources, and the config file itself (a symlinked `beeui.config.json` is rejected outright, never followed).
+- Existing symlink path segments are rejected for consumer destinations, canonical registry sources, and the config file itself (a symlinked `beeui.config.json` is rejected outright, never followed) — `beeui.manifest.json` (#219) is checked the same way.
 - Registry source realpaths are checked to remain within the repository (dev mode) or the bundled sources directory (packed mode).
 - Consumer destinations are resolved and checked to remain within the selected project root, including when an intermediate path segment (e.g. a configured `componentsDir`) is itself a symlink planted to redirect writes outside the project.
 - Registry item names are validated against a strict lowercase-kebab-case pattern before any lookup, so a hostile `add` argument (path traversal, absolute path, embedded control character) is rejected by pattern match, not by filesystem behavior.
@@ -542,10 +670,26 @@ Generated/copied source contains no timestamps or machine-specific absolute path
   error's exact non-migrating message, and that `init`'s detected-project guidance never
   mutates the consumer's own `package.json`
 
+`scripts/__tests__/beeui-diff-update.test.mjs` (also run by `pnpm registry:test`) covers
+`#219`'s diff/update engine: the manifest records every resolved file (including internal
+dependencies) after `add`; `diff`/`update` report "nothing managed yet" before any `add`;
+every classification (`UNCHANGED`/`UPSTREAM`/`LOCAL`/`SYNCED`/`CONFLICT`/`NEW`/`MISSING`/
+`UNTRACKED`) via both CLI-level scenarios and direct `classifyDiffEntry` unit cases;
+`update` never rewrites a `LOCAL` file even with `--force`; a `CONFLICT` requires `--force`
+and, once forced, restores canonical content and refreshes the manifest baseline;
+`--dry-run` mutates nothing; a symlinked or malformed `beeui.manifest.json` (including an
+unsupported `schemaVersion`) fails clearly rather than being guessed at or migrated; and
+the pure `diffLines`/`formatUnifiedDiff` rendering helpers produce a minimal, deterministic
+edit script with collapsed unchanged-context runs.
+
 `pnpm cli:smoke` additionally builds the real packed `dist/` artifact and, beyond its
 existing end-to-end `add`/import-resolution checks, tampers with a bundled source file and
 with the bundled `registry.json` after the build to prove the packed binary — not just the
-unit-tested engine — refuses tampered bundled data.
+unit-tested engine — refuses tampered bundled data, and (`#219`) proves `diff`/`update`
+correctly classify and preserve a local edit against that same packed, checksum-verified
+artifact. `pnpm cli:matrix` (`#218`, see "End-to-end clean-consumer matrix" above) is the
+broader clean-consumer proof across Expo/bare-RN/Web/incompatible-peer fixtures; it is a
+developer/release-time tool, not part of the required `pnpm test`/`pnpm typecheck` gates.
 
 The root `pnpm test` command also runs `pnpm registry:verify` and `pnpm registry:test` after the existing showcase test suite.
 
@@ -578,12 +722,21 @@ and `init`'s `beeui.config.json` shape, defaults, idempotence, and non-migrating
 schema-version error are the locked, documented 1.0 contract. `#215` (package-manager
 mutation) remains explicitly out of scope — an owner-gated decision this tranche
 intentionally does not implement; `add`'s and `doctor`'s reporting stay read-only, never
-invoking npm/pnpm/yarn/bun on the consumer's behalf. Remaining follow-on CLI tranche items
-can still:
+invoking npm/pnpm/yarn/bun on the consumer's behalf.
+
+`#218` (end-to-end clean-consumer matrix) and `#219` (source-owned update/diff assistance)
+are addressed above too: `pnpm cli:matrix` runs the packed artifact through
+init/doctor/collision/overwrite/dry-run/idempotent-add/complex-closure/diff/update across
+Expo/bare-RN/Web/incompatible-peer fixtures (see "End-to-end clean-consumer matrix"); and
+`beeui diff`/`beeui update`, backed by the new `beeui.manifest.json` content-identity
+record, give a source-owning consumer a deterministic, non-destructive-by-default way to
+see and selectively re-sync upstream changes (see "Source-owned update/diff assistance").
+Remaining follow-on CLI tranche items can still:
 
 1. decide safe package-manager mutation under a separate explicit contract (`#215`,
    owner-gated);
 2. expand source transforms only when each transform has drift/error tests;
-3. decide safe diff/update assistance, or explicitly defer it (`#219`).
+3. wire `pnpm cli:matrix` into an optional, non-required CI job (deferred — the matrix
+   already runs locally and is not required for this tranche's acceptance).
 
 The registry should stay in lockstep with the stable public component-module surface. `pnpm registry:verify` enforces that invariant; new components must declare their exact source files, internal registry dependencies, external packages, peer expectations, and required transforms before their public export can land. Components with more complex native dependencies or provider/context behavior still need consumer verification appropriate to their runtime contract.

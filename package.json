@@ -60,8 +60,9 @@
     "pack:artifacts": "node ./scripts/pack-artifacts.mjs",
     "beeui": "node ./scripts/beeui.mjs",
     "registry:verify": "node ./scripts/verify-registry.mjs",
-    "registry:test": "node --test ./scripts/__tests__/beeui.test.mjs",
+    "registry:test": "node --test ./scripts/__tests__/beeui.test.mjs ./scripts/__tests__/beeui-diff-update.test.mjs",
     "cli:smoke": "pnpm --filter @beemvp/beeui-cli run build && pnpm --filter @beemvp/beeui-cli run smoke",
+    "cli:matrix": "pnpm --filter @beemvp/beeui-cli run build && pnpm --filter @beemvp/beeui-cli run matrix",
     "tokens:migration-report": "node ./scripts/generate-token-migration-report.mjs"
   },
   "devDependencies": {

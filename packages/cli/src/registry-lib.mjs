@@ -123,7 +123,9 @@ export function resolveInside(root, relativePath, label = 'path') {
   return candidate;
 }
 
-async function statIfExists(target) {
+// Exported for `update-lib.mjs` (#219): the diff/update engine needs the
+// same lstat-based existence probe add planning already uses.
+export async function statIfExists(target) {
   try {
     return await lstat(target);
   } catch (error) {
@@ -240,7 +242,10 @@ export async function validateRegistry(registry, { repoRoot = REPO_ROOT, checkSo
 
 const SHA256_HEX_RE = /^[0-9a-f]{64}$/;
 
-function sha256Hex(content) {
+// Exported for `update-lib.mjs` (#219): source-identity/content-hash
+// checks in `beeui diff`/`beeui update` reuse the exact same digest the
+// #216 integrity manifest already relies on.
+export function sha256Hex(content) {
   return createHash('sha256').update(content, 'utf8').digest('hex');
 }
 
@@ -262,7 +267,10 @@ function validateIntegrityManifestShape(manifest, label) {
 // but the file is absent or unreadable, this fails loudly rather than
 // silently skipping verification — a bundled `registry/registry.json` without
 // its accompanying `integrity.json` is itself a build/install defect.
-async function loadIntegrityManifest(integrityPath) {
+// Exported for `update-lib.mjs` (#219): the diff/update engine reads
+// canonical registry source the same way `buildAddPlan` does, and must
+// verify it against the same bundled checksum manifest before trusting it.
+export async function loadIntegrityManifest(integrityPath) {
   if (!integrityPath) return null;
   let raw;
   try {
@@ -282,7 +290,8 @@ async function loadIntegrityManifest(integrityPath) {
   return validateIntegrityManifestShape(manifest, `registry integrity manifest (${integrityPath})`);
 }
 
-function verifySourceChecksum(relativeSource, content, manifest) {
+// Exported for `update-lib.mjs` (#219): see `loadIntegrityManifest` above.
+export function verifySourceChecksum(relativeSource, content, manifest) {
   // No manifest means dev mode (live monorepo tree, no bundled checksum data
   // to compare against) — nothing to verify.
   if (!manifest) return;
@@ -452,7 +461,10 @@ export function resolveRegistryItems(registry, requestedItems) {
   return resolved;
 }
 
-function configuredTarget(config, target) {
+// Exported for `update-lib.mjs` (#219 diff/update engine), which resolves the
+// same configured-target/source-checksum path this add engine uses, without
+// duplicating the mapping rule.
+export function configuredTarget(config, target) {
   if (target.root === 'theme') return config.themeFile;
   const base = target.root === 'components' ? config.componentsDir : config.libDir;
   return `${base}/${target.path}`;
