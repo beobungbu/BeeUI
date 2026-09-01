@@ -226,7 +226,7 @@ BeeUI targets React Native first and must work with Expo, Expo prebuild/dev buil
 
 ## Distribution contract
 
-BeeUI packages remain private during `0.x`; no public npm availability is implied.
+BeeUI packages stay unpublished during `0.x`; no public npm availability is implied.
 
 Current paths are workspace links, `pnpm pack` tarballs for boundary verification/controlled external smoke, and the repository-local Registry + source-ownership CLI. `pnpm release:verify` remains the canonical package gate. Public CLI/package distribution is roadmap work.
 

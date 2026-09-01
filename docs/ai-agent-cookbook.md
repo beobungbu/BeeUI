@@ -38,7 +38,8 @@ BeeUI is **pre-1.0 and UNPUBLISHED**. This is the single most important fact for
 because the natural instinct — "install the library from npm" — is wrong today.
 
 - There is **no `@beemvp/beeui-*` package on npm**, **no `@beemvp/beeui-cli`**, **no `v1.0.0` tag**, and
-  **no GitHub Release**. The repository is private by owner decision.
+  **no GitHub Release**. The repository is public, but nothing is published to npm; the `@beemvp`
+  scope resolves `404`, and publication stays owner-gated at #254.
 - The names `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`, and `@beemvp/beeui-cli` are
   **release-ready-but-not-published targets**. They are reserved intent, not live registry
   entries. See [docs/distribution-names.md](distribution-names.md) and

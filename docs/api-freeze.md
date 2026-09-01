@@ -9,6 +9,11 @@
 > **Snapshot:** 2026-09-02.
 > **Frozen packages:** `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`
 > (one lockstep group) and `@beemvp/beeui-cli` (binary `beeui`).
+> **Binds to the RC candidate:** this freeze holds unchanged through the RC candidate `1.0.0-rc-ready.1`
+> ([#246](https://github.com/beobungbu/BeeUI/issues/246)) at SHA `5cb061f` — the only public-surface
+> commit since the freeze base, the CASE C overlay-Escape fix ([#402](https://github.com/beobungbu/BeeUI/issues/402)),
+> touched internal overlay-runtime only and changed no package `exports`, barrel export, or token, so no
+> re-freeze is required.
 
 ## What "frozen" means here (and what it does not)
 

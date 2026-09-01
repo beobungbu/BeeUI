@@ -6,7 +6,18 @@
 > **Program base at creation:** `fe8733345ee09720808ec0f6a4db93be9ff4a78f`  
 > **Worker model:** one atomic issue = one branch/PR; mandatory self-test + self-review; independent review; no self-merge.
 
-**Owner-authorized (2026-08-31): drive resumed through R7–R10, stopping only at genuine owner-gates.** Current closed-issue state (38 open): R0–R4 ✅ (R1 #126 device-gated) · **R5 8/8 ✅** · R6 10/10 ✅ · **R7 done** except owner-gated #198/#205/#207 (ADR/metadata/build/exports/packed-verify/prerelease-artifacts/clean-consumers/dist-tag-policy/compat-report all landed) · **R8 nearly done** (registry closure #217/#319/#355, CLI extract+hardening #209/#210/#211/#212/#213/#214/#216; #218/#219 in flight; #215 owner-decision) · **R9 done** (docs-site #220, llms.txt #226, AI cookbook+regression #227/#228, per-component doc contract #221/#222/#223, Showcase+native-preview #224/#225; #229 owner-decision) · **R10 in progress** (consumer starters #230-233 ✅, demo architecture ADR-013 #236 ✅, demo shell #258 ✅; demo screens #259-263 + integration epic #237 + #238-242 next; #234/#235 next). **R11 freeze/RC (#243-256) pending** after R10. Owner-gates: #198/#205 npm account, #254 publish, #234/#253 external, #248/#249 real-device, #215/#229 product decisions. Infra: CI GitHub-hosted parallel+sharded, `main` flake-free, rulesets live (#196), repo PUBLIC.
+**End-state (2026-09-02): all agent-doable BeeUI 1.0 work is COMPLETE. R0–R11 agent-work is done and the immutable RC candidate `1.0.0-rc-ready.1` (#246) is stamped with a green exact-candidate CI matrix (#247) at SHA `5cb061f`.** Exactly **15 issues remain open, every one owner-gated, deferred to physical devices, or a tracker** — no agent-doable work remains. The open set:
+
+- **#114** — this program tracker; **open by design** for the life of the drive.
+- **#62 + #349** — documented, non-blocking iOS native-simulator edge cases (RN-Modal `pageSheet` headless-sim tap-swallow; headless-Simulator Fabric blank-render); tracked, not release blockers.
+- **#126 + #248 + #249** — real physical-device native-runtime stress + RC VoiceOver/TalkBack acceptance; **owner-deferred to real devices**.
+- **#198 + #205 + #207** — reserve the `@beemvp` npm org + configure trusted publishing/provenance + verify the provenance path; **owner npm-account actions**.
+- **#254 + #255** — owner-authorized `1.0.0` publication + verify-published artifacts; **owner release gate** (no publish before #254).
+- **#215** — package-manager mutation policy; **owner decision**.
+- **#229** — optional BeeUI MCP server; **owner decision**.
+- **#234 + #253** — one real-world external consumer + bounded RC soak/external feedback; **owner**.
+
+R0–R6 ✅ · **R7 done** except owner-gated #198/#205/#207 (ADR/metadata/build/exports/packed-verify/prerelease-artifacts/clean-consumers/dist-tag-policy/compat-report all landed) · **R8 done** except owner-decision #215 (registry closure #217/#319/#355, CLI extract+hardening #209–#214/#216, **#218 packed-CLI clean-consumer E2E + #219 diff/update landed**) · **R9 done** except owner-decision #229 (docs-site #220, per-component/executable/pattern docs #221/#222/#223, Showcase+native-preview #224/#225, llms.txt family #226, AI cookbook+fresh-agent regression #227/#228) · **R10 done** except owner #234 (consumer starters #230–#233, demo architecture ADR-013 #236, demo shell #258, **demo screens #259–#263, integration epic #237, quality gates #238–#242, AI-gen reference app #235, fresh-agent reproduction #241, feedback classification #242 all landed**) · **R11 agent-work done** — API freeze #243, token freeze #244, semver audit #245, changelog/migration #252, rollback runbook #256, RC Web-a11y #250 + security audit #251, and the immutable RC candidate #246 + green CI matrix #247; only owner gates #248/#249/#253/#254/#255 remain. A late catch during freeze — a real overlay-Escape routing bug (CASE C) that had been red-but-masked — was found and fixed (#402), and the `visual-web-report` required-check masking was closed, so `main`'s visual matrix is now genuinely green. **Overall: BeeUI 1.0 is release-ready, NOT released** — publication is owner-gated at #254. Infra: CI GitHub-hosted parallel+sharded, `main` flake-free, rulesets live (#196), repo PUBLIC.
 
 This file is the BeeUI 1.0 **product-scope and issue-map authority**. It does not duplicate every child issue's implementation details.
 
@@ -301,7 +312,7 @@ shared-authority source of truth for every row below; it is drift-checked by
 
 # R7 — Packages — publication-ready only, DO NOT publish
 
-**R7 status: 9/12 closed — done except the owner-gated npm-account/provenance items #198/#205/#207.**
+**R7 status: 9/12 closed — agent-work done; only the owner-gated npm-account/provenance items #198/#205/#207 remain open.**
 
 - #197 distribution architecture ADR. **Closed** — see [ADR-011](decisions/011-distribution-architecture.md).
 - #198 package/CLI names and permissions; owner/admin gate where required. **Preflight done** ([docs/distribution-names.md](distribution-names.md)): `@beemvp/beeui-*` scope + `@beemvp/beeui-cli` verified available; CLI recommended `@beemvp/beeui-cli` (bare `beeui` is a taken tombstone). **Issue stays open for the OWNER action**: create the `@beemvp` npm org + reserve names + grant release-workflow permissions (ties to #205).
@@ -318,7 +329,7 @@ shared-authority source of truth for every row below; it is drift-checked by
 
 # R8 — CLI/source ownership — publication-ready only, DO NOT publish
 
-**R8 status: 8/11 closed — CLI extracted, hardened and diagnostics/detection/`init` landed; #218 clean-consumer E2E and #219 diff/update in flight; #215 owner decision.**
+**R8 status: 10/11 closed — agent-work done; only owner-decision #215 remains open.** CLI extracted, hardened and diagnostics/detection/`init` landed; #218 packed-CLI clean-consumer E2E and #219 diff/update both landed.
 
 - #209 publication-ready packed CLI. **Closed.**
 - #210 required command contract. **Closed.**
@@ -329,8 +340,8 @@ shared-authority source of truth for every row below; it is drift-checked by
 - #215 package-manager mutation policy. **Open — owner decision.**
 - #216 registry delivery/integrity strategy. **Closed.**
 - #217 complete stable 1.0 registry closure. **Closed** — [#355](https://github.com/beobungbu/BeeUI/issues/355) resolved (`@beemvp/beeui-tokens` is declared as a consumer dependency on every affected registry item instead of left unresolved; the curated-file-list test gap that let affected files skip CI is fixed); [#319](https://github.com/beobungbu/BeeUI/issues/319) resolved (`use-direction` declared on every component that imports it); full registry-dependency-graph audit closed two additional latent gaps (`input`/`toast` missing `text`, `list-item` missing `list-group`).
-- #218 packed CLI clean-consumer E2E. **Open — in flight.**
-- #219 optional safe diff/update assistance or explicit defer. **Open — in flight.**
+- #218 packed CLI clean-consumer E2E. **Closed.**
+- #219 optional safe diff/update assistance or explicit defer. **Closed** — safe `diff`/`update` implemented and pinned by `scripts/__tests__/beeui-diff-update.test.mjs`.
 
 # R9 — Docs, Showcase & AI-native development — hard 1.0
 
@@ -351,7 +362,7 @@ Hard AI-native chain: `#226 → #227 → #228`.
 
 # R10 — Independent consumers & production demo — hard 1.0
 
-**R10 status: 6/19 closed — in progress.** Consumer starters #230–#233, demo architecture #236 and demo shell #258 are accepted; demo screens #259–#263, integration epic #237, demo acceptance #238–#242 and external/agent proof #234/#235 remain (#234 owner access, #253 downstream).
+**R10 status: 18/19 closed — agent-work done; only owner-action #234 remains open.** Consumer starters #230–#233, demo architecture #236, demo shell #258, demo screens #259–#263, integration epic #237, demo acceptance #238–#242 and the fresh-agent reference app #235 are all accepted; #234 (real-world external consumer) stays open pending owner selection/access.
 
 ## Independent consumers
 
@@ -359,48 +370,48 @@ Hard AI-native chain: `#226 → #227 → #228`.
 - #231 source-ownership starter. **Closed.**
 - #232 bare RN starter. **Closed.**
 - #233 independent Web consumer. **Closed.**
-- #234 real-world external consumer; owner selection/access when private. **Open — owner action if private.**
-- #235 fresh-agent reference app from canonical context only. **Open.**
+- #234 real-world external consumer; owner selection/access when private. **Open — owner action.**
+- #235 fresh-agent reference app from canonical context only. **Closed.**
 
 ## Production demo
 
 - #236 architecture/spec. **Closed** — ADR-013.
-- #237 functional integration epic. **Open — closes only after #258–#263 are accepted and integrated E2E passes.**
+- #237 functional integration epic. **Closed** — #258–#263 accepted and integrated critical-path E2E passes.
   - #258 shell + mobile-first responsive navigation. **Closed** — establishes the shared demo shell/navigation authority.
-  - #259 dashboard/data overview. **Open.**
-  - #260 searchable/filterable Table/DataTable flow. **Open.**
-  - #261 detail/edit-form flow. **Open.**
-  - #262 scheduling/date-time flow. **Open.**
-  - #263 settings/accessibility preferences + integrated states/E2E. **Open.**
-- #238 final iOS/Android/Web platform/runtime quality matrix. **Open.**
-- #239 production engineering quality gate. **Open.**
-- #240 real rendered visual/product polish review. **Open.**
-- #241 fresh-agent extend/fix test on accepted demo. **Open.**
-- #242 classify all consumer/demo/agent findings before freeze. **Open.**
+  - #259 dashboard/data overview. **Closed.**
+  - #260 searchable/filterable Table/DataTable flow. **Closed.**
+  - #261 detail/edit-form flow. **Closed.**
+  - #262 scheduling/date-time flow. **Closed.**
+  - #263 settings/accessibility preferences + integrated states/E2E. **Closed.**
+- #238 final iOS/Android/Web platform/runtime quality matrix. **Closed.**
+- #239 production engineering quality gate. **Closed.**
+- #240 real rendered visual/product polish review. **Closed.**
+- #241 fresh-agent extend/fix test on accepted demo. **Closed.**
+- #242 classify all consumer/demo/agent findings before freeze. **Closed.**
 
 The demo must be a coherent production-grade multi-screen app, not a component catalog, and must prove mobile-first responsive behavior across supported screen/form-factor classes.
 
 # R11 — Freeze, immutable candidate & owner-gated release
 
-**R11 status: 0/14 — pending; begins only after R10 acceptance.**
+**R11 status: agent-work done — the immutable RC candidate `1.0.0-rc-ready.1` (#246) is stamped at SHA `5cb061f` with a green exact-candidate CI matrix (#247).** The freeze/audit/candidate/evidence chain landed; the only open R11 items are the owner/real-device gates #248, #249, #253, #254, #255. STOP at 1.0-ready is reached; publication has not occurred.
 
 Execution order is intentionally different from numeric identifier order:
 
-1. #243 API freeze.
-2. #244 token lifecycle/vocabulary freeze.
-3. #245 semver/breaking-change audit.
-4. **#256 rollback/hotfix/deprecation runbook + no-publication dry-run before candidate.**
-5. #246 immutable `1.0.0-rc-ready.N` candidate, no publication.
-6. #247 exact-candidate automated CI/consumer/compat/performance matrix.
-7. #248 exact-candidate native runtime matrix.
-8. #249 exact-candidate VoiceOver/TalkBack acceptance.
-9. #250 exact-candidate Web accessibility/keyboard acceptance.
-10. #251 security/release-readiness audit including #256.
-11. #252 final changelog/migration guide.
-12. #253 bounded RC soak/external feedback.
-13. **STOP — BeeUI is 1.0-ready, not released.**
-14. #254 owner-authorized exact-candidate `1.0.0` publication only.
-15. #255 verify actual public artifacts after authorized publication.
+1. #243 API freeze. **Closed** — [docs/api-freeze.md](api-freeze.md), frozen at `a1efd48`.
+2. #244 token lifecycle/vocabulary freeze. **Closed** — [docs/token-freeze.md](token-freeze.md).
+3. #245 semver/breaking-change audit. **Closed** — [docs/semver-audit.md](semver-audit.md).
+4. **#256 rollback/hotfix/deprecation runbook + no-publication dry-run before candidate. Closed** — [docs/rollback-runbook.md](rollback-runbook.md).
+5. #246 immutable `1.0.0-rc-ready.1` candidate, no publication. **Closed** — [docs/rc-candidate.md](rc-candidate.md), SHA `5cb061f`.
+6. #247 exact-candidate automated CI/consumer/compat/performance matrix. **Closed** — [docs/rc-ci-matrix.md](rc-ci-matrix.md), green.
+7. #248 exact-candidate native runtime matrix. **Open — owner-deferred to real devices.**
+8. #249 exact-candidate VoiceOver/TalkBack acceptance. **Open — owner-deferred to real devices.**
+9. #250 exact-candidate Web accessibility/keyboard acceptance. **Closed** — [docs/rc-web-a11y-acceptance.md](rc-web-a11y-acceptance.md).
+10. #251 security/release-readiness audit including #256. **Closed** — [docs/rc-security-readiness-audit.md](rc-security-readiness-audit.md).
+11. #252 final changelog/migration guide. **Closed** — [docs/migration-guide.md](migration-guide.md).
+12. #253 bounded RC soak/external feedback. **Open — owner.**
+13. **STOP — BeeUI is 1.0-ready, not released.** ← reached.
+14. #254 owner-authorized exact-candidate `1.0.0` publication only. **Open — owner release gate.**
+15. #255 verify actual public artifacts after authorized publication. **Open — owner (after #254).**
 
 If #255 finds an incident, execute the already-prepared #256 runbook. Never silently mutate immutable npm artifacts or rewrite release history.
 

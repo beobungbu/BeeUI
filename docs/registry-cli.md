@@ -312,7 +312,7 @@ Depending on the requested items, reported requirements can include:
 
 `@gorhom/bottom-sheet`, `react-native-reanimated`, `react-native-gesture-handler`, and `react-native-worklets` are reported only when `sheet` is requested (per ADR-006, `docs/decisions/006-sheet-gesture-engine.md`) — no other registry entry's reported requirements change. All four are native-only, optional (`peerDependenciesMeta.optional: true` in `packages/ui/package.json`, mirroring `react-dom` today), and are never imported by `sheet.web.tsx`; only `sheet.native.tsx` requires `@gorhom/bottom-sheet`/`react-native-reanimated`, which in turn require `react-native-gesture-handler`/`react-native-worklets` for their own native modules to link. Installing them without also configuring the required app-root wiring (`GestureHandlerRootView` + `BottomSheetModalProvider`, see `docs/components.md`'s "Sheet boundary" section) still leaves `Sheet` non-functional at runtime — the CLI proves source-copy/package-declaration completeness only, not app-root wiring, which remains a manual consumer step.
 
-These ranges are the declared public promise; `docs/compatibility-matrix.md` is the authority for which point in each range has actually been tested and which parts of the range remain an unverified candidate pending R2 (#130–#135).
+These ranges are the declared public promise; `docs/compatibility-matrix.md` is the authority for which point in each range has actually been tested (the per-row verification #130–#135 is complete) and which parts of the range remain an evidence-bounded candidate rather than a verified row.
 
 ## Import transforms
 
