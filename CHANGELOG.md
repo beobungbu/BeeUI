@@ -47,3 +47,74 @@ All notable consumer-facing changes to BeeUI are recorded here.
 - `react-native-teleport` is a peer dependency. `react-dom` is optional as BeeUI's own direct peer, though teleport's peer shape can still require it under strict native-only resolution.
 - `Tooltip` remains component-level work with its own hover/focus/accessibility contract; a first-class `Sheet` remains separately gated. `Select` is now implemented as its own value-selection contract on the accepted anchored-overlay runtime.
 - Documentation treats Registry/CLI as implemented phase-1 tooling and Wave 0 Pattern Gallery as implemented, while preserving that public `npx beeui` and public npm distribution do not exist yet.
+
+## [1.0.0] — release-ready, not yet published
+
+> **Not published.** This entry describes the frozen BeeUI 1.0 scope prepared for release. The
+> `1.0.0` lockstep version bump and the `npm publish` are owner-gated at
+> [#254](https://github.com/beobungbu/BeeUI/issues/254): the `@beemvp/beeui-*` scope is
+> unpublished, no dist-tag exists, and every manifest still reads `0.1.0` today. "Release-ready"
+> is not publication ([docs/beeui-1.0-owner-gates.md](docs/beeui-1.0-owner-gates.md),
+> [docs/dist-tag-policy.md](docs/dist-tag-policy.md)). This section consolidates the running
+> `Unreleased` log above into the consumer-facing 1.0 story. Upgrade steps and validated
+> examples: [docs/migration-guide.md](docs/migration-guide.md); semver classification of every
+> change: [docs/semver-audit.md](docs/semver-audit.md).
+
+### Added
+
+- **Published package set (target shape).** `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and
+  `@beemvp/beeui-ui` become public scoped packages on one lockstep version, plus the
+  source-ownership CLI `@beemvp/beeui-cli` (binary `beeui`) — all owner-gated at #254
+  ([ADR-011](docs/decisions/011-distribution-architecture.md)).
+- **62 granular `@beemvp/beeui-ui` component subpath exports** alongside the barrel, resolving
+  the correct platform build (`react-native` vs web) through the package `exports` conditions
+  ([ADR-012](docs/decisions/012-granular-subpath-exports.md)).
+- **New hard 1.0 surfaces:** `Tooltip`, `Sheet`, `Table`/`DataTable`, `Calendar`, `DatePicker`,
+  `DateTimePicker`, `Select` (its own anchored value-selection contract), and provider-scoped
+  `Toast` via `useToast()`.
+- **Theme Tokens v3** frozen as the stable token contract (DTCG source/codegen, typed theme
+  registry/scoping, runtime overrides/readers, density, high-contrast, semantic data-viz,
+  motion/layout/typography), with machine-readable token lifecycle governance
+  ([docs/token-lifecycle.md](docs/token-lifecycle.md)).
+- **Accessibility, RTL, and large-text contracts** across the component surface, recorded as
+  their own evidence classes (VoiceOver/TalkBack/large-text/physical-device are not implied by
+  compile/deterministic proof) ([docs/accessibility-contract.md](docs/accessibility-contract.md),
+  [docs/release.md](docs/release.md)).
+- **Source-ownership CLI** with `add`/`list`/`init`/`doctor`/`diff`/`update`, a bundled
+  checksum-verified registry, and deterministic non-destructive re-sync
+  ([docs/registry-cli.md](docs/registry-cli.md)).
+- **AI-native docs** (`llms.txt` family + agent cookbook) and a **production demo** exercising
+  the real 1.0 surface.
+- **Final semver/breaking-change audit** ([docs/semver-audit.md](docs/semver-audit.md)) and the
+  **rollback/hotfix/deprecation runbook** ([docs/rollback-runbook.md](docs/rollback-runbook.md)).
+
+### Changed (breaking from the pre-1.0 repository shape)
+
+- **Package format:** the published artifact is built `dist/` (dual ESM + CJS + `.d.ts`); the
+  raw-`src`-only entry that required the monorepo/Metro toolchain is gone from the centralized
+  path (`src` is retained for source ownership) ([ADR-011](docs/decisions/011-distribution-architecture.md) D2/D3).
+- **Web theme import path:** `@import '@beemvp/beeui-tokens/theme.css'` (package subpath) rather
+  than a monorepo-relative path.
+- **`@beemvp/beeui-tokens` is public:** promoted from internal to a published package and, for
+  the source-ownership path, a declared runtime dependency rather than a vendored copy
+  (resolves [#355](https://github.com/beobungbu/BeeUI/issues/355)).
+- **CLI invocation:** the repo-local `pnpm beeui -- add …` shim becomes
+  `npx @beemvp/beeui-cli add …` once published; the command/flag/exit-code contract is unchanged.
+- **Peer ranges frozen to tested evidence:** `react >=19 <20`, `react-native >=0.86.0 <0.87.0`
+  (0.87 excluded on real compile-failure evidence), `tailwindcss >=4 <5`, `uniwind >=1.10.1 <2`,
+  and the optional native peers ([docs/consumer-compatibility-report.md](docs/consumer-compatibility-report.md)).
+
+### Deprecated
+
+- No public component export, subpath, or stable token is deprecated at 1.0. The token
+  lifecycle path (deprecate → compatibility alias → removal in a MAJOR once the window and
+  migration evidence are met) is the governed mechanism for future deprecations
+  ([docs/token-lifecycle.md](docs/token-lifecycle.md)).
+
+### Known limitations
+
+- **iOS `pageSheet`/`formSheet` presentation is EXPERIMENTAL** and outside the `1.x` stability
+  promise until exact-head native runtime evidence promotes it; `overFullScreen` is unaffected
+  ([#62](https://github.com/beobungbu/BeeUI/issues/62) policy, [docs/release.md](docs/release.md)).
+- **Web support is Chromium-only** through the Expo/Metro and Vite bundlers; Firefox/WebKit,
+  other bundlers, and SSR/SSG are not claimed ([docs/web-support-contract.md](docs/web-support-contract.md)).
