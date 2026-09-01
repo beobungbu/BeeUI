@@ -165,7 +165,7 @@ behavior (ADR-006, `docs/decisions/006-sheet-gesture-engine.md`; full contract i
 - **Known limitations**: presenting a Sheet from inside an already-open RN `Modal` can
   render behind the native modal window on iOS without a `react-native-screens`
   `FullWindowOverlay` (not added for 1.0 — prefer a BeeUI-native overlay as the opener in
-  that scenario). Sheet registry/dependency-closure documentation (#161) is still open.
+  that scenario). Sheet registry/dependency-closure documentation (#161) is closed.
 
 ### Table / DataTable
 
@@ -205,14 +205,15 @@ composition on native, one shared prop contract (ADR-007,
   stack (strong, well-established AT support by construction). Native gets a
   deterministic-contract-verified accessible-name strategy (row/column context folded into
   labels); **no VoiceOver/TalkBack interaction evidence exists yet** for either platform —
-  #167 (native rendering/a11y policy) is closed at the deterministic-contract level, but
-  the release-level VoiceOver/TalkBack matrices (#147/#148) that would add real AT
-  evidence remain open.
+  #167 (native rendering/a11y policy) is closed at the deterministic-contract level; the
+  release-level VoiceOver/TalkBack matrices (#147/#148) are closed with their checklists
+  recorded, and real on-device AT execution is owner-deferred to the RC native-runtime and
+  VoiceOver/TalkBack gates (#248/#249).
 - **Known limitations**: no default virtualization (evidence-gated, `docs/decisions/007-
   table-datatable-architecture.md`); if a future virtualization adapter ships, it must
   preserve `aria-rowcount`/`aria-rowindex` and fixed/explicit column widths or Web
   row-count AT semantics regress — not yet needed at the accepted 100/500-row envelope.
-  Table registry/docs/AI-metadata integration (#170) is still open.
+  Table registry/docs/AI-metadata integration (#170) is closed.
 
 ### Calendar / DatePicker / DateTimePicker
 
@@ -273,11 +274,12 @@ architecture.md`); `Field` derives `accessibilityHint`/`accessibilityLabel`/
   indicator, touch target). **No VoiceOver/TalkBack interaction evidence exists yet** for
   native grid traversal (#176 closed the component-local accessibility/keyboard
   acceptance at the deterministic+browser level; #177, visual + native runtime acceptance,
-  and #147/#148, the release-level AT matrices, remain open).
+  and #147/#148, the release-level AT matrices, are closed — real on-device AT execution is
+  owner-deferred to the RC native-runtime and VoiceOver/TalkBack gates #248/#249).
 - **Known limitations**: i18n/week-start/DST regression coverage is tracked separately
   (`docs/date-i18n-timezone-matrix.md`, #175, closed) and is not repeated here.
   Calendar/date registry/docs/AI-metadata integration (#178) and visual/native runtime
-  acceptance (#177) remain open.
+  acceptance (#177) are closed.
 
 ### Anchored overlays (Popover, DropdownMenu, Select)
 
@@ -454,24 +456,23 @@ every other interactive component rather than leaving it implicit.
   keyboard. It fixed one genuine gap (Dialog/AlertDialog's `animationType` did not
   compose the ambient reduced-motion signal) and recorded explicit no-motion rationale,
   with real evidence, for every other animated/anchored-overlay surface.
-- **No assistive-technology (VoiceOver/TalkBack) evidence exists for any component**
-  (#147/#148 open) — see "Native screen readers" above. The release-gate checklists and
-  their deterministic-contract backing now exist (`docs/voiceover-release-matrix.md`,
-  `docs/talkback-release-matrix.md`); what remains open is executing them against a
-  release-candidate build and recording the result.
-- **Localization/long-content stress suite is open** (#144) — this document does not
+- **No on-device assistive-technology (VoiceOver/TalkBack) evidence exists for any component
+  yet** (#147/#148 closed with checklists recorded) — see "Native screen readers" above. The
+  release-gate checklists and their deterministic-contract backing exist
+  (`docs/voiceover-release-matrix.md`, `docs/talkback-release-matrix.md`); executing them
+  against a release-candidate build on real devices is owner-deferred to the RC AT gate (#249).
+- **Localization/long-content stress suite (#144, closed)** — this document does not
   evaluate long-string/CJK/complex-script wrapping behavior beyond what
   `docs/dynamic-type.md`'s wrap-vs-truncation policy already covers for stress-length
   Latin-script text.
-- **Table and Calendar/date registry, docs, and AI-metadata integration are open**
-  (#170, #178), and Calendar/date visual + native runtime acceptance is open (#177).
-  Their component-local accessibility/keyboard behavior is implemented and tested (closed
-  #166/#167/#176), but the final registry/docs/clean-consumer/native-runtime-evidence
-  layer for these two component families is not yet complete. Treat this document's Table
-  and Calendar sections as accurate for what exists on `main` today, not as a claim that
-  #170/#178/#177 are finished.
-- **Sheet registry dependency closure is open** (#161) — Sheet's own accessibility
-  behavior (native #158, Web #159) is implemented and tested; #161 is packaging/export
+- **Table and Calendar/date registry, docs, and AI-metadata integration are closed**
+  (#170, #178), as is Calendar/date visual + native runtime acceptance (#177). Their
+  component-local accessibility/keyboard behavior (#166/#167/#176) and their final
+  registry/docs/clean-consumer layer all landed; remaining native-runtime AT evidence for
+  these families is owner-deferred to the RC device gates (#248/#249). This document's Table
+  and Calendar sections describe what exists on `main` today.
+- **Sheet registry dependency closure is closed** (#161) — Sheet's own accessibility
+  behavior (native #158, Web #159) is implemented and tested; #161 was packaging/export
   closure, not an accessibility gap, listed here only because #150's own dependency list
   names it.
 

@@ -85,6 +85,7 @@ always wins, matching Sheet's own "explicit override always wins" precedent. See
 - **Production-demo rows are deferred**, mirroring `docs/keyboard-focus-acceptance-
   matrix.md`'s identical deferral — no dedicated production-motion-demo surface exists
   yet in this repo.
-- **No VoiceOver/TalkBack evidence** exists for any reduced-motion interaction proven
-  here (#147/#148 remain open, per `docs/accessibility-contract.md` "Native screen
+- **No on-device VoiceOver/TalkBack evidence** exists yet for any reduced-motion interaction
+  proven here (#147/#148 closed with checklists recorded; real on-device AT execution is
+  owner-deferred to the RC AT gate #249, per `docs/accessibility-contract.md` "Native screen
   readers").

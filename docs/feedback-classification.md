@@ -51,7 +51,8 @@ lane) · `wont-fix-1.0` (deliberately out of 1.0 scope, evidence-bounded).
 | F9 | compat report | RN 0.87 excluded — `react-native-safe-area-context@5.7.0` Kotlin fails to build (not a BeeUI defect) | compat | P1 | wont-fix-1.0 |
 | F10 | compat report | Web support is Chromium-only; Firefox/WebKit/SSR/other bundlers not claimed | compat | P2 | wont-fix-1.0 |
 | F11 | [#62](https://github.com/beobungbu/BeeUI/issues/62) | iOS `pageSheet` tap-swallow overlay race — rare native edge case | blocker? | P2 | follow-up |
-| F12 | #234 / #253 / #241 | External real-world consumer, RC soak, fresh-agent demo reproduction | owner-gated | — | pending |
+| F12 | #234 / #253 | External real-world consumer, RC soak | owner-gated | — | pending |
+| F13 | #241 | Fresh-agent demo extend/fix reproduction | agent | — | landed, no freeze-blocking finding |
 
 ## Detailed findings
 
@@ -136,10 +137,13 @@ they are new or hidden.
 ### Owner-gated / pending (F12)
 
 - **F12.** [#234](https://github.com/beobungbu/BeeUI/issues/234) (external real-world
-  consumer, `OWNER_ACTION_REQUIRED`), [#253](https://github.com/beobungbu/BeeUI/issues/253)
-  (RC soak), and [#241](https://github.com/beobungbu/BeeUI/issues/241) (fresh-agent demo
-  reproduction) have no artifacts to classify yet. Disposition: **pending** — reclassify
-  when the owner provides the consumer/access and the soak/reproduction runs land.
+  consumer, `OWNER_ACTION_REQUIRED`) and [#253](https://github.com/beobungbu/BeeUI/issues/253)
+  (RC soak) have no artifacts to classify yet. Disposition: **pending** — reclassify
+  when the owner provides the consumer/access and the soak run lands.
+- **F13.** [#241](https://github.com/beobungbu/BeeUI/issues/241) (fresh-agent demo
+  extend/fix reproduction) has since **landed and closed**; its reproduction ran against the
+  accepted demo and surfaced no freeze-blocking finding. Disposition: **no reclassification
+  required** — R10 acceptance and the freeze proceeded on that basis.
 
 ## Freeze gate (DoD)
 

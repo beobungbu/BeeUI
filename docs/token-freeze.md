@@ -9,6 +9,10 @@
 > **Snapshot:** 2026-09-02.
 > **Canonical source:** `packages/tokens/tokens.json` (DTCG 2025.10 + `com.beeui` extension).
 > **Machine projection:** `@beemvp/beeui-tokens/lifecycle.json`.
+> **Binds to the RC candidate:** this vocabulary freeze holds unchanged through the RC candidate
+> `1.0.0-rc-ready.1` ([#246](https://github.com/beobungbu/BeeUI/issues/246)) at SHA `5cb061f` — the
+> only public-surface commit since the freeze base ([#402](https://github.com/beobungbu/BeeUI/issues/402))
+> touched internal overlay-runtime only and changed no token source or generated token artifact.
 
 ## What "frozen" means here (and what it does not)
 

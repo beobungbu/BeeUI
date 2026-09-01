@@ -229,9 +229,9 @@ Design constraints that make it usable as evidence:
 - **Home stays navigable at scale.** Showcase home's own header scrolls with the launcher
   catalog instead of sitting above it as fixed chrome — at `2x` a fixed header that tall
   would leave the scrollable launcher list zero usable height and make every surface below
-  (this fixture included) unreachable. This is a Showcase layout decision, not a fix or a
-  mask for #284's AppHeader defect, which remains open and reproducible on the screens that
-  keep fixed headers.
+  (this fixture included) unreachable. This is a Showcase layout decision, independent of the
+  AppHeader large-text defect tracked in #284 (now closed/resolved) — it neither masked nor
+  fixed that defect.
 - **Real public components only** — the same `Select`/`Pagination`/`Button`/`Input` instances
   a consumer would render; nothing on the screen forks on the reported font scale.
 
