@@ -18,6 +18,16 @@ import {
 } from './registry-lib.mjs';
 import { detectProject } from './detect.mjs';
 import { diagnoseProjectDependencies, formatDetectionSummary, formatDiagnosticLine } from './dependency-diagnostics.mjs';
+import {
+  buildDiffReport,
+  buildUpdatePlan,
+  executeUpdatePlan,
+  formatDiffReport,
+  formatUpdatePlan,
+  readManifest,
+  recordPlanInManifest,
+  writeManifest,
+} from './update-lib.mjs';
 
 // This file always ships one directory below the package root, both in
 // repository-local dev mode (`packages/cli/src/beeui.mjs`) and in the built
@@ -45,6 +55,9 @@ Usage:
   beeui add --dry-run <items...>
   beeui add --overwrite <items...>
   beeui doctor
+  beeui diff [items...]
+  beeui update [items...]
+  beeui update --force [items...]
 
 Commands:
   help                 Show this help.
@@ -55,12 +68,24 @@ Commands:
   doctor               Validate the canonical registry, local BeeUI config, and bundled
                        registry integrity (see "registry delivery" below).
   verify               Alias for doctor.
+  diff [items...]      Compare previously-added source against the current registry,
+                       without naming items explicitly diffs every item 'add' has
+                       already synced at least one file for. Never mutates the project.
+  update [items...]    Re-sync previously-added files whose upstream source changed
+                       since the last sync. Never touches a file with local edits
+                       unless the upstream source for that same file also changed.
 
 Add options:
   --all                Add the complete stable public registry surface (same set as
                        'beeui list'), instead of naming items explicitly.
   --dry-run            Show the deterministic plan without filesystem mutation.
   --overwrite          Explicitly replace differing destination files after preflight.
+
+Update options:
+  --dry-run            Show the deterministic update plan without filesystem mutation.
+  --force              Also overwrite files where both local and upstream content
+                       changed since the last sync, discarding the local edit. Never
+                       applied without this flag.
 
 Exit codes:
   0                    Success.
@@ -125,6 +150,34 @@ function parseAddArgs(args) {
   if (all && items.length > 0) throw new Error("'add --all' does not accept explicit item names");
   if (!all && items.length === 0) throw new Error("'add' requires at least one component name, or use --all");
   return { dryRun, overwrite, all, items };
+}
+
+function parseDiffArgs(args) {
+  const items = [];
+  for (const arg of args) {
+    if (arg.startsWith('-')) throw new Error(`unknown diff option '${arg}'`);
+    items.push(arg);
+  }
+  return { items };
+}
+
+function parseUpdateArgs(args) {
+  let dryRun = false;
+  let force = false;
+  const items = [];
+  for (const arg of args) {
+    if (arg === '--dry-run') {
+      dryRun = true;
+      continue;
+    }
+    if (arg === '--force') {
+      force = true;
+      continue;
+    }
+    if (arg.startsWith('-')) throw new Error(`unknown update option '${arg}'`);
+    items.push(arg);
+  }
+  return { dryRun, force, items };
 }
 
 function printRequirements(stdout, requirements) {
@@ -263,7 +316,52 @@ export async function main(argv = process.argv.slice(2), options = {}) {
       printPlan(stdout, plan, { dryRun });
       if (!dryRun) {
         await executeAddPlan(projectRoot, plan);
+        // #219: keep beeui.manifest.json's recorded content-identity baseline
+        // in lockstep with what is now actually on disk, so a later 'beeui
+        // diff'/'beeui update' has an honest "last synced" reference point.
+        const manifest = await readManifest(projectRoot);
+        await writeManifest(projectRoot, recordPlanInManifest(manifest, plan));
         write(stdout, 'Source ownership plan applied. External packages, if missing, still require manual installation.');
+      }
+      return 0;
+    }
+
+    if (command === 'diff') {
+      const { items } = parseDiffArgs(args);
+      const config = await readConfig(projectRoot);
+      await validateConfiguredProjectPaths(projectRoot, config);
+      const report = await buildDiffReport({ projectRoot, registry, config, requestedItems: items });
+      if (report.itemNames.length === 0) {
+        write(
+          stdout,
+          "Nothing to diff: no components have been added to this project yet. Run 'beeui add <items...>' first, " +
+            'or pass explicit item names.',
+        );
+        return 0;
+      }
+      write(stdout, `Comparing: ${report.itemNames.join(', ')}`);
+      for (const line of formatDiffReport(report)) write(stdout, line);
+      return 0;
+    }
+
+    if (command === 'update') {
+      const { dryRun, force, items } = parseUpdateArgs(args);
+      const config = await readConfig(projectRoot);
+      await validateConfiguredProjectPaths(projectRoot, config);
+      const plan = await buildUpdatePlan({ projectRoot, registry, config, requestedItems: items, force });
+      if (plan.entries.length === 0) {
+        write(
+          stdout,
+          "Nothing to update: no components have been added to this project yet. Run 'beeui add <items...>' first, " +
+            'or pass explicit item names.',
+        );
+        return 0;
+      }
+      write(stdout, `Comparing: ${plan.itemNames.join(', ')}`);
+      for (const line of formatUpdatePlan(plan, { dryRun })) write(stdout, line);
+      if (!dryRun) {
+        await executeUpdatePlan(projectRoot, plan);
+        write(stdout, 'Update applied. External packages, if missing, still require manual installation.');
       }
       return 0;
     }

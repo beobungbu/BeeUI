@@ -13,7 +13,9 @@
 //     CLI must not reintroduce),
 //   - no `@beemvp/beeui-core` or `workspace:*` leaks survive into copied source,
 //   - every relative import in the copied file set resolves to a real file
-//     on disk in the consumer fixture.
+//     on disk in the consumer fixture,
+//   - `beeui diff`/`beeui update` (#219) correctly classify and preserve a
+//     local edit against the packed, checksum-verified bundled registry.
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
@@ -119,6 +121,24 @@ async function main() {
       }
     }
 
+    // #219: diff/update assistance, exercised against the packed artifact
+    // (bundled + checksum-verified registry), not only the dev-mode engine
+    // already covered by scripts/__tests__/beeui-diff-update.test.mjs.
+    const cleanDiff = runCli(['diff'], consumerRoot);
+    assert.match(cleanDiff.trim(), /^Comparing: /);
+    assert.doesNotMatch(cleanDiff, /CONFLICT|LOCAL|UPSTREAM|MISSING|UNTRACKED/, 'a freshly-added consumer must diff clean');
+
+    const sheetTarget = path.join(dir, 'sheet.tsx');
+    const originalSheet = await readFile(sheetTarget, 'utf8');
+    await writeFile(sheetTarget, `${originalSheet}\n// smoke-test local edit\n`, 'utf8');
+
+    const localDiff = runCli(['diff', 'sheet'], consumerRoot);
+    assert.match(localDiff, /LOCAL\s+src\/components\/beeui\/sheet\.tsx \(sheet\)/);
+
+    const updateWithoutForce = runCli(['update', 'sheet'], consumerRoot);
+    assert.match(updateWithoutForce, /SKIP\s+src\/components\/beeui\/sheet\.tsx \(sheet\) — local-modified/);
+    assert.equal(await readFile(sheetTarget, 'utf8'), `${originalSheet}\n// smoke-test local edit\n`, 'update must never rewrite a local-only edit');
+
     const doctorOutput = runCli(['doctor'], consumerRoot);
     assert.match(doctorOutput, /BeeUI doctor OK/);
     // #216: the packed artifact must report its bundled registry delivery
@@ -143,7 +163,7 @@ async function main() {
 
   process.stdout.write(
     '@beemvp/beeui-cli smoke: PASS (packed dist/beeui.mjs end-to-end add + import resolution + #355 @beemvp/beeui-tokens closure ' +
-      '+ #216 tampered-bundle rejection)\n',
+      '+ #219 diff/update + #216 tampered-bundle rejection)\n',
   );
 }
 
