@@ -231,8 +231,17 @@ jobs:
             local major minor min_major min_minor
             IFS='.' read -r major minor _ <<< "$version"
             IFS='.' read -r min_major min_minor _ <<< "$min_version"
-            (( ${major:-0} > ${min_major:-0} || \
-               (${major:-0} == ${min_major:-0} && ${minor:-0} >= ${min_minor:-0}) ))
+            # Return an explicit boolean. A bare `(( ... ))` as a function's
+            # final statement exits 1 whenever the comparison is false, so under
+            # `set -euo pipefail` the helper's status would ride on shell error
+            # handling rather than the version test. Branch explicitly so a
+            # supported Xcode can never be misread as unsupported.
+            if (( ${major:-0} > ${min_major:-0} || \
+                  (${major:-0} == ${min_major:-0} && ${minor:-0} >= ${min_minor:-0}) )); then
+              return 0
+            else
+              return 1
+            fi
           }
 
           for app in $(ls -d /Applications/Xcode*.app 2>/dev/null | sort -rV); do
