@@ -165,4 +165,14 @@ jobs:
           name: visual-web-report-${{ github.event.pull_request.head.sha || github.sha }}
           path: apps/visual-regression/playwright-report
           if-no-files-found: warn
+
+      # The combined report is always published above so shard diagnostics stay
+      # visible, but this required check must still FAIL when any shard failed.
+      # `visual-web-report` is the branch-ruleset required status check; without
+      # this guard a red shard (e.g. a failing interaction spec) merged silently.
+      - name: Fail if any visual-web shard did not succeed
+        if: needs.visual-web.result != 'success'
+        run: |
+          echo "::error::visual-web matrix result is '${{ needs.visual-web.result }}' — one or more shards failed; see the combined report artifact."
+          exit 1
           retention-days: 3
