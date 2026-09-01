@@ -1,12 +1,6 @@
 import * as React from 'react';
-import { RoutePlaceholder } from '../../../src/shell/route-placeholder';
+import { SettingsScreen } from '../../../src/features/settings/settings-screen';
 
 export default function SettingsRoute() {
-  return (
-    <RoutePlaceholder
-      description="Theme, density, direction, text-scale, and other a11y preferences land here"
-      issue="#263"
-      title="Settings"
-    />
-  );
+  return <SettingsScreen />;
 }

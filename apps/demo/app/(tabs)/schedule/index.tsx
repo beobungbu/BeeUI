@@ -1,12 +1,6 @@
 import * as React from 'react';
-import { RoutePlaceholder } from '../../../src/shell/route-placeholder';
+import { ScheduleScreen } from '../../../src/features/schedule/schedule-screen';
 
 export default function ScheduleRoute() {
-  return (
-    <RoutePlaceholder
-      description="The calendar/date-time scheduling flow lands here"
-      issue="#262"
-      title="Schedule"
-    />
-  );
+  return <ScheduleScreen />;
 }
