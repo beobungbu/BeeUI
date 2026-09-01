@@ -1,0 +1,41 @@
+{
+  "name": "beeui-demo-reproduction-records",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "R10.12 (#241) — fresh-agent reproduction of the production demo's searchable/filterable records Table flow (#260), built from BeeUI's AI-agent context only and consumed through real @beemvp/beeui-* pnpm pack tarballs (BeeUI is unpublished).",
+  "scripts": {
+    "setup": "bash ./setup.sh",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@beemvp/beeui-core": "file:.beeui-tarballs/beemvp-beeui-core-0.1.0.tgz",
+    "@beemvp/beeui-tokens": "file:.beeui-tarballs/beemvp-beeui-tokens-0.1.0.tgz",
+    "@beemvp/beeui-ui": "file:.beeui-tarballs/beemvp-beeui-ui-0.1.0.tgz",
+    "@gorhom/bottom-sheet": "5.2.14",
+    "@react-native-community/datetimepicker": "9.1.0",
+    "class-variance-authority": "0.7.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.2",
+    "react-native-gesture-handler": "2.32.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-teleport": "1.1.13",
+    "react-native-web": "0.21.0",
+    "react-native-worklets": "0.10.1",
+    "tailwindcss": "4.3.3",
+    "uniwind": "1.10.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.2",
+    "typescript": "5.9.3",
+    "vite": "8.2.2",
+    "vite-plugin-rnw": "0.0.12"
+  }
+}
