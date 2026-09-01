@@ -95,6 +95,43 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
+/**
+ * Global `react-native-safe-area-context` mock (mirrors
+ * `apps/showcase/__tests__/safe-area.test.tsx`'s per-file mock, promoted here
+ * because every demo feature screen renders through `KeyboardAwareScreen`/
+ * `Screen`/`SafeArea` — not just one suite's own component under test — so
+ * every feature test that renders a full screen needs deterministic insets
+ * without a real native `SafeAreaProvider` ancestor.
+ */
+jest.mock('react-native-safe-area-context', () => {
+  const ReactActual = require('react');
+  const { View } = require('react-native');
+  const insets = { top: 0, right: 0, bottom: 0, left: 0 };
+  const frame = { x: 0, y: 0, width: 390, height: 844 };
+
+  return {
+    initialWindowMetrics: { frame, insets },
+    SafeAreaProvider: ({ children }: { children?: React.ReactNode }) => children,
+    SafeAreaListener: ({
+      children,
+      onChange,
+    }: {
+      children?: React.ReactNode;
+      onChange?: (metrics: { frame: typeof frame; insets: typeof insets }) => void;
+    }) => {
+      ReactActual.useEffect(() => {
+        onChange?.({ frame, insets });
+      }, [onChange]);
+      return children;
+    },
+    SafeAreaView: ReactActual.forwardRef(
+      ({ children, ...props }: { children?: React.ReactNode }, ref: React.Ref<typeof View>) =>
+        ReactActual.createElement(View, { ref, ...props }, children),
+    ),
+    useSafeAreaInsets: () => insets,
+  };
+});
+
 jest.mock('@gorhom/bottom-sheet', () => {
   const ReactActual = require('react');
   const { View } = require('react-native');

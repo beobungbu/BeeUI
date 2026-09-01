@@ -4,6 +4,7 @@ import { BeeUIProvider } from '@beemvp/beeui-ui';
 import { Stack } from 'expo-router';
 import * as React from 'react';
 import { AppProviders } from '../src/providers/app-providers';
+import { DemoScenarioProvider } from '../src/state/demo-scenario';
 import { AppPreferencesProvider, useAppPreferences } from '../src/state/preferences';
 
 /**
@@ -27,7 +28,9 @@ export default function RootLayout() {
     <BeeUIProvider>
       <AppProviders>
         <AppPreferencesProvider>
-          <DirectionKeyedNavigator />
+          <DemoScenarioProvider>
+            <DirectionKeyedNavigator />
+          </DemoScenarioProvider>
         </AppPreferencesProvider>
       </AppProviders>
     </BeeUIProvider>
