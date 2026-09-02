@@ -72,11 +72,10 @@ jobs:
           pnpm lint
           pnpm check
 
-      - name: Remove one-shot bootstrap helpers
+      - name: Remove one-shot migration helpers
         run: |
           rm scripts/.tmp-apply-release-integrity-407.mjs
           rm scripts/.tmp-finalize-release-policy-407.mjs
-          rm .github/workflows/release-integrity-407-bootstrap-final.yml
 
       - name: Create clean exact-head commit
         run: |
@@ -84,8 +83,8 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
           git diff --cached --check
-          if git ls-files | grep -E '(^|/)\.tmp-|release-integrity-407-bootstrap'; then
-            echo 'Temporary bootstrap artifact remains in the final index.' >&2
+          if git ls-files | grep -E '(^|/)\.tmp-'; then
+            echo 'Temporary migration helper remains in the final index.' >&2
             exit 1
           fi
           git diff --cached --quiet && { echo 'No cleanup changes to commit.' >&2; exit 1; }
