@@ -10,14 +10,24 @@ const repoRoot = path.resolve(testDir, '../..');
 const workflowPath = path.join(repoRoot, '.github/workflows/ci.yml');
 const bareScriptPath = path.join(repoRoot, 'scripts/verify-bare-consumer.sh');
 const expoScriptPath = path.join(repoRoot, 'scripts/verify-expo-consumer.sh');
+const showcasePackagePath = path.join(repoRoot, 'apps/showcase/package.json');
+const showcaseBuildPrereqPath = path.join(repoRoot, 'apps/showcase/scripts/ensure-workspace-build.mjs');
 
 async function sources() {
-  const [workflow, bareScript, expoScript] = await Promise.all([
+  const [workflow, bareScript, expoScript, showcasePackageRaw, showcaseBuildPrereq] = await Promise.all([
     readFile(workflowPath, 'utf8'),
     readFile(bareScriptPath, 'utf8'),
     readFile(expoScriptPath, 'utf8'),
+    readFile(showcasePackagePath, 'utf8'),
+    readFile(showcaseBuildPrereqPath, 'utf8'),
   ]);
-  return { workflow, bareScript, expoScript };
+  return {
+    workflow,
+    bareScript,
+    expoScript,
+    showcasePackage: JSON.parse(showcasePackageRaw),
+    showcaseBuildPrereq,
+  };
 }
 
 test('Showcase iOS uses job-local DerivedData with compilation caching but no Actions DerivedData cache', async () => {
@@ -53,6 +63,17 @@ test('verification decomposes historical typecheck/test chains into eight parall
   }
   assert.doesNotMatch(workflow, /^  verify-lane:\n\s+needs:/m);
   assert.match(workflow, /contracts\)[\s\S]*classify-ci-changes\.test\.mjs[\s\S]*ios-build-cache-contract\.test\.mjs/);
+});
+
+test('Showcase tests provision package build artifacts only when a clean checkout needs them', async () => {
+  const { showcasePackage, showcaseBuildPrereq } = await sources();
+  assert.equal(showcasePackage.scripts.pretest, 'node ./scripts/ensure-workspace-build.mjs');
+  assert.match(showcaseBuildPrereq, /packages\/core\/dist\/module\/index\.js/);
+  assert.match(showcaseBuildPrereq, /packages\/tokens\/dist\/module\/motion-runtime\.js/);
+  assert.match(showcaseBuildPrereq, /packages\/ui\/dist\/module\/index\.js/);
+  assert.match(showcaseBuildPrereq, /packages\/ui\/dist\/typescript\/module\/index\.d\.ts/);
+  assert.match(showcaseBuildPrereq, /'--filter', '@beemvp\/beeui-ui\.\.\.', 'run', 'build'/);
+  assert.match(showcaseBuildPrereq, /artifactState\.every\(Boolean\)/);
 });
 
 test('Showcase exports run as three independent matrix jobs', async () => {
