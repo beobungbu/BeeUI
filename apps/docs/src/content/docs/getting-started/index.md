@@ -1,42 +1,37 @@
 ---
 title: Getting started
-description: Install BeeUI, add the provider, and render your first screen.
+description: Evaluate BeeUI, choose a supported platform path, and render a first screen without assuming unpublished registry artifacts.
 ---
 
-This page is the canonical BeeUI quick start. It is accurate for the current repository
-state; platform-specific detail lives in the sibling pages linked below.
+This is the canonical BeeUI entry point for first-time developers. Platform-specific setup lives in the sibling pages linked below, and exact version/support values are owned by the compatibility contract rather than duplicated here.
 
-:::note[Reference implementation]
-This page is BeeUI's reference example of a complete docs page: it demonstrates the
-site's navigation, code blocks, and admonitions. Other pages in this release are
-intentionally stubs — see each page for what is pending.
+:::caution[Public package gate is closed]
+BeeUI is currently **unpublished**. Do not treat `npm install`, `pnpm add`, or public `npx` commands for `@beemvp/beeui-*` as available distribution paths. Until publication is explicitly opened, use the repository, Showcase/demo, packed consumer fixtures, or the repository-local source-ownership workflow.
 :::
 
-## Choose your platform
+## Choose your path
 
-- **[Expo](/getting-started/expo/)** — the fastest path; BeeUI's own Showcase app runs on Expo SDK 57.
-- **[Bare React Native](/getting-started/bare-react-native/)** — no Expo runtime dependency.
-- **[Web](/getting-started/web/)** — React Native Web through Expo's web target or a standalone bundler.
+- **Evaluate without installing:** inspect [Showcase & preview](/showcase/) and the repository source.
+- **[Expo](/getting-started/expo/):** use the accepted Showcase/consumer fixtures to understand Expo integration.
+- **[Bare React Native](/getting-started/bare-react-native/):** follow the bare consumer boundary and native dependency expectations.
+- **[Web](/getting-started/web/):** follow the React Native Web/theme-CSS path actually exercised by repository tests.
+- **[CLI & source ownership](/cli/):** own component source through the repository-local Registry workflow while public CLI publication remains closed.
 
-## Install
+## Repository evaluation setup
 
-BeeUI ships as source-consumed workspace packages today; publication to npm is a
-release-gated milestone, not yet available. Until BeeUI 1.0 publishes, consume BeeUI
-through a pnpm workspace (this repository) or the source-ownership CLI described in
-[CLI & source ownership](/cli/).
+The commands below bootstrap this repository; they are **not** package-install instructions for an external application.
 
 ```bash
 corepack enable
 pnpm install --frozen-lockfile
+pnpm docs:build
+pnpm --filter @beemvp/beeui-showcase build:web
+pnpm --filter @beemvp/beeui-demo build:web
 ```
 
-## Add the provider and own your safe areas
+## Provider and safe-area contract
 
-Every BeeUI application root wraps its content in `BeeUIProvider`. The provider supplies
-safe-area measurement, the shared Toast runtime/viewport, and the anchored-overlay runtime
-used by `Popover` and `DropdownMenu`. BeeUI never adds safe-area padding for you outside an
-explicit `SafeArea` boundary, so each shell element that touches a system edge (a header, the
-scrollable body, a bottom action bar) opts in explicitly:
+Every BeeUI application root should mount `BeeUIProvider`. It supplies the shared safe-area measurement context plus accepted Toast/anchored-overlay runtime services. BeeUI does not silently add app-shell safe-area padding: shell surfaces opt in with explicit `SafeArea` boundaries.
 
 ```tsx
 import {
@@ -47,7 +42,7 @@ import {
   Screen,
 } from '@beemvp/beeui-ui';
 
-function AppShell() {
+export function AppShell() {
   return (
     <BeeUIProvider>
       <Screen>
@@ -66,10 +61,9 @@ function AppShell() {
 }
 ```
 
-`Screen`, `AppHeader`, and `BottomActionBar` own no safe-area behavior themselves — see
-[Provider & safe area](/getting-started/provider-safe-area/) for the full ownership model.
+`Screen`, `AppHeader`, and `BottomActionBar` do not own safe-area behavior themselves. See [Provider & safe area](/getting-started/provider-safe-area/) for the ownership model.
 
-## Verify your setup
+## Verify repository changes
 
 ```bash
 pnpm typecheck
@@ -78,6 +72,7 @@ pnpm test
 
 ## Next steps
 
-- [Theming](/theming/) to apply your brand's tokens and choose a density.
-- [Components](/components/) for the full component catalog.
-- [Compatibility](/compatibility/) to confirm your React Native/React/Node versions are supported.
+- [Theming](/theming/) for semantic tokens, branding, and density.
+- [Components](/components/) for the public component catalog.
+- [Compatibility](/compatibility/) for exact tested platform/toolchain versions.
+- [Showcase & preview](/showcase/) to inspect real runtime behavior.
