@@ -4,13 +4,17 @@ This documents the live GitHub configuration that protects `main`, protects rele
 
 ## Required-check design
 
-BeeUI now optimizes CI for wall-clock latency on public GitHub-hosted runners. Expensive independent work fans out immediately; stable required status names fan the results back in.
+BeeUI optimizes CI for wall-clock latency on public GitHub-hosted runners. Expensive independent work fans out immediately; stable required status names fan results back in.
 
-`ci.yml` starts `classify`, three `verify-check` lanes (`static`, `tests`, `release`) and three Showcase bundle lanes (`web`, `android`, `ios`) in parallel. The branch-protection-required `verify` job is a lightweight `if: always()` aggregator over those lanes, so the required check name remains stable while failures in any parallel lane still block it.
+`ci.yml` starts `classify`, eight `verify-lane` jobs (`quality`, `tokens`, `contracts`, `docs`, `types`, `showcase-registry`, `bench`, `release`) and three Showcase bundle jobs (`web`, `android`, `ios`) in parallel. The branch-protection-required `verify` job is a lightweight `if: always()` aggregator over those lanes, preserving the required status name while any failed upstream lane still blocks it.
+
+The historical top-level `pnpm typecheck` and `pnpm test` commands remain useful local commands, but CI decomposes their constituent checks across the eight lanes instead of executing the two long serial chains. The `contracts` lane also runs classifier/native-CI topology tests, so `classify` itself stays on the shortest possible path to native fan-out.
 
 `classify` controls only conditional native/package-boundary work. `bare-bundle` and `bare-android` are independent Linux jobs; `ios-showcase` and `ios-bare` are independent macOS jobs. Legitimate docs/test-only PRs can skip those jobs, so none is branch-protection-required.
 
-The same applies to `runtime-native.yml`'s `ios-runtime`/`android-runtime`, which are gated by main push, schedule/manual dispatch, or explicit PR runtime intent.
+`expo-consumer.yml` stages three jobs at initial PR fan-out (`typecheck-web`, Android export, iOS export). Together with required/core workflows this targets the 20-job hosted concurrency budget instead of oversubscribing it at t=0. Expo native compiles become eligible after `typecheck-web` frees a slot.
+
+The same conditional-status rule applies to `runtime-native.yml`'s `ios-runtime`/`android-runtime`, which are gated by main push, schedule/manual dispatch, or explicit PR runtime intent.
 
 Standard GitHub-hosted runners are isolated, ephemeral VMs; BeeUI grants these workflows only `contents: read` and does not expose repository secrets to pull-request code. Required checks therefore also run for fork PRs.
 
@@ -27,8 +31,8 @@ Standard GitHub-hosted runners are isolated, ephemeral VMs; BeeUI grants these w
 
 | Check | Workflow | Why it is always present |
 | --- | --- | --- |
-| `classify` | `ci.yml` | No job-level `if:`; classifies optional native work for every PR. |
-| `verify` | `ci.yml` | `if: always()` fan-in over `classify`, the three verification lanes and the three Showcase platform exports; it fails unless every required upstream lane succeeds. |
+| `classify` | `ci.yml` | No job-level `if:`; emits optional native-work decisions for every PR. |
+| `verify` | `ci.yml` | `if: always()` fan-in over `classify`, all eight verification lanes and all three Showcase platform exports; it fails unless every required upstream lane succeeds. |
 | `web-a11y` | `web-a11y.yml` | No conditional gate; axe-core/Playwright accessibility verification always runs. |
 | `visual-web-report` | `visual-web.yml` | `if: always()` aggregate for the full visual shard matrix. |
 | `web-consumer` | `web-consumer.yml` | No conditional gate; the independent Vite + react-native-web consumer always runs. |
@@ -68,8 +72,9 @@ BeeUI's active workflows use standard `ubuntu-latest` and `macos-latest` GitHub-
 - Each job is treated as ephemeral.
 - Workflow permissions default to `contents: read`.
 - Pull-request workflows do not receive release/npm secrets.
-- Public-repository runner minutes are treated as unmetered; CI is designed around wall-clock latency and the account's finite concurrent-job/macOS limits.
-- The heaviest topology deliberately fans out until the GitHub-hosted concurrency budget is saturated instead of serializing independent work.
+- Public-repository runner minutes are treated as unmetered; CI is designed around wall-clock latency and finite concurrent-job/macOS limits.
+- Initial PR scheduling is shaped to fill the 20-job budget with required/core work first; optional native work enters as slots become available.
+- Independent native iOS proofs use separate macOS jobs so Showcase and bare-RN compiles can overlap.
 - Large Xcode DerivedData is not persisted in Actions cache; bounded dependency/tool caches remain performance hints only.
 
 ## Rollback
