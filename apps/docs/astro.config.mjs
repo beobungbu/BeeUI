@@ -1,21 +1,24 @@
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 
-// Static, framework-light docs site for BeeUI. This is infrastructure only
-// (issue #220): the IA below is a navigation/theming skeleton. Final
-// per-component content lands in #221-#225 and must replace the
-// "content pending" placeholders without changing this structure unless the
-// IA itself needs to change.
 export default defineConfig({
   output: 'static',
   integrations: [
     starlight({
       title: 'BeeUI',
       description:
-        'BeeUI is a production-oriented, accessibility-first React Native UI system for Expo, bare React Native, and Web.',
+        'Production-oriented React Native components and patterns for Expo, bare React Native, and Web.',
       defaultLocale: 'en',
       lastUpdated: false,
       pagination: true,
+      customCss: ['./src/styles/custom.css'],
+      social: [
+        {
+          icon: 'github',
+          label: 'GitHub',
+          href: 'https://github.com/beobungbu/BeeUI',
+        },
+      ],
       sidebar: [
         {
           label: 'Getting started',
