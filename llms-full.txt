@@ -8,9 +8,9 @@ STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is
 BeeUI is a reusable, mobile-first React Native UI foundation for long-lived client apps. The public component API stops at `@beemvp/beeui-ui`; applications should not need to know the styling engine. Web support is additive and native ergonomics remain first-class. See [docs/architecture.md](docs/architecture.md).
 
 ## Packages (all unpublished / pre-1.0, one lockstep version)
-- `@beemvp/beeui-core` v0.1.0 — Engine-neutral utilities (class-name merging, anchored-overlay geometry) shared by @beemvp/beeui-ui. No React, React Native, or Expo dependency. [unpublished (publishConfig.access=public prepared)]
-- `@beemvp/beeui-tokens` v0.1.0 — BeeUI's design-token system: semantic color/spacing/typography/motion contracts and the canonical Uniwind/Tailwind theme CSS. [unpublished (publishConfig.access=public prepared)]
-- `@beemvp/beeui-ui` v0.1.0 — Typed React Native + Web components built on @beemvp/beeui-core and @beemvp/beeui-tokens, styled through Uniwind/Tailwind. [unpublished (publishConfig.access=public prepared)]
+- `@beemvp/beeui-core` v20260902.0.0 — Engine-neutral utilities (class-name merging, anchored-overlay geometry) shared by @beemvp/beeui-ui. No React, React Native, or Expo dependency. [unpublished (publishConfig.access=public prepared)]
+- `@beemvp/beeui-tokens` v20260902.0.0 — BeeUI's design-token system: semantic color/spacing/typography/motion contracts and the canonical Uniwind/Tailwind theme CSS. [unpublished (publishConfig.access=public prepared)]
+- `@beemvp/beeui-ui` v20260902.0.0 — Typed React Native + Web components built on @beemvp/beeui-core and @beemvp/beeui-tokens, styled through Uniwind/Tailwind. [unpublished (publishConfig.access=public prepared)]
 
 `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` share one lockstep version and are released together (ADR-011 D6). Package manifests declare `publishConfig.access=public` + provenance but remain unpublished; `exports` maps ship dual ESM+CJS with `.d.ts`, a `react-native` condition for Metro, `browser`/`default` for Web, and `@beemvp/beeui-tokens/theme.css` for the Web theme.
 

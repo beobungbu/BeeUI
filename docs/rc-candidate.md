@@ -1,3 +1,5 @@
+> **Release-integrity note (#407, 2026-09-02):** this document preserves historical evidence for candidate `5cb061f`. Those tarballs encode the former `0.1.0` package version. The owner-selected date-version label is `20260902`, represented in npm-compatible SemVer as `20260902.0.0`. The visual verification harness was stabilized after `5cb061f` at `18a6833`. Therefore `5cb061f` MUST NOT be published as the current package set. A new immutable candidate must be stamped after #407 lands and the exact new head is green.
+
 # BeeUI 1.0 RC-ready candidate — `1.0.0-rc-ready.1` (#246, R11.4)
 
 > **Status:** FROZEN evidence candidate. This document declares the single immutable

@@ -129,7 +129,7 @@ Modal-class components use React Native core `Modal` as the accepted behavior ke
 - `DialogContent` defaults to `overFullScreen`, with `transparent=true` only for that presentation. `fullScreen`, `pageSheet`, and `formSheet` are non-transparent so RN can honor the requested native presentation rather than coercing it to `overFullScreen`.
 - Higher-level modal components must not create independent overlay engines unless their platform contract requires it.
 
-BeeUI does not claim browser-style focus trapping or unsupported native roles. Focus, keyboard, VoiceOver/TalkBack, native sheet interaction, and destructive-confirmation interaction remain runtime/device release concerns where not automated.
+On Web, Dialog owns and tests browser-style Tab focus trapping, initial focus, and focus restoration. On native, BeeUI relies on native modal/accessibility behavior and does not claim DOM focus-trap semantics or unsupported native roles. Native focus, keyboard, VoiceOver/TalkBack, native sheet interaction, and destructive-confirmation interaction remain runtime/device release concerns where not automated.
 
 ## Transient notification contract
 

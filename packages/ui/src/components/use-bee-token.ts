@@ -144,9 +144,6 @@ import { Uniwind, useCSSVariable } from 'uniwind';
  */
 export function useBeeToken<Path extends BeeTokenPath>(path: Path): BeeTokenValue<Path> {
   const variable = beeTokenReader.resolve(path).variable;
-  // eslint-disable-next-line react-hooks/rules-of-hooks -- `variable` is derived
-  // deterministically from `path` on every render, so this hook is always
-  // called; only *which* CSS variable name it subscribes to can change.
   const raw = useCSSVariable(variable);
   return readTokenValue(beeTokenReader, path, raw);
 }

@@ -268,7 +268,7 @@ try {
   record('generated token artifacts are current');
 
   assert(rootPackage.private === true, 'workspace root remains private');
-  assert(typeof rootVersion === 'string' && /^0\.\d+\.\d+$/.test(rootVersion), 'workspace uses a pre-1.0 semver version', rootVersion);
+  assert(rootVersion === '20260902.0.0', 'workspace uses the owner-approved release version', rootVersion);
 
   // D2/D3 (ADR-011): the built dist/ output is the primary published artifact,
   // so it must exist on disk before the exports/packed-file checks below can

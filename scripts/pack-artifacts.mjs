@@ -14,6 +14,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { EXPECTED_VERSION } from './check-release-control-plane.mjs';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(SCRIPT_DIR, '..');
@@ -96,8 +97,10 @@ try {
   const rootPackage = readJson(path.join(ROOT_DIR, 'package.json'));
   const rootVersion = rootPackage.version;
 
-  if (typeof rootVersion !== 'string' || !/^0\.\d+\.\d+$/.test(rootVersion)) {
-    throw new Error(`Workspace root must stay on a pre-1.0 lockstep version; found "${rootVersion}".`);
+  if (rootVersion !== EXPECTED_VERSION) {
+    throw new Error(
+      `Workspace root must match release-control-plane lockstep version "${EXPECTED_VERSION}"; found "${rootVersion}".`,
+    );
   }
   if (rootPackage.private !== true) {
     throw new Error('Workspace root must remain private: true; this script must never run against a publish-ready root.');

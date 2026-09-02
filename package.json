@@ -1,7 +1,7 @@
 {
   "name": "beeui-workspace",
   "private": true,
-  "version": "0.1.0",
+  "version": "20260902.0.0",
   "license": "MIT",
   "author": {
     "name": "Trần Đức Lân",
@@ -53,8 +53,8 @@
     "bench:footprint": "pnpm build && node ./scripts/benchmark/footprint.mjs",
     "bench:budget": "pnpm bench:footprint && node ./scripts/benchmark/budget-check.mjs",
     "build": "pnpm --filter './packages/*' run build",
-    "typecheck": "pnpm hygiene:check && pnpm tokens:check && pnpm tokens:consumption-check && pnpm compat:check && pnpm ui-exports:check && pnpm release-ruleset:check && pnpm dist-policy:check && pnpm llms:check && pnpm ai-contract:check && pnpm docs:contract:check && pnpm docs:examples:check && pnpm docs:patterns:check && pnpm build && pnpm -r --if-present typecheck",
-    "test": "pnpm tokens:test && pnpm compat:test && pnpm ui-exports:test && pnpm release-ruleset:test && pnpm dist-policy:test && pnpm llms:test && pnpm ai-contract:test && pnpm docs:contract:test && pnpm docs:examples:test && pnpm docs:patterns:test && pnpm bench:test && pnpm --filter @beemvp/beeui-showcase test && pnpm registry:verify && pnpm registry:test",
+    "typecheck": "pnpm hygiene:check && pnpm release-control-plane:check && pnpm lint && pnpm tokens:check && pnpm tokens:consumption-check && pnpm compat:check && pnpm ui-exports:check && pnpm release-ruleset:check && pnpm dist-policy:check && pnpm llms:check && pnpm ai-contract:check && pnpm docs:contract:check && pnpm docs:examples:check && pnpm docs:patterns:check && pnpm build && pnpm -r --if-present typecheck",
+    "test": "pnpm release-control-plane:test && pnpm tokens:test && pnpm compat:test && pnpm ui-exports:test && pnpm release-ruleset:test && pnpm dist-policy:test && pnpm llms:test && pnpm ai-contract:test && pnpm docs:contract:test && pnpm docs:examples:test && pnpm docs:patterns:test && pnpm bench:test && pnpm --filter @beemvp/beeui-showcase test && pnpm registry:verify && pnpm registry:test",
     "check": "pnpm typecheck && pnpm test",
     "release:verify": "node ./scripts/verify-release.mjs",
     "pack:artifacts": "node ./scripts/pack-artifacts.mjs",
@@ -63,12 +63,18 @@
     "registry:test": "node --test ./scripts/__tests__/beeui.test.mjs ./scripts/__tests__/beeui-diff-update.test.mjs",
     "cli:smoke": "pnpm --filter @beemvp/beeui-cli run build && pnpm --filter @beemvp/beeui-cli run smoke",
     "cli:matrix": "pnpm --filter @beemvp/beeui-cli run build && pnpm --filter @beemvp/beeui-cli run matrix",
-    "tokens:migration-report": "node ./scripts/generate-token-migration-report.mjs"
+    "tokens:migration-report": "node ./scripts/generate-token-migration-report.mjs",
+    "lint": "eslint packages/ui/src apps/demo/src --max-warnings=0",
+    "release-control-plane:check": "node ./scripts/check-release-control-plane.mjs",
+    "release-control-plane:test": "node --test ./scripts/__tests__/release-control-plane.test.mjs"
   },
   "devDependencies": {
     "@hyperjump/json-schema": "1.17.8",
     "@types/react": "^19.2.0",
+    "@typescript-eslint/parser": "8.69.0",
     "esbuild": "0.28.2",
+    "eslint": "10.9.1",
+    "eslint-plugin-react-hooks": "7.1.1",
     "react-native-builder-bob": "0.43.0",
     "typescript": "~5.9.2"
   },

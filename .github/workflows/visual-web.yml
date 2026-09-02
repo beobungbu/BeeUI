@@ -21,10 +21,8 @@ env:
 
 jobs:
   visual-web:
-    # Fork PRs must never run on our self-hosted runner: the attacker-
-    # controlled checkout would execute arbitrary code directly on our
-    # infrastructure regardless of GITHUB_TOKEN scope. Push events are
-    # always same-repo.
+    # Same-repository PR guard: this verification path intentionally excludes
+    # fork PRs; push events are always repository-controlled.
     if: >
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
@@ -59,7 +57,7 @@ jobs:
         run: pnpm config set store-dir "$HOME/.pnpm-store"
 
       - name: Cache pnpm store
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.pnpm-store
           key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
@@ -67,7 +65,7 @@ jobs:
 
       - name: Cache Playwright browsers
         id: pw-cache
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.cache/ms-playwright
           key: pw-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
@@ -139,7 +137,7 @@ jobs:
         run: pnpm config set store-dir "$HOME/.pnpm-store"
 
       - name: Cache pnpm store
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.pnpm-store
           key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
@@ -175,4 +173,3 @@ jobs:
         run: |
           echo "::error::visual-web matrix result is '${{ needs.visual-web.result }}' — one or more shards failed; see the combined report artifact."
           exit 1
-          retention-days: 3

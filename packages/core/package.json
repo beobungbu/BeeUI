@@ -1,6 +1,6 @@
 {
   "name": "@beemvp/beeui-core",
-  "version": "0.1.0",
+  "version": "20260902.0.0",
   "description": "Engine-neutral utilities (class-name merging, anchored-overlay geometry) shared by @beemvp/beeui-ui. No React, React Native, or Expo dependency.",
   "license": "MIT",
   "author": {

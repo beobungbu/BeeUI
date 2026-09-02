@@ -174,7 +174,7 @@ function ToastCard({ toast, dismiss }: { toast: NormalizedToast; dismiss: (id: T
   React.useEffect(() => {
     if (Platform.OS !== 'ios') return;
     AccessibilityInfo.announceForAccessibilityWithOptions?.(announcement, { queue: true });
-  }, [toast.id]);
+  }, [announcement, toast.id]);
 
   React.useEffect(() => {
     if (toast.duration === 'persistent') return undefined;

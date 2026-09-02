@@ -1,6 +1,6 @@
 {
   "name": "@beemvp/beeui-ui",
-  "version": "0.1.0",
+  "version": "20260902.0.0",
   "description": "Typed React Native + Web components built on @beemvp/beeui-core and @beemvp/beeui-tokens, styled through Uniwind/Tailwind.",
   "license": "MIT",
   "author": {
