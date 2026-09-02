@@ -21,11 +21,8 @@ env:
 
 jobs:
   visual-web:
-    # Same-repository PR guard: this verification path intentionally excludes
-    # fork PRs; push events are always repository-controlled.
-    if: >
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+    # Standard GitHub-hosted runners are isolated/ephemeral. With a read-only
+    # token and no secrets, visual verification can safely run for fork PRs.
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -105,16 +102,10 @@ jobs:
 
   visual-web-report:
     needs: [visual-web]
-    # Merge and publish the combined report regardless of individual shard
-    # outcomes so a failing shard's diagnostics are still visible in one
-    # place. `always()` bypasses the default needs-skip propagation, so the
-    # fork-guard must be re-checked explicitly here.
-    if: >
-      always() &&
-      (
-        github.event_name != 'pull_request' ||
-        github.event.pull_request.head.repo.full_name == github.repository
-      )
+    # Merge and publish the combined report regardless of shard outcome so
+    # diagnostics stay available. `always()` also keeps this required status
+    # check present when a shard fails.
+    if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -163,11 +154,10 @@ jobs:
           name: visual-web-report-${{ github.event.pull_request.head.sha || github.sha }}
           path: apps/visual-regression/playwright-report
           if-no-files-found: warn
+          retention-days: 7
 
       # The combined report is always published above so shard diagnostics stay
       # visible, but this required check must still FAIL when any shard failed.
-      # `visual-web-report` is the branch-ruleset required status check; without
-      # this guard a red shard (e.g. a failing interaction spec) merged silently.
       - name: Fail if any visual-web shard did not succeed
         if: needs.visual-web.result != 'success'
         run: |
