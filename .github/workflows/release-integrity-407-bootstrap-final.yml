@@ -42,6 +42,14 @@ jobs:
         run: |
           node scripts/.tmp-apply-release-integrity-407.mjs
           node scripts/.tmp-finalize-release-policy-407.mjs
+          node <<'NODE'
+          const fs = require('node:fs');
+          const file = 'packages/ui/src/components/use-bee-token.ts';
+          const suppression = "  // eslint-disable-next-line react-hooks/rules-of-hooks -- `variable` is derived\n  // deterministically from `path` on every render, so this hook is always\n  // called; only *which* CSS variable name it subscribes to can change.\n";
+          const source = fs.readFileSync(file, 'utf8');
+          if (!source.includes(suppression)) throw new Error(`${file}: expected obsolete hook suppression not found`);
+          fs.writeFileSync(file, source.replace(suppression, ''));
+          NODE
 
       - name: Add focused lint dependencies and refresh lockfile
         run: |
