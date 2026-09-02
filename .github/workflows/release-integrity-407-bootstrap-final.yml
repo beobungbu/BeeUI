@@ -1,0 +1,83 @@
+name: release-integrity-407-bootstrap-final
+
+on:
+  push:
+    branches:
+      - fix/release-integrity-20260902-final
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: 24.13.1
+  PNPM_VERSION: 10.15.0
+
+jobs:
+  apply-verify-and-clean:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pnpm via Corepack
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+      - name: Install current workspace
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply release-integrity migration
+        run: |
+          node scripts/.tmp-apply-release-integrity-407.mjs
+          node scripts/.tmp-finalize-release-policy-407.mjs
+
+      - name: Add focused lint dependencies and refresh lockfile
+        run: |
+          pnpm add -Dw --save-exact eslint@10.9.1 @typescript-eslint/parser@8.69.0 eslint-plugin-react-hooks@7.1.1
+          pnpm install --lockfile-only
+
+      - name: Regenerate AI-facing release docs
+        run: pnpm llms:generate
+
+      - name: Verify guard, lint and full repository checks
+        run: |
+          pnpm release-control-plane:check
+          pnpm lint
+          pnpm check
+
+      - name: Remove one-shot bootstrap helpers
+        run: |
+          rm scripts/.tmp-apply-release-integrity-407.mjs
+          rm scripts/.tmp-finalize-release-policy-407.mjs
+          rm .github/workflows/release-integrity-407-bootstrap-final.yml
+
+      - name: Create clean exact-head commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          if git diff --cached --name-only | grep -E '(^|/)\.tmp-|release-integrity-407-bootstrap'; then
+            echo 'Temporary bootstrap artifact leaked into final diff.' >&2
+            exit 1
+          fi
+          git diff --cached --quiet && { echo 'No cleanup changes to commit.' >&2; exit 1; }
+          git commit -m 'fix: close release-integrity gaps for 20260902 (#407)'
+
+      - name: Verify release contract on exact final local head
+        run: BEEUI_VERIFY_SHA="$(git rev-parse HEAD)" pnpm release:verify
+
+      - name: Push exact verified head
+        run: git push origin HEAD:fix/release-integrity-20260902-final
