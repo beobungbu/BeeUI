@@ -64,7 +64,7 @@ test('bare RN iOS keeps deterministic job-local compiler/Ruby paths', async () =
   assert.match(bareScript, /COMPILATION_CACHE_ENABLE_CACHING=YES/);
 });
 
-test('classifier is minimal and native work fans out immediately after it', async () => {
+test('classifier is minimal and keeps verification policy tests off its critical path', async () => {
   const { workflow } = await sources();
   assert.match(workflow, /^  classify:\n/m);
   assert.match(workflow, /git diff --name-only --no-renames "\$BEEUI_BASE_SHA" "\$BEEUI_HEAD_SHA"/);
@@ -100,11 +100,22 @@ function assertPlaywrightCacheHitContract(source) {
   assert.doesNotMatch(source, /cache-hit == 'true' && '' \|\| '--with-deps'/);
 }
 
-test('all Playwright workflows skip Linux dependency provisioning on a browser cache hit', async () => {
+test('all Playwright workflows skip full Linux dependency provisioning on a browser cache hit', async () => {
   const { webConsumerWorkflow, webA11yWorkflow, visualWebWorkflow } = await sources();
   assertPlaywrightCacheHitContract(webConsumerWorkflow);
   assertPlaywrightCacheHitContract(webA11yWorkflow);
   assertPlaywrightCacheHitContract(visualWebWorkflow);
+});
+
+test('visual warm-cache path installs only deterministic glyph fallback and avoids a redundant global font-cache rebuild', async () => {
+  const { visualWebWorkflow } = await sources();
+  const warmCacheBlock = visualWebWorkflow.slice(
+    visualWebWorkflow.indexOf('      - name: Verify cached Chromium on cache hit'),
+    visualWebWorkflow.indexOf('      - name: Report visual browser versions'),
+  );
+  assert.match(warmCacheBlock, /apt-get install -y --no-install-recommends fonts-unifont/);
+  assert.doesNotMatch(warmCacheBlock, /--with-deps/);
+  assert.doesNotMatch(warmCacheBlock, /fc-cache -f/);
 });
 
 test('Web consumer artifact upload follows the harness work-root nesting and fails closed', async () => {
@@ -127,18 +138,25 @@ test('stable verify check is only a fan-in aggregator', async () => {
   assert.match(workflow, /needs\.showcase-bundle\.result/);
 });
 
-test('bare bundle and Android compile are independent classifier children', async () => {
+test('native scheduling saturates hosted capacity without oversubscribing required checks', async () => {
   const { workflow } = await sources();
-  assert.match(workflow, /^  bare-bundle:\n\s+needs: \[classify\]/m);
-  assert.match(workflow, /^  bare-android:\n\s+needs: \[classify\]/m);
+  assert.match(workflow, /^  ios-bare:\n\s+needs: \[classify\]/m);
+  assert.match(workflow, /^  bare-bundle:\n\s+needs: \[classify, showcase-bundle\]/m);
+  assert.match(workflow, /^  bare-android:\n\s+needs: \[classify, showcase-bundle\]/m);
+  assert.match(workflow, /^  ios-showcase:\n\s+needs: \[classify, showcase-bundle\]/m);
+  assert.match(workflow, /bare-bundle:\n\s+needs: \[classify, showcase-bundle\]\n\s+if: >\n\s+always\(\) &&/m);
+  assert.match(workflow, /bare-android:\n\s+needs: \[classify, showcase-bundle\]\n\s+if: >\n\s+always\(\) &&/m);
+  assert.match(workflow, /ios-showcase:\n\s+needs: \[classify, showcase-bundle\]\n\s+if: >\n\s+always\(\) &&/m);
+});
+
+test('bare bundle and Android compile remain independent native proofs', async () => {
+  const { workflow } = await sources();
   assert.match(workflow, /bare-bundle:[\s\S]*Bundle bare consumer for Android and iOS/);
   assert.match(workflow, /bare-android:[\s\S]*Compile bare Android debug APK/);
 });
 
-test('Showcase and bare iOS compiles are independent macOS classifier children', async () => {
+test('Showcase and bare iOS compiles remain independent macOS jobs', async () => {
   const { workflow } = await sources();
-  assert.match(workflow, /^  ios-showcase:\n\s+needs: \[classify\]/m);
-  assert.match(workflow, /^  ios-bare:\n\s+needs: \[classify\]/m);
   assert.match(workflow, /ios-showcase:[\s\S]*Compile Showcase for iOS Simulator/);
   assert.match(workflow, /ios-bare:[\s\S]*Compile bare React Native consumer for iOS Simulator/);
   assert.doesNotMatch(workflow, /^  ios-bare:\n\s+needs: \[ios-showcase\]/m);
@@ -147,8 +165,8 @@ test('Showcase and bare iOS compiles are independent macOS classifier children',
 test('native fan-out preserves specific classifier gates', async () => {
   const { workflow } = await sources();
   assert.match(workflow, /bare-bundle:[\s\S]*package-boundary-required == 'true'[\s\S]*bare-native-required == 'true'/);
-  assert.match(workflow, /bare-android:[\s\S]*if: needs\.classify\.outputs\.bare-native-required == 'true'/);
-  assert.match(workflow, /ios-showcase:[\s\S]*if: needs\.classify\.outputs\.showcase-native-required == 'true'/);
+  assert.match(workflow, /bare-android:[\s\S]*needs\.classify\.outputs\.bare-native-required == 'true'/);
+  assert.match(workflow, /ios-showcase:[\s\S]*needs\.classify\.outputs\.showcase-native-required == 'true'/);
   assert.match(workflow, /ios-bare:[\s\S]*if: needs\.classify\.outputs\.bare-native-required == 'true'/);
 });
 
