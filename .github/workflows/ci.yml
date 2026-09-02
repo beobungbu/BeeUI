@@ -46,12 +46,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           package-manager-cache: false
 
-      - name: Test native CI policy
-        run: >
-          node --test
-          ./scripts/__tests__/classify-ci-changes.test.mjs
-          ./scripts/__tests__/ios-build-cache-contract.test.mjs
-
+      # Keep classification itself on the shortest possible critical path.
+      # Policy/contract tests run in the parallel contracts lane below.
       - name: Classify package boundary and native graph verification
         id: native-changes
         env:
@@ -69,17 +65,25 @@ jobs:
           git diff --name-only --no-renames "$BEEUI_BASE_SHA" "$BEEUI_HEAD_SHA" \
             | node ./scripts/classify-ci-changes.mjs
 
-  # Fan out independent correctness work immediately. These jobs deliberately
-  # do not wait for classify: public-repo hosted minutes are unmetered, so the
-  # optimization target is wall-clock latency rather than runner-minute usage.
-  verify-check:
+  # package.json's historical `typecheck` + `test` commands are intentionally
+  # decomposed here. Each lane preserves the same checks while eliminating the
+  # long serial chain from CI's critical path.
+  verify-lane:
     name: verify-${{ matrix.task }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
-        task: [static, tests, release]
+        task:
+          - quality
+          - tokens
+          - contracts
+          - docs
+          - types
+          - showcase-registry
+          - bench
+          - release
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
@@ -116,31 +120,70 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Verify generated token artifacts
-        if: matrix.task == 'static'
-        run: pnpm tokens:check
-
-      - name: Verify core packages stay Expo-free
-        if: matrix.task == 'static'
-        run: |
-          if grep -R -n -E "from ['\"]expo([^'\"]*)['\"]|require\(['\"]expo([^'\"]*)['\"]\)" packages/core/src packages/ui/src; then
-            echo "BeeUI core packages must not import Expo runtime modules."
-            exit 1
-          fi
-
-      - name: Typecheck
-        if: matrix.task == 'static'
-        run: pnpm typecheck
-
-      - name: Test
-        if: matrix.task == 'tests'
-        run: pnpm test
-
-      - name: Verify release package contract
-        if: matrix.task == 'release'
+      - name: Run verification lane
         env:
           BEEUI_VERIFY_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: pnpm release:verify
+        run: |
+          set -euo pipefail
+          case "${{ matrix.task }}" in
+            quality)
+              pnpm hygiene:check
+              pnpm release-control-plane:check
+              pnpm lint
+              pnpm release-control-plane:test
+              ;;
+            tokens)
+              pnpm tokens:check
+              pnpm tokens:consumption-check
+              pnpm tokens:test
+              ;;
+            contracts)
+              pnpm compat:check
+              pnpm compat:test
+              pnpm release-ruleset:check
+              pnpm release-ruleset:test
+              pnpm dist-policy:check
+              pnpm dist-policy:test
+              node --test \
+                ./scripts/__tests__/classify-ci-changes.test.mjs \
+                ./scripts/__tests__/ios-build-cache-contract.test.mjs
+              ;;
+            docs)
+              pnpm llms:check
+              pnpm llms:test
+              pnpm ai-contract:check
+              pnpm ai-contract:test
+              pnpm docs:contract:check
+              pnpm docs:contract:test
+              pnpm docs:examples:check
+              pnpm docs:examples:test
+              pnpm docs:patterns:check
+              pnpm docs:patterns:test
+              ;;
+            types)
+              pnpm build
+              pnpm -r --if-present typecheck
+              pnpm ui-exports:check
+              node --test \
+                ./scripts/__tests__/generate-ui-exports.test.mjs \
+                ./scripts/__tests__/verify-ui-export-map.test.mjs
+              ;;
+            showcase-registry)
+              pnpm --filter @beemvp/beeui-showcase test
+              pnpm registry:verify
+              pnpm registry:test
+              ;;
+            bench)
+              pnpm bench:test
+              ;;
+            release)
+              pnpm release:verify
+              ;;
+            *)
+              echo "Unknown verification lane: ${{ matrix.task }}"
+              exit 2
+              ;;
+          esac
 
       - name: Upload release verification report
         if: matrix.task == 'release'
@@ -219,22 +262,17 @@ jobs:
           --platform "${{ matrix.platform }}"
           --output-dir "dist-${{ matrix.platform }}"
 
-  # Keep the branch-ruleset status name stable while making the expensive work
-  # parallel. This job only fans in results and therefore adds a few seconds.
   verify:
-    needs: [classify, verify-check, showcase-bundle]
+    needs: [classify, verify-lane, showcase-bundle]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Require every verification lane to pass
         run: |
           test "${{ needs.classify.result }}" = "success"
-          test "${{ needs.verify-check.result }}" = "success"
+          test "${{ needs.verify-lane.result }}" = "success"
           test "${{ needs.showcase-bundle.result }}" = "success"
 
-  # Package-boundary Metro proof and Android native compile do not depend on
-  # each other. Use separate hosted jobs so they can start together as soon as
-  # classification finishes.
   bare-bundle:
     needs: [classify]
     if: >
@@ -373,7 +411,6 @@ jobs:
             [ -d "$app/Contents/Developer" ] || continue
             candidate="$app/Contents/Developer"
             version="$(DEVELOPER_DIR="$candidate" /usr/bin/xcodebuild -version | awk 'NR == 1 { print $2 }')"
-            echo "Found $app -> Xcode $version"
             if version_is_supported "$version" "$XCODE_MIN_VERSION"; then
               selected_developer_dir="$candidate"
               selected_version="$version"
@@ -434,8 +471,7 @@ jobs:
 
       - name: Pin Node binary for Xcode build scripts
         working-directory: apps/showcase/ios
-        run: |
-          printf 'export NODE_BINARY="%s"\n' "$(command -v node)" > .xcode.env.local
+        run: printf 'export NODE_BINARY="%s"\n' "$(command -v node)" > .xcode.env.local
 
       - name: Discover generated Xcode workspace and scheme
         id: xcode
@@ -520,7 +556,6 @@ jobs:
             [ -d "$app/Contents/Developer" ] || continue
             candidate="$app/Contents/Developer"
             version="$(DEVELOPER_DIR="$candidate" /usr/bin/xcodebuild -version | awk 'NR == 1 { print $2 }')"
-            echo "Found $app -> Xcode $version"
             if version_is_supported "$version" "$XCODE_MIN_VERSION"; then
               selected_developer_dir="$candidate"
               selected_version="$version"
