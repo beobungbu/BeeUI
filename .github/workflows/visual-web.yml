@@ -71,8 +71,13 @@ jobs:
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Provision pinned Chromium and Linux dependencies
-        run: pnpm --dir apps/visual-regression exec playwright install ${{ steps.pw-cache.outputs.cache-hit == 'true' && '' || '--with-deps' }} chromium
+      - name: Provision Chromium and Linux dependencies on cache miss
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: pnpm --dir apps/visual-regression exec playwright install --with-deps chromium
+
+      - name: Verify cached Chromium on cache hit
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: pnpm --dir apps/visual-regression exec playwright install chromium
 
       - name: Report visual browser versions
         run: |
