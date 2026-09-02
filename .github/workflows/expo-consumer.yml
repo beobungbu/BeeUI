@@ -1,8 +1,10 @@
 name: expo-consumer
 
-# Independent packed Expo SDK 57 consumer. Public-repo hosted minutes are
-# unmetered, so every independent proof starts immediately instead of waiting
-# behind a shared prepare/bundle job.
+# Independent packed Expo SDK 57 consumer. The initial PR fan-out is
+# deliberately three jobs: combined with BeeUI's required/core workflows this
+# fills the 20-job GitHub Free concurrency budget without making required jobs
+# compete randomly with extra Expo work. Native compile starts as soon as the
+# bootstrap lane frees a slot.
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
@@ -25,14 +27,9 @@ env:
   PNPM_VERSION: 10.15.0
 
 jobs:
-  consumer-check:
-    name: expo-consumer-${{ matrix.task }}
+  typecheck-web:
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        task: [typecheck, web, android, ios]
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
@@ -69,31 +66,82 @@ jobs:
         run: bash scripts/verify-expo-consumer.sh prepare
 
       - name: Typecheck independent Expo consumer
-        if: matrix.task == 'typecheck'
         env:
           BEEUI_EXPO_CONSUMER_WORK_ROOT: ${{ runner.temp }}/beeui-expo-consumer
         run: bash scripts/verify-expo-consumer.sh typecheck
 
-      - name: Export independent Expo consumer
-        if: matrix.task != 'typecheck'
+      - name: Export independent Expo consumer for Web
+        working-directory: ${{ runner.temp }}/beeui-expo-consumer/app
+        run: npx expo export --platform web --output-dir dist-web
+
+      - name: Upload Web consumer export
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: expo-consumer-web-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/beeui-expo-consumer/app/dist-web
+          if-no-files-found: error
+          retention-days: 3
+
+  platform-export:
+    name: expo-consumer-${{ matrix.platform }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [android, ios]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pnpm via Corepack
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+      - name: pnpm store dir
+        run: pnpm config set store-dir "$HOME/.pnpm-store"
+
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare independent Expo consumer
+        env:
+          BEEUI_EXPO_CONSUMER_WORK_ROOT: ${{ runner.temp }}/beeui-expo-consumer
+          BEEUI_EXPO_CONSUMER_CLEAN: '1'
+        run: bash scripts/verify-expo-consumer.sh prepare
+
+      - name: Export independent Expo consumer for ${{ matrix.platform }}
         working-directory: ${{ runner.temp }}/beeui-expo-consumer/app
         run: >
           npx expo export
-          --platform "${{ matrix.task }}"
-          --output-dir "dist-${{ matrix.task }}"
+          --platform "${{ matrix.platform }}"
+          --output-dir "dist-${{ matrix.platform }}"
 
       - name: Upload consumer export output
-        if: matrix.task != 'typecheck'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: expo-consumer-${{ matrix.task }}-${{ github.event.pull_request.head.sha || github.sha }}
-          path: ${{ runner.temp }}/beeui-expo-consumer/app/dist-${{ matrix.task }}
+          name: expo-consumer-${{ matrix.platform }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/beeui-expo-consumer/app/dist-${{ matrix.platform }}
           if-no-files-found: error
           retention-days: 3
 
   android-native:
-    # Start immediately on exact main/weekly/manual runs, or an explicitly
-    # native-sensitive PR. It prepares its own isolated consumer in parallel.
+    needs: [typecheck-web]
     if: >
       github.event_name == 'push' ||
       github.event_name == 'schedule' ||
@@ -170,8 +218,7 @@ jobs:
         run: bash scripts/verify-expo-consumer.sh android-build
 
   ios-native:
-    # Start immediately on every PR/main/weekly/manual run. This is one of at
-    # most four simultaneous macOS jobs in BeeUI's heaviest main-push topology.
+    needs: [typecheck-web]
     runs-on: macos-latest
     timeout-minutes: 90
     env:
