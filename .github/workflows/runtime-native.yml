@@ -50,6 +50,9 @@ jobs:
       - name: Checkout exact head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
         with:
+          # Label-opted fork PRs must fetch the exact head from the fork repo,
+          # not assume that SHA is addressable through the base repository.
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           fetch-depth: 0
           ref: ${{ env.BEEUI_RUNTIME_HEAD_SHA }}
 
@@ -169,6 +172,7 @@ jobs:
       - name: Checkout exact head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
         with:
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           fetch-depth: 0
           ref: ${{ env.BEEUI_RUNTIME_HEAD_SHA }}
 
@@ -266,8 +270,8 @@ jobs:
           arch: x86_64
           avd-name: beeui-runtime-api36
           profile: pixel_7
-          # AVD restore cost was comparable to fresh creation while consuming a
-          # multi-GB cache. Build a deterministic fresh device each run instead.
+          # Avoid persisting a multi-GB AVD snapshot. Build a deterministic fresh
+          # device from the pinned system image on every runtime-proof job.
           force-avd-creation: true
           disable-animations: true
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -camera-back none -camera-front none -accel ${{ env.BEEUI_ANDROID_ACCEL }} -memory 4096 -cores 4 -no-snapshot
