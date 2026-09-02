@@ -8,7 +8,9 @@ The implementation lives in `scripts/classify-ci-changes.mjs` and is exercised b
 
 Independent work must not wait behind unrelated work.
 
-At workflow start, `classify`, the three `verify-check` lanes (`static`, `tests`, `release`) and three Showcase export lanes (`web`, `android`, `ios`) start concurrently. The required `verify` status is only a lightweight fan-in aggregator after those lanes finish.
+At workflow start, `classify`, eight `verify-lane` jobs (`quality`, `tokens`, `contracts`, `docs`, `types`, `showcase-registry`, `bench`, `release`) and three Showcase export jobs (`web`, `android`, `ios`) start concurrently. The required `verify` status is only a lightweight fan-in aggregator after those lanes finish.
+
+The old top-level CI sequence `pnpm typecheck` followed by `pnpm test` is deliberately decomposed across these lanes. All constituent checks remain covered, but the critical path is now the slowest lane rather than the sum of all checks. Classifier/topology contract tests live in the `contracts` lane instead of delaying `classify`.
 
 Once `classify` resolves the native graph, it fans out additional independent work:
 
@@ -18,6 +20,8 @@ Once `classify` resolves the native graph, it fans out additional independent wo
 - `ios-bare`: independently prepares the packed bare-RN consumer and compiles iOS.
 
 None of those four jobs depends on another native job. On a native-sensitive change the two macOS compiles therefore run concurrently rather than serially inside one `ios-native` job.
+
+At repository level, the ordinary PR startup topology is shaped around the 20-job hosted concurrency budget. Core/required work plus three initial Expo-consumer jobs fills that budget; additional native work becomes ready as `classify` finishes and enters available slots. This keeps runner capacity saturated without making extra optional jobs compete unnecessarily with required checks at the initial scheduling boundary.
 
 ## Pull-request policy
 
@@ -53,4 +57,4 @@ The bare React Native and Expo consumers are independently recreated in each par
 
 ## Maintenance rule
 
-Keep the classifier conservative and the graph dependency-minimal. A job may depend on another job only when it consumes that job's result or artifact; do not serialize merely to reuse an ephemeral workspace. Prefer an extra parallel hosted job over an avoidable critical-path dependency, while keeping total concurrency within the GitHub account limits.
+Keep the classifier conservative and the graph dependency-minimal. A job may depend on another job only when it consumes that job's result, is an intentional fan-in gate, or is staged specifically to respect the global concurrency budget. Do not serialize merely to reuse an ephemeral workspace. Prefer an extra parallel hosted job over an avoidable critical-path dependency while keeping total concurrency within GitHub account limits.
