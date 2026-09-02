@@ -13,13 +13,15 @@ const PUBLIC_ROOTS = [
 ];
 
 const FORBIDDEN_PUBLIC_DISTRIBUTION = [
-  /\bnpm\s+(?:install|i)\s+@beemvp\/beeui-/g,
-  /\bpnpm\s+add\s+@beemvp\/beeui-/g,
-  /\byarn\s+add\s+@beemvp\/beeui-/g,
-  /\bbun\s+add\s+@beemvp\/beeui-/g,
-  /\bnpx\s+@beemvp\/beeui-cli\b/g,
-  /\bpnpm\s+dlx\s+@beemvp\/beeui-cli\b/g,
+  /\bnpm\s+(?:install|i)\s+@beemvp\/beeui-[a-z0-9-]+/i,
+  /\bpnpm\s+add\s+@beemvp\/beeui-[a-z0-9-]+/i,
+  /\byarn\s+add\s+@beemvp\/beeui-[a-z0-9-]+/i,
+  /\bbun\s+add\s+@beemvp\/beeui-[a-z0-9-]+/i,
+  /\bnpx\s+@beemvp\/beeui-cli\b/i,
+  /\bpnpm\s+dlx\s+@beemvp\/beeui-cli\b/i,
 ];
+
+const NEGATED_COMMAND_CONTEXT = /\b(?:do not|don't|not available|unavailable|unpublished|not published|must not|never)\b/i;
 
 function walkTextFiles(target) {
   const stat = fs.statSync(target);
@@ -33,21 +35,29 @@ function walkTextFiles(target) {
     });
 }
 
+function availableCommandOnLine(line, pattern) {
+  const match = pattern.exec(line);
+  if (!match) return null;
+  if (NEGATED_COMMAND_CONTEXT.test(line)) return null;
+  return match[0];
+}
+
 export function collectPublicTruthViolations(rootDir = ROOT_DIR) {
   const violations = [];
   const files = PUBLIC_ROOTS.flatMap((relative) => walkTextFiles(path.join(rootDir, relative)));
 
   for (const file of files) {
     const relative = path.relative(rootDir, file).replaceAll(path.sep, '/');
-    const text = fs.readFileSync(file, 'utf8');
+    const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
 
-    for (const pattern of FORBIDDEN_PUBLIC_DISTRIBUTION) {
-      pattern.lastIndex = 0;
-      const match = pattern.exec(text);
-      if (match) {
-        violations.push(`${relative}: public output contains unavailable registry command ${JSON.stringify(match[0])}.`);
+    lines.forEach((line, index) => {
+      for (const pattern of FORBIDDEN_PUBLIC_DISTRIBUTION) {
+        const command = availableCommandOnLine(line, pattern);
+        if (command) {
+          violations.push(`${relative}:${index + 1}: public output contains unavailable registry command ${JSON.stringify(command)}.`);
+        }
       }
-    }
+    });
   }
 
   const demoPath = path.join(rootDir, 'apps/demo/README.md');
