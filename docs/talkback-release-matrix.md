@@ -101,7 +101,7 @@ record"). Record results in the "Evidence record log" below.
 | 9 | Table / DataTable | Swipe through table rows; activate a sort-header trigger | Each cell announces its composed "`<column>`: `<value>`" label in row-then-column traversal order; the sort trigger announces its updated state after activation | Row "Table / DataTable" — **Android-specific proof (traversal order)** |
 | 10 | Calendar / date-time controls | Open a date/time control; swipe through day cells; navigate months | Each day cell announces the full date plus today/selected/disabled state; month navigation triggers a spoken announcement without an extra swipe | Row "Calendar / date-time controls" |
 | 11 | Settings/list rows | Swipe through a `ListGroup`/`SettingsItem` list | Each row announces its full composed label; list traversal order matches visual order | Row "Settings/list rows" — **Android-specific proof (traversal order)** |
-| 12 | Production-demo navigation | *(deferred — no production-demo surface exists yet in this repo; add rows here once one exists, before RC freeze, per #148's DoD)* | — | Deferred |
+| 12 | Production-demo navigation | *(deferred — the production demo (`apps/demo`, #258–#263) now exists, but on-device TalkBack acceptance of its flows is owner-gated RC (#248/#249), not run here)* | — | Deferred |
 
 ### What each checklist run must record
 

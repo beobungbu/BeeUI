@@ -224,11 +224,11 @@ Emulator / device) is required to produce a real `measured` native result.
 
 ## 7. Production-demo observations
 
-None yet. The production-demo work (`#258`-`#263`, roadmap R10) has not
-started — `docs/roadmap.md` lists it as future, unstarted work. This report
-makes no production-demo performance claim; when that work lands, its
-observations belong here as a new dated section, not folded into the
-component-lane numbers above.
+None yet. The production demo (`#258`-`#263`, roadmap R10) has landed
+(`apps/demo`), but its runtime performance has not been separately measured —
+this report makes no production-demo performance claim. When demo-specific
+performance measurement is taken, its observations belong here as a new dated
+section, not folded into the component-lane numbers above.
 
 ## Regression policy
 
