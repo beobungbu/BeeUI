@@ -83,8 +83,9 @@ jobs:
           # handful of Unicode symbols through GNU Unifont. Installing only that
           # missing font keeps glyph selection deterministic without repeating
           # Playwright's full apt dependency provisioning on every warm-cache run.
+          # The package install already triggers fontconfig, so a second global
+          # `fc-cache -f` pass would only add several seconds to every shard.
           sudo apt-get install -y --no-install-recommends fonts-unifont
-          fc-cache -f
           pnpm --dir apps/visual-regression exec playwright install chromium
 
       - name: Report visual browser versions
