@@ -30,11 +30,28 @@ body {
 }
 
 /*
- * The Table production fixture intentionally uses the Unicode wastebasket
- * character as visible IconButton content. Force its text presentation so
- * screenshot rendering cannot flip between a monochrome symbol and a color
- * emoji when the hosted runner's optional system-font packages differ.
+ * The Table production fixture uses an accessible IconButton for Delete, but
+ * its legacy visible child is a Unicode emoji whose glyph depends on whatever
+ * system emoji fonts a hosted runner happens to have installed. Hide only the
+ * generated Button label and draw the fixture icon from deterministic CSS
+ * geometry instead. The button keeps its aria-label and touch target; visual
+ * evidence no longer depends on apt-installed fonts.
  */
 [aria-label^='Delete '] {
-  font-variant-emoji: text;
+  color: var(--color-foreground);
+  position: relative;
+}
+
+[aria-label^='Delete '] > * {
+  display: none !important;
+}
+
+[aria-label^='Delete ']::before {
+  background-color: currentColor;
+  content: '';
+  display: block;
+  height: 14px;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M5 2h6l1 2h3v2H1V4h3l1-2Zm-1 5h8l-.7 7H4.7L4 7Zm2 1v4h1V8H6Zm3 0v4h1V8H9Z'/%3E%3C/svg%3E") center / contain no-repeat;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M5 2h6l1 2h3v2H1V4h3l1-2Zm-1 5h8l-.7 7H4.7L4 7Zm2 1v4h1V8H6Zm3 0v4h1V8H9Z'/%3E%3C/svg%3E") center / contain no-repeat;
+  width: 14px;
 }
