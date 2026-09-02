@@ -9,13 +9,15 @@ const repoRoot = path.resolve(testDir, '../..');
 
 const workflowPath = path.join(repoRoot, '.github/workflows/ci.yml');
 const bareScriptPath = path.join(repoRoot, 'scripts/verify-bare-consumer.sh');
+const expoScriptPath = path.join(repoRoot, 'scripts/verify-expo-consumer.sh');
 
 async function sources() {
-  const [workflow, bareScript] = await Promise.all([
+  const [workflow, bareScript, expoScript] = await Promise.all([
     readFile(workflowPath, 'utf8'),
     readFile(bareScriptPath, 'utf8'),
+    readFile(expoScriptPath, 'utf8'),
   ]);
-  return { workflow, bareScript };
+  return { workflow, bareScript, expoScript };
 }
 
 test('Showcase iOS build keeps persistent keyed DerivedData and Xcode compilation caching enabled', async () => {
@@ -161,4 +163,25 @@ test('nightly remains an isolated pristine full-native backstop', async () => {
     workflow,
     /group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.event_name \}\}-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}/,
   );
+});
+
+test('Expo independent-consumer iOS build installs pods directly (no Gemfile/Bundler) and still runs a real simulator compile', async () => {
+  const { expoScript } = await sources();
+
+  // Expo SDK 57 prebuild does not emit a Gemfile in the isolated consumer, so
+  // the iOS harness must never invoke Bundler (regression: the CocoaPods step
+  // failed with "Could not locate Gemfile"). Anchor to command position so the
+  // explanatory comment referencing Bundler does not trip these assertions.
+  assert.doesNotMatch(expoScript, /\n\s*bundle install\b/);
+  assert.doesNotMatch(expoScript, /\n\s*bundle exec\b/);
+
+  // It installs CocoaPods directly on PATH, mirroring ci.yml's canonical macOS
+  // pod flow, and pins the Node binary for the RN/Expo Xcode build phases.
+  assert.match(expoScript, /\n\s*pod install\b/);
+  assert.match(expoScript, /\.xcode\.env\.local/);
+  assert.match(expoScript, /NODE_BINARY/);
+
+  // The iOS path must still perform a real simulator compile — not an Expo JS
+  // export, not a skipped/soft-failed step.
+  assert.match(expoScript, /xcodebuild[\s\S]*-sdk iphonesimulator[\s\S]*\n\s*build\b/);
 });

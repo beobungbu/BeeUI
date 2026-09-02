@@ -343,10 +343,25 @@ build_ios() {
   echo "::endgroup::"
 
   cd ios
-  bundle install
-  bundle exec pod install
 
-  local workspace scheme
+  # Canonical BeeUI CI CocoaPods flow (mirrors .github/workflows/ci.yml's iOS
+  # native job): github-hosted macOS ships `pod` on PATH as a gem, and the
+  # Expo-prebuilt consumer contains NO Gemfile, so install pods directly rather
+  # than through Bundler, which previously failed here with "Could not locate
+  # Gemfile" because Expo SDK 57 prebuild does not generate one.
+  pod install
+
+  # Pin the Node executable for the React Native / Expo Xcode build phases,
+  # matching ci.yml's `.xcode.env.local` pattern, so the "Bundle React Native
+  # code and images" phase resolves node deterministically instead of guessing.
+  local workspace scheme node_binary
+  node_binary="$(command -v node)"
+  test -n "${node_binary}"
+  if [ -n "${NODE_VERSION:-}" ]; then
+    test "$(node --version)" = "v${NODE_VERSION}"
+  fi
+  printf 'export NODE_BINARY="%s"\n' "${node_binary}" > .xcode.env.local
+
   workspace="$(find . -maxdepth 1 -type d -name '*.xcworkspace' -print -quit)"
   test -n "${workspace}" || { echo "No generated .xcworkspace found after pod install."; exit 1; }
   scheme="beeuiexpoconsumersmoke"
