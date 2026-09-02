@@ -273,11 +273,21 @@ jobs:
           test "${{ needs.verify-lane.result }}" = "success"
           test "${{ needs.showcase-bundle.result }}" = "success"
 
+  # Keep one long macOS proof (ios-bare) eligible immediately after classify.
+  # Stage the other native jobs behind Showcase exports so the initial global
+  # demand stays within the hosted 20-job budget and required checks are not
+  # randomly displaced. `always()` preserves native diagnostics even if an
+  # export fails; showcase-bundle is a scheduling barrier, not a correctness
+  # prerequisite for these native jobs.
   bare-bundle:
-    needs: [classify]
+    needs: [classify, showcase-bundle]
     if: >
-      needs.classify.outputs.package-boundary-required == 'true' ||
-      needs.classify.outputs.bare-native-required == 'true'
+      always() &&
+      needs.classify.result == 'success' &&
+      (
+        needs.classify.outputs.package-boundary-required == 'true' ||
+        needs.classify.outputs.bare-native-required == 'true'
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -316,8 +326,11 @@ jobs:
         run: ./scripts/verify-bare-consumer.sh bundle
 
   bare-android:
-    needs: [classify]
-    if: needs.classify.outputs.bare-native-required == 'true'
+    needs: [classify, showcase-bundle]
+    if: >
+      always() &&
+      needs.classify.result == 'success' &&
+      needs.classify.outputs.bare-native-required == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -384,8 +397,11 @@ jobs:
         run: ./scripts/verify-bare-consumer.sh android-build
 
   ios-showcase:
-    needs: [classify]
-    if: needs.classify.outputs.showcase-native-required == 'true'
+    needs: [classify, showcase-bundle]
+    if: >
+      always() &&
+      needs.classify.result == 'success' &&
+      needs.classify.outputs.showcase-native-required == 'true'
     runs-on: macos-latest
     timeout-minutes: 90
     steps:
