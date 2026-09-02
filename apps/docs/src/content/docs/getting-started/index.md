@@ -3,32 +3,30 @@ title: Getting started
 description: Install BeeUI, add the provider, and render your first screen.
 ---
 
-This page is the canonical BeeUI quick start. It is accurate for the current repository
-state; platform-specific detail lives in the sibling pages linked below.
-
-:::note[Reference implementation]
-This page is BeeUI's reference example of a complete docs page: it demonstrates the
-site's navigation, code blocks, and admonitions. Other pages in this release are
-intentionally stubs — see each page for what is pending.
-:::
+This page is the canonical BeeUI quick start. It reflects the current repository release
+candidate (`20260902.0.0`); platform-specific detail lives in the sibling pages linked below.
 
 ## Choose your platform
 
 - **[Expo](/getting-started/expo/)** — the fastest path; BeeUI's own Showcase app runs on Expo SDK 57.
-- **[Bare React Native](/getting-started/bare-react-native/)** — no Expo runtime dependency.
+- **[Bare React Native](/getting-started/bare-react-native/)** — use BeeUI in a native application with the supported React Native toolchain.
 - **[Web](/getting-started/web/)** — React Native Web through Expo's web target or a standalone bundler.
 
 ## Install
 
-BeeUI ships as source-consumed workspace packages today; publication to npm is a
-release-gated milestone, not yet available. Until BeeUI 1.0 publishes, consume BeeUI
-through a pnpm workspace (this repository) or the source-ownership CLI described in
+Public npm publication is still owner-gated, so `@beemvp/beeui-ui` is not yet a public
+consumer install contract. Until publication completes, use BeeUI from this repository's
+pnpm workspace or follow the source-ownership workflow in
 [CLI & source ownership](/cli/).
 
 ```bash
 corepack enable
 pnpm install --frozen-lockfile
 ```
+
+After the npm publication gate closes, this page will promote the public package install
+command as the primary consumer path. Until then, the repository and Showcase are the
+canonical executable surfaces.
 
 ## Add the provider and own your safe areas
 
@@ -79,5 +77,6 @@ pnpm test
 ## Next steps
 
 - [Theming](/theming/) to apply your brand's tokens and choose a density.
-- [Components](/components/) for the full component catalog.
+- [Components](/components/) for the component catalog and public API guidance.
+- [Showcase & preview](/showcase/) to inspect the real cross-platform implementation.
 - [Compatibility](/compatibility/) to confirm your React Native/React/Node versions are supported.
