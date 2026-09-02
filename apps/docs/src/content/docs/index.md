@@ -1,43 +1,115 @@
 ---
 title: BeeUI
-description: >-
-  BeeUI is a production-oriented, accessibility-first React Native UI system
-  for Expo, bare React Native, and Web.
+description: Production-oriented React Native components and patterns for Expo, bare React Native, and Web.
+template: splash
+hero:
+  title: Build native product UI without rebuilding the system.
+  tagline: BeeUI is a typed, accessibility-first React Native UI system for Expo, bare React Native, and Web — with reusable primitives, production patterns, and deterministic verification.
+  actions:
+    - text: Get started
+      link: /getting-started/
+      icon: right-arrow
+      variant: primary
+    - text: Browse components
+      link: /components/
+      variant: secondary
+    - text: View on GitHub
+      link: https://github.com/beobungbu/BeeUI
+      icon: external
+      variant: minimal
 ---
 
-BeeUI is a production-oriented React Native UI system written in TypeScript. It is
-mobile-first, framework-light, and designed for long-lived client applications.
-Stable behavior, semantic, and variant APIs do not require callers to know the
-underlying styling engine.
+<div class="bee-status" role="status">
+  <div>
+    <span class="bee-kicker">Current repository release candidate</span>
+    <strong>20260902.0.0</strong>
+  </div>
+  <p>Public npm publication is still owner-gated. Use the repository and Showcase as the source of truth until the package is published.</p>
+</div>
 
-:::caution[Site status]
-This site is being filled in incrementally. Per-component API reference, executable
-examples, the production pattern library, and the Web Showcase/native preview workflow are
-in place (see [Showcase & preview](/showcase/)); some pages remain stubs pending their
-follow-up content and say so explicitly.
-:::
+<section class="bee-section">
+  <div class="bee-section-heading">
+    <span class="bee-kicker">Start with the path you need</span>
+    <h2>From first render to production screen</h2>
+    <p>BeeUI keeps consumer onboarding close to the component catalog while moving maintainer and release internals deeper into the docs.</p>
+  </div>
 
-## Where to start
+  <div class="bee-card-grid">
+    <a class="bee-card" href="/getting-started/">
+      <span class="bee-card-index">01</span>
+      <h3>Get started</h3>
+      <p>Choose Expo, bare React Native, or Web, add the provider, and establish explicit safe-area ownership.</p>
+      <span class="bee-card-link">Installation & setup →</span>
+    </a>
+    <a class="bee-card" href="/components/">
+      <span class="bee-card-index">02</span>
+      <h3>Build with components</h3>
+      <p>Browse typed primitives across layout, forms, selection, navigation, overlays, feedback, and data display.</p>
+      <span class="bee-card-link">Component catalog →</span>
+    </a>
+    <a class="bee-card" href="/patterns/">
+      <span class="bee-card-index">03</span>
+      <h3>Compose real products</h3>
+      <p>Use 37 production screens as compositional evidence instead of treating isolated component demos as the finish line.</p>
+      <span class="bee-card-link">Production patterns →</span>
+    </a>
+    <a class="bee-card" href="/showcase/">
+      <span class="bee-card-index">04</span>
+      <h3>Inspect the Showcase</h3>
+      <p>Run the same public contract on Web, iOS, and Android, including theme, localization, Dynamic Type, and runtime stress fixtures.</p>
+      <span class="bee-card-link">Preview & QA →</span>
+    </a>
+  </div>
+</section>
 
-- **[Getting started](/getting-started/)** — install BeeUI and choose your platform: Expo, bare React Native, or Web.
-- **[Showcase & preview](/showcase/)** — run the real component and pattern surface on Web, and preview it natively on iOS and Android.
-- **[Theming](/theming/)** — tokens, branding, and density.
-- **[Components](/components/)** — the component catalog, including Table and Calendar/date-time.
-- **[Patterns](/patterns/)** — production screen patterns built from BeeUI primitives.
-- **[Accessibility](/accessibility/)** — RTL, large text, and assistive-technology behavior.
-- **[CLI & source ownership](/cli/)** — the BeeUI registry CLI for source-owned components.
-- **[Compatibility](/compatibility/)** — supported React Native/React/Node/Expo/Web versions.
-- **[Migration & versioning](/migration/)** — upgrade paths and semver policy.
-- **[Troubleshooting](/troubleshooting/)** — common setup and runtime problems.
-- **[Performance](/performance/)** — benchmarks, budgets, and footprint.
-- **[Release & security](/release-security/)** — release process and how to report vulnerabilities.
+<section class="bee-section bee-section-split">
+  <div class="bee-section-heading">
+    <span class="bee-kicker">Designed for long-lived apps</span>
+    <h2>Stable contracts above styling details</h2>
+  </div>
+  <div class="bee-principles">
+    <div>
+      <strong>Mobile-first</strong>
+      <p>Native ergonomics, safe areas, keyboards, large text, RTL, and platform behavior are first-class constraints.</p>
+    </div>
+    <div>
+      <strong>Semantic by default</strong>
+      <p>Reusable APIs depend on semantic tokens and typed variants instead of literal brand values or styling-engine knowledge.</p>
+    </div>
+    <div>
+      <strong>Accessible behavior</strong>
+      <p>Interaction contracts are exercised with deterministic tests and dedicated native/runtime acceptance paths.</p>
+    </div>
+    <div>
+      <strong>Source ownership when useful</strong>
+      <p>Use package APIs for stable consumption or the Registry/CLI path when an application needs to own and adapt source.</p>
+    </div>
+  </div>
+</section>
 
-## Current foundation
+<section class="bee-section">
+  <div class="bee-section-heading">
+    <span class="bee-kicker">Explore the system</span>
+    <h2>Everything needed beyond the happy path</h2>
+  </div>
+  <div class="bee-link-grid">
+    <a href="/theming/"><strong>Theming</strong><span>Tokens, branding, density, light/dark and high contrast.</span></a>
+    <a href="/accessibility/"><strong>Accessibility</strong><span>RTL, localization, large text, zoom and assistive technology.</span></a>
+    <a href="/compatibility/"><strong>Compatibility</strong><span>React Native, React, Expo, Node and Web support boundaries.</span></a>
+    <a href="/cli/"><strong>CLI & source ownership</strong><span>Registry workflows for source-owned components.</span></a>
+    <a href="/performance/"><strong>Performance</strong><span>Budgets, measurement and footprint evidence.</span></a>
+    <a href="/troubleshooting/"><strong>Troubleshooting</strong><span>Setup, bundling and runtime failure modes.</span></a>
+  </div>
+</section>
 
-BeeUI currently includes React Native + TypeScript packages (`@beemvp/beeui-core`, `@beemvp/beeui-tokens`,
-`@beemvp/beeui-ui`), Uniwind + Tailwind CSS v4 styling, semantic light/dark design tokens, explicit
-safe-area ownership, broad layout/typography/form/selection/navigation/disclosure/overlay/feedback
-coverage, and a repository-local Registry + source-ownership CLI.
-
-Source of truth for the exact current component inventory and the BeeUI 1.0 release plan lives
-in the repository's `docs/components.md` and `docs/roadmap.md`.
+<section class="bee-section bee-maintainers">
+  <div>
+    <span class="bee-kicker">Maintainers</span>
+    <h2>Release evidence stays visible without dominating consumer onboarding.</h2>
+  </div>
+  <div class="bee-maintainer-links">
+    <a href="/migration/">Migration & versioning →</a>
+    <a href="/release-security/">Release & security →</a>
+    <a href="https://github.com/beobungbu/BeeUI/blob/main/docs/roadmap.md">Production-readiness roadmap →</a>
+  </div>
+</section>
