@@ -3,8 +3,13 @@ name: native-runtime-smoke
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
+  push:
+    branches:
+      - main
+  # Weekly clean-environment backstop. Exact main pushes already run the same
+  # simulator/emulator proof, so a nightly duplicate is unnecessary.
   schedule:
-    - cron: '17 3 * * *'
+    - cron: '17 3 * * 1'
   workflow_dispatch:
 
 concurrency:
@@ -22,19 +27,17 @@ env:
   MAESTRO_VERSION: 2.7.0
   XCODE_MIN_VERSION: '26.4'
   BEEUI_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-  BEEUI_RUNTIME_EXPECTED_BASE: ${{ github.event_name == 'pull_request' && github.head_ref == 'test/runtime-device-smoke' && '292b850bf7402bdf2fa3878cc80c4551f8ffd843' || '' }}
 
 jobs:
   ios-runtime:
-    # Same-repository check is defense-in-depth on top of the head_ref/label
-    # gate below: a fork branch can reuse the magic branch name, and a
-    # maintainer can accidentally label a fork PR; neither may enter the
-    # hosted runtime path.
+    # Main pushes, weekly/manual runs, and explicitly requested PR runtime
+    # checks run on isolated GitHub-hosted macOS VMs. The PR label/head-ref
+    # gate controls latency/concurrency, not trust of a persistent machine.
     if: >-
+      github.event_name == 'push' ||
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' &&
-        github.event.pull_request.head.repo.full_name == github.repository &&
         (github.head_ref == 'test/runtime-device-smoke' || contains(github.event.pull_request.labels.*.name, 'ci:runtime')))
     runs-on: macos-latest
     timeout-minutes: 90
@@ -116,13 +119,9 @@ jobs:
           key: pods-macos-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pods-macos-
 
-      - name: Cache Xcode DerivedData
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: ~/Library/Developer/Xcode/DerivedData
-          key: dd-macos-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: dd-macos-
-
+      # DerivedData is deliberately not stored in Actions cache. Runtime smoke
+      # builds into a custom job-local path; caching multi-GB compiler output
+      # would compete with the repository's finite cache quota for low reuse.
       - name: Cache Maestro CLI
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
@@ -148,15 +147,14 @@ jobs:
           retention-days: 7
 
   android-runtime:
-    # Same-repository check is defense-in-depth on top of the head_ref/label
-    # gate below: a fork branch can reuse the magic branch name, and a
-    # maintainer can accidentally label a fork PR; neither may enter the
-    # hosted runtime path.
+    # Same trigger policy as iOS: exact main, weekly/manual, or explicit PR
+    # runtime verification. GitHub-hosted Linux is ephemeral and untrusted PR
+    # code receives only the read-only token declared above.
     if: >-
+      github.event_name == 'push' ||
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' &&
-        github.event.pull_request.head.repo.full_name == github.repository &&
         (github.head_ref == 'test/runtime-device-smoke' || contains(github.event.pull_request.labels.*.name, 'ci:runtime')))
     runs-on: ubuntu-latest
     timeout-minutes: 90
