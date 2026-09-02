@@ -5,13 +5,8 @@ on:
   push:
     branches:
       - main
-  # #137: weekly recurring re-verification of the independent Web consumer
-  # contract (#136) even on weeks with no PR/push activity touching it —
-  # every run already installs fresh (BEEUI_WEB_CONSUMER_CLEAN below), so
-  # this catches drift from outside this repo's own commits (e.g. a
-  # `vite-plugin-rnw`/Vite/Playwright-Chromium update). Offset from the other
-  # nightly compatibility crons (ci.yml 47 2 * * *, runtime-native.yml
-  # 17 3 * * *, compat-rn-0-87.yml 52 3 * * *).
+  # Weekly recurring re-verification of the independent Web consumer contract
+  # catches drift from dependencies/tooling even when BeeUI itself is idle.
   schedule:
     - cron: '22 4 * * 1'
   workflow_dispatch:
@@ -36,11 +31,8 @@ env:
 
 jobs:
   web-consumer:
-    # Same-repository PR guard: this verification path intentionally excludes
-    # fork PRs; push/schedule/manual events are repository-controlled.
-    if: >
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+    # Standard GitHub-hosted runners are isolated/ephemeral. With a read-only
+    # token and no secrets, this required check can safely run for fork PRs.
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
