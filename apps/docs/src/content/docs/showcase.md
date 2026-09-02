@@ -18,11 +18,11 @@ the app owns no router):
 - **Runtime / Dynamic Type / Localization stress** — deterministic fixtures for native
   runtime QA, large-text scaling, and RTL/long-content localization.
 
-:::caution[Unpublished status]
-BeeUI is pre-1.0 and unpublished. No `@beemvp/beeui-*` package or the `beeui` CLI is on npm, and
-there is no `v1.0.0` tag or GitHub Release. The Showcase is built from in-repo workspace
-source; it never runs `npm install @beemvp/beeui-ui`. Its home screen shows this status inline
-next to the build identity.
+:::caution[Publication status]
+The current repository release candidate is `20260902.0.0`, but public npm publication is
+still owner-gated. The Showcase is therefore built from in-repo workspace source; it does not
+pretend that `npm install @beemvp/beeui-ui` is available before the publication gate closes.
+Its build identity exists so any deployed preview can be traced to an exact revision.
 :::
 
 ## Prerequisites
