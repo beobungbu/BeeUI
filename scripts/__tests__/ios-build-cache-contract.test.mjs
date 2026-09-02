@@ -251,11 +251,15 @@ test('runtime smoke avoids multi-GB AVD cache and separates concurrency event cl
   assert.match(runtimeWorkflow, /force-avd-creation: true/);
 });
 
-test('runtime common flow scrolls the first home launcher into view before tapping it', async () => {
+test('runtime common flow scrolls and retries verified first-home navigation', async () => {
   const { runtimeCommonFlow } = await sources();
-  const componentsIndex = runtimeCommonFlow.indexOf('id: "showcase-open-components"');
-  const firstTapIndex = runtimeCommonFlow.indexOf('- tapOn:\n    id: "showcase-open-components"');
   const scrollIndex = runtimeCommonFlow.indexOf('- scrollUntilVisible:\n    element:\n      id: "showcase-open-components"');
-  assert.ok(componentsIndex >= 0);
-  assert.ok(scrollIndex >= 0 && scrollIndex < firstTapIndex);
+  const firstLauncherIdIndex = runtimeCommonFlow.indexOf('id: "showcase-open-components"');
+  const retryIndex = runtimeCommonFlow.indexOf('- retry:', firstLauncherIdIndex);
+  const tapLauncherIdIndex = runtimeCommonFlow.indexOf('id: "showcase-open-components"', firstLauncherIdIndex + 1);
+  const destinationIndex = runtimeCommonFlow.indexOf('id: "component-gallery"', tapLauncherIdIndex);
+  assert.ok(scrollIndex >= 0);
+  assert.ok(scrollIndex < retryIndex);
+  assert.ok(retryIndex < tapLauncherIdIndex);
+  assert.ok(tapLauncherIdIndex < destinationIndex);
 });
