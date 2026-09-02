@@ -21,11 +21,8 @@ env:
 
 jobs:
   web-a11y:
-    # Same-repository PR guard: this verification path intentionally excludes
-    # fork PRs; push events are always repository-controlled.
-    if: >
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+    # Standard GitHub-hosted runners are isolated/ephemeral. With a read-only
+    # token and no secrets, this required check can safely run for fork PRs.
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -78,15 +75,13 @@ jobs:
 
       # Uploaded on every run (not just failure): the JSON/HTML detail is the
       # actionable artifact issue #145 requires, and a passing run's report
-      # still records per-scenario allowlisted/non-blocking findings for
-      # review.
+      # still records per-scenario allowlisted/non-blocking findings for review.
       - name: Upload accessibility audit report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: web-a11y-report-${{ github.event.pull_request.head.sha || github.sha }}
-          path: |
-            apps/visual-regression/a11y-report
+          path: apps/visual-regression/a11y-report
           if-no-files-found: warn
           retention-days: 14
 
