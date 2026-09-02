@@ -13,6 +13,13 @@ function write(relative, content) {
   fs.writeFileSync(path.join(ROOT, relative), content.endsWith('\n') ? content : `${content}\n`);
 }
 
+function replaceRequired(relative, from, to) {
+  const current = read(relative);
+  if (current.includes(to)) return;
+  if (!current.includes(from)) throw new Error(`${relative}: expected text not found: ${from.slice(0, 120)}`);
+  write(relative, current.replace(from, to));
+}
+
 // #407 supersedes the old package-version examples for the current BeeUI 1.0
 // product milestone. Keep the two-channel dist-tag model, but make every
 // operational version example agree with the owner-selected date version.
@@ -23,7 +30,6 @@ function write(relative, content) {
   content = content.replaceAll('`1.0.0-rc.1`', '`20260902.0.0-rc.1`');
   content = content.replaceAll('`1.0.0-rc.2`', '`20260902.0.0-rc.2`');
   content = content.replaceAll('`1.0.0`', `\`${VERSION}\``);
-  content = content.replaceAll('`rc.1`, `rc.2`, …', '`rc.1`, `rc.2`, …');
   content = content.replace(
     '## Prerelease versioning\n',
     `## Prerelease versioning\n\n> **2026-09-02 owner decision (#407):** BeeUI 1.0 remains the product milestone name, while npm artifacts use the date-version label \`20260902\`, encoded as SemVer \`${VERSION}\`. If a prerelease is needed for this release line, use \`${RC_VERSION}\`. This supersedes the earlier operational \`1.0.0[-rc.N]\` package-version examples.\n\n`,
@@ -54,5 +60,14 @@ function write(relative, content) {
   );
   write(relative, content);
 }
+
+// The release verifier previously encoded the old 0.x era as a hard invariant.
+// #407 changes the package-version authority, so keep the check strict but bind
+// it to the exact owner-selected version instead of accepting only /^0.x.y$/.
+replaceRequired(
+  'scripts/verify-release.mjs',
+  "  assert(typeof rootVersion === 'string' && /^0\\.\\d+\\.\\d+$/.test(rootVersion), 'workspace uses a pre-1.0 semver version', rootVersion);",
+  `  assert(rootVersion === '${VERSION}', 'workspace uses the owner-approved release version', rootVersion);`,
+);
 
 console.log(`Reconciled operational release policy to ${VERSION}.`);
