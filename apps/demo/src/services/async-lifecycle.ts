@@ -70,7 +70,6 @@ export function useAsync<T>(
         const error = caught instanceof Error ? caught : new Error(String(caught));
         setState({ status: 'error', data: undefined, error });
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `deps` is caller-supplied by design (mirrors useEffect's own contract).
   }, []);
 
   React.useEffect(() => {

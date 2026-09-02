@@ -7,9 +7,9 @@ STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is
 BeeUI ships 62 public component modules from `@beemvp/beeui-ui` plus a semantic design-token contract (`@beemvp/beeui-tokens`) and engine-neutral helpers (`@beemvp/beeui-core`). It owns UI only: no router, data-fetching, backend, auth, form-library, or chart framework. Two consumption models coexist — centralized packages and file-level source ownership.
 
 ## Packages
-- `@beemvp/beeui-core` v0.1.0 — Engine-neutral utilities (class-name merging, anchored-overlay geometry) shared by @beemvp/beeui-ui. No React, React Native, or Expo dependency. [unpublished (publishConfig.access=public prepared)] ([packages/core/package.json](packages/core/package.json))
-- `@beemvp/beeui-tokens` v0.1.0 — BeeUI's design-token system: semantic color/spacing/typography/motion contracts and the canonical Uniwind/Tailwind theme CSS. [unpublished (publishConfig.access=public prepared)] ([packages/tokens/package.json](packages/tokens/package.json))
-- `@beemvp/beeui-ui` v0.1.0 — Typed React Native + Web components built on @beemvp/beeui-core and @beemvp/beeui-tokens, styled through Uniwind/Tailwind. [unpublished (publishConfig.access=public prepared)] ([packages/ui/package.json](packages/ui/package.json))
+- `@beemvp/beeui-core` v20260902.0.0 — Engine-neutral utilities (class-name merging, anchored-overlay geometry) shared by @beemvp/beeui-ui. No React, React Native, or Expo dependency. [unpublished (publishConfig.access=public prepared)] ([packages/core/package.json](packages/core/package.json))
+- `@beemvp/beeui-tokens` v20260902.0.0 — BeeUI's design-token system: semantic color/spacing/typography/motion contracts and the canonical Uniwind/Tailwind theme CSS. [unpublished (publishConfig.access=public prepared)] ([packages/tokens/package.json](packages/tokens/package.json))
+- `@beemvp/beeui-ui` v20260902.0.0 — Typed React Native + Web components built on @beemvp/beeui-core and @beemvp/beeui-tokens, styled through Uniwind/Tailwind. [unpublished (publishConfig.access=public prepared)] ([packages/ui/package.json](packages/ui/package.json))
 
 ## Install (both models, targets are unpublished)
 - Centralized (release-ready target, NOT yet on npm): `npm i @beemvp/beeui-ui @beemvp/beeui-core @beemvp/beeui-tokens`, then `import { Button } from '@beemvp/beeui-ui'` and wire the Web theme via `@import '@beemvp/beeui-tokens/theme.css'`. See [docs/decisions/011-distribution-architecture.md](docs/decisions/011-distribution-architecture.md).

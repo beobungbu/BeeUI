@@ -442,6 +442,9 @@ function useMeasuredOverlayHost(
   }, []);
   const overridden = React.useMemo(
     () => (hostRectOverride ? finiteRect(hostRectOverride) : null),
+    // Intentionally track scalar geometry rather than caller object identity: a new
+    // object with identical coordinates must not retire/restart native measurement.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [hostRectOverride?.height, hostRectOverride?.width, hostRectOverride?.x, hostRectOverride?.y],
   );
 

@@ -204,7 +204,7 @@ export function Tooltip(props: TooltipProps) {
         setOpen(false);
       }, closeDelay);
     },
-    [clearOpenTimer, closeDelay, setOpen],
+    [clearCloseTimer, clearOpenTimer, closeDelay, setOpen],
   );
 
   const cancelPendingOpen = React.useCallback(() => {

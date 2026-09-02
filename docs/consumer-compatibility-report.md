@@ -5,7 +5,7 @@
 > passed**.
 > **Snapshot:** 2026-08-31
 > **Packages under test:** `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui` (one lockstep group;
-> candidate version `0.1.0` today — the eventual `1.0.0` candidate is owner-gated at
+> candidate version `20260902.0.0` today — publication of that exact version is owner-gated at
 > [#254](https://github.com/beobungbu/BeeUI/issues/254)).
 
 This report consolidates compatibility that is **actually proven** by the clean-consumer
@@ -122,7 +122,7 @@ This is what mechanically prevents a peer claim here from exceeding a tested row
 {
   "published": false,
   "packageSet": ["@beemvp/beeui-core", "@beemvp/beeui-tokens", "@beemvp/beeui-ui"],
-  "candidateVersion": "0.1.0",
+  "candidateVersion": "20260902.0.0",
   "cleanConsumerScripts": [
     "scripts/verify-bare-consumer.sh",
     "scripts/verify-web-consumer.sh",

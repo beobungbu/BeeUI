@@ -823,8 +823,10 @@ export const SelectItem = React.forwardRef<React.ComponentRef<typeof Pressable>,
       [forwardedRef],
     );
 
+    const registerItem = root.registerItem;
+    const unregisterItem = root.unregisterItem;
     React.useEffect(() => {
-      root.registerItem({
+      registerItem({
         disabled: disabled === true,
         focus: () => internalRef.current?.focus?.(),
         id,
@@ -832,8 +834,8 @@ export const SelectItem = React.forwardRef<React.ComponentRef<typeof Pressable>,
         textValue: resolvedTextValue,
         value,
       });
-      return () => root.unregisterItem(id);
-    }, [disabled, id, order, resolvedTextValue, root.registerItem, root.unregisterItem, value]);
+      return () => unregisterItem(id);
+    }, [disabled, id, order, registerItem, resolvedTextValue, unregisterItem, value]);
 
     return (
       <Pressable

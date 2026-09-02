@@ -772,7 +772,8 @@ export const DropdownMenuRadioItem = React.forwardRef<
     const resolvedDisabled = disabled === true || duplicate;
     const checked = group.value === value;
 
-    React.useEffect(() => group.registerValue(value), [group.registerValue, value]);
+    const registerValue = group.registerValue;
+    React.useEffect(() => registerValue(value), [registerValue, value]);
     React.useEffect(() => {
       if (typeof __DEV__ !== 'undefined' && __DEV__ && duplicate) {
         console.warn(`BeeUI DropdownMenuRadioGroup: duplicate radio value \`${value}\` is disabled.`);
