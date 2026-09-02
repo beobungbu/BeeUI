@@ -8,6 +8,8 @@ import path from 'node:path';
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(testDir, '../..');
 const workflowPath = path.join(repoRoot, '.github/workflows/ci.yml');
+const runtimeWorkflowPath = path.join(repoRoot, '.github/workflows/runtime-native.yml');
+const expoConsumerWorkflowPath = path.join(repoRoot, '.github/workflows/expo-consumer.yml');
 const webConsumerWorkflowPath = path.join(repoRoot, '.github/workflows/web-consumer.yml');
 const webA11yWorkflowPath = path.join(repoRoot, '.github/workflows/web-a11y.yml');
 const visualWebWorkflowPath = path.join(repoRoot, '.github/workflows/visual-web.yml');
@@ -15,10 +17,13 @@ const bareScriptPath = path.join(repoRoot, 'scripts/verify-bare-consumer.sh');
 const expoScriptPath = path.join(repoRoot, 'scripts/verify-expo-consumer.sh');
 const showcasePackagePath = path.join(repoRoot, 'apps/showcase/package.json');
 const showcaseBuildPrereqPath = path.join(repoRoot, 'apps/showcase/scripts/ensure-workspace-build.mjs');
+const runtimeCommonFlowPath = path.join(repoRoot, 'apps/showcase/runtime-smoke/maestro/common.yaml');
 
 async function sources() {
   const [
     workflow,
+    runtimeWorkflow,
+    expoConsumerWorkflow,
     webConsumerWorkflow,
     webA11yWorkflow,
     visualWebWorkflow,
@@ -26,8 +31,11 @@ async function sources() {
     expoScript,
     showcasePackageRaw,
     showcaseBuildPrereq,
+    runtimeCommonFlow,
   ] = await Promise.all([
     readFile(workflowPath, 'utf8'),
+    readFile(runtimeWorkflowPath, 'utf8'),
+    readFile(expoConsumerWorkflowPath, 'utf8'),
     readFile(webConsumerWorkflowPath, 'utf8'),
     readFile(webA11yWorkflowPath, 'utf8'),
     readFile(visualWebWorkflowPath, 'utf8'),
@@ -35,9 +43,12 @@ async function sources() {
     readFile(expoScriptPath, 'utf8'),
     readFile(showcasePackagePath, 'utf8'),
     readFile(showcaseBuildPrereqPath, 'utf8'),
+    readFile(runtimeCommonFlowPath, 'utf8'),
   ]);
   return {
     workflow,
+    runtimeWorkflow,
+    expoConsumerWorkflow,
     webConsumerWorkflow,
     webA11yWorkflow,
     visualWebWorkflow,
@@ -45,6 +56,7 @@ async function sources() {
     expoScript,
     showcasePackage: JSON.parse(showcasePackageRaw),
     showcaseBuildPrereq,
+    runtimeCommonFlow,
   };
 }
 
@@ -83,15 +95,13 @@ test('verification decomposes historical typecheck/test chains into eight parall
   assert.match(workflow, /contracts\)[\s\S]*classify-ci-changes\.test\.mjs[\s\S]*ios-build-cache-contract\.test\.mjs/);
 });
 
-test('Showcase tests provision package build artifacts only when a clean checkout needs them', async () => {
+test('Showcase tests always rebuild current workspace artifacts before executing', async () => {
   const { showcasePackage, showcaseBuildPrereq } = await sources();
   assert.equal(showcasePackage.scripts.pretest, 'node ./scripts/ensure-workspace-build.mjs');
-  assert.match(showcaseBuildPrereq, /packages\/core\/dist\/module\/index\.js/);
-  assert.match(showcaseBuildPrereq, /packages\/tokens\/dist\/module\/motion-runtime\.js/);
-  assert.match(showcaseBuildPrereq, /packages\/ui\/dist\/module\/index\.js/);
-  assert.match(showcaseBuildPrereq, /packages\/ui\/dist\/typescript\/module\/index\.d\.ts/);
   assert.match(showcaseBuildPrereq, /'--filter', '@beemvp\/beeui-ui\.\.\.', 'run', 'build'/);
-  assert.match(showcaseBuildPrereq, /artifactState\.every\(Boolean\)/);
+  assert.doesNotMatch(showcaseBuildPrereq, /artifactState\.every\(Boolean\)/);
+  assert.doesNotMatch(showcaseBuildPrereq, /requiredArtifacts/);
+  assert.doesNotMatch(showcaseBuildPrereq, /from 'node:fs\/promises'/);
 });
 
 function assertPlaywrightCacheHitContract(source) {
@@ -190,4 +200,44 @@ test('Expo independent-consumer iOS harness still performs a real simulator comp
   assert.match(expoScript, /\n\s*pod install\b/);
   assert.match(expoScript, /xcodebuild[\s\S]*-sdk iphonesimulator[\s\S]*\n\s*build\b/);
   assert.match(expoScript, /xcodebuild -workspace "\$\{workspace\}" -list -json/);
+});
+
+test('runtime magic branch cannot self-trigger device smoke from a fork', async () => {
+  const { runtimeWorkflow } = await sources();
+  const guard = /github\.event\.pull_request\.head\.repo\.full_name == github\.repository\)[\s\S]*github\.head_ref == 'test\/runtime-device-smoke'/g;
+  assert.equal([...runtimeWorkflow.matchAll(guard)].length, 2);
+  assert.equal((runtimeWorkflow.match(/contains\(github\.event\.pull_request\.labels\.\*\.name, 'ci:runtime'\)/g) ?? []).length, 2);
+});
+
+test('Expo iOS native capacity is automatic only for same-repository PRs', async () => {
+  const { expoConsumerWorkflow } = await sources();
+  const iosBlock = expoConsumerWorkflow.slice(expoConsumerWorkflow.indexOf('  ios-native:'));
+  assert.match(iosBlock, /github\.event_name != 'pull_request'/);
+  assert.match(iosBlock, /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
+  assert.match(iosBlock, /contains\(github\.event\.pull_request\.labels\.\*\.name, 'ci:native'\)/);
+});
+
+test('generated Android projects use cache keys derived from checked-in inputs', async () => {
+  const { runtimeWorkflow, expoConsumerWorkflow } = await sources();
+  assert.match(runtimeWorkflow, /key: gradle-runtime-v2-\$\{\{ runner\.os \}\}-\$\{\{ hashFiles\('pnpm-lock\.yaml'/);
+  assert.match(expoConsumerWorkflow, /key: gradle-expo-v2-\$\{\{ runner\.os \}\}-\$\{\{ hashFiles\('pnpm-lock\.yaml'/);
+  assert.doesNotMatch(runtimeWorkflow, /hashFiles\('\*\*\/\*\.gradle\*'/);
+  assert.doesNotMatch(expoConsumerWorkflow, /hashFiles\('\*\*\/\*\.gradle\*'/);
+});
+
+test('runtime smoke avoids multi-GB AVD cache and separates concurrency event classes', async () => {
+  const { runtimeWorkflow, expoConsumerWorkflow } = await sources();
+  assert.match(runtimeWorkflow, /group: native-runtime-smoke-\$\{\{ github\.event_name \}\}-/);
+  assert.match(expoConsumerWorkflow, /group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.event_name \}\}-/);
+  assert.doesNotMatch(runtimeWorkflow, /Cache Android AVD/);
+  assert.match(runtimeWorkflow, /force-avd-creation: true/);
+});
+
+test('runtime common flow scrolls the first home launcher into view before tapping it', async () => {
+  const { runtimeCommonFlow } = await sources();
+  const componentsIndex = runtimeCommonFlow.indexOf('id: "showcase-open-components"');
+  const firstTapIndex = runtimeCommonFlow.indexOf('- tapOn:\n    id: "showcase-open-components"');
+  const scrollIndex = runtimeCommonFlow.indexOf('- scrollUntilVisible:\n    element:\n      id: "showcase-open-components"');
+  assert.ok(componentsIndex >= 0);
+  assert.ok(scrollIndex >= 0 && scrollIndex < firstTapIndex);
 });
