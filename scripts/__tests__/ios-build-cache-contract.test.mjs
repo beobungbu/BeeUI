@@ -8,14 +8,16 @@ import path from 'node:path';
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(testDir, '../..');
 const workflowPath = path.join(repoRoot, '.github/workflows/ci.yml');
+const webConsumerWorkflowPath = path.join(repoRoot, '.github/workflows/web-consumer.yml');
 const bareScriptPath = path.join(repoRoot, 'scripts/verify-bare-consumer.sh');
 const expoScriptPath = path.join(repoRoot, 'scripts/verify-expo-consumer.sh');
 const showcasePackagePath = path.join(repoRoot, 'apps/showcase/package.json');
 const showcaseBuildPrereqPath = path.join(repoRoot, 'apps/showcase/scripts/ensure-workspace-build.mjs');
 
 async function sources() {
-  const [workflow, bareScript, expoScript, showcasePackageRaw, showcaseBuildPrereq] = await Promise.all([
+  const [workflow, webConsumerWorkflow, bareScript, expoScript, showcasePackageRaw, showcaseBuildPrereq] = await Promise.all([
     readFile(workflowPath, 'utf8'),
+    readFile(webConsumerWorkflowPath, 'utf8'),
     readFile(bareScriptPath, 'utf8'),
     readFile(expoScriptPath, 'utf8'),
     readFile(showcasePackagePath, 'utf8'),
@@ -23,6 +25,7 @@ async function sources() {
   ]);
   return {
     workflow,
+    webConsumerWorkflow,
     bareScript,
     expoScript,
     showcasePackage: JSON.parse(showcasePackageRaw),
@@ -74,6 +77,19 @@ test('Showcase tests provision package build artifacts only when a clean checkou
   assert.match(showcaseBuildPrereq, /packages\/ui\/dist\/typescript\/module\/index\.d\.ts/);
   assert.match(showcaseBuildPrereq, /'--filter', '@beemvp\/beeui-ui\.\.\.', 'run', 'build'/);
   assert.match(showcaseBuildPrereq, /artifactState\.every\(Boolean\)/);
+});
+
+test('Web consumer skips Linux dependency provisioning on a Playwright browser cache hit', async () => {
+  const { webConsumerWorkflow } = await sources();
+  assert.match(webConsumerWorkflow, /Provision Chromium and Linux dependencies on cache miss[\s\S]*if: steps\.pw-cache\.outputs\.cache-hit != 'true'[\s\S]*playwright install --with-deps chromium/);
+  assert.match(webConsumerWorkflow, /Verify cached Chromium on cache hit[\s\S]*if: steps\.pw-cache\.outputs\.cache-hit == 'true'[\s\S]*playwright install chromium/);
+  assert.doesNotMatch(webConsumerWorkflow, /cache-hit == 'true' && '' \|\| '--with-deps'/);
+});
+
+test('Web consumer artifact upload follows the harness work-root nesting and fails closed', async () => {
+  const { webConsumerWorkflow } = await sources();
+  assert.match(webConsumerWorkflow, /path: \$\{\{ runner\.temp \}\}\/beeui-web-consumer\/web-consumer\/app\/dist/);
+  assert.match(webConsumerWorkflow, /if-no-files-found: error/);
 });
 
 test('Showcase exports run as three independent matrix jobs', async () => {
