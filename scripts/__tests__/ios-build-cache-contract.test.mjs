@@ -204,7 +204,7 @@ test('Expo independent-consumer iOS harness still performs a real simulator comp
 
 test('runtime magic branch cannot self-trigger device smoke from a fork', async () => {
   const { runtimeWorkflow } = await sources();
-  const guard = /github\.event\.pull_request\.head\.repo\.full_name == github\.repository\)[\s\S]*github\.head_ref == 'test\/runtime-device-smoke'/g;
+  const guard = /github\.event\.pull_request\.head\.repo\.full_name == github\.repository\)\s*&&\s*github\.head_ref == 'test\/runtime-device-smoke'/g;
   assert.equal([...runtimeWorkflow.matchAll(guard)].length, 2);
   assert.equal((runtimeWorkflow.match(/contains\(github\.event\.pull_request\.labels\.\*\.name, 'ci:runtime'\)/g) ?? []).length, 2);
 });
@@ -226,9 +226,10 @@ test('generated Android projects use cache keys derived from checked-in inputs',
 });
 
 test('runtime smoke avoids multi-GB AVD cache and separates concurrency event classes', async () => {
-  const { runtimeWorkflow, expoConsumerWorkflow } = await sources();
+  const { runtimeWorkflow, expoConsumerWorkflow, webConsumerWorkflow } = await sources();
   assert.match(runtimeWorkflow, /group: native-runtime-smoke-\$\{\{ github\.event_name \}\}-/);
   assert.match(expoConsumerWorkflow, /group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.event_name \}\}-/);
+  assert.match(webConsumerWorkflow, /group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.event_name \}\}-/);
   assert.doesNotMatch(runtimeWorkflow, /Cache Android AVD/);
   assert.match(runtimeWorkflow, /force-avd-creation: true/);
 });
