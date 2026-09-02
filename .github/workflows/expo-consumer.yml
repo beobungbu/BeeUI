@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -181,8 +181,10 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-expo-${{ runner.os }}-${{ hashFiles('**/*.gradle*','**/gradle-wrapper.properties') }}
-          restore-keys: gradle-expo-${{ runner.os }}-
+          # The consumer's android/ tree is generated after this step, so key
+          # from checked-in inputs that are already present at cache evaluation.
+          key: gradle-expo-v2-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'scripts/verify-expo-consumer.sh', 'apps/showcase/app.json') }}
+          restore-keys: gradle-expo-v2-${{ runner.os }}-
 
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
@@ -219,6 +221,12 @@ jobs:
 
   ios-native:
     needs: [typecheck-web]
+    # Same-repository PRs retain the normal iOS consumer proof. Fork PRs may
+    # only consume a macOS runner when a maintainer explicitly opts them in.
+    if: >
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository ||
+      contains(github.event.pull_request.labels.*.name, 'ci:native')
     runs-on: macos-latest
     timeout-minutes: 90
     env:
