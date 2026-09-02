@@ -41,7 +41,7 @@ verifies, per surface, the three requirements #149 names:
 | Table (interactive headers/rows) | None (`docs/accessibility-contract.md`) | N/A | N/A — no enter/exit state to gate | ✅ | `docs/accessibility-contract.md` "Table / DataTable" § "Reduced motion" |
 | Skeleton | None — no `animate-*` utility class is applied | N/A | N/A | ✅ | Regression guard: `issue-149-reduced-motion-acceptance.test.tsx` ("Skeleton ... ships no animate-* utility class") |
 | Spinner (`ActivityIndicator`) | Platform-native indeterminate spinner (iOS `UIActivityIndicatorView` / Android `ProgressBar` / Web CSS) | N/A — BeeUI does not own or gate this animation; it is a platform accessibility-exempt "essential" busy indicator (WCAG 2.3.3 does not require disabling non-parallax, non-flashing indeterminate progress indicators), and no platform accessibility API exists to suppress it | ✅ (unaffected either way — the indicator is not the state change, `aria-busy`/`Button`'s loading state is) | ✅ small-scale, non-parallax, no flashing | Documented rationale only; no dedicated test — nothing in this component reads or could read the reduced-motion signal |
-| Production-demo flows | Deferred | Deferred | Deferred | Deferred | No dedicated production-motion-demo surface exists yet in this repo (mirrors `docs/keyboard-focus-acceptance-matrix.md`'s identical deferral) |
+| Production-demo flows | Deferred | Deferred | Deferred | Deferred | The production demo (`apps/demo`, #258–#263) exists, but formal reduced-motion acceptance of its flows is part of owner-gated RC acceptance (#248/#249 on real devices), not asserted here; the component rows above stand (mirrors `docs/keyboard-focus-acceptance-matrix.md`) |
 
 ## Evidence index
 
@@ -83,8 +83,9 @@ always wins, matching Sheet's own "explicit override always wins" precedent. See
   motion) and are out of scope here: they are an explicit caller opt-in, not this
   matrix's default-path claim.
 - **Production-demo rows are deferred**, mirroring `docs/keyboard-focus-acceptance-
-  matrix.md`'s identical deferral — no dedicated production-motion-demo surface exists
-  yet in this repo.
+  matrix.md`'s identical deferral — the production demo (`apps/demo`, #258–#263) now
+  exists, but formal reduced-motion acceptance of its flows is part of owner-gated RC
+  acceptance (#248/#249 on real devices), not asserted here.
 - **No on-device VoiceOver/TalkBack evidence** exists yet for any reduced-motion interaction
   proven here (#147/#148 closed with checklists recorded; real on-device AT execution is
   owner-deferred to the RC AT gate #249, per `docs/accessibility-contract.md` "Native screen

@@ -44,8 +44,9 @@ Dialog/AlertDialog, Sheet, Table, Calendar/Date/Time controls.
 | Production-demo flows | Deferred | Deferred | Deferred | Deferred | Deferred | Deferred | Deferred |
 
 Production-demo rows are deferred per #146's own sequence rule ("production-demo rows
-may be appended after #237 if not yet available"); no production-demo surface exists yet
-in this repo.
+may be appended after #237 if not yet available"); the production demo (`apps/demo`,
+#258–#263) now exists, but formal keyboard/focus acceptance of its flows is part of
+owner-gated RC acceptance (#248/#249 on real devices), not asserted here.
 
 ## Evidence index
 
