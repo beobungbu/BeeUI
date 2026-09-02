@@ -10,7 +10,7 @@ Independent work must not wait behind unrelated work, but ready jobs must also b
 
 At workflow start, `classify`, eight `verify-lane` jobs (`quality`, `tokens`, `contracts`, `docs`, `types`, `showcase-registry`, `bench`, `release`) and three Showcase export jobs (`web`, `android`, `ios`) start concurrently. The required `verify` status is only a lightweight fan-in aggregator after those lanes finish.
 
-The old top-level CI sequence `pnpm typecheck` followed by `pnpm test` is deliberately decomposed across these lanes. All constituent checks remain covered, but the critical path is now the slowest lane rather than the sum of all checks. Classifier/topology contract tests live in the `contracts` lane instead of delaying `classify`.
+The old top-level CI sequence `pnpm typecheck` followed by `pnpm test` is deliberately decomposed across these lanes. All constituent checks remain covered, but the critical path is now the slowest lane rather than the sum of all checks. Classifier/topology contract tests live in the `contracts` lane instead of delaying `classify`. Only the `tokens` lane fetches full Git history because its token-removal guard compares against repository history; the other verification lanes use shallow checkout.
 
 Once `classify` resolves the native graph, `ios-bare` becomes eligible immediately because it is a long macOS proof. The remaining native jobs are independent proofs but use the completed Showcase export matrix as a **scheduling barrier**:
 
@@ -41,7 +41,9 @@ Production pattern implementation under `apps/showcase/patterns/**` is executabl
 
 ## Force native verification
 
-Add `ci:native` to force the full native graph on a pull request. The workflow subscribes to label changes, so the new run immediately uses the forced classification.
+Add `ci:native` to force the full compile graph on a pull request. The workflow subscribes to label changes, so the new run immediately uses the forced classification.
+
+Runtime device smoke has a separate `ci:runtime` opt-in. A PR cannot self-trigger the runtime workflow merely by naming a fork branch `test/runtime-device-smoke`: that magic branch only works for same-repository PRs. A maintainer-applied `ci:runtime` label may explicitly opt a fork PR in; runtime checkout then fetches and verifies the exact fork head SHA.
 
 ## Main and scheduled policy
 
@@ -51,7 +53,9 @@ Pushes to `main` force the complete native compile graph. A weekly clean run cat
 
 Each hosted job starts on a fresh VM. Correctness never depends on local state surviving from a prior job or run.
 
-Persist only caches with clear reuse value and bounded size: pnpm, CocoaPods downloads/specs, Gradle, Playwright browsers, Maestro and Android AVD where applicable. Xcode `DerivedData` is intentionally not stored in Actions cache; iOS jobs use deterministic job-local DerivedData and always execute a real current-source `xcodebuild`.
+Persist only caches with clear reuse value and bounded size: pnpm, CocoaPods downloads/specs, Gradle, Playwright browsers and Maestro. Xcode `DerivedData` is intentionally not stored in Actions cache; iOS jobs use deterministic job-local DerivedData and always execute a real current-source `xcodebuild`. The Android runtime workflow also avoids persisting its multi-GB AVD snapshot and creates a deterministic fresh AVD from the pinned system image on each proof run.
+
+Generated Android projects are created after cache evaluation, so Gradle cache keys must come from checked-in inputs such as the lockfile, app manifest/package metadata and harness scripts. Keys based only on generated `*.gradle*` files silently collapse before prebuild and are forbidden by the CI contract tests.
 
 On a Playwright browser-cache hit, workflows verify the cached browser without rerunning full Linux dependency provisioning. The visual workflow installs only the deterministic GNU Unifont fallback needed by the canonical baselines; the package installation itself refreshes fontconfig, so an extra global font-cache rebuild is intentionally avoided.
 
