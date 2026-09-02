@@ -1,16 +1,14 @@
 name: expo-consumer
 
-# Independent, clean Expo SDK 57 consumer (#204): installs only packed BeeUI
-# tarballs, proves TypeScript + Metro export, and keeps real Android/iOS native
-# compile coverage separate from the monorepo Showcase.
+# Independent packed Expo SDK 57 consumer. Public-repo hosted minutes are
+# unmetered, so every independent proof starts immediately instead of waiting
+# behind a shared prepare/bundle job.
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches:
       - main
-  # Weekly dependency/toolchain drift backstop. Exact main pushes already
-  # verify this row, so weekly is enough when the repository is otherwise idle.
   schedule:
     - cron: '5 5 * * 1'
   workflow_dispatch:
@@ -27,23 +25,17 @@ env:
   PNPM_VERSION: 10.15.0
 
 jobs:
-  bundle:
-    # Hosted Linux is isolated/ephemeral; fork PRs receive only the read-only
-    # token above and no repository secrets, so this verification can run for
-    # all pull requests.
+  consumer-check:
+    name: expo-consumer-${{ matrix.task }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        task: [typecheck, web, android, ios]
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
-
-      - name: Record exact compatibility-row SHA
-        run: |
-          {
-            echo "### Compatibility row: independent Expo SDK 57 consumer (#204)"
-            echo "- Exact checked-out SHA: \`$(git rev-parse HEAD)\`"
-            echo "- Trigger: \`${{ github.event_name }}\`"
-          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -56,11 +48,6 @@ jobs:
           npm install -g corepack@0.33.0
           corepack enable
           corepack prepare "pnpm@${PNPM_VERSION}" --activate
-
-      - name: Verify JavaScript toolchain
-        run: |
-          test "$(node --version)" = "v${NODE_VERSION}"
-          test "$(pnpm --version)" = "${PNPM_VERSION}"
 
       - name: pnpm store dir
         run: pnpm config set store-dir "$HOME/.pnpm-store"
@@ -75,38 +62,38 @@ jobs:
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Prepare the independent Expo consumer
+      - name: Prepare independent Expo consumer
         env:
           BEEUI_EXPO_CONSUMER_WORK_ROOT: ${{ runner.temp }}/beeui-expo-consumer
           BEEUI_EXPO_CONSUMER_CLEAN: '1'
         run: bash scripts/verify-expo-consumer.sh prepare
 
-      - name: Typecheck the independent Expo consumer
+      - name: Typecheck independent Expo consumer
+        if: matrix.task == 'typecheck'
         env:
           BEEUI_EXPO_CONSUMER_WORK_ROOT: ${{ runner.temp }}/beeui-expo-consumer
         run: bash scripts/verify-expo-consumer.sh typecheck
 
-      - name: Bundle the independent Expo consumer for Web/Android/iOS
-        env:
-          BEEUI_EXPO_CONSUMER_WORK_ROOT: ${{ runner.temp }}/beeui-expo-consumer
-        run: bash scripts/verify-expo-consumer.sh bundle
+      - name: Export independent Expo consumer
+        if: matrix.task != 'typecheck'
+        working-directory: ${{ runner.temp }}/beeui-expo-consumer/app
+        run: >
+          npx expo export
+          --platform "${{ matrix.task }}"
+          --output-dir "dist-${{ matrix.task }}"
 
       - name: Upload consumer export output
-        if: always()
+        if: matrix.task != 'typecheck'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: expo-consumer-dist-${{ github.event.pull_request.head.sha || github.sha }}
-          path: |
-            ${{ runner.temp }}/beeui-expo-consumer/app/dist-web
-            ${{ runner.temp }}/beeui-expo-consumer/app/dist-android
-            ${{ runner.temp }}/beeui-expo-consumer/app/dist-ios
-          if-no-files-found: warn
+          name: expo-consumer-${{ matrix.task }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/beeui-expo-consumer/app/dist-${{ matrix.task }}
+          if-no-files-found: error
           retention-days: 3
 
   android-native:
-    needs: [bundle]
-    # Android compile is a heavier optional PR proof. It always runs on exact
-    # main/weekly/manual checks and can be requested on any PR with ci:native.
+    # Start immediately on exact main/weekly/manual runs, or an explicitly
+    # native-sensitive PR. It prepares its own isolated consumer in parallel.
     if: >
       github.event_name == 'push' ||
       github.event_name == 'schedule' ||
@@ -171,9 +158,10 @@ jobs:
             "ndk;27.1.12297006" \
             "cmake;3.22.1"
 
-      - name: Prepare the independent Expo consumer
+      - name: Prepare independent Expo consumer
         env:
           BEEUI_EXPO_CONSUMER_WORK_ROOT: ${{ runner.temp }}/beeui-expo-consumer
+          BEEUI_EXPO_CONSUMER_CLEAN: '1'
         run: bash scripts/verify-expo-consumer.sh prepare
 
       - name: Compile Expo consumer Android debug APK
@@ -182,14 +170,8 @@ jobs:
         run: bash scripts/verify-expo-consumer.sh android-build
 
   ios-native:
-    needs: [bundle]
-    # Standard hosted macOS is free for public repositories and isolated per
-    # job. Keep this real consumer compile on every PR as well as main/weekly.
-    if: >
-      github.event_name == 'push' ||
-      github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'pull_request'
+    # Start immediately on every PR/main/weekly/manual run. This is one of at
+    # most four simultaneous macOS jobs in BeeUI's heaviest main-push topology.
     runs-on: macos-latest
     timeout-minutes: 90
     env:
@@ -201,44 +183,31 @@ jobs:
       - name: Select Xcode ${{ env.XCODE_MIN_VERSION }}+
         run: |
           set -euo pipefail
-
           selected_developer_dir=""
           selected_version=""
-
           version_is_supported() {
             local version="$1" min_version="$2"
             local major minor min_major min_minor
             IFS='.' read -r major minor _ <<< "$version"
             IFS='.' read -r min_major min_minor _ <<< "$min_version"
-            if (( ${major:-0} > ${min_major:-0} || \
-                  (${major:-0} == ${min_major:-0} && ${minor:-0} >= ${min_minor:-0}) )); then
+            if (( ${major:-0} > ${min_major:-0} || (${major:-0} == ${min_major:-0} && ${minor:-0} >= ${min_minor:-0}) )); then
               return 0
-            else
-              return 1
             fi
+            return 1
           }
-
           for app in $(ls -d /Applications/Xcode*.app 2>/dev/null | sort -rV); do
             [ -d "$app/Contents/Developer" ] || continue
             candidate="$app/Contents/Developer"
             version="$(DEVELOPER_DIR="$candidate" /usr/bin/xcodebuild -version | awk 'NR == 1 { print $2 }')"
-            echo "Found $app -> Xcode $version"
             if version_is_supported "$version" "$XCODE_MIN_VERSION"; then
               selected_developer_dir="$candidate"
               selected_version="$version"
               break
             fi
           done
-
-          if [ -z "$selected_developer_dir" ]; then
-            active_version="$(/usr/bin/xcodebuild -version | awk 'NR == 1 { print $2 }')"
-            echo "::error::expo-consumer requires Xcode ${XCODE_MIN_VERSION}+. Active Xcode is ${active_version}."
-            exit 1
-          fi
-
+          test -n "$selected_developer_dir"
           echo "DEVELOPER_DIR=$selected_developer_dir" >> "$GITHUB_ENV"
           export DEVELOPER_DIR="$selected_developer_dir"
-          echo "Using Xcode $selected_version at $DEVELOPER_DIR"
           /usr/bin/xcodebuild -version
 
       - name: Setup Node
@@ -277,9 +246,10 @@ jobs:
           pnpm install --frozen-lockfile --prefer-offline
           --store-dir "$HOME/.pnpm-store/beeui-v10"
 
-      - name: Prepare the independent Expo consumer
+      - name: Prepare independent Expo consumer
         env:
           BEEUI_EXPO_CONSUMER_WORK_ROOT: ${{ runner.temp }}/beeui-expo-consumer
+          BEEUI_EXPO_CONSUMER_CLEAN: '1'
         run: bash scripts/verify-expo-consumer.sh prepare
 
       - name: Compile Expo consumer for iOS Simulator
