@@ -49,6 +49,8 @@ Runtime device smoke has a separate `ci:runtime` opt-in. A PR cannot self-trigge
 
 Pushes to `main` force the complete native compile graph. A weekly clean run catches hosted-image/toolchain drift when the repository is idle. `runtime-native.yml` separately runs real iOS Simulator and Android Emulator smoke on exact `main`, explicit runtime PRs, manual dispatch and its weekly backstop.
 
+Runtime navigation is verified by destination state rather than by trusting a successful Maestro `tapOn` command alone. Home launchers that can begin outside, or immediately after entering, a scrolled viewport are scrolled into view and the tap + destination assertion is retried as one unit. This preserves the assertion strength while avoiding false negatives from freshly scrolled native hit targets. The exact-head runtime proof for PR #409 (`c71da7f515284e4d1ffb3aeac8eda82325ab0c6e`, run `33633583702`) completed successfully on both iOS Simulator and Android Emulator.
+
 ## Hosted-runner cache policy
 
 Each hosted job starts on a fresh VM. Correctness never depends on local state surviving from a prior job or run.
