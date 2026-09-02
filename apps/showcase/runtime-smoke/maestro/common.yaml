@@ -182,7 +182,20 @@ appId: com.beeui.showcase
     id: "runtime-toast-show"
 - assertVisible:
     text: "Runtime toast"
+# The persistent-toast dismiss fixture is the next row in the scroll content,
+# not the close affordance rendered inside the Toast overlay. Bringing only the
+# Show button into view can leave this control below Android's viewport even
+# though the Toast itself is visible. Center the actual test control before
+# asserting/tapping it, while proving the persistent Toast survives the scroll.
+- scrollUntilVisible:
+    element:
+      id: "runtime-toast-dismiss"
+    direction: DOWN
+    visibilityPercentage: 100
+    centerElement: true
 - waitForAnimationToEnd
+- assertVisible:
+    text: "Runtime toast"
 - retry:
     maxRetries: 4
     commands:
