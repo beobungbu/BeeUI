@@ -1,36 +1,15 @@
-import { access } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '../../..');
-
-const requiredArtifacts = [
-  'packages/core/dist/module/index.js',
-  'packages/tokens/dist/module/motion-runtime.js',
-  'packages/ui/dist/module/index.js',
-  'packages/ui/dist/typescript/module/index.d.ts',
-];
-
-async function artifactExists(relativePath) {
-  try {
-    await access(path.join(repoRoot, relativePath));
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-const artifactState = await Promise.all(requiredArtifacts.map(artifactExists));
-if (artifactState.every(Boolean)) {
-  process.exit(0);
-}
-
-const missing = requiredArtifacts.filter((_, index) => !artifactState[index]);
-console.log(`Showcase test prerequisites missing (${missing.join(', ')}); building @beemvp/beeui-ui and workspace dependencies.`);
-
 const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+
+// Showcase tests must execute against the current workspace source, not merely
+// whatever dist files happen to exist from an earlier local build. Always
+// rebuild the UI package and its workspace dependencies before tests so a
+// long-lived checkout cannot silently validate stale compiled artifacts.
 const result = spawnSync(
   pnpm,
   ['--filter', '@beemvp/beeui-ui...', 'run', 'build'],
