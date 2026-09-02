@@ -7,6 +7,15 @@ appId: com.beeui.showcase
     visible:
       id: "showcase-home"
 
+# The home catalog is responsive and scrollable. On tall-text/large-font Android
+# configurations the Components card can start just below the initial viewport,
+# so discover it the same way as every lower launcher before tapping it.
+- scrollUntilVisible:
+    element:
+      id: "showcase-open-components"
+    direction: DOWN
+    visibilityPercentage: 100
+- waitForAnimationToEnd
 - tapOn:
     id: "showcase-open-components"
 - assertVisible:
