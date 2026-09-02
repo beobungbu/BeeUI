@@ -8,6 +8,7 @@ import { buildPublicLanding, renderPublicLanding } from '../build-public-landing
 import { collectPublicWebViolations } from '../check-public-web.mjs';
 import { buildPublicComponentManifest, generatePublicComponentPages } from '../public-component-reference.mjs';
 import { buildPreviewDescriptor, enhanceGeneratedPublicComponentPages } from '../public-component-previews.mjs';
+import { buildPublicPatternManifest, generatePublicPatternPages } from '../public-pattern-reference.mjs';
 
 const rootDir = path.resolve(new URL('../..', import.meta.url).pathname);
 
@@ -58,5 +59,22 @@ test('rich component pages lazy-load real Showcase and display exact typechecked
     assert.ok(page.includes(descriptor.source));
     assert.ok(page.includes(descriptor.showcaseHref));
     assert.match(page, /### Composition anatomy/);
+  }
+});
+
+test('public pattern generator emits one detail page per canonical Pattern Gallery screen', () => {
+  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-patterns-'));
+  const manifest = generatePublicPatternPages({ rootDir, outDir });
+  assert.equal(manifest.length, buildPublicPatternManifest(rootDir).length);
+  assert.equal(fs.existsSync(path.join(outDir, 'index.md')), true);
+  for (const pattern of manifest) {
+    const page = fs.readFileSync(path.join(outDir, pattern.pack, `${pattern.slug}.md`), 'utf8');
+    assert.match(page, /## Preview/);
+    assert.match(page, /## State and callback contract/);
+    assert.match(page, /## Responsive contract/);
+    assert.match(page, /## Accessibility/);
+    assert.match(page, /## Application ownership boundary/);
+    assert.ok(page.includes(pattern.showcaseHref));
+    assert.ok(page.includes(pattern.sourceHref));
   }
 });
