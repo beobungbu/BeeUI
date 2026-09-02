@@ -1,0 +1,178 @@
+name: visual-web
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+# Least-privilege default: only reads source and uploads its own job
+# artifacts (via the runner's ACTIONS_RUNTIME_TOKEN, not this token's scope).
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 24.13.1
+  PNPM_VERSION: 10.15.0
+
+jobs:
+  visual-web:
+    # Fork PRs must never run on our self-hosted runner: the attacker-
+    # controlled checkout would execute arbitrary code directly on our
+    # infrastructure regardless of GITHUB_TOKEN scope. Push events are
+    # always same-repo.
+    if: >
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pnpm via Corepack
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+      - name: Verify JavaScript toolchain
+        run: |
+          test "$(node --version)" = "v${NODE_VERSION}"
+          test "$(pnpm --version)" = "${PNPM_VERSION}"
+
+      - name: pnpm store dir
+        run: pnpm config set store-dir "$HOME/.pnpm-store"
+
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pw-${{ runner.os }}-
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Provision pinned Chromium and Linux dependencies
+        run: pnpm --dir apps/visual-regression exec playwright install ${{ steps.pw-cache.outputs.cache-hit == 'true' && '' || '--with-deps' }} chromium
+
+      - name: Report visual browser versions
+        run: |
+          pnpm --dir apps/visual-regression exec playwright --version
+          pnpm --dir apps/visual-regression exec node -e "const { chromium } = require('@playwright/test'); (async () => { const browser = await chromium.launch(); console.log('Chromium ' + browser.version()); await browser.close(); })().catch(error => { console.error(error); process.exit(1); });"
+
+      - name: Compare canonical web screenshots (shard ${{ matrix.shard }}/3)
+        run: pnpm --dir apps/visual-regression test --shard=${{ matrix.shard }}/3 --reporter=blob
+
+      - name: Upload blob report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: blob-${{ matrix.shard }}
+          path: apps/visual-regression/blob-report
+          if-no-files-found: warn
+          retention-days: 3
+
+      - name: Upload visual regression diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: visual-regression-${{ matrix.shard }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: apps/visual-regression/test-results
+          if-no-files-found: warn
+          retention-days: 3
+
+  visual-web-report:
+    needs: [visual-web]
+    # Merge and publish the combined report regardless of individual shard
+    # outcomes so a failing shard's diagnostics are still visible in one
+    # place. `always()` bypasses the default needs-skip propagation, so the
+    # fork-guard must be re-checked explicitly here.
+    if: >
+      always() &&
+      (
+        github.event_name != 'pull_request' ||
+        github.event.pull_request.head.repo.full_name == github.repository
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pnpm via Corepack
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+      - name: pnpm store dir
+        run: pnpm config set store-dir "$HOME/.pnpm-store"
+
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download blob reports
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: blob-*
+          path: apps/visual-regression/all-blob-reports
+          merge-multiple: true
+
+      - name: Merge shard reports into one HTML report
+        run: pnpm --dir apps/visual-regression exec playwright merge-reports --reporter=html ./all-blob-reports
+
+      - name: Upload combined HTML report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: visual-web-report-${{ github.event.pull_request.head.sha || github.sha }}
+          path: apps/visual-regression/playwright-report
+          if-no-files-found: warn
+
+      # The combined report is always published above so shard diagnostics stay
+      # visible, but this required check must still FAIL when any shard failed.
+      # `visual-web-report` is the branch-ruleset required status check; without
+      # this guard a red shard (e.g. a failing interaction spec) merged silently.
+      - name: Fail if any visual-web shard did not succeed
+        if: needs.visual-web.result != 'success'
+        run: |
+          echo "::error::visual-web matrix result is '${{ needs.visual-web.result }}' — one or more shards failed; see the combined report artifact."
+          exit 1
+          retention-days: 3

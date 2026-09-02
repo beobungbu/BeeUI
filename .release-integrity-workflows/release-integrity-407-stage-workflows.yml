@@ -1,0 +1,80 @@
+name: release-integrity-407-stage-workflows
+
+on:
+  push:
+    branches:
+      - fix/release-integrity-20260902
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-integrity-407-stage-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  stage-pinned-workflows:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Capture immutable start SHA
+        run: echo "START_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Generate patched workflow blobs outside .github
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source = Path('.github/workflows')
+          target = Path('.release-integrity-workflows')
+          target.mkdir(exist_ok=True)
+          changed = 0
+          cache_from = 'uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6'
+          cache_to = 'uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6'
+          comment_from = "# Fork PRs must never run on our self-hosted runners: pull_request from a\n    # fork gets a read-only, secret-less token, but the attacker-controlled\n    # checkout would still execute arbitrary code directly on our\n    # infrastructure. Push/schedule events are always same-repo."
+          comment_to = "# Public-repo policy: this full verification path is intentionally limited to\n    # same-repository PRs. Fork PRs stay outside it; push/schedule events are\n    # always same-repo."
+          comment_from_indented = "# Fork PRs must never run on our self-hosted runners: pull_request from a\n      # fork gets a read-only, secret-less token, but the attacker-controlled\n      # checkout would still execute arbitrary code directly on our\n      # infrastructure. Push/schedule events are always same-repo."
+          comment_to_indented = "# Public-repo policy: this full verification path is intentionally limited to\n      # same-repository PRs. Fork PRs stay outside it; push/schedule events are\n      # always same-repo."
+
+          for path in sorted(source.iterdir()):
+              if path.suffix not in {'.yml', '.yaml'}:
+                  continue
+              text = path.read_text()
+              patched = text.replace(cache_from, cache_to)
+              patched = patched.replace(comment_from, comment_to)
+              patched = patched.replace(comment_from_indented, comment_to_indented)
+              if patched != text:
+                  (target / path.name).write_text(patched)
+                  changed += 1
+
+          if changed == 0:
+              raise SystemExit('No workflow pin/comment changes were generated')
+          print(f'Staged {changed} patched workflow blobs')
+          PY
+
+      - name: Commit only staging blobs
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .release-integrity-workflows
+          test -z "$(git diff --cached --name-only -- .github/workflows)"
+          git diff --cached --check
+          git commit -m 'chore: stage immutable workflow pins for #407'
+
+      - name: Guard remote head and push staging blobs
+        run: |
+          set -euo pipefail
+          git fetch origin fix/release-integrity-20260902
+          REMOTE_SHA=$(git rev-parse FETCH_HEAD)
+          test "$REMOTE_SHA" = "$START_SHA" || {
+            echo "Remote branch moved: start=$START_SHA remote=$REMOTE_SHA" >&2
+            exit 1
+          }
+          git push origin HEAD:fix/release-integrity-20260902
