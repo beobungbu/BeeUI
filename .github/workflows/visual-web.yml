@@ -77,7 +77,15 @@ jobs:
 
       - name: Verify cached Chromium on cache hit
         if: steps.pw-cache.outputs.cache-hit == 'true'
-        run: pnpm --dir apps/visual-regression exec playwright install chromium
+        run: |
+          # The hosted image already contains Chromium runtime dependencies and
+          # Noto Color Emoji. Canonical visual baselines additionally resolve a
+          # handful of Unicode symbols through GNU Unifont. Installing only that
+          # missing font keeps glyph selection deterministic without repeating
+          # Playwright's full apt dependency provisioning on every warm-cache run.
+          sudo apt-get install -y --no-install-recommends fonts-unifont
+          fc-cache -f
+          pnpm --dir apps/visual-regression exec playwright install chromium
 
       - name: Report visual browser versions
         run: |
