@@ -1,0 +1,87 @@
+name: release-integrity-407-bootstrap-v3
+
+on:
+  push:
+    branches:
+      - fix/release-integrity-20260902
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: 24.13.1
+  PNPM_VERSION: 10.15.0
+
+jobs:
+  apply-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pnpm via Corepack
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+      - name: Install current workspace
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply release-integrity migration
+        run: node scripts/.tmp-apply-release-integrity-407.mjs
+
+      - name: Add focused lint dependencies and refresh lockfile
+        run: |
+          pnpm add -Dw --save-exact eslint@10.9.1 @typescript-eslint/parser@8.69.0 eslint-plugin-react-hooks@7.1.1
+          pnpm install --lockfile-only
+
+      - name: Verify focused guard and lint
+        run: |
+          pnpm release-control-plane:check
+          pnpm lint
+
+      - name: Run full repository checks
+        run: pnpm check
+
+      - name: Verify release package contract
+        env:
+          BEEUI_VERIFY_SHA: ${{ github.sha }}
+        run: pnpm release:verify
+
+      - name: Inspect version residue
+        run: |
+          echo 'Remaining tracked 0.1.0 references (historical references may remain intentionally):'
+          git grep -n '0\.1\.0' -- ':!pnpm-lock.yaml' || true
+
+      - name: Commit verified cleanup
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            package.json pnpm-lock.yaml \
+            packages/core/package.json packages/tokens/package.json packages/ui/package.json packages/cli/package.json \
+            eslint.config.mjs scripts/check-release-control-plane.mjs scripts/__tests__/release-control-plane.test.mjs \
+            apps/demo/src/services/async-lifecycle.ts \
+            packages/ui/src/components/dropdown-menu.tsx packages/ui/src/components/overlay-runtime.tsx \
+            packages/ui/src/components/select.tsx packages/ui/src/components/toast.tsx \
+            packages/ui/src/components/tooltip-shared.tsx packages/ui/src/components/use-bee-token.ts \
+            docs/architecture.md docs/dist-tag-policy.md docs/consumer-compatibility-report.md \
+            docs/rc-candidate.md docs/rc-ci-matrix.md docs/release-integrity-20260902.md \
+            .github/workflows/ci.yml .github/workflows/compat-rn-0-87.yml .github/workflows/expo-consumer.yml \
+            .github/workflows/runtime-native.yml .github/workflows/visual-web.yml .github/workflows/web-a11y.yml \
+            .github/workflows/web-consumer.yml
+          git diff --cached --check
+          git diff --cached --quiet && { echo 'No cleanup changes to commit.'; exit 1; }
+          git commit -m 'fix: close release-integrity gaps for 20260902 (#407)'
+          git push origin HEAD:fix/release-integrity-20260902
