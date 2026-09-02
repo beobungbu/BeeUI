@@ -6,22 +6,22 @@ The implementation lives in `scripts/classify-ci-changes.mjs` and is exercised b
 
 ## Parallel execution policy
 
-Independent work must not wait behind unrelated work.
+Independent work must not wait behind unrelated work, but ready jobs must also be staged so optional work cannot randomly displace required checks at the hosted-runner concurrency ceiling.
 
 At workflow start, `classify`, eight `verify-lane` jobs (`quality`, `tokens`, `contracts`, `docs`, `types`, `showcase-registry`, `bench`, `release`) and three Showcase export jobs (`web`, `android`, `ios`) start concurrently. The required `verify` status is only a lightweight fan-in aggregator after those lanes finish.
 
 The old top-level CI sequence `pnpm typecheck` followed by `pnpm test` is deliberately decomposed across these lanes. All constituent checks remain covered, but the critical path is now the slowest lane rather than the sum of all checks. Classifier/topology contract tests live in the `contracts` lane instead of delaying `classify`.
 
-Once `classify` resolves the native graph, it fans out additional independent work:
+Once `classify` resolves the native graph, `ios-bare` becomes eligible immediately because it is a long macOS proof. The remaining native jobs are independent proofs but use the completed Showcase export matrix as a **scheduling barrier**:
 
 - `bare-bundle`: packed bare-RN consumer prepare + Android/iOS Metro bundle proof;
 - `bare-android`: independently prepares the packed bare-RN consumer and compiles Android;
 - `ios-showcase`: Expo Showcase prebuild/pods/Xcode simulator compile;
-- `ios-bare`: independently prepares the packed bare-RN consumer and compiles iOS.
+- `ios-bare`: independently prepares the packed bare-RN consumer and compiles iOS, eligible immediately after `classify`.
 
-None of those four jobs depends on another native job. On a native-sensitive change the two macOS compiles therefore run concurrently rather than serially inside one `ios-native` job.
+The barrier does not pass artifacts and is not a correctness dependency. The staged jobs use `always()` and retain their classifier conditions, so they still run for diagnostics even if a Showcase export fails. No native job depends on another native job. When `ios-bare` is still running as the export matrix completes, `ios-showcase` runs concurrently with it rather than waiting for the bare compile.
 
-At repository level, the ordinary PR startup topology is shaped around the 20-job hosted concurrency budget. Core/required work plus three initial Expo-consumer jobs fills that budget; additional native work becomes ready as `classify` finishes and enters available slots. This keeps runner capacity saturated without making extra optional jobs compete unnecessarily with required checks at the initial scheduling boundary.
+At repository level, the ordinary PR startup topology is shaped around the 20-job hosted concurrency budget. Core/required work plus the initial Expo-consumer work consumes the startup slots. `ios-bare` is released after the short classifier; the other three native jobs are released when the three Showcase export slots are freed. This keeps capacity saturated while preventing optional native work from racing required visual/a11y/web checks for the last startup slots.
 
 ## Pull-request policy
 
@@ -53,7 +53,9 @@ Each hosted job starts on a fresh VM. Correctness never depends on local state s
 
 Persist only caches with clear reuse value and bounded size: pnpm, CocoaPods downloads/specs, Gradle, Playwright browsers, Maestro and Android AVD where applicable. Xcode `DerivedData` is intentionally not stored in Actions cache; iOS jobs use deterministic job-local DerivedData and always execute a real current-source `xcodebuild`.
 
-The bare React Native and Expo consumers are independently recreated in each parallel lane that needs them. This duplicates setup work intentionally: runner minutes are not the scarce resource, while eliminating dependency chains reduces time-to-result.
+On a Playwright browser-cache hit, workflows verify the cached browser without rerunning full Linux dependency provisioning. The visual workflow installs only the deterministic GNU Unifont fallback needed by the canonical baselines; the package installation itself refreshes fontconfig, so an extra global font-cache rebuild is intentionally avoided.
+
+The bare React Native and Expo consumers are independently recreated in each parallel lane that needs them. This duplicates setup work intentionally: runner minutes are not the scarce resource, while eliminating unnecessary workspace-sharing chains reduces time-to-result.
 
 ## Maintenance rule
 
