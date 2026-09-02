@@ -18,6 +18,7 @@ const expoScriptPath = path.join(repoRoot, 'scripts/verify-expo-consumer.sh');
 const showcasePackagePath = path.join(repoRoot, 'apps/showcase/package.json');
 const showcaseBuildPrereqPath = path.join(repoRoot, 'apps/showcase/scripts/ensure-workspace-build.mjs');
 const runtimeCommonFlowPath = path.join(repoRoot, 'apps/showcase/runtime-smoke/maestro/common.yaml');
+const androidRuntimeScriptPath = path.join(repoRoot, 'scripts/runtime-smoke/android.sh');
 
 async function sources() {
   const [
@@ -32,6 +33,7 @@ async function sources() {
     showcasePackageRaw,
     showcaseBuildPrereq,
     runtimeCommonFlow,
+    androidRuntimeScript,
   ] = await Promise.all([
     readFile(workflowPath, 'utf8'),
     readFile(runtimeWorkflowPath, 'utf8'),
@@ -44,6 +46,7 @@ async function sources() {
     readFile(showcasePackagePath, 'utf8'),
     readFile(showcaseBuildPrereqPath, 'utf8'),
     readFile(runtimeCommonFlowPath, 'utf8'),
+    readFile(androidRuntimeScriptPath, 'utf8'),
   ]);
   return {
     workflow,
@@ -57,6 +60,7 @@ async function sources() {
     showcasePackage: JSON.parse(showcasePackageRaw),
     showcaseBuildPrereq,
     runtimeCommonFlow,
+    androidRuntimeScript,
   };
 }
 
@@ -262,4 +266,14 @@ test('runtime common flow scrolls and retries verified first-home navigation', a
   assert.ok(scrollIndex < retryIndex);
   assert.ok(retryIndex < tapLauncherIdIndex);
   assert.ok(tapLauncherIdIndex < destinationIndex);
+});
+
+test('Android A7 centers the dialog trigger and retries tap plus verified destination', async () => {
+  const { androidRuntimeScript } = await sources();
+  const start = androidRuntimeScript.indexOf("run_inline_maestro a7-open <<'EOF_FLOW'");
+  const end = androidRuntimeScript.indexOf('real_back "A7 Back #1', start);
+  assert.ok(start >= 0 && end > start);
+  const a7Open = androidRuntimeScript.slice(start, end);
+  assert.match(a7Open, /id: "runtime-stress-dialog-trigger"[\s\S]*timeout: 30000[\s\S]*visibilityPercentage: 80[\s\S]*centerElement: true/);
+  assert.match(a7Open, /- retry:\n\s+maxRetries: 4[\s\S]*- tapOn:\n\s+id: "runtime-stress-dialog-trigger"[\s\S]*- extendedWaitUntil:\n\s+visible:\n\s+id: "runtime-stress-dialog-content"/);
 });
