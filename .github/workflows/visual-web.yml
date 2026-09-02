@@ -21,10 +21,8 @@ env:
 
 jobs:
   visual-web:
-    # Fork PRs must never run on our self-hosted runner: the attacker-
-    # controlled checkout would execute arbitrary code directly on our
-    # infrastructure regardless of GITHUB_TOKEN scope. Push events are
-    # always same-repo.
+    # Same-repository PR guard: this verification path intentionally excludes
+    # fork PRs; push events are always repository-controlled.
     if: >
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
