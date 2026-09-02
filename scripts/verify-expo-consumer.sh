@@ -364,7 +364,23 @@ build_ios() {
 
   workspace="$(find . -maxdepth 1 -type d -name '*.xcworkspace' -print -quit)"
   test -n "${workspace}" || { echo "No generated .xcworkspace found after pod install."; exit 1; }
-  scheme="beeuiexpoconsumersmoke"
+
+  # The generated Expo scheme name is derived from the app config and can differ
+  # in casing from the workspace directory (observed: workspace
+  # "BeeUIExpoconsumersmoke" vs. a hardcoded lowercase "beeuiexpoconsumersmoke",
+  # which xcodebuild rejects), so discover it deterministically from
+  # `xcodebuild -list`, mirroring ci.yml's canonical iOS scheme discovery.
+  scheme="$({ xcodebuild -workspace "${workspace}" -list -json; } | node -e '
+    let input = "";
+    process.stdin.on("data", (chunk) => (input += chunk));
+    process.stdin.on("end", () => {
+      const data = JSON.parse(input);
+      const schemes = data.workspace?.schemes ?? [];
+      if (!schemes.length) process.exit(2);
+      process.stdout.write(schemes[0]);
+    });
+  ')"
+  test -n "${scheme}" || { echo "No shared Xcode scheme found in ${workspace}."; exit 1; }
 
   xcodebuild \
     -workspace "${workspace}" \

@@ -184,4 +184,10 @@ test('Expo independent-consumer iOS build installs pods directly (no Gemfile/Bun
   // The iOS path must still perform a real simulator compile — not an Expo JS
   // export, not a skipped/soft-failed step.
   assert.match(expoScript, /xcodebuild[\s\S]*-sdk iphonesimulator[\s\S]*\n\s*build\b/);
+
+  // The Xcode scheme is discovered deterministically from `xcodebuild -list`,
+  // not hardcoded, because the generated Expo scheme casing differs from the
+  // workspace directory name (xcodebuild rejected the hardcoded lowercase one).
+  assert.match(expoScript, /xcodebuild -workspace "\$\{workspace\}" -list -json/);
+  assert.doesNotMatch(expoScript, /scheme="beeuiexpoconsumersmoke"/);
 });
