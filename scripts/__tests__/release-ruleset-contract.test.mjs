@@ -12,105 +12,81 @@ import {
   jobIsConditionallySkippable,
 } from '../check-release-ruleset.mjs';
 
-const FORK_GUARD_ALWAYS_RUN_JOB = `
+const ALWAYS_RUN_CI_JOBS = `
 jobs:
   classify:
     runs-on: ubuntu-latest
-    if: >
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
-    steps:
-      - run: echo classify
+  verify-check:
+    strategy:
+      matrix:
+        task: [static, tests, release]
+  showcase-bundle:
+    strategy:
+      matrix:
+        platform: [web, android, ios]
   verify:
-    needs: [classify]
+    needs: [classify, verify-check, showcase-bundle]
+    if: always()
     runs-on: ubuntu-latest
-    steps:
-      - run: echo verify
 `;
 
-const CLASSIFY_GATED_JOB = `
+const CLASSIFY_GATED_JOBS = `
 jobs:
-  bare-native:
+  bare-bundle:
     needs: [classify]
     if: >
       needs.classify.outputs.package-boundary-required == 'true' ||
       needs.classify.outputs.bare-native-required == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo bare-native
-  ios-native:
+  bare-android:
     needs: [classify]
-    if: >
-      needs.classify.outputs.ios-native-required == 'true'
-    runs-on: macos-latest
-    steps:
-      - run: echo ios-native
+    if: needs.classify.outputs.bare-native-required == 'true'
+  ios-showcase:
+    needs: [classify]
+    if: needs.classify.outputs.showcase-native-required == 'true'
+  ios-bare:
+    needs: [classify]
+    if: needs.classify.outputs.bare-native-required == 'true'
 `;
 
 const ALWAYS_WRAPPED_REPORT_JOB = `
 jobs:
   visual-web:
-    if: >
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
     strategy:
       matrix:
         shard: [1, 2, 3]
-    steps:
-      - run: echo shard
   visual-web-report:
     needs: [visual-web]
-    if: >
-      always() &&
-      (
-        github.event_name != 'pull_request' ||
-        github.event.pull_request.head.repo.full_name == github.repository
-      )
-    steps:
-      - run: echo report
+    if: always()
 `;
 
 const LABEL_GATED_RUNTIME_JOB = `
 jobs:
   ios-runtime:
     if: >-
+      github.event_name == 'push' ||
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' &&
-        github.event.pull_request.head.repo.full_name == github.repository &&
-        (github.head_ref == 'test/runtime-device-smoke' || contains(github.event.pull_request.labels.*.name, 'ci:runtime')))
-    steps:
-      - run: echo ios-runtime
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci:runtime'))
 `;
 
-test('extractJobIfCondition reads a block-scalar (>) if condition', () => {
-  const condition = extractJobIfCondition(FORK_GUARD_ALWAYS_RUN_JOB, 'classify');
-  assert.match(condition, /github\.event_name != 'pull_request'/);
+test('extractJobIfCondition reads classifier-gated condition', () => {
+  const condition = extractJobIfCondition(CLASSIFY_GATED_JOBS, 'bare-bundle');
+  assert.match(condition, /package-boundary-required/);
 });
 
-test('extractJobIfCondition returns null when a job has no if:', () => {
-  assert.equal(extractJobIfCondition(FORK_GUARD_ALWAYS_RUN_JOB, 'verify'), null);
-});
-
-test('jobAlwaysRuns is true for the plain fork-guard and for a job with no if:', () => {
-  assert.equal(jobAlwaysRuns(FORK_GUARD_ALWAYS_RUN_JOB, 'classify'), true);
-  assert.equal(jobAlwaysRuns(FORK_GUARD_ALWAYS_RUN_JOB, 'verify'), true);
-});
-
-test('jobAlwaysRuns is true for the always()-wrapped fork-guard used by visual-web-report', () => {
+test('required fan-in aggregators using always() count as always-run', () => {
+  assert.equal(jobAlwaysRuns(ALWAYS_RUN_CI_JOBS, 'classify'), true);
+  assert.equal(jobAlwaysRuns(ALWAYS_RUN_CI_JOBS, 'verify'), true);
   assert.equal(jobAlwaysRuns(ALWAYS_WRAPPED_REPORT_JOB, 'visual-web-report'), true);
-  assert.equal(jobAlwaysRuns(ALWAYS_WRAPPED_REPORT_JOB, 'visual-web'), true);
 });
 
-test('jobIsConditionallySkippable is true for a job gated on needs.classify.outputs', () => {
-  assert.equal(jobIsConditionallySkippable(CLASSIFY_GATED_JOB, 'bare-native'), true);
-});
-
-test('jobIsConditionallySkippable is true for a job gated on labels/head_ref/schedule', () => {
+test('classifier/runtime gated jobs remain conditionally skippable', () => {
+  assert.equal(jobIsConditionallySkippable(CLASSIFY_GATED_JOBS, 'bare-android'), true);
+  assert.equal(jobIsConditionallySkippable(CLASSIFY_GATED_JOBS, 'ios-showcase'), true);
   assert.equal(jobIsConditionallySkippable(LABEL_GATED_RUNTIME_JOB, 'ios-runtime'), true);
 });
 
-test('collectReleaseRulesetViolations passes for a coherent doc + always-run workflows', () => {
+test('collectReleaseRulesetViolations passes for coherent parallel topology', () => {
   const markdown = [
     '```json release-ruleset',
     JSON.stringify({ requiredStatusChecks: REQUIRED_STATUS_CHECKS.map((entry) => entry.job) }),
@@ -118,82 +94,69 @@ test('collectReleaseRulesetViolations passes for a coherent doc + always-run wor
   ].join('\n');
 
   const workflowContentsByFile = {
-    'ci.yml': FORK_GUARD_ALWAYS_RUN_JOB + CLASSIFY_GATED_JOB,
-    'web-a11y.yml': `jobs:\n  web-a11y:\n    if: >\n      github.event_name != 'pull_request' ||\n      github.event.pull_request.head.repo.full_name == github.repository\n`,
+    'ci.yml': ALWAYS_RUN_CI_JOBS + CLASSIFY_GATED_JOBS,
+    'web-a11y.yml': `jobs:\n  web-a11y:\n    steps:\n      - run: echo a11y\n`,
     'visual-web.yml': ALWAYS_WRAPPED_REPORT_JOB,
-    'web-consumer.yml': `jobs:\n  web-consumer:\n    if: >\n      github.event_name != 'pull_request' ||\n      github.event.pull_request.head.repo.full_name == github.repository\n`,
-    'runtime-native.yml': LABEL_GATED_RUNTIME_JOB + `\n  android-runtime:\n    if: >-\n      github.event_name == 'schedule'\n`,
-    'compat-rn-0-87.yml': `jobs:\n  bare-android-rn87:\n    if: contains(github.event.pull_request.labels.*.name, 'ci:rn-0.87')\n  bare-ios-rn87:\n    if: contains(github.event.pull_request.labels.*.name, 'ci:rn-0.87')\n`,
+    'web-consumer.yml': `jobs:\n  web-consumer:\n    steps:\n      - run: echo consumer\n`,
+    'runtime-native.yml': LABEL_GATED_RUNTIME_JOB + `\n  android-runtime:\n    if: github.event_name == 'schedule'\n`,
   };
 
-  const violations = collectReleaseRulesetViolations({ markdown, workflowContentsByFile });
-  assert.deepEqual(violations, []);
+  assert.deepEqual(collectReleaseRulesetViolations({ markdown, workflowContentsByFile }), []);
 });
 
-test('collectReleaseRulesetViolations flags a required check that can be skipped', () => {
+test('collectReleaseRulesetViolations flags a skippable required aggregator', () => {
   const markdown = [
     '```json release-ruleset',
     JSON.stringify({ requiredStatusChecks: REQUIRED_STATUS_CHECKS.map((entry) => entry.job) }),
     '```',
   ].join('\n');
 
-  // "verify" is re-defined here as classify-gated, simulating an accidental
-  // future change that would make a required check skippable.
   const regressedCi = `
 jobs:
   classify:
-    if: >
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
   verify:
     needs: [classify]
-    if: needs.classify.outputs.package-boundary-required == 'true'
-  bare-native:
-    needs: [classify]
     if: needs.classify.outputs.bare-native-required == 'true'
-  ios-native:
-    needs: [classify]
-    if: needs.classify.outputs.ios-native-required == 'true'
+  bare-bundle:
+    if: needs.classify.outputs.package-boundary-required == 'true'
+  bare-android:
+    if: needs.classify.outputs.bare-native-required == 'true'
+  ios-showcase:
+    if: needs.classify.outputs.showcase-native-required == 'true'
+  ios-bare:
+    if: needs.classify.outputs.bare-native-required == 'true'
 `;
 
   const workflowContentsByFile = {
     'ci.yml': regressedCi,
-    'web-a11y.yml': `jobs:\n  web-a11y:\n    if: >\n      github.event_name != 'pull_request' ||\n      github.event.pull_request.head.repo.full_name == github.repository\n`,
+    'web-a11y.yml': `jobs:\n  web-a11y:\n`,
     'visual-web.yml': ALWAYS_WRAPPED_REPORT_JOB,
-    'web-consumer.yml': `jobs:\n  web-consumer:\n    if: >\n      github.event_name != 'pull_request' ||\n      github.event.pull_request.head.repo.full_name == github.repository\n`,
-    'runtime-native.yml': LABEL_GATED_RUNTIME_JOB + `\n  android-runtime:\n    if: >-\n      github.event_name == 'schedule'\n`,
-    'compat-rn-0-87.yml': `jobs:\n  bare-android-rn87:\n    if: contains(github.event.pull_request.labels.*.name, 'ci:rn-0.87')\n  bare-ios-rn87:\n    if: contains(github.event.pull_request.labels.*.name, 'ci:rn-0.87')\n`,
+    'web-consumer.yml': `jobs:\n  web-consumer:\n`,
+    'runtime-native.yml': LABEL_GATED_RUNTIME_JOB + `\n  android-runtime:\n    if: github.event_name == 'schedule'\n`,
   };
 
   const violations = collectReleaseRulesetViolations({ markdown, workflowContentsByFile });
   assert.ok(violations.some((v) => v.includes('ci.yml:verify')), violations.join('\n'));
 });
 
-test('collectReleaseRulesetViolations flags a documented check list that drifts from the pinned set', () => {
-  const markdown = [
-    '```json release-ruleset',
-    JSON.stringify({ requiredStatusChecks: ['classify', 'verify'] }),
-    '```',
-  ].join('\n');
-
+test('documented required check list cannot drift', () => {
+  const markdown = ['```json release-ruleset', JSON.stringify({ requiredStatusChecks: ['classify', 'verify'] }), '```'].join('\n');
   const workflowContentsByFile = {
-    'ci.yml': FORK_GUARD_ALWAYS_RUN_JOB + CLASSIFY_GATED_JOB,
-    'web-a11y.yml': `jobs:\n  web-a11y:\n    if: >\n      github.event_name != 'pull_request' ||\n      github.event.pull_request.head.repo.full_name == github.repository\n`,
+    'ci.yml': ALWAYS_RUN_CI_JOBS + CLASSIFY_GATED_JOBS,
+    'web-a11y.yml': `jobs:\n  web-a11y:\n`,
     'visual-web.yml': ALWAYS_WRAPPED_REPORT_JOB,
-    'web-consumer.yml': `jobs:\n  web-consumer:\n    if: >\n      github.event_name != 'pull_request' ||\n      github.event.pull_request.head.repo.full_name == github.repository\n`,
-    'runtime-native.yml': LABEL_GATED_RUNTIME_JOB + `\n  android-runtime:\n    if: >-\n      github.event_name == 'schedule'\n`,
-    'compat-rn-0-87.yml': `jobs:\n  bare-android-rn87:\n    if: contains(github.event.pull_request.labels.*.name, 'ci:rn-0.87')\n  bare-ios-rn87:\n    if: contains(github.event.pull_request.labels.*.name, 'ci:rn-0.87')\n`,
+    'web-consumer.yml': `jobs:\n  web-consumer:\n`,
+    'runtime-native.yml': LABEL_GATED_RUNTIME_JOB + `\n  android-runtime:\n    if: github.event_name == 'schedule'\n`,
   };
-
   const violations = collectReleaseRulesetViolations({ markdown, workflowContentsByFile });
   assert.ok(violations.some((v) => v.includes('requiredStatusChecks')), violations.join('\n'));
 });
 
-test('extractDocumentedRuleset throws without the fenced release-ruleset block', () => {
+test('extractDocumentedRuleset throws without fenced contract', () => {
   assert.throws(() => extractDocumentedRuleset('# no fenced block here'), /fenced contract block/);
 });
 
-test('pinned sets stay disjoint: conditional/matrix jobs never overlap the required-check names', () => {
+test('conditional and matrix jobs never overlap required-check names', () => {
   const requiredNames = new Set(REQUIRED_STATUS_CHECKS.map((entry) => entry.job));
   for (const excluded of [...CONDITIONAL_JOBS_EXCLUDED_FROM_REQUIRED_CHECKS, VISUAL_WEB_MATRIX_JOB]) {
     assert.equal(requiredNames.has(excluded.job), false, `${excluded.job} must stay out of REQUIRED_STATUS_CHECKS`);

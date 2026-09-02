@@ -5,13 +5,8 @@ on:
   push:
     branches:
       - main
-  # #137: weekly recurring re-verification of the independent Web consumer
-  # contract (#136) even on weeks with no PR/push activity touching it —
-  # every run already installs fresh (BEEUI_WEB_CONSUMER_CLEAN below), so
-  # this catches drift from outside this repo's own commits (e.g. a
-  # `vite-plugin-rnw`/Vite/Playwright-Chromium update). Offset from the other
-  # nightly compatibility crons (ci.yml 47 2 * * *, runtime-native.yml
-  # 17 3 * * *, compat-rn-0-87.yml 52 3 * * *).
+  # Weekly recurring re-verification of the independent Web consumer contract
+  # catches drift from dependencies/tooling even when BeeUI itself is idle.
   schedule:
     - cron: '22 4 * * 1'
   workflow_dispatch:
@@ -22,7 +17,9 @@ on:
         default: false
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # Keep push/schedule/manual evidence independent while cancelling stale runs
+  # within the same event class/ref.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 # Least-privilege default: only reads source and uploads its own job
@@ -36,11 +33,8 @@ env:
 
 jobs:
   web-consumer:
-    # Same-repository PR guard: this verification path intentionally excludes
-    # fork PRs; push/schedule/manual events are repository-controlled.
-    if: >
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+    # Standard GitHub-hosted runners are isolated/ephemeral. With a read-only
+    # token and no secrets, this required check can safely run for fork PRs.
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -94,8 +88,15 @@ jobs:
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Provision pinned Chromium and Linux dependencies
-        run: pnpm --dir apps/visual-regression exec playwright install ${{ steps.pw-cache.outputs.cache-hit == 'true' && '' || '--with-deps' }} chromium
+      # The hosted Ubuntu image already carries Chromium's system libraries.
+      # Only pay the apt/font provisioning cost when the browser cache is cold.
+      - name: Provision Chromium and Linux dependencies on cache miss
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: pnpm --dir apps/visual-regression exec playwright install --with-deps chromium
+
+      - name: Verify cached Chromium on cache hit
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: pnpm --dir apps/visual-regression exec playwright install chromium
 
       # Issue #136 — the independent, non-Showcase clean Web consumer: packs
       # @beemvp/beeui-core/@beemvp/beeui-tokens/@beemvp/beeui-ui, installs them (plus the exact
@@ -115,6 +116,6 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: web-consumer-dist-${{ github.event.pull_request.head.sha || github.sha }}
-          path: ${{ runner.temp }}/beeui-web-consumer/app/dist
-          if-no-files-found: warn
+          path: ${{ runner.temp }}/beeui-web-consumer/web-consumer/app/dist
+          if-no-files-found: error
           retention-days: 3

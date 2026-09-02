@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 // Guards docs/compatibility-matrix.md against silent drift from the actual
-// pinned/tested versions in package manifests, .nvmrc and CI workflows. The
-// matrix doc is the BeeUI 1.0 R2 compatibility authority (#129); this script
-// is what keeps that authority honest instead of merely aspirational.
+// pinned/tested versions in package manifests, .nvmrc and active CI workflows.
+// The matrix doc is the BeeUI 1.0 R2 compatibility authority (#129); this
+// script is what keeps that authority honest instead of merely aspirational.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -21,7 +21,7 @@ const CI_WORKFLOW_PATHS = [
   path.join(ROOT_DIR, '.github', 'workflows', 'visual-web.yml'),
   path.join(ROOT_DIR, '.github', 'workflows', 'web-a11y.yml'),
   path.join(ROOT_DIR, '.github', 'workflows', 'web-consumer.yml'),
-  path.join(ROOT_DIR, '.github', 'workflows', 'compat-rn-0-87.yml'),
+  path.join(ROOT_DIR, '.github', 'workflows', 'expo-consumer.yml'),
 ];
 // Published apps/docs pages (#138) that surface the same pinned/tested versions declared
 // in docs/compatibility-matrix.md's machine-readable snapshot. Every value in that

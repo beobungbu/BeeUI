@@ -3,12 +3,19 @@ name: native-runtime-smoke
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
+  push:
+    branches:
+      - main
+  # Weekly clean-environment backstop. Exact main pushes already run the same
+  # simulator/emulator proof, so a nightly duplicate is unnecessary.
   schedule:
-    - cron: '17 3 * * *'
+    - cron: '17 3 * * 1'
   workflow_dispatch:
 
 concurrency:
-  group: native-runtime-smoke-${{ github.event.pull_request.number || github.ref }}
+  # Keep weekly/manual/push evidence independent while still cancelling stale
+  # reruns within the same event class/ref.
+  group: native-runtime-smoke-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 # Least-privilege default: only reads source and uploads its own job
@@ -22,26 +29,30 @@ env:
   MAESTRO_VERSION: 2.7.0
   XCODE_MIN_VERSION: '26.4'
   BEEUI_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-  BEEUI_RUNTIME_EXPECTED_BASE: ${{ github.event_name == 'pull_request' && github.head_ref == 'test/runtime-device-smoke' && '292b850bf7402bdf2fa3878cc80c4551f8ffd843' || '' }}
 
 jobs:
   ios-runtime:
-    # Same-repository check is defense-in-depth on top of the head_ref/label
-    # gate below: a fork branch can reuse the magic branch name, and a
-    # maintainer can accidentally label a fork PR; neither may enter the
-    # hosted runtime path.
+    # Main pushes, weekly/manual runs, and explicitly requested PR runtime
+    # checks run on isolated GitHub-hosted macOS VMs. A maintainer-applied
+    # ci:runtime label may opt a fork PR in; the magic branch trigger is limited
+    # to this repository so a fork cannot self-trigger scarce macOS capacity.
     if: >-
+      github.event_name == 'push' ||
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' &&
-        github.event.pull_request.head.repo.full_name == github.repository &&
-        (github.head_ref == 'test/runtime-device-smoke' || contains(github.event.pull_request.labels.*.name, 'ci:runtime')))
+        (((github.event.pull_request.head.repo.full_name == github.repository) &&
+          github.head_ref == 'test/runtime-device-smoke') ||
+         contains(github.event.pull_request.labels.*.name, 'ci:runtime')))
     runs-on: macos-latest
     timeout-minutes: 90
     steps:
       - name: Checkout exact head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
         with:
+          # Label-opted fork PRs must fetch the exact head from the fork repo,
+          # not assume that SHA is addressable through the base repository.
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           fetch-depth: 0
           ref: ${{ env.BEEUI_RUNTIME_HEAD_SHA }}
 
@@ -116,13 +127,9 @@ jobs:
           key: pods-macos-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pods-macos-
 
-      - name: Cache Xcode DerivedData
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: ~/Library/Developer/Xcode/DerivedData
-          key: dd-macos-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: dd-macos-
-
+      # DerivedData is deliberately not stored in Actions cache. Runtime smoke
+      # builds into a custom job-local path; caching multi-GB compiler output
+      # would compete with the repository's finite cache quota for low reuse.
       - name: Cache Maestro CLI
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
@@ -148,22 +155,24 @@ jobs:
           retention-days: 7
 
   android-runtime:
-    # Same-repository check is defense-in-depth on top of the head_ref/label
-    # gate below: a fork branch can reuse the magic branch name, and a
-    # maintainer can accidentally label a fork PR; neither may enter the
-    # hosted runtime path.
+    # Same trigger policy as iOS: exact main, weekly/manual, or explicit PR
+    # runtime verification. Forks cannot self-trigger via the magic branch name;
+    # maintainers retain the ci:runtime opt-in path when fork evidence is needed.
     if: >-
+      github.event_name == 'push' ||
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' &&
-        github.event.pull_request.head.repo.full_name == github.repository &&
-        (github.head_ref == 'test/runtime-device-smoke' || contains(github.event.pull_request.labels.*.name, 'ci:runtime')))
+        (((github.event.pull_request.head.repo.full_name == github.repository) &&
+          github.head_ref == 'test/runtime-device-smoke') ||
+         contains(github.event.pull_request.labels.*.name, 'ci:runtime')))
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
       - name: Checkout exact head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
         with:
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           fetch-depth: 0
           ref: ${{ env.BEEUI_RUNTIME_HEAD_SHA }}
 
@@ -229,26 +238,23 @@ jobs:
           key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pnpm-${{ runner.os }}-
 
+      # Prebuild generates Gradle files after cache evaluation, so never key the
+      # cache from **/*.gradle*. Use checked-in inputs that exist before prebuild
+      # and cover dependency/app/runtime-toolchain changes instead.
       - name: Cache Gradle
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*','**/gradle-wrapper.properties') }}
-          restore-keys: gradle-${{ runner.os }}-
+          key: gradle-runtime-v2-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'apps/showcase/app.json', 'apps/showcase/package.json', 'scripts/runtime-smoke/android.sh') }}
+          restore-keys: gradle-runtime-v2-${{ runner.os }}-
 
       - name: Cache Maestro CLI
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.maestro
           key: maestro-${{ runner.os }}-${{ hashFiles('scripts/runtime-smoke/install-maestro.sh') }}
-
-      - name: Cache Android AVD
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: ~/.android/avd/*
-          key: avd-api36-google_apis-x86_64-pixel_7-v2-${{ runner.os }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -264,7 +270,9 @@ jobs:
           arch: x86_64
           avd-name: beeui-runtime-api36
           profile: pixel_7
-          force-avd-creation: false
+          # Avoid persisting a multi-GB AVD snapshot. Build a deterministic fresh
+          # device from the pinned system image on every runtime-proof job.
+          force-avd-creation: true
           disable-animations: true
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -camera-back none -camera-front none -accel ${{ env.BEEUI_ANDROID_ACCEL }} -memory 4096 -cores 4 -no-snapshot
           script: bash ./scripts/runtime-smoke/android.sh

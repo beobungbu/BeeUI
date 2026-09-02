@@ -7,10 +7,27 @@ appId: com.beeui.showcase
     visible:
       id: "showcase-home"
 
-- tapOn:
-    id: "showcase-open-components"
-- assertVisible:
-    id: "component-gallery"
+# The home catalog is responsive and scrollable. On tall-text/large-font Android
+# configurations the Components card can start just below the initial viewport,
+# so discover it the same way as every lower launcher before tapping it.
+- scrollUntilVisible:
+    element:
+      id: "showcase-open-components"
+    direction: DOWN
+    visibilityPercentage: 100
+- waitForAnimationToEnd
+# Maestro can report an iOS tap as delivered while a freshly scrolled React
+# Native control is still settling its hit target. Treat the destination, not
+# the tap command, as proof that navigation happened and retry the pair.
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "showcase-open-components"
+      - extendedWaitUntil:
+          visible:
+            id: "component-gallery"
+          timeout: 12000
 - waitForAnimationToEnd
 - retry:
     maxRetries: 3
@@ -27,10 +44,15 @@ appId: com.beeui.showcase
       id: "showcase-open-patterns"
     direction: DOWN
 - waitForAnimationToEnd
-- tapOn:
-    id: "showcase-open-patterns"
-- assertVisible:
-    id: "pattern-gallery"
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "showcase-open-patterns"
+      - extendedWaitUntil:
+          visible:
+            id: "pattern-gallery"
+          timeout: 12000
 - waitForAnimationToEnd
 - retry:
     maxRetries: 3
@@ -45,10 +67,15 @@ appId: com.beeui.showcase
       id: "showcase-open-runtime"
     direction: DOWN
 - waitForAnimationToEnd
-- tapOn:
-    id: "showcase-open-runtime"
-- assertVisible:
-    id: "runtime-ready"
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "showcase-open-runtime"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-ready"
+          timeout: 12000
 
 - retry:
     maxRetries: 3
@@ -155,7 +182,20 @@ appId: com.beeui.showcase
     id: "runtime-toast-show"
 - assertVisible:
     text: "Runtime toast"
+# The persistent-toast dismiss fixture is the next row in the scroll content,
+# not the close affordance rendered inside the Toast overlay. Bringing only the
+# Show button into view can leave this control below Android's viewport even
+# though the Toast itself is visible. Center the actual test control before
+# asserting/tapping it, while proving the persistent Toast survives the scroll.
+- scrollUntilVisible:
+    element:
+      id: "runtime-toast-dismiss"
+    direction: DOWN
+    visibilityPercentage: 100
+    centerElement: true
 - waitForAnimationToEnd
+- assertVisible:
+    text: "Runtime toast"
 - retry:
     maxRetries: 4
     commands:

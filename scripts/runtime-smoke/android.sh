@@ -472,11 +472,19 @@ run_inline_maestro a7-open <<'EOF_FLOW'
     element:
       id: "runtime-stress-dialog-trigger"
     direction: DOWN
+    timeout: 30000
+    visibilityPercentage: 80
+    centerElement: true
 - waitForAnimationToEnd
-- tapOn:
-    id: "runtime-stress-dialog-trigger"
-- assertVisible:
-    id: "runtime-stress-dialog-content"
+- retry:
+    maxRetries: 4
+    commands:
+      - tapOn:
+          id: "runtime-stress-dialog-trigger"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-stress-dialog-content"
+          timeout: 10000
 - tapOn:
     id: "runtime-stress-dialog-popover-trigger"
 - assertVisible:

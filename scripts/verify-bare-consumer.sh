@@ -3,38 +3,28 @@ set -euo pipefail
 
 ACTION="${1:-all}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# WORK_ROOT must survive across CI jobs for the R1 reuse path to hit: the
-# GitHub Actions runner empties RUNNER_TEMP at the start of every job, so the
-# reusable bare app lives under the persistent iOS cache root instead (the
-# same location family as the DerivedData caches derived below). Fall back to
-# the same HOME path the ios-build step uses, then to /tmp for throwaway runs.
+# GitHub-hosted jobs are ephemeral. This work root is job-local there; callers
+# may still override it for deliberate local/long-lived reuse. Correctness
+# never depends on the directory surviving between CI jobs or runs.
 WORK_ROOT="${BEEUI_BARE_WORK_ROOT:-${BEEUI_IOS_CACHE_ROOT:-${HOME:-/tmp}/Library/Caches/BeeUI}/bare-consumer}"
 APP_DIR="${WORK_ROOT}/BeeUIBareSmoke"
 PACKAGE_DIR="${WORK_ROOT}/packages"
 FINGERPRINT_FILE="${WORK_ROOT}/.beeui-bare-fingerprint"
 CLI_VERSION="${BEEUI_RN_CLI_VERSION:-20.2.0}"
 RN_VERSION="${BEEUI_RN_VERSION:-0.86.2}"
-# Extra npm flags for the tarball install, e.g. "--legacy-peer-deps" when a
-# caller deliberately tests an RN line outside @beemvp/beeui-ui's current declared
-# peerDependencies range (see .github/workflows/compat-rn-0-87.yml, which
-# tests an RN line the peer range excludes and needs to bypass npm's strict
-# peer resolution to still gather real bundle/compile evidence). Left empty
-# for the default in-range consumer, where strict resolution should hold.
+# Extra npm flags are reserved for an explicit out-of-range diagnostic run.
+# The normal supported consumer leaves this empty so strict peer resolution
+# remains part of the verification contract.
 NPM_INSTALL_FLAGS="${BEEUI_BARE_NPM_INSTALL_FLAGS:-}"
 
 # @beemvp/beeui-ui peers on react-native-teleport for its native context-preserving
 # overlay host; teleport in turn peers on react-dom, so pin react-dom to the
 # app's react version to keep strict peer resolution clean.
-# DatePicker's native file (date-picker.native.tsx) hard-imports
-# @react-native-community/datetimepicker (its optional native peer), so the bare
-# consumer must install it too or the Metro bundle cannot resolve it.
-# Sheet's native file (sheet.native.tsx) hard-imports @gorhom/bottom-sheet (its
-# optional native peer), which itself peers on react-native-reanimated and
-# react-native-gesture-handler; Reanimated v4 in turn peers on
-# react-native-worklets (its own split-out worklets runtime, not an
-# independent BeeUI dependency decision — see packages/ui/package.json and
-# docs/decisions/006-sheet-gesture-engine.md). All four must be installed or
-# the Metro bundle cannot resolve them.
+# DatePicker's native file hard-imports @react-native-community/datetimepicker.
+# Sheet's native file hard-imports @gorhom/bottom-sheet, which peers on
+# react-native-reanimated/react-native-gesture-handler; Reanimated v4 peers on
+# react-native-worklets. All are installed so Metro/native builds exercise the
+# real supported dependency graph.
 PINNED_DEPS=(
   uniwind@1.10.1
   tailwindcss@4.3.3
@@ -116,9 +106,8 @@ prepare_consumer() {
     echo "::group::Install BeeUI tarballs and runtime styling dependencies"
     # shellcheck disable=SC2206 # NPM_INSTALL_FLAGS is a controlled, space-separated flag list.
     extra_flags=(${NPM_INSTALL_FLAGS})
-    # Expand a possibly-empty array safely under `set -u`: on bash 3.2 (the macOS
-    # ios-native runner) a bare "${extra_flags[@]}" over an empty array is an
-    # unbound-variable error. The ${arr[@]+"${arr[@]}"} idiom is portable.
+    # Expand a possibly-empty array safely under `set -u`: on bash 3.2 a bare
+    # "${extra_flags[@]}" over an empty array is an unbound-variable error.
     npm install --save-exact ${extra_flags[@]+"${extra_flags[@]}"} \
       "${CORE_TARBALL}" \
       "${TOKENS_TARBALL}" \
@@ -134,15 +123,10 @@ prepare_consumer() {
 
     echo "::group::Reinstall BeeUI tarballs into existing consumer"
     # The BeeUI tarball versions do not change between runs, so npm would skip
-    # a same-version reinstall; force it by clearing the scope first so new
-    # tarball content is always picked up. The rest of node_modules and
-    # ios/Pods are left intact for incremental installs/builds.
+    # a same-version reinstall; clear the scope so new tarball content is used.
     rm -rf node_modules/@beemvp
     # shellcheck disable=SC2206 # NPM_INSTALL_FLAGS is a controlled, space-separated flag list.
     extra_flags=(${NPM_INSTALL_FLAGS})
-    # Expand a possibly-empty array safely under `set -u`: on bash 3.2 (the macOS
-    # ios-native runner) a bare "${extra_flags[@]}" over an empty array is an
-    # unbound-variable error. The ${arr[@]+"${arr[@]}"} idiom is portable.
     npm install --save-exact ${extra_flags[@]+"${extra_flags[@]}"} \
       "${CORE_TARBALL}" \
       "${TOKENS_TARBALL}" \
@@ -201,9 +185,6 @@ import {
   Screen,
   Text,
 } from '@beemvp/beeui-ui';
-// #204: proves a granular per-component subpath (ADR-012,
-// docs/decisions/012-granular-subpath-exports.md) resolves through Metro
-// from the packed @beemvp/beeui-ui tarball, not just the barrel import above.
 import { Badge } from '@beemvp/beeui-ui/badge';
 import * as React from 'react';
 import { ScrollView } from 'react-native';
@@ -293,7 +274,7 @@ build_ios() {
   bundle_path="${cache_root}/bundle/ruby-${ruby_version}-$(uname -m)/rn-${RN_VERSION}"
 
   mkdir -p "$bundle_path"
-  echo "Using persistent Bundler cache: $bundle_path"
+  echo "Using iOS Bundler path: $bundle_path"
   bundle config set --local path "$bundle_path"
   bundle install
   bundle exec pod install
@@ -302,7 +283,7 @@ build_ios() {
   pod_hash="$(shasum -a 256 Podfile.lock | awk '{ print $1 }')"
   derived_data="${cache_root}/DerivedData/bare-rn-${RN_VERSION}/xcode-${safe_xcode_version}/pods-${pod_hash}"
   mkdir -p "$derived_data"
-  echo "Using persistent bare RN DerivedData: $derived_data"
+  echo "Using job-local bare RN DerivedData: $derived_data"
 
   xcodebuild \
     -workspace BeeUIBareSmoke.xcworkspace \
