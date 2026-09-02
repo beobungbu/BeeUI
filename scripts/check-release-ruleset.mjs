@@ -5,14 +5,12 @@
 // drifting from the actual `if:` gating in the workflow files that produce
 // those checks (issue #196).
 //
-// The core hazard this guards against: ci.yml's `classify` job decides
-// whether `bare-native`/`ios-native` run at all. On a JS-only/docs pull
-// request those jobs report "skipped", and GitHub treats a skipped required
-// check as unsatisfied — requiring a conditional job would deadlock every
-// PR that legitimately skips it. So the required-check set may only contain
-// jobs whose `if:` condition is the plain same-repo fork-guard (or, for
-// visual-web-report, that guard wrapped in `always()`), never a job gated by
-// `needs.classify.outputs.*` or another conditional trigger.
+// Standard GitHub-hosted runners are isolated, ephemeral VMs and are free for
+// public repositories. Required checks therefore run for ordinary pull
+// requests, including forks, with `permissions: contents: read`; they must not
+// be hidden behind labels, path classifiers, or same-repository guards.
+// Conditional native/runtime jobs remain intentionally outside the required
+// set because GitHub reports skipped required checks as unsatisfied.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -21,14 +19,9 @@ import { fileURLToPath } from 'node:url';
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DOC_PATH = path.join(ROOT_DIR, 'docs', 'release-ruleset.md');
 
-// The plain same-repo fork-guard used by every always-run job across ci.yml,
-// visual-web.yml, web-a11y.yml and web-consumer.yml.
-const FORK_GUARD_CONDITION =
-  "github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository";
-
 // Canonical, pinned set of GitHub status-check names required by the `main`
 // branch ruleset. Changing this list must be a deliberate decision reviewed
-// alongside the live `gh api .../rulesets` update — see docs/release-ruleset.md.
+// alongside the live ruleset update — see docs/release-ruleset.md.
 export const REQUIRED_STATUS_CHECKS = Object.freeze([
   { workflow: 'ci.yml', job: 'classify' },
   { workflow: 'ci.yml', job: 'verify' },
@@ -37,24 +30,19 @@ export const REQUIRED_STATUS_CHECKS = Object.freeze([
   { workflow: 'web-consumer.yml', job: 'web-consumer' },
 ]);
 
-// Native/compat jobs intentionally EXCLUDED from REQUIRED_STATUS_CHECKS
-// because they are conditionally skipped on ordinary pull requests. Listed
-// here (rather than only in prose) so a future contributor cannot silently
-// promote one into REQUIRED_STATUS_CHECKS without this file also changing.
+// Native/runtime jobs intentionally EXCLUDED from REQUIRED_STATUS_CHECKS
+// because they can be conditionally skipped on ordinary pull requests.
 export const CONDITIONAL_JOBS_EXCLUDED_FROM_REQUIRED_CHECKS = Object.freeze([
   { workflow: 'ci.yml', job: 'bare-native' },
   { workflow: 'ci.yml', job: 'ios-native' },
   { workflow: 'runtime-native.yml', job: 'ios-runtime' },
   { workflow: 'runtime-native.yml', job: 'android-runtime' },
-  { workflow: 'compat-rn-0-87.yml', job: 'bare-android-rn87' },
-  { workflow: 'compat-rn-0-87.yml', job: 'bare-ios-rn87' },
 ]);
 
 // Also intentionally excluded: the per-shard `visual-web (1/2/3)` matrix
-// checks. They always run (same fork-guard), but requiring each shard
-// individually is fragile against shard-count changes; `visual-web-report`
-// already `needs: [visual-web]` and runs with `always()`, so it is the
-// single authoritative signal for the whole visual-web workflow.
+// checks. They always run, but requiring each shard by name is fragile
+// against a future shard-count change; `visual-web-report` already depends on
+// the full matrix and is the single authoritative visual signal.
 export const VISUAL_WEB_MATRIX_JOB = Object.freeze({ workflow: 'visual-web.yml', job: 'visual-web' });
 
 function normalizeCondition(raw) {
@@ -123,27 +111,15 @@ export function extractJobIfCondition(workflowYaml, jobName) {
   return normalizeCondition(inlineValue);
 }
 
-// True when a job's condition is exactly the same-repo fork-guard (optionally
-// wrapped in `always() && (...)`, as visual-web-report does to bypass the
-// default needs-skip propagation) — i.e. the job always attempts to run.
-function stripWhitespaceAndParens(str) {
-  return str.replace(/[\s()]+/g, '');
-}
-
+// Required jobs either have no `if:` at all, or use `always()` only when
+// they aggregate another job/matrix (visual-web-report). Any other condition
+// can make a required check disappear or report skipped for a legitimate PR.
 export function jobAlwaysRuns(workflowYaml, jobName) {
   const condition = extractJobIfCondition(workflowYaml, jobName);
   if (condition === null) return true;
-
-  const collapsed = stripWhitespaceAndParens(condition);
-  const bare = stripWhitespaceAndParens(FORK_GUARD_CONDITION);
-  const alwaysWrapped = stripWhitespaceAndParens(`always() && ${FORK_GUARD_CONDITION}`);
-
-  return collapsed === bare || collapsed === alwaysWrapped;
+  return condition.replace(/\s+/g, '') === 'always()';
 }
 
-// True when a job's condition includes gating beyond the plain fork-guard
-// (classify outputs, labels, head refs, schedule/workflow_dispatch, ...) —
-// i.e. it can legitimately report "skipped" on an ordinary pull request.
 export function jobIsConditionallySkippable(workflowYaml, jobName) {
   return !jobAlwaysRuns(workflowYaml, jobName);
 }
@@ -188,12 +164,12 @@ export function collectReleaseRulesetViolations({ markdown, workflowContentsByFi
     }
     if (jobIsConditionallySkippable(contents, job)) {
       violations.push(
-        `${workflow}:${job} is a required status check but its "if:" condition can skip it on an ordinary pull request — this would deadlock JS-only/docs PRs.`,
+        `${workflow}:${job} is a required status check but its "if:" condition can skip it on an ordinary pull request.`,
       );
     }
   }
 
-  for (const { workflow, job } of [...CONDITIONAL_JOBS_EXCLUDED_FROM_REQUIRED_CHECKS, VISUAL_WEB_MATRIX_JOB]) {
+  for (const { job } of [...CONDITIONAL_JOBS_EXCLUDED_FROM_REQUIRED_CHECKS, VISUAL_WEB_MATRIX_JOB]) {
     if (canonicalNames.includes(job)) {
       violations.push(`"${job}" must not appear in REQUIRED_STATUS_CHECKS (it is a conditional/per-shard job).`);
     }
@@ -216,14 +192,7 @@ export function collectReleaseRulesetViolations({ markdown, workflowContentsByFi
 }
 
 function runCli() {
-  const workflowFiles = [
-    'ci.yml',
-    'visual-web.yml',
-    'web-a11y.yml',
-    'web-consumer.yml',
-    'runtime-native.yml',
-    'compat-rn-0-87.yml',
-  ];
+  const workflowFiles = ['ci.yml', 'visual-web.yml', 'web-a11y.yml', 'web-consumer.yml', 'runtime-native.yml'];
   const workflowContentsByFile = Object.fromEntries(
     workflowFiles.map((file) => [file, fs.readFileSync(path.join(ROOT_DIR, '.github', 'workflows', file), 'utf8')]),
   );
