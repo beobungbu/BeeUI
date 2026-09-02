@@ -26,10 +26,10 @@ env:
 
 jobs:
   ios-runtime:
-    # Same-repo check is defense-in-depth on top of the head_ref/label gate
-    # below: a fork branch could reuse the magic branch name or a maintainer
-    # could label a fork PR without realizing the runtime smoke runs on our
-    # self-hosted Mac.
+    # Same-repository check is defense-in-depth on top of the head_ref/label
+    # gate below: a fork branch can reuse the magic branch name, and a
+    # maintainer can accidentally label a fork PR; neither may enter the
+    # hosted runtime path.
     if: >-
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
@@ -148,10 +148,10 @@ jobs:
           retention-days: 7
 
   android-runtime:
-    # Same-repo check is defense-in-depth on top of the head_ref/label gate
-    # below: a fork branch could reuse the magic branch name or a maintainer
-    # could label a fork PR without realizing the runtime smoke runs on our
-    # self-hosted runner.
+    # Same-repository check is defense-in-depth on top of the head_ref/label
+    # gate below: a fork branch can reuse the magic branch name, and a
+    # maintainer can accidentally label a fork PR; neither may enter the
+    # hosted runtime path.
     if: >-
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
