@@ -1,26 +1,16 @@
 name: expo-consumer
 
-# #204 (R7.8, parent #114): the independent, clean Expo SDK 57 consumer —
-# installs only the packed @beemvp/beeui-core/@beemvp/beeui-tokens/@beemvp/beeui-ui tarballs (no
-# workspace link, no repository source fallback), proves TypeScript
-# typechecking plus a Metro bundle/export for Web/Android/iOS from those
-# tarballs, and exercises the provider/theme/forms/overlays surface through
-# both the public barrel and a granular per-component subpath import
-# (ADR-012). Mirrors web-consumer.yml's structure/gating; native
-# prebuild+compile runs as a separate, heavier job gated the same way
-# ci.yml's bare-native/ios-native jobs are, since it needs the Android
-# SDK/Xcode toolchains, not just Node/pnpm.
-
+# Independent, clean Expo SDK 57 consumer (#204): installs only packed BeeUI
+# tarballs, proves TypeScript + Metro export, and keeps real Android/iOS native
+# compile coverage separate from the monorepo Showcase.
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches:
       - main
-  # Weekly recurring re-verification even on weeks with no PR/push activity
-  # touching this row, offset from the other nightly compatibility crons
-  # (ci.yml 47 2 * * *, runtime-native.yml 17 3 * * *,
-  # compat-rn-0-87.yml 52 3 * * *, web-consumer.yml 22 4 * * 1).
+  # Weekly dependency/toolchain drift backstop. Exact main pushes already
+  # verify this row, so weekly is enough when the repository is otherwise idle.
   schedule:
     - cron: '5 5 * * 1'
   workflow_dispatch:
@@ -29,8 +19,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-# Least-privilege default: only reads source and uploads its own job
-# artifacts (via the runner's ACTIONS_RUNTIME_TOKEN, not this token's scope).
 permissions:
   contents: read
 
@@ -40,11 +28,9 @@ env:
 
 jobs:
   bundle:
-    # Same-repository PR guard: this verification path intentionally excludes
-    # fork PRs; push/schedule/manual events are repository-controlled.
-    if: >
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+    # Hosted Linux is isolated/ephemeral; fork PRs receive only the read-only
+    # token above and no repository secrets, so this verification can run for
+    # all pull requests.
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -119,17 +105,13 @@ jobs:
 
   android-native:
     needs: [bundle]
-    # Native prebuild + Gradle compile is heavier than the bundle job above,
-    # so it only runs on push/schedule/dispatch or an explicit `ci:native`
-    # label — the same trigger shape as ci.yml's bare-native Android leg.
+    # Android compile is a heavier optional PR proof. It always runs on exact
+    # main/weekly/manual checks and can be requested on any PR with ci:native.
     if: >
       github.event_name == 'push' ||
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
-      (
-        contains(github.event.pull_request.labels.*.name, 'ci:native') &&
-        github.event.pull_request.head.repo.full_name == github.repository
-      )
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci:native'))
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -201,13 +183,13 @@ jobs:
 
   ios-native:
     needs: [bundle]
-    # Same trigger shape as ci.yml's ios-native job: push/schedule/dispatch,
-    # or a same-repository PR. Fork PRs stay outside this hosted macOS path.
+    # Standard hosted macOS is free for public repositories and isolated per
+    # job. Keep this real consumer compile on every PR as well as main/weekly.
     if: >
       github.event_name == 'push' ||
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+      github.event_name == 'pull_request'
     runs-on: macos-latest
     timeout-minutes: 90
     env:
@@ -228,11 +210,6 @@ jobs:
             local major minor min_major min_minor
             IFS='.' read -r major minor _ <<< "$version"
             IFS='.' read -r min_major min_minor _ <<< "$min_version"
-            # Return an explicit boolean. A bare `(( ... ))` as a function's
-            # final statement exits 1 whenever the comparison is false, so under
-            # `set -euo pipefail` the helper's status would ride on shell error
-            # handling rather than the version test. Branch explicitly so a
-            # supported Xcode can never be misread as unsupported.
             if (( ${major:-0} > ${min_major:-0} || \
                   (${major:-0} == ${min_major:-0} && ${minor:-0} >= ${min_minor:-0}) )); then
               return 0
