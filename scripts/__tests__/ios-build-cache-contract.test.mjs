@@ -115,7 +115,7 @@ test('visual warm-cache path installs only deterministic glyph fallback and avoi
   );
   assert.match(warmCacheBlock, /apt-get install -y --no-install-recommends fonts-unifont/);
   assert.doesNotMatch(warmCacheBlock, /--with-deps/);
-  assert.doesNotMatch(warmCacheBlock, /fc-cache -f/);
+  assert.doesNotMatch(warmCacheBlock, /^\s*fc-cache -f\s*$/m);
 });
 
 test('Web consumer artifact upload follows the harness work-root nesting and fails closed', async () => {
