@@ -40,10 +40,8 @@ env:
 
 jobs:
   bundle:
-    # Fork PRs must never run on our self-hosted runner: the attacker-
-    # controlled checkout would execute arbitrary code directly on our
-    # infrastructure regardless of GITHUB_TOKEN scope. Push/schedule events
-    # are always same-repo.
+    # Same-repository PR guard: this verification path intentionally excludes
+    # fork PRs; push/schedule/manual events are repository-controlled.
     if: >
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
@@ -204,8 +202,7 @@ jobs:
   ios-native:
     needs: [bundle]
     # Same trigger shape as ci.yml's ios-native job: push/schedule/dispatch,
-    # or a same-repo PR (fork PRs still cannot execute on the self-hosted
-    # Mac).
+    # or a same-repository PR. Fork PRs stay outside this hosted macOS path.
     if: >
       github.event_name == 'push' ||
       github.event_name == 'schedule' ||
