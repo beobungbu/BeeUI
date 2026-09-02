@@ -95,6 +95,13 @@ test('verification decomposes historical typecheck/test chains into eight parall
   assert.match(workflow, /contracts\)[\s\S]*classify-ci-changes\.test\.mjs[\s\S]*ios-build-cache-contract\.test\.mjs/);
 });
 
+test('only the token verification lane requests full Git history', async () => {
+  const { workflow } = await sources();
+  const verifyBlock = workflow.slice(workflow.indexOf('  verify-lane:'), workflow.indexOf('  showcase-bundle:'));
+  assert.match(verifyBlock, /fetch-depth: \$\{\{ matrix\.task == 'tokens' && '0' \|\| '1' \}\}/);
+  assert.equal((verifyBlock.match(/fetch-depth:/g) ?? []).length, 1);
+});
+
 test('Showcase tests always rebuild current workspace artifacts before executing', async () => {
   const { showcasePackage, showcaseBuildPrereq } = await sources();
   assert.equal(showcasePackage.scripts.pretest, 'node ./scripts/ensure-workspace-build.mjs');
@@ -209,6 +216,14 @@ test('runtime magic branch cannot self-trigger device smoke from a fork', async 
   assert.equal((runtimeWorkflow.match(/contains\(github\.event\.pull_request\.labels\.\*\.name, 'ci:runtime'\)/g) ?? []).length, 2);
 });
 
+test('runtime fork opt-in checks out and verifies the exact fork head', async () => {
+  const { runtimeWorkflow } = await sources();
+  const repoSelection = /repository: \$\{\{ github\.event_name == 'pull_request' && github\.event\.pull_request\.head\.repo\.full_name \|\| github\.repository \}\}/g;
+  assert.equal([...runtimeWorkflow.matchAll(repoSelection)].length, 2);
+  assert.equal((runtimeWorkflow.match(/ref: \$\{\{ env\.BEEUI_RUNTIME_HEAD_SHA \}\}/g) ?? []).length, 2);
+  assert.equal((runtimeWorkflow.match(/git rev-parse HEAD/g) ?? []).length, 2);
+});
+
 test('Expo iOS native capacity is automatic only for same-repository PRs', async () => {
   const { expoConsumerWorkflow } = await sources();
   const iosBlock = expoConsumerWorkflow.slice(expoConsumerWorkflow.indexOf('  ios-native:'));
@@ -218,9 +233,11 @@ test('Expo iOS native capacity is automatic only for same-repository PRs', async
 });
 
 test('generated Android projects use cache keys derived from checked-in inputs', async () => {
-  const { runtimeWorkflow, expoConsumerWorkflow } = await sources();
+  const { workflow, runtimeWorkflow, expoConsumerWorkflow } = await sources();
+  assert.match(workflow, /key: gradle-bare-v2-\$\{\{ runner\.os \}\}-\$\{\{ hashFiles\('pnpm-lock\.yaml','scripts\/verify-bare-consumer\.sh'\) \}\}/);
   assert.match(runtimeWorkflow, /key: gradle-runtime-v2-\$\{\{ runner\.os \}\}-\$\{\{ hashFiles\('pnpm-lock\.yaml'/);
   assert.match(expoConsumerWorkflow, /key: gradle-expo-v2-\$\{\{ runner\.os \}\}-\$\{\{ hashFiles\('pnpm-lock\.yaml'/);
+  assert.doesNotMatch(workflow, /hashFiles\('\*\*\/\*\.gradle\*'/);
   assert.doesNotMatch(runtimeWorkflow, /hashFiles\('\*\*\/\*\.gradle\*'/);
   assert.doesNotMatch(expoConsumerWorkflow, /hashFiles\('\*\*\/\*\.gradle\*'/);
 });
