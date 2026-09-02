@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 // BeeUI 1.0 #144 (R3.6) — localization / long-content stress suite, real-browser
 // evidence. Mirrors the established pattern of `dynamic-type-showcase.spec.ts`
@@ -92,6 +92,45 @@ async function assertFullyInViewport(page: Page, box: { x: number; y: number; wi
   expect(box.y).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(viewport!.width + VIEWPORT_BOUNDS_TOLERANCE_PX);
   expect(box.y + box.height).toBeLessThanOrEqual(viewport!.height + VIEWPORT_BOUNDS_TOLERANCE_PX);
+}
+
+// Sheet Web becomes visible before its Animated translateY entry motion settles.
+// #408's CI trace captured the action while the wrapper was still translated by
+// 23.6569px, so wait for resting geometry while keeping the 2px acceptance strict.
+async function waitForStableBoundingBox(locator: Locator) {
+  let previous: { x: number; y: number; width: number; height: number } | null = null;
+  let stableSamples = 0;
+
+  await expect
+    .poll(
+      async () => {
+        const current = await locator.boundingBox();
+        if (!current) {
+          previous = null;
+          stableSamples = 0;
+          return stableSamples;
+        }
+
+        if (previous) {
+          const maxDelta = Math.max(
+            Math.abs(current.x - previous.x),
+            Math.abs(current.y - previous.y),
+            Math.abs(current.width - previous.width),
+            Math.abs(current.height - previous.height),
+          );
+          stableSamples = maxDelta <= 0.25 ? stableSamples + 1 : 0;
+        }
+
+        previous = current;
+        return stableSamples;
+      },
+      {
+        timeout: 5_000,
+        intervals: [50, 50, 100, 100],
+        message: 'Sheet target should reach stable resting geometry before viewport assertions',
+      },
+    )
+    .toBeGreaterThanOrEqual(2);
 }
 
 test.describe('Localization / long-content stress suite (#144)', () => {
@@ -189,6 +228,7 @@ test.describe('Localization / long-content stress suite (#144)', () => {
       const action = page.getByTestId('l10n-stress-primary-action');
       await expect(action).toBeVisible();
       await expect(action).toContainText(expectedIdentifier);
+      await waitForStableBoundingBox(action);
 
       const box = await action.boundingBox();
       expect(box).not.toBeNull();
@@ -234,6 +274,7 @@ test.describe('Localization / long-content stress suite (#144)', () => {
 
     const action = page.getByTestId('l10n-stress-primary-action');
     await expect(action).toBeVisible();
+    await waitForStableBoundingBox(action);
     const box = await action.boundingBox();
     expect(box).not.toBeNull();
     await assertFullyInViewport(page, box!);
@@ -263,6 +304,7 @@ test.describe('Localization / long-content stress suite (#144)', () => {
     await trigger.click();
     const action = page.getByTestId('l10n-stress-primary-action');
     await expect(action).toBeVisible();
+    await waitForStableBoundingBox(action);
     const box = await action.boundingBox();
     expect(box).not.toBeNull();
     await assertFullyInViewport(page, box!);
