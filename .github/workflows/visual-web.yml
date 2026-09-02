@@ -175,4 +175,3 @@ jobs:
         run: |
           echo "::error::visual-web matrix result is '${{ needs.visual-web.result }}' — one or more shards failed; see the combined report artifact."
           exit 1
-          retention-days: 3
