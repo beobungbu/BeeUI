@@ -7,6 +7,7 @@ import test from 'node:test';
 import { buildPublicLanding, renderPublicLanding } from '../build-public-landing.mjs';
 import { collectPublicWebViolations } from '../check-public-web.mjs';
 import { buildPublicComponentManifest, generatePublicComponentPages } from '../public-component-reference.mjs';
+import { buildPreviewDescriptor, enhanceGeneratedPublicComponentPages } from '../public-component-previews.mjs';
 
 const rootDir = path.resolve(new URL('../..', import.meta.url).pathname);
 
@@ -42,5 +43,20 @@ test('public component generator emits one reference page per stable public fami
     assert.match(page, /## Accessibility/);
     assert.match(page, /## Executable examples/);
     assert.match(page, /## Limitations/);
+  }
+});
+
+test('rich component pages lazy-load real Showcase and display exact typechecked fixture source', () => {
+  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-component-previews-'));
+  const manifest = generatePublicComponentPages({ rootDir, outDir });
+  enhanceGeneratedPublicComponentPages({ rootDir, outDir });
+  for (const component of manifest) {
+    const page = fs.readFileSync(path.join(outDir, `${component.name}.md`), 'utf8');
+    const descriptor = buildPreviewDescriptor(component, rootDir);
+    assert.match(page, /## Live Web preview/);
+    assert.match(page, /loading="lazy"/);
+    assert.ok(page.includes(descriptor.source));
+    assert.ok(page.includes(descriptor.showcaseHref));
+    assert.match(page, /### Composition anatomy/);
   }
 });
