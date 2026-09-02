@@ -16,10 +16,18 @@ appId: com.beeui.showcase
     direction: DOWN
     visibilityPercentage: 100
 - waitForAnimationToEnd
-- tapOn:
-    id: "showcase-open-components"
-- assertVisible:
-    id: "component-gallery"
+# Maestro can report an iOS tap as delivered while a freshly scrolled React
+# Native control is still settling its hit target. Treat the destination, not
+# the tap command, as proof that navigation happened and retry the pair.
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "showcase-open-components"
+      - extendedWaitUntil:
+          visible:
+            id: "component-gallery"
+          timeout: 12000
 - waitForAnimationToEnd
 - retry:
     maxRetries: 3
@@ -36,10 +44,15 @@ appId: com.beeui.showcase
       id: "showcase-open-patterns"
     direction: DOWN
 - waitForAnimationToEnd
-- tapOn:
-    id: "showcase-open-patterns"
-- assertVisible:
-    id: "pattern-gallery"
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "showcase-open-patterns"
+      - extendedWaitUntil:
+          visible:
+            id: "pattern-gallery"
+          timeout: 12000
 - waitForAnimationToEnd
 - retry:
     maxRetries: 3
@@ -54,10 +67,15 @@ appId: com.beeui.showcase
       id: "showcase-open-runtime"
     direction: DOWN
 - waitForAnimationToEnd
-- tapOn:
-    id: "showcase-open-runtime"
-- assertVisible:
-    id: "runtime-ready"
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "showcase-open-runtime"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-ready"
+          timeout: 12000
 
 - retry:
     maxRetries: 3
