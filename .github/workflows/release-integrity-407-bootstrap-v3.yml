@@ -39,12 +39,17 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Apply release-integrity migration
-        run: node scripts/.tmp-apply-release-integrity-407.mjs
+        run: |
+          node scripts/.tmp-apply-release-integrity-407.mjs
+          node scripts/.tmp-finalize-release-policy-407.mjs
 
       - name: Add focused lint dependencies and refresh lockfile
         run: |
           pnpm add -Dw --save-exact eslint@10.9.1 @typescript-eslint/parser@8.69.0 eslint-plugin-react-hooks@7.1.1
           pnpm install --lockfile-only
+
+      - name: Regenerate AI-facing release docs
+        run: pnpm llms:generate
 
       - name: Verify focused guard and lint
         run: |
@@ -76,8 +81,9 @@ jobs:
             packages/ui/src/components/dropdown-menu.tsx packages/ui/src/components/overlay-runtime.tsx \
             packages/ui/src/components/select.tsx packages/ui/src/components/toast.tsx \
             packages/ui/src/components/tooltip-shared.tsx packages/ui/src/components/use-bee-token.ts \
-            docs/architecture.md docs/dist-tag-policy.md docs/consumer-compatibility-report.md \
+            docs/architecture.md docs/release.md docs/dist-tag-policy.md docs/consumer-compatibility-report.md \
             docs/rc-candidate.md docs/rc-ci-matrix.md docs/release-integrity-20260902.md \
+            llms.txt llms-full.txt \
             .github/workflows/ci.yml .github/workflows/compat-rn-0-87.yml .github/workflows/expo-consumer.yml \
             .github/workflows/runtime-native.yml .github/workflows/visual-web.yml .github/workflows/web-a11y.yml \
             .github/workflows/web-consumer.yml
