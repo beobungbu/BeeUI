@@ -6,6 +6,7 @@ import test from 'node:test';
 
 import { buildPublicLanding, renderPublicLanding } from '../build-public-landing.mjs';
 import { collectPublicWebViolations } from '../check-public-web.mjs';
+import { buildPublicComponentManifest, generatePublicComponentPages } from '../public-component-reference.mjs';
 
 const rootDir = path.resolve(new URL('../..', import.meta.url).pathname);
 
@@ -28,4 +29,18 @@ test('landing derives publication/version truth from canonical repository state'
   assert.equal(contract.buildTruth.publication.published, false);
   assert.equal(publicationLabel, 'Unpublished');
   assert.match(html, new RegExp(contract.buildTruth.version.replaceAll('.', '\\.')));
+});
+
+test('public component generator emits one reference page per stable public family', () => {
+  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-components-'));
+  const manifest = generatePublicComponentPages({ rootDir, outDir });
+  assert.equal(manifest.length, buildPublicComponentManifest(rootDir).length);
+  assert.equal(fs.existsSync(path.join(outDir, 'index.md')), true);
+  for (const component of manifest) {
+    const page = fs.readFileSync(path.join(outDir, `${component.name}.md`), 'utf8');
+    assert.match(page, new RegExp(`^# ${component.title}`, 'm'));
+    assert.match(page, /## Accessibility/);
+    assert.match(page, /## Executable examples/);
+    assert.match(page, /## Limitations/);
+  }
 });
