@@ -28,3 +28,13 @@ body {
   transition-delay: 0s !important;
   caret-color: transparent !important;
 }
+
+/*
+ * The Table production fixture intentionally uses the Unicode wastebasket
+ * character as visible IconButton content. Force its text presentation so
+ * screenshot rendering cannot flip between a monochrome symbol and a color
+ * emoji when the hosted runner's optional system-font packages differ.
+ */
+[aria-label^='Delete '] {
+  font-variant-emoji: text;
+}
