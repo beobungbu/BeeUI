@@ -8,9 +8,14 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release-integrity-407-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   NODE_VERSION: 24.13.1
   PNPM_VERSION: 10.15.0
+  START_SHA: ${{ github.sha }}
 
 jobs:
   apply-verify-and-clean:
@@ -77,8 +82,8 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
           git diff --cached --check
-          if git diff --cached --name-only | grep -E '(^|/)\.tmp-|release-integrity-407-bootstrap'; then
-            echo 'Temporary bootstrap artifact leaked into final diff.' >&2
+          if git ls-files | grep -E '(^|/)\.tmp-|release-integrity-407-bootstrap'; then
+            echo 'Temporary bootstrap artifact remains in the final index.' >&2
             exit 1
           fi
           git diff --cached --quiet && { echo 'No cleanup changes to commit.' >&2; exit 1; }
@@ -88,4 +93,11 @@ jobs:
         run: BEEUI_VERIFY_SHA="$(git rev-parse HEAD)" pnpm release:verify
 
       - name: Push exact verified head
-        run: git push origin HEAD:fix/release-integrity-20260902-final
+        run: |
+          git fetch origin fix/release-integrity-20260902-final
+          remote_sha="$(git rev-parse FETCH_HEAD)"
+          if [ "$remote_sha" != "$START_SHA" ]; then
+            echo "Remote branch advanced during verification: expected $START_SHA, found $remote_sha" >&2
+            exit 1
+          fi
+          git push origin HEAD:fix/release-integrity-20260902-final
