@@ -395,11 +395,65 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for attempt in $(seq 1 30); do
-            if curl --silent --fail "$PREVIEW_URL/api/health" >"$RUNNER_TEMP/health.json"; then break; fi
-            sleep 2
+          verified=false
+          for attempt in $(seq 1 5); do
+            health_file="$RUNNER_TEMP/health.json"
+            rm -f "$health_file"
+            url="$PREVIEW_URL/api/health?verify=${EXPECTED_SHA}&attempt=${attempt}&ts=$(date +%s%N)"
+            http_status=$(curl --silent --show-error \
+              --output "$health_file" \
+              --write-out '%{http_code}' \
+              --header 'Cache-Control: no-cache, no-store, max-age=0' \
+              --header 'Pragma: no-cache' \
+              "$url" || true)
+            if HTTP_STATUS="$http_status" ATTEMPT="$attempt" HEALTH_FILE="$health_file" python3 <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          expected = {
+              'httpStatus': '200',
+              'ok': True,
+              'commit': os.environ['EXPECTED_SHA'],
+              'environment': os.environ['EXPECTED_ENV'],
+          }
+          actual = {'httpStatus': os.environ.get('HTTP_STATUS', '')}
+          mismatches = []
+          path = Path(os.environ['HEALTH_FILE'])
+          raw = path.read_text(encoding='utf-8') if path.exists() else ''
+
+          if actual['httpStatus'] != expected['httpStatus']:
+              mismatches.append(f"httpStatus expected={expected['httpStatus']!r} actual={actual['httpStatus']!r}")
+
+          try:
+              body = json.loads(raw)
+          except Exception as exc:
+              actual['jsonError'] = f'{type(exc).__name__}: {exc}'
+              actual['body'] = raw[:500]
+              mismatches.append(f"body.json expected='valid JSON' actual={actual['jsonError']!r}")
+          else:
+              for field in ('ok', 'commit', 'environment'):
+                  actual[field] = body.get(field)
+                  if actual[field] != expected[field]:
+                      mismatches.append(f"{field} expected={expected[field]!r} actual={actual[field]!r}")
+
+          print(f"Preview identity verification attempt {os.environ['ATTEMPT']}/5")
+          print('expected: ' + json.dumps(expected, sort_keys=True))
+          print('actual:   ' + json.dumps(actual, sort_keys=True))
+          if mismatches:
+              print('mismatch: ' + '; '.join(mismatches))
+              raise SystemExit(1)
+          PY
+            then
+              verified=true
+              break
+            fi
+            if [ "$attempt" -lt 5 ]; then sleep 10; fi
           done
-          node -e "const fs=require('fs'); const j=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/health.json')); if(!j.ok||j.commit!==process.env.EXPECTED_SHA||j.environment!==process.env.EXPECTED_ENV) process.exit(1)"
+          if [ "$verified" != true ]; then
+            echo "Preview identity verification failed after 5 attempts within one minute." >&2
+            exit 1
+          fi
 
       - name: Deploy exact merged SHA to environment Custom Domain
         if: needs.authorize.outputs.mode == 'deploy'
@@ -425,11 +479,65 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for attempt in $(seq 1 60); do
-            if curl --silent --fail "$DEPLOYMENT_URL/api/health" >"$RUNNER_TEMP/health.json"; then break; fi
-            sleep 5
+          verified=false
+          for attempt in $(seq 1 5); do
+            health_file="$RUNNER_TEMP/health.json"
+            rm -f "$health_file"
+            url="$DEPLOYMENT_URL/api/health?verify=${EXPECTED_SHA}&attempt=${attempt}&ts=$(date +%s%N)"
+            http_status=$(curl --silent --show-error \
+              --output "$health_file" \
+              --write-out '%{http_code}' \
+              --header 'Cache-Control: no-cache, no-store, max-age=0' \
+              --header 'Pragma: no-cache' \
+              "$url" || true)
+            if HTTP_STATUS="$http_status" ATTEMPT="$attempt" HEALTH_FILE="$health_file" python3 <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          expected = {
+              'httpStatus': '200',
+              'ok': True,
+              'commit': os.environ['EXPECTED_SHA'],
+              'environment': os.environ['EXPECTED_ENV'],
+          }
+          actual = {'httpStatus': os.environ.get('HTTP_STATUS', '')}
+          mismatches = []
+          path = Path(os.environ['HEALTH_FILE'])
+          raw = path.read_text(encoding='utf-8') if path.exists() else ''
+
+          if actual['httpStatus'] != expected['httpStatus']:
+              mismatches.append(f"httpStatus expected={expected['httpStatus']!r} actual={actual['httpStatus']!r}")
+
+          try:
+              body = json.loads(raw)
+          except Exception as exc:
+              actual['jsonError'] = f'{type(exc).__name__}: {exc}'
+              actual['body'] = raw[:500]
+              mismatches.append(f"body.json expected='valid JSON' actual={actual['jsonError']!r}")
+          else:
+              for field in ('ok', 'commit', 'environment'):
+                  actual[field] = body.get(field)
+                  if actual[field] != expected[field]:
+                      mismatches.append(f"{field} expected={expected[field]!r} actual={actual[field]!r}")
+
+          print(f"Deployment identity verification attempt {os.environ['ATTEMPT']}/5")
+          print('expected: ' + json.dumps(expected, sort_keys=True))
+          print('actual:   ' + json.dumps(actual, sort_keys=True))
+          if mismatches:
+              print('mismatch: ' + '; '.join(mismatches))
+              raise SystemExit(1)
+          PY
+            then
+              verified=true
+              break
+            fi
+            if [ "$attempt" -lt 5 ]; then sleep 10; fi
           done
-          node -e "const fs=require('fs'); const j=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/health.json')); if(!j.ok||j.commit!==process.env.EXPECTED_SHA||j.environment!==process.env.EXPECTED_ENV) process.exit(1)"
+          if [ "$verified" != true ]; then
+            echo "Deployment identity verification failed after 5 attempts within one minute." >&2
+            exit 1
+          fi
 
       - name: Record delivery evidence
         if: always()
