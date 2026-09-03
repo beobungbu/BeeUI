@@ -1,0 +1,15 @@
+{
+  "name": "@beemvp/beeui-web-worker",
+  "private": true,
+  "version": "20260902.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "node ../../scripts/build-public-worker.mjs",
+    "typecheck": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json",
+    "test": "node --test ../../scripts/__tests__/public-worker.test.mjs",
+    "validate": "pnpm dlx wrangler@4.128.0 deploy --dry-run --config wrangler.jsonc",
+    "dev": "pnpm dlx wrangler@4.128.0 dev --config wrangler.jsonc",
+    "deploy:preview": "pnpm dlx wrangler@4.128.0 deploy --config wrangler.jsonc",
+    "deploy:production": "pnpm dlx wrangler@4.128.0 deploy --env production --config wrangler.jsonc"
+  }
+}

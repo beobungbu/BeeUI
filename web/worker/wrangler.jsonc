@@ -1,0 +1,28 @@
+{
+  "name": "beeui-web-preview",
+  "main": "./src/index.mjs",
+  "compatibility_date": "2026-09-03",
+  "workers_dev": true,
+  "preview_urls": true,
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "observability": {
+    "enabled": true
+  },
+  "env": {
+    "production": {
+      "name": "beeui-web",
+      "workers_dev": false,
+      "preview_urls": false,
+      "routes": [
+        {
+          "pattern": "beeui.beemvp.com",
+          "custom_domain": true
+        }
+      ]
+    }
+  }
+}
