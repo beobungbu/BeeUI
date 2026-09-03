@@ -1,0 +1,189 @@
+name: beeui-web
+
+on:
+  pull_request:
+  push:
+    branches:
+      - development
+      - staging
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 24.13.1
+  PNPM_VERSION: 10.15.0
+  WRANGLER_VERSION: 4.128.0
+
+jobs:
+  build-and-local-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact source revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Resolve source identity and artifact environment
+        id: identity
+        shell: bash
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.ref }}
+          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            case "$PR_BASE" in
+              development) ARTIFACT_ENV=development-preview ;;
+              staging) ARTIFACT_ENV=staging-preview ;;
+              main) ARTIFACT_ENV=production-candidate ;;
+              *) ARTIFACT_ENV=pr-preview ;;
+            esac
+          else
+            case "${GITHUB_REF_NAME:-}" in
+              development) ARTIFACT_ENV=development ;;
+              staging) ARTIFACT_ENV=staging ;;
+              main) ARTIFACT_ENV=production ;;
+              *) ARTIFACT_ENV=ci ;;
+            esac
+          fi
+          {
+            echo "source_sha=$SOURCE_SHA"
+            echo "artifact_environment=$ARTIFACT_ENV"
+            echo "pr_base=$PR_BASE"
+            echo "pr_head_repo=$PR_HEAD_REPO"
+            echo "pr_number=$PR_NUMBER"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pinned pnpm
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+          test "$(node --version)" = "v${NODE_VERSION}"
+          test "$(pnpm --version)" = "${PNPM_VERSION}"
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run public Web source contracts
+        run: |
+          pnpm web:check
+          pnpm web:test
+
+      - name: Build exact composed Worker artifact
+        env:
+          BEEUI_WEB_ENV: ${{ steps.identity.outputs.artifact_environment }}
+        run: pnpm --dir web/worker build
+
+      - name: Verify Worker runtime and Wrangler config
+        run: |
+          pnpm --dir web/worker typecheck
+          pnpm --dir web/worker test
+          pnpm --dir web/worker validate
+
+      - name: Smoke production-like local Worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm dlx "wrangler@${WRANGLER_VERSION}" dev --config web/worker/wrangler.jsonc --port 8787 >"$RUNNER_TEMP/beeui-wrangler.log" 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 45); do
+            if curl --silent --fail http://127.0.0.1:8787/api/health >"$RUNNER_TEMP/health.json"; then break; fi
+            sleep 1
+          done
+          node -e "const fs=require('fs'); const j=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/health.json')); if(!j.ok||j.service!=='beeui-web'||j.commit!==process.env.SOURCE_SHA||j.environment!==process.env.ARTIFACT_ENV) process.exit(1)"
+          curl --silent --fail http://127.0.0.1:8787/ >/dev/null
+          curl --silent --fail http://127.0.0.1:8787/docs/ >/dev/null
+          curl --silent --fail http://127.0.0.1:8787/docs/components/reference/button/ >/dev/null
+          curl --silent --fail http://127.0.0.1:8787/docs/patterns/reference/auth/sign-in-screen/ >/dev/null
+          curl --silent --fail http://127.0.0.1:8787/showcase/ >/dev/null
+          curl --silent --fail http://127.0.0.1:8787/demo/ >/dev/null
+          curl --silent --fail http://127.0.0.1:8787/examples/ >/dev/null
+          curl --silent --fail http://127.0.0.1:8787/llms.txt >/dev/null
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8787/definitely-missing.js)" = "404"
+          test "$(curl --silent --output "$RUNNER_TEMP/api-missing.json" --write-out '%{http_code}' http://127.0.0.1:8787/api/definitely-missing)" = "404"
+          node -e "const fs=require('fs'); const j=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/api-missing.json')); if(j.error!=='not_found') process.exit(1)"
+        env:
+          SOURCE_SHA: ${{ steps.identity.outputs.source_sha }}
+          ARTIFACT_ENV: ${{ steps.identity.outputs.artifact_environment }}
+
+      - name: Assemble non-executable delivery artifact
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ steps.identity.outputs.source_sha }}
+          ARTIFACT_ENV: ${{ steps.identity.outputs.artifact_environment }}
+          PR_BASE: ${{ steps.identity.outputs.pr_base }}
+          PR_HEAD_REPO: ${{ steps.identity.outputs.pr_head_repo }}
+          PR_NUMBER: ${{ steps.identity.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+          ROOT=.artifacts/beeui-web-delivery
+          rm -rf "$ROOT"
+          mkdir -p "$ROOT/dist"
+          cp web/worker/src/index.mjs "$ROOT/worker.mjs"
+          cp -a web/worker/dist/. "$ROOT/dist/"
+          node <<'NODE'
+          const fs = require('fs');
+          const path = '.artifacts/beeui-web-delivery/manifest.json';
+          fs.writeFileSync(path, JSON.stringify({
+            schema: 1,
+            repository: process.env.GITHUB_REPOSITORY,
+            workflowRunId: process.env.GITHUB_RUN_ID,
+            workflowRunSha: process.env.GITHUB_SHA,
+            event: process.env.GITHUB_EVENT_NAME,
+            sourceSha: process.env.SOURCE_SHA,
+            artifactEnvironment: process.env.ARTIFACT_ENV,
+            pullRequest: process.env.PR_NUMBER ? {
+              number: Number(process.env.PR_NUMBER),
+              base: process.env.PR_BASE,
+              headRepository: process.env.PR_HEAD_REPO,
+            } : null,
+          }, null, 2) + '\n');
+          NODE
+          test ! -L "$ROOT/worker.mjs"
+          test ! -L "$ROOT/dist"
+          if find "$ROOT" -type l -print -quit | grep -q .; then
+            echo 'Delivery artifact must not contain symlinks.' >&2
+            exit 1
+          fi
+
+      - name: Upload immutable delivery artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: beeui-web-delivery
+          path: .artifacts/beeui-web-delivery
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Record exact validation identity
+        if: always()
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          {
+            echo "### BeeUI Web validation"
+            echo "- Source SHA: \`${{ steps.identity.outputs.source_sha }}\`"
+            echo "- Artifact environment: \`${{ steps.identity.outputs.artifact_environment }}\`"
+            echo "- Workspace version: \`${VERSION}\`"
+            echo "- Wrangler: \`${WRANGLER_VERSION}\`"
+            echo "- Cloudflare credentials available to this workflow: \`false\`"
+            echo "- Deployment performed: \`false\`"
+          } >> "$GITHUB_STEP_SUMMARY"
