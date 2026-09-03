@@ -38,12 +38,12 @@ export async function collectViolations(rootDir) {
     }
     if (!og.includes('width="1200"') || !og.includes('height="630"')) violations.push('shared OG asset must remain 1200x630.');
 
-    const generatedDocs = [
-      path.join(rootDir, 'apps/docs/src/content/docs/components/reference'),
-      path.join(rootDir, 'apps/docs/src/content/docs/patterns/reference'),
-    ];
-    for (const dir of generatedDocs) {
-      if (fs.existsSync(dir)) violations.push(`generated docs output must not become a committed SEO authority: ${path.relative(rootDir, dir)}`);
+    const gitignore = fs.readFileSync(path.join(rootDir, '.gitignore'), 'utf8');
+    for (const generatedDir of [
+      'apps/docs/src/content/docs/components/reference/',
+      'apps/docs/src/content/docs/patterns/reference/',
+    ]) {
+      if (!gitignore.includes(generatedDir)) violations.push(`generated docs output is not ignored: ${generatedDir}`);
     }
   } finally {
     fs.rmSync(outDir, { recursive: true, force: true });
