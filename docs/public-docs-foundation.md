@@ -68,7 +68,7 @@ Website pages may project those structured inputs into visual page metadata, but
 
 Canonical inputs:
 
-1. executable pattern source under `apps/showcase/src/patterns`;
+1. executable pattern source under `apps/showcase/patterns`;
 2. `docs/pattern-library.content.json` — structured human content contract;
 3. `scripts/generate-pattern-library.mjs` — canonical pattern docs generator.
 
@@ -117,7 +117,7 @@ Policy is centralized in `web/public-site.config.json`:
 - production runtime paths such as `/api/` stay non-indexable;
 - sitemap architecture is enabled when Astro has its canonical `site`.
 
-`foundation-contract.ts` provides canonical URL, index-policy, and shared page metadata helpers. Actual deployment/runtime robot-header delivery remains with the existing Cloudflare workflow and later launch-quality work; #455 does not introduce a second deployment control plane.
+`foundation-contract.ts` provides canonical URL, index-policy, and shared page metadata helpers. `PageMetadataInput.environment` is required for typed callers, and the runtime policy is fail-closed: any missing/unknown environment resolves to `noindex,nofollow`, never production indexing. Actual deployment/runtime robot-header delivery remains with the existing Cloudflare workflow and later launch-quality work; #455 does not introduce a second deployment control plane.
 
 ## Generated output discipline
 
