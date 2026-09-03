@@ -5,8 +5,37 @@ import { fileURLToPath } from 'node:url';
 export const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const CONFIG_PATH = 'web/public-site.config.json';
 
+const ENVIRONMENT_ALIASES = new Map([
+  ['development', 'development'],
+  ['development-preview', 'development'],
+  ['staging', 'staging'],
+  ['staging-preview', 'staging'],
+  ['production', 'production'],
+  ['production-candidate', 'staging'],
+  ['main', 'production'],
+  ['preview', 'development'],
+  ['pr-preview', 'development'],
+  ['ci', 'development'],
+  ['local', 'development'],
+]);
+
 export function readPublicSiteConfig(rootDir = ROOT_DIR) {
   return JSON.parse(fs.readFileSync(path.join(rootDir, CONFIG_PATH), 'utf8'));
+}
+
+export function normalizePublicSiteEnvironment(value = process.env.BEEUI_WEB_ENV || 'development') {
+  return ENVIRONMENT_ALIASES.get(value) ?? 'development';
+}
+
+export function resolvePublicSiteEnvironment(config, value = process.env.BEEUI_WEB_ENV || 'development') {
+  const environment = normalizePublicSiteEnvironment(value);
+  const profile = config.environments?.[environment];
+  if (!profile) throw new Error(`web/public-site.config.json is missing environment profile ${environment}.`);
+  if (!profile.origin) throw new Error(`public-site environment ${environment} is missing origin.`);
+  if (!['index,follow', 'noindex,nofollow'].includes(profile.indexPolicy)) {
+    throw new Error(`public-site environment ${environment} has invalid indexPolicy ${profile.indexPolicy}.`);
+  }
+  return { environment, ...profile };
 }
 
 export function readWorkspaceVersion(rootDir = ROOT_DIR) {
@@ -39,12 +68,17 @@ export function readCliDistributionState(rootDir = ROOT_DIR) {
   };
 }
 
-export function buildPublicSiteContract(rootDir = ROOT_DIR) {
+export function buildPublicSiteContract(rootDir = ROOT_DIR, { environment } = {}) {
   const config = readPublicSiteConfig(rootDir);
+  const resolvedEnvironment = resolvePublicSiteEnvironment(config, environment);
   const publication = readPublicationState(rootDir);
   const version = readWorkspaceVersion(rootDir);
   return {
     ...config,
+    environment: resolvedEnvironment.environment,
+    origin: resolvedEnvironment.origin,
+    indexPolicy: resolvedEnvironment.indexPolicy,
+    robotsDisallow: resolvedEnvironment.robotsDisallow ?? [],
     buildTruth: {
       version,
       publication,
