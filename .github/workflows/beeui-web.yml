@@ -50,7 +50,12 @@ jobs:
               *) ARTIFACT_ENV=pr-preview ;;
             esac
           else
-            ARTIFACT_ENV="${GITHUB_REF_NAME:-ci}"
+            case "${GITHUB_REF_NAME:-}" in
+              development) ARTIFACT_ENV=development ;;
+              staging) ARTIFACT_ENV=staging ;;
+              main) ARTIFACT_ENV=production ;;
+              *) ARTIFACT_ENV=ci ;;
+            esac
           fi
           {
             echo "source_sha=$SOURCE_SHA"
