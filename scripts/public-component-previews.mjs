@@ -8,7 +8,11 @@ import {
   PUBLIC_COMPONENT_DIR,
   buildPublicComponentManifest,
 } from './public-component-reference.mjs';
-import { ROOT_DIR } from './component-docs-lib.mjs';
+import {
+  ROOT_DIR,
+  buildShowcaseUsageIndex,
+  usageForComponent,
+} from './component-docs-lib.mjs';
 
 function anatomy(component) {
   const rootCandidate = component.title.replaceAll(' ', '');
@@ -26,22 +30,50 @@ function anatomy(component) {
   return lines.join('\n');
 }
 
+function fixtureRank(file) {
+  if (file.includes('/__mocks__/')) return 100;
+  if (file.includes('/__tests__/')) return 90;
+  if (file.includes('/component-gallery/')) return 0;
+  if (file.includes('/pattern-gallery/')) return 10;
+  if (file.includes('/patterns/')) return 20;
+  if (file.endsWith('/showcase-root.tsx')) return 30;
+  if (file.includes('/runtime-smoke')) return 40;
+  return 50;
+}
+
+function leaksPrivateMonorepoImport(source) {
+  return source.includes('/packages/ui/src/') || source.includes("from '../../packages/");
+}
+
+export function selectPreviewFixture(component, rootDir = ROOT_DIR) {
+  const usageIndex = buildShowcaseUsageIndex(rootDir);
+  const candidates = usageForComponent(component, usageIndex)
+    .sort((a, b) => fixtureRank(a) - fixtureRank(b) || a.localeCompare(b));
+
+  for (const fixture of candidates) {
+    const source = fs.readFileSync(path.join(rootDir, fixture), 'utf8');
+    if (!source.includes("from '@beemvp/beeui-ui'")) continue;
+    if (leaksPrivateMonorepoImport(source)) continue;
+    return { fixture, source };
+  }
+  throw new Error(`${component.name}: no public-boundary runtime Showcase fixture is available for the live preview.`);
+}
+
 export function buildPreviewDescriptor(component, rootDir = ROOT_DIR) {
-  const fixture = component.examples[0];
-  if (!fixture) throw new Error(`${component.name}: cannot build preview descriptor without an executable fixture.`);
+  const selected = selectPreviewFixture(component, rootDir);
   return {
     component: component.name,
     title: component.title,
-    fixture,
-    source: fs.readFileSync(path.join(rootDir, fixture), 'utf8'),
-    sourceHref: `https://github.com/beobungbu/BeeUI/blob/main/${fixture}`,
+    fixture: selected.fixture,
+    source: selected.source,
+    sourceHref: `https://github.com/beobungbu/BeeUI/blob/main/${selected.fixture}`,
     showcaseHref: `${component.showcaseHref}&embed=1`,
     anatomy: anatomy(component),
   };
 }
 
 export function renderPreviewAddon(descriptor) {
-  return `## Live Web preview\n\n<div class="beeui-component-preview" data-component="${descriptor.component}">\n  <iframe\n    src="${descriptor.showcaseHref}"\n    title="Live Web preview of ${descriptor.title}"\n    loading="lazy"\n    style="width:100%;min-height:32rem;border:1px solid var(--sl-color-gray-5);border-radius:0.75rem;background:var(--sl-color-bg);"\n  ></iframe>\n</div>\n\nThis frame loads the **real BeeUI Web Showcase** on demand; it is not a second docs-only implementation. It proves browser behavior only. Use [native preview](/docs/showcase/) for iOS/Android simulator, emulator or device paths.\n\n### Composition anatomy\n\n${descriptor.anatomy}\n\nThe tree above is ordinary document structure so it remains readable with keyboard and assistive technology; it is derived from the real public export family rather than a canvas-only diagram.\n\n## Verified example source\n\nThe following is the exact typechecked Showcase fixture used as this page's primary example: [\`${descriptor.fixture}\`](${descriptor.sourceHref}). The displayed source and executable source are the same file; there is no separately maintained demo snippet.\n\n\`\`\`\`tsx\n${descriptor.source}\n\`\`\`\`\n\nUse the code block's copy affordance to copy the exact fixture. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.\n\n`;
+  return `## Live Web preview\n\n<div class="beeui-component-preview" data-component="${descriptor.component}">\n  <iframe\n    src="${descriptor.showcaseHref}"\n    title="Live Web preview of ${descriptor.title}"\n    loading="lazy"\n    style="width:100%;min-height:32rem;border:1px solid var(--sl-color-gray-5);border-radius:0.75rem;background:var(--sl-color-bg);"\n  ></iframe>\n</div>\n\nThis frame loads the **real BeeUI Web Showcase** on demand; it is not a second docs-only implementation. It proves browser behavior only. Use [native preview](/docs/showcase/) for iOS/Android simulator, emulator or device paths.\n\n### Composition anatomy\n\n${descriptor.anatomy}\n\nThe tree above is ordinary document structure so it remains readable with keyboard and assistive technology; it is derived from the real public export family rather than a canvas-only diagram.\n\n## Verified example source\n\nThe following is the exact typechecked **runtime Showcase fixture selected for this live preview**: [\`${descriptor.fixture}\`](${descriptor.sourceHref}). Runtime gallery/pattern sources are preferred over test harnesses, and the displayed source and executable source are the same file; there is no separately maintained demo snippet.\n\n\`\`\`\`tsx\n${descriptor.source}\n\`\`\`\`\n\nUse the code block's copy affordance to copy the exact fixture. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.\n\n`;
 }
 
 export function collectPublicComponentPreviewViolations(rootDir = ROOT_DIR) {
@@ -55,10 +87,13 @@ export function collectPublicComponentPreviewViolations(rootDir = ROOT_DIR) {
       continue;
     }
     if (!descriptor.source.includes("from '@beemvp/beeui-ui'")) {
-      violations.push(`${component.name}: primary fixture does not consume the public BeeUI package boundary.`);
+      violations.push(`${component.name}: preview fixture does not consume the public BeeUI package boundary.`);
     }
-    if (descriptor.source.includes('/packages/ui/src/') || descriptor.source.includes("from '../../packages/")) {
-      violations.push(`${component.name}: primary fixture leaks a private monorepo import.`);
+    if (leaksPrivateMonorepoImport(descriptor.source)) {
+      violations.push(`${component.name}: preview fixture leaks a private monorepo import.`);
+    }
+    if (descriptor.fixture.includes('/__tests__/') || descriptor.fixture.includes('/__mocks__/')) {
+      violations.push(`${component.name}: live preview selected a test/mock source instead of a runtime Showcase fixture.`);
     }
     if (!descriptor.showcaseHref.startsWith(`/showcase/?component=${encodeURIComponent(component.name)}`)) {
       violations.push(`${component.name}: preview is not addressable through the canonical Showcase component query.`);
@@ -98,11 +133,11 @@ function main() {
     return;
   }
   if (check) {
-    console.log(`Public component preview check passed (${buildPublicComponentManifest(ROOT_DIR).length} source-equal previews).`);
+    console.log(`Public component preview check passed (${buildPublicComponentManifest(ROOT_DIR).length} source-equal runtime previews).`);
     return;
   }
   const manifest = enhanceGeneratedPublicComponentPages();
-  console.log(`Enhanced ${manifest.length} public component pages with lazy Showcase previews and exact fixture source.`);
+  console.log(`Enhanced ${manifest.length} public component pages with lazy Showcase previews and exact runtime fixture source.`);
 }
 
 const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
