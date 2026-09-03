@@ -13,11 +13,17 @@ apps/visual-regression/test-results/
 apps/visual-regression/playwright-report/
 apps/showcase/dist-gallery-qa/
 apps/showcase/dist-web/
+apps/showcase/dist-public-web/
 apps/showcase/dist-ios/
 apps/showcase/dist-android/
 apps/demo/dist-web/
+apps/demo/dist-public-web/
 apps/demo/dist-ios/
 apps/demo/dist-android/
+apps/docs/src/content/docs/components/reference/
+apps/docs/src/content/docs/patterns/reference/
+apps/docs/src/content/docs/compatibility/current.generated.md
+apps/docs/src/content/docs/migration/current-release.generated.md
 .env
 .env.*
 !.env.example

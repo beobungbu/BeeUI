@@ -1,19 +1,19 @@
 ---
 title: Patterns
-description: Production screen patterns built from BeeUI primitives.
+description: Production screen compositions built from BeeUI primitives.
 ---
 
-BeeUI includes a 37-screen production Pattern Gallery spanning Authentication +
-Onboarding, Dashboard + Finance, Commerce + Social, and Account + Settings packs.
+# Patterns
 
-The production pattern library ([#223](https://github.com/beobungbu/BeeUI/issues/223))
-documents all 37 screens: for each screen it records purpose, state contract,
-composition, the callback ownership boundary, responsive and accessibility guidance,
-source-ownership guidance, and the application logic intentionally left to the caller —
-with every entry linking to its executable, typechecked source in the Pattern Gallery:
+BeeUI's Pattern Gallery is a reusable UI-composition library, not the routed production
+reference app. Its public inventory is derived directly from the typechecked Showcase
+screen sources and curated application-boundary metadata.
 
-- `docs/pattern-library.md` — the generated production pattern library.
-- `apps/showcase/patterns/**` — the executable Showcase screen sources.
+- **[Browse every production pattern](/docs/patterns/reference/)** — grouped by the canonical source packs.
+- **[Open the interactive Pattern Gallery](/showcase/?section=patterns)** — inspect the real Web runtime.
+- **[Open the production reference app](/demo/)** — see BeeUI composed inside one coherent routed consumer application.
 
-The patterns are original BeeUI compositions built only from public `@beemvp/beeui-ui`
-components; BeeUI owns no routing, data, or backend behind them.
+Every generated detail page documents purpose, exact Showcase/source links, principal
+BeeUI composition, caller-owned callbacks/state, mobile-first responsive behavior,
+accessibility/evidence boundaries and the product/backend responsibilities intentionally
+excluded from BeeUI.

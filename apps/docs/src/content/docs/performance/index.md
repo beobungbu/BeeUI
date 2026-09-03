@@ -1,25 +1,22 @@
 ---
 title: Performance
-description: BeeUI's benchmark harness, regression budgets, and baseline report.
+description: Understand BeeUI benchmark classes, bundle footprint and regression budgets without turning one machine into a universal promise.
 ---
 
-BeeUI includes a reproducible benchmark harness (`pnpm bench`) covering render/update
-stress, overlay/Tooltip/Sheet latency, Theme Tokens v3 runtime performance, Table
-render/update scale, and package/bundle footprint.
+# Performance
 
-- **Methodology** — how measurements are taken, environment provenance, warm-up/sampling
-  strategy, and the Web-vs-native evidence rules: `docs/benchmark-harness.md`.
-- **Baseline report** — current numbers with interpretation across render/update stress,
-  overlay latency, theme switching, Table scale, package/bundle footprint, and optional
-  dependency cost, plus what BeeUI explicitly does not claim: `docs/performance-baseline-report.md`.
-- **Package/bundle footprint baseline** — packed tarball sizes and clean-consumer bundle
-  contribution against the real release-ready package layout: `docs/bundle-footprint-baseline.md`.
-- **Regression budgets** — the machine-checkable thresholds (`pnpm bench:web` /
-  `pnpm bench:native` overhead-ratio gates, `pnpm bench:budget` footprint gates) that
-  keep the numbers above from silently regressing, documented in the methodology doc's
-  "Regression budgets" section.
+BeeUI measures repeatable component operations and package/bundle footprint so regressions
+can be detected against a controlled baseline. Benchmark classes include representative
+Table work, overlay open/close/positioning, theme/token operations and package footprint.
 
-Reproduce any number yourself with `pnpm bench:web`, `pnpm bench:native`,
-`pnpm bench:components`, or `pnpm bench:footprint` — every result records its own
-environment (Node/OS/CPU/git SHA), so treat timing numbers as host-relative and only
-the package/bundle byte counts as portable across hosts.
+## How to read a result
+
+A benchmark is meaningful only with its environment, warmup/sampling method and variance.
+CI/regression budgets catch material changes; they are not universal frame-rate or device
+latency guarantees. Browser bundle size is not the same as native binary size, and synthetic
+component loops are not end-user interaction traces.
+
+Use BeeUI's results to compare changes on the same harness, then measure your own app on the
+hardware/browser mix that matters to you.
+
+Sources: [benchmark harness](https://github.com/beobungbu/BeeUI/blob/main/docs/benchmark-harness.md), [performance baseline](https://github.com/beobungbu/BeeUI/blob/main/docs/performance-baseline-report.md), and [bundle footprint](https://github.com/beobungbu/BeeUI/blob/main/docs/bundle-footprint-baseline.md).

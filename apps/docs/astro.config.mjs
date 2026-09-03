@@ -1,18 +1,24 @@
+import { readFileSync } from 'node:fs';
+
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 
-// Static, framework-light docs site for BeeUI. This is infrastructure only
-// (issue #220): the IA below is a navigation/theming skeleton. Final
-// per-component content lands in #221-#225 and must replace the
-// "content pending" placeholders without changing this structure unless the
-// IA itself needs to change.
+const publicSite = JSON.parse(
+  readFileSync(new URL('../../web/public-site.config.json', import.meta.url), 'utf8'),
+);
+
+// W2 (#414) owns global public-site route/IA authority. Content workstreams may
+// add pages and sidebar-local entries, but canonical origin/base paths and
+// top-level product navigation come from web/public-site.config.json.
 export default defineConfig({
+  site: publicSite.origin,
+  base: publicSite.docsBase,
   output: 'static',
   integrations: [
     starlight({
       title: 'BeeUI',
       description:
-        'BeeUI is a production-oriented, accessibility-first React Native UI system for Expo, bare React Native, and Web.',
+        'BeeUI is a production-oriented React Native UI system for Expo, bare React Native, and Web.',
       defaultLocale: 'en',
       lastUpdated: false,
       pagination: true,
@@ -43,13 +49,23 @@ export default defineConfig({
           label: 'Components',
           items: [
             { label: 'Overview', slug: 'components' },
+            {
+              label: 'Reference',
+              items: [{ autogenerate: { directory: 'components/reference' } }],
+            },
             { label: 'Table', slug: 'components/table' },
             { label: 'Calendar & date/time', slug: 'components/calendar-date-time' },
           ],
         },
         {
           label: 'Patterns',
-          items: [{ label: 'Overview', slug: 'patterns' }],
+          items: [
+            { label: 'Overview', slug: 'patterns' },
+            {
+              label: 'Pattern library',
+              items: [{ autogenerate: { directory: 'patterns/reference' } }],
+            },
+          ],
         },
         {
           label: 'Accessibility',
