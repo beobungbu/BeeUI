@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
+import {
+  buildPageMetadata,
+  buildShowcaseHref,
+  indexPolicyForEnvironment,
+} from '../../apps/docs/src/lib/foundation-contract.ts';
 import {
   buildDocsFoundationManifest,
   buildRedirectRules,
@@ -52,6 +58,55 @@ test('release state is derived from canonical policy and remains publication-saf
   assert.equal(state.installCta, 'hidden');
   assert.equal(state.sourceEvaluationCta, 'enabled');
   assert.equal(state.ownerGate, '#254');
+});
+
+test('page metadata indexes only explicit production and fails closed otherwise', () => {
+  assert.equal(indexPolicyForEnvironment('production'), 'index,follow');
+  for (const environment of ['development', 'staging', 'preview', undefined]) {
+    assert.equal(indexPolicyForEnvironment(environment), 'noindex,nofollow');
+  }
+
+  const production = buildPageMetadata({
+    title: 'Start',
+    description: 'Start with BeeUI.',
+    pathname: '/docs/start/',
+    imagePath: '/og/start.png',
+    environment: 'production',
+  });
+  assert.equal(production.canonical, 'https://beeui.beemvp.com/docs/start/');
+  assert.equal(production.robots, 'index,follow');
+  assert.equal(production.openGraph.url, production.canonical);
+  assert.equal(production.openGraph.image, 'https://beeui.beemvp.com/og/start.png');
+
+  const failClosed = buildPageMetadata({
+    title: 'Preview',
+    description: 'Preview metadata.',
+    pathname: '/docs/start/',
+    environment: undefined,
+  });
+  assert.equal(failClosed.robots, 'noindex,nofollow');
+});
+
+test('Showcase href builder is deterministic and rejects missing target identity', () => {
+  assert.equal(
+    buildShowcaseHref({
+      surface: 'component',
+      id: 'select',
+      ownerId: 'select',
+      example: 'controlled',
+      state: 'open',
+      theme: 'dark',
+      density: 'compact',
+    }),
+    '/showcase/?surface=component&id=select&owner=select&example=controlled&state=open&theme=dark&density=compact',
+  );
+  assert.throws(() => buildShowcaseHref({ surface: 'component', id: '   ' }), /must be non-empty/u);
+});
+
+test('Foundation documentation names the current executable pattern authority', () => {
+  const foundationDoc = readFileSync(new URL('../../docs/public-docs-foundation.md', import.meta.url), 'utf8');
+  assert.match(foundationDoc, /`apps\/showcase\/patterns`/u);
+  assert.doesNotMatch(foundationDoc, /apps\/showcase\/src\/patterns/u);
 });
 
 test('legacy redirect manifest is deterministic and has unique sources/destinations', () => {
