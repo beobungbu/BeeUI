@@ -1,91 +1,141 @@
 # BeeUI Web deployment — Cloudflare Workers
 
-`beeui.beemvp.com` is designed as one Cloudflare Worker origin with Static Assets. The static site remains asset-first; only `/api/*` invokes Worker code first. The launch runtime intentionally provisions no D1, KV, R2, Durable Object, Analytics Engine or Workers AI binding until a real feature needs one.
+BeeUI Web uses three Cloudflare Worker environments and a separate package-publication environment:
 
-Canonical configuration: [`web/worker/wrangler.jsonc`](../web/worker/wrangler.jsonc).
+| Git branch | GitHub environment | Worker | Custom Domain | PR preview |
+| --- | --- | --- | --- | --- |
+| `development` | `development` | `beeui-dev` | `https://beeui-dev.beemvp.com` | `pr-<n>-beeui-dev.<account-subdomain>.workers.dev` |
+| `staging` | `staging` | `beeui-stg` | `https://beeui-stg.beemvp.com` | `pr-<n>-beeui-stg.<account-subdomain>.workers.dev` |
+| `main` | `production` | `beeui` | `https://beeui.beemvp.com` | none; staging is the production candidate |
 
-Official platform references used for this launch contract:
+The existing GitHub environment `release` is **not** a Web environment. It remains the owner-approved npm/tag/GitHub Release gate documented in `docs/release-ruleset.md`.
 
-- https://developers.cloudflare.com/workers/static-assets/
-- https://developers.cloudflare.com/workers/static-assets/binding/
-- https://developers.cloudflare.com/workers/static-assets/headers/
-- https://developers.cloudflare.com/workers/wrangler/configuration/
-- https://developers.cloudflare.com/workers/wrangler/environments/
-- https://developers.cloudflare.com/workers/configuration/routing/custom-domains/
+All three Workers use Static Assets. The site remains asset-first; only `/api/*` invokes Worker code first. Launch intentionally provisions no D1, KV, R2, Durable Object, Analytics Engine or Workers AI binding.
 
-## Build one deploy artifact
+## Security boundary
 
-From a clean checkout on the pinned Node/pnpm toolchain:
+Cloudflare credentials never exist in pull-request/build/test jobs.
 
-```bash
-corepack enable
-pnpm install --frozen-lockfile
-pnpm --dir web/worker build
-pnpm --dir web/worker typecheck
-pnpm --dir web/worker test
-pnpm --dir web/worker validate
+`.github/workflows/beeui-web.yml` is the untrusted build side. It checks out the exact source revision, installs repository dependencies, runs Web contracts, builds the composed artifact, validates Wrangler locally, performs HTTP smoke tests and uploads only:
+
+- `worker.mjs`;
+- composed `dist/` static assets;
+- a non-executable identity manifest.
+
+It contains no `CLOUDFLARE_API_TOKEN` or `CLOUDFLARE_ACCOUNT_ID` reference.
+
+`.github/workflows/beeui-web-delivery.yml` is the trusted side. GitHub only activates a `workflow_run` workflow from the default branch (`main`). The delivery job:
+
+1. verifies the triggering build succeeded;
+2. verifies the PR/base branch or exact pushed branch;
+3. waits for the exact-SHA delivery gates;
+4. checks out **`main`**, never the PR/source branch;
+5. downloads the already-built artifact;
+6. rejects symlinks or unexpected control-plane files;
+7. verifies `manifest.json` and `dist/build-identity.json` against GitHub event data;
+8. installs only pinned Wrangler `4.128.0` before the Cloudflare credential is mapped into a process;
+9. copies a trusted `.github/deployment/wrangler-*.jsonc` from `main` into the artifact;
+10. uses Wrangler `--no-bundle`, so no repository build/postinstall/custom-build hook executes while a Cloudflare token is present.
+
+The only steps receiving `CLOUDFLARE_API_TOKEN` are the final Wrangler upload/deploy commands. The token is never bound into the Worker runtime.
+
+## CI gates
+
+Pull requests into `development` or `staging` receive a preview only after the existing required BeeUI checks are green on the PR check SHA:
+
+- `classify`;
+- `verify`;
+- `web-a11y`;
+- `visual-web-report`;
+- `web-consumer`;
+- successful `beeui-web` artifact build.
+
+Fork PRs do not receive automatic Cloudflare previews. They remain ordinary no-secret CI until code is brought into a trusted same-repository branch.
+
+After merge into `development` or `staging`, `.github/workflows/beeui-environment-ci.yml` reruns the root `pnpm typecheck` and `pnpm test` contracts on the exact merged SHA. Delivery waits for `environment-ci` plus the successful exact-SHA `beeui-web` artifact before changing the Custom Domain environment.
+
+After merge into `main`, delivery waits for the five branch-protection required checks above on the exact main SHA before production deployment.
+
+Stale environment deliveries are cancelled by per-target concurrency groups.
+
+## Preview semantics
+
+Development and staging enable Workers preview URLs. `wrangler versions upload --preview-alias pr-<n>` creates a non-active Worker Version; it does not replace the active deployment for the Custom Domain.
+
+Cloudflare aliases use the platform format:
+
+```text
+<alias>-<worker-name>.<account-subdomain>.workers.dev
 ```
 
-The build runs the public Docs, Showcase and Demo production builds, regenerates landing/examples/SEO/LLM assets, then composes them into `web/worker/dist/` with final-path collision detection. Showcase and Demo use their dedicated `/showcase` and `/demo` public base-path exports, not the root-hosted engineering builds.
+For example, if the account subdomain is `beemvp`, PR 427 targeting development is expected at:
 
-The composed tree also contains `build-identity.json` with workspace version, exact Git SHA and build environment. `/api/health` reads that asset, so runtime identity travels atomically with the static deployment.
+```text
+https://pr-427-beeui-dev.beemvp.workers.dev
+```
+
+Preview URLs remain `noindex`. Production has `workers_dev: false` and `preview_urls: false`; `beeui-stg.beemvp.com` is the production candidate.
+
+## Environment secrets
+
+Each deployment environment has one Cloudflare token secret and one account-id variable:
+
+```text
+CLOUDFLARE_API_TOKEN   (environment secret)
+CLOUDFLARE_ACCOUNT_ID  (environment variable)
+```
+
+Use separate Cloudflare tokens for `development`, `staging`, and `production`. Current Worker Version upload/deploy needs `Account -> Workers Scripts -> Edit` (`Workers Scripts Write`). Do not add DNS, KV, R2, D1, billing or token-management permissions unless a future binding actually requires them.
+
+Because `Workers Scripts Write` is account-scoped, token separation is for audit/revocation and GitHub isolation; the hard security boundary is the main-controlled delivery workflow.
+
+### GitHub deployment-branch policy
+
+`beeui-web-delivery.yml` runs from the default branch by design. GitHub matches environment deployment branch policies against the delivery workflow run's `GITHUB_REF`, which is `main` for this `workflow_run` controller. Therefore `development`, `staging`, and `production` must all permit the protected branch `main` (or use **Protected branches only**). Do **not** allow `refs/pull/*` solely to make previews work; PR code never references the environments directly.
+
+The source target (`development`, `staging`, or `main`) is independently verified from the triggering `beeui-web` run before an environment is selected.
+
+## Worker configs
+
+`web/worker/wrangler.jsonc` is the developer/local/dry-run configuration and describes all three targets. It is untrusted when supplied by a PR and is never used by the privileged delivery workflow.
+
+The privileged configs are:
+
+- `.github/deployment/wrangler-development.jsonc`;
+- `.github/deployment/wrangler-staging.jsonc`;
+- `.github/deployment/wrangler-production.jsonc`.
+
+They contain no custom build command. The Web quality gate fails if executable build hooks are introduced or if trusted delivery starts running repository package scripts.
 
 ## Route model
 
-- Existing static asset -> served directly by Workers Static Assets.
-- `/api/health` -> Worker JSON with exact build identity, `Cache-Control: no-store`.
-- Unknown `/api/*` -> intentional JSON 404.
-- Missing static file -> real asset 404. There is no site-wide SPA fallback that could return HTML as missing JavaScript/CSS.
+Every environment exposes the same path contract:
 
-`_headers` adds `nosniff`, referrer and permissions policy to static assets, longer browser caching only for fingerprinted Astro/Expo asset folders, short revalidation for `llms*.txt`, and `X-Robots-Tag: noindex` for versioned `workers.dev` previews. We intentionally do not set `X-Frame-Options`/`frame-ancestors` at launch because component docs embed the same-origin Showcase. A restrictive CSP must be introduced only after verifying it against Starlight, Expo Web and embedded previews.
+- `/` — landing;
+- `/docs/**` — documentation;
+- `/showcase/**` — Showcase;
+- `/demo/**` — Demo;
+- `/examples/{slug}` — examples;
+- `/changelog/**` — changelog;
+- `/llms*.txt` — AI discovery corpus;
+- `/api/health` — exact deployment identity;
+- unknown `/api/*` — JSON 404;
+- missing static asset — real asset 404, never a site-wide SPA fallback.
 
-## Local production-like development
+Examples therefore differ only by hostname, for example:
 
-Build first, then:
-
-```bash
-pnpm --dir web/worker dev
+```text
+https://beeui-dev.beemvp.com/examples/<slug>
+https://beeui-stg.beemvp.com/examples/<slug>
+https://beeui.beemvp.com/examples/<slug>
 ```
 
-The command uses pinned Wrangler `4.128.0` and the same `wrangler.jsonc`. No Cloudflare production token is needed for ordinary local `wrangler dev`.
+## Runtime evidence
 
-Smoke at least `/`, `/docs/`, one component page, one pattern page, `/showcase/`, `/demo/`, `/llms.txt`, `/api/health`, an unknown static route and an unknown `/api/*` route.
+`build-identity.json` travels in the same immutable artifact as the site. `/api/health` returns its `version`, exact source `commit`, and `environment`. Trusted delivery verifies that endpoint after every preview upload and Custom Domain deployment.
 
-## Preview deployment
-
-The top-level Wrangler environment is `beeui-web-preview`, enables `workers.dev` and preview URLs, and has no Custom Domain. CI pull requests build and dry-run only; they never receive Cloudflare credentials.
-
-An authorized manual workflow dispatch may deploy preview with:
-
-```bash
-BEEUI_WEB_ENV=preview pnpm --dir web/worker build
-pnpm --dir web/worker deploy:preview
-```
-
-CI requires least-privilege `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` only in the manual deploy job/environment. Record the deployed URL and exact SHA from the build identity/health endpoint. Preview URLs are never canonical in generated HTML and receive `X-Robots-Tag: noindex` where the Workers hostname pattern matches.
-
-## Production Custom Domain — OWNER ACTION REQUIRED
-
-Production is the named Wrangler `production` environment. It changes the Worker name to `beeui-web`, disables `workers.dev`/preview URLs and declares:
-
-```json
-{
-  "pattern": "beeui.beemvp.com",
-  "custom_domain": true
-}
-```
-
-**Do not run the production deployment autonomously.** Deploying this environment is the owner-authorized action that can create/change the Worker Custom Domain, DNS and certificate state:
-
-```bash
-BEEUI_WEB_ENV=production pnpm --dir web/worker build
-pnpm --dir web/worker deploy:production
-```
-
-Before that action, confirm the Cloudflare zone is active and inspect `beeui.beemvp.com` for an existing CNAME/service conflict. Cloudflare documents that a Custom Domain cannot be created on a hostname with an existing CNAME. Do not delete or replace DNS without explicit owner authorization.
-
-After activation verify TLS, canonical metadata, all route families and `/api/health` against the production hostname. `workers.dev` must not be treated as the production canonical origin.
+Cloudflare preview aliases and Custom Domains are delivery surfaces only; generated canonical metadata remains the production origin `https://beeui.beemvp.com`.
 
 ## Future bindings
 
-When a real API needs D1/KV/R2/DO/Workers AI/service bindings, add only the required binding to Wrangler and the `Env` runtime contract. The public hostname, composed static artifact and `/api/*` namespace do not need to move. Bindings and secrets must remain environment-specific; secrets never belong in source control or `build-identity.json`.
+When a real API needs D1/KV/R2/DO/Workers AI/service bindings, add only the required binding and corresponding least-privilege token permission. Secrets never belong in source control, static assets, `build-identity.json`, or Worker bindings unless the application explicitly needs that runtime secret.
