@@ -131,8 +131,29 @@ export function buildDocsFoundationManifest(rootDir = ROOT_DIR) {
   };
 }
 
-function sourcePathFromSymbolReference(reference) {
-  return reference.split('#', 1)[0];
+function splitSymbolReference(reference) {
+  const [sourcePath, symbol] = reference.split('#', 2);
+  return { sourcePath, symbol: symbol || null };
+}
+
+function exportedSymbolExists(source, symbol) {
+  const escaped = symbol.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(
+    `\\bexport\\s+(?:declare\\s+)?(?:async\\s+)?(?:function|const|let|class|interface|type|enum)\\s+${escaped}\\b|\\bexport\\s*\\{[^}]*\\b${escaped}\\b[^}]*\\}`,
+    'su',
+  );
+  return pattern.test(source);
+}
+
+function validateSymbolReference(rootDir, reference, label) {
+  if (!reference) return `${label} reference is unset.`;
+  const { sourcePath, symbol } = splitSymbolReference(reference);
+  const absolutePath = path.join(rootDir, sourcePath);
+  if (!fs.existsSync(absolutePath)) return `${label} references missing ${reference}.`;
+  if (!symbol) return null;
+  const source = fs.readFileSync(absolutePath, 'utf8');
+  if (!exportedSymbolExists(source, symbol)) return `${label} references missing exported symbol ${reference}.`;
+  return null;
 }
 
 export function validateDocsFoundation(rootDir = ROOT_DIR) {
@@ -160,9 +181,17 @@ export function validateDocsFoundation(rootDir = ROOT_DIR) {
   }
 
   const metadata = config.docsFoundation.metadataContracts;
-  for (const reference of [metadata?.implementation, metadata?.releaseState]) {
-    if (!reference || !fs.existsSync(path.join(rootDir, sourcePathFromSymbolReference(reference)))) {
-      violations.push(`metadata contract references missing ${reference ?? '<unset>'}.`);
+  for (const [reference, label] of [
+    [metadata?.implementation, 'metadata implementation'],
+    [metadata?.releaseState, 'release-state module'],
+  ]) {
+    const violation = validateSymbolReference(rootDir, reference, label);
+    if (violation) violations.push(violation);
+  }
+  if (metadata?.implementation) {
+    for (const symbol of metadata.types ?? []) {
+      const violation = validateSymbolReference(rootDir, `${metadata.implementation}#${symbol}`, 'metadata contract');
+      if (violation) violations.push(violation);
     }
   }
 
@@ -208,9 +237,8 @@ export function validateDocsFoundation(rootDir = ROOT_DIR) {
   if (!seo?.robots?.nonProduction?.disallow?.includes('/')) violations.push('non-production robots policy must disallow crawling.');
 
   const showcaseBuilder = config.docsFoundation.showcaseAddressability?.urlBuilder;
-  if (!showcaseBuilder || !fs.existsSync(path.join(rootDir, sourcePathFromSymbolReference(showcaseBuilder)))) {
-    violations.push(`Showcase URL-builder contract references missing ${showcaseBuilder ?? '<unset>'}.`);
-  }
+  const showcaseViolation = validateSymbolReference(rootDir, showcaseBuilder, 'Showcase URL-builder contract');
+  if (showcaseViolation) violations.push(showcaseViolation);
 
   if (releaseState.workspaceVersion !== releaseState.currentVersion) {
     violations.push(`release state version ${releaseState.currentVersion} does not match workspace ${releaseState.workspaceVersion}.`);
