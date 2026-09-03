@@ -28,7 +28,7 @@ export async function collectViolations(rootDir) {
     if (!landing.includes('application/ld+json') || !landing.includes('SoftwareSourceCode')) {
       violations.push('landing is missing restrained SoftwareSourceCode JSON-LD.');
     }
-    if (!changelog.includes('Source-driven history') || !changelog.includes('## Unreleased')) {
+    if (!changelog.includes('Source-driven history') || !changelog.includes('<h2>Unreleased</h2>')) {
       violations.push('public changelog no longer reflects canonical CHANGELOG.md content.');
     }
     if (!robots.includes(`Sitemap: ${contract.origin}/sitemap.xml`)) violations.push('robots.txt sitemap origin drifted from public-site contract.');
