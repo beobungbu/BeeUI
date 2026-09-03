@@ -95,6 +95,10 @@ export function composeWorkerAssets({
 }
 
 export function buildWorkerSite({ rootDir = ROOT_DIR, environment = process.env.BEEUI_WEB_ENV || 'local' } = {}) {
+  // Expo Router's static-render server resolves the package export map under
+  // plain Node/Metro conditions. Build the publishable package outputs first
+  // so SSR never depends on Metro's source fallback or a stale local dist/.
+  run('pnpm', ['build'], rootDir);
   run('pnpm', ['docs:build'], rootDir);
   run('pnpm', ['--filter', '@beemvp/beeui-showcase', 'build:web:public'], rootDir);
   run('pnpm', ['--filter', '@beemvp/beeui-demo', 'build:web:public'], rootDir);
