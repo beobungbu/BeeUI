@@ -67,7 +67,16 @@ function rankExample(file) {
 }
 
 function pickExamples(files, limit = 3) {
-  return [...files].sort((a, b) => rankExample(a) - rankExample(b) || a.localeCompare(b)).slice(0, limit);
+  // `public-doc-fixtures.tsx` is a meta-fixture used by the richer generated public
+  // component pages when no better runtime source exists. Keep it out of this legacy
+  // repository reference's "Executable examples" list so adding/changing that fallback
+  // does not recursively churn the generated contract. Real screens/galleries/tests
+  // remain the examples for this document; the public site still displays the exact
+  // runtime fallback source through `public-component-previews.mjs`.
+  return [...files]
+    .filter((file) => !file.endsWith('/component-gallery/public-doc-fixtures.tsx'))
+    .sort((a, b) => rankExample(a) - rankExample(b) || a.localeCompare(b))
+    .slice(0, limit);
 }
 
 function providerLine(component) {
