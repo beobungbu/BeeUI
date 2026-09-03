@@ -302,14 +302,87 @@ jobs:
         run: |
           set -euo pipefail
           cd .delivery-artifact
-          NO_COLOR=1 wrangler versions upload \
-            --config wrangler.jsonc \
-            --no-bundle \
-            --preview-alias "$PREVIEW_ALIAS" \
-            --tag "sha-${SOURCE_SHA:0:12}" \
-            --message "BeeUI preview ${SOURCE_SHA}" \
-            | tee "$RUNNER_TEMP/wrangler-preview.txt"
-          PREVIEW_URL=$(grep -Eo "https://${PREVIEW_ALIAS}-[^[:space:]]+\.workers\.dev" "$RUNNER_TEMP/wrangler-preview.txt" | tail -1)
+          PREVIEW_LOG="$RUNNER_TEMP/wrangler-preview.txt"
+
+          upload_preview() {
+            NO_COLOR=1 wrangler versions upload \
+              --config wrangler.jsonc \
+              --no-bundle \
+              --preview-alias "$PREVIEW_ALIAS" \
+              --tag "sha-${SOURCE_SHA:0:12}" \
+              --message "BeeUI preview ${SOURCE_SHA}" \
+              2>&1 | tee "$PREVIEW_LOG"
+            return "${PIPESTATUS[0]}"
+          }
+
+          echo "bootstrapped=false" >> "$GITHUB_OUTPUT"
+          set +e
+          upload_preview
+          upload_status=$?
+          set -e
+
+          if [ "$upload_status" -ne 0 ]; then
+            if ! grep -Fq "does not yet exist" "$PREVIEW_LOG"; then
+              exit "$upload_status"
+            fi
+
+            BOOTSTRAP_DIR="$RUNNER_TEMP/beeui-worker-bootstrap"
+            rm -rf "$BOOTSTRAP_DIR"
+            mkdir -p "$BOOTSTRAP_DIR"
+            export TRUSTED_CONFIG="$PWD/wrangler.jsonc"
+            export BOOTSTRAP_DIR
+
+            python3 <<'PY'
+          import json
+          import os
+          import re
+
+          source = open(os.environ['TRUSTED_CONFIG'], encoding='utf-8').read()
+          match = re.search(r'"name"\s*:\s*"([^"]+)"', source)
+          if not match:
+              raise SystemExit('Trusted Wrangler config has no Worker name.')
+          name = match.group(1)
+          if not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,62}', name):
+              raise SystemExit(f'Unsafe Worker name in trusted config: {name!r}')
+
+          config = {
+              'name': name,
+              'main': './bootstrap-worker.mjs',
+              'compatibility_date': '2026-09-03',
+              'workers_dev': True,
+              'preview_urls': True,
+          }
+          with open(os.path.join(os.environ['BOOTSTRAP_DIR'], 'wrangler.jsonc'), 'w', encoding='utf-8') as handle:
+              json.dump(config, handle, indent=2)
+              handle.write('\n')
+          PY
+
+            cat > "$BOOTSTRAP_DIR/bootstrap-worker.mjs" <<'EOF'
+          export default {
+            async fetch() {
+              return new Response("BeeUI preview worker bootstrap", {
+                status: 503,
+                headers: {
+                  "Cache-Control": "no-store",
+                  "Content-Type": "text/plain; charset=utf-8"
+                }
+              });
+            }
+          };
+          EOF
+
+            (
+              cd "$BOOTSTRAP_DIR"
+              NO_COLOR=1 wrangler deploy \
+                --config wrangler.jsonc \
+                --no-bundle \
+                --message "BeeUI trusted preview bootstrap"
+            )
+            echo "bootstrapped=true" >> "$GITHUB_OUTPUT"
+            upload_preview
+          fi
+
+          PREVIEW_URL=$(grep -Eo "https://${PREVIEW_ALIAS}-[^[:space:]]+\.workers\.dev" "$PREVIEW_LOG" | tail -1)
           test -n "$PREVIEW_URL"
           echo "preview_url=$PREVIEW_URL" >> "$GITHUB_OUTPUT"
 
@@ -369,6 +442,7 @@ jobs:
             echo "- Source SHA: \`${{ needs.authorize.outputs.source_sha }}\`"
             if [ "${{ needs.authorize.outputs.mode }}" = "preview" ]; then
               echo "- Preview: ${{ steps.preview.outputs.preview_url }}"
+              echo "- First-use Worker bootstrap: \`${{ steps.preview.outputs.bootstrapped }}\` (trusted inert Worker only; no PR code/routes/assets)"
             else
               echo "- Custom Domain: ${{ needs.authorize.outputs.deployment_url }}"
             fi
