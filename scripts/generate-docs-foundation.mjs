@@ -4,12 +4,14 @@ import { fileURLToPath } from 'node:url';
 
 import {
   ROOT_DIR,
+  readCliDistributionState,
   readPublicSiteConfig,
   readPublicationState,
   readWorkspaceVersion,
 } from './public-site-contract-lib.mjs';
 
-export const OUTPUT_PATH = 'docs/public-docs-foundation.generated.json';
+export const ROUTE_MANIFEST_OUTPUT = 'apps/docs/public/route-manifest.json';
+export const RELEASE_STATE_OUTPUT = 'apps/docs/public/release-state.json';
 const DOCS_CONTENT_ROOT = 'apps/docs/src/content/docs';
 const SUPPORTED_CONTENT_EXTENSIONS = new Set(['.md', '.mdx']);
 
@@ -69,17 +71,37 @@ export function buildRedirectRules(config) {
 }
 
 export function buildReleaseState(rootDir = ROOT_DIR) {
+  const config = readPublicSiteConfig(rootDir);
   const publication = readPublicationState(rootDir);
   const workspaceVersion = readWorkspaceVersion(rootDir);
+  const cli = readCliDistributionState(rootDir);
+  const releaseConfig = config.docsFoundation?.release;
+  if (!releaseConfig) throw new Error('docsFoundation.release is missing from web/public-site.config.json.');
+
+  const prerelease = publication.published && publication.currentVersion.includes('-');
+  const status = publication.published ? (prerelease ? 'prerelease' : 'stable') : 'unpublished';
+  const channel = publication.published
+    ? (prerelease ? publication.prereleaseDistTag : publication.stableDistTag)
+    : 'closed';
+
   return {
     schemaVersion: 1,
-    generatedFrom: ['docs/dist-tag-policy.md', 'package.json'],
+    generatedFrom: ['docs/dist-tag-policy.md', 'packages/cli/package.json', 'package.json', 'web/public-site.config.json'],
     published: publication.published,
-    status: publication.published ? 'stable' : 'unpublished',
+    status,
+    channel,
     currentVersion: publication.currentVersion,
     workspaceVersion,
-    ownerGate: '#254',
+    packageNames: publication.lockstepPackages,
+    cliPackageName: cli?.packageName ?? null,
+    cliAvailable: publication.published && Boolean(cli?.packageName),
     publicInstallCommandsAvailable: publication.published,
+    installCta: publication.published ? (prerelease ? 'prerelease' : 'stable') : 'hidden',
+    sourceEvaluationCta: 'enabled',
+    ownerGate: releaseConfig.ownerGate,
+    changelogHref: releaseConfig.changelogHref,
+    migrationHref: releaseConfig.migrationHref,
+    sourceEvaluationHref: releaseConfig.sourceEvaluationHref,
   };
 }
 
@@ -106,40 +128,129 @@ export function buildDocsFoundationManifest(rootDir = ROOT_DIR) {
     sourceToPage: config.docsFoundation.sourceToPage,
     showcaseAddressability: config.docsFoundation.showcaseAddressability,
     seo: config.docsFoundation.seo,
-    releaseState: buildReleaseState(rootDir),
   };
 }
 
-export function renderDocsFoundationManifest(rootDir = ROOT_DIR) {
-  return `${JSON.stringify(buildDocsFoundationManifest(rootDir), null, 2)}\n`;
+function sourcePathFromSymbolReference(reference) {
+  return reference.split('#', 1)[0];
 }
 
-export function checkDocsFoundationManifest(rootDir = ROOT_DIR) {
-  const output = path.join(rootDir, OUTPUT_PATH);
-  const expected = renderDocsFoundationManifest(rootDir);
-  if (!fs.existsSync(output)) {
-    throw new Error(`${OUTPUT_PATH} is missing. Run pnpm docs:foundation:generate.`);
+export function validateDocsFoundation(rootDir = ROOT_DIR) {
+  const violations = [];
+  let config;
+  let manifest;
+  let releaseState;
+  try {
+    config = readPublicSiteConfig(rootDir);
+    manifest = buildDocsFoundationManifest(rootDir);
+    releaseState = buildReleaseState(rootDir);
+  } catch (error) {
+    return [error.message];
   }
-  const actual = fs.readFileSync(output, 'utf8');
-  if (actual !== expected) {
-    throw new Error(`${OUTPUT_PATH} is stale. Run pnpm docs:foundation:generate and commit the result.`);
+
+  const docsRoutes = new Set(manifest.currentDocsRoutes.map((entry) => entry.route));
+  const sectionIds = new Set();
+  const sectionRoutes = new Set();
+  for (const section of manifest.targetDocsSections) {
+    if (sectionIds.has(section.id)) violations.push(`duplicate docs foundation section id ${section.id}.`);
+    if (sectionRoutes.has(section.route)) violations.push(`duplicate docs foundation section route ${section.route}.`);
+    sectionIds.add(section.id);
+    sectionRoutes.add(section.route);
+    if (!docsRoutes.has(section.route)) violations.push(`target docs route ${section.route} has no static content owner.`);
   }
+
+  const metadata = config.docsFoundation.metadataContracts;
+  for (const reference of [metadata?.implementation, metadata?.releaseState]) {
+    if (!reference || !fs.existsSync(path.join(rootDir, sourcePathFromSymbolReference(reference)))) {
+      violations.push(`metadata contract references missing ${reference ?? '<unset>'}.`);
+    }
+  }
+
+  for (const pipeline of manifest.sourceToPage) {
+    if (!pipeline.id || !pipeline.routePrefix?.startsWith('/')) violations.push('source-to-page pipeline requires an id and absolute routePrefix.');
+    for (const source of pipeline.sources ?? []) {
+      if (!fs.existsSync(path.join(rootDir, source))) violations.push(`source-to-page ${pipeline.id} references missing source ${source}.`);
+    }
+    if (pipeline.generator && !fs.existsSync(path.join(rootDir, pipeline.generator))) {
+      violations.push(`source-to-page ${pipeline.id} references missing generator ${pipeline.generator}.`);
+    }
+  }
+
+  const redirectSources = new Set();
+  const redirectDestinations = new Set();
+  const redirectMap = new Map();
+  for (const redirect of manifest.redirects) {
+    if (redirectSources.has(redirect.fromPrefix)) violations.push(`duplicate redirect source ${redirect.fromPrefix}.`);
+    if (redirectDestinations.has(redirect.toPrefix)) violations.push(`ambiguous duplicate redirect destination ${redirect.toPrefix}.`);
+    if (redirect.fromPrefix === redirect.toPrefix) violations.push(`redirect loop at ${redirect.fromPrefix}.`);
+    redirectSources.add(redirect.fromPrefix);
+    redirectDestinations.add(redirect.toPrefix);
+    redirectMap.set(redirect.fromPrefix, redirect.toPrefix);
+  }
+  for (const source of redirectMap.keys()) {
+    const visited = new Set([source]);
+    let cursor = redirectMap.get(source);
+    while (cursor && redirectMap.has(cursor)) {
+      if (visited.has(cursor)) {
+        violations.push(`redirect cycle detected from ${source}.`);
+        break;
+      }
+      visited.add(cursor);
+      cursor = redirectMap.get(cursor);
+    }
+  }
+
+  const seo = manifest.seo;
+  if (seo?.canonicalOrigin !== config.origin) violations.push('SEO canonicalOrigin must match the canonical public origin.');
+  if (seo?.productionIndexPolicy !== 'index,follow') violations.push('production index policy must be index,follow.');
+  if (seo?.nonProductionIndexPolicy !== 'noindex,nofollow') violations.push('non-production index policy must be noindex,nofollow.');
+  if (!seo?.sitemap?.enabledWhenSiteConfigured) violations.push('sitemap architecture must be enabled when Astro site is configured.');
+  if (!seo?.robots?.nonProduction?.disallow?.includes('/')) violations.push('non-production robots policy must disallow crawling.');
+
+  const showcaseBuilder = config.docsFoundation.showcaseAddressability?.urlBuilder;
+  if (!showcaseBuilder || !fs.existsSync(path.join(rootDir, sourcePathFromSymbolReference(showcaseBuilder)))) {
+    violations.push(`Showcase URL-builder contract references missing ${showcaseBuilder ?? '<unset>'}.`);
+  }
+
+  if (releaseState.workspaceVersion !== releaseState.currentVersion) {
+    violations.push(`release state version ${releaseState.currentVersion} does not match workspace ${releaseState.workspaceVersion}.`);
+  }
+  if (!releaseState.published) {
+    if (releaseState.publicInstallCommandsAvailable) violations.push('unpublished release state may not expose public install commands.');
+    if (releaseState.cliAvailable) violations.push('unpublished release state may not expose the CLI as publicly available.');
+    if (releaseState.installCta !== 'hidden') violations.push('unpublished release state must hide install CTA.');
+    if (releaseState.ownerGate !== '#254') violations.push('unpublished release state must retain owner gate #254.');
+  }
+  if (releaseState.sourceEvaluationCta !== 'enabled') violations.push('source evaluation CTA must remain available while publication is closed.');
+
+  return violations;
+}
+
+export function writeDocsFoundationOutputs(rootDir = ROOT_DIR) {
+  const routeOutput = path.join(rootDir, ROUTE_MANIFEST_OUTPUT);
+  const releaseOutput = path.join(rootDir, RELEASE_STATE_OUTPUT);
+  fs.mkdirSync(path.dirname(routeOutput), { recursive: true });
+  fs.writeFileSync(routeOutput, `${JSON.stringify(buildDocsFoundationManifest(rootDir), null, 2)}\n`);
+  fs.writeFileSync(releaseOutput, `${JSON.stringify(buildReleaseState(rootDir), null, 2)}\n`);
+  return [ROUTE_MANIFEST_OUTPUT, RELEASE_STATE_OUTPUT];
 }
 
 function run() {
-  const rootDir = ROOT_DIR;
   const check = process.argv.includes('--check');
-  if (check) {
-    checkDocsFoundationManifest(rootDir);
-    console.log(`docs foundation manifest is current: ${OUTPUT_PATH}`);
+  const violations = validateDocsFoundation(ROOT_DIR);
+  if (violations.length) {
+    console.error('Docs foundation contract failed:');
+    for (const violation of violations) console.error(`- ${violation}`);
+    process.exitCode = 1;
     return;
   }
 
-  const output = path.join(rootDir, OUTPUT_PATH);
-  fs.writeFileSync(output, renderDocsFoundationManifest(rootDir));
-  console.log(`generated ${OUTPUT_PATH}`);
+  if (check) {
+    console.log('Docs foundation contract passed (routes, redirects, SEO, source pipelines and release truth are consistent).');
+    return;
+  }
+
+  for (const output of writeDocsFoundationOutputs(ROOT_DIR)) console.log(`generated ${output}`);
 }
 
-if (fileURLToPath(import.meta.url) === path.resolve(process.argv[1] ?? '')) {
-  run();
-}
+if (fileURLToPath(import.meta.url) === path.resolve(process.argv[1] ?? '')) run();
