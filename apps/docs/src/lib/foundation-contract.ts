@@ -103,7 +103,7 @@ export interface PageMetadataInput {
   description: string;
   pathname: string;
   imagePath?: string;
-  environment?: DeploymentEnvironment;
+  environment: DeploymentEnvironment;
 }
 
 export interface PageMetadata {
@@ -131,19 +131,18 @@ export function buildCanonicalUrl(pathname: string, origin = PUBLIC_SITE_ORIGIN)
 }
 
 export function indexPolicyForEnvironment(
-  environment: DeploymentEnvironment,
+  environment: DeploymentEnvironment | undefined,
 ): 'index,follow' | 'noindex,nofollow' {
   return environment === 'production' ? 'index,follow' : 'noindex,nofollow';
 }
 
 export function buildPageMetadata(input: PageMetadataInput): PageMetadata {
   const canonical = buildCanonicalUrl(input.pathname);
-  const environment = input.environment ?? 'production';
   return {
     title: input.title,
     description: input.description,
     canonical,
-    robots: indexPolicyForEnvironment(environment),
+    robots: indexPolicyForEnvironment(input.environment),
     openGraph: {
       title: input.title,
       description: input.description,
