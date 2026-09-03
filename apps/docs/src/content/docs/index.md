@@ -1,33 +1,29 @@
 ---
-title: BeeUI
-description: >-
-  BeeUI is a production-oriented React Native UI system for Expo, bare React Native,
-  and Web, with source-grounded accessibility and responsive contracts.
+title: BeeUI Docs
+description: Build mobile-first React Native interfaces for Expo, bare React Native and Web with BeeUI.
 ---
 
-BeeUI is a mobile-first React Native UI system written in TypeScript for Expo, bare React Native, and Web. Stable behavior, semantic, and variant APIs are designed so consumers do not need to couple application code to the underlying styling engine.
+# BeeUI Docs
 
-:::caution[Distribution status]
-BeeUI is currently **unpublished**. The repository is public, but no `@beemvp/beeui-*` package or BeeUI CLI should be assumed to resolve from the public npm registry. Evaluate the project through the repository, Showcase, demo, and verified local/packed consumer workflows until the owner opens the publication gate.
-:::
+BeeUI is a production-oriented React Native UI system with one public behavior contract
+across Expo, bare React Native and Web. Packages/CLI remain unpublished; these docs always
+separate the stable target API from the distribution actions that are actually available.
 
-## Where to start
+## Start building
 
-- **[Getting started](/getting-started/)** — choose the supported Expo, bare React Native, or Web evaluation/onboarding path.
-- **[Showcase & preview](/showcase/)** — inspect the real component and pattern surface on Web and follow the native preview workflow.
-- **[Theming](/theming/)** — semantic tokens, branding, light/dark behavior, and density.
-- **[Components](/components/)** — public component families, API contracts, and source links.
-- **[Patterns](/patterns/)** — production screen patterns composed from BeeUI primitives.
-- **[Accessibility](/accessibility/)** — semantics, keyboard/focus, RTL, large text, and evidence limits.
-- **[CLI & source ownership](/cli/)** — repository-local Registry/source-ownership workflow while public CLI publication is closed.
-- **[Compatibility](/compatibility/)** — tested React Native/React/Node/Expo/Web compatibility.
-- **[Migration & versioning](/migration/)** — versioning and migration contracts.
-- **[Troubleshooting](/troubleshooting/)** — common setup and runtime failures.
-- **[Performance](/performance/)** — benchmark methodology, budgets, and footprint.
-- **[Release & security](/release-security/)** — current release state and public security reporting guidance.
+- **[Getting Started](/docs/getting-started/)** — choose Expo, bare React Native or Web and run a real packed/workspace consumer.
+- **[Components](/docs/components/)** — complete source-driven public component reference.
+- **[Production patterns](/docs/patterns/reference/)** — reusable screen compositions from the Pattern Gallery.
+- **[Showcase](/showcase/)** — inspect the real interactive Web runtime or follow the native preview path.
+- **[Production reference app](/demo/)** — routed Dashboard/Records/Schedule/Settings consumer application.
 
-## What exists today
+## Design and platform guides
 
-The repository contains React Native + TypeScript packages (`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`), semantic light/dark tokens, explicit safe-area ownership, responsive primitives, forms and selection controls, navigation/disclosure/overlay/feedback components, data/date-time surfaces, a production Pattern Gallery, a routed reference demo, and a repository-local Registry/source-ownership CLI.
+- [Theming](/docs/theming/) · [Responsive & mobile-first](/docs/responsive/) · [Accessibility](/docs/accessibility/)
+- [Current compatibility](/docs/compatibility/current.generated/) · [Migration & versioning](/docs/migration/)
+- [Troubleshooting](/docs/troubleshooting/) · [Performance](/docs/performance/)
+- [Release & security](/docs/release-security/) · [Architecture](/docs/architecture/)
+- [CLI & source ownership](/docs/cli/)
 
-Exact inventory and support claims remain source-driven. The canonical engineering authorities live in `docs/components.md`, `docs/compatibility-matrix.md`, `docs/dist-tag-policy.md`, and the generated component/pattern contracts; public pages summarize those contracts rather than inventing a second truth source.
+For deep maintainer contracts, source history and exact evidence records, the public GitHub
+repository remains the authority: [`docs/`](https://github.com/beobungbu/BeeUI/tree/main/docs).
