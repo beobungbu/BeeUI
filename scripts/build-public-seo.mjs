@@ -37,8 +37,9 @@ function docsSourceRoutes(rootDir) {
   return routes;
 }
 
-function publicRoutes(rootDir) {
-  const routes = new Set(['/', '/examples/', '/showcase/', '/demo/', '/changelog/']);
+function publicRoutes(rootDir, discovery) {
+  const routes = new Set(['/', '/showcase/', '/demo/', '/changelog/']);
+  for (const page of discovery.pages) routes.add(page.route);
   for (const route of docsSourceRoutes(rootDir)) routes.add(route);
   for (const component of buildPublicComponentManifest(rootDir)) routes.add(`/docs/components/reference/${component.name}/`);
   for (const pattern of buildPublicPatternManifest(rootDir)) routes.add(`/docs/patterns/reference/${pattern.pack}/${pattern.slug}/`);
@@ -87,7 +88,7 @@ function socialSvg(version) {
 
 export function buildPublicSeo({ rootDir = ROOT_DIR, outDir = path.join(rootDir, 'web/dist') } = {}) {
   buildPublicLanding({ rootDir, outDir });
-  buildPublicDiscovery({ rootDir, outDir });
+  const discovery = buildPublicDiscovery({ rootDir, outDir });
   const contract = buildPublicSiteContract(rootDir);
   const image = `${contract.origin}/assets/og-beeui.svg`;
 
@@ -100,23 +101,26 @@ export function buildPublicSeo({ rootDir = ROOT_DIR, outDir = path.join(rootDir,
     image,
   }).replace('</head>', `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'SoftwareSourceCode', name: 'BeeUI', codeRepository: 'https://github.com/beobungbu/BeeUI', programmingLanguage: ['TypeScript', 'JavaScript'], runtimePlatform: ['React Native', 'Web'], license: 'https://opensource.org/license/mit', version: contract.buildTruth.version })}</script>\n</head>`));
 
-  const examplesPath = path.join(outDir, 'examples/index.html');
-  fs.writeFileSync(examplesPath, addSocialMetadata(fs.readFileSync(examplesPath, 'utf8'), {
-    title: 'BeeUI examples',
-    description: 'Buildable BeeUI consumers for Expo, bare React Native, Web, source ownership, and coding agents.',
-    canonical: `${contract.origin}/examples/`,
-    image,
-  }));
+  for (const page of discovery.pages) {
+    const pagePath = path.join(outDir, page.relativePath);
+    const html = fs.readFileSync(pagePath, 'utf8');
+    fs.writeFileSync(pagePath, addSocialMetadata(html, {
+      title: page.title,
+      description: page.description,
+      canonical: `${contract.origin}${page.route}`,
+      image,
+    }));
+  }
 
   fs.mkdirSync(path.join(outDir, 'changelog'), { recursive: true });
   fs.writeFileSync(path.join(outDir, 'changelog/index.html'), renderChangelog(fs.readFileSync(path.join(rootDir, 'CHANGELOG.md'), 'utf8'), contract));
   fs.writeFileSync(path.join(outDir, 'assets/og-beeui.svg'), socialSvg(contract.buildTruth.version));
 
-  const routes = publicRoutes(rootDir);
+  const routes = publicRoutes(rootDir, discovery);
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${routes.map((route) => `  <url><loc>${contract.origin}${route}</loc></url>`).join('\n')}\n</urlset>\n`;
   fs.writeFileSync(path.join(outDir, 'sitemap.xml'), sitemap);
   fs.writeFileSync(path.join(outDir, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${contract.origin}/sitemap.xml\n`);
-  return { routes, outDir };
+  return { routes, discovery, outDir };
 }
 
 function main() {
