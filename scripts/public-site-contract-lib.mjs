@@ -23,6 +23,19 @@ export function readPublicationState(rootDir = ROOT_DIR) {
     currentVersion: policy.currentVersion,
     stableDistTag: policy.stableDistTag,
     prereleaseDistTag: policy.prereleaseDistTag,
+    lockstepPackages: policy.lockstepPackages ?? [],
+    releaseEnvironment: policy.releaseEnvironment ?? null,
+  };
+}
+
+export function readCliDistributionState(rootDir = ROOT_DIR) {
+  const manifestPath = path.join(rootDir, 'packages/cli/package.json');
+  if (!fs.existsSync(manifestPath)) return null;
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  return {
+    packageName: manifest.name,
+    version: manifest.version,
+    binaryNames: Object.keys(manifest.bin ?? {}),
   };
 }
 
@@ -35,6 +48,7 @@ export function buildPublicSiteContract(rootDir = ROOT_DIR) {
     buildTruth: {
       version,
       publication,
+      cli: readCliDistributionState(rootDir),
     },
   };
 }
