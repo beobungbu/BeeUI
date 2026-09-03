@@ -47,7 +47,7 @@
       {
         "id": "patterns",
         "routePrefix": "/docs/patterns/",
-        "sources": ["apps/showcase/src/patterns", "docs/pattern-library.content.json"],
+        "sources": ["apps/showcase/patterns", "docs/pattern-library.content.json"],
         "generator": "scripts/generate-pattern-library.mjs"
       },
       {
@@ -128,7 +128,7 @@
     "componentApi": ["packages/ui/src/index.ts", "packages/ui/src/components", "docs/component-reference.content.json"],
     "platformSupport": ["docs/compatibility-matrix.md", "scripts/check-compatibility-matrix.mjs"],
     "accessibility": ["docs/accessibility-contract.md", "docs/keyboard-focus-acceptance-matrix.md", "docs/dynamic-type.md", "docs/reduced-motion-acceptance-matrix.md"],
-    "patterns": ["apps/showcase/src/patterns", "docs/pattern-library.content.json", "scripts/generate-pattern-library.mjs"],
+    "patterns": ["apps/showcase/patterns", "docs/pattern-library.content.json", "scripts/generate-pattern-library.mjs"],
     "demo": ["apps/demo/app", "apps/demo/src", "docs/decisions/013-production-demo-architecture.md"],
     "publication": ["docs/dist-tag-policy.md", "scripts/check-distribution-policy.mjs"],
     "version": ["package.json", "packages/core/package.json", "packages/tokens/package.json", "packages/ui/package.json"],
