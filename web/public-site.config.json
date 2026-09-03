@@ -14,6 +14,69 @@
     { "id": "llms", "prefix": "/llms", "owner": "scripts/generate-llms-txt.mjs", "output": "web/dist", "visibility": "public", "indexable": false },
     { "id": "api", "prefix": "/api/", "owner": "web/worker", "output": null, "visibility": "runtime", "indexable": false }
   ],
+  "docsFoundation": {
+    "schemaVersion": 1,
+    "sections": [
+      { "id": "start", "route": "/docs/start/", "ownerIssue": 457, "status": "foundation" },
+      { "id": "learn", "route": "/docs/learn/", "ownerIssue": 462, "status": "foundation" },
+      { "id": "components", "route": "/docs/components/", "ownerIssue": 459, "status": "existing" },
+      { "id": "patterns", "route": "/docs/patterns/", "ownerIssue": 460, "status": "existing" },
+      { "id": "guides", "route": "/docs/guides/", "ownerIssue": 458, "status": "foundation" },
+      { "id": "reference", "route": "/docs/reference/", "ownerIssue": 463, "status": "foundation" }
+    ],
+    "metadataContracts": {
+      "implementation": "apps/docs/src/lib/foundation-contract.ts",
+      "types": [
+        "ComponentDocMeta",
+        "PatternDocMeta",
+        "ExampleDocMeta",
+        "ReleaseState",
+        "RedirectRule",
+        "ShowcaseLinkIntent"
+      ]
+    },
+    "sourceToPage": [
+      {
+        "id": "components",
+        "routePrefix": "/docs/components/",
+        "sources": ["packages/ui/src/index.ts", "registry/registry.json", "docs/component-reference.content.json"],
+        "generator": "scripts/generate-component-reference.mjs"
+      },
+      {
+        "id": "patterns",
+        "routePrefix": "/docs/patterns/",
+        "sources": ["apps/showcase/src/patterns", "docs/pattern-library.content.json"],
+        "generator": "scripts/generate-pattern-library.mjs"
+      },
+      {
+        "id": "examples",
+        "routePrefix": "/examples/",
+        "sources": ["examples/README.md", "examples"],
+        "generator": null
+      },
+      {
+        "id": "release",
+        "routePrefix": "/docs/reference/release/",
+        "sources": ["docs/dist-tag-policy.md", "package.json"],
+        "generator": "scripts/generate-docs-foundation.mjs"
+      }
+    ],
+    "showcaseAddressability": {
+      "ownerIssue": 472,
+      "urlBuilder": "apps/docs/src/lib/foundation-contract.ts#buildShowcaseHref",
+      "requiredFields": ["surface", "id"],
+      "optionalFields": ["example", "state", "theme", "density"]
+    },
+    "seo": {
+      "productionIndexPolicy": "index,follow",
+      "nonProductionIndexPolicy": "noindex,nofollow",
+      "sitemap": {
+        "includeIndexableRoutes": true,
+        "excludePrefixes": ["/api/", "/llms"]
+      },
+      "canonicalOrigin": "https://beeui.beemvp.com"
+    }
+  },
   "legacyDocsRedirect": {
     "status": 308,
     "prefixes": [
