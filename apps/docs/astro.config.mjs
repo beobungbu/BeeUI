@@ -49,6 +49,10 @@ export default defineConfig({
           label: 'Components',
           items: [
             { label: 'Overview', slug: 'components' },
+            {
+              label: 'Reference',
+              items: [{ autogenerate: { directory: 'components/reference' } }],
+            },
             { label: 'Table', slug: 'components/table' },
             { label: 'Calendar & date/time', slug: 'components/calendar-date-time' },
           ],
