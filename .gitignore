@@ -19,6 +19,7 @@ apps/demo/dist-web/
 apps/demo/dist-ios/
 apps/demo/dist-android/
 apps/docs/src/content/docs/components/reference/
+apps/docs/src/content/docs/patterns/reference/
 .env
 .env.*
 !.env.example
