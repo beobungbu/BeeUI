@@ -1,43 +1,29 @@
 ---
-title: BeeUI
-description: >-
-  BeeUI is a production-oriented, accessibility-first React Native UI system
-  for Expo, bare React Native, and Web.
+title: BeeUI Docs
+description: Build mobile-first React Native interfaces for Expo, bare React Native and Web with BeeUI.
 ---
 
-BeeUI is a production-oriented React Native UI system written in TypeScript. It is
-mobile-first, framework-light, and designed for long-lived client applications.
-Stable behavior, semantic, and variant APIs do not require callers to know the
-underlying styling engine.
+# BeeUI Docs
 
-:::caution[Site status]
-This site is being filled in incrementally. Per-component API reference, executable
-examples, the production pattern library, and the Web Showcase/native preview workflow are
-in place (see [Showcase & preview](/showcase/)); some pages remain stubs pending their
-follow-up content and say so explicitly.
-:::
+BeeUI is a production-oriented React Native UI system with one public behavior contract
+across Expo, bare React Native and Web. Packages/CLI remain unpublished; these docs always
+separate the stable target API from the distribution actions that are actually available.
 
-## Where to start
+## Start building
 
-- **[Getting started](/getting-started/)** — install BeeUI and choose your platform: Expo, bare React Native, or Web.
-- **[Showcase & preview](/showcase/)** — run the real component and pattern surface on Web, and preview it natively on iOS and Android.
-- **[Theming](/theming/)** — tokens, branding, and density.
-- **[Components](/components/)** — the component catalog, including Table and Calendar/date-time.
-- **[Patterns](/patterns/)** — production screen patterns built from BeeUI primitives.
-- **[Accessibility](/accessibility/)** — RTL, large text, and assistive-technology behavior.
-- **[CLI & source ownership](/cli/)** — the BeeUI registry CLI for source-owned components.
-- **[Compatibility](/compatibility/)** — supported React Native/React/Node/Expo/Web versions.
-- **[Migration & versioning](/migration/)** — upgrade paths and semver policy.
-- **[Troubleshooting](/troubleshooting/)** — common setup and runtime problems.
-- **[Performance](/performance/)** — benchmarks, budgets, and footprint.
-- **[Release & security](/release-security/)** — release process and how to report vulnerabilities.
+- **[Getting Started](/docs/getting-started/)** — choose Expo, bare React Native or Web and run a real packed/workspace consumer.
+- **[Components](/docs/components/)** — complete source-driven public component reference.
+- **[Production patterns](/docs/patterns/reference/)** — reusable screen compositions from the Pattern Gallery.
+- **[Showcase](/showcase/)** — inspect the real interactive Web runtime or follow the native preview path.
+- **[Production reference app](/demo/)** — routed Dashboard/Records/Schedule/Settings consumer application.
 
-## Current foundation
+## Design and platform guides
 
-BeeUI currently includes React Native + TypeScript packages (`@beemvp/beeui-core`, `@beemvp/beeui-tokens`,
-`@beemvp/beeui-ui`), Uniwind + Tailwind CSS v4 styling, semantic light/dark design tokens, explicit
-safe-area ownership, broad layout/typography/form/selection/navigation/disclosure/overlay/feedback
-coverage, and a repository-local Registry + source-ownership CLI.
+- [Theming](/docs/theming/) · [Responsive & mobile-first](/docs/responsive/) · [Accessibility](/docs/accessibility/)
+- [Current compatibility](/docs/compatibility/current.generated/) · [Migration & versioning](/docs/migration/)
+- [Troubleshooting](/docs/troubleshooting/) · [Performance](/docs/performance/)
+- [Release & security](/docs/release-security/) · [Architecture](/docs/architecture/)
+- [CLI & source ownership](/docs/cli/)
 
-Source of truth for the exact current component inventory and the BeeUI 1.0 release plan lives
-in the repository's `docs/components.md` and `docs/roadmap.md`.
+For deep maintainer contracts, source history and exact evidence records, the public GitHub
+repository remains the authority: [`docs/`](https://github.com/beobungbu/BeeUI/tree/main/docs).

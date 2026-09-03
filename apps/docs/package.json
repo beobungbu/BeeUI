@@ -4,9 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node ../../scripts/public-component-reference.mjs && node ../../scripts/public-component-previews.mjs && node ../../scripts/public-pattern-reference.mjs && node ../../scripts/public-guide-data.mjs",
     "dev": "astro dev",
+    "prebuild": "node ../../scripts/public-component-reference.mjs && node ../../scripts/public-component-previews.mjs && node ../../scripts/public-pattern-reference.mjs && node ../../scripts/public-guide-data.mjs",
     "build": "astro build",
     "preview": "astro preview",
+    "pretypecheck": "node ../../scripts/public-component-reference.mjs && node ../../scripts/public-component-previews.mjs && node ../../scripts/public-pattern-reference.mjs && node ../../scripts/public-guide-data.mjs",
     "typecheck": "astro check"
   },
   "dependencies": {

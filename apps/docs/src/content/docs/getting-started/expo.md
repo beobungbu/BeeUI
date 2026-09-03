@@ -1,33 +1,108 @@
 ---
 title: Expo
-description: Run BeeUI inside an Expo project.
+description: Evaluate and integrate BeeUI through the accepted Expo package boundary.
 ---
 
-BeeUI's own Showcase app runs on Expo SDK 57 with React Native 0.86.2 and React 19.2.3.
+BeeUI's accepted Expo path is exercised on Expo SDK 57 with the same public package boundary intended for external consumers. Because BeeUI is currently unpublished, the repository's `examples/expo-package-consumer` fixture packs the three BeeUI packages into tarballs before installing them into an isolated Expo app. That is the executable onboarding authority today.
 
-## Preview the Showcase on Expo
+:::caution[Distribution gate]
+The BeeUI packages and BeeUI CLI are not published to the public npm registry yet. The workflow below is intentionally repository-local and uses packed artifacts; no public package-install command is implied.
+:::
 
-The Showcase app (`apps/showcase`) is the reference Expo integration. Run it on a device,
-simulator, or emulator:
+## 1. Prove the clean Expo consumer
+
+From a clean checkout:
 
 ```bash
 corepack enable
 pnpm install --frozen-lockfile
+pnpm build
 
-pnpm --filter @beemvp/beeui-showcase start      # Expo dev server + QR (Expo Go, over the air)
-pnpm --filter @beemvp/beeui-showcase ios        # iOS Simulator (macOS + Xcode)
-pnpm --filter @beemvp/beeui-showcase android     # Android emulator or attached device
+cd examples/expo-package-consumer
+bash setup.sh
+bash bundle.sh
 ```
 
-`start` prints a QR code you can scan with Expo Go without any native toolchain. See
-[Showcase & preview](/showcase/) for the full native-preview workflow, prebuild notes, and
-the environments each path supports.
+`setup.sh` packs `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui`, then installs the tarballs plus the pinned Expo/native peers into the isolated fixture. `bundle.sh` runs Expo's headless export for Android, iOS, and Web.
 
-:::note[Content pending]
-A standalone step-by-step guide for adding BeeUI to a *new* Expo project (config plugin
-requirements, Metro/Uniwind wiring) is tracked for a follow-up docs content issue and will
-be sourced from the Showcase app's setup once the public package surface publishes.
-:::
+For an interactive local session after `setup.sh`:
 
-See [Compatibility](/compatibility/) for the exact tested Expo/React Native/React version
-combination.
+```bash
+npx expo start
+```
+
+Use Expo's normal `i`, `a`, or `w` targets when the matching simulator/emulator/browser environment is available.
+
+## 2. Wire the styling entry
+
+The accepted fixture imports Tailwind, Uniwind, and BeeUI's semantic Web/theme output once:
+
+```css
+@import 'tailwindcss';
+@import 'uniwind';
+@import '@beemvp/beeui-tokens/theme.css';
+
+@source '../node_modules/@beemvp/beeui-core/src';
+@source '../node_modules/@beemvp/beeui-ui/src';
+```
+
+Its Metro config uses Uniwind's supported wrapper and points to the same CSS entry:
+
+```js
+const { getDefaultConfig } = require('expo/metro-config');
+const { withUniwindConfig } = require('uniwind/metro');
+
+module.exports = withUniwindConfig(getDefaultConfig(__dirname), {
+  cssEntryFile: './global.css',
+  dtsFile: './uniwind-types.d.ts',
+  extraThemes: [
+    'violet-light',
+    'violet-dark',
+    'high-contrast-light',
+    'high-contrast-dark',
+  ],
+});
+```
+
+Treat the fixture files as executable source if these details change; the public guide is guarded against drifting away from them.
+
+## 3. Mount BeeUIProvider and explicit safe areas
+
+```tsx
+import './global.css';
+
+import {
+  BeeUIProvider,
+  Button,
+  SafeArea,
+  Screen,
+  Text,
+} from '@beemvp/beeui-ui';
+
+export default function App() {
+  return (
+    <BeeUIProvider>
+      <Screen>
+        <SafeArea edges={['top', 'left', 'right']} className="flex-1">
+          <Text variant="title">BeeUI on Expo</Text>
+          <Button>Continue</Button>
+        </SafeArea>
+      </Screen>
+    </BeeUIProvider>
+  );
+}
+```
+
+`BeeUIProvider` supplies accepted runtime services; `SafeArea` is still an explicit application-owned edge boundary. Read [Provider & safe area](/docs/getting-started/provider-safe-area/) before building an app shell.
+
+## 4. Understand what the fixture proves
+
+The Expo consumer's acceptance is **package-boundary + Metro export evidence** for Android, iOS, and Web. A successful export is not a native simulator/device interaction result and must not be reported as one.
+
+For live component/pattern inspection use [Showcase](/showcase/). For a routed application use [Demo](/demo/). Exact platform/toolchain support lives in [Compatibility](/docs/compatibility/).
+
+## Source authority
+
+- [`examples/expo-package-consumer`](https://github.com/beobungbu/BeeUI/tree/main/examples/expo-package-consumer) — isolated executable consumer.
+- [`apps/showcase`](https://github.com/beobungbu/BeeUI/tree/main/apps/showcase) — full Expo runtime surface.
+- [`docs/compatibility-matrix.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/compatibility-matrix.md) — tested version contract.
