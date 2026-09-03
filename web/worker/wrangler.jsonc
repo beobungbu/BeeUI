@@ -1,5 +1,5 @@
 {
-  "name": "beeui-web-preview",
+  "name": "beeui-web-local",
   "main": "./src/index.mjs",
   "compatibility_date": "2026-09-03",
   "workers_dev": true,
@@ -13,8 +13,30 @@
     "enabled": true
   },
   "env": {
+    "development": {
+      "name": "beeui-dev",
+      "workers_dev": true,
+      "preview_urls": true,
+      "routes": [
+        {
+          "pattern": "beeui-dev.beemvp.com",
+          "custom_domain": true
+        }
+      ]
+    },
+    "staging": {
+      "name": "beeui-stg",
+      "workers_dev": true,
+      "preview_urls": true,
+      "routes": [
+        {
+          "pattern": "beeui-stg.beemvp.com",
+          "custom_domain": true
+        }
+      ]
+    },
     "production": {
-      "name": "beeui-web",
+      "name": "beeui",
       "workers_dev": false,
       "preview_urls": false,
       "routes": [
