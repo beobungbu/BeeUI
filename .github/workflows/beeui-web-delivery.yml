@@ -395,11 +395,28 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          verified=false
           for attempt in $(seq 1 30); do
-            if curl --silent --fail "$PREVIEW_URL/api/health" >"$RUNNER_TEMP/health.json"; then break; fi
+            url="$PREVIEW_URL/api/health?verify=${EXPECTED_SHA}&attempt=${attempt}"
+            if curl --silent --show-error --fail \
+              --header 'Cache-Control: no-cache, no-store, max-age=0' \
+              --header 'Pragma: no-cache' \
+              "$url" >"$RUNNER_TEMP/health.json"; then
+              if node -e "const fs=require('fs'); try { const j=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/health.json')); process.exit(j.ok && j.commit===process.env.EXPECTED_SHA && j.environment===process.env.EXPECTED_ENV ? 0 : 1) } catch { process.exit(1) }"; then
+                verified=true
+                break
+              fi
+              echo "Preview identity not current yet (attempt ${attempt}); observed: $(cat "$RUNNER_TEMP/health.json")"
+            else
+              echo "Preview health endpoint not ready yet (attempt ${attempt})."
+            fi
             sleep 2
           done
-          node -e "const fs=require('fs'); const j=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/health.json')); if(!j.ok||j.commit!==process.env.EXPECTED_SHA||j.environment!==process.env.EXPECTED_ENV) process.exit(1)"
+          if [ "$verified" != true ]; then
+            echo "Timed out waiting for preview identity ${EXPECTED_SHA} / ${EXPECTED_ENV}. Last response:" >&2
+            cat "$RUNNER_TEMP/health.json" >&2 2>/dev/null || true
+            exit 1
+          fi
 
       - name: Deploy exact merged SHA to environment Custom Domain
         if: needs.authorize.outputs.mode == 'deploy'
@@ -425,11 +442,28 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          verified=false
           for attempt in $(seq 1 60); do
-            if curl --silent --fail "$DEPLOYMENT_URL/api/health" >"$RUNNER_TEMP/health.json"; then break; fi
+            url="$DEPLOYMENT_URL/api/health?verify=${EXPECTED_SHA}&attempt=${attempt}"
+            if curl --silent --show-error --fail \
+              --header 'Cache-Control: no-cache, no-store, max-age=0' \
+              --header 'Pragma: no-cache' \
+              "$url" >"$RUNNER_TEMP/health.json"; then
+              if node -e "const fs=require('fs'); try { const j=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/health.json')); process.exit(j.ok && j.commit===process.env.EXPECTED_SHA && j.environment===process.env.EXPECTED_ENV ? 0 : 1) } catch { process.exit(1) }"; then
+                verified=true
+                break
+              fi
+              echo "Deployment identity not current yet (attempt ${attempt}); observed: $(cat "$RUNNER_TEMP/health.json")"
+            else
+              echo "Deployment health endpoint not ready yet (attempt ${attempt})."
+            fi
             sleep 5
           done
-          node -e "const fs=require('fs'); const j=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/health.json')); if(!j.ok||j.commit!==process.env.EXPECTED_SHA||j.environment!==process.env.EXPECTED_ENV) process.exit(1)"
+          if [ "$verified" != true ]; then
+            echo "Timed out waiting for deployment identity ${EXPECTED_SHA} / ${EXPECTED_ENV}. Last response:" >&2
+            cat "$RUNNER_TEMP/health.json" >&2 2>/dev/null || true
+            exit 1
+          fi
 
       - name: Record delivery evidence
         if: always()
