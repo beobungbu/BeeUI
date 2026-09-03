@@ -31,6 +31,7 @@ export async function collectViolations(rootDir) {
   const ciPath = path.join(rootDir, '.github/workflows/beeui-web.yml');
   const environmentCiPath = path.join(rootDir, '.github/workflows/beeui-environment-ci.yml');
   const deliveryPath = path.join(rootDir, '.github/workflows/beeui-web-delivery.yml');
+  const codeownersPath = path.join(rootDir, '.github/CODEOWNERS');
 
   const trustedConfigPaths = Object.fromEntries(
     Object.keys(TARGETS).map((target) => [
@@ -47,6 +48,7 @@ export async function collectViolations(rootDir) {
     ciPath,
     environmentCiPath,
     deliveryPath,
+    codeownersPath,
     ...Object.values(trustedConfigPaths),
   ]) {
     if (!fs.existsSync(file)) violations.push(`missing Worker launch file ${path.relative(rootDir, file)}`);
@@ -109,6 +111,9 @@ export async function collectViolations(rootDir) {
   for (const token of ['apps/docs/dist', 'apps/showcase/dist-public-web', 'apps/demo/dist-public-web', 'web/worker/dist', 'asset collision', 'build-identity.json', '_headers']) {
     if (!build.includes(token)) violations.push(`composed Worker build contract missing ${token}.`);
   }
+  if (!build.includes("run('pnpm', ['build'], rootDir)")) {
+    violations.push('composed Worker build must materialize package exports before Expo Router static SSR.');
+  }
 
   const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
   for (const script of [
@@ -132,8 +137,8 @@ export async function collectViolations(rootDir) {
   if (!ci.includes('development') || !ci.includes('staging') || !ci.includes('main')) {
     violations.push('beeui-web CI must build exact pushes for development, staging and main.');
   }
-  if (!ci.includes('beeui-web-delivery') && /CLOUDFLARE_API_TOKEN|CLOUDFLARE_ACCOUNT_ID/.test(ci)) {
-    violations.push('untrusted beeui-web CI must never reference Cloudflare credentials.');
+  if (!ci.includes('main) ARTIFACT_ENV=production')) {
+    violations.push('main push artifacts must be stamped as production, not as the branch name.');
   }
   if (/secrets\.CLOUDFLARE|vars\.CLOUDFLARE/.test(ci)) {
     violations.push('untrusted beeui-web CI must not read Cloudflare environment secrets or variables.');
@@ -171,6 +176,11 @@ export async function collectViolations(rootDir) {
   }
   if (/pnpm\s+(run\s+)?|npm\s+run\s+/.test(delivery)) {
     violations.push('trusted delivery workflow must not execute repository package scripts.');
+  }
+
+  const codeowners = fs.readFileSync(codeownersPath, 'utf8');
+  if (!codeowners.includes('/.github/deployment/')) {
+    violations.push('CODEOWNERS must cover the trusted deployment configuration directory.');
   }
 
   return violations;
