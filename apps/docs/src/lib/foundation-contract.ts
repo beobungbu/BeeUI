@@ -3,6 +3,7 @@ export type DocumentationStatus = 'stable' | 'experimental' | 'deprecated' | 'in
 export type PlatformId = 'expo' | 'bare-react-native' | 'web' | 'ios' | 'android';
 export type PlatformSupport = 'supported' | 'partial' | 'unsupported' | 'unknown';
 export type ShowcaseSurface = 'component' | 'pattern' | 'tokens' | 'fixture';
+export type DeploymentEnvironment = 'production' | 'development' | 'staging' | 'preview';
 
 export interface SourceRef {
   path: string;
@@ -16,12 +17,30 @@ export interface PlatformStatus {
   note?: string;
 }
 
+export interface ShowcaseLinkIntent {
+  surface: ShowcaseSurface;
+  id: string;
+  ownerId?: string;
+  example?: string;
+  state?: string;
+  theme?: string;
+  density?: string;
+}
+
+export interface PublicSurfaceLinks {
+  source?: SourceRef;
+  showcase?: ShowcaseLinkIntent;
+  demoHref?: string;
+}
+
 interface PublicDocMeta {
   id: string;
+  ownerId: string;
   title: string;
   description: string;
   status: DocumentationStatus;
   sources: SourceRef[];
+  links?: PublicSurfaceLinks;
   platforms?: PlatformStatus[];
 }
 
@@ -40,10 +59,10 @@ export interface PatternDocMeta extends PublicDocMeta {
 
 export interface ExampleDocMeta extends PublicDocMeta {
   kind: 'example';
-  owner: string;
   prerequisites: string[];
   expectedResult: string;
-  showcase?: ShowcaseLinkIntent;
+  exampleId: string;
+  stateIds?: string[];
 }
 
 export interface ReleaseState {
@@ -51,10 +70,19 @@ export interface ReleaseState {
   generatedFrom: readonly string[];
   published: boolean;
   status: PublicationStatus;
+  channel: 'closed' | 'next' | 'latest';
   currentVersion: string;
   workspaceVersion: string;
-  ownerGate: '#254';
+  packageNames: readonly string[];
+  cliPackageName: string | null;
+  cliAvailable: boolean;
   publicInstallCommandsAvailable: boolean;
+  installCta: 'hidden' | 'prerelease' | 'stable';
+  sourceEvaluationCta: 'enabled';
+  ownerGate: '#254';
+  changelogHref: string;
+  migrationHref: string;
+  sourceEvaluationHref: string;
 }
 
 export interface RedirectRule {
@@ -65,18 +93,30 @@ export interface RedirectRule {
   preserveQuery: boolean;
 }
 
-export interface ShowcaseLinkIntent {
-  surface: ShowcaseSurface;
-  id: string;
-  example?: string;
-  state?: string;
-  theme?: string;
-  density?: string;
-}
-
 export interface SiteIndexPolicy {
   production: 'index,follow';
   nonProduction: 'noindex,nofollow';
+}
+
+export interface PageMetadataInput {
+  title: string;
+  description: string;
+  pathname: string;
+  imagePath?: string;
+  environment?: DeploymentEnvironment;
+}
+
+export interface PageMetadata {
+  title: string;
+  description: string;
+  canonical: string;
+  robots: 'index,follow' | 'noindex,nofollow';
+  openGraph: {
+    title: string;
+    description: string;
+    url: string;
+    image?: string;
+  };
 }
 
 export const PUBLIC_SITE_ORIGIN = 'https://beeui.beemvp.com' as const;
@@ -90,11 +130,34 @@ export function buildCanonicalUrl(pathname: string, origin = PUBLIC_SITE_ORIGIN)
   return new URL(normalizeAbsolutePath(pathname), origin).toString();
 }
 
+export function indexPolicyForEnvironment(
+  environment: DeploymentEnvironment,
+): 'index,follow' | 'noindex,nofollow' {
+  return environment === 'production' ? 'index,follow' : 'noindex,nofollow';
+}
+
+export function buildPageMetadata(input: PageMetadataInput): PageMetadata {
+  const canonical = buildCanonicalUrl(input.pathname);
+  const environment = input.environment ?? 'production';
+  return {
+    title: input.title,
+    description: input.description,
+    canonical,
+    robots: indexPolicyForEnvironment(environment),
+    openGraph: {
+      title: input.title,
+      description: input.description,
+      url: canonical,
+      ...(input.imagePath ? { image: buildCanonicalUrl(input.imagePath) } : {}),
+    },
+  };
+}
+
 /**
- * Foundation-owned URL builder seam for #472.
+ * Foundation-owned URL-builder seam for #472.
  *
- * #472 owns the final target inventory/parser/runtime behavior. Docs code should call this
- * helper instead of constructing Showcase query strings by hand so the final contract can
+ * #472 owns the final target inventory/parser/runtime behavior. Docs code must call this
+ * helper instead of constructing Showcase query strings by hand so target identity can
  * evolve in one place.
  */
 export function buildShowcaseHref(target: ShowcaseLinkIntent): string {
@@ -103,6 +166,7 @@ export function buildShowcaseHref(target: ShowcaseLinkIntent): string {
   const params = new URLSearchParams();
   params.set('surface', target.surface);
   params.set('id', target.id);
+  if (target.ownerId) params.set('owner', target.ownerId);
   if (target.example) params.set('example', target.example);
   if (target.state) params.set('state', target.state);
   if (target.theme) params.set('theme', target.theme);
