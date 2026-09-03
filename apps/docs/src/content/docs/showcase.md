@@ -1,115 +1,65 @@
 ---
-title: Showcase & preview
-description: Run the BeeUI Showcase on Web and preview it natively on iOS and Android.
+title: Showcase & native preview
+description: Inspect the real BeeUI Web runtime and run the same Showcase on iOS or Android.
 ---
 
-The BeeUI Showcase (`apps/showcase`) is one Expo app that renders the **real** BeeUI
-public contract — the same `@beemvp/beeui-ui` components a consumer receives — across Web, iOS,
-and Android from a single source tree. It is the app BeeUI dogfoods and the surface these
-docs reference.
+# Showcase & native preview
 
-Its home screen mounts one inspection surface at a time (navigation is local React state;
-the app owns no router):
+The public **[BeeUI Showcase](/showcase/)** is the same Expo application used by repository
+Web/native verification. It is not a docs mock and the docs do not bundle a second React
+Native runtime. Component pages deep-link with `?component=<registry-family>`; pattern pages
+deep-link with the canonical source identity and the public router resolves it against the
+real Pattern Catalog.
 
-- **Components** — the interactive gallery, including Table/DataTable, Select, Tooltip,
-  Sheet, Calendar, DatePicker, and DateTimePicker.
-- **Theme & tokens** — semantic tokens with Brand A/B and light/dark/high-contrast switching.
-- **Patterns** — the 37-screen production Pattern Gallery.
-- **Runtime / Dynamic Type / Localization stress** — deterministic fixtures for native
-  runtime QA, large-text scaling, and RTL/long-content localization.
+## Public Web surface
 
-:::caution[Unpublished status]
-BeeUI is pre-1.0 and unpublished. No `@beemvp/beeui-*` package or the `beeui` CLI is on npm, and
-there is no `v1.0.0` tag or GitHub Release. The Showcase is built from in-repo workspace
-source; it never runs `npm install @beemvp/beeui-ui`. Its home screen shows this status inline
-next to the build identity.
-:::
+- **[Component Gallery](/showcase/?section=components)** — interactive public component system.
+- **[Pattern Gallery](/showcase/?section=patterns)** — production screen patterns and demo states.
+- Generated component/pattern pages use `embed=1` so the same runtime can sit inside docs without duplicate global chrome.
+- The public export is hosted under `/showcase/`; Expo's `experiments.baseUrl` is enabled only for this launch build, so existing root-hosted CI/visual exports keep their current contract.
 
-## Prerequisites
-
-From the repository root, using the pinned toolchain (see
-[Compatibility](/compatibility/)): Node `24.13.1`, then:
+From a BeeUI checkout:
 
 ```bash
-corepack enable
-pnpm install --frozen-lockfile
+pnpm --filter @beemvp/beeui-showcase build:web:public
 ```
 
-The workspace packages compile straight from source through Metro, so no separate package
-build step is needed to run the Showcase.
+This stamps the current Git SHA and writes the subpath-ready static build to
+`apps/showcase/dist-public-web/`. The ordinary `build:web` remains the root-hosted CI/export
+path.
 
-## Web (publish-ready static export)
+## Native preview
 
-```bash
-# Iterative development (Metro dev server, Web target)
-pnpm --filter @beemvp/beeui-showcase web
-
-# Deterministic static production export → apps/showcase/dist-web/
-pnpm --filter @beemvp/beeui-showcase build:web
-```
-
-`build:web` runs `expo export --platform web` and writes a self-contained `dist-web/`
-(`index.html`, a hashed JS bundle, and the compiled Uniwind/Tailwind CSS). Deploy that
-directory to any static host — there is no server-side runtime. Preview it locally with any
-static file server, for example `npx serve apps/showcase/dist-web`.
-
-### Build identity
-
-The home screen renders a build-identity row so any deployment is traceable to an exact
-revision. The version comes from `app.json`; inject the commit SHA at export time:
+Run the **same source tree** rather than treating the Web Showcase as native proof:
 
 ```bash
-EXPO_PUBLIC_BUILD_SHA=$(git rev-parse --short HEAD) \
-  pnpm --filter @beemvp/beeui-showcase build:web
-```
-
-When the SHA is unset the row shows a `local build` label — no environment is assumed.
-
-## Native preview (iOS / Android)
-
-Preview the same Showcase on a real device, simulator, or emulator.
-
-### Expo Go + QR (fastest, no native build)
-
-```bash
+# Expo dev server / QR
 pnpm --filter @beemvp/beeui-showcase start
+
+# Native local builds
+pnpm --filter @beemvp/beeui-showcase ios
+pnpm --filter @beemvp/beeui-showcase android
+
+# Bundle-only evidence (not device runtime)
+pnpm --filter @beemvp/beeui-showcase bundle:ios
+pnpm --filter @beemvp/beeui-showcase bundle:android
 ```
 
-Metro prints a QR code. Scan it with Expo Go (Android) or the Camera app (iOS) on a device
-sharing the dev machine's network to load the bundle over the air — no Xcode or Android SDK
-required. Use `expo start --tunnel` when the device and machine cannot share a network.
+`start` can load the bundle on a compatible Expo development path; `ios`/`android` invoke
+native local builds. Bundle/export/compile evidence proves packaging and resolution, **not**
+keyboard, safe area, hardware Back, VoiceOver/TalkBack or visual runtime behavior. Those
+claims require the repository's explicit native runtime/device evidence classes.
 
-### Simulator / emulator (local native build)
+## Build identity and status
 
-Requires the platform toolchain (Xcode for iOS on macOS; Android Studio/SDK for Android):
+The Showcase application version is aligned to the current BeeUI workspace release label,
+and the launch Web export injects `git rev-parse --short HEAD`. The runtime still states
+that BeeUI packages/CLI are unpublished; a public Showcase URL does not imply npm
+publication.
 
-```bash
-pnpm --filter @beemvp/beeui-showcase ios       # iOS Simulator
-pnpm --filter @beemvp/beeui-showcase android    # Android emulator or attached device
-```
+## Public navigation
 
-These run `expo run:ios` / `expo run:android`, which invoke `expo prebuild` to generate
-the native projects on first run. Regenerate with `npx expo prebuild --clean` if a prebuild
-goes stale after native dependency changes.
-
-### Verify native bundling (evidence, no device)
-
-Proves the exact source resolves and bundles for each native platform without a device or
-the native toolchain — the reusable release-acceptance evidence path:
-
-```bash
-pnpm --filter @beemvp/beeui-showcase bundle:ios       # → dist-ios/  (Hermes bytecode bundle)
-pnpm --filter @beemvp/beeui-showcase bundle:android    # → dist-android/
-```
-
-## Supported environments and limitations
-
-- iOS Simulator builds require macOS with Xcode; Android requires the Android SDK plus an
-  emulator or device. Expo Go needs no native toolchain but requires network reachability.
-- Native **bundle/compile is not runtime**: a clean bundle proves resolution and packaging,
-  not live interaction (safe area, keyboard, VoiceOver/TalkBack, hardware Back). Those are
-  exercised by the Showcase's runtime fixtures and the Maestro flows in the repository.
-- iOS `pageSheet`/`formSheet` `Dialog` presentation is **experimental** — see
-  [Compatibility → Native](/compatibility/native/).
-
-Full command detail lives in the Showcase app README (`apps/showcase/README.md`).
+Outside embedded mode, Showcase includes lightweight navigation back to BeeUI Docs, Demo
+and the landing page. Native keeps its router-free application architecture; opening a
+public-site destination uses the system browser rather than introducing a navigation
+framework into BeeUI.

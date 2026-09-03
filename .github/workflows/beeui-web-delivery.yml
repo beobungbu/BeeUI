@@ -1,0 +1,377 @@
+name: beeui-web-delivery
+
+on:
+  workflow_run:
+    workflows:
+      - beeui-web
+    types:
+      - completed
+
+permissions:
+  actions: read
+  checks: read
+  contents: read
+  pull-requests: read
+
+jobs:
+  authorize:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      allowed: ${{ steps.route.outputs.allowed }}
+      mode: ${{ steps.route.outputs.mode }}
+      environment: ${{ steps.route.outputs.environment }}
+      source_sha: ${{ steps.route.outputs.source_sha }}
+      check_sha: ${{ steps.route.outputs.check_sha }}
+      pr_number: ${{ steps.route.outputs.pr_number }}
+      preview_alias: ${{ steps.route.outputs.preview_alias }}
+      artifact_environment: ${{ steps.route.outputs.artifact_environment }}
+      deployment_url: ${{ steps.route.outputs.deployment_url }}
+      config_file: ${{ steps.route.outputs.config_file }}
+      concurrency_key: ${{ steps.route.outputs.concurrency_key }}
+    steps:
+      - name: Resolve and validate trusted delivery route
+        id: route
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          event = json.load(open(os.environ['GITHUB_EVENT_PATH'], encoding='utf-8'))
+          run = event['workflow_run']
+          repository = event['repository']['full_name']
+          api = event['repository']['url']
+          token = os.environ['GH_TOKEN']
+          output = os.environ['GITHUB_OUTPUT']
+
+          route = {
+              'allowed': 'false',
+              'mode': '',
+              'environment': '',
+              'source_sha': '',
+              'check_sha': run.get('head_sha', ''),
+              'pr_number': '',
+              'preview_alias': '',
+              'artifact_environment': '',
+              'deployment_url': '',
+              'config_file': '',
+              'concurrency_key': '',
+          }
+
+          def get_json(url):
+              request = urllib.request.Request(
+                  url,
+                  headers={
+                      'Authorization': f'Bearer {token}',
+                      'Accept': 'application/vnd.github+json',
+                      'X-GitHub-Api-Version': '2022-11-28',
+                      'User-Agent': 'beeui-web-delivery',
+                  },
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  return json.load(response)
+
+          if run.get('event') == 'pull_request':
+              prs = run.get('pull_requests') or []
+              if len(prs) == 1:
+                  number = prs[0]['number']
+                  pr = get_json(f'{api}/pulls/{number}')
+                  base = pr['base']['ref']
+                  head_repo = (pr.get('head', {}).get('repo') or {}).get('full_name')
+                  if pr.get('state') == 'open' and head_repo == repository and base in {'development', 'staging'}:
+                      route.update({
+                          'allowed': 'true',
+                          'mode': 'preview',
+                          'environment': base,
+                          'source_sha': pr['head']['sha'],
+                          'pr_number': str(number),
+                          'preview_alias': f'pr-{number}',
+                          'artifact_environment': f'{base}-preview',
+                          'deployment_url': '',
+                          'config_file': f'wrangler-{base}.jsonc',
+                          'concurrency_key': f'preview-{base}-pr-{number}',
+                      })
+          elif run.get('event') == 'push':
+              branch = run.get('head_branch')
+              mapping = {
+                  'development': ('https://beeui-dev.beemvp.com', 'wrangler-development.jsonc'),
+                  'staging': ('https://beeui-stg.beemvp.com', 'wrangler-staging.jsonc'),
+                  'main': ('https://beeui.beemvp.com', 'wrangler-production.jsonc'),
+              }
+              if branch in mapping:
+                  url, config = mapping[branch]
+                  environment = 'production' if branch == 'main' else branch
+                  route.update({
+                      'allowed': 'true',
+                      'mode': 'deploy',
+                      'environment': environment,
+                      'source_sha': run['head_sha'],
+                      'artifact_environment': environment,
+                      'deployment_url': url,
+                      'config_file': config,
+                      'concurrency_key': f'deploy-{environment}',
+                  })
+
+          with open(output, 'a', encoding='utf-8') as handle:
+              for key, value in route.items():
+                  handle.write(f'{key}={value}\n')
+          PY
+
+  gate:
+    needs: authorize
+    if: needs.authorize.outputs.allowed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Wait for exact-SHA delivery gates
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHECK_SHA: ${{ needs.authorize.outputs.check_sha }}
+          MODE: ${{ needs.authorize.outputs.mode }}
+          TARGET_ENV: ${{ needs.authorize.outputs.environment }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import json
+          import os
+          import time
+          import urllib.request
+
+          repository = os.environ['GITHUB_REPOSITORY']
+          sha = os.environ['CHECK_SHA']
+          mode = os.environ['MODE']
+          target = os.environ['TARGET_ENV']
+          token = os.environ['GH_TOKEN']
+
+          if mode == 'preview' or target == 'production':
+              required = {'classify', 'verify', 'web-a11y', 'visual-web-report', 'web-consumer'}
+          else:
+              required = {'environment-ci'}
+
+          url = f'https://api.github.com/repos/{repository}/commits/{sha}/check-runs?per_page=100&filter=latest'
+
+          def load_checks():
+              request = urllib.request.Request(
+                  url,
+                  headers={
+                      'Authorization': f'Bearer {token}',
+                      'Accept': 'application/vnd.github+json',
+                      'X-GitHub-Api-Version': '2022-11-28',
+                      'User-Agent': 'beeui-web-delivery',
+                  },
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  payload = json.load(response)
+              return {item['name']: item for item in payload.get('check_runs', [])}
+
+          for attempt in range(90):
+              checks = load_checks()
+              failed = []
+              pending = []
+              for name in sorted(required):
+                  check = checks.get(name)
+                  if check is None or check.get('status') != 'completed':
+                      pending.append(name)
+                      continue
+                  if check.get('conclusion') != 'success':
+                      failed.append(f"{name}={check.get('conclusion')}")
+              if failed:
+                  raise SystemExit('Delivery gate failed: ' + ', '.join(failed))
+              if not pending:
+                  print(f'Delivery gates green for {sha}: {sorted(required)}')
+                  break
+              if attempt == 89:
+                  raise SystemExit('Timed out waiting for delivery gates: ' + ', '.join(pending))
+              print('Waiting for delivery gates: ' + ', '.join(pending))
+              time.sleep(20)
+          PY
+
+  deliver:
+    needs: [authorize, gate]
+    if: needs.authorize.outputs.allowed == 'true' && needs.gate.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: beeui-web-${{ needs.authorize.outputs.concurrency_key }}
+      cancel-in-progress: true
+    environment:
+      name: ${{ needs.authorize.outputs.environment }}
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout trusted deployment control plane from main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+        with:
+          ref: main
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Download artifact from the successful untrusted build run
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: beeui-web-delivery
+          path: .delivery-artifact
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Verify artifact identity and reject executable control-plane input
+        env:
+          EXPECTED_SHA: ${{ needs.authorize.outputs.source_sha }}
+          EXPECTED_ENV: ${{ needs.authorize.outputs.artifact_environment }}
+          EXPECTED_MODE: ${{ needs.authorize.outputs.mode }}
+          EXPECTED_PR: ${{ needs.authorize.outputs.pr_number }}
+          EXPECTED_REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f .delivery-artifact/worker.mjs
+          test -f .delivery-artifact/manifest.json
+          test -f .delivery-artifact/dist/build-identity.json
+          if find .delivery-artifact -type l -print -quit | grep -q .; then
+            echo 'Refusing delivery artifact containing symlinks.' >&2
+            exit 1
+          fi
+          test "$(find .delivery-artifact -mindepth 1 -maxdepth 1 -printf '%f\n' | sort | tr '\n' ' ')" = "dist manifest.json worker.mjs "
+          python3 <<'PY'
+          import json
+          import os
+
+          manifest = json.load(open('.delivery-artifact/manifest.json', encoding='utf-8'))
+          identity = json.load(open('.delivery-artifact/dist/build-identity.json', encoding='utf-8'))
+          expected_sha = os.environ['EXPECTED_SHA']
+          expected_env = os.environ['EXPECTED_ENV']
+          expected_pr = os.environ['EXPECTED_PR']
+
+          assert manifest.get('schema') == 1
+          assert manifest.get('repository') == os.environ['EXPECTED_REPOSITORY']
+          assert manifest.get('sourceSha') == expected_sha
+          assert manifest.get('artifactEnvironment') == expected_env
+          assert identity.get('commit') == expected_sha
+          assert identity.get('environment') == expected_env
+          assert isinstance(identity.get('version'), str) and identity['version']
+          if os.environ['EXPECTED_MODE'] == 'preview':
+              pr = manifest.get('pullRequest') or {}
+              assert str(pr.get('number')) == expected_pr
+              assert pr.get('base') in {'development', 'staging'}
+              assert pr.get('headRepository') == os.environ['EXPECTED_REPOSITORY']
+          PY
+
+      - name: Install pinned trusted Wrangler without Cloudflare credentials
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.13.1
+          package-manager-cache: false
+
+      - name: Provision pinned Wrangler CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global wrangler@4.128.0
+          wrangler --version | grep -F '4.128.0'
+
+      - name: Install trusted deployment config
+        env:
+          CONFIG_FILE: ${{ needs.authorize.outputs.config_file }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f ".github/deployment/$CONFIG_FILE"
+          if grep -Eq '"build"|custom_build|command' ".github/deployment/$CONFIG_FILE"; then
+            echo 'Trusted Wrangler config must not contain executable build hooks.' >&2
+            exit 1
+          fi
+          cp ".github/deployment/$CONFIG_FILE" .delivery-artifact/wrangler.jsonc
+
+      - name: Upload non-active Cloudflare preview version
+        if: needs.authorize.outputs.mode == 'preview'
+        id: preview
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          PREVIEW_ALIAS: ${{ needs.authorize.outputs.preview_alias }}
+          SOURCE_SHA: ${{ needs.authorize.outputs.source_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd .delivery-artifact
+          NO_COLOR=1 wrangler versions upload \
+            --config wrangler.jsonc \
+            --no-bundle \
+            --preview-alias "$PREVIEW_ALIAS" \
+            --tag "sha-${SOURCE_SHA:0:12}" \
+            --message "BeeUI preview ${SOURCE_SHA}" \
+            | tee "$RUNNER_TEMP/wrangler-preview.txt"
+          PREVIEW_URL=$(grep -Eo "https://${PREVIEW_ALIAS}-[^[:space:]]+\\.workers\\.dev" "$RUNNER_TEMP/wrangler-preview.txt" | tail -1)
+          test -n "$PREVIEW_URL"
+          echo "preview_url=$PREVIEW_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Verify Cloudflare preview identity
+        if: needs.authorize.outputs.mode == 'preview'
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
+          EXPECTED_SHA: ${{ needs.authorize.outputs.source_sha }}
+          EXPECTED_ENV: ${{ needs.authorize.outputs.artifact_environment }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            if curl --silent --fail "$PREVIEW_URL/api/health" >"$RUNNER_TEMP/health.json"; then break; fi
+            sleep 2
+          done
+          node -e "const fs=require('fs'); const j=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/health.json')); if(!j.ok||j.commit!==process.env.EXPECTED_SHA||j.environment!==process.env.EXPECTED_ENV) process.exit(1)"
+
+      - name: Deploy exact merged SHA to environment Custom Domain
+        if: needs.authorize.outputs.mode == 'deploy'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          SOURCE_SHA: ${{ needs.authorize.outputs.source_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd .delivery-artifact
+          NO_COLOR=1 wrangler deploy \
+            --config wrangler.jsonc \
+            --no-bundle \
+            --message "BeeUI environment deploy ${SOURCE_SHA}"
+
+      - name: Verify deployed Custom Domain identity
+        if: needs.authorize.outputs.mode == 'deploy'
+        env:
+          DEPLOYMENT_URL: ${{ needs.authorize.outputs.deployment_url }}
+          EXPECTED_SHA: ${{ needs.authorize.outputs.source_sha }}
+          EXPECTED_ENV: ${{ needs.authorize.outputs.artifact_environment }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 60); do
+            if curl --silent --fail "$DEPLOYMENT_URL/api/health" >"$RUNNER_TEMP/health.json"; then break; fi
+            sleep 5
+          done
+          node -e "const fs=require('fs'); const j=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/health.json')); if(!j.ok||j.commit!==process.env.EXPECTED_SHA||j.environment!==process.env.EXPECTED_ENV) process.exit(1)"
+
+      - name: Record delivery evidence
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### BeeUI trusted Cloudflare delivery"
+            echo "- Mode: \`${{ needs.authorize.outputs.mode }}\`"
+            echo "- Environment: \`${{ needs.authorize.outputs.environment }}\`"
+            echo "- Source SHA: \`${{ needs.authorize.outputs.source_sha }}\`"
+            if [ "${{ needs.authorize.outputs.mode }}" = "preview" ]; then
+              echo "- Preview: ${{ steps.preview.outputs.preview_url }}"
+            else
+              echo "- Custom Domain: ${{ needs.authorize.outputs.deployment_url }}"
+            fi
+            echo "- PR/source package scripts executed while Cloudflare token was mapped: \`false\`"
+            echo "- Trusted Wrangler mode: \`--no-bundle\`"
+          } >> "$GITHUB_STEP_SUMMARY"
