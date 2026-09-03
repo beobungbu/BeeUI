@@ -25,7 +25,7 @@ The accepted implementation includes the dashboard, records table, record detail
 
 ## Run from the repository root
 
-Use the workspace scripts from the root manifest; do not substitute generic `npm run build` commands.
+Use the workspace scripts from the root manifest; do not substitute generic package-manager build commands.
 
 ```bash
 corepack enable
