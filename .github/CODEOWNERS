@@ -6,7 +6,8 @@
 # takes effect automatically the day a second maintainer gets write access,
 # without another ruleset change.
 
-/packages/          @beobungbu
-/.github/workflows/ @beobungbu
-/scripts/           @beobungbu
-/registry/          @beobungbu
+/packages/            @beobungbu
+/.github/workflows/   @beobungbu
+/.github/deployment/  @beobungbu
+/scripts/             @beobungbu
+/registry/            @beobungbu
