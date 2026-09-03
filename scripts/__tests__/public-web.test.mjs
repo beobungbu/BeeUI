@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
+import { buildPublicDiscovery } from '../build-public-discovery.mjs';
 import { buildPublicLanding, renderPublicLanding } from '../build-public-landing.mjs';
 import { collectPublicWebViolations } from '../check-public-web.mjs';
 import { buildPublicComponentManifest, generatePublicComponentPages } from '../public-component-reference.mjs';
@@ -76,5 +77,41 @@ test('public pattern generator emits one detail page per canonical Pattern Galle
     assert.match(page, /## Application ownership boundary/);
     assert.ok(page.includes(pattern.showcaseHref));
     assert.ok(page.includes(pattern.sourceHref));
+  }
+});
+
+test('examples hub materializes every canonical component and pattern as preview-and-code recipes', () => {
+  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-examples-hub-'));
+  try {
+    const result = buildPublicDiscovery({ rootDir, outDir });
+    const components = buildPublicComponentManifest(rootDir);
+    const patterns = buildPublicPatternManifest(rootDir);
+    assert.equal(result.components.length, components.length);
+    assert.equal(result.patterns.length, patterns.length);
+    assert.equal(result.starters.length, 5);
+    assert.ok(result.featured.length >= 10);
+
+    const hub = fs.readFileSync(path.join(outDir, 'examples/index.html'), 'utf8');
+    assert.match(hub, /data-example-search/);
+    assert.match(hub, new RegExp(`${components.length}[^<]*<\/strong><span>component recipes`));
+    assert.match(hub, new RegExp(`${patterns.length}[^<]*<\/strong><span>production patterns`));
+
+    const component = components.find((candidate) => candidate.name === 'dialog') ?? components[0];
+    const componentPage = fs.readFileSync(path.join(outDir, 'examples/components', component.name, 'index.html'), 'utf8');
+    assert.match(componentPage, /role="tablist"/);
+    assert.match(componentPage, /data-copy-target=/);
+    assert.match(componentPage, /Live Web preview/);
+    assert.ok(componentPage.includes(component.showcaseHref));
+
+    const pattern = patterns.find((candidate) => candidate.slug === 'sign-in-screen') ?? patterns[0];
+    const patternPage = fs.readFileSync(path.join(outDir, 'examples/patterns', pattern.pack, pattern.slug, 'index.html'), 'utf8');
+    assert.match(patternPage, /Principal BeeUI exports/);
+    assert.match(patternPage, /data-copy-target=/);
+    assert.ok(patternPage.includes(pattern.sourceHref));
+
+    assert.equal(fs.existsSync(path.join(outDir, 'assets/examples.css')), true);
+    assert.equal(fs.existsSync(path.join(outDir, 'assets/examples.js')), true);
+  } finally {
+    fs.rmSync(outDir, { recursive: true, force: true });
   }
 });
