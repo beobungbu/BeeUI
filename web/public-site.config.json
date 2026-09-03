@@ -1,9 +1,25 @@
 {
   "schemaVersion": 1,
-  "origin": "https://beeui.beemvp.com",
   "productionRuntime": "cloudflare-workers",
   "docsBase": "/docs",
   "locales": ["en"],
+  "environments": {
+    "development": {
+      "origin": "https://beeui-dev.beemvp.com",
+      "indexPolicy": "noindex,nofollow",
+      "robotsDisallow": ["/"]
+    },
+    "staging": {
+      "origin": "https://beeui-stg.beemvp.com",
+      "indexPolicy": "noindex,nofollow",
+      "robotsDisallow": ["/"]
+    },
+    "production": {
+      "origin": "https://beeui.beemvp.com",
+      "indexPolicy": "index,follow",
+      "robotsDisallow": ["/api/"]
+    }
+  },
   "routes": [
     { "id": "landing", "prefix": "/", "owner": "web/site", "output": "web/dist", "visibility": "public", "indexable": true },
     { "id": "docs", "prefix": "/docs/", "owner": "apps/docs", "output": "apps/docs/dist", "visibility": "public", "indexable": true },
@@ -70,23 +86,9 @@
       "optionalFields": ["example", "state", "theme", "density"]
     },
     "seo": {
-      "canonicalOrigin": "https://beeui.beemvp.com",
-      "productionIndexPolicy": "index,follow",
-      "nonProductionIndexPolicy": "noindex,nofollow",
       "sitemap": {
-        "enabledWhenSiteConfigured": true,
         "includeIndexableRoutes": true,
         "excludePrefixes": ["/api/", "/llms"]
-      },
-      "robots": {
-        "production": {
-          "policy": "index,follow",
-          "disallow": ["/api/"]
-        },
-        "nonProduction": {
-          "policy": "noindex,nofollow",
-          "disallow": ["/"]
-        }
       }
     },
     "release": {
