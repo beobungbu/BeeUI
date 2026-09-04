@@ -63,10 +63,10 @@ The owner/admin gate in `docs/beeui-1.0-owner-gates.md` remains authoritative ev
 
 Its registry-mutating operations are:
 
-- `bootstrap-rc`: one-time first-package prerelease bootstrap under `next`; protected by `environment: release`; registry authentication uses only the temporary environment secret `NPM_BOOTSTRAP_TOKEN`. The job also grants job-local `id-token: write` solely because `npm publish --provenance` needs OIDC to mint the provenance attestation; that permission is not Trusted Publisher authentication for the bootstrap.
+- `bootstrap-rc`: one-time first-package prerelease bootstrap under `next`; protected by `environment: release`; registry authentication uses the temporary environment secret `NPM_BOOTSTRAP_TOKEN`, but the workflow exposes that secret only to the final direct-publish step. Dependency install, release verification, builds, packing, and registry probes do not inherit it. The job also grants job-local `id-token: write` solely because `npm publish --provenance` needs OIDC to mint the provenance attestation; that permission is not Trusted Publisher authentication for the bootstrap.
 - `stage-rc`: steady-state prerelease staging after package bootstrap; protected by `environment: release`; grants `contents: read` plus job-local `id-token: write`; uses npm Trusted Publishing/OIDC and no long-lived publish token.
 
-Both mutation paths require an exact `20260902.0.0-rc.N` workspace version and the explicit confirmation string `BEEUI_RC_RELEASE`; preflight runs release-control-plane, distribution-policy and packed-release verification before the environment-gated job can mutate the registry.
+Both mutation paths require an exact `20260902.0.0-rc.N` workspace version and the explicit confirmation string `BEEUI_RC_RELEASE`; preflight runs release-control-plane, distribution-policy and packed-release verification before the environment-gated job can mutate the registry. Registry existence probes treat only E404/404 as absence; unexpected registry/network errors stop the workflow.
 
 The workflow does **not** implement stable `latest` publication. Stable publication remains #254 and requires an exact owner-approved candidate plus the stable transaction/recovery contract in `docs/dist-tag-policy.md`.
 
@@ -82,7 +82,7 @@ After the first package bootstrap, each `@beemvp/beeui-*` package should bind np
 - environment `release`
 - allowed action `npm stage publish` only
 
-Both registry-mutating jobs have job-local `id-token: write`, but only `stage-rc` uses OIDC as npm registry authentication. `bootstrap-rc` authenticates with the temporary token and uses OIDC only for provenance. Ordinary CI has neither publication credentials nor `id-token: write`. The temporary bootstrap token must live only in the protected `release` environment and must be revoked/deleted after OIDC Trusted Publishing is configured and proven.
+Both registry-mutating jobs have job-local `id-token: write`, but only `stage-rc` uses OIDC as npm registry authentication. `bootstrap-rc` authenticates with the temporary token, scoped to the direct-publish step, and uses OIDC only for provenance. Ordinary CI has neither publication credentials nor `id-token: write`. The temporary bootstrap token must live only in the protected `release` environment and must be revoked/deleted after OIDC Trusted Publishing is configured and proven.
 
 ## CODEOWNERS
 
