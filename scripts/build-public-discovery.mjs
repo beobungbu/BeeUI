@@ -276,87 +276,67 @@ function renderTabs({ slug, preview, code, platform }) {
   </div>`;
 }
 
-function codePanel({ id, source, sourceHref, caption }) {
-  return `<div class="code-toolbar"><p>${escapeHtml(caption)}</p><div><a href="${escapeHtml(sourceHref)}">View source</a><button type="button" class="copy-button" data-copy-target="${id}">Copy code</button></div></div><pre class="recipe-code"><code id="${id}">${escapeHtml(source)}</code></pre>`;
-}
-
-function platformPanel() {
-  return `<div class="platform-detail-grid">
-    <article><strong>Web</strong><span>Interactive preview above runs the real same-origin BeeUI Showcase.</span></article>
-    <article><strong>iOS</strong><span>Use the native preview path for simulator/device evidence; Web preview is not native proof.</span><a href="/docs/showcase/">Native preview guide →</a></article>
-    <article><strong>Android</strong><span>Use emulator/device paths for runtime evidence; API/composition remains the public BeeUI contract.</span><a href="/docs/showcase/">Native preview guide →</a></article>
-  </div>`;
+function codePanel({ source, sourceHref, id }) {
+  return `<div class="code-toolbar"><p>Exact committed source used by the preview/runtime path.</p><div><a class="text-link" href="${escapeHtml(sourceHref)}">View source</a><button type="button" class="copy-button" data-copy-target="${escapeHtml(id)}">Copy code</button></div></div><pre class="recipe-code"><code id="${escapeHtml(id)}">${escapeHtml(source)}</code></pre>`;
 }
 
 function renderComponentRecipe({ contract, component, patterns, rootDir }) {
-  const descriptor = buildPreviewDescriptor(component, rootDir);
   const route = `/examples/components/${component.name}/`;
+  const descriptor = buildPreviewDescriptor(component, rootDir);
+  const sourceHref = githubBlobHref(descriptor.fixture);
+  const preview = `<div class="live-preview-card"><div class="live-preview-head"><div><p class="eyebrow">Live Web preview</p><h2>${escapeHtml(component.title)}</h2></div>${platformBadges()}</div><iframe title="${escapeHtml(component.title)} interactive BeeUI preview" src="${escapeHtml(descriptor.showcaseHref)}" loading="lazy"></iframe><p class="preview-note">The iframe loads the real Showcase route; the source tab below is the exact typechecked fixture used for this component family.</p><div class="examples-actions"><a class="button secondary" href="${escapeHtml(descriptor.showcaseHref)}">Open in Showcase</a><a class="text-link" href="${escapeHtml(component.route)}">Component docs</a></div></div>`;
+  const code = codePanel({ source: descriptor.source, sourceHref, id: `component-source-${component.name}` });
+  const platform = `<div class="platform-panel"><article><p class="eyebrow">Web</p><h3>Interactive preview</h3><p>Runs through the actual Showcase web bundle, not a rewritten HTML approximation.</p></article><article><p class="eyebrow">iOS / Android</p><h3>Same component source</h3><p>The component belongs to the same package and Showcase inventory. Platform/runtime limitations stay explicit in the component documentation.</p></article></div>`;
+  const tabs = renderTabs({ slug: `component-${component.name}`, preview, code, platform });
   const related = relatedPatternCards(component, patterns);
-  const preview = `<div class="preview-frame"><iframe src="${escapeHtml(descriptor.showcaseHref)}" title="Live Web preview of ${escapeHtml(component.title)}" loading="lazy"></iframe></div><p class="preview-note">This is the real BeeUI Web Showcase, lazy-loaded in place. The code tab displays the exact typechecked runtime fixture selected for this preview.</p>`;
-  const code = codePanel({
-    id: `code-${component.name}`,
-    source: descriptor.source,
-    sourceHref: descriptor.sourceHref,
-    caption: descriptor.fixture,
-  });
-  const tabs = renderTabs({ slug: `component-${component.name}`, preview, code, platform: platformPanel() });
-  const anatomy = component.values.map((value) => `<li><code>${escapeHtml(value)}</code></li>`).join('');
   const body = `<main id="main" class="shell recipe-main">
 <nav class="recipe-breadcrumb" aria-label="Breadcrumb"><a href="/examples/">Examples</a><span aria-hidden="true">/</span><span>Components</span><span aria-hidden="true">/</span><span aria-current="page">${escapeHtml(component.title)}</span></nav>
 <header class="recipe-header">
-  <p class="eyebrow">Component recipe · ${escapeHtml(component.category)}</p>
+  <p class="eyebrow">${escapeHtml(component.category)} component recipe</p>
   <h1>${escapeHtml(component.title)}</h1>
   <p>${escapeHtml(component.purpose)}</p>
-  ${platformBadges()}
-  <div class="examples-actions"><a class="button primary" href="${escapeHtml(component.showcaseHref)}">Open in Showcase</a><a class="button secondary" href="${escapeHtml(component.route)}">Component docs</a><a class="text-link" href="${escapeHtml(component.sourceHref)}">Source</a></div>
+  <div class="examples-actions"><a class="button primary" href="${escapeHtml(descriptor.showcaseHref)}">Open live Showcase</a><a class="button secondary" href="${escapeHtml(component.route)}">Read component docs</a><a class="text-link" href="${escapeHtml(sourceHref)}">Source</a></div>
 </header>
 ${tabs}
 <section class="recipe-info-grid">
-  <article><p class="eyebrow">Composition</p><h2>Public anatomy</h2><ul class="anatomy-list">${anatomy}</ul><p>The recipe uses the public <code>@beemvp/beeui-ui</code> boundary. Source-owned consumers can use <code>${escapeHtml(component.cliAdd)}</code> from a BeeUI checkout.</p></article>
-  <article><p class="eyebrow">Contract</p><h2>What remains canonical</h2><p>Behavior, accessibility, provider requirements, density/theming and platform limitations stay authoritative in the component docs. This recipe is a fast preview-and-copy surface, not a second API contract.</p><a class="text-link" href="${escapeHtml(component.route)}">Read ${escapeHtml(component.title)} docs →</a></article>
+  <article><p class="eyebrow">Composition</p><h2>Public symbols</h2><p>${component.values.map((value) => `<code>${escapeHtml(value)}</code>`).join(' ')}</p><p>Types: ${component.types.map((value) => `<code>${escapeHtml(value)}</code>`).join(' ') || 'No separately exported public types.'}</p></article>
+  <article><p class="eyebrow">Ownership boundary</p><h2>Component source, not app state.</h2><p>BeeUI owns reusable UI behavior and semantics. Networking, routing, persistence, business validation, and domain side effects stay in your application.</p></article>
 </section>
-${related ? `<section class="recipe-related"><p class="eyebrow">Used in production patterns</p><h2>See this component in context.</h2><ul>${related}</ul></section>` : ''}
+${related ? `<section class="recipe-related"><p class="eyebrow">Used in production patterns</p><h2>See this primitive in context.</h2><ul>${related}</ul></section>` : ''}
 </main>`;
-
   return {
-    html: documentShell({ contract, title: `${component.title} example — BeeUI`, description: component.purpose, route, body }),
+    html: documentShell({ contract, title: `${component.title} recipe — BeeUI`, description: component.purpose, route, body }),
     route,
-    title: `${component.title} example — BeeUI`,
+    title: `${component.title} recipe — BeeUI`,
     description: component.purpose,
     relativePath: `examples/components/${component.name}/index.html`,
   };
 }
 
 function compositionLinks(pattern, components) {
-  const bySymbol = new Map();
-  for (const component of components) for (const symbol of component.values) bySymbol.set(symbol, component);
   return pattern.beeuiComponents.map((symbol) => {
-    const component = bySymbol.get(symbol);
-    return component
-      ? `<a href="/examples/components/${component.name}/"><code>${escapeHtml(symbol)}</code></a>`
-      : `<code>${escapeHtml(symbol)}</code>`;
+    const owner = components.find((component) => component.values.includes(symbol));
+    if (!owner) return `<code>${escapeHtml(symbol)}</code>`;
+    return `<a href="/examples/components/${owner.name}/"><code>${escapeHtml(symbol)}</code></a>`;
   }).join(' ');
 }
 
 function renderPatternRecipe({ contract, pattern, components, rootDir }) {
   const route = `/examples/patterns/${pattern.pack}/${pattern.slug}/`;
-  const source = fs.readFileSync(path.join(rootDir, pattern.file), 'utf8');
-  const preview = `<div class="preview-frame"><iframe src="${escapeHtml(pattern.showcaseHref)}" title="Live Web preview of ${escapeHtml(pattern.title)}" loading="lazy"></iframe></div><p class="preview-note">The preview loads the exact production Pattern Gallery screen in the real Showcase. Routing, backend/data, auth and product side effects remain application-owned.</p>`;
-  const code = codePanel({
-    id: `code-${pattern.pack}-${pattern.slug}`,
-    source,
-    sourceHref: pattern.sourceHref,
-    caption: pattern.file,
-  });
-  const tabs = renderTabs({ slug: `pattern-${pattern.pack}-${pattern.slug}`, preview, code, platform: platformPanel() });
-  const callbacks = pattern.callbacks.length ? pattern.callbacks.map((name) => `<code>${escapeHtml(name)}</code>`).join(' ') : '<span>No explicit on* callback props detected.</span>';
+  const absoluteSource = path.join(rootDir, pattern.source);
+  const source = fs.readFileSync(absoluteSource, 'utf8');
+  const sourceHref = githubBlobHref(pattern.source);
+  const preview = `<div class="live-preview-card"><div class="live-preview-head"><div><p class="eyebrow">Live production pattern</p><h2>${escapeHtml(pattern.title)}</h2></div>${platformBadges()}</div><iframe title="${escapeHtml(pattern.title)} production pattern preview" src="${escapeHtml(pattern.showcaseHref)}" loading="lazy"></iframe><p class="preview-note">The preview is the actual Pattern Gallery route and source below is the canonical screen composition.</p><div class="examples-actions"><a class="button secondary" href="${escapeHtml(pattern.showcaseHref)}">Open in Showcase</a><a class="text-link" href="${escapeHtml(pattern.route)}">Pattern docs</a></div></div>`;
+  const code = codePanel({ source, sourceHref, id: `pattern-source-${pattern.pack}-${pattern.slug}` });
+  const platform = `<div class="platform-panel"><article><p class="eyebrow">Responsive</p><h3>${escapeHtml(pattern.responsive)}</h3><p>Responsive behavior belongs to the canonical pattern contract and source rather than a docs-only clone.</p></article><article><p class="eyebrow">Application layer</p><h3>Caller owned</h3><p>${escapeHtml(pattern.excluded)}</p></article></div>`;
+  const tabs = renderTabs({ slug: `pattern-${pattern.pack}-${pattern.slug}`, preview, code, platform });
+  const callbacks = pattern.callbacks.length ? pattern.callbacks.map((name) => `<code>${escapeHtml(name)}</code>`).join(' ') : 'No named callbacks declared.';
   const body = `<main id="main" class="shell recipe-main">
-<nav class="recipe-breadcrumb" aria-label="Breadcrumb"><a href="/examples/">Examples</a><span aria-hidden="true">/</span><span>Patterns</span><span aria-hidden="true">/</span><span aria-current="page">${escapeHtml(pattern.title)}</span></nav>
+<nav class="recipe-breadcrumb" aria-label="Breadcrumb"><a href="/examples/">Examples</a><span aria-hidden="true">/</span><span>Patterns</span><span aria-hidden="true">/</span><span>${escapeHtml(pattern.pack)}</span><span aria-hidden="true">/</span><span aria-current="page">${escapeHtml(pattern.title)}</span></nav>
 <header class="recipe-header">
-  <p class="eyebrow">Production pattern · ${escapeHtml(pattern.pack)}</p>
+  <p class="eyebrow">${escapeHtml(pattern.pack)} production pattern</p>
   <h1>${escapeHtml(pattern.title)}</h1>
   <p>${escapeHtml(pattern.purpose)}</p>
-  ${platformBadges()}
   <div class="examples-actions"><a class="button primary" href="${escapeHtml(pattern.showcaseHref)}">Open in Showcase</a><a class="button secondary" href="${escapeHtml(pattern.route)}">Pattern docs</a><a class="text-link" href="${escapeHtml(pattern.sourceHref)}">Source</a></div>
 </header>
 ${tabs}
@@ -412,8 +392,8 @@ function writePage(outDir, page) {
   fs.writeFileSync(target, page.html);
 }
 
-export function buildPublicDiscovery({ rootDir = ROOT_DIR, outDir = path.join(rootDir, 'web/dist') } = {}) {
-  const contract = buildPublicSiteContract(rootDir);
+export function buildPublicDiscovery({ rootDir = ROOT_DIR, outDir = path.join(rootDir, 'web/dist'), environment } = {}) {
+  const contract = buildPublicSiteContract(rootDir, { environment });
   const components = buildPublicComponentManifest(rootDir);
   const patterns = buildPublicPatternManifest(rootDir);
   const featured = resolveFeatured(components, patterns);
