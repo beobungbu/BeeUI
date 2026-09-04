@@ -91,6 +91,14 @@ function fixture(overrides = {}) {
       ),
     }),
   );
+  write(
+    '.github/workflows/beeui-web-delivery.yml',
+    `mapping = {
+  'development': ('https://beeui-dev.beemvp.com', 'wrangler-development.jsonc'),
+  'staging': ('https://beeui-stg.beemvp.com', 'wrangler-staging.jsonc'),
+  'main': ('https://beeui.beemvp.com', 'wrangler-production.jsonc'),
+}\n`,
+  );
   return { root, config };
 }
 
@@ -117,7 +125,7 @@ test('selects the longest matching public route', () => {
   assert.equal(routeForPath('/', config).id, 'landing');
 });
 
-test('rejects environment/domain drift from deployment control plane', () => {
+test('rejects environment/domain drift from every deployment projection', () => {
   const { root } = fixture();
   const configPath = path.join(root, 'web/public-site.config.json');
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -126,6 +134,7 @@ test('rejects environment/domain drift from deployment control plane', () => {
   const violations = collectPublicSiteContractViolations(root).join('\n');
   assert.match(violations, /does not match .*wrangler-staging/u);
   assert.match(violations, /does not match web\/worker\/wrangler\.jsonc/u);
+  assert.match(violations, /beeui-web-delivery\.yml projection/u);
 });
 
 test('rejects Pages, duplicate prefixes and a published state before owner gate', () => {
