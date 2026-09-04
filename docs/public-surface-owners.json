@@ -1,0 +1,30 @@
+{
+  "$schema-note": "Primary documentation ownership policy for the generated BeeUI public-surface inventory (#473). Inventory rows are derived from package manifests/barrels, tokens, CLI help and registry data; this file defines route ownership/classification rules, not a hand-maintained copy of the surface.",
+  "schemaVersion": 1,
+  "owners": {
+    "uiComponent": "/docs/components/{component}/",
+    "uiPackage": "/docs/reference/components/",
+    "tokens": "/docs/reference/tokens/",
+    "styling": "/docs/reference/styling/",
+    "core": "/docs/reference/core/",
+    "cli": "/docs/reference/cli/",
+    "registry": "/docs/reference/registry/",
+    "release": "/docs/reference/release/",
+    "machine": "/docs/reference/ai-machine/"
+  },
+  "coreClassification": {
+    "normalConsumer": ["cn"],
+    "advancedConsumerPrefixes": ["calendar", "date", "clock", "resolveAnchored", "computeAnchored", "overlay", "dismiss", "keyboard", "safeArea"],
+    "default": "advanced-consumer"
+  },
+  "tokenStylingSubpaths": ["./theme.css"],
+  "machineTokenSubpaths": ["./tokens.json", "./tokens.resolver.json", "./lifecycle.json"],
+  "requiredMachineMirrors": ["llms-components.txt", "llms-patterns.txt"],
+  "releaseTruthReadmes": [
+    "README.md",
+    "packages/core/README.md",
+    "packages/tokens/README.md",
+    "packages/ui/README.md",
+    "packages/cli/README.md"
+  ]
+}
