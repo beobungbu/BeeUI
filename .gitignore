@@ -26,6 +26,7 @@ apps/docs/src/content/docs/compatibility/current.generated.md
 apps/docs/src/content/docs/migration/current-release.generated.md
 apps/docs/public/route-manifest.json
 apps/docs/public/release-state.json
+docs/public-surface.inventory.json
 .env
 .env.*
 !.env.example
