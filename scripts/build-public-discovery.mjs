@@ -11,53 +11,100 @@ import { ROOT_DIR, buildPublicSiteContract } from './public-site-contract-lib.mj
 
 const LLM_FILES = ['llms.txt', 'llms-full.txt', 'llms-components.txt', 'llms-patterns.txt'];
 
+// #461's typed example metadata. `type` carries the distinction the issue is explicit about:
+// the four R10 starters are intentionally minimal buildable proofs, not polished demos, and the
+// copy must never market one as the other. Commands were verified against each example's own
+// package.json scripts and shell entrypoints rather than copied forward.
 export const STARTERS = [
   {
     slug: 'expo-package-consumer',
     name: 'Expo package consumer',
     path: 'examples/expo-package-consumer',
+    type: 'starter',
+    platforms: ['iOS', 'Android', 'Web'],
+    toolchain: 'Expo SDK 57 · Metro · Uniwind',
     model: 'Packed package boundary',
     purpose: 'Expo SDK 57 / Metro consumer using the same package boundary intended for public distribution.',
+    proves: 'BeeUI resolves and bundles from packed tarballs in an isolated Expo app, with no workspace shortcut.',
     onboarding: '/docs/start/expo/',
+    relatedDocs: [['Expo onboarding', '/docs/start/expo/'], ['Compatibility', '/docs/compatibility/']],
     commands: ['pnpm build', 'cd examples/expo-package-consumer', 'bash setup.sh', 'bash bundle.sh'],
   },
   {
     slug: 'bare-rn-consumer',
     name: 'Bare React Native consumer',
     path: 'examples/bare-rn-consumer',
+    type: 'starter',
+    platforms: ['iOS', 'Android'],
+    toolchain: 'React Native CLI · Metro',
     model: 'Packed package boundary',
     purpose: 'Bare React Native / Metro consumer proving BeeUI works without Expo application ownership.',
+    proves: 'BeeUI bundles for Android and iOS with Expo absent from the dependency graph entirely.',
     onboarding: '/docs/start/bare-react-native/',
+    relatedDocs: [['Bare RN onboarding', '/docs/start/bare-react-native/'], ['Troubleshooting', '/docs/guides/troubleshooting/']],
     commands: ['pnpm build', 'cd examples/bare-rn-consumer', 'bash setup.sh', 'bash bundle.sh'],
   },
   {
     slug: 'web-consumer',
     name: 'Web consumer',
     path: 'examples/web-consumer',
+    type: 'starter',
+    platforms: ['Web'],
+    toolchain: 'Vite · react-native-web · Tailwind',
     model: 'Packed package boundary',
     purpose: 'Vite + react-native-web consumer with a real production build and browser interaction coverage.',
+    proves: 'A production Vite build serves BeeUI through react-native-web, verified by Playwright and axe.',
     onboarding: '/docs/start/web/',
+    relatedDocs: [['Web onboarding', '/docs/start/web/'], ['Accessibility', '/docs/accessibility/']],
     commands: ['pnpm build', 'cd examples/web-consumer', 'bash setup.sh', 'npm run build'],
   },
   {
     slug: 'source-ownership-starter',
     name: 'Source ownership starter',
     path: 'examples/source-ownership-starter',
+    type: 'starter',
+    platforms: ['Web'],
+    toolchain: 'Vite · packed Registry CLI',
     model: 'Registry source ownership',
     purpose: 'Consumer-owned BeeUI source copied through the repository-local Registry workflow.',
-    onboarding: '/docs/registry/',
+    proves: 'The app renders BeeUI components while never resolving @beemvp/beeui-ui at all — the source is its own.',
+    onboarding: '/docs/reference/registry/',
+    relatedDocs: [['CLI & source ownership', '/docs/guides/cli-source-ownership/'], ['Registry reference', '/docs/reference/registry/']],
     commands: ['pnpm build', 'cd examples/source-ownership-starter', 'bash setup.sh', 'npm run build'],
   },
   {
     slug: 'agent-reference-app',
     name: 'Agent reference app',
     path: 'examples/agent-reference-app',
+    type: 'agent-reference',
+    platforms: ['Web'],
+    toolchain: 'Vite · llms.txt family',
     model: 'AI-context reference',
     purpose: 'Small application built from the public llms.txt family and agent-development contract.',
+    proves: 'The machine-readable docs are sufficient for an agent to build a working BeeUI app from them.',
     onboarding: '/docs/ai/',
+    relatedDocs: [['AI & LLM surfaces', '/docs/ai/'], ['Components', '/docs/components/']],
     commands: ['pnpm build', 'cd examples/agent-reference-app', 'bash setup.sh', 'npm run build'],
   },
+  {
+    // #461 requires apps/demo represented here as the Production Reference App. It is the one
+    // entry that is a real product application rather than a minimal starter, and the copy has
+    // to keep that distinction rather than flattening everything into "example".
+    slug: 'production-demo',
+    name: 'Production demo application',
+    path: 'apps/demo',
+    type: 'reference-app',
+    platforms: ['iOS', 'Android', 'Web'],
+    toolchain: 'Expo · Metro · routed multi-screen app',
+    model: 'Workspace application',
+    purpose: 'A routed product application — Dashboard, Records, Detail, Schedule and Settings — composed from BeeUI.',
+    proves: 'BeeUI composes into a coherent multi-screen product, not just isolated component demos.',
+    onboarding: '/demo/',
+    relatedDocs: [['Open the demo', '/demo/'], ['Production patterns', '/docs/patterns/']],
+    commands: ['pnpm build', 'pnpm --filter @beemvp/beeui-demo build:web'],
+  },
 ];
+
 
 const FEATURED_RECIPES = [
   { kind: 'pattern', id: 'sign-in-screen', label: 'Login form', summary: 'Email/password sign-in with social and recovery affordances.' },
@@ -134,13 +181,19 @@ function recipeCard({ kind, title, purpose, route, tags = [], featuredLabel = ''
   </article>`;
 }
 
+const EXAMPLE_KIND_LABEL = {
+  starter: 'Minimal starter',
+  'reference-app': 'Production reference app',
+  'agent-reference': 'Agent reference',
+};
+
 function starterCard(starter) {
   return recipeCard({
-    kind: 'Starter app',
+    kind: EXAMPLE_KIND_LABEL[starter.type],
     title: starter.name,
     purpose: starter.purpose,
     route: `/examples/starters/${starter.slug}/`,
-    tags: [starter.model],
+    tags: [starter.model, starter.platforms.join(' · '), starter.toolchain],
   });
 }
 
@@ -205,7 +258,8 @@ function renderHub({ contract, components, patterns, featured }) {
   <div class="examples-stats" aria-label="Examples inventory">
     <div><strong>${components.length}</strong><span>component recipes</span></div>
     <div><strong>${patterns.length}</strong><span>production patterns</span></div>
-    <div><strong>${STARTERS.length}</strong><span>consumer starters</span></div>
+    <div><strong>${STARTERS.filter((entry) => entry.type === 'starter').length}</strong><span>consumer starters</span></div>
+    <div><strong>${STARTERS.filter((entry) => entry.type !== 'starter').length}</strong><span>reference apps</span></div>
     <div><strong>1</strong><span>canonical Showcase runtime</span></div>
   </div>
 </section>
@@ -363,7 +417,7 @@ function renderStarterPage({ contract, starter }) {
   const body = `<main id="main" class="shell recipe-main">
 <nav class="recipe-breadcrumb" aria-label="Breadcrumb"><a href="/examples/">Examples</a><span aria-hidden="true">/</span><span>Starters</span><span aria-hidden="true">/</span><span aria-current="page">${escapeHtml(starter.name)}</span></nav>
 <header class="recipe-header">
-  <p class="eyebrow">Starter app · ${escapeHtml(starter.model)}</p>
+  <p class="eyebrow">${escapeHtml(EXAMPLE_KIND_LABEL[starter.type])} · ${escapeHtml(starter.model)}</p>
   <h1>${escapeHtml(starter.name)}</h1>
   <p>${escapeHtml(starter.purpose)}</p>
   <div class="examples-actions"><a class="button primary" href="${escapeHtml(sourceHref)}">View source</a><a class="button secondary" href="${escapeHtml(starter.onboarding)}">Onboarding guide</a></div>
@@ -373,7 +427,9 @@ function renderStarterPage({ contract, starter }) {
   <pre class="recipe-code"><code id="starter-${escapeHtml(starter.slug)}">${escapeHtml(commandSource)}</code></pre>
 </section>
 <section class="recipe-info-grid">
-  <article><p class="eyebrow">What it proves</p><h2>No monorepo shortcut.</h2><p>The starter installs/builds through the intended package or source-ownership boundary instead of silently resolving private workspace internals.</p></article>
+  <article><p class="eyebrow">What it proves</p><h2>${escapeHtml(starter.proves)}</h2><p>${starter.type === 'starter' ? 'This is a minimal buildable starter, not a polished product demo. It exists to prove the consumption boundary works, and deliberately stops there.' : 'It builds through the intended boundary rather than silently resolving private workspace internals.'}</p></article>
+  <article><p class="eyebrow">Platforms and toolchain</p><h2>${escapeHtml(starter.platforms.join(' · '))}</h2><p>${escapeHtml(starter.toolchain)}. Source: <a href="${escapeHtml(sourceHref)}">${escapeHtml(starter.path)}</a>.</p></article>
+  <article><p class="eyebrow">Related documentation</p><h2>Where to read next.</h2><p>${starter.relatedDocs.map(([label, href]) => `<a href="${escapeHtml(href)}">${escapeHtml(label)}</a>`).join(' · ')}</p></article>
   <article><p class="eyebrow">Distribution truth</p><h2>Still unpublished.</h2><p>Public npm/CLI distribution is not implied. Repository examples use packed package artifacts or committed source ownership until the owner-gated publication step occurs.</p></article>
 </section>
 </main>`;

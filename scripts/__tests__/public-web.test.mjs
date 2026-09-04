@@ -126,7 +126,15 @@ test('examples hub materializes every canonical component and pattern as preview
     const patterns = buildPublicPatternManifest(rootDir);
     assert.equal(result.components.length, components.length);
     assert.equal(result.patterns.length, patterns.length);
-    assert.equal(result.starters.length, 5);
+    // #461 names the inventory the hub must represent, so assert that contract rather than a
+    // count — a count silently accepts the wrong entry appearing and the right one vanishing.
+    assert.deepEqual(
+      result.starters.map((entry) => entry.slug).sort(),
+      ['agent-reference-app', 'bare-rn-consumer', 'expo-package-consumer', 'production-demo', 'source-ownership-starter', 'web-consumer'],
+    );
+    // The starter-versus-demo distinction is the one Gate E42 is explicit about.
+    assert.equal(result.starters.filter((entry) => entry.type === 'starter').length, 4);
+    assert.equal(result.starters.find((entry) => entry.slug === 'production-demo').type, 'reference-app');
     assert.ok(result.featured.length >= 10);
 
     const hub = fs.readFileSync(path.join(outDir, 'examples/index.html'), 'utf8');
