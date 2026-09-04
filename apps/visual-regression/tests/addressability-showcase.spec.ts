@@ -1,24 +1,82 @@
 import { expect, test } from '@playwright/test';
 
-const showcaseBaseUrl = 'http://127.0.0.1:4174';
+const showcaseBaseUrl = 'http://127.0.0.1:4174/showcase/';
 
 function targetUrl(query: string) {
-  return `${showcaseBaseUrl}/?${query}`;
+  return `${showcaseBaseUrl}?${query}`;
 }
 
-test('opens a canonical component target directly and preserves it across reload', async ({ page }) => {
+async function expectActiveTarget(page: Parameters<typeof test>[0] extends never ? never : any, label: string) {
+  await expect(page.getByTestId('showcase-active-example-label')).toHaveText(label);
+}
+
+test('opens a real Button/basic target directly and preserves it across reload', async ({ page }) => {
   await page.goto(targetUrl('surface=component&id=button&example=basic'), { waitUntil: 'load' });
 
   await expect(page.getByTestId('addressable-component-gallery')).toBeVisible();
-  await expect(page.getByTestId('showcase-active-example')).toContainText('button / basic');
-  await expect(page.getByTestId('showcase-active-example-source')).toContainText('apps/showcase/');
-  await expect(page).toHaveURL(/surface=component&id=button&example=basic/u);
+  await expectActiveTarget(page, 'button / basic');
+  await expect(page.locator('[data-showcase-target-active="true"]')).toHaveText('Primary action');
+  await expect(page).toHaveURL(/\/showcase\/\?surface=component&id=button&example=basic/u);
 
   await page.reload({ waitUntil: 'load' });
-  await expect(page.getByTestId('showcase-active-example')).toContainText('button / basic');
+  await expectActiveTarget(page, 'button / basic');
+  await expect(page.locator('[data-showcase-target-active="true"]')).toHaveText('Primary action');
 });
 
-test('opens an exact pattern state and keeps Back/Forward deterministic', async ({ page }) => {
+test('opens a form target at the actual Field fixture', async ({ page }) => {
+  await page.goto(targetUrl('surface=component&id=field&example=basic'), { waitUntil: 'load' });
+
+  await expectActiveTarget(page, 'field / basic');
+  await expect(page.locator('[data-showcase-target-active="true"]')).toHaveText('Email');
+});
+
+test('selects distinct Select examples and synchronizes Back/Forward with the URL', async ({ page }) => {
+  await page.goto(targetUrl('surface=component&id=select&example=controlled'), { waitUntil: 'load' });
+
+  await expectActiveTarget(page, 'select / controlled');
+  await expect(page.getByTestId('select-showcase-controlled-trigger')).toBeVisible();
+  await expect(page.getByTestId('select-showcase-controlled-trigger')).toHaveAttribute('data-showcase-target-active', 'true');
+
+  await page.getByTestId('showcase-example-states').click();
+  await expect(page).toHaveURL(/surface=component&id=select&example=states/u);
+  await expectActiveTarget(page, 'select / states');
+  await expect(page.getByTestId('select-showcase-disabled-trigger')).toHaveAttribute('data-showcase-target-active', 'true');
+
+  await page.goBack();
+  await expect(page).toHaveURL(/surface=component&id=select&example=controlled/u);
+  await expectActiveTarget(page, 'select / controlled');
+
+  await page.goForward();
+  await expect(page).toHaveURL(/surface=component&id=select&example=states/u);
+  await expectActiveTarget(page, 'select / states');
+});
+
+test('opens representative overlay, data and date/time component fixtures exactly', async ({ page }) => {
+  const cases = [
+    { id: 'sheet', assertion: 'sheet-demo-trigger' },
+    { id: 'table', assertion: 'table-showcase' },
+    { id: 'date-picker', assertion: 'showcase-exact-fixture' },
+    { id: 'date-time-picker', assertion: 'showcase-exact-fixture' },
+  ];
+
+  for (const entry of cases) {
+    await page.goto(targetUrl(`surface=component&id=${entry.id}&example=basic`), { waitUntil: 'load' });
+    await expectActiveTarget(page, `${entry.id} / basic`);
+    await expect(page.getByTestId(entry.assertion)).toBeVisible();
+    await expect(page.locator('[data-showcase-target-active="true"]')).toHaveCount(1);
+  }
+});
+
+test('opens one exact pattern target from every production domain', async ({ page }) => {
+  for (const patternId of ['sign-in', 'dashboard-overview', 'product-feed', 'profile']) {
+    await page.goto(targetUrl(`surface=pattern&id=${patternId}`), { waitUntil: 'load' });
+    await expect(page.getByTestId(`pattern-preview-${patternId}`)).toBeVisible();
+    await expect(page.getByTestId('showcase-active-example')).toContainText(`${patternId} /`);
+    await expect(page).toHaveURL(new RegExp(`surface=pattern&id=${patternId}.*state=`, 'u'));
+  }
+});
+
+test('opens an exact non-default pattern state and keeps Back/Forward deterministic', async ({ page }) => {
   await page.goto(targetUrl('surface=pattern&id=sign-in&state=invalid'), { waitUntil: 'load' });
 
   await expect(page.getByTestId('pattern-preview-sign-in')).toBeVisible();
@@ -52,5 +110,6 @@ test('keeps the legacy component query readable during migration', async ({ page
   await page.goto(targetUrl('component=button'), { waitUntil: 'load' });
 
   await expect(page.getByTestId('addressable-component-gallery')).toBeVisible();
-  await expect(page.getByTestId('showcase-active-example')).toContainText('button / basic');
+  await expectActiveTarget(page, 'button / basic');
+  await expect(page.locator('[data-showcase-target-active="true"]')).toHaveText('Primary action');
 });
