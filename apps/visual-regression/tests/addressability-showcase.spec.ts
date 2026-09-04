@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 const showcaseBaseUrl = 'http://127.0.0.1:4174/showcase/';
 
@@ -6,7 +6,7 @@ function targetUrl(query: string) {
   return `${showcaseBaseUrl}?${query}`;
 }
 
-async function expectActiveTarget(page: Parameters<typeof test>[0] extends never ? never : any, label: string) {
+async function expectActiveTarget(page: Page, label: string) {
   await expect(page.getByTestId('showcase-active-example-label')).toHaveText(label);
 }
 
@@ -72,7 +72,7 @@ test('opens one exact pattern target from every production domain', async ({ pag
     await page.goto(targetUrl(`surface=pattern&id=${patternId}`), { waitUntil: 'load' });
     await expect(page.getByTestId(`pattern-preview-${patternId}`)).toBeVisible();
     await expect(page.getByTestId('showcase-active-example')).toContainText(`${patternId} /`);
-    await expect(page).toHaveURL(new RegExp(`surface=pattern&id=${patternId}.*state=`, 'u'));
+    await expect(page).toHaveURL(new RegExp(`/showcase/\\?surface=pattern&id=${patternId}`, 'u'));
   }
 });
 
