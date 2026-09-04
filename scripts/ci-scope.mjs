@@ -32,6 +32,15 @@ const VISUAL_PREFIXES = [
   'registry/',
 ];
 
+const TOKEN_PREFIXES = ['packages/tokens/src/', 'scripts/tokens/', 'scripts/__tests__/token'];
+const TOKEN_EXACT = new Set([
+  'packages/tokens/package.json',
+  'packages/tokens/tokens.json',
+  'scripts/generate-tokens.mjs',
+  'scripts/check-token-removals.mjs',
+  'scripts/check-semantic-token-consumption.mjs',
+]);
+
 const CONSUMER_EXACT = new Set([
   'pnpm-lock.yaml',
   'pnpm-workspace.yaml',
@@ -84,6 +93,10 @@ function isVisualPath(file) {
   return VISUAL_PREFIXES.some((prefix) => file.startsWith(prefix));
 }
 
+function isTokenPath(file) {
+  return TOKEN_EXACT.has(file) || TOKEN_PREFIXES.some((prefix) => file.startsWith(prefix));
+}
+
 function isConsumerPath(file) {
   return isPackageBoundarySensitivePath(file) || CONSUMER_EXACT.has(file);
 }
@@ -126,6 +139,7 @@ export function classifyCiScope(values, { forceFull = false } = {}) {
       web: true,
       visual: true,
       package: true,
+      tokens: true,
       showcase: true,
       consumer: true,
       expoConsumer: true,
@@ -148,6 +162,7 @@ export function classifyCiScope(values, { forceFull = false } = {}) {
     web: webChanged,
     visual: visualChanged,
     package: packageChanged,
+    tokens: files.some(isTokenPath),
     showcase: showcaseChanged,
     consumer: files.some(isConsumerPath),
     expoConsumer: files.some(isExpoPath),
@@ -163,7 +178,7 @@ function envFlag(name) {
 
 function writeOutput(result) {
   if (!process.env.GITHUB_OUTPUT) return;
-  for (const key of ['docs', 'web', 'visual', 'package', 'showcase', 'consumer', 'expoConsumer', 'release', 'benchmark']) {
+  for (const key of ['docs', 'web', 'visual', 'package', 'tokens', 'showcase', 'consumer', 'expoConsumer', 'release', 'benchmark']) {
     const outputName = key.replace(/[A-Z]/g, (value) => `-${value.toLowerCase()}`);
     appendFileSync(process.env.GITHUB_OUTPUT, `${outputName}=${result[key] ? 'true' : 'false'}\n`);
   }
