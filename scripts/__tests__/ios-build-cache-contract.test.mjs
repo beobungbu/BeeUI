@@ -20,6 +20,7 @@ async function sources() {
     webConsumer,
     webA11y,
     visual,
+    visualConfig,
     beeuiWeb,
     environmentCi,
     bareScript,
@@ -31,12 +32,13 @@ async function sources() {
     read('.github/workflows/web-consumer.yml'),
     read('.github/workflows/web-a11y.yml'),
     read('.github/workflows/visual-web.yml'),
+    read('apps/visual-regression/playwright.config.ts'),
     read('.github/workflows/beeui-web.yml'),
     read('.github/workflows/beeui-environment-ci.yml'),
     read('scripts/verify-bare-consumer.sh'),
     read('scripts/verify-expo-consumer.sh'),
   ]);
-  return { ci, runtime, expo, webConsumer, webA11y, visual, beeuiWeb, environmentCi, bareScript, expoScript };
+  return { ci, runtime, expo, webConsumer, webA11y, visual, visualConfig, beeuiWeb, environmentCi, bareScript, expoScript };
 }
 
 test('PR CI is affected-first instead of eight verification lanes plus three export jobs', async () => {
@@ -151,16 +153,27 @@ test('required accessibility check skips Playwright provisioning when visual sur
   assert.match(webA11y, /if: steps\.scope\.outputs\.visual == 'true'/);
 });
 
-test('development PR visual proof is one required job; full 3-shard matrix moved to environment pushes', async () => {
-  const { visual } = await sources();
+test('development PR visual proof is targeted while full pushes use three duration-balanced semantic lanes', async () => {
+  const { visual, visualConfig } = await sources();
   const prBlock = visual.slice(visual.indexOf('  visual-web-report:'), visual.indexOf('  visual-web-full:'));
   assert.match(prBlock, /if: github\.event_name == 'pull_request'/);
-  assert.match(prBlock, /--shard=1\/3/);
+  assert.match(prBlock, /--project=mobile-light/);
+  assert.match(prBlock, /--project=showcase-acceptance-smoke/);
+  assert.doesNotMatch(prBlock, /--shard=/);
   assert.doesNotMatch(prBlock, /matrix:/);
 
   const fullBlock = visual.slice(visual.indexOf('  visual-web-full:'));
   assert.match(fullBlock, /if: github\.event_name == 'push'/);
-  assert.match(fullBlock, /shard: \[1, 2, 3\]/);
+  assert.match(fullBlock, /lane: \[canonical-and-smoke, showcase-integration, showcase-acceptance-matrix\]/);
+  assert.match(fullBlock, /--project='mobile-\*'/);
+  assert.match(fullBlock, /--project='desktop-\*'/);
+  assert.match(fullBlock, /--project=showcase-integration/);
+  assert.match(fullBlock, /--project=showcase-acceptance-matrix/);
+  assert.doesNotMatch(fullBlock, /--shard=/);
+
+  assert.match(visualConfig, /name: 'showcase-integration'[\s\S]*testIgnore: rootShowcaseSpec/);
+  assert.match(visualConfig, /name: 'showcase-acceptance-matrix'[\s\S]*grep: fullAcceptanceMatrix/);
+  assert.match(visualConfig, /name: 'showcase-acceptance-smoke'[\s\S]*grepInvert: fullAcceptanceMatrix/);
 });
 
 test('Playwright cache-hit paths avoid full dependency provisioning', async () => {
