@@ -9,6 +9,19 @@ const REQUIRED_DESTINATIONS = ['/docs/start/', '/docs/components/', '/docs/patte
 
 export function collectViolations(rootDir = ROOT_DIR) {
   const violations = [];
+
+  // #456: proof-point numbers must come from canonical generation. A literal count in the
+  // template is correct only until the day it is not, and nothing would have said so — the
+  // pattern count sat at a hand-typed 37 through every pattern the repo gained or lost.
+  const template = fs.readFileSync(path.join(rootDir, 'web/site/index.template.html'), 'utf8');
+  const proofStrip = /<section class="proof-strip"[\s\S]*?<\/section>/u.exec(template)?.[0] ?? '';
+  for (const literal of proofStrip.matchAll(/<strong>(\d+)<\/strong>/gu)) {
+    violations.push(
+      `landing proof strip states a literal count ${literal[1]}; derive it from the canonical ` +
+      'manifest through a template token instead.',
+    );
+  }
+
   const { html, contract, publicationLabel } = renderPublicLanding(rootDir);
   const css = fs.readFileSync(path.join(rootDir, 'web/site/site.css'), 'utf8');
 
