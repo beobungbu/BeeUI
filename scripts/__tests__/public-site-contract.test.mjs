@@ -68,16 +68,29 @@ function fixture(overrides = {}) {
   write('package.json', JSON.stringify({ version: '20260902.0.0' }));
   write('docs/dist-tag-policy.md', '```json dist-tag-policy\n{"published":false,"currentVersion":"20260902.0.0","stableDistTag":"latest","prereleaseDistTag":"next"}\n```\n');
   write('scripts/generate-llms-txt.mjs', '');
-  for (const [environment, host] of Object.entries({
+
+  const hosts = {
     development: 'beeui-dev.beemvp.com',
     staging: 'beeui-stg.beemvp.com',
     production: 'beeui.beemvp.com',
-  })) {
+  };
+  for (const [environment, host] of Object.entries(hosts)) {
     write(
       `.github/deployment/wrangler-${environment}.jsonc`,
       JSON.stringify({ routes: [{ pattern: host, custom_domain: true }] }),
     );
   }
+  write(
+    'web/worker/wrangler.jsonc',
+    JSON.stringify({
+      env: Object.fromEntries(
+        Object.entries(hosts).map(([environment, host]) => [
+          environment,
+          { routes: [{ pattern: host, custom_domain: true }] },
+        ]),
+      ),
+    }),
+  );
   return { root, config };
 }
 
@@ -109,7 +122,9 @@ test('rejects environment/domain drift from deployment control plane', () => {
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   config.environments.staging.origin = 'https://wrong-staging.beemvp.com';
   fs.writeFileSync(configPath, JSON.stringify(config));
-  assert.match(collectPublicSiteContractViolations(root).join('\n'), /does not match .*wrangler-staging/u);
+  const violations = collectPublicSiteContractViolations(root).join('\n');
+  assert.match(violations, /does not match .*wrangler-staging/u);
+  assert.match(violations, /does not match web\/worker\/wrangler\.jsonc/u);
 });
 
 test('rejects Pages, duplicate prefixes and a published state before owner gate', () => {
