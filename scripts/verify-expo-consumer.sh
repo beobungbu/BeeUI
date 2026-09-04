@@ -299,13 +299,18 @@ build_android() {
   echo "::endgroup::"
 
   cd android
-  gradle_args=(assembleDebug --no-daemon --stacktrace)
+  # Expo SDK 57's generated app/build.gradle starts `node` processes at
+  # configuration time (resolveAppEntry plus require.resolve for react-native,
+  # hermes-compiler, @react-native/codegen and @expo/cli), which Gradle 9.3.1's
+  # configuration cache rejects outright. Keep this consumer on the task output
+  # cache only; docs/rc-ci-matrix.md records the same rejection.
+  gradle_args=(--no-daemon --stacktrace --no-configuration-cache)
   if is_truthy "${BEEUI_ANDROID_FRESH_BUILD:-}"; then
-    gradle_args+=(--no-build-cache --no-configuration-cache)
+    gradle_args+=(--no-build-cache)
   else
-    gradle_args+=(--build-cache --configuration-cache)
+    gradle_args+=(--build-cache)
   fi
-  ./gradlew "${gradle_args[@]}"
+  ./gradlew assembleDebug "${gradle_args[@]}"
   test -f app/build/outputs/apk/debug/app-debug.apk
 }
 

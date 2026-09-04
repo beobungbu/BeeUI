@@ -73,9 +73,13 @@ test('normal PR fast lane owns CI policy contracts while expensive checks are co
   for (const job of ['verify-docs', 'verify-tokens', 'verify-runtime', 'verify-release', 'verify-benchmark', 'bare-consumer']) {
     const start = ci.indexOf(`  ${job}:`);
     assert.ok(start >= 0, job);
-    const next = ci.indexOf('\n  ', start + 3);
-    const block = ci.slice(start, next >= 0 ? next : undefined);
-    assert.match(block, /if: /, job);
+    // The next job header, not merely the next two-space-indented line: job
+    // bodies are indented deeper, so anchoring on `\n  ` alone would slice the
+    // block down to its own header and make the `if:` assertion vacuous.
+    const rest = ci.slice(start + job.length + 3);
+    const next = rest.search(/\n {2}[A-Za-z][\w-]*:/);
+    const block = rest.slice(0, next >= 0 ? next : undefined);
+    assert.match(block, /\n {4}if: /, job);
   }
 });
 
