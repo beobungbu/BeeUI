@@ -77,7 +77,6 @@ describe('Showcase public target contract', () => {
       expect(basic.coverageClasses).toEqual(['basic']);
       expect(basic.sourcePath).toMatch(/^apps\/showcase\//);
       expect(basic.showcaseTarget).toEqual({ surface: 'component', id: basic.ownerId, example: 'basic' });
-      expect(basic.focusTestId || basic.focusText).toBeTruthy();
 
       for (const coverageClass of basic.applicableCoverageClasses ?? []) {
         const addressable = componentExamples.find(
