@@ -3,25 +3,12 @@
 // Guards the two distribution-policy documents against silent drift from the
 // repository's real state:
 //
-//   docs/dist-tag-policy.md            (#206 dist-tag/prerelease policy)
-//   docs/consumer-compatibility-report.md (#208 consumer compatibility report)
+//   docs/dist-tag-policy.md
+//   docs/consumer-compatibility-report.md
 //
-// Neither document publishes anything; both make claims that must stay true:
-//
-//   - The dist-tag policy pins the lockstep version, the prerelease naming
-//     pattern, the two dist-tags, and the `release` environment. Its
-//     `currentVersion` must equal every package version and `published` must
-//     stay false until the owner actually publishes (#254) — so the policy
-//     cannot describe a published state that does not exist.
-//   - The compatibility report's version pins must equal
-//     docs/compatibility-matrix.md's machine snapshot, and its peer promises
-//     must equal packages/ui's declared peerDependencies. This is what
-//     mechanically prevents a peer claim in the report from exceeding a tested
-//     row (the #129/#208 rule), instead of merely asserting it in prose.
-//
-// Mirrors the other repo doc-drift checks (check-release-ruleset.mjs,
-// check-compatibility-matrix.mjs): a pure violation collector plus a CLI
-// runner; the unit tests import the collector.
+// The dist-tag policy is pre-publication policy, not proof that anything has
+// reached npm. It must track the exact BeeUI date-version release line and keep
+// all public packages/CLI lockstep while `published` remains false until #254.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -34,7 +21,7 @@ const REPORT_DOC = path.join(ROOT_DIR, 'docs', 'consumer-compatibility-report.md
 const MATRIX_DOC = path.join(ROOT_DIR, 'docs', 'compatibility-matrix.md');
 const RELEASE_RULESET_DOC = path.join(ROOT_DIR, 'docs', 'release-ruleset.md');
 
-const LOCKSTEP_PACKAGE_MANIFESTS = ['packages/core', 'packages/tokens', 'packages/ui'];
+const LOCKSTEP_PACKAGE_MANIFESTS = ['packages/core', 'packages/tokens', 'packages/ui', 'packages/cli'];
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -65,7 +52,11 @@ export function extractReleaseEnvironment(markdown) {
   return block.releaseEnvironment;
 }
 
-// ---- dist-tag / prerelease policy (#206) ----
+function stableBase(version) {
+  return version.replace(/-rc\.(0|[1-9][0-9]*)$/, '');
+}
+
+// ---- dist-tag / prerelease policy ----
 
 export function collectDistTagPolicyViolations({ policy, packageVersions, releaseEnvironment, existsSync }) {
   const violations = [];
@@ -75,7 +66,6 @@ export function collectDistTagPolicyViolations({ policy, packageVersions, releas
     violations.push(`${label}: "published" must be false until the owner publishes (#254).`);
   }
 
-  // Lockstep invariant: currentVersion equals every package version.
   const distinct = [...new Set(Object.values(packageVersions))];
   if (distinct.length !== 1) {
     violations.push(
@@ -87,15 +77,13 @@ export function collectDistTagPolicyViolations({ policy, packageVersions, releas
     );
   }
 
-  // No package is at the stable candidate yet (pre-publication).
-  if (Object.values(packageVersions).includes(policy.candidateStableVersion)) {
+  const currentStableBase = stableBase(policy.currentVersion);
+  if (policy.candidateStableVersion !== currentStableBase) {
     violations.push(
-      `${label}: a package is already at candidateStableVersion ${JSON.stringify(policy.candidateStableVersion)}; the stable candidate must not be reached before publication.`,
+      `${label}: "candidateStableVersion" ${JSON.stringify(policy.candidateStableVersion)} must equal the stable base ${JSON.stringify(currentStableBase)} of currentVersion.`,
     );
   }
 
-  // Prerelease pattern: valid regex, matches the example and rc.N, rejects the
-  // stable version and the current version.
   let re;
   try {
     re = new RegExp(policy.prereleaseVersionPattern);
@@ -116,15 +104,17 @@ export function collectDistTagPolicyViolations({ policy, packageVersions, releas
         `${label}: prereleaseVersionPattern must NOT match the stable version ${JSON.stringify(policy.candidateStableVersion)} (a prerelease is not the stable release).`,
       );
     }
+    if (policy.currentVersion.includes('-rc.') && !re.test(policy.currentVersion)) {
+      violations.push(`${label}: prerelease currentVersion ${JSON.stringify(policy.currentVersion)} must match prereleaseVersionPattern.`);
+    }
   }
 
-  // Exactly the two dist-tags, and the stable/prerelease/promotion tags are among them.
   const expectedTags = ['latest', 'next'];
   const tags = policy.distTags;
   if (!Array.isArray(tags) || tags.length !== expectedTags.length || !expectedTags.every((t) => tags.includes(t))) {
     violations.push(`${label}: "distTags" must be exactly ${JSON.stringify(expectedTags)}, got ${JSON.stringify(tags)}.`);
   }
-  for (const key of ['stableDistTag', 'prereleaseDistTag', 'atomicPromotionTag']) {
+  for (const key of ['stableDistTag', 'prereleaseDistTag', 'stablePromotionTag']) {
     if (Array.isArray(tags) && !tags.includes(policy[key])) {
       violations.push(`${label}: "${key}" ${JSON.stringify(policy[key])} must be one of distTags ${JSON.stringify(tags)}.`);
     }
@@ -132,11 +122,15 @@ export function collectDistTagPolicyViolations({ policy, packageVersions, releas
   if (policy.stableDistTag !== 'latest') {
     violations.push(`${label}: "stableDistTag" must be "latest".`);
   }
+  if (policy.stablePromotionTag !== policy.stableDistTag) {
+    violations.push(
+      `${label}: "stablePromotionTag" ${JSON.stringify(policy.stablePromotionTag)} must equal stableDistTag ${JSON.stringify(policy.stableDistTag)}.`,
+    );
+  }
   if (policy.prereleaseDistTag === policy.stableDistTag) {
     violations.push(`${label}: prereleaseDistTag and stableDistTag must differ (prereleases never publish to latest).`);
   }
 
-  // Lockstep package set matches the real manifests.
   const expectedPackages = Object.keys(packageVersions);
   const declared = policy.lockstepPackages;
   if (
@@ -149,7 +143,6 @@ export function collectDistTagPolicyViolations({ policy, packageVersions, releas
     );
   }
 
-  // Release environment matches the live ruleset contract.
   if (policy.releaseEnvironment !== releaseEnvironment) {
     violations.push(
       `${label}: "releaseEnvironment" ${JSON.stringify(policy.releaseEnvironment)} must equal docs/release-ruleset.md's ${JSON.stringify(releaseEnvironment)}.`,
@@ -159,9 +152,8 @@ export function collectDistTagPolicyViolations({ policy, packageVersions, releas
   return violations;
 }
 
-// ---- consumer compatibility report (#208) ----
+// ---- consumer compatibility report ----
 
-// Maps report versionPins keys to the compatibility-matrix snapshot value.
 function matrixValueFor(key, snapshot) {
   switch (key) {
     case 'node':
@@ -200,14 +192,12 @@ export function collectCompatibilityReportViolations({ report, matrixSnapshot, u
     );
   }
 
-  // Every clean-consumer script the report cites must exist on disk.
   for (const rel of report.cleanConsumerScripts ?? []) {
     if (!existsSync(path.join(ROOT_DIR, rel))) {
       violations.push(`${label}: cleanConsumerScripts references "${rel}", which does not exist.`);
     }
   }
 
-  // Version pins must equal the compatibility-matrix snapshot exactly.
   for (const [key, value] of Object.entries(report.versionPins ?? {})) {
     const expected = matrixValueFor(key, matrixSnapshot);
     if (expected === undefined) {
@@ -219,8 +209,6 @@ export function collectCompatibilityReportViolations({ report, matrixSnapshot, u
     }
   }
 
-  // Peer promises must equal packages/ui's declared peerDependencies exactly —
-  // the report may not claim a wider (or narrower) peer than the package.
   for (const [name, range] of Object.entries(report.peerPromises ?? {})) {
     const declared = uiPeerDependencies[name];
     if (declared === undefined) {

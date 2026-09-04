@@ -1,22 +1,14 @@
 # Branch, tag and release ruleset (R6.10, #196)
 
-This documents the live GitHub configuration that protects `main`, protects release tags, and gates the eventual publish workflow (#254) behind an explicit human approval. It is the audit trail for the repository rules and the contract enforced by `scripts/check-release-ruleset.mjs` and `scripts/__tests__/release-ruleset-contract.test.mjs`.
+This document records the GitHub controls that protect `main`, protect release tags, and gate registry mutation behind explicit human approval. It is the audit trail consumed by `scripts/check-release-ruleset.mjs` and `scripts/__tests__/release-ruleset-contract.test.mjs`.
 
 ## Required-check design
 
-BeeUI optimizes CI for wall-clock latency on public GitHub-hosted runners. Expensive independent work fans out immediately; stable required status names fan results back in.
+BeeUI fans independent CI work out early and uses stable aggregate status names for branch protection.
 
-`ci.yml` starts `classify`, eight `verify-lane` jobs (`quality`, `tokens`, `contracts`, `docs`, `types`, `showcase-registry`, `bench`, `release`) and three Showcase bundle jobs (`web`, `android`, `ios`) in parallel. The branch-protection-required `verify` job is a lightweight `if: always()` aggregator over those lanes, preserving the required status name while any failed upstream lane still blocks it.
+`ci.yml` starts `classify`, eight verification lanes (`quality`, `tokens`, `contracts`, `docs`, `types`, `showcase-registry`, `bench`, `release`) and Showcase export work. The required `verify` job is an `if: always()` fan-in so an upstream failure still produces a stable blocking status.
 
-The historical top-level `pnpm typecheck` and `pnpm test` commands remain useful local commands, but CI decomposes their constituent checks across the eight lanes instead of executing the two long serial chains. The `contracts` lane also runs classifier/native-CI topology tests, so `classify` itself stays on the shortest possible path to native fan-out.
-
-`classify` controls only conditional native/package-boundary work. `bare-bundle` and `bare-android` are independent Linux jobs; `ios-showcase` and `ios-bare` are independent macOS jobs. Legitimate docs/test-only PRs can skip those jobs, so none is branch-protection-required.
-
-`expo-consumer.yml` stages three jobs at initial PR fan-out (`typecheck-web`, Android export, iOS export). Together with required/core workflows this targets the 20-job hosted concurrency budget instead of oversubscribing it at t=0. Expo native compiles become eligible after `typecheck-web` frees a slot.
-
-The same conditional-status rule applies to `runtime-native.yml`'s `ios-runtime`/`android-runtime`, which are gated by main push, schedule/manual dispatch, or explicit PR runtime intent.
-
-Standard GitHub-hosted runners are isolated, ephemeral VMs; BeeUI grants these workflows only `contents: read` and does not expose repository secrets to pull-request code. Required checks therefore also run for fork PRs.
+Conditional native/runtime jobs remain real evidence when scheduled but are not branch-protection-required because legitimate PRs may skip them. Standard GitHub-hosted runners are isolated, ephemeral VMs; ordinary PR workflows receive only `contents: read` and no npm/release credentials.
 
 ```json release-ruleset
 {
@@ -31,52 +23,84 @@ Standard GitHub-hosted runners are isolated, ephemeral VMs; BeeUI grants these w
 
 | Check | Workflow | Why it is always present |
 | --- | --- | --- |
-| `classify` | `ci.yml` | No job-level `if:`; emits optional native-work decisions for every PR. |
-| `verify` | `ci.yml` | `if: always()` fan-in over `classify`, all eight verification lanes and all three Showcase platform exports; it fails unless every required upstream lane succeeds. |
-| `web-a11y` | `web-a11y.yml` | No conditional gate; axe-core/Playwright accessibility verification always runs. |
-| `visual-web-report` | `visual-web.yml` | `if: always()` aggregate for the full visual shard matrix. |
-| `web-consumer` | `web-consumer.yml` | No conditional gate; the independent Vite + react-native-web consumer always runs. |
+| `classify` | `ci.yml` | No job-level conditional gate; emits optional native/package-boundary decisions. |
+| `verify` | `ci.yml` | `if: always()` fan-in over verification/export work. |
+| `web-a11y` | `web-a11y.yml` | Always-run browser accessibility verification. |
+| `visual-web-report` | `visual-web.yml` | Stable `if: always()` aggregate for visual shards. |
+| `web-consumer` | `web-consumer.yml` | Always-run independent Vite + react-native-web consumer. |
 
 ### Intentionally excluded conditional/per-shard jobs
 
-These remain real gates when scheduled, but are not branch-protection-required because legitimate PRs can skip them:
+- `ci.yml`: `bare-bundle`, `bare-android`, `ios-showcase`, `ios-bare`
+- `runtime-native.yml`: `ios-runtime`, `android-runtime`
+- `visual-web.yml`: `visual-web` matrix shards; `visual-web-report` is the required aggregate
 
-- `ci.yml`: `bare-bundle`, `bare-android`, `ios-showcase`, `ios-bare` — classifier-controlled package/native work, split so independent compiles run concurrently.
-- `runtime-native.yml`: `ios-runtime`, `android-runtime` — main push, weekly/manual, or explicit runtime PR intent.
-- `visual-web.yml`: `visual-web (1/2/3)` — matrix shards; `visual-web-report` is the stable aggregate signal.
-
-A push to `main` forces the full compile graph in `ci.yml`, and `runtime-native.yml` also runs simulator/emulator smoke on exact main. Weekly scheduled backstops catch hosted-runner/toolchain drift without duplicating the same work nightly.
+A push to `main` forces the full compile graph in `ci.yml`; runtime smoke has its own schedule/manual/main policy.
 
 ## `main` branch ruleset
 
-Applied as repository ruleset `main-required-checks-and-protections` (id `21888207`) to `refs/heads/main`.
-
-The ruleset enforces pull-request merging, stale-review dismissal, the five strict required checks above, linear history, conversation resolution, force-push/deletion protection, and the repository-admin emergency bypass path.
+Repository ruleset `main-required-checks-and-protections` (id `21888207`) targets `refs/heads/main`. It enforces pull-request merging, stale-review dismissal, the five strict required checks above, linear history, conversation resolution, force-push/deletion protection, and the repository-admin emergency bypass path.
 
 ## Tag protection ruleset (`v*`)
 
-Ruleset `release-tag-protection` (id `21888212`) protects `refs/tags/v*`. No tag is created by ordinary CI verification.
+Ruleset `release-tag-protection` (id `21888212`) protects `refs/tags/v*`. Ordinary CI verification does not create release tags.
 
-## Release environment (`release`)
+## Protected release environment
 
-Environment id `20896613487` exists with required reviewer `beobungbu` and `prevent_self_review: false`. The eventual #254 publish job must set `environment: release`; green CI alone never authorizes npm publication, a Git tag, GitHub Release, or dist-tag mutation.
+GitHub environment `release` (id `20896613487`) exists with required reviewer `beobungbu` and `prevent_self_review: false`. Green CI alone never authorizes npm publication/staging, Git tag creation, GitHub Release creation, or dist-tag mutation.
+
+Any workflow job that mutates the npm registry must set:
+
+```yaml
+environment: release
+```
+
+The owner/admin gate in `docs/beeui-1.0-owner-gates.md` remains authoritative even when the environment approval technically permits execution.
+
+## npm release workflow
+
+`.github/workflows/npm-release.yml` is the prepared npm transport. It is intentionally `workflow_dispatch` only and defaults to the non-mutating `verify` operation.
+
+Its registry-mutating operations are:
+
+- `bootstrap-rc`: one-time first-package prerelease bootstrap under `next`; protected by `environment: release`; registry authentication uses the temporary environment secret `NPM_BOOTSTRAP_TOKEN`, but the workflow exposes that secret only to the final direct-publish step. Dependency install, release verification, builds, packing, and registry probes do not inherit it. The job also grants job-local `id-token: write` solely because `npm publish --provenance` needs OIDC to mint the provenance attestation; that permission is not Trusted Publisher authentication for the bootstrap.
+- `stage-rc`: steady-state prerelease staging after package bootstrap; protected by `environment: release`; grants `contents: read` plus job-local `id-token: write`; uses npm Trusted Publishing/OIDC and no long-lived publish token.
+
+Both mutation paths require all of these preconditions: dispatch from `refs/heads/main`, exact `GITHUB_SHA` checkout, an exact `20260902.0.0-rc.N` workspace version, and the confirmation string `BEEUI_RC_RELEASE`. Preflight runs release-control-plane, distribution-policy and packed-release verification before the environment-gated job can mutate the registry. Registry existence probes treat only E404/404 as absence; unexpected registry/network errors stop the workflow.
+
+The workflow does **not** implement stable `latest` publication. Stable publication remains #254 and requires an exact owner-approved candidate plus the stable transaction/recovery contract in `docs/dist-tag-policy.md`.
+
+The detailed npm owner handoff is `docs/npm-release-bootstrap.md`.
+
+## Trusted Publishing security boundary
+
+After the first package bootstrap, each `@beemvp/beeui-*` package should bind npm Trusted Publisher to:
+
+- GitHub owner/user `beobungbu`
+- repository `BeeUI`
+- workflow filename `npm-release.yml`
+- environment `release`
+- allowed action `npm stage publish` only
+
+Both registry-mutating jobs have job-local `id-token: write`, but only `stage-rc` uses OIDC as npm registry authentication. `bootstrap-rc` authenticates with the temporary token, scoped to the direct-publish step, and uses OIDC only for provenance. Ordinary CI has neither publication credentials nor `id-token: write`. The temporary bootstrap token must live only in the protected `release` environment and must be revoked/deleted after OIDC Trusted Publishing is configured and proven.
 
 ## CODEOWNERS
 
-`.github/CODEOWNERS` maps `packages/`, `.github/workflows/`, `scripts/` and `registry/` to `@beobungbu`. `require_code_owner_reviews` remains off while BeeUI has only one maintainer.
+`.github/CODEOWNERS` maps `packages/`, `.github/workflows/`, `scripts/` and `registry/` to `@beobungbu`. `require_code_owner_reviews` remains off while BeeUI has one maintainer.
 
 ## Hosted-runner assumptions
 
-BeeUI's active workflows use standard `ubuntu-latest` and `macos-latest` GitHub-hosted runners. No correctness or security rule assumes a persistent self-hosted machine.
+BeeUI release correctness/security assumes standard GitHub-hosted runners for provenance and OIDC publication work.
 
-- Each job is treated as ephemeral.
-- Workflow permissions default to `contents: read`.
-- Pull-request workflows do not receive release/npm secrets.
-- Public-repository runner minutes are treated as unmetered; CI is designed around wall-clock latency and finite concurrent-job/macOS limits.
-- Initial PR scheduling is shaped to fill the 20-job budget with required/core work first; optional native work enters as slots become available.
-- Independent native iOS proofs use separate macOS jobs so Showcase and bare-RN compiles can overlap.
-- Large Xcode DerivedData is not persisted in Actions cache; bounded dependency/tool caches remain performance hints only.
+- jobs are treated as ephemeral;
+- ordinary workflow permissions default to `contents: read`;
+- PR workflows receive no npm publication authority;
+- registry-mutating jobs receive `id-token: write` only at job scope and only where required for provenance/Trusted Publishing;
+- no correctness rule assumes persistent self-hosted state;
+- release builds do not depend on mutable local runner caches for evidence.
 
-## Rollback
+## Rollback and owner control
 
-The protection pieces remain independently reversible by the owner through GitHub repository settings/API. File-level policy changes are ordinary reviewed commits.
+Repository rulesets, tag protections, environment approvals, npm package settings, Trusted Publisher bindings, and environment secrets remain owner/admin-controlled. File-level policy/workflow changes are ordinary reviewed commits.
+
+A failed or partial registry operation is not automatically retried. Stop and reconcile exact package/version state, artifact hashes and provenance before any recovery action.

@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ALLOWED_VERSION_PATTERN } from './check-release-control-plane.mjs';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(SCRIPT_DIR, '..');
@@ -268,7 +269,11 @@ try {
   record('generated token artifacts are current');
 
   assert(rootPackage.private === true, 'workspace root remains private');
-  assert(rootVersion === '20260902.0.0', 'workspace uses the owner-approved release version', rootVersion);
+  assert(
+    ALLOWED_VERSION_PATTERN.test(rootVersion),
+    'workspace uses the owner-approved stable/RC release line',
+    rootVersion,
+  );
 
   // D2/D3 (ADR-011): the built dist/ output is the primary published artifact,
   // so it must exist on disk before the exports/packed-file checks below can
