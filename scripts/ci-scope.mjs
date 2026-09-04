@@ -16,6 +16,15 @@ function uniqueFiles(values) {
 const PACKAGE_DOC_RE = /^packages\/(?:core|ui|tokens)\/(?:README\.md|CHANGELOG\.md|docs\/)/;
 const PACKAGE_MANIFEST_RE = /^packages\/(?:core|ui|tokens)\/package\.json$/;
 
+// The central orchestrator and its two classifiers are self-hosting CI policy.
+// Any change to them gets one intentionally expensive full validation run so a
+// broken optimization cannot teach CI to skip the evidence that would catch it.
+const CI_CONTROL_PLANE_EXACT = new Set([
+  '.github/workflows/ci.yml',
+  'scripts/ci-scope.mjs',
+  'scripts/classify-ci-changes.mjs',
+]);
+
 const DOC_EXACT = new Set(['README.md', 'CHANGELOG.md']);
 const DOC_PREFIXES = ['docs/', 'apps/docs/'];
 const DOC_SCRIPT_RE = /^scripts\/(?:check-public-doc|check-doc|generate-docs|generate-component-reference|generate-pattern-library|generate-llms|check-ai-agent-contract|check-public-surface|generate-public-surface)/;
@@ -129,24 +138,32 @@ function isBenchmarkPath(file) {
   );
 }
 
+function fullResult(files, reason) {
+  return {
+    files,
+    docs: true,
+    web: true,
+    visual: true,
+    package: true,
+    tokens: true,
+    showcase: true,
+    consumer: true,
+    expoConsumer: true,
+    release: true,
+    benchmark: true,
+    reason,
+  };
+}
+
 export function classifyCiScope(values, { forceFull = false } = {}) {
   const files = uniqueFiles(values);
 
-  if (forceFull || files.length === 0) {
-    return {
-      files,
-      docs: true,
-      web: true,
-      visual: true,
-      package: true,
-      tokens: true,
-      showcase: true,
-      consumer: true,
-      expoConsumer: true,
-      release: true,
-      benchmark: true,
-      reason: forceFull ? 'full CI explicitly requested' : 'no changed paths supplied; failing safe to full CI',
-    };
+  if (forceFull) return fullResult(files, 'full CI explicitly requested');
+  if (files.length === 0) return fullResult(files, 'no changed paths supplied; failing safe to full CI');
+
+  const controlPlaneFiles = files.filter((file) => CI_CONTROL_PLANE_EXACT.has(file));
+  if (controlPlaneFiles.length > 0) {
+    return fullResult(files, `CI control-plane changed: ${controlPlaneFiles.join(', ')}`);
   }
 
   const packageChanged = files.some(isPackageBoundarySensitivePath);
