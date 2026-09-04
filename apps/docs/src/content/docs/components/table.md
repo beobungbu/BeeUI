@@ -7,10 +7,10 @@ Table/DataTable is one of BeeUI 1.0's hard release gates, covering core anatomy,
 keyboard/a11y semantics, native rendering/a11y, a 100/500-row performance envelope, and
 production patterns.
 
-:::note[Content pending]
-Full Table documentation is tracked in [#221](https://github.com/beobungbu/BeeUI/issues/221)
-and will be sourced from `docs/decisions/007-table-datatable-architecture.md` and the
-stable Table API once accepted.
+:::note[Looking for the task guide?]
+[Table](/docs/guides/table/) covers anatomy, state ownership, keyboard and accessibility
+behavior, the native/Web split, the performance envelope and limitations. This page keeps
+the measured performance evidence behind those recommendations.
 :::
 
 ## Performance

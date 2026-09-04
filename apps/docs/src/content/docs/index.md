@@ -20,7 +20,7 @@ separate the stable target API from the distribution actions that are actually a
 ## Design and platform guides
 
 - [Theming](/docs/theming/) · [Responsive & mobile-first](/docs/responsive/) · [Accessibility](/docs/accessibility/)
-- [Current compatibility](/docs/compatibility/current.generated/) · [Migration & versioning](/docs/guides/migration-versioning/)
+- [Current compatibility](/docs/compatibility/current/) · [Migration & versioning](/docs/guides/migration-versioning/)
 - [Troubleshooting](/docs/guides/troubleshooting/) · [Performance](/docs/performance/)
 - [Release & security](/docs/release-security/) · [Architecture](/docs/architecture/)
 - [CLI & source ownership](/docs/guides/cli-source-ownership/)

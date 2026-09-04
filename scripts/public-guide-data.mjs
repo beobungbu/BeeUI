@@ -32,8 +32,8 @@ function renderRelease(data) {
 
 export function generatePublicGuideData({ rootDir = ROOT_DIR } = {}) {
   const data = readPublicGuideData(rootDir);
-  const compatibilityOut = path.join(rootDir, 'apps/docs/src/content/docs/compatibility/current.generated.md');
-  const releaseOut = path.join(rootDir, 'apps/docs/src/content/docs/guides/current-release.generated.md');
+  const compatibilityOut = path.join(rootDir, 'apps/docs/src/content/docs/compatibility/current.md');
+  const releaseOut = path.join(rootDir, 'apps/docs/src/content/docs/guides/current-release.md');
   fs.writeFileSync(compatibilityOut, renderCompatibility(data));
   fs.writeFileSync(releaseOut, renderRelease(data));
   return data;

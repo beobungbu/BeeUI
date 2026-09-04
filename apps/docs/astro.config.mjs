@@ -36,12 +36,21 @@ export default defineConfig({
           items: [{ label: 'Web & native preview', slug: 'showcase' }],
         },
         {
-          label: 'Theming',
+          label: 'Guides',
           items: [
-            { label: 'Overview', slug: 'theming' },
+            { label: 'Overview', slug: 'guides' },
             { label: 'Branding', slug: 'guides/branding' },
             { label: 'Density', slug: 'guides/density' },
+            { label: 'Table', slug: 'guides/table' },
+            { label: 'Dates & times', slug: 'guides/date-time' },
+            { label: 'CLI & source ownership', slug: 'guides/cli-source-ownership' },
+            { label: 'Troubleshooting', slug: 'guides/troubleshooting' },
+            { label: 'Migration & versioning', slug: 'guides/migration-versioning' },
           ],
+        },
+        {
+          label: 'Theming',
+          items: [{ label: 'Overview', slug: 'theming' }],
         },
         {
           label: 'Components',
@@ -74,24 +83,12 @@ export default defineConfig({
           ],
         },
         {
-          label: 'CLI & source ownership',
-          items: [{ label: 'Overview', slug: 'guides/cli-source-ownership' }],
-        },
-        {
           label: 'Compatibility',
           items: [
             { label: 'Overview', slug: 'compatibility' },
             { label: 'Native (RN/Expo)', slug: 'compatibility/native' },
             { label: 'Web', slug: 'compatibility/web' },
           ],
-        },
-        {
-          label: 'Migration & versioning',
-          items: [{ label: 'Overview', slug: 'guides/migration-versioning' }],
-        },
-        {
-          label: 'Troubleshooting',
-          items: [{ label: 'Overview', slug: 'guides/troubleshooting' }],
         },
         {
           label: 'Performance',

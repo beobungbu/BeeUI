@@ -22,8 +22,8 @@ apps/demo/dist-ios/
 apps/demo/dist-android/
 apps/docs/src/content/docs/components/reference/
 apps/docs/src/content/docs/patterns/reference/
-apps/docs/src/content/docs/compatibility/current.generated.md
-apps/docs/src/content/docs/guides/current-release.generated.md
+apps/docs/src/content/docs/compatibility/current.md
+apps/docs/src/content/docs/guides/current-release.md
 apps/docs/public/route-manifest.json
 apps/docs/public/release-state.json
 .env

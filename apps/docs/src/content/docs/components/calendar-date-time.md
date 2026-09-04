@@ -6,8 +6,8 @@ description: BeeUI's Calendar, DatePicker, and DateTimePicker components.
 Calendar/DatePicker/DateTimePicker are hard release gates for BeeUI 1.0, with explicit
 value/timezone/i18n semantics and dedicated i18n/week-start/DST regression coverage.
 
-:::note[Content pending]
-Full date/time documentation is tracked in [#221](https://github.com/beobungbu/BeeUI/issues/221)
-and will be sourced from `docs/decisions/008-datetime-architecture.md` and the stable
-DatePicker/DateTimePicker/Calendar APIs once accepted.
+:::note[Looking for the task guide?]
+[Dates and times](/docs/guides/date-time/) covers value semantics, timezone ownership,
+locale and week start, DST edge behavior, controlled state, platform behavior and
+accessibility. This page keeps the release-gate evidence behind those contracts.
 :::
