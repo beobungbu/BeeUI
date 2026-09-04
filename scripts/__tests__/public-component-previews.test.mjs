@@ -344,12 +344,31 @@ test('the citation guard rejects an excerpt whose brackets are left open', () =>
   }
 });
 
-test('the citation guard rejects a visible label that disagrees with the anchor', () => {
+test('the citation guard rejects a visible label that disagrees with the block below it', () => {
   const fixture = guardFixture({
     pageMutator: (page) => page.replace(/\[lines (\d+)–(\d+)\]/u, (_m, a, b) => `[lines ${Number(a) + 500}–${Number(b) + 500}]`),
   });
   try {
-    assert.ok(guardViolations(fixture).some((v) => /visible line label/u.test(v)));
+    assert.ok(guardViolations(fixture).some((v) => /visible label reads/u.test(v)), guardViolations(fixture).join(' | '));
+  } finally {
+    fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+  }
+});
+
+// `addon.includes(label)` proved the label existed somewhere; with 19 families rendering more
+// than one excerpt, swapping two labels left every membership check green.
+test('the citation guard rejects a label paired with another excerpt block', () => {
+  const fixture = guardFixture({
+    extraSource: ['<Accordion value="second">', '  <AccordionItem />', '</Accordion>'],
+    pageMutator: (page) => {
+      const labels = [...page.matchAll(/\[lines (\d+)–(\d+)\]\(([^)]*)\)/gu)];
+      if (labels.length < 2) return page;
+      return page.replace(labels[0][0], labels[1][0]);
+    },
+  });
+  try {
+    const violations = guardViolations(fixture);
+    assert.ok(violations.some((v) => /visible label reads|link points at/u.test(v)), violations.join(' | '));
   } finally {
     fs.rmSync(fixture.rootDir, { recursive: true, force: true });
   }
@@ -360,8 +379,11 @@ test('the citation guard rejects a visible label that disagrees with the anchor'
 test('the anchor predicate rejects text that lost the node it was built from', () => {
   assert.equal(excerptMatchesAnchor('<Accordion value="a">\n  <AccordionItem />', '<Accordion value="a">'), true);
   assert.equal(excerptMatchesAnchor('const filler0 = 0;', '<Accordion value="a">'), false);
-  // A range with no anchor (a merged span) is not judged by this predicate.
-  assert.equal(excerptMatchesAnchor('anything', undefined), true);
+  // Equality on the first line, not containment: a duplicate occurrence further down must not
+  // satisfy it — 20 of 52 excerpted families have a non-unique first line.
+  assert.equal(excerptMatchesAnchor('const other = 1;\n<Accordion value="a">', '<Accordion value="a">'), false);
+  // A range with no anchor is a defect, not a free pass.
+  assert.equal(excerptMatchesAnchor('anything', undefined), false);
 });
 
 test('the citation guard rejects an excerpt cut across syntactic boundaries', () => {
@@ -373,4 +395,57 @@ test('the citation guard rejects an excerpt cut across syntactic boundaries', ()
   // The opening-tag case is deliberately a fragment and must stay accepted.
   assert.equal(isSyntacticallyWholeExcerpt('<Screen testID="root">', true), true);
   assert.equal(isSyntacticallyWholeExcerpt('const half = {', true), false);
+});
+
+// --- constants that change published output -----------------------------------------------
+// Three mutations that changed real pages survived the suite: the whole-file threshold, the
+// opening-tag drop, and the widening size cap. Each is pinned at its boundary now.
+
+test('the whole-file threshold decides at its boundary, not near it', () => {
+  const usage = ['<Accordion>', '  <AccordionItem />', '</Accordion>'];
+  const pad = (count) => Array.from({ length: count }, (_, index) => `const filler${index} = ${index};`);
+
+  // 160 lines total: shown whole.
+  const atLimit = fixtureOf([...usage, ...pad(157)]);
+  assert.equal(excerptFixture(atLimit, FAMILY, 'at.tsx').whole, true);
+
+  // 161 lines: excerpted.
+  const overLimit = fixtureOf([...usage, ...pad(158)]);
+  assert.equal(excerptFixture(overLimit, FAMILY, 'over.tsx').whole, false);
+});
+
+test('a bare opening tag is dropped when the family has real examples elsewhere', () => {
+  const pad = Array.from({ length: 60 }, (_, index) => `  <Other id={${index}} />`);
+  const source = fixtureOf([
+    // A wrapper too large to quote whole: contributes only its opening tag.
+    '<Accordion testID="wrapper">',
+    ...pad,
+    '</Accordion>',
+    ...pad,
+    // A real, quotable example.
+    '<Accordion value="b">',
+    '  <AccordionItem />',
+    '</Accordion>',
+    ...pad,
+  ]);
+  const excerpts = excerptFixture(source, FAMILY, 'drop.tsx').excerpts;
+
+  assert.ok(excerpts.length >= 1);
+  assert.equal(
+    excerpts.some((part) => part.openingTagOnly),
+    false,
+    'a bare opening tag must not be shown next to a complete example',
+  );
+  assert.ok(excerpts.some((part) => part.text.includes('<AccordionItem />')));
+});
+
+test('widening a lone short use stops before the enclosing element gets large', () => {
+  const big = Array.from({ length: 60 }, (_, index) => `  <Other id={${index}} />`);
+  const filler = Array.from({ length: 80 }, (_, index) => `const filler${index} = ${index};`);
+  // The only enclosing element is far larger than an example, so widening must not take it.
+  const source = fixtureOf([...filler, '<Box>', ...big, '  <Accordion />', ...big, '</Box>', ...filler]);
+  const excerpts = excerptFixture(source, FAMILY, 'wide.tsx').excerpts;
+
+  assert.equal(excerpts.length, 1);
+  assert.equal(excerpts[0].text.trim(), '<Accordion />');
 });

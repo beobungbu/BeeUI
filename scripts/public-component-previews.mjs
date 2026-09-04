@@ -114,6 +114,7 @@ export function derivedBindingNames(source, component, fileName = 'fixture.tsx')
 }
 
 export function familyUsageRanges(source, component, fileName = 'fixture.tsx') {
+  const lines = source.split('\n');
   const names = new Set(component.values);
   // `useToast()` is the export, but the usage worth showing is `toast.show({...})` on the value
   // it returns. Matching only the export name reduced toast.md's entire "Verified example
@@ -157,7 +158,7 @@ export function familyUsageRanges(source, component, fileName = 'fixture.tsx') {
       }
       current = current.parent;
     }
-    return { start, end };
+    return { start, end, anchor: lines[start - 1]?.trim() };
   };
 
   const visit = (node) => {
@@ -230,8 +231,11 @@ export function familyUsageRanges(source, component, fileName = 'fixture.tsx') {
       const previous = merged.at(-1);
       if (previous && range.start - previous.end <= MERGE_GAP_LINES) {
         previous.end = Math.max(previous.end, range.end);
-        // A merged region is no longer just an opening tag.
-        if (previous.end !== lineOf(sourceFile.getStart())) previous.openingTagOnly = previous.openingTagOnly && range.openingTagOnly;
+        // A merged span covers more than the tag it started from, and its first line is the
+        // earlier region's — so it is no longer an opening-tag-only region, and its anchor is
+        // the one it already carries. The guard removed here compared the merged end against
+        // the file's first line, which is never true and never did anything.
+        previous.openingTagOnly = previous.openingTagOnly && range.openingTagOnly;
         return merged;
       }
       return [...merged, { ...range }];
@@ -407,7 +411,12 @@ export function renderPreviewAddon(descriptor) {
 // disagree and the citation is wrong. Used by the generator (fails the build) and by the
 // citation guard (fails the check), so one predicate pins both.
 export function excerptMatchesAnchor(text, anchor) {
-  return !anchor || text.includes(anchor);
+  // Equality on the first line, not containment: `text.includes(anchor)` is satisfied by any
+  // duplicate occurrence, and 20 of 52 excerpted families have a non-unique first line. Every
+  // range carries an anchor, so a missing one is itself a defect rather than a free pass — an
+  // earlier version returned `!anchor || …`, which let unanchored ranges through vacuously.
+  if (!anchor) return false;
+  return text.split('\n')[0].trim() === anchor;
 }
 
 export function isSyntacticallyWholeExcerpt(text, openingTagOnly = false) {
@@ -486,16 +495,49 @@ export function collectExcerptCitationViolations(rootDir, component, descriptor,
       );
     }
 
-    // The reader sees the prose label, not the anchor. Checking only `#L..-L..` left the visible
-    // "lines N–M" free to say anything.
-    const label = part.start === part.end ? `[line ${part.start}]` : `[lines ${part.start}–${part.end}]`;
-    if (!addon.includes(label)) {
-      violations.push(`${component.name}: the visible line label does not match the cited range ${part.start}-${part.end}.`);
-    }
-    if (!addon.includes(`#L${part.start}-L${part.end}`)) {
-      violations.push(`${component.name}: excerpt at lines ${part.start}-${part.end} is not linked to those lines.`);
-    }
   }
+
+  // `addon.includes(label)` proves the label exists somewhere on the page, not that it sits
+  // above the block it describes. With 19 families rendering more than one excerpt, swapping two
+  // labels left every membership check green. Pair each rendered label with the code fence that
+  // follows it and compare positionally instead.
+  const rendered = [...addon.matchAll(
+    /\[(?:line (\d+)|lines (\d+)–(\d+))\]\([^)]*#L(\d+)-L(\d+)\):\n\n````tsx\n([\s\S]*?)\n````/gu,
+  )].map((match) => ({
+    labelStart: Number(match[1] ?? match[2]),
+    labelEnd: Number(match[1] ?? match[3]),
+    hrefStart: Number(match[4]),
+    hrefEnd: Number(match[5]),
+    text: match[6],
+  }));
+
+  if (rendered.length !== descriptor.excerpt.excerpts.length) {
+    violations.push(
+      `${component.name}: the page renders ${rendered.length} cited code block(s) but the excerpt carries ` +
+      `${descriptor.excerpt.excerpts.length}.`,
+    );
+    return violations;
+  }
+
+  descriptor.excerpt.excerpts.forEach((part, index) => {
+    const block = rendered[index];
+    if (block.text !== part.text) {
+      violations.push(`${component.name}: the code block in position ${index + 1} is not the excerpt cited there.`);
+    }
+    if (block.labelStart !== part.start || block.labelEnd !== part.end) {
+      violations.push(
+        `${component.name}: the visible label reads ${block.labelStart}-${block.labelEnd} above the block cited at ` +
+        `${part.start}-${part.end}.`,
+      );
+    }
+    if (block.hrefStart !== part.start || block.hrefEnd !== part.end) {
+      violations.push(
+        `${component.name}: the link points at ${block.hrefStart}-${block.hrefEnd} above the block cited at ` +
+        `${part.start}-${part.end}.`,
+      );
+    }
+  });
+
   return violations;
 }
 

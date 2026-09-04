@@ -126,12 +126,12 @@ const BEHAVIOR_GUARD_NON_PROP_TERMS = new Set(['fieldset', 'radiogroup']);
 // prop/exported-value of the family nor a documented exception — each one is either a stale/
 // typo'd prop reference (the bug class M8 exists to catch) or a legitimate case the two
 // exception lists above have not been tuned for yet.
-function findUnknownBehaviorPropReferences(component, rootDir) {
+function findUnknownBehaviorPropReferences(component, rootDir, field = 'behavior') {
   const known = getBehaviorGuardKnownNames(component, component.typeDocs, rootDir);
   const unknown = [];
   BEHAVIOR_PROP_LIKE_TOKEN.lastIndex = 0;
   let match;
-  while ((match = BEHAVIOR_PROP_LIKE_TOKEN.exec(component.behavior))) {
+  while ((match = BEHAVIOR_PROP_LIKE_TOKEN.exec(component[field] ?? ''))) {
     const token = match[1];
     if (BEHAVIOR_GUARD_LITERAL_KEYWORDS.has(token)) continue;
     if (BEHAVIOR_GUARD_EXTERNAL_TERMS.has(token)) continue;
@@ -156,10 +156,21 @@ export function collectPublicComponentReferenceViolations(rootDir = ROOT_DIR) {
     if (routes.has(component.route)) violations.push(`duplicate public component route ${component.route}.`);
     routes.add(component.route);
     if (!component.purpose.trim()) violations.push(`${component.name}: missing curated purpose.`);
+    // `purpose` and `limitations` are published in the meta description, the page lead and the
+    // repository reference. Guarding only `behavior` let the AlertDialog page assert the
+    // opposite of itself at line 8 and line 52 — the behavior text was corrected and the
+    // purpose above it was not.
+    for (const field of ['purpose', 'limitations']) {
+      for (const token of findUnknownBehaviorPropReferences(component, rootDir, field)) {
+        violations.push(
+          `${component.name}: ${field} references \`${token}\`, which is not a known prop or exported value of this family.`,
+        );
+      }
+    }
     if (!component.behavior.trim()) {
       violations.push(`${component.name}: missing curated behavior contract.`);
     } else {
-      for (const token of findUnknownBehaviorPropReferences(component, rootDir)) {
+      for (const token of findUnknownBehaviorPropReferences(component, rootDir, 'behavior')) {
         violations.push(
           `${component.name}: behavior references \`${token}\`, which is not a known prop or exported value of this family.`,
         );
@@ -334,6 +345,9 @@ function renderPlatformDiffBullets(diff) {
     const withDefault = field.default !== undefined ? ` (Web default \`${escapeCell(field.default)}\`)` : '';
     lines.push(`- \`${field.name}\` is declared explicitly on Web${withDefault}${inheritedNote('native', bases.native)}.`);
   }
+  for (const name of diff.inert ?? []) {
+    lines.push(`- \`${name}\` is accepted on Web for API parity but has no effect there.`);
+  }
   for (const change of diff.changed) {
     if (change.typeChanged) {
       lines.push(
@@ -377,7 +391,7 @@ function renderPlatformDiffNote(entry) {
   }
   const lines = [];
   if (diff.kind === 'object') {
-    lines.push(...renderPlatformDiffBullets(diff.diff));
+    lines.push(...renderPlatformDiffBullets({ ...diff.diff, inert: entry.webShape?.inert }));
   } else {
     for (const { variantName, diff: variantDiff } of diff.variantDiffs) {
       lines.push(`- Variant \`${variantName}\`:`);

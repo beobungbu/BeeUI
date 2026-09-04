@@ -58,7 +58,9 @@ export function collectStarterSourceGlobViolations(rootDir = ROOT_DIR, docs = nu
     const cssPath = path.join(rootDir, entry.css);
     const cssDir = path.resolve(rootDir, entry.cssRuntimeDir);
     const installDir = path.resolve(rootDir, entry.installDir);
-    const globs = [...fs.readFileSync(cssPath, 'utf8').matchAll(/@source\s+'([^']+)'/gu)].map(([, glob]) => glob);
+    // CSS accepts either quote, so matching only `'…'` left a double-quoted glob unchecked here
+      // and invisible to the page comparison below.
+      const globs = [...fs.readFileSync(cssPath, 'utf8').matchAll(/@source\s+['"]([^'"]+)['"]/gu)].map(([, glob]) => glob);
 
     if (!globs.length) {
       violations.push(`${entry.css} declares no @source glob, so Tailwind never scans BeeUI's own source.`);
@@ -111,7 +113,7 @@ export function collectStarterSourceGlobViolations(rootDir = ROOT_DIR, docs = nu
       const fixtureSet = [...new Set(globs)].sort();
       // Without the optional `;` a stale glob quoted in prose rather than in a fenced block was
       // invisible to this comparison, which is the one direction it was added to close.
-      const pageSet = [...new Set([...page.matchAll(/@source\s+'([^']+)'/gu)].map(([, glob]) => glob))].sort();
+      const pageSet = [...new Set([...page.matchAll(/@source\s+['"]([^'"]+)['"]/gu)].map(([, glob]) => glob))].sort();
       if (fixtureSet.join('\n') !== pageSet.join('\n')) {
         violations.push(
           `${entry.doc} reproduces @source globs [${pageSet.join(', ') || 'none'}] but ${entry.css} declares ` +

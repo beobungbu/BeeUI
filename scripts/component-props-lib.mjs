@@ -410,6 +410,40 @@ export function extractDefaults(files, candidateNames) {
 // props it actually reads, and those names are the ones a reader is looking for. This returns
 // them, with a default where one is destructured, so an aliased family still documents the
 // subset it handles rather than deferring the entire question upstream.
+// Props destructured into an underscore-prefixed binding — `modalProps: _modalProps` — are the
+// repository's convention for "accepted for API parity, deliberately unread on this platform".
+// Reporting only that such a prop's *type* differs is true and misleading: on Web `modalProps`,
+// `avoidKeyboard` and `enableSwipeToDismiss` do nothing at all.
+export function extractInertProps(files, candidateNames) {
+  const inert = new Set();
+  const record = (pattern) => {
+    for (const element of pattern.elements) {
+      if (!ts.isBindingElement(element) || element.dotDotDotToken) continue;
+      if (!element.propertyName || !ts.isIdentifier(element.propertyName)) continue;
+      if (ts.isIdentifier(element.name) && element.name.text.startsWith('_')) inert.add(element.propertyName.text);
+    }
+  };
+
+  for (const { path: filePath, source } of files) {
+    const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, scriptKindFor(filePath));
+    walk(sourceFile, (node) => {
+      if (ts.isCallExpression(node) && node.typeArguments?.length === 2 && /forwardRef$/.test(node.expression.getText(sourceFile))) {
+        if (!candidateNames.has(getBareTypeReferenceName(node.typeArguments[1]) ?? '')) return;
+        const renderFn = node.arguments[0];
+        const param = (ts.isArrowFunction(renderFn) || ts.isFunctionExpression(renderFn)) ? renderFn.parameters[0] : undefined;
+        if (param && ts.isObjectBindingPattern(param.name)) record(param.name);
+        return;
+      }
+      if (ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node) || ts.isArrowFunction(node)) {
+        const param = node.parameters[0];
+        if (!param || !candidateNames.has(getBareTypeReferenceName(param.type) ?? '')) return;
+        if (ts.isObjectBindingPattern(param.name)) record(param.name);
+      }
+    });
+  }
+  return inert;
+}
+
 export function extractConsumedProps(files, candidateNames) {
   const consumed = new Map();
 
@@ -748,6 +782,14 @@ export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
         const webShape = resolveNamedTypeShape(typeName, webCtx);
         applyDefaults(webShape, extractDefaults(files, webCtx.names));
         fillConsumedFallback(webShape, files, webCtx.names);
+        // A prop the Web implementation destructures into an underscore-prefixed binding is
+        // accepted for API parity and deliberately unread. Reporting only that its type differs
+        // is true and misleading: on Web `modalProps`, `avoidKeyboard` and `enableSwipeToDismiss`
+        // do nothing at all.
+        webShape.inert = [...extractInertProps(
+          [{ path: webPath, source: fs.readFileSync(path.join(rootDir, webPath), 'utf8') }],
+          webCtx.names,
+        )];
         entry.webShape = webShape;
         entry.webSource = webPath;
       }

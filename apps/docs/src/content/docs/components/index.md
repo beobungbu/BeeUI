@@ -70,7 +70,7 @@ This index is generated from the public Registry + `@beemvp/beeui-ui` export map
 ## Overlays & feedback
 
 - **[Alert Banner](/docs/components/alert-banner/)** — Inline semantic status callout with live-region announcement for feedback that stays on screen. · [Showcase](/showcase/?surface=component&id=alert-banner&example=basic)
-- **[Alert Dialog](/docs/components/alert-dialog/)** — Confirmation/destructive modal built on the Dialog kernel; only explicit Cancel/Action closes it. · [Showcase](/showcase/?surface=component&id=alert-dialog&example=basic)
+- **[Alert Dialog](/docs/components/alert-dialog/)** — Confirmation/destructive modal built on the Dialog kernel; a backdrop press or Escape never closes it. · [Showcase](/showcase/?surface=component&id=alert-dialog&example=basic)
 - **[Dialog](/docs/components/dialog/)** — Controlled/uncontrolled modal backed by React Native core Modal, with a real Web focus trap and Escape dismissal. · [Showcase](/showcase/?surface=component&id=dialog&example=basic)
 - **[Dropdown Menu](/docs/components/dropdown-menu/)** — Non-modal action menu on the shared anchored-overlay runtime, with items, checkbox items, and radio groups. · [Showcase](/showcase/?surface=component&id=dropdown-menu&example=basic)
 - **[Popover](/docs/components/popover/)** — Non-modal anchored surface on the shared overlay runtime with flip/shift/collision and safe-area policy. · [Showcase](/showcase/?surface=component&id=popover&example=basic)

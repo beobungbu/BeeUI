@@ -1,1 +1,1 @@
-- [WBS #474 docs-portal wave](project_474_docs_portal_wave.md) — meta-guards that check references not content, lane-mapped checks CI never runs, mutation-test the revert not the deletion, review-copy recipe
+- [WBS #474 docs-portal wave](project_474_docs_portal_wave.md) — meta-guards checking references not content, `includes` proves membership not association, vacuous-pass predicates, lane-mapped checks CI never runs, review-copy recipe
