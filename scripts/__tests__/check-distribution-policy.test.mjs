@@ -9,15 +9,14 @@ import {
   extractDistTagPolicy,
 } from '../check-distribution-policy.mjs';
 
-// ---- fixtures mirroring the real repository state ----
-
 const PACKAGE_VERSIONS = {
-  '@beemvp/beeui-core': '0.1.0',
-  '@beemvp/beeui-tokens': '0.1.0',
-  '@beemvp/beeui-ui': '0.1.0',
+  '@beemvp/beeui-core': '20260902.0.0',
+  '@beemvp/beeui-tokens': '20260902.0.0',
+  '@beemvp/beeui-ui': '20260902.0.0',
+  '@beemvp/beeui-cli': '20260902.0.0',
 };
 const RELEASE_ENVIRONMENT = 'release';
-const ROOT_VERSION = '0.1.0';
+const ROOT_VERSION = '20260902.0.0';
 
 const UI_PEERS = {
   react: '>=19 <20',
@@ -46,22 +45,27 @@ const MATRIX_SNAPSHOT = {
 
 const GOOD_POLICY = {
   published: false,
-  currentVersion: '0.1.0',
-  candidateStableVersion: '1.0.0',
-  prereleaseVersionPattern: '^1\\.0\\.0-rc\\.(0|[1-9][0-9]*)$',
-  prereleaseExample: '1.0.0-rc.1',
+  currentVersion: '20260902.0.0',
+  candidateStableVersion: '20260902.0.0',
+  prereleaseVersionPattern: '^20260902\\.0\\.0-rc\\.(0|[1-9][0-9]*)$',
+  prereleaseExample: '20260902.0.0-rc.1',
   distTags: ['latest', 'next'],
   prereleaseDistTag: 'next',
   stableDistTag: 'latest',
   atomicPromotionTag: 'latest',
-  lockstepPackages: ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui'],
+  lockstepPackages: [
+    '@beemvp/beeui-core',
+    '@beemvp/beeui-tokens',
+    '@beemvp/beeui-ui',
+    '@beemvp/beeui-cli',
+  ],
   releaseEnvironment: 'release',
 };
 
 const GOOD_REPORT = {
   published: false,
   packageSet: ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui'],
-  candidateVersion: '0.1.0',
+  candidateVersion: ROOT_VERSION,
   cleanConsumerScripts: [
     'scripts/verify-bare-consumer.sh',
     'scripts/verify-web-consumer.sh',
@@ -81,10 +85,10 @@ const GOOD_REPORT = {
 
 const alwaysExists = () => true;
 
-function policyViolations(overrides) {
+function policyViolations(overrides, packageVersions = PACKAGE_VERSIONS) {
   return collectDistTagPolicyViolations({
     policy: { ...GOOD_POLICY, ...overrides },
-    packageVersions: PACKAGE_VERSIONS,
+    packageVersions,
     releaseEnvironment: RELEASE_ENVIRONMENT,
     existsSync: alwaysExists,
   });
@@ -100,32 +104,39 @@ function reportViolations(overrides) {
   });
 }
 
-// ---- dist-tag policy ----
-
-test('clean dist-tag policy fixture produces no violations', () => {
+test('clean stable dist-tag policy fixture produces no violations', () => {
   assert.deepEqual(policyViolations({}), []);
 });
 
-test('published:true is rejected (pre-publication invariant)', () => {
+test('clean rc fixture on the same date-version line produces no violations', () => {
+  const rc = '20260902.0.0-rc.3';
+  const packageVersions = Object.fromEntries(Object.keys(PACKAGE_VERSIONS).map((name) => [name, rc]));
+  assert.deepEqual(policyViolations({ currentVersion: rc }, packageVersions), []);
+});
+
+test('published:true is rejected while the repo still records pre-publication state', () => {
   assert.ok(policyViolations({ published: true }).some((v) => /published/.test(v)));
 });
 
 test('currentVersion must equal the lockstep package version', () => {
-  assert.ok(policyViolations({ currentVersion: '0.2.0' }).some((v) => /currentVersion/.test(v)));
+  assert.ok(policyViolations({ currentVersion: '20260902.0.0-rc.1' }).some((v) => /currentVersion/.test(v)));
+});
+
+test('candidate stable version must equal the stable base of currentVersion', () => {
+  assert.ok(policyViolations({ candidateStableVersion: '1.0.0' }).some((v) => /candidateStableVersion/.test(v)));
 });
 
 test('prerelease pattern must reject the stable version', () => {
-  // A pattern that also matches "1.0.0" would let a stable version pose as a prerelease.
-  const v = policyViolations({ prereleaseVersionPattern: '^1\\.0\\.0(-rc\\.[0-9]+)?$' });
+  const v = policyViolations({ prereleaseVersionPattern: '^20260902\\.0\\.0(-rc\\.[0-9]+)?$' });
   assert.ok(v.some((m) => /must NOT match the stable version/.test(m)));
 });
 
 test('prerelease example must match the pattern', () => {
-  assert.ok(policyViolations({ prereleaseExample: '1.0.0' }).some((v) => /prereleaseExample/.test(v)));
+  assert.ok(policyViolations({ prereleaseExample: '20260902.0.0' }).some((v) => /prereleaseExample/.test(v)));
 });
 
 test('an invalid prerelease regex is reported', () => {
-  assert.ok(policyViolations({ prereleaseVersionPattern: '^1\\.0\\.0-rc\\.(' }).some((v) => /valid regex/.test(v)));
+  assert.ok(policyViolations({ prereleaseVersionPattern: '^20260902\\.0\\.0-rc\\.(' }).some((v) => /valid regex/.test(v)));
 });
 
 test('distTags must be exactly latest and next', () => {
@@ -142,20 +153,9 @@ test('releaseEnvironment must match the ruleset', () => {
   assert.ok(policyViolations({ releaseEnvironment: 'prod' }).some((v) => /releaseEnvironment/.test(v)));
 });
 
-test('a package already at the stable candidate is rejected', () => {
-  const v = collectDistTagPolicyViolations({
-    policy: GOOD_POLICY,
-    packageVersions: { '@beemvp/beeui-core': '1.0.0', '@beemvp/beeui-tokens': '1.0.0', '@beemvp/beeui-ui': '1.0.0' },
-    releaseEnvironment: RELEASE_ENVIRONMENT,
-    existsSync: alwaysExists,
-  });
-  assert.ok(v.some((m) => /candidateStableVersion/.test(m)));
-});
-
-// ---- consumer compatibility report ----
-
-test('clean report fixture produces no violations', () => {
-  assert.deepEqual(reportViolations({}), []);
+test('CLI is part of the lockstep published set', () => {
+  const v = policyViolations({ lockstepPackages: ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui'] });
+  assert.ok(v.some((m) => /lockstepPackages/.test(m)));
 });
 
 test('a peer promise wider than the declared peer is rejected', () => {
@@ -193,8 +193,6 @@ test('a peerPromises key that is not a real peer is rejected', () => {
   assert.ok(v.some((m) => /not a packages\/ui peerDependency/.test(m)));
 });
 
-// ---- fenced-block extraction from the real documents ----
-
 test('the real docs expose parseable fenced blocks that pass the combined check', async () => {
   const fs = await import('node:fs');
   const path = await import('node:path');
@@ -205,13 +203,12 @@ test('the real docs expose parseable fenced blocks that pass the combined check'
   const matrixMarkdown = fs.readFileSync(path.join(ROOT_DIR, 'docs', 'compatibility-matrix.md'), 'utf8');
   const rulesetMarkdown = fs.readFileSync(path.join(ROOT_DIR, 'docs', 'release-ruleset.md'), 'utf8');
 
-  // Blocks parse.
   assert.equal(extractDistTagPolicy(distTagMarkdown).published, false);
   assert.equal(extractConsumerCompatibility(reportMarkdown).published, false);
 
   const readPkg = (rel) => JSON.parse(fs.readFileSync(path.join(ROOT_DIR, rel), 'utf8'));
   const packageVersions = Object.fromEntries(
-    ['packages/core', 'packages/tokens', 'packages/ui'].map((d) => {
+    ['packages/core', 'packages/tokens', 'packages/ui', 'packages/cli'].map((d) => {
       const m = readPkg(`${d}/package.json`);
       return [m.name, m.version];
     }),
