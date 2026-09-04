@@ -12,7 +12,10 @@ concurrency:
   # not. The group carries no SHA, so one merge cancelled the previous
   # merge's run and lost the post-merge integration gate that is the only real check on development.
   # Merges land faster than the native jobs finish, so that was not rare.
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # main keeps newest-wins: beeui-web-delivery's production gate waits at most
+  # 30 minutes for `verify`, already spends 12-14 of them, and main pushes have
+  # landed 7 seconds apart here — a queued run would miss that deadline.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/main' }}
 
 permissions:
   contents: read

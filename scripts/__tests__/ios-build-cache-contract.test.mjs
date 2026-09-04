@@ -341,8 +341,8 @@ test('a merge never cancels the previous merge run', async () => {
     assert.ok(setting, `${name} declares no cancel-in-progress`);
     assert.equal(
       setting[1].trim(),
-      "${{ github.event_name == 'pull_request' }}",
-      `${name} cancels push runs, so a merge can drop the previous merge's evidence`,
+      "${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/main' }}",
+      `${name} cancels development push runs, so a merge can drop the previous merge's evidence`,
     );
   }
 });
