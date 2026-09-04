@@ -22,13 +22,13 @@ export default defineConfig({
       pagination: true,
       sidebar: [
         {
-          label: 'Getting started',
+          label: 'Start',
           items: [
-            { label: 'Overview', slug: 'getting-started' },
-            { label: 'Expo', slug: 'getting-started/expo' },
-            { label: 'Bare React Native', slug: 'getting-started/bare-react-native' },
-            { label: 'Web', slug: 'getting-started/web' },
-            { label: 'Provider & safe area', slug: 'getting-started/provider-safe-area' },
+            { label: 'Overview', slug: 'start' },
+            { label: 'Expo', slug: 'start/expo' },
+            { label: 'Bare React Native', slug: 'start/bare-react-native' },
+            { label: 'Web', slug: 'start/web' },
+            { label: 'Provider & safe area', slug: 'start/provider-safe-area' },
           ],
         },
         {

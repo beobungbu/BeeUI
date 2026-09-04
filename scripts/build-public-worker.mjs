@@ -6,7 +6,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { buildPublicSeo } from './build-public-seo.mjs';
-import { ROOT_DIR, buildPublicSiteContract } from './public-site-contract-lib.mjs';
+import { buildRedirectRules, renderRedirectsFile } from './generate-docs-foundation.mjs';
+import { ROOT_DIR, buildPublicSiteContract, readPublicSiteConfig } from './public-site-contract-lib.mjs';
 
 function run(command, args, cwd = ROOT_DIR, env = process.env) {
   const result = spawnSync(command, args, { cwd, stdio: 'inherit', env });
@@ -68,8 +69,20 @@ https://:version.:subdomain.workers.dev/*
 `;
 }
 
-function writeHeaders(outDir, contract) {
-  fs.writeFileSync(path.join(outDir, '_headers'), renderWorkerHeaders(contract));
+// Files the composed root owns itself rather than copying from a build output. They go
+// through the same `claimed` map as copied assets so an upstream build that ever emits one
+// raises the collision error instead of being silently overwritten — and so the set is a
+// value a test can assert against, which is what the redirect defect needed and lacked.
+export function buildComposedRootFiles({ rootDir, contract, identity }) {
+  const rules = buildRedirectRules(readPublicSiteConfig(rootDir));
+  return {
+    'build-identity.json': `${JSON.stringify(identity, null, 2)}\n`,
+    _headers: renderWorkerHeaders(contract),
+    // The redirect manifest was declared in config, published into the route manifest and
+    // validated for duplicates/loops/cycles, and never written to disk, so every legacy
+    // URL 404ed in production while every check stayed green.
+    _redirects: renderRedirectsFile(rules),
+  };
 }
 
 export function composeWorkerAssets({
@@ -95,8 +108,23 @@ export function composeWorkerAssets({
     commit: exactCommit,
     environment,
   };
-  fs.writeFileSync(path.join(outDir, 'build-identity.json'), `${JSON.stringify(identity, null, 2)}\n`);
-  writeHeaders(outDir, contract);
+  const rootFiles = buildComposedRootFiles({ rootDir, contract, identity });
+  for (const [name, contents] of Object.entries(rootFiles)) {
+    if (claimed.has(name)) throw new Error(`asset collision: ${name} from composed root conflicts with ${claimed.get(name)}`);
+    claimed.set(name, 'composed root');
+    fs.writeFileSync(path.join(outDir, name), contents);
+  }
+
+  // Read back what the composed root declared. The redirect manifest was declared,
+  // published and validated for a year while never reaching disk, and every check stayed
+  // green because they all sat upstream of the write. Verifying the write here means
+  // dropping it fails the build itself rather than waiting for someone to notice a 404.
+  for (const [name, contents] of Object.entries(rootFiles)) {
+    const written = path.join(outDir, name);
+    if (!fs.existsSync(written)) throw new Error(`composed root declared ${name} but never wrote it`);
+    if (fs.readFileSync(written, 'utf8') !== contents) throw new Error(`composed root wrote ${name} with unexpected contents`);
+  }
+
   return { claimed, identity, outDir, contract };
 }
 

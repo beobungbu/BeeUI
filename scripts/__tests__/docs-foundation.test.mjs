@@ -12,6 +12,8 @@ import { showcaseHref } from '../../apps/showcase/showcase-target.ts';
 import {
   buildDocsFoundationManifest,
   buildRedirectRules,
+  collectRedirectViolations,
+  renderRedirectsFile,
   buildReleaseState,
   contentPathToRoute,
   validateDocsFoundation,
@@ -140,16 +142,102 @@ test('Foundation documentation names the current executable pattern authority an
   assert.match(foundationDoc, /`web\/public-site\.config\.json` owns the environment-to-origin mapping/u);
 });
 
-test('legacy redirect manifest is deterministic and has unique sources/destinations', () => {
-  const config = readPublicSiteConfig(ROOT_DIR);
-  const redirects = buildRedirectRules(config);
-  assert.deepEqual(redirects, [...redirects].sort((a, b) => a.fromPrefix.localeCompare(b.fromPrefix)));
+test('redirect manifest is deterministic and has unique sources', () => {
+  const redirects = buildRedirectRules(readPublicSiteConfig(ROOT_DIR));
   assert.equal(new Set(redirects.map((rule) => rule.fromPrefix)).size, redirects.length);
-  assert.equal(new Set(redirects.map((rule) => rule.toPrefix)).size, redirects.length);
   for (const rule of redirects) {
     assert.notEqual(rule.fromPrefix, rule.toPrefix);
     assert.ok(rule.toPrefix.startsWith('/docs/'));
   }
+});
+
+// Cloudflare applies the top-most matching rule, so ordering is behavior, not cosmetics.
+test('redirect rules are ordered most specific first', () => {
+  const redirects = buildRedirectRules(readPublicSiteConfig(ROOT_DIR));
+  const lengths = redirects.map((rule) => rule.fromPrefix.length);
+  assert.deepEqual(lengths, [...lengths].sort((a, b) => b - a));
+});
+
+const rule = (fromPrefix, toPrefix, aliasOf) => ({
+  fromPrefix,
+  toPrefix,
+  status: 308,
+  preserveSuffix: true,
+  preserveQuery: true,
+  ...(aliasOf ? { aliasOf } : {}),
+});
+
+// These drive collectRedirectViolations itself. Asserting properties of the production
+// config instead would only ever exercise the one input already known to pass.
+test('an alias may share a destination with the canonical rule it aliases', () => {
+  assert.deepEqual(
+    collectRedirectViolations([
+      rule('/docs/getting-started/', '/docs/start/'),
+      rule('/getting-started/', '/docs/start/', '/docs/getting-started/'),
+    ]),
+    [],
+  );
+});
+
+test('two unrelated sources may not claim one destination, even an aliased one', () => {
+  const violations = collectRedirectViolations([
+    rule('/docs/getting-started/', '/docs/start/'),
+    rule('/getting-started/', '/docs/start/', '/docs/getting-started/'),
+    rule('/docs/quickstart/', '/docs/start/'),
+  ]);
+  assert.ok(
+    violations.some((violation) => violation.includes('ambiguous duplicate redirect destination /docs/start/')),
+    violations.join('\n'),
+  );
+});
+
+test('an alias pointing at a source it does not actually alias is rejected', () => {
+  const violations = collectRedirectViolations([
+    rule('/docs/getting-started/', '/docs/start/'),
+    rule('/intro/', '/docs/start/', '/docs/somewhere-else/'),
+  ]);
+  assert.ok(violations.some((violation) => violation.includes('aliases /docs/somewhere-else/')), violations.join('\n'));
+});
+
+test('a redirect source that shadows a more specific source is rejected', () => {
+  const violations = collectRedirectViolations([
+    rule('/docs/', '/docs/start/'),
+    rule('/docs/getting-started/', '/docs/start/'),
+  ]);
+  assert.ok(violations.some((violation) => violation.includes('shadows the more specific')), violations.join('\n'));
+});
+
+// Redirects are followed whether or not an asset matches, so a rule mounted on a canonical
+// route would 308 away everything ever published there.
+test('a redirect source that collides with a canonical route is rejected', () => {
+  const violations = collectRedirectViolations([rule('/showcase/', '/docs/start/')], {
+    routePrefixes: ['/', '/docs/', '/showcase/'],
+  });
+  assert.ok(violations.some((violation) => violation.includes('collides with the canonical route')), violations.join('\n'));
+});
+
+test('no redirect destination is itself a redirect source', () => {
+  const redirects = buildRedirectRules(readPublicSiteConfig(ROOT_DIR));
+  assert.deepEqual(collectRedirectViolations(redirects).filter((v) => v.includes('points at another redirect')), []);
+});
+
+// The bare spelling worked before the move because auto-trailing-slash 307s /folder to
+// /folder/ while the asset exists. Once it moves, only an explicit rule saves it.
+test('a moved section redirects both the bare and the descendant form', () => {
+  const rules = buildRedirectRules(readPublicSiteConfig(ROOT_DIR));
+  const moved = rules.find((entry) => entry.fromPrefix === '/docs/getting-started/');
+  assert.ok(moved, 'the #457 getting-started -> start move must be in the manifest');
+  assert.equal(moved.preserveSuffix, true);
+  assert.equal(moved.status, 308);
+
+  const rendered = renderRedirectsFile(rules);
+  assert.match(rendered, /^\/docs\/getting-started \/docs\/start\/ 308$/mu);
+  assert.match(rendered, /^\/docs\/getting-started\/\* \/docs\/start\/:splat 308$/mu);
+
+  const lines = rendered.trim().split('\n');
+  const firstDynamic = lines.findIndex((line) => line.includes('*'));
+  const lastStatic = lines.reduce((last, line, index) => (line.includes('*') ? last : index), -1);
+  assert.ok(firstDynamic > lastStatic, 'every static rule must precede every dynamic rule');
 });
 
 test('full Foundation validation has no violations', () => {

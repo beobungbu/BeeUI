@@ -40,6 +40,9 @@
       { "id": "guides", "route": "/docs/guides/", "ownerIssue": 458, "status": "foundation" },
       { "id": "reference", "route": "/docs/reference/", "ownerIssue": 463, "status": "foundation" }
     ],
+    "movedRoutes": [
+      { "fromPrefix": "/docs/getting-started/", "toPrefix": "/docs/start/", "status": 308, "ownerIssue": 457 }
+    ],
     "metadataContracts": {
       "implementation": "apps/docs/src/lib/foundation-contract.ts",
       "releaseState": "apps/docs/src/lib/release-state.ts",

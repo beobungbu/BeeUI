@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { ROOT_DIR } from '../public-site-contract-lib.mjs';
 
-const DOC_DIR = 'apps/docs/src/content/docs/getting-started';
+const DOC_DIR = 'apps/docs/src/content/docs/start';
 const REQUIRED_DOCS = ['index.md', 'expo.md', 'bare-react-native.md', 'web.md', 'provider-safe-area.md'];
 
 export function collectViolations(rootDir = ROOT_DIR) {

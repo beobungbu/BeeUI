@@ -5,7 +5,7 @@ import { ROOT_DIR } from '../public-site-contract-lib.mjs';
 import { renderPublicLanding } from '../build-public-landing.mjs';
 
 const REQUIRED_SECTIONS = ['hero', 'platforms', 'components', 'patterns', 'demo', 'evidence', 'theming', 'ownership', 'ai', 'status'];
-const REQUIRED_DESTINATIONS = ['/docs/getting-started/', '/docs/components/', '/docs/patterns/', '/showcase/', '/demo/', '/llms.txt'];
+const REQUIRED_DESTINATIONS = ['/docs/start/', '/docs/components/', '/docs/patterns/', '/showcase/', '/demo/', '/llms.txt'];
 
 export function collectViolations(rootDir = ROOT_DIR) {
   const violations = [];
