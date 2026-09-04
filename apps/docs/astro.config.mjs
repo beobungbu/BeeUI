@@ -36,6 +36,21 @@ export default defineConfig({
           items: [{ label: 'Web & native preview', slug: 'showcase' }],
         },
         {
+          label: 'Learn',
+          items: [
+            { label: 'Overview', slug: 'learn' },
+            { label: 'Foundations', slug: 'learn/foundations' },
+            { label: 'Ownership model', slug: 'learn/ownership-model' },
+            { label: 'Composition model', slug: 'learn/composition-model' },
+            { label: 'State model', slug: 'learn/state-model' },
+            { label: 'Overlays & runtime', slug: 'learn/overlays-and-runtime' },
+            { label: 'Forms model', slug: 'learn/forms-model' },
+            { label: 'Cross-platform model', slug: 'learn/cross-platform-model' },
+            { label: 'Responsive model', slug: 'learn/responsive-model' },
+            { label: 'Accessibility model', slug: 'learn/accessibility-model' },
+          ],
+        },
+        {
           label: 'Guides',
           items: [
             { label: 'Overview', slug: 'guides' },
