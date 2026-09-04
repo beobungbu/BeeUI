@@ -85,6 +85,15 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,
     },
+    // The documentation portal, for the WBS-H072 audit. Every a11y scenario before this one
+    // navigated to the Showcase, so `web-a11y` passing said nothing about the 151-page site a
+    // reader actually uses.
+    {
+      command: 'pnpm --filter @beemvp/beeui-docs build && node ./scripts/serve-docs.mjs',
+      url: 'http://127.0.0.1:4175/docs/',
+      reuseExistingServer: !process.env.CI,
+      timeout: 300_000,
+    },
   ],
   projects: [
     ...canonicalProjects,
@@ -119,7 +128,7 @@ export default defineConfig({
             // Includes the overlay readiness regression (a11y-readiness.spec.ts),
             // which pins the settled-modal-owner contract the dialog-overlay
             // scenario synchronizes on before axe runs.
-            testMatch: /a11y(-readiness)?\.spec\.ts/,
+            testMatch: /a11y(-readiness|-docs-portal)?\.spec\.ts/,
             use: {
               colorScheme: 'light' as const,
               deviceScaleFactor: 1,
