@@ -14,6 +14,7 @@ const DEPLOYMENT_CONFIGS = {
   production: '.github/deployment/wrangler-production.jsonc',
 };
 const WORKER_WRANGLER = 'web/worker/wrangler.jsonc';
+const DELIVERY_WORKFLOW = '.github/workflows/beeui-web-delivery.yml';
 
 function readJson(rootDir, relativePath) {
   return JSON.parse(fs.readFileSync(path.join(rootDir, relativePath), 'utf8'));
@@ -31,6 +32,14 @@ function readWorkerEnvironmentHost(rootDir, environment) {
   const customDomain = (config.env?.[environment]?.routes ?? []).find((route) => route.custom_domain === true)?.pattern;
   if (!customDomain) throw new Error(`${WORKER_WRANGLER} is missing ${environment} custom-domain route.`);
   return customDomain;
+}
+
+function deliveryProjectionMatches(rootDir, branch, origin, configFile) {
+  const workflow = fs.readFileSync(path.join(rootDir, DELIVERY_WORKFLOW), 'utf8');
+  const escapedBranch = branch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escapedOrigin = origin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escapedConfig = configFile.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`['\"]${escapedBranch}['\"]:\\s*\\(['\"]${escapedOrigin}['\"],\\s*['\"]${escapedConfig}['\"]\\)`, 'u').test(workflow);
 }
 
 export function collectPublicSiteContractViolations(rootDir = ROOT_DIR) {
@@ -95,6 +104,16 @@ export function collectPublicSiteContractViolations(rootDir = ROOT_DIR) {
     } catch (error) {
       violations.push(error.message);
     }
+
+    const deliveryBranch = environment === 'production' ? 'main' : environment;
+    const deploymentFilename = path.basename(deploymentConfig);
+    try {
+      if (!deliveryProjectionMatches(rootDir, deliveryBranch, profile.origin, deploymentFilename)) {
+        violations.push(`${DELIVERY_WORKFLOW} projection for ${deliveryBranch} must match ${profile.origin} and ${deploymentFilename}.`);
+      }
+    } catch (error) {
+      violations.push(error.message);
+    }
   }
 
   const ids = new Set(contract.routes.map((route) => route.id));
@@ -152,7 +171,7 @@ function main() {
     process.exitCode = 1;
     return;
   }
-  console.log('Public site architecture contract passed (environment origins, deployment routes, sources, publication state and outputs are consistent).');
+  console.log('Public site architecture contract passed (environment origins, delivery projections, routes, sources, publication state and outputs are consistent).');
 }
 
 const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
