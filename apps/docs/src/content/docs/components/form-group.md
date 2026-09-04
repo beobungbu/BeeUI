@@ -61,7 +61,7 @@ Structural legend/description/error/disabled grouping; it stays `accessible={fal
 | `required` | `boolean` | `false` | — |
 | `requiredAccessibilityLabel` | `string` | `'required'` | — |
 
-Also carries every prop of `Omit< ViewProps, 'accessibilityRole' \| 'accessible' \| 'children' \| 'role' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'accessible' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

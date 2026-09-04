@@ -54,7 +54,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 | `children` | `React.ReactNode` | — | — |
 | `syncUniwindInsets` | `boolean` | `true` | Keeps Uniwind OSS safe-area utilities (`pt-safe`, `bottom-safe`, etc.) in sync with react-native-safe-area-context. |
 
-Also carries every prop of `Omit< React.ComponentProps<typeof NativeSafeAreaProvider>, 'children' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<React.ComponentProps<typeof NativeSafeAreaProvider>, 'children'>` — that upstream contract is not reproduced here.
 
 #### `SafeAreaProps`
 

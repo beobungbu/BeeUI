@@ -56,7 +56,7 @@ Stateless router-neutral trail; separators between `BreadcrumbItem`s are decorat
 | `current` | `boolean` | `false` | — |
 | `labelClassName` | `string` | — | — |
 
-Also carries every prop of `Omit< PressableProps, 'accessibilityRole' \| 'children' \| 'role' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
 
 #### `BreadcrumbProps`
 

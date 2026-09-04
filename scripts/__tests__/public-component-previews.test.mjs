@@ -89,3 +89,4 @@ test('an import of the family name is not treated as a usage', () => {
   const source = fixtureOf(["import { Accordion } from '@beemvp/beeui-ui';", ...filler]);
   assert.deepEqual(familyUsageRanges(source, FAMILY, 'imports.tsx'), []);
 });
+

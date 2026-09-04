@@ -57,7 +57,7 @@ Controlled (`value`/`onValueChange`) mutually exclusive selection with `radiogro
 | `onPress` | `PressableProps['onPress']` | — | — |
 | `value` **(required)** | `string` | — | — |
 
-Also carries every prop of `Omit< PressableProps, 'accessibilityRole' \| 'children' \| 'onPress' \| 'role' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'onPress' \| 'role'>` — that upstream contract is not reproduced here.
 
 #### `SegmentedControlProps`
 

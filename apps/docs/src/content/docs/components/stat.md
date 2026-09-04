@@ -51,13 +51,23 @@ Stateless layout-only metric composition (`StatLabel`/`StatValue`/`StatHelpText`
 
 #### `StatHelpTextProps`
 
-_No own fields; this type is exactly the base(s) below._
+This type adds no fields of its own. These are the props the implementation reads from the base type below; everything else is passed straight through.
+
+| Prop | Default |
+| --- | --- |
+| `tone` | `'muted'` |
+
 
 Also carries every prop of `Omit<TextProps, 'variant'>` — that upstream contract is not reproduced here.
 
 #### `StatLabelProps`
 
-_No own fields; this type is exactly the base(s) below._
+This type adds no fields of its own. These are the props the implementation reads from the base type below; everything else is passed straight through.
+
+| Prop | Default |
+| --- | --- |
+| `tone` | `'muted'` |
+
 
 Also carries every prop of `Omit<TextProps, 'variant'>` — that upstream contract is not reproduced here.
 

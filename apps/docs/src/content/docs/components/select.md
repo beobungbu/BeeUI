@@ -76,7 +76,12 @@ Also carries every prop of `Omit<ViewProps, 'nativeID' \| 'role'>` — that upst
 
 #### `SelectGroupProps`
 
-_No own fields; this type is exactly the base(s) below._
+This type adds no fields of its own. These are the props the implementation reads from the base type below; everything else is passed straight through.
+
+| Prop | Default |
+| --- | --- |
+| `children` | — |
+
 
 Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'role'>` — that upstream contract is not reproduced here.
 
@@ -91,7 +96,7 @@ Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'role'>` — 
 | `textValue` | `string` | — | — |
 | `value` **(required)** | `SelectOptionValue` | — | — |
 
-Also carries every prop of `Omit< PressableProps, 'accessibilityRole' \| 'children' \| 'onPress' \| 'role' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'onPress' \| 'role'>` — that upstream contract is not reproduced here.
 
 #### `SelectLabelProps`
 
@@ -125,7 +130,7 @@ Also carries every prop of `Omit<RNTextProps, 'nativeID' \| 'role'>` — that up
 | `indicator` | `React.ReactNode` | — | — |
 | `onKeyDown` | `(event: WebKeyboardEvent) => void` | — | — |
 
-Also carries every prop of `Omit< PressableProps, 'accessibilityRole' \| 'children' \| 'role' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
 
 #### `SelectValueProps`
 

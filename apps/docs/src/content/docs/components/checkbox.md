@@ -58,7 +58,7 @@ Controlled boolean/indeterminate `checked`/`onCheckedChange` checkbox; enabling 
 | `labelClassName` | `string` | — | — |
 | `onCheckedChange` | `(checked: boolean) => void` | — | — |
 
-Also carries every prop of `Omit< PressableProps, 'accessibilityRole' \| 'role' \| 'children' \| 'onPress' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children' \| 'onPress'>` — that upstream contract is not reproduced here.
 
 **Related exported types:**
 

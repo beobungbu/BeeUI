@@ -72,7 +72,7 @@ Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'role' \| 'ch
 | `onCheckedChange` | `(checked: boolean) => void` | — | — |
 | `value` | `string` | — | — |
 
-Also carries every prop of `Omit< PressableProps, 'accessibilityRole' \| 'role' \| 'children' \| 'onPress' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children' \| 'onPress'>` — that upstream contract is not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

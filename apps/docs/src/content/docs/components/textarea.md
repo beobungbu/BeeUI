@@ -48,7 +48,15 @@ Uncontrolled-by-default multiline text field sharing `Input`'s focus/invalid/dis
 
 #### `TextareaProps`
 
-_No own fields; this type is exactly the base(s) below._
+This type adds no fields of its own. These are the props the implementation reads from the base type below; everything else is passed straight through.
+
+| Prop | Default |
+| --- | --- |
+| `className` | — |
+| `numberOfLines` | `4` |
+| `style` | — |
+| `textAlignVertical` | `'top'` |
+
 
 Also carries every prop of `Omit<InputProps, 'multiline' \| 'size'>` — that upstream contract is not reproduced here.
 

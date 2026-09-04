@@ -82,11 +82,19 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \
 | `shift` | `boolean` | `true` | — |
 | `sideOffset` | `number` | `8` | — |
 
-Also carries every prop of `Omit< ViewProps, 'accessibilityViewIsModal' \| 'role' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ViewProps, 'accessibilityViewIsModal' \| 'role'>` — that upstream contract is not reproduced here.
 
 #### `PopoverDescriptionProps`
 
-_No own fields; this type is exactly the base(s) below._
+This type adds no fields of its own. These are the props the implementation reads from the base type below; everything else is passed straight through.
+
+| Prop | Default |
+| --- | --- |
+| `accessibilityLabel` | — |
+| `children` | — |
+| `className` | — |
+| `nativeID` | — |
+
 
 Also carries every prop of `Omit<TextProps, 'tone' \| 'variant'>` — that upstream contract is not reproduced here.
 
@@ -114,7 +122,15 @@ one of the following mutually exclusive variants:
 
 #### `PopoverTitleProps`
 
-_No own fields; this type is exactly the base(s) below._
+This type adds no fields of its own. These are the props the implementation reads from the base type below; everything else is passed straight through.
+
+| Prop | Default |
+| --- | --- |
+| `accessibilityLabel` | — |
+| `children` | — |
+| `className` | — |
+| `nativeID` | — |
+
 
 Also carries every prop of `Omit<TextProps, 'accessibilityRole' \| 'role' \| 'variant'>` — that upstream contract is not reproduced here.
 

@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   buildTypeIndex,
+  extractConsumedProps,
   extractDefaults,
   resolveComponentTypeEntry,
   resolveDeclaration,
@@ -354,4 +355,26 @@ test('every public component resolves a typeDocs model with no thrown errors, an
       assert.ok(hasContent, `${component.name}.${entry.name} resolved to neither fields nor a base`);
     }
   }
+});
+
+// `SwitchProps = Omit<RNSwitchProps, …>` has no fields of its own, so a fields table for it is
+// empty and the page never names `value` or `onValueChange` — the "documented but unanswerable"
+// shape surviving inside its own fix. The implementation destructures the props it reads.
+test('a Props type that only narrows an upstream type still documents what the family reads', () => {
+  const files = [{
+    path: 'switch.tsx',
+    source: [
+      "export type SwitchProps = Omit<RNSwitchProps, 'thumbColor'>;",
+      'export const Switch = React.forwardRef<Ref, SwitchProps>(',
+      '  ({ accessibilityState, disabled = false, onValueChange, value = false, ...props }, ref) => null,',
+      ');',
+    ].join('\n'),
+  }];
+
+  const consumed = extractConsumedProps(files, new Set(['SwitchProps']));
+  assert.deepEqual([...consumed.keys()].sort(), ['accessibilityState', 'disabled', 'onValueChange', 'value']);
+  assert.equal(consumed.get('disabled'), 'false');
+  assert.equal(consumed.get('value'), 'false');
+  // `...props` is the passthrough, not a prop anyone looks up.
+  assert.equal(consumed.has('props'), false);
 });

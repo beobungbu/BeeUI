@@ -57,7 +57,7 @@ Controlled/uncontrolled one-time-code input; entered text is normalized to digit
 | `onValueChange` | `(value: string) => void` | — | — |
 | `value` | `string` | — | — |
 
-Also carries every prop of `Omit< InputProps, 'defaultValue' \| 'inputMode' \| 'keyboardType' \| 'maxLength' \| 'onChangeText' \| 'value' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<InputProps, 'defaultValue' \| 'inputMode' \| 'keyboardType' \| 'maxLength' \| 'onChangeText' \| 'value'>` — that upstream contract is not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

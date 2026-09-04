@@ -56,7 +56,7 @@ Controlled `currentStep` context shared with every `StepperItem`; step values ar
 | `step` **(required)** | `number` | — | — |
 | `title` **(required)** | `React.ReactNode` | — | — |
 
-Also carries every prop of `Omit< PressableProps, 'accessibilityRole' \| 'children' \| 'role' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
 
 #### `StepperProps`
 

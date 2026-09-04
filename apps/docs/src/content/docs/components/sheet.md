@@ -85,11 +85,19 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \
 | `showHandle` | `boolean` | `true` | Renders the default drag-handle affordance above `children`. |
 | `snapPoints` | `readonly SheetSnapPoint[]` | — | Snap points / presentation sizes. |
 
-Also carries every prop of `Omit< ViewProps, 'accessibilityRole' \| 'accessibilityViewIsModal' \| 'role' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'accessibilityViewIsModal' \| 'role'>` — that upstream contract is not reproduced here.
 
 #### `SheetDescriptionProps`
 
-_No own fields; this type is exactly the base(s) below._
+This type adds no fields of its own. These are the props the implementation reads from the base type below; everything else is passed straight through.
+
+| Prop | Default |
+| --- | --- |
+| `accessibilityLabel` | — |
+| `children` | — |
+| `className` | — |
+| `nativeID` | — |
+
 
 Also carries every prop of `Omit<TextProps, 'tone' \| 'variant'>` — that upstream contract is not reproduced here.
 
@@ -103,7 +111,12 @@ Also carries every prop of `ViewProps` — that upstream contract is not reprodu
 
 #### `SheetHandleProps`
 
-_No own fields; this type is exactly the base(s) below._
+This type adds no fields of its own. These are the props the implementation reads from the base type below; everything else is passed straight through.
+
+| Prop | Default |
+| --- | --- |
+| `className` | — |
+
 
 Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'role'>` — that upstream contract is not reproduced here.
 
@@ -131,7 +144,15 @@ one of the following mutually exclusive variants:
 
 #### `SheetTitleProps`
 
-_No own fields; this type is exactly the base(s) below._
+This type adds no fields of its own. These are the props the implementation reads from the base type below; everything else is passed straight through.
+
+| Prop | Default |
+| --- | --- |
+| `accessibilityLabel` | — |
+| `children` | — |
+| `className` | — |
+| `nativeID` | — |
+
 
 Also carries every prop of `Omit<TextProps, 'accessibilityRole' \| 'role' \| 'variant'>` — that upstream contract is not reproduced here.
 

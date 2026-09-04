@@ -62,7 +62,7 @@ Controlled/uncontrolled (`open`/`onOpenChange`/`defaultOpen`) non-modal menu; `D
 | `closeOnSelect` | `boolean` | `false` | — |
 | `onCheckedChange` | `(checked: boolean) => void` | — | — |
 
-Also carries every prop of `Omit< DropdownMenuItemBaseProps, 'closeOnSelect' \| 'onSelect' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<DropdownMenuItemBaseProps, 'closeOnSelect' \| 'onSelect'>` — that upstream contract is not reproduced here.
 
 #### `DropdownMenuContentProps`
 
@@ -97,11 +97,16 @@ Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract 
 | `onSelect` | `() => void` | — | — |
 | `textClassName` | `string` | — | — |
 
-Also carries every prop of `Omit< PressableProps, 'accessibilityRole' \| 'children' \| 'onPress' \| 'role' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'onPress' \| 'role'>` — that upstream contract is not reproduced here.
 
 #### `DropdownMenuLabelProps`
 
-_No own fields; this type is exactly the base(s) below._
+This type adds no fields of its own. These are the props the implementation reads from the base type below; everything else is passed straight through.
+
+| Prop | Default |
+| --- | --- |
+| `className` | — |
+
 
 Also carries every prop of `Omit<TextProps, 'role' \| 'variant'>` — that upstream contract is not reproduced here.
 
@@ -143,11 +148,16 @@ Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract 
 | `closeOnSelect` | `boolean` | `false` | — |
 | `value` **(required)** | `string` | — | — |
 
-Also carries every prop of `Omit< DropdownMenuItemBaseProps, 'closeOnSelect' \| 'onSelect' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<DropdownMenuItemBaseProps, 'closeOnSelect' \| 'onSelect'>` — that upstream contract is not reproduced here.
 
 #### `DropdownMenuSeparatorProps`
 
-_No own fields; this type is exactly the base(s) below._
+This type adds no fields of its own. These are the props the implementation reads from the base type below; everything else is passed straight through.
+
+| Prop | Default |
+| --- | --- |
+| `className` | — |
+
 
 Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract is not reproduced here.
 

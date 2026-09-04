@@ -146,15 +146,36 @@ function renderFieldRow(field) {
 
 function renderBasesLine(bases) {
   if (!bases.length) return '';
-  const list = bases.map((base) => `\`${escapeCell(base)}\``).join(' and ');
+  // A base printed from a multi-line type node keeps its newlines and indentation, which
+  // renders as `Omit< RNSwitchProps, … >`. Collapse it back to one line.
+  const list = bases.map((base) => `\`${escapeCell(base.replace(/\s+/gu, ' ').replace(/([<(])\s+/gu, '$1').replace(/\s+([>)])/gu, '$1'))}\``).join(' and ');
   return `\n\nAlso carries every prop of ${list} — that upstream contract is not reproduced here.`;
 }
 
+// A type that only narrows an upstream one has no fields of its own. Listing nothing and
+// pointing upstream is accurate and useless: the reader still cannot find `value` or
+// `onValueChange`. The implementation names the props it reads, so those are listed instead,
+// labelled for what they are — the subset this family handles, not the whole upstream contract.
+function renderConsumedProps(consumed) {
+  const rows = consumed
+    .map((prop) => `| \`${prop.name}\` | ${prop.default ? `\`${prop.default}\`` : '—'} |`)
+    .join('\n');
+  return (
+    'This type adds no fields of its own. These are the props the implementation reads from the ' +
+    'base type below; everything else is passed straight through.\n\n' +
+    `| Prop | Default |\n| --- | --- |\n${rows}\n`
+  );
+}
+
 function renderObjectShape(shape) {
-  const table = shape.fields.length
-    ? `| Prop | Type | Default | Description |\n| --- | --- | --- | --- |\n${shape.fields.map(renderFieldRow).join('\n')}`
+  if (shape.fields.length) {
+    const table = `| Prop | Type | Default | Description |\n| --- | --- | --- | --- |\n${shape.fields.map(renderFieldRow).join('\n')}`;
+    return `${table}${renderBasesLine(shape.bases)}`;
+  }
+  const consumed = shape.consumed?.length
+    ? renderConsumedProps(shape.consumed)
     : '_No own fields; this type is exactly the base(s) below._';
-  return `${table}${renderBasesLine(shape.bases)}`;
+  return `${consumed}${renderBasesLine(shape.bases)}`;
 }
 
 function renderPropsTypeEntry(entry) {

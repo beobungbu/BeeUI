@@ -61,7 +61,7 @@ one of the following mutually exclusive variants:
 | `page` **(required)** | `number` | — | — |
 | `type` | `'page'` | `'page'` | — |
 
-Also carries every prop of `Omit< PressableProps, 'accessibilityRole' \| 'children' \| 'role' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
 
 **Variant `PaginationNavigationItemProps`:**
 
@@ -73,7 +73,7 @@ Also carries every prop of `Omit< PressableProps, 'accessibilityRole' \| 'childr
 | `page` | `never` | — | — |
 | `type` **(required)** | `'previous' \| 'next'` | `'page'` | — |
 
-Also carries every prop of `Omit< PressableProps, 'accessibilityRole' \| 'children' \| 'role' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
 
 #### `PaginationProps`
 

@@ -42,15 +42,23 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Controlled native `Switch` (`checked`/`onValueChange`); enabled usage without `onValueChange` warns in development instead of silently doing nothing.
+Controlled native `Switch` (`value`/`onValueChange`); enabled usage without `onValueChange` warns in development instead of silently doing nothing.
 
 ### Props
 
 #### `SwitchProps`
 
-_No own fields; this type is exactly the base(s) below._
+This type adds no fields of its own. These are the props the implementation reads from the base type below; everything else is passed straight through.
 
-Also carries every prop of `Omit< RNSwitchProps, 'accessibilityRole' \| 'role' \| 'ios_backgroundColor' \| 'thumbColor' \| 'trackColor' >` — that upstream contract is not reproduced here.
+| Prop | Default |
+| --- | --- |
+| `accessibilityState` | — |
+| `disabled` | `false` |
+| `onValueChange` | — |
+| `value` | `false` |
+
+
+Also carries every prop of `Omit<RNSwitchProps, 'accessibilityRole' \| 'role' \| 'ios_backgroundColor' \| 'thumbColor' \| 'trackColor'>` — that upstream contract is not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

@@ -356,6 +356,48 @@ export function extractDefaults(files, candidateNames) {
   return defaults;
 }
 
+// A Props type that is a pure alias of an upstream type — `SwitchProps = Omit<RNSwitchProps, …>`
+// — has no own fields, so a fields table for it is empty and the page tells the reader nothing
+// about `value`, `onValueChange` or `disabled`. The component's own render function names the
+// props it actually reads, and those names are the ones a reader is looking for. This returns
+// them, with a default where one is destructured, so an aliased family still documents the
+// subset it handles rather than deferring the entire question upstream.
+export function extractConsumedProps(files, candidateNames) {
+  const consumed = new Map();
+
+  const record = (pattern, sourceFile) => {
+    for (const element of pattern.elements) {
+      if (!ts.isBindingElement(element)) continue;
+      // `...props` is the passthrough, not a documented prop.
+      if (element.dotDotDotToken) continue;
+      const name = element.propertyName ?? element.name;
+      if (!ts.isIdentifier(name)) continue;
+      if (consumed.has(name.text)) continue;
+      consumed.set(name.text, element.initializer ? element.initializer.getText(sourceFile) : '');
+    }
+  };
+
+  for (const { path: filePath, source } of files) {
+    const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, scriptKindFor(filePath));
+    walk(sourceFile, (node) => {
+      if (ts.isCallExpression(node) && node.typeArguments?.length === 2 && /forwardRef$/.test(node.expression.getText(sourceFile))) {
+        if (!candidateNames.has(getBareTypeReferenceName(node.typeArguments[1]) ?? '')) return;
+        const renderFn = node.arguments[0];
+        const param = (ts.isArrowFunction(renderFn) || ts.isFunctionExpression(renderFn)) ? renderFn.parameters[0] : undefined;
+        if (param && ts.isObjectBindingPattern(param.name)) record(param.name, sourceFile);
+        return;
+      }
+      if (ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node) || ts.isArrowFunction(node)) {
+        const param = node.parameters[0];
+        if (!param || !candidateNames.has(getBareTypeReferenceName(param.type) ?? '')) return;
+        if (ts.isObjectBindingPattern(param.name)) record(param.name, sourceFile);
+      }
+    });
+  }
+
+  return consumed;
+}
+
 function applyDefaults(shape, defaults) {
   if (shape.fields) {
     shape.fields = shape.fields.map((field) => (defaults.has(field.name) ? { ...field, default: defaults.get(field.name) } : field));
@@ -436,6 +478,13 @@ export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
         source: fs.readFileSync(path.join(rootDir, relPath), 'utf8'),
       }));
       applyDefaults(entry, extractDefaults(files, entry.names));
+      // A pure alias of an upstream type documents nothing on its own; fall back to the props
+      // the implementation actually reads out of it.
+      if (!entry.fields?.length) {
+        entry.consumed = [...extractConsumedProps(files, entry.names)]
+          .map(([name, defaultText]) => ({ name, default: defaultText }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+      }
     }
     return entry;
   });

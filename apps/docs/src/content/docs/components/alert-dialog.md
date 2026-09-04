@@ -85,7 +85,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \
 | --- | --- | --- | --- |
 | `cancelOnRequestClose` | `boolean` | `true` | Whether native request-close paths (Android hardware back and accessibility escape) should behave like cancellation. |
 
-Also carries every prop of `Omit< DialogContentProps, 'closeOnBackdropPress' \| 'dismissOnEscape' \| 'dismissOnRequestClose' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<DialogContentProps, 'closeOnBackdropPress' \| 'dismissOnEscape' \| 'dismissOnRequestClose'>` — that upstream contract is not reproduced here.
 
 #### `AlertDialogDescriptionProps`
 

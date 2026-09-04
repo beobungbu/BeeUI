@@ -65,7 +65,7 @@ Controlled (`open`+`onOpenChange`) or uncontrolled (`defaultOpen`) non-interacti
 | `shift` | `boolean` | `true` | — |
 | `sideOffset` | `number` | `8` | — |
 
-Also carries every prop of `Omit< PressableProps, 'accessibilityViewIsModal' \| 'role' \| 'children' \| 'style' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityViewIsModal' \| 'role' \| 'children' \| 'style'>` — that upstream contract is not reproduced here.
 
 #### `TooltipProps`
 

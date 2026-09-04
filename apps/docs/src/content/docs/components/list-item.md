@@ -59,7 +59,7 @@ Press behavior is opt-in (`onPress` makes the row interactive); an interactive r
 | `titleClassName` | `string` | — | — |
 | `trailing` | `React.ReactNode` | — | — |
 
-Also carries every prop of `Omit< PressableProps, 'accessibilityRole' \| 'accessibilityState' \| 'children' \| 'role' >` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'accessibilityState' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
 
 #### `SettingsItemProps`
 
