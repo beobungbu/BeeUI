@@ -53,6 +53,8 @@ The bootstrap token is intentionally exceptional. It exists only because npm can
 
 Create a granular npm access token with the minimum scope that can create the four public `@beemvp/beeui-*` packages. Because the one-time bootstrap happens in non-interactive GitHub Actions, npm direct publishing may require the token to bypass the interactive 2FA challenge. Store it only as the `NPM_BOOTSTRAP_TOKEN` secret in the protected GitHub `release` environment, never as a repository-level secret and never in `.npmrc`, source, logs or issue comments.
 
+The workflow exposes `NPM_BOOTSTRAP_TOKEN` only to the final direct-publish step. Dependency installation, release verification, package builds, tarball packing, and registry existence probes run without the token in their environment. This prevents dependency lifecycle scripts or build tooling from inheriting the bootstrap credential.
+
 The bootstrap job also has job-local `id-token: write`, but that permission is not used for npm registry authentication. It is required by `npm publish --provenance` so the GitHub-hosted runner can mint the Sigstore/OIDC provenance attestation for the token-authenticated first publish.
 
 Revoke the bootstrap token immediately after bootstrap and Trusted Publisher configuration. The steady state is OIDC-only registry authentication through Trusted Publishing.
@@ -68,9 +70,11 @@ Revoke the bootstrap token immediately after bootstrap and Trusted Publisher con
 - `pnpm release-control-plane:check`, `pnpm dist-policy:check`, and `pnpm release:verify` pass;
 - protected `release` environment approval.
 
-`bootstrap-rc` additionally refuses a version that is already public. `stage-rc` requires all package names to already exist and refuses a version that is already public. Registry mutation is sequential in dependency order: core, tokens, ui, cli.
+`bootstrap-rc` additionally refuses a version that is already public. `stage-rc` requires all package names to already exist and refuses a version that is already public. Registry existence checks treat only an npm `E404`/404 as "missing"; network, authentication, registry, or other unexpected probe failures stop the workflow instead of being misclassified as package absence. Registry mutation is sequential in dependency order: core, tokens, ui, cli.
 
-A partial bootstrap is not automatically retried. Stop and reconcile the exact registry state, package hashes and provenance before any recovery action. Never publish a different artifact under the same semantic version.
+A partial bootstrap is not automatically retried. The current `bootstrap-rc` operation deliberately refuses to rerun once any package/version already exists. Stop and reconcile the exact registry state, package hashes, provenance, and the set of missing packages before recovery.
+
+If recovery is owner-authorized, publish only the missing package/version pairs using the exact previously reviewed tarballs; do not rebuild or change the artifact under the same version. That recovery is a separate explicit/manual action (or a separately reviewed recovery workflow), not a normal rerun of `bootstrap-rc`. Keep the same dependency order and the `release` approval boundary. Never publish a different artifact under the same semantic version.
 
 ## Staged approval
 
