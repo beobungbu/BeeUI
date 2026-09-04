@@ -1,36 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# #204 (R7.8, parent #114): the independent, clean Expo SDK 57 consumer.
-# Mirrors scripts/verify-bare-consumer.sh's and scripts/verify-web-consumer.sh's
-# structure and rigor (pack real tarballs, install into an isolated app with
-# no monorepo/workspace fallback) but for the Expo/Metro path — ADR-011 D7 and
-# docs/decisions/011-distribution-architecture.md list Expo as one of the
-# three required clean-consumer rows alongside bare React Native and Web.
-#
-# Unlike apps/showcase (which is workspace-linked, `@beemvp/beeui-ui: workspace:*`,
-# and deliberately reorders Metro's resolver conditions to resolve `src/`
-# directly — see its own metro.config.js comment), this app installs the
-# packed @beemvp/beeui-core/@beemvp/beeui-tokens/@beemvp/beeui-ui tarballs like a real npm
-# consumer and never touches `unstable_conditionsByPlatform`, so Metro
-# resolves the packaged `dist/` output through its ordinary `react-native`/
-# `browser`/`default` conditions — the real, unmodified consumer contract.
-
+# Independent, clean Expo SDK 57 consumer. It packs the real BeeUI packages,
+# installs them into an isolated app and verifies the public package boundary.
 ACTION="${1:-all}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# WORK_ROOT must survive across CI jobs for the same reason
-# verify-bare-consumer.sh's does: GitHub Actions empties RUNNER_TEMP at the
-# start of every job.
 WORK_ROOT="${BEEUI_EXPO_CONSUMER_WORK_ROOT:-${BEEUI_IOS_CACHE_ROOT:-${HOME:-/tmp}/Library/Caches/BeeUI}/expo-consumer}"
 APP_DIR="${WORK_ROOT}/app"
 PACKAGE_DIR="${WORK_ROOT}/packages"
 FINGERPRINT_FILE="${WORK_ROOT}/.beeui-expo-consumer-fingerprint"
 EXPO_SDK_VERSION="${BEEUI_EXPO_SDK_VERSION:-57.0.15}"
 
-# Exact versions this repo has actually tested elsewhere
-# (docs/compatibility-matrix.md, apps/showcase/package.json), reused here so
-# this row's claims stay pinned to the same evidence rather than drifting to
-# whatever `npm install` resolves.
 RUNTIME_DEPS=(
   expo@${EXPO_SDK_VERSION}
   @expo/metro-runtime@57.0.12
@@ -124,12 +104,6 @@ import App from './App';
 registerRootComponent(App);
 EOF
 
-  # Deliberately does NOT reorder `unstable_conditionsByPlatform` the way
-  # apps/showcase's metro.config.js does — that override exists only so the
-  # *workspace-linked* Showcase can resolve `@beemvp/beeui-*` straight from `src/`
-  # without a build step. This is a clean consumer of the packed tarballs, so
-  # Metro must resolve through the ordinary `react-native`/`browser`/
-  # `default` conditions straight to the packaged `dist/` output.
   cat > metro.config.js <<'EOF'
 const { getDefaultConfig } = require('expo/metro-config');
 const { withUniwindConfig } = require('uniwind/metro');
@@ -165,11 +139,6 @@ EOF
 }
 EOF
 
-  # Barrel plus a granular per-component subpath import (#204, ADR-012,
-  # docs/decisions/012-granular-subpath-exports.md) — proves both resolve and
-  # compile from the packed tarball under Expo/Metro, matching the same proof
-  # already carried by scripts/verify-bare-consumer.sh and
-  # scripts/verify-web-consumer.sh.
   cat > App.tsx <<'EOF'
 import './global.css';
 
@@ -330,7 +299,13 @@ build_android() {
   echo "::endgroup::"
 
   cd android
-  ./gradlew assembleDebug --no-daemon --build-cache --configuration-cache --stacktrace
+  gradle_args=(assembleDebug --no-daemon --stacktrace)
+  if is_truthy "${BEEUI_ANDROID_FRESH_BUILD:-}"; then
+    gradle_args+=(--no-build-cache --no-configuration-cache)
+  else
+    gradle_args+=(--build-cache --configuration-cache)
+  fi
+  ./gradlew "${gradle_args[@]}"
   test -f app/build/outputs/apk/debug/app-debug.apk
 }
 
@@ -343,18 +318,9 @@ build_ios() {
   echo "::endgroup::"
 
   cd ios
-
-  # Canonical BeeUI CI CocoaPods flow (mirrors .github/workflows/ci.yml's iOS
-  # native job): github-hosted macOS ships `pod` on PATH as a gem, and the
-  # Expo-prebuilt consumer contains NO Gemfile, so install pods directly rather
-  # than through Bundler, which previously failed here with "Could not locate
-  # Gemfile" because Expo SDK 57 prebuild does not generate one.
   pod install
 
-  # Pin the Node executable for the React Native / Expo Xcode build phases,
-  # matching ci.yml's `.xcode.env.local` pattern, so the "Bundle React Native
-  # code and images" phase resolves node deterministically instead of guessing.
-  local workspace scheme node_binary
+  local workspace scheme node_binary cache_root xcode_version safe_xcode_version pod_hash derived_data
   node_binary="$(command -v node)"
   test -n "${node_binary}"
   if [ -n "${NODE_VERSION:-}" ]; then
@@ -365,11 +331,6 @@ build_ios() {
   workspace="$(find . -maxdepth 1 -type d -name '*.xcworkspace' -print -quit)"
   test -n "${workspace}" || { echo "No generated .xcworkspace found after pod install."; exit 1; }
 
-  # The generated Expo scheme name is derived from the app config and can differ
-  # in casing from the workspace directory (observed: workspace
-  # "BeeUIExpoconsumersmoke" vs. a hardcoded lowercase "beeuiexpoconsumersmoke",
-  # which xcodebuild rejects), so discover it deterministically from
-  # `xcodebuild -list`, mirroring ci.yml's canonical iOS scheme discovery.
   scheme="$({ xcodebuild -workspace "${workspace}" -list -json; } | node -e '
     let input = "";
     process.stdin.on("data", (chunk) => (input += chunk));
@@ -382,13 +343,24 @@ build_ios() {
   ')"
   test -n "${scheme}" || { echo "No shared Xcode scheme found in ${workspace}."; exit 1; }
 
+  cache_root="${BEEUI_IOS_CACHE_ROOT:-${HOME:-${RUNNER_TEMP:-/tmp}}/Library/Caches/BeeUI}"
+  xcode_version="${BEEUI_XCODE_VERSION:-$(xcodebuild -version | awk 'NR == 1 { print $2 }')}"
+  safe_xcode_version="$(printf '%s' "$xcode_version" | tr -cs '[:alnum:].-' '_')"
+  test -f Podfile.lock
+  pod_hash="$(shasum -a 256 Podfile.lock | awk '{ print $1 }')"
+  derived_data="${cache_root}/DerivedData/expo-consumer/xcode-${safe_xcode_version}/pods-${pod_hash}"
+  mkdir -p "$derived_data"
+  echo "Using Expo consumer DerivedData: $derived_data"
+
   xcodebuild \
     -workspace "${workspace}" \
     -scheme "${scheme}" \
     -configuration Debug \
     -sdk iphonesimulator \
     -destination 'generic/platform=iOS Simulator' \
+    -derivedDataPath "$derived_data" \
     -showBuildTimingSummary \
+    COMPILATION_CACHE_ENABLE_CACHING="${BEEUI_XCODE_COMPILATION_CACHE:-YES}" \
     CODE_SIGNING_ALLOWED=NO \
     build
 }
