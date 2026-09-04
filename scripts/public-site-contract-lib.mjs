@@ -24,7 +24,9 @@ export function readPublicSiteConfig(rootDir = ROOT_DIR) {
 }
 
 export function normalizePublicSiteEnvironment(value = process.env.BEEUI_WEB_ENV || 'development') {
-  return ENVIRONMENT_ALIASES.get(value) ?? 'development';
+  const environment = ENVIRONMENT_ALIASES.get(value);
+  if (!environment) throw new Error(`Unsupported BeeUI Web environment: ${value}.`);
+  return environment;
 }
 
 export function resolvePublicSiteEnvironment(config, value = process.env.BEEUI_WEB_ENV || 'development') {
