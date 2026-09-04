@@ -7,6 +7,13 @@ import { fileURLToPath } from 'node:url';
 
 import { buildPublicSeo } from './build-public-seo.mjs';
 import { buildRedirectRules, renderRedirectsFile } from './generate-docs-foundation.mjs';
+import {
+  DEMO_FALLBACK_MARKER,
+  SHOWCASE_FALLBACK_MARKER,
+  injectFallback,
+  renderDemoFallback,
+  renderShowcaseFallback,
+} from './public-portal-shell.mjs';
 import { ROOT_DIR, buildPublicSiteContract, readPublicSiteConfig } from './public-site-contract-lib.mjs';
 
 function run(command, args, cwd = ROOT_DIR, env = process.env) {
@@ -108,11 +115,30 @@ export function composeWorkerAssets({
     commit: exactCommit,
     environment,
   };
+  // /showcase/ and /demo/ are JS-only Expo exports that sit in the sitemap. Give each a
+  // static catalog for readers and crawlers that never run the app (#464, #465).
+  for (const [portal, render, marker] of [
+    ['showcase', () => renderShowcaseFallback({ rootDir, identity }), SHOWCASE_FALLBACK_MARKER],
+    ['demo', () => renderDemoFallback({ identity }), DEMO_FALLBACK_MARKER],
+  ]) {
+    const indexPath = path.join(outDir, portal, 'index.html');
+    if (!fs.existsSync(indexPath)) throw new Error(`${portal} export has no index.html to attach a static fallback to`);
+    fs.writeFileSync(indexPath, injectFallback(fs.readFileSync(indexPath, 'utf8'), render(), marker));
+  }
+
   const rootFiles = buildComposedRootFiles({ rootDir, contract, identity });
   for (const [name, contents] of Object.entries(rootFiles)) {
     if (claimed.has(name)) throw new Error(`asset collision: ${name} from composed root conflicts with ${claimed.get(name)}`);
     claimed.set(name, 'composed root');
     fs.writeFileSync(path.join(outDir, name), contents);
+  }
+
+  // The portals are the same failure shape as the redirect manifest: injection can be deleted
+  // and every upstream check still passes, because they all run before the write. Read the
+  // markers back out of the composed output.
+  for (const [portal, marker] of [['showcase', SHOWCASE_FALLBACK_MARKER], ['demo', DEMO_FALLBACK_MARKER]]) {
+    const written = fs.readFileSync(path.join(outDir, portal, 'index.html'), 'utf8');
+    if (!written.includes(marker)) throw new Error(`${portal} export was composed without its static fallback`);
   }
 
   // Read back what the composed root declared. The redirect manifest was declared,

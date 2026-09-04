@@ -125,7 +125,7 @@ export async function collectViolations(rootDir) {
   }
 
   const build = fs.readFileSync(buildPath, 'utf8');
-  for (const token of ['apps/docs/dist', 'apps/showcase/dist-public-web', 'apps/demo/dist-public-web', 'web/worker/dist', 'asset collision', 'build-identity.json', '_headers', '_redirects']) {
+  for (const token of ['apps/docs/dist', 'apps/showcase/dist-public-web', 'apps/demo/dist-public-web', 'web/worker/dist', 'asset collision', 'build-identity.json', '_headers', '_redirects', 'renderShowcaseFallback', 'renderDemoFallback']) {
     if (!build.includes(token)) violations.push(`composed Worker build contract missing ${token}.`);
   }
   if (!build.includes('const buildEnv = { ...process.env, BEEUI_WEB_ENV: environment }')) {
