@@ -41,7 +41,7 @@ function publicRoutes(rootDir, discovery) {
   const routes = new Set(['/', '/showcase/', '/demo/', '/changelog/']);
   for (const page of discovery.pages) routes.add(page.route);
   for (const route of docsSourceRoutes(rootDir)) routes.add(route);
-  for (const component of buildPublicComponentManifest(rootDir)) routes.add(`/docs/components/reference/${component.name}/`);
+  for (const component of buildPublicComponentManifest(rootDir)) routes.add(`/docs/components/${component.name}/`);
   for (const pattern of buildPublicPatternManifest(rootDir)) routes.add(`/docs/patterns/reference/${pattern.pack}/${pattern.slug}/`);
   return [...routes].sort();
 }

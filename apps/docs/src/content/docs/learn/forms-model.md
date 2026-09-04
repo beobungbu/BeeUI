@@ -100,7 +100,7 @@ The related anti-pattern is putting a whole group of controls inside a single `F
 - [State model](/docs/learn/state-model/) — controlled and uncontrolled controls.
 - [Composition model](/docs/learn/composition-model/) — why the parts must stay together.
 - [Accessibility model](/docs/learn/accessibility-model/) — label, error and announcement obligations.
-- [Field](/docs/components/reference/field/) · [Input](/docs/components/reference/input/) · [Select](/docs/components/reference/select/) · [Keyboard-aware screen](/docs/components/reference/keyboard-aware-screen/) — exact props and types.
+- [Field](/docs/components/field/) · [Input](/docs/components/input/) · [Select](/docs/components/select/) · [Keyboard-aware screen](/docs/components/keyboard-aware-screen/) — exact props and types.
 - [Date & time guide](/docs/guides/date-time/) — timezone, locale and storage rules for date fields.
 - [Patterns](/docs/patterns/) — sign-in, sign-up and settings forms already composed.
 

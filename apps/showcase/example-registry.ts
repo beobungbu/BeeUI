@@ -146,7 +146,7 @@ function componentExample(
     coverageClasses: [exampleId],
     applicableCoverageClasses,
     ...focus,
-    docsRoute: `/docs/components/reference/${ownerId}/`,
+    docsRoute: `/docs/components/${ownerId}/`,
     ...(exampleId === 'basic' && PRODUCTION_PATTERN_USAGE[ownerId]?.length
       ? {
         productionTargets: PRODUCTION_PATTERN_USAGE[ownerId].map((patternId) => ({
