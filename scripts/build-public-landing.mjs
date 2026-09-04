@@ -21,8 +21,8 @@ function renderNavigation(navigation) {
     .join('');
 }
 
-export function renderPublicLanding(rootDir = ROOT_DIR) {
-  const contract = buildPublicSiteContract(rootDir);
+export function renderPublicLanding(rootDir = ROOT_DIR, { environment } = {}) {
+  const contract = buildPublicSiteContract(rootDir, { environment });
   const template = fs.readFileSync(path.join(rootDir, 'web/site/index.template.html'), 'utf8');
   const publicationLabel = contract.buildTruth.publication.published ? 'Published' : 'Unpublished';
   const replacements = new Map([
@@ -39,8 +39,8 @@ export function renderPublicLanding(rootDir = ROOT_DIR) {
   return { html, contract, publicationLabel };
 }
 
-export function buildPublicLanding({ rootDir = ROOT_DIR, outDir = path.join(rootDir, 'web/dist') } = {}) {
-  const { html } = renderPublicLanding(rootDir);
+export function buildPublicLanding({ rootDir = ROOT_DIR, outDir = path.join(rootDir, 'web/dist'), environment } = {}) {
+  const { html } = renderPublicLanding(rootDir, { environment });
   fs.rmSync(outDir, { recursive: true, force: true });
   fs.mkdirSync(path.join(outDir, 'assets'), { recursive: true });
   fs.writeFileSync(path.join(outDir, 'index.html'), html);
