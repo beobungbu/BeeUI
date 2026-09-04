@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { showcaseHref } from '../apps/showcase/showcase-target.ts';
 import {
   ROOT_DIR,
   buildShowcaseUsageIndex,
@@ -54,7 +55,7 @@ export function buildPublicComponentManifest(rootDir = ROOT_DIR) {
       notes: curated?.notes ?? '',
       examples,
       route: `/docs/components/reference/${component.name}/`,
-      showcaseHref: `/showcase/?component=${encodeURIComponent(component.name)}`,
+      showcaseHref: showcaseHref({ surface: 'component', id: component.name, example: 'basic' }),
       sourceHref: githubHref(component.source),
       registryHref: githubHref('registry/registry.json'),
     };
