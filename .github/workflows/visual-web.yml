@@ -21,8 +21,9 @@ env:
   PNPM_VERSION: 10.15.0
 
 jobs:
-  # Stable required PR check. Development PRs run one representative shard only
-  # when visual surfaces changed. Staging/main PRs run the complete suite.
+  # Stable required PR check. Development PRs run one compact canonical +
+  # Showcase smoke proof only when visual surfaces changed. Staging/main PRs
+  # still run the complete suite in one required context.
   visual-web-report:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -90,7 +91,11 @@ jobs:
           pnpm --dir apps/visual-regression build:web
       - name: Compare representative screenshots for development PR
         if: steps.scope.outputs.visual == 'true' && steps.scope.outputs.full != 'true'
-        run: pnpm --dir apps/visual-regression exec playwright test --shard=1/3 --reporter=html
+        run: >-
+          pnpm --dir apps/visual-regression exec playwright test
+          --project=mobile-light
+          --project=showcase-acceptance-smoke
+          --reporter=html
       - name: Compare complete screenshots for staging/main PR
         if: steps.scope.outputs.visual == 'true' && steps.scope.outputs.full == 'true'
         run: pnpm --dir apps/visual-regression exec playwright test --reporter=html
@@ -105,8 +110,13 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
-  # Full 3-way matrix moves off the PR critical path. Every merged environment
-  # revision still receives complete canonical visual evidence.
+  # Full visual evidence moves off the development PR critical path. Numeric
+  # Playwright sharding produced 176/174/175 tests but ~27/43/251 seconds of
+  # actual test time in run 33832785919 because the full Showcase acceptance
+  # matrix landed on shard 3. Keep three runner slots, but partition by observed
+  # runtime instead: ~116s canonical+smoke, ~103s Showcase integration, ~103s
+  # full acceptance matrix. This removes the long-tail shard without paying a
+  # fourth checkout/setup/browser provisioning cost or another concurrency slot.
   visual-web-full:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -114,7 +124,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        lane: [canonical-and-smoke, showcase-integration, showcase-acceptance-matrix]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -154,13 +164,39 @@ jobs:
         run: |
           pnpm build
           pnpm --dir apps/visual-regression build:web
-      - name: Compare canonical screenshots
-        run: pnpm --dir apps/visual-regression exec playwright test --shard=${{ matrix.shard }}/3 --reporter=blob
+      - name: Compare duration-balanced canonical screenshots
+        env:
+          VISUAL_LANE: ${{ matrix.lane }}
+        run: |
+          set -euo pipefail
+          case "$VISUAL_LANE" in
+            canonical-and-smoke)
+              pnpm --dir apps/visual-regression exec playwright test \
+                --project='mobile-*' \
+                --project='desktop-*' \
+                --project=showcase-acceptance-smoke \
+                --reporter=blob
+              ;;
+            showcase-integration)
+              pnpm --dir apps/visual-regression exec playwright test \
+                --project=showcase-integration \
+                --reporter=blob
+              ;;
+            showcase-acceptance-matrix)
+              pnpm --dir apps/visual-regression exec playwright test \
+                --project=showcase-acceptance-matrix \
+                --reporter=blob
+              ;;
+            *)
+              echo "Unknown visual lane: $VISUAL_LANE" >&2
+              exit 2
+              ;;
+          esac
       - name: Upload blob report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: visual-full-blob-${{ matrix.shard }}-${{ github.sha }}
+          name: visual-full-blob-${{ matrix.lane }}-${{ github.sha }}
           path: apps/visual-regression/blob-report
           if-no-files-found: warn
           retention-days: 3
