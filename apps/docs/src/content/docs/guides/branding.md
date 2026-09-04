@@ -78,6 +78,9 @@ resolved value instead of re-declaring the color:
 ```tsx
 import { useBeeToken } from '@beemvp/beeui-ui';
 
+// Web-only illustration: `svg`/`rect` are DOM elements. On native the same hook feeds an
+// `react-native-svg` element or a chart library prop instead — the hook is the portable part,
+// the element is not. `react-native-svg` is not a BeeUI peer dependency.
 export function BrandGlyph() {
   const fill = useBeeToken('colors.primary');
   const radius = useBeeToken('radius.md');
@@ -171,7 +174,7 @@ Semantic **names** are the contract. Values are yours; roles are not.
 | --- | --- | --- |
 | Semantic colors (34 roles) | Yes | The full `colors` category of `defineThemeOverrides` |
 | `radius` | Yes | Numbers, compiled to `px` |
-| `motionDuration` | Yes | Numbers, compiled to `ms` |
+| `motionDuration` (category key `motion`) | Yes | Numbers, compiled to `ms` |
 | Chart colors (10 roles) | No | Theme-defined; readable through the `chart.*` token paths |
 | `spacing`, typography, `controlSize`, `iconSize`, `avatarSize` | No | Sizing and readability are accessibility surface |
 | `focusRing`, `elevation`, `layer`, `motionEasing` | No | Fixed geometry and stacking contracts |

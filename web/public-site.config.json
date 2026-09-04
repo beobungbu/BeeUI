@@ -104,7 +104,7 @@
       "policySource": "docs/dist-tag-policy.md",
       "cliManifest": "packages/cli/package.json",
       "changelogHref": "/changelog/",
-      "migrationHref": "/docs/migration/",
+      "migrationHref": "/docs/guides/migration-versioning/",
       "sourceEvaluationHref": "/docs/start/"
     }
   },

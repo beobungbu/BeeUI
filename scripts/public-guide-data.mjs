@@ -13,6 +13,11 @@ function fencedJson(file, tag, rootDir = ROOT_DIR) {
   return JSON.parse(match[1]);
 }
 
+// The two pages this generator owns. Exported so consumers — the internal-link check in
+// particular — resolve them from here instead of restating the paths and drifting on rename.
+export const GENERATED_COMPATIBILITY_PAGE = 'apps/docs/src/content/docs/compatibility/current.md';
+export const GENERATED_RELEASE_PAGE = 'apps/docs/src/content/docs/guides/current-release.md';
+
 export function readPublicGuideData(rootDir = ROOT_DIR) {
   const compatibility = fencedJson('docs/compatibility-matrix.md', 'compatibility-matrix', rootDir);
   const distribution = fencedJson('docs/dist-tag-policy.md', 'dist-tag-policy', rootDir);
@@ -32,8 +37,8 @@ function renderRelease(data) {
 
 export function generatePublicGuideData({ rootDir = ROOT_DIR } = {}) {
   const data = readPublicGuideData(rootDir);
-  const compatibilityOut = path.join(rootDir, 'apps/docs/src/content/docs/compatibility/current.md');
-  const releaseOut = path.join(rootDir, 'apps/docs/src/content/docs/guides/current-release.md');
+  const compatibilityOut = path.join(rootDir, GENERATED_COMPATIBILITY_PAGE);
+  const releaseOut = path.join(rootDir, GENERATED_RELEASE_PAGE);
   fs.writeFileSync(compatibilityOut, renderCompatibility(data));
   fs.writeFileSync(releaseOut, renderRelease(data));
   return data;

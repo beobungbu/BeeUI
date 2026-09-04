@@ -43,6 +43,14 @@ export function contentPathToRoute(contentPath, docsBase = '/docs') {
   let relative = contentPath.slice(prefix.length).replace(/\.(md|mdx)$/u, '');
   if (relative === 'index') relative = '';
   if (relative.endsWith('/index')) relative = relative.slice(0, -'/index'.length);
+  // Astro drops dots from a slug, so current.generated.md is served at /currentgenerated/.
+  // The manifest recorded the literal filename instead, which is how two pages shipped with
+  // every in-repo link pointing at a route that 404s. Mirror the serving behaviour here so
+  // the manifest and the live site agree, and a link check built on it can be trusted.
+  relative = relative
+    .split('/')
+    .map((segment) => segment.replaceAll('.', ''))
+    .join('/');
   const normalizedBase = docsBase === '/' ? '' : docsBase.replace(/\/$/u, '');
   return relative ? `${normalizedBase}/${relative}/` : `${normalizedBase}/`;
 }

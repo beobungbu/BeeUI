@@ -40,8 +40,10 @@ const reminder: ClockTime = { hour: 14, minute: 30 };           // 0–23, 0–5
 - Both types are timezone-free by construction. There is no field to put an offset in.
 - `DateTimePicker` uses one coherent `{ date, time }` object, not two independently
   controlled props, so a date and a time can never drift out of sync mid-update.
-- All three are **controlled**: `value` is required and may be `null`. `null` from
-  `onValueChange` means an explicit clear.
+- All three are **controlled**: `value` is required and may be `null`. Clearing differs by
+  component: `DatePicker` and `DateTimePicker` emit `null` from `onValueChange` for an explicit
+  clear, while `Calendar`'s callback is `(date: CalendarDate) => void` and fires only on a cell
+  press — a `Calendar` clear affordance is the caller's own control.
 - Single-date selection only. There is no range or multi-select value type, by design.
 
 ### Serialize to your backend

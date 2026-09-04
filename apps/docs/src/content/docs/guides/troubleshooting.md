@@ -489,13 +489,17 @@ Related usage errors: `'add --all' does not accept explicit item names`,
 - **Verify:**
 
 ```bash
-pnpm beeui doctor
-pnpm beeui diff
+pnpm registry:verify
+pnpm ui-exports:check
+pnpm docs:contract:check
 ```
 
 - **Relevant versions:** registry `schemaVersion: 1`.
-- **Still broken:** `diff` never mutates anything, so it is always safe to run first; treat
-  its output as the ground truth about what your project owns.
+- **Still broken:** `pnpm beeui doctor` and `pnpm beeui diff` are consumer-project
+  commands, not repository ones — from a BeeUI checkout they exit `1` with `BeeUI is not
+  initialized in this project`, and running `init` there would write a stray
+  `beeui.config.json` into the monorepo. Run them from inside the consumer project instead,
+  where `diff` never mutates anything and is the ground truth about what that project owns.
 
 ---
 

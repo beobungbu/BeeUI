@@ -4,6 +4,7 @@ import path from 'node:path';
 import { buildRedirectRules, collectDocsRoutes } from '../generate-docs-foundation.mjs';
 import { buildPublicComponentManifest } from '../public-component-reference.mjs';
 import { buildPublicPatternManifest } from '../public-pattern-reference.mjs';
+import { GENERATED_COMPATIBILITY_PAGE, GENERATED_RELEASE_PAGE } from '../public-guide-data.mjs';
 import { readPublicSiteConfig } from '../public-site-contract-lib.mjs';
 
 const DOCS_CONTENT_ROOT = 'apps/docs/src/content/docs';
@@ -11,7 +12,7 @@ const DOCS_CONTENT_ROOT = 'apps/docs/src/content/docs';
 // Absolute in-site links written by hand in docs content. Relative links, anchors,
 // external URLs and mailto: are out of scope — Starlight resolves the first two itself and
 // the last two are not ours to validate.
-const LINK_RE = /\]\((\/[^)\s#]*)(?:#[^)\s]*)?\)/gu;
+const LINK_RE = /\]\((\/[^)\s#?]*)(?:[?#][^)\s]*)?(?:\s+"[^"]*")?\)/gu;
 
 // Pages the apps/docs pre-build hooks write. They are gitignored, so they are absent from
 // the content tree whenever this check runs before those hooks — which is exactly what
@@ -23,9 +24,10 @@ function generatedDocsRoutes(rootDir, docsBase) {
   const routes = new Set([
     `${docsBase}/components/reference/`,
     `${docsBase}/patterns/reference/`,
-    // Fixed outputs of scripts/public-guide-data.mjs.
-    `${docsBase}/compatibility/current/`,
-    `${docsBase}/guides/current-release/`,
+    // Resolved from the generator that writes them rather than restated here.
+    ...[GENERATED_COMPATIBILITY_PAGE, GENERATED_RELEASE_PAGE].map(
+      (file) => `${docsBase}/${file.slice(`${DOCS_CONTENT_ROOT}/`.length).replace(/\.mdx?$/u, '')}/`,
+    ),
   ]);
 
   for (const component of buildPublicComponentManifest(rootDir)) {
@@ -65,7 +67,7 @@ export function collectViolations(rootDir) {
 
   const known = new Set(collectDocsRoutes(rootDir, config.docsBase).map((entry) => entry.route));
   for (const route of generatedDocsRoutes(rootDir, docsBase)) known.add(route);
-  const redirectSources = buildRedirectRules(config).map((rule) => rule.fromPrefix);
+  const redirects = buildRedirectRules(config);
   const externalPrefixes = nonDocsRoutePrefixes(config);
 
   for (const file of listContentFiles(rootDir)) {
@@ -86,8 +88,18 @@ export function collectViolations(rootDir) {
       const normalized = href.endsWith('/') ? href : `${href}/`;
       if (known.has(normalized)) continue;
 
-      // A link into a prefix that redirects is fine — it resolves in one documented hop.
-      if (redirectSources.some((prefix) => normalized.startsWith(prefix))) continue;
+      // A link into a redirected prefix is fine only if the rewritten path is itself real.
+      // Accepting the prefix alone let /docs/cli/does-not-exist/ through, because the 308
+      // lands on a page that does not exist.
+      const redirect = redirects.find((rule) => normalized.startsWith(rule.fromPrefix));
+      if (redirect) {
+        const rewritten = `${redirect.toPrefix}${normalized.slice(redirect.fromPrefix.length)}`;
+        if (known.has(rewritten)) continue;
+        violations.push(
+          `${relative} links to ${href}, which redirects to ${rewritten} — and that is not a page.`,
+        );
+        continue;
+      }
 
       violations.push(
         `${relative} links to ${href}, which is neither a published docs route, a generated ` +

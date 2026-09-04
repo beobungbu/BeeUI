@@ -41,5 +41,10 @@ Semantic token names, typed component variants and behavior contracts are the re
 surface. `className` remains a current-engine escape hatch for application/source-owned
 work and is **not** a portability promise across future styling engines.
 
+## Task guides built on this contract
+
+- [Branding](/docs/guides/branding/) — override a brand palette without leaving the semantic model.
+- [Density](/docs/guides/density/) — the orthogonal row-height and gap axis.
+
 Deeper authorities: [theming](https://github.com/beobungbu/BeeUI/blob/main/docs/theming.md),
 [theme scope](https://github.com/beobungbu/BeeUI/blob/main/docs/theme-scope.md), [density](https://github.com/beobungbu/BeeUI/blob/main/docs/density.md), and [token lifecycle](https://github.com/beobungbu/BeeUI/blob/main/docs/token-lifecycle.md).

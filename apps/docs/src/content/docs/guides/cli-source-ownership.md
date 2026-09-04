@@ -15,7 +15,9 @@ Do not use `npx @beemvp/beeui-cli …`, `npx beeui …`, or public npm install c
 
 ## Do it
 
-Run from a BeeUI repository checkout, pointed at the consumer project you are evaluating:
+The CLI has no project-targeting flag: it resolves the project from the current working
+directory. `pnpm beeui` runs with the cwd at the BeeUI repository root, so these commands act on
+**this checkout**, which is what you want while evaluating the registry from a BeeUI clone:
 
 ```bash
 pnpm beeui init

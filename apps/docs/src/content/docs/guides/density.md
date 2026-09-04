@@ -39,13 +39,13 @@ An unknown mode throws rather than silently resolving to `undefined`.
 
 | Metric | CSS variable | `compact` | `comfortable` (default) | `spacious` | Consumed by |
 | --- | --- | --- | --- | --- | --- |
-| `rowHeight` | `--spacing-density-row-height` | 44px | 56px | 64px | `ListItem` |
-| `rowGap` | `--spacing-density-row-gap` | 8px | 12px | 16px | `ListItem` |
+| `rowHeight` | `--spacing-density-row-height` | 44px | 56px | 64px | `ListItem`, `Table` |
+| `rowGap` | `--spacing-density-row-gap` | 8px | 12px | 16px | `ListItem`, `Table` |
 | `formGap` | `--spacing-density-form-gap` | 4px | 8px | 12px | `FormGroup`, `Field` |
 
 Concretely, in a ten-row settings list: `compact` renders roughly 440px of row height plus 72px
-of gaps, `comfortable` 560px plus 108px, and `spacious` 640px plus 144px — about a 190px
-difference across one screen of rows, with identical type sizes, icon sizes, control heights and
+of gaps, `comfortable` 560px plus 108px, and `spacious` 640px plus 144px — 512px, 668px and
+784px in total, so about 270px between `compact` and `spacious` across one screen of rows, with identical type sizes, icon sizes, control heights and
 focus rings in all three. A three-field form tightens or loosens by 4px per field boundary and
 nothing else. There is no side-by-side screenshot in this guide because the difference is exactly
 these numbers, not a restyle.
@@ -68,7 +68,7 @@ list of density-sensitive names.
 | Concern | Owner |
 | --- | --- |
 | Mode vocabulary, per-mode values, CSS variables | BeeUI runtime (generated from the canonical token source) |
-| Which components read the density variables | BeeUI runtime (`ListItem`, `FormGroup`, `Field`) |
+| Which components read the density variables | BeeUI runtime (`ListItem`, `Table`, `FormGroup`, `Field`) |
 | Choosing a mode | Your application |
 | Persisting the user's or workspace's choice | Your application |
 | Calling `applyDensity` at startup and on change | Your application |
@@ -113,9 +113,10 @@ own code and call `applyDensity` yourself. See [Responsive](/docs/responsive/).
 
 ## Known limitations
 
-- **Global per runtime theme, never per subtree.** There is no `BeeDensityScope`. A compact table
-  embedded in an otherwise spacious screen is not supported today; the deliberate reason is that
-  subtree density would need a genuinely new propagation mechanism, and no recurring product
+- **Global per runtime theme, never per subtree.** There is no `BeeDensityScope`. `Table` is
+  density-aware like `ListItem`, but it reads the same global mode as everything else: a compact
+  table embedded in an otherwise spacious screen is not supported today. The deliberate reason is
+  that subtree density would need a genuinely new propagation mechanism, and no recurring product
   evidence for nested density exists yet.
 - **Three metrics only.** Panel/card padding and navigation-item height are explicitly out of
   scope. New metrics require recurring evidence — the same literal repeated across two or more
