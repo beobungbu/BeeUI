@@ -15,7 +15,12 @@ on:
       - 'scripts/ci-scope.mjs'
       - '.github/workflows/expo-consumer.yml'
   push:
+    # #474 rule 12: integration checkpoints land as merge commits on development and
+    # promotion candidates on staging, so the external-consumer proof must re-run on the
+    # exact integrated head rather than inherit a sibling PR head's green.
     branches:
+      - development
+      - staging
       - main
   schedule:
     - cron: '5 5 * * 1'

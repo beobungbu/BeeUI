@@ -28,15 +28,19 @@ export const REQUIRED_STATUS_CHECKS = Object.freeze([
 ]);
 
 export const CONDITIONAL_JOBS_EXCLUDED_FROM_REQUIRED_CHECKS = Object.freeze([
-  { workflow: 'ci.yml', job: 'bare-bundle' },
-  { workflow: 'ci.yml', job: 'bare-android' },
-  { workflow: 'ci.yml', job: 'ios-showcase' },
-  { workflow: 'ci.yml', job: 'ios-bare' },
+  { workflow: 'ci.yml', job: 'verify-docs' },
+  { workflow: 'ci.yml', job: 'verify-tokens' },
+  { workflow: 'ci.yml', job: 'verify-runtime' },
+  { workflow: 'ci.yml', job: 'verify-release' },
+  { workflow: 'ci.yml', job: 'verify-benchmark' },
+  { workflow: 'ci.yml', job: 'bare-consumer' },
+  { workflow: 'ci.yml', job: 'android-native' },
+  { workflow: 'ci.yml', job: 'ios-native' },
   { workflow: 'runtime-native.yml', job: 'ios-runtime' },
   { workflow: 'runtime-native.yml', job: 'android-runtime' },
 ]);
 
-export const VISUAL_WEB_MATRIX_JOB = Object.freeze({ workflow: 'visual-web.yml', job: 'visual-web' });
+export const VISUAL_WEB_MATRIX_JOB = Object.freeze({ workflow: 'visual-web.yml', job: 'visual-web-full' });
 
 function normalizeCondition(raw) {
   return raw.replace(/\s+/g, ' ').trim();
@@ -89,13 +93,23 @@ export function extractJobIfCondition(workflowYaml, jobName) {
   return normalizeCondition(inlineValue);
 }
 
-// Required jobs either have no `if:` at all, or use `always()` only when
-// they fan in upstream jobs/matrices. Any other condition can make a required
-// check disappear or report skipped for a legitimate PR.
+// Branch protection only evaluates required checks on pull requests, so a
+// required job qualifies as always-run when it has no `if:` at all, uses
+// `always()` to fan in upstream jobs/matrices, or gates solely on the event
+// being a pull request. The last form lets a workflow keep one stable required
+// PR context while routing push/schedule events to a different, heavier job.
+// Any other condition can make a required check disappear or report skipped
+// for a legitimate PR.
+const PULL_REQUEST_ONLY_CONDITIONS = new Set([
+  "github.event_name=='pull_request'",
+  'github.event_name=="pull_request"',
+]);
+
 export function jobAlwaysRuns(workflowYaml, jobName) {
   const condition = extractJobIfCondition(workflowYaml, jobName);
   if (condition === null) return true;
-  return condition.replace(/\s+/g, '') === 'always()';
+  const compact = condition.replace(/\s+/g, '');
+  return compact === 'always()' || PULL_REQUEST_ONLY_CONDITIONS.has(compact);
 }
 
 export function jobIsConditionallySkippable(workflowYaml, jobName) {

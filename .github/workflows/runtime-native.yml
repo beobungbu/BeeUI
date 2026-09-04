@@ -5,6 +5,12 @@ on:
     types: [opened, synchronize, reopened, labeled]
   push:
     branches:
+      # staging is the promotion candidate #474 H076 verifies with the full
+      # production-like matrix, so it needs its own simulator/emulator proof rather
+      # than inheriting a development merge's evidence. Ordinary development merges
+      # stay off this lane: the docs program does not move native runtime code, and
+      # the PR lane plus the staging/main candidates already cover it.
+      - staging
       - main
   # Weekly clean-environment backstop. Exact main pushes already run the same
   # simulator/emulator proof, so a nightly duplicate is unnecessary.

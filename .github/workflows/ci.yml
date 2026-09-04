@@ -4,7 +4,13 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
+    # #474 rule 12: every integration checkpoint (B011/C022/D034/E044/F052) is a merge
+    # commit on development, and promotion candidates land on staging. Green sibling PR
+    # heads are not proof for the integrated tree, so the aggregate verify must re-run on
+    # the exact integrated head. Non-pull_request events already force full CI below.
     branches:
+      - development
+      - staging
       - main
   schedule:
     - cron: '47 2 * * 1'
