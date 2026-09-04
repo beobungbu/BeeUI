@@ -11,6 +11,11 @@ on:
     types: [opened, synchronize, reopened, labeled, unlabeled, edited]
   push:
     branches:
+      # Pull requests can only restore caches from their own ref, their base
+      # branch and the default branch. Every pull request targets development,
+      # so without a run here the native caches are never warm for anyone: each
+      # one started cold and rebuilt roughly 900 MB it alone could reuse.
+      - development
       - main
   schedule:
     - cron: '47 2 * * 1'
@@ -412,7 +417,7 @@ jobs:
       - name: Setup Gradle cache
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
-          cache-read-only: ${{ github.event_name == 'schedule' }}
+          cache-read-only: ${{ github.event_name != 'push' }}
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
           add-job-summary: always
       - name: Setup Android SDK
@@ -508,18 +513,21 @@ jobs:
           path: ~/.pnpm-store
           key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pnpm-${{ runner.os }}-
-      - name: Cache CocoaPods and bare Bundler state
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      - name: Restore CocoaPods and bare Bundler state
+        id: pods-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.cocoapods
             ~/Library/Caches/CocoaPods
             ~/Library/Caches/BeeUI/bundle
+            ~/Library/Caches/ReactNative
           key: pods-macos-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pods-macos-
-      - name: Cache Xcode compilation results
+      - name: Restore Xcode compilation results
+        id: xcode-cas
         if: github.event_name != 'schedule'
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/Library/Caches/BeeUI/DerivedData/**/CompilationCache.noindex
@@ -599,6 +607,30 @@ jobs:
         # be masked by tee. `shell: bash` adds -o pipefail.
         shell: bash
         run: ./scripts/verify-bare-consumer.sh ios-build 2>&1 | tee "$RUNNER_TEMP/beeui-bare-ios.log"
+
+      - name: Save CocoaPods and bare Bundler state
+        # Pull requests restore but never save. A run on refs/pull/N writes into
+        # its own cache scope, which no other pull request can read, so saving
+        # there buys nothing and evicts the shared entries every pull request
+        # depends on — this repository was at 9.6 of 10 GB with 92% of it held
+        # by dead per-pull-request entries. Base-branch runs write the warm copy.
+        if: github.event_name == 'push' && steps.pods-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.cocoapods
+            ~/Library/Caches/CocoaPods
+            ~/Library/Caches/BeeUI/bundle
+            ~/Library/Caches/ReactNative
+          key: pods-macos-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Save Xcode compilation results
+        if: github.event_name == 'push'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/Library/Caches/BeeUI/DerivedData/**/CompilationCache.noindex
+            ~/Library/Developer/Xcode/DerivedData/showcase/**/CompilationCache.noindex
+          key: xcode-cas-v1-${{ runner.arch }}-${{ steps.select-xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
 
       - name: Upload iOS build logs
         if: always()

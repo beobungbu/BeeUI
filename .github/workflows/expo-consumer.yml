@@ -22,6 +22,9 @@ on:
       - '.github/workflows/expo-consumer.yml'
   push:
     branches:
+      # See ci.yml: development is the branch every pull request targets, so it
+      # is the only place a warm native cache is reachable from.
+      - development
       - main
   schedule:
     - cron: '5 5 * * 1'
@@ -163,7 +166,7 @@ jobs:
       - name: Setup Gradle cache
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
-          cache-read-only: ${{ github.event_name == 'schedule' }}
+          cache-read-only: ${{ github.event_name != 'push' }}
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
           add-job-summary: always
       - name: Setup Android SDK
@@ -260,17 +263,19 @@ jobs:
           path: ~/.pnpm-store
           key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pnpm-${{ runner.os }}-
-      - name: Cache CocoaPods
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      - name: Restore CocoaPods
+        id: pods-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.cocoapods
             ~/Library/Caches/CocoaPods
+            ~/Library/Caches/ReactNative
           key: pods-expo-consumer-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pods-expo-consumer-
-      - name: Cache Xcode compilation results
+      - name: Restore Xcode compilation results
         if: github.event_name != 'schedule'
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/Library/Caches/BeeUI/DerivedData/expo-consumer/**/CompilationCache.noindex
           key: xcode-expo-cas-v1-${{ runner.arch }}-${{ steps.select-xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
@@ -291,6 +296,23 @@ jobs:
         # xcodebuild. `shell: bash` adds -o pipefail.
         shell: bash
         run: bash scripts/verify-expo-consumer.sh ios-build 2>&1 | tee "$RUNNER_TEMP/beeui-expo-ios.log"
+      - name: Save CocoaPods
+        # Pull requests restore but never save; see ci.yml for why.
+        if: github.event_name == 'push' && steps.pods-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.cocoapods
+            ~/Library/Caches/CocoaPods
+            ~/Library/Caches/ReactNative
+          key: pods-expo-consumer-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Save Xcode compilation results
+        if: github.event_name == 'push'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/Library/Caches/BeeUI/DerivedData/expo-consumer/**/CompilationCache.noindex
+          key: xcode-expo-cas-v1-${{ runner.arch }}-${{ steps.select-xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+
       - name: Upload iOS xcodebuild log
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
