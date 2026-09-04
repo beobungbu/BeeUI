@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   buildPublicSurfaceInventory,
   parseDirectExports,
+  parseModuleExports,
   validatePublicSurfaceInventory,
 } from '../generate-public-surface-inventory.mjs';
 import { ROOT_DIR } from '../component-docs-lib.mjs';
@@ -20,6 +21,14 @@ test('direct export parser distinguishes values and types', () => {
   assert.deepEqual(parsed.types, ['TypeA', 'TypeB', 'TypeC']);
 });
 
+test('module export parser follows relative export-star barrels', () => {
+  const parsed = parseModuleExports('packages/tokens/src/index.ts', ROOT_DIR);
+  assert.ok(parsed.values.includes('defineThemeRegistry'));
+  assert.ok(parsed.values.includes('applyThemeOverrides'));
+  assert.ok(parsed.values.includes('defineTokenReader'));
+  assert.ok(parsed.types.includes('ThemeRegistryDefinition'));
+});
+
 test('derived inventory covers each required public-surface class', () => {
   const inventory = buildPublicSurfaceInventory(ROOT_DIR);
   const kinds = new Set(inventory.rows.map((row) => row.kind));
@@ -29,7 +38,9 @@ test('derived inventory covers each required public-surface class', () => {
     'package-export',
     'token-group',
     'token-runtime-value',
+    'token-runtime-type',
     'core-value',
+    'core-type',
     'cli-command',
     'cli-flag',
     'registry-item',
@@ -49,7 +60,7 @@ test('each derived row has one stable id, one primary owner and a classification
   }
 });
 
-test('important small public symbols and machine-readable subpaths cannot disappear silently', () => {
+test('important small public symbols, star exports and machine subpaths cannot disappear silently', () => {
   const ids = new Set(buildPublicSurfaceInventory(ROOT_DIR).rows.map((row) => row.id));
   for (const id of [
     '@beemvp/beeui-ui:value:DialogClose',
@@ -57,6 +68,10 @@ test('important small public symbols and machine-readable subpaths cannot disapp
     '@beemvp/beeui-ui:value:useToast',
     '@beemvp/beeui-ui:value:BeeUIProvider',
     '@beemvp/beeui-ui:value:useBeeToken',
+    '@beemvp/beeui-tokens:value:defineThemeRegistry',
+    '@beemvp/beeui-tokens:value:applyThemeOverrides',
+    '@beemvp/beeui-tokens:value:defineTokenReader',
+    '@beemvp/beeui-tokens:type:ThemeRegistryDefinition',
     '@beemvp/beeui-tokens:export:./theme.css',
     '@beemvp/beeui-tokens:export:./tokens.json',
     '@beemvp/beeui-tokens:export:./tokens.resolver.json',
