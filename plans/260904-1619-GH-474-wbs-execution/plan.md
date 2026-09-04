@@ -68,7 +68,7 @@ body. A PR body is read once; an issue is read again.
 
 | Deferred | Tracked | Why it was split out |
 | --- | --- | --- |
-| Screenshot preview cards for patterns, component previews, landing visual proof | **#494** | One shared capability behind three issues (#460, #459, #456). The capture path already exists — `addressability-showcase.spec.ts` drives the real Showcase at #472 targets — so it is a capture step, not a new pipeline. Needs an owner call on committed PNGs versus build-time artifacts. |
+| Screenshot preview cards for patterns, component previews, landing visual proof | **#494** | One shared capability behind three issues (#460, #459, #456). The capture path already exists — `addressability-showcase.spec.ts` drives the real Showcase at #472 targets — so it is a capture step, not a new pipeline. Owner chose build-time artifacts into `apps/docs/public/`, gitignored, with a `--check` that fails when a declared target has no capture. |
 
 ## Owner decisions needed (blocking G060, not the D/E waves)
 
