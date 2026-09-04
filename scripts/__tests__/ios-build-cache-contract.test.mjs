@@ -321,6 +321,32 @@ test('native workflows warm the base branch and never let a pull request write t
   }
 });
 
+// The concurrency group carries no SHA, so `cancel-in-progress: true` made one
+// merge cancel the previous merge's run. On workflows whose push run is the
+// thing we depend on — warming the native caches, the post-merge native and
+// visual evidence, and the integration gate that is the only real check on
+// development — that silently drops the evidence whenever merges land closer
+// together than the native jobs take, which is the normal case here.
+test('a merge never cancels the previous merge run', async () => {
+  const { ci, expo, visual, webA11y, webConsumer, environmentCi } = await sources();
+  for (const [name, workflow] of [
+    ['ci.yml', ci],
+    ['expo-consumer.yml', expo],
+    ['visual-web.yml', visual],
+    ['web-a11y.yml', webA11y],
+    ['web-consumer.yml', webConsumer],
+    ['beeui-environment-ci.yml', environmentCi],
+  ]) {
+    const setting = /cancel-in-progress: (.+)/.exec(workflow);
+    assert.ok(setting, `${name} declares no cancel-in-progress`);
+    assert.equal(
+      setting[1].trim(),
+      "${{ github.event_name == 'pull_request' }}",
+      `${name} cancels push runs, so a merge can drop the previous merge's evidence`,
+    );
+  }
+});
+
 test('consumer scripts still perform real native compiles', async () => {
   const { bareScript, expoScript } = await sources();
   assert.match(bareScript, /\.\/gradlew[\s\S]*assembleDebug/);
