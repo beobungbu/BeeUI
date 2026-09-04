@@ -66,6 +66,20 @@ test('parseBarrelExports groups value/type symbols by specifier and ignores comm
   assert.equal(parsed.has('./components/ghost'), false);
 });
 
+// A renamed re-export is a public symbol under its exported name. Recording the raw
+// `Foo as Bar` specifier would have published a name no consumer can import, in the
+// public-surface inventory, llms.txt and the generated reference pages simultaneously.
+test('parseBarrelExports records a renamed re-export under the name consumers import', () => {
+  const parsed = parseBarrelExports(
+    "export { Sheet as Drawer, type SheetProps as DrawerProps } from './components/sheet';\n" +
+    "export type { InnerRef as PublicRef } from './components/sheet';\n",
+  );
+  assert.deepEqual(parsed.get('./components/sheet'), {
+    values: ['Drawer'],
+    types: ['DrawerProps', 'PublicRef'],
+  });
+});
+
 test('buildModel maps public components to their barrel symbols and source paths', () => {
   const model = buildModel({
     registry: sampleRegistry(),

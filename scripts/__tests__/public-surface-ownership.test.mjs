@@ -10,6 +10,8 @@ import {
   acknowledgeSurfaceSources,
   gitBlobSha,
   validateAcknowledgedSurfaceSources,
+  validateContributorSurfaceDocs,
+  CONTRIBUTOR_DOC_HEADING,
   validatePublicSurfaceOwnership,
 } from '../check-public-surface-ownership.mjs';
 
@@ -91,6 +93,86 @@ test('acknowledge tooling rewrites only the recorded blob shas', () => {
     assert.deepEqual(acknowledgeSurfaceSources(rootDir), ['surface.ts']);
     assert.deepEqual(validateAcknowledgedSurfaceSources(rootDir), []);
     assert.deepEqual(acknowledgeSurfaceSources(rootDir), []);
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+// `docs:surface:acknowledge` makes the staleness error disappear whether or not anything was
+// documented, so the only thing standing between a contributor and a silently undocumented
+// public surface is a written sequence. These drive the guard with synthetic trees rather than
+// asserting against the real CONTRIBUTING.md, which would pass without the guard existing.
+function contributorFixture(section) {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-contrib-doc-'));
+  fs.mkdirSync(path.join(rootDir, 'docs'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, 'docs/reference.content.json'), '{}\n');
+  fs.writeFileSync(
+    path.join(rootDir, 'package.json'),
+    `${JSON.stringify({ scripts: { 'docs:surface:generate': 'x', 'docs:surface:acknowledge': 'x' } })}\n`,
+  );
+  fs.writeFileSync(path.join(rootDir, 'CONTRIBUTING.md'), section);
+  return rootDir;
+}
+
+const GOOD_SECTION = [
+  CONTRIBUTOR_DOC_HEADING,
+  '',
+  'Run `pnpm docs:surface:generate`, then `pnpm docs:surface:acknowledge` last.',
+  'Owners live in `docs/reference.content.json`.',
+  '',
+  '`pnpm docs:surface:acknowledge` is not the fix for the error it silences.',
+  '',
+  '## Next section',
+].join('\n');
+
+test('the contributor workflow guard accepts a complete section', () => {
+  const rootDir = contributorFixture(GOOD_SECTION);
+  try {
+    assert.deepEqual(validateContributorSurfaceDocs(rootDir), []);
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('a deleted or renamed workflow section fails the gate', () => {
+  const rootDir = contributorFixture('## Something else\n\nNo workflow here.\n');
+  try {
+    const violations = validateContributorSurfaceDocs(rootDir);
+    assert.equal(violations.length, 1);
+    assert.match(violations[0], /has no "## Public documentation surfaces" section/u);
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('a documented command that is not a package script fails the gate', () => {
+  const rootDir = contributorFixture(GOOD_SECTION.replace('docs:surface:generate', 'docs:surface:regenerate'));
+  try {
+    const violations = validateContributorSurfaceDocs(rootDir);
+    assert.deepEqual(violations, [
+      'CONTRIBUTING.md tells contributors to run `pnpm docs:surface:regenerate`, which is not a package.json script.',
+    ]);
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('a documented control file that no longer exists fails the gate', () => {
+  const rootDir = contributorFixture(GOOD_SECTION.replace('docs/reference.content.json', 'docs/renamed.content.json'));
+  try {
+    const violations = validateContributorSurfaceDocs(rootDir);
+    assert.deepEqual(violations, ['CONTRIBUTING.md references docs/renamed.content.json, which does not exist.']);
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('dropping the acknowledge warning fails the gate', () => {
+  const rootDir = contributorFixture(GOOD_SECTION.replace('is not the fix for the error it silences.', 'is the final step.'));
+  try {
+    const violations = validateContributorSurfaceDocs(rootDir);
+    assert.equal(violations.length, 1);
+    assert.match(violations[0], /must keep warning/u);
   } finally {
     fs.rmSync(rootDir, { recursive: true, force: true });
   }

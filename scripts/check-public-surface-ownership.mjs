@@ -53,11 +53,65 @@ export function validateAcknowledgedSurfaceSources(rootDir = ROOT_DIR, policy = 
   return violations;
 }
 
+export const CONTRIBUTOR_DOC_FILE = 'CONTRIBUTING.md';
+export const CONTRIBUTOR_DOC_HEADING = '## Public documentation surfaces';
+
+// The ownership gate tells a contributor that documentation is stale; it cannot tell them how
+// to make it current. That workflow lives in CONTRIBUTING.md, and a workflow document nobody
+// verifies is how a gate ends up with an undocumented escape hatch: `docs:surface:acknowledge`
+// silences the hash error whether or not the surface was ever documented. So the gate asserts
+// its own instructions still exist and still name real commands and real files.
+export function validateContributorSurfaceDocs(rootDir = ROOT_DIR) {
+  const violations = [];
+  const docPath = path.join(rootDir, CONTRIBUTOR_DOC_FILE);
+  if (!fs.existsSync(docPath)) return [`${CONTRIBUTOR_DOC_FILE} is missing; the public-surface workflow is undocumented.`];
+
+  const doc = fs.readFileSync(docPath, 'utf8');
+  const start = doc.indexOf(CONTRIBUTOR_DOC_HEADING);
+  if (start === -1) {
+    return [
+      `${CONTRIBUTOR_DOC_FILE} has no "${CONTRIBUTOR_DOC_HEADING}" section. Adding a public ` +
+      'surface fails this gate, so the remediation sequence must stay documented.',
+    ];
+  }
+  const nextHeading = doc.indexOf('\n## ', start + CONTRIBUTOR_DOC_HEADING.length);
+  const section = doc.slice(start, nextHeading === -1 ? doc.length : nextHeading);
+
+  const scripts = readJson('package.json', rootDir).scripts ?? {};
+  const named = new Set([...section.matchAll(/\bpnpm ((?:docs|registry|release):[a-z:-]+)/gu)].map(([, name]) => name));
+  for (const name of named) {
+    if (!scripts[name]) {
+      violations.push(
+        `${CONTRIBUTOR_DOC_FILE} tells contributors to run \`pnpm ${name}\`, which is not a package.json script.`,
+      );
+    }
+  }
+
+  // The section names the hand-editable control files by path; a rename must not leave the
+  // instructions pointing at a file that no longer exists.
+  for (const [, relPath] of section.matchAll(/`(docs\/[a-z.-]+\.json)`/gu)) {
+    if (!fs.existsSync(path.join(rootDir, relPath))) {
+      violations.push(`${CONTRIBUTOR_DOC_FILE} references ${relPath}, which does not exist.`);
+    }
+  }
+
+  // Naming the acknowledge command without the warning is the failure mode this guards.
+  if (!/not the fix for the error it silences/u.test(section)) {
+    violations.push(
+      `${CONTRIBUTOR_DOC_FILE}'s "${CONTRIBUTOR_DOC_HEADING}" section must keep warning that ` +
+      '`docs:surface:acknowledge` is run last and is not the remedy for the staleness error.',
+    );
+  }
+
+  return violations;
+}
+
 export function validatePublicSurfaceOwnership(rootDir = ROOT_DIR) {
   return [
     ...validatePublicSurfaceInventory(rootDir),
     ...validateInventoryFreshness(rootDir),
     ...validateAcknowledgedSurfaceSources(rootDir),
+    ...validateContributorSurfaceDocs(rootDir),
   ];
 }
 
