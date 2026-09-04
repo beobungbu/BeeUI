@@ -89,4 +89,4 @@ export function SaveButton() {
 
 Safe-area/provider deterministic tests prove ownership/geometry contracts; native compilation proves code builds; representative device/simulator evidence is classified separately. Do not infer live notch, keyboard, sheet, or assistive-technology behavior from a unit test alone.
 
-Next: choose [Expo](/docs/getting-started/expo/), [Bare React Native](/docs/getting-started/bare-react-native/), or [Web](/docs/getting-started/web/), then verify exact versions in [Compatibility](/docs/compatibility/).
+Next: choose [Expo](/docs/start/expo/), [Bare React Native](/docs/start/bare-react-native/), or [Web](/docs/start/web/), then verify exact versions in [Compatibility](/docs/compatibility/).

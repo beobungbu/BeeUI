@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { buildPublicSeo } from './build-public-seo.mjs';
+import { buildRedirectRules, renderRedirectsFile } from './generate-docs-foundation.mjs';
 import { ROOT_DIR, buildPublicSiteContract } from './public-site-contract-lib.mjs';
 
 function run(command, args, cwd = ROOT_DIR, env = process.env) {
@@ -72,6 +73,15 @@ function writeHeaders(outDir, contract) {
   fs.writeFileSync(path.join(outDir, '_headers'), renderWorkerHeaders(contract));
 }
 
+// The redirect manifest is declared in web/public-site.config.json and published into the
+// route manifest, but nothing served it: the composed worker emitted _headers and no
+// _redirects, so every legacy and moved URL 404ed in production. Emit it from the same
+// canonical rules the manifest and its loop/cycle validation use.
+function writeRedirects(rootDir, outDir) {
+  const config = JSON.parse(fs.readFileSync(path.join(rootDir, 'web/public-site.config.json'), 'utf8'));
+  fs.writeFileSync(path.join(outDir, '_redirects'), renderRedirectsFile(buildRedirectRules(config)));
+}
+
 export function composeWorkerAssets({
   rootDir = ROOT_DIR,
   outDir = path.join(rootDir, 'web/worker/dist'),
@@ -97,6 +107,7 @@ export function composeWorkerAssets({
   };
   fs.writeFileSync(path.join(outDir, 'build-identity.json'), `${JSON.stringify(identity, null, 2)}\n`);
   writeHeaders(outDir, contract);
+  writeRedirects(rootDir, outDir);
   return { claimed, identity, outDir, contract };
 }
 

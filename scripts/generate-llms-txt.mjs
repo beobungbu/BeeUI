@@ -72,11 +72,11 @@ export const LINKED_PATHS = [
   'docs/decisions/010-select-presentation-1-0-decision.md',
   'docs/decisions/011-distribution-architecture.md',
   'apps/docs/src/content/docs/index.md',
-  'apps/docs/src/content/docs/getting-started/index.md',
-  'apps/docs/src/content/docs/getting-started/expo.md',
-  'apps/docs/src/content/docs/getting-started/bare-react-native.md',
-  'apps/docs/src/content/docs/getting-started/web.md',
-  'apps/docs/src/content/docs/getting-started/provider-safe-area.md',
+  'apps/docs/src/content/docs/start/index.md',
+  'apps/docs/src/content/docs/start/expo.md',
+  'apps/docs/src/content/docs/start/bare-react-native.md',
+  'apps/docs/src/content/docs/start/web.md',
+  'apps/docs/src/content/docs/start/provider-safe-area.md',
   'apps/docs/src/content/docs/cli/index.md',
   'apps/docs/src/content/docs/components/index.md',
   'apps/docs/src/content/docs/components/table.md',
@@ -301,7 +301,7 @@ pnpm showcase   # then press i (iOS), a (Android), or w (Web)
 Verification: \`pnpm check\` (typecheck + tests), \`pnpm release:verify\` (package gate), \`pnpm --dir apps/visual-regression test\` (browser QA). See [README.md](README.md).
 
 ## Provider and safe-area setup
-Wrap the app root in \`BeeUIProvider\` (installs safe-area measurement, the Toast runtime, and the shared anchored-overlay runtime). \`SafeArea\` assigns explicit \`top\`/\`bottom\`/\`left\`/\`right\` edge ownership; \`Screen\`, \`AppHeader\`, and \`BottomActionBar\` never add insets themselves. See [apps/docs/src/content/docs/getting-started/provider-safe-area.md](apps/docs/src/content/docs/getting-started/provider-safe-area.md).
+Wrap the app root in \`BeeUIProvider\` (installs safe-area measurement, the Toast runtime, and the shared anchored-overlay runtime). \`SafeArea\` assigns explicit \`top\`/\`bottom\`/\`left\`/\`right\` edge ownership; \`Screen\`, \`AppHeader\`, and \`BottomActionBar\` never add insets themselves. See [apps/docs/src/content/docs/start/provider-safe-area.md](apps/docs/src/content/docs/start/provider-safe-area.md).
 
 ## Web bundling (Vite + react-native-web)
 \`@import '@beemvp/beeui-tokens/theme.css'\` supplies the semantic tokens but is not, by itself, a Web build. A from-scratch Vite + react-native-web app needs a specific plugin stack and a Tailwind/Uniwind CSS entry; get it wrong and the app either fails to resolve \`react-native\` or builds **unstyled**. The tested stack:
@@ -357,7 +357,7 @@ ${adrs.map(([slug, note]) => `- [ADR-${slug.slice(0, 3)} ${slug.slice(4)}](docs/
 ## Documentation map
 - AI-agent contract + prompt cookbook: [docs/ai-agent-cookbook.md](docs/ai-agent-cookbook.md)
 - Authority index: [docs/README.md](docs/README.md)
-- Getting started: [Expo](apps/docs/src/content/docs/getting-started/expo.md) · [bare RN](apps/docs/src/content/docs/getting-started/bare-react-native.md) · [Web](apps/docs/src/content/docs/getting-started/web.md)
+- Getting started: [Expo](apps/docs/src/content/docs/start/expo.md) · [bare RN](apps/docs/src/content/docs/start/bare-react-native.md) · [Web](apps/docs/src/content/docs/start/web.md)
 - CLI: [apps/docs/src/content/docs/cli/index.md](apps/docs/src/content/docs/cli/index.md)
 - Components site: [apps/docs/src/content/docs/components/index.md](apps/docs/src/content/docs/components/index.md) (deep dives: [Table](apps/docs/src/content/docs/components/table.md), [Calendar/DatePicker](apps/docs/src/content/docs/components/calendar-date-time.md))
 - Performance: methodology [docs/benchmark-harness.md](docs/benchmark-harness.md) · baseline report [docs/performance-baseline-report.md](docs/performance-baseline-report.md) · package/bundle footprint [docs/bundle-footprint-baseline.md](docs/bundle-footprint-baseline.md) · docs site [apps/docs/src/content/docs/performance/index.md](apps/docs/src/content/docs/performance/index.md)

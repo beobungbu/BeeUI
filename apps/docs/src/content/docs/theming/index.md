@@ -24,7 +24,7 @@ same component tree: [open Theme & tokens](/showcase/).
 ```
 
 This is the same CSS contract used by the clean Expo/Web consumers. The package is still
-unpublished; see [Getting Started](/docs/getting-started/) for the current packed/workspace
+unpublished; see [Getting Started](/docs/start/) for the current packed/workspace
 consumption path.
 
 ## Brand scope and density

@@ -42,7 +42,7 @@ The CLI **does not install packages**, fetch remote executable code, or silently
 
 A Registry item records its source files, BeeUI dependency closure, external requirements and integrity metadata. Once copied, those files belong to the consumer repository. Component reference pages expose the Registry item identity and source link mechanically from `registry/registry.json`; the website does not maintain a second Registry inventory.
 
-For provider and native setup after copying source, follow [Provider & safe area](/docs/getting-started/provider-safe-area/) and the component page's dependency section.
+For provider and native setup after copying source, follow [Provider & safe area](/docs/start/provider-safe-area/) and the component page's dependency section.
 
 ## Safe update workflow
 

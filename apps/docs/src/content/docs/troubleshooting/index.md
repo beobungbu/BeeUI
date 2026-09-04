@@ -16,10 +16,10 @@ event.
 
 ## Content is double-inset or under system UI
 Assign each edge to the `SafeArea` that actually touches it. A `Screen`, header or bottom
-bar does not secretly own all insets. See [Provider & safe area](/docs/getting-started/provider-safe-area/).
+bar does not secretly own all insets. See [Provider & safe area](/docs/start/provider-safe-area/).
 
 ## Web looks unstyled
-Verify the token theme CSS plus Tailwind/Uniwind imports in [Web onboarding](/docs/getting-started/web/).
+Verify the token theme CSS plus Tailwind/Uniwind imports in [Web onboarding](/docs/start/web/).
 
 ## Metro/native module cannot resolve
 Compare your peer/native dependencies to [Compatibility](/docs/compatibility/). After

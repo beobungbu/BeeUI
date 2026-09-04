@@ -93,7 +93,7 @@ export default function App() {
 }
 ```
 
-`BeeUIProvider` supplies accepted runtime services; `SafeArea` is still an explicit application-owned edge boundary. Read [Provider & safe area](/docs/getting-started/provider-safe-area/) before building an app shell.
+`BeeUIProvider` supplies accepted runtime services; `SafeArea` is still an explicit application-owned edge boundary. Read [Provider & safe area](/docs/start/provider-safe-area/) before building an app shell.
 
 ## 4. Understand what the fixture proves
 

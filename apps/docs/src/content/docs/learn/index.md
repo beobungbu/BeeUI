@@ -11,7 +11,7 @@ This route is the stable home for the learning work owned by #462. Existing topi
 - [Accessibility](/docs/accessibility/)
 - [Compatibility](/docs/compatibility/)
 - [Patterns](/docs/patterns/)
-- [Provider & safe area](/docs/getting-started/provider-safe-area/)
+- [Provider & safe area](/docs/start/provider-safe-area/)
 - [Performance](/docs/performance/)
 
 For exact values, symbols, commands, and compatibility data, use [Reference](/docs/reference/) instead.

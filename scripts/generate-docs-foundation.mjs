@@ -57,18 +57,54 @@ export function collectDocsRoutes(rootDir = ROOT_DIR, docsBase = '/docs') {
     .sort((a, b) => a.route.localeCompare(b.route) || a.source.localeCompare(b.source));
 }
 
+// Two redirect classes share one manifest. `legacyDocsRedirect` covers the pre-/docs
+// origin layout (/theming/ -> /docs/theming/). `docsFoundation.movedRoutes` covers IA
+// moves *inside* /docs/ that happen as the ratified sections take ownership of content
+// (/docs/getting-started/ -> /docs/start/, owned by #457). Both must survive as real
+// 308s, so both are emitted into the composed worker's _redirects.
 export function buildRedirectRules(config) {
+  const moved = [...(config.docsFoundation?.movedRoutes ?? [])]
+    .sort((a, b) => a.fromPrefix.localeCompare(b.fromPrefix));
+  // A legacy prefix whose /docs/ landing spot has since moved would otherwise cost the
+  // visitor two hops (/theming/ -> /docs/theming/ -> /docs/guides/theming/). Resolve the
+  // legacy destination through the move map so every rule is a single 308.
+  const movedByPrefix = new Map(moved.map((rule) => [rule.fromPrefix, rule.toPrefix]));
+  const rules = [];
   const legacy = config.legacyDocsRedirect;
-  if (!legacy) return [];
-  return [...legacy.prefixes]
-    .sort()
-    .map((fromPrefix) => ({
-      fromPrefix,
-      toPrefix: `${legacy.targetPrefix}${fromPrefix}`.replace(/\/{2,}/gu, '/'),
-      status: legacy.status,
+  if (legacy) {
+    for (const fromPrefix of [...legacy.prefixes].sort()) {
+      const docsPrefix = `${legacy.targetPrefix}${fromPrefix}`.replace(/\/{2,}/gu, '/');
+      const movedTo = movedByPrefix.get(docsPrefix);
+      rules.push({
+        fromPrefix,
+        toPrefix: movedTo ?? docsPrefix,
+        status: legacy.status,
+        preserveSuffix: true,
+        preserveQuery: true,
+        // Set only when flattening skipped a hop. It records which /docs/ prefix this
+        // legacy rule is an alias of, so validation can tell an intentional alias
+        // convergence apart from two unrelated prefixes claiming one destination.
+        ...(movedTo ? { aliasOf: docsPrefix } : {}),
+      });
+    }
+  }
+  for (const rule of moved) {
+    rules.push({
+      fromPrefix: rule.fromPrefix,
+      toPrefix: rule.toPrefix,
+      status: rule.status,
       preserveSuffix: true,
       preserveQuery: true,
-    }));
+    });
+  }
+  return rules.sort((a, b) => a.fromPrefix.localeCompare(b.fromPrefix));
+}
+
+// Cloudflare static-asset `_redirects` syntax. `:splat` carries the path suffix, so a
+// moved section redirects every descendant page, not just its index.
+export function renderRedirectsFile(rules) {
+  const lines = rules.map((rule) => `${rule.fromPrefix}* ${rule.toPrefix}:splat ${rule.status}`);
+  return `${lines.join('\n')}\n`;
 }
 
 export function buildReleaseState(rootDir = ROOT_DIR) {
@@ -212,9 +248,17 @@ export function validateDocsFoundation(rootDir = ROOT_DIR) {
   const redirectSources = new Set();
   const redirectDestinations = new Set();
   const redirectMap = new Map();
+  // A rule carrying `aliasOf` was flattened past a moved prefix, so it is deliberately
+  // the same journey as the move's own rule and may share its destination. Any other
+  // pair sharing a destination still means two unrelated prefixes claim one page.
+  const aliasedDestinations = new Set(
+    manifest.redirects.filter((redirect) => redirect.aliasOf).map((redirect) => redirect.toPrefix),
+  );
   for (const redirect of manifest.redirects) {
     if (redirectSources.has(redirect.fromPrefix)) violations.push(`duplicate redirect source ${redirect.fromPrefix}.`);
-    if (redirectDestinations.has(redirect.toPrefix)) violations.push(`ambiguous duplicate redirect destination ${redirect.toPrefix}.`);
+    if (redirectDestinations.has(redirect.toPrefix) && !aliasedDestinations.has(redirect.toPrefix)) {
+      violations.push(`ambiguous duplicate redirect destination ${redirect.toPrefix}.`);
+    }
     if (redirect.fromPrefix === redirect.toPrefix) violations.push(`redirect loop at ${redirect.fromPrefix}.`);
     redirectSources.add(redirect.fromPrefix);
     redirectDestinations.add(redirect.toPrefix);
@@ -230,6 +274,30 @@ export function validateDocsFoundation(rootDir = ROOT_DIR) {
       }
       visited.add(cursor);
       cursor = redirectMap.get(cursor);
+    }
+  }
+
+  // A moved route only stops being a 404 if the source is actually vacated and the
+  // destination actually exists. Without both, the redirect manifest reads green while
+  // the live site serves a redirect into nothing (or shadows a page that still renders).
+  for (const moved of config.docsFoundation.movedRoutes ?? []) {
+    if (!moved.fromPrefix?.startsWith('/docs/') || !moved.fromPrefix.endsWith('/')) {
+      violations.push(`moved docs route ${moved.fromPrefix} must be a slash-delimited /docs/ prefix.`);
+      continue;
+    }
+    if (!moved.toPrefix?.startsWith('/docs/') || !moved.toPrefix.endsWith('/')) {
+      violations.push(`moved docs route ${moved.fromPrefix} must target a slash-delimited /docs/ prefix.`);
+      continue;
+    }
+    const stillPublished = [...docsRoutes].filter((route) => route.startsWith(moved.fromPrefix));
+    if (stillPublished.length) {
+      violations.push(
+        `moved docs route ${moved.fromPrefix} still has published pages (${stillPublished.join(', ')}); ` +
+        'a redirected prefix may not also render content.',
+      );
+    }
+    if (!docsRoutes.has(moved.toPrefix)) {
+      violations.push(`moved docs route ${moved.fromPrefix} redirects to ${moved.toPrefix}, which has no page.`);
     }
   }
 

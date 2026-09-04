@@ -2,43 +2,145 @@
   "schemaVersion": 1,
   "productionRuntime": "cloudflare-workers",
   "docsBase": "/docs",
-  "locales": ["en"],
+  "locales": [
+    "en"
+  ],
   "environments": {
     "development": {
       "origin": "https://beeui-dev.beemvp.com",
       "indexPolicy": "noindex,nofollow",
-      "robotsDisallow": ["/"]
+      "robotsDisallow": [
+        "/"
+      ]
     },
     "staging": {
       "origin": "https://beeui-stg.beemvp.com",
       "indexPolicy": "noindex,nofollow",
-      "robotsDisallow": ["/"]
+      "robotsDisallow": [
+        "/"
+      ]
     },
     "production": {
       "origin": "https://beeui.beemvp.com",
       "indexPolicy": "index,follow",
-      "robotsDisallow": ["/api/"]
+      "robotsDisallow": [
+        "/api/"
+      ]
     }
   },
   "routes": [
-    { "id": "landing", "prefix": "/", "owner": "web/site", "output": "web/dist", "visibility": "public", "indexable": true },
-    { "id": "docs", "prefix": "/docs/", "owner": "apps/docs", "output": "apps/docs/dist", "visibility": "public", "indexable": true },
-    { "id": "showcase", "prefix": "/showcase/", "owner": "apps/showcase", "output": "apps/showcase/dist-web", "visibility": "public", "indexable": true },
-    { "id": "demo", "prefix": "/demo/", "owner": "apps/demo", "output": "apps/demo/dist-web", "visibility": "public", "indexable": true },
-    { "id": "examples", "prefix": "/examples/", "owner": "web/site", "output": "web/dist/examples", "visibility": "public", "indexable": true },
-    { "id": "changelog", "prefix": "/changelog/", "owner": "web/site", "output": "web/dist/changelog", "visibility": "public", "indexable": true },
-    { "id": "llms", "prefix": "/llms", "owner": "scripts/generate-llms-txt.mjs", "output": "web/dist", "visibility": "public", "indexable": false },
-    { "id": "api", "prefix": "/api/", "owner": "web/worker", "output": null, "visibility": "runtime", "indexable": false }
+    {
+      "id": "landing",
+      "prefix": "/",
+      "owner": "web/site",
+      "output": "web/dist",
+      "visibility": "public",
+      "indexable": true
+    },
+    {
+      "id": "docs",
+      "prefix": "/docs/",
+      "owner": "apps/docs",
+      "output": "apps/docs/dist",
+      "visibility": "public",
+      "indexable": true
+    },
+    {
+      "id": "showcase",
+      "prefix": "/showcase/",
+      "owner": "apps/showcase",
+      "output": "apps/showcase/dist-web",
+      "visibility": "public",
+      "indexable": true
+    },
+    {
+      "id": "demo",
+      "prefix": "/demo/",
+      "owner": "apps/demo",
+      "output": "apps/demo/dist-web",
+      "visibility": "public",
+      "indexable": true
+    },
+    {
+      "id": "examples",
+      "prefix": "/examples/",
+      "owner": "web/site",
+      "output": "web/dist/examples",
+      "visibility": "public",
+      "indexable": true
+    },
+    {
+      "id": "changelog",
+      "prefix": "/changelog/",
+      "owner": "web/site",
+      "output": "web/dist/changelog",
+      "visibility": "public",
+      "indexable": true
+    },
+    {
+      "id": "llms",
+      "prefix": "/llms",
+      "owner": "scripts/generate-llms-txt.mjs",
+      "output": "web/dist",
+      "visibility": "public",
+      "indexable": false
+    },
+    {
+      "id": "api",
+      "prefix": "/api/",
+      "owner": "web/worker",
+      "output": null,
+      "visibility": "runtime",
+      "indexable": false
+    }
   ],
   "docsFoundation": {
     "schemaVersion": 1,
     "sections": [
-      { "id": "start", "route": "/docs/start/", "ownerIssue": 457, "status": "foundation" },
-      { "id": "learn", "route": "/docs/learn/", "ownerIssue": 462, "status": "foundation" },
-      { "id": "components", "route": "/docs/components/", "ownerIssue": 459, "status": "existing" },
-      { "id": "patterns", "route": "/docs/patterns/", "ownerIssue": 460, "status": "existing" },
-      { "id": "guides", "route": "/docs/guides/", "ownerIssue": 458, "status": "foundation" },
-      { "id": "reference", "route": "/docs/reference/", "ownerIssue": 463, "status": "foundation" }
+      {
+        "id": "start",
+        "route": "/docs/start/",
+        "ownerIssue": 457,
+        "status": "foundation"
+      },
+      {
+        "id": "learn",
+        "route": "/docs/learn/",
+        "ownerIssue": 462,
+        "status": "foundation"
+      },
+      {
+        "id": "components",
+        "route": "/docs/components/",
+        "ownerIssue": 459,
+        "status": "existing"
+      },
+      {
+        "id": "patterns",
+        "route": "/docs/patterns/",
+        "ownerIssue": 460,
+        "status": "existing"
+      },
+      {
+        "id": "guides",
+        "route": "/docs/guides/",
+        "ownerIssue": 458,
+        "status": "foundation"
+      },
+      {
+        "id": "reference",
+        "route": "/docs/reference/",
+        "ownerIssue": 463,
+        "status": "foundation"
+      }
+    ],
+    "movedRoutes": [
+      {
+        "fromPrefix": "/docs/getting-started/",
+        "toPrefix": "/docs/start/",
+        "status": 308,
+        "ownerIssue": 457
+      }
     ],
     "metadataContracts": {
       "implementation": "apps/docs/src/lib/foundation-contract.ts",
@@ -57,38 +159,63 @@
       {
         "id": "components",
         "routePrefix": "/docs/components/",
-        "sources": ["packages/ui/src/index.ts", "registry/registry.json", "docs/component-reference.content.json"],
+        "sources": [
+          "packages/ui/src/index.ts",
+          "registry/registry.json",
+          "docs/component-reference.content.json"
+        ],
         "generator": "scripts/generate-component-reference.mjs"
       },
       {
         "id": "patterns",
         "routePrefix": "/docs/patterns/",
-        "sources": ["apps/showcase/patterns", "docs/pattern-library.content.json"],
+        "sources": [
+          "apps/showcase/patterns",
+          "docs/pattern-library.content.json"
+        ],
         "generator": "scripts/generate-pattern-library.mjs"
       },
       {
         "id": "examples",
         "routePrefix": "/examples/",
-        "sources": ["examples/README.md", "examples"],
+        "sources": [
+          "examples/README.md",
+          "examples"
+        ],
         "generator": null
       },
       {
         "id": "release",
         "routePrefix": "/docs/reference/release/",
-        "sources": ["docs/dist-tag-policy.md", "packages/cli/package.json", "package.json"],
+        "sources": [
+          "docs/dist-tag-policy.md",
+          "packages/cli/package.json",
+          "package.json"
+        ],
         "generator": "scripts/generate-docs-foundation.mjs"
       }
     ],
     "showcaseAddressability": {
       "ownerIssue": 472,
       "urlBuilder": "apps/docs/src/lib/foundation-contract.ts#buildShowcaseHref",
-      "requiredFields": ["surface", "id"],
-      "optionalFields": ["example", "state", "theme", "density"]
+      "requiredFields": [
+        "surface",
+        "id"
+      ],
+      "optionalFields": [
+        "example",
+        "state",
+        "theme",
+        "density"
+      ]
     },
     "seo": {
       "sitemap": {
         "includeIndexableRoutes": true,
-        "excludePrefixes": ["/api/", "/llms"]
+        "excludePrefixes": [
+          "/api/",
+          "/llms"
+        ]
       }
     },
     "release": {
@@ -118,24 +245,82 @@
     "targetPrefix": "/docs"
   },
   "navigation": [
-    { "label": "Docs", "href": "/docs/" },
-    { "label": "Components", "href": "/docs/components/" },
-    { "label": "Patterns", "href": "/docs/patterns/" },
-    { "label": "Showcase", "href": "/showcase/" },
-    { "label": "Demo", "href": "/demo/" },
-    { "label": "GitHub", "href": "https://github.com/beobungbu/BeeUI" }
+    {
+      "label": "Docs",
+      "href": "/docs/"
+    },
+    {
+      "label": "Components",
+      "href": "/docs/components/"
+    },
+    {
+      "label": "Patterns",
+      "href": "/docs/patterns/"
+    },
+    {
+      "label": "Showcase",
+      "href": "/showcase/"
+    },
+    {
+      "label": "Demo",
+      "href": "/demo/"
+    },
+    {
+      "label": "GitHub",
+      "href": "https://github.com/beobungbu/BeeUI"
+    }
   ],
   "contentSources": {
-    "componentInventory": ["packages/ui/src/index.ts", "registry/registry.json", "scripts/generate-component-reference.mjs"],
-    "componentApi": ["packages/ui/src/index.ts", "packages/ui/src/components", "docs/component-reference.content.json"],
-    "platformSupport": ["docs/compatibility-matrix.md", "scripts/check-compatibility-matrix.mjs"],
-    "accessibility": ["docs/accessibility-contract.md", "docs/keyboard-focus-acceptance-matrix.md", "docs/dynamic-type.md", "docs/reduced-motion-acceptance-matrix.md"],
-    "patterns": ["apps/showcase/patterns", "docs/pattern-library.content.json", "scripts/generate-pattern-library.mjs"],
-    "demo": ["apps/demo/app", "apps/demo/src", "docs/decisions/013-production-demo-architecture.md"],
-    "publication": ["docs/dist-tag-policy.md", "scripts/check-distribution-policy.mjs"],
-    "version": ["package.json", "packages/core/package.json", "packages/tokens/package.json", "packages/ui/package.json"],
-    "changelog": ["CHANGELOG.md"],
-    "ai": ["scripts/generate-llms-txt.mjs", "llms.txt", "llms-full.txt", "llms-components.txt", "llms-patterns.txt"]
+    "componentInventory": [
+      "packages/ui/src/index.ts",
+      "registry/registry.json",
+      "scripts/generate-component-reference.mjs"
+    ],
+    "componentApi": [
+      "packages/ui/src/index.ts",
+      "packages/ui/src/components",
+      "docs/component-reference.content.json"
+    ],
+    "platformSupport": [
+      "docs/compatibility-matrix.md",
+      "scripts/check-compatibility-matrix.mjs"
+    ],
+    "accessibility": [
+      "docs/accessibility-contract.md",
+      "docs/keyboard-focus-acceptance-matrix.md",
+      "docs/dynamic-type.md",
+      "docs/reduced-motion-acceptance-matrix.md"
+    ],
+    "patterns": [
+      "apps/showcase/patterns",
+      "docs/pattern-library.content.json",
+      "scripts/generate-pattern-library.mjs"
+    ],
+    "demo": [
+      "apps/demo/app",
+      "apps/demo/src",
+      "docs/decisions/013-production-demo-architecture.md"
+    ],
+    "publication": [
+      "docs/dist-tag-policy.md",
+      "scripts/check-distribution-policy.mjs"
+    ],
+    "version": [
+      "package.json",
+      "packages/core/package.json",
+      "packages/tokens/package.json",
+      "packages/ui/package.json"
+    ],
+    "changelog": [
+      "CHANGELOG.md"
+    ],
+    "ai": [
+      "scripts/generate-llms-txt.mjs",
+      "llms.txt",
+      "llms-full.txt",
+      "llms-components.txt",
+      "llms-patterns.txt"
+    ]
   },
   "buildOutputs": {
     "landing": "web/dist",

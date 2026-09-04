@@ -12,6 +12,7 @@ import { showcaseHref } from '../../apps/showcase/showcase-target.ts';
 import {
   buildDocsFoundationManifest,
   buildRedirectRules,
+  renderRedirectsFile,
   buildReleaseState,
   contentPathToRoute,
   validateDocsFoundation,
@@ -140,16 +141,59 @@ test('Foundation documentation names the current executable pattern authority an
   assert.match(foundationDoc, /`web\/public-site\.config\.json` owns the environment-to-origin mapping/u);
 });
 
-test('legacy redirect manifest is deterministic and has unique sources/destinations', () => {
+test('redirect manifest is deterministic and has unique sources', () => {
   const config = readPublicSiteConfig(ROOT_DIR);
   const redirects = buildRedirectRules(config);
   assert.deepEqual(redirects, [...redirects].sort((a, b) => a.fromPrefix.localeCompare(b.fromPrefix)));
   assert.equal(new Set(redirects.map((rule) => rule.fromPrefix)).size, redirects.length);
-  assert.equal(new Set(redirects.map((rule) => rule.toPrefix)).size, redirects.length);
   for (const rule of redirects) {
     assert.notEqual(rule.fromPrefix, rule.toPrefix);
     assert.ok(rule.toPrefix.startsWith('/docs/'));
   }
+});
+
+// Every rule must land the visitor on a real page in one hop. If a destination were
+// itself a redirect source, the browser would take two 308s and search engines would see
+// a chain, which is exactly what flattening legacy prefixes through movedRoutes prevents.
+test('no redirect destination is itself a redirect source', () => {
+  const redirects = buildRedirectRules(readPublicSiteConfig(ROOT_DIR));
+  const sources = new Set(redirects.map((rule) => rule.fromPrefix));
+  for (const rule of redirects) {
+    assert.equal(sources.has(rule.toPrefix), false, `${rule.fromPrefix} redirects into another redirect (${rule.toPrefix})`);
+  }
+});
+
+// Destinations may legitimately converge: a moved section is reachable both from its old
+// /docs/ prefix and from the pre-/docs origin alias of that prefix. Only a convergence
+// explained by that alias relationship is allowed.
+test('only alias rules may share a redirect destination', () => {
+  const redirects = buildRedirectRules(readPublicSiteConfig(ROOT_DIR));
+  const byDestination = new Map();
+  for (const rule of redirects) {
+    byDestination.set(rule.toPrefix, [...(byDestination.get(rule.toPrefix) ?? []), rule]);
+  }
+  for (const [destination, rules] of byDestination) {
+    if (rules.length === 1) continue;
+    assert.ok(
+      rules.some((rule) => rule.aliasOf) && rules.some((rule) => !rule.aliasOf),
+      `${destination} is claimed by ${rules.length} unrelated redirect sources`,
+    );
+    for (const alias of rules.filter((rule) => rule.aliasOf)) {
+      assert.ok(
+        rules.some((rule) => rule.fromPrefix === alias.aliasOf),
+        `${alias.fromPrefix} claims to alias ${alias.aliasOf}, which is not a redirect source`,
+      );
+    }
+  }
+});
+
+test('a moved docs section redirects its descendants, not only its index', () => {
+  const rules = buildRedirectRules(readPublicSiteConfig(ROOT_DIR));
+  const moved = rules.find((rule) => rule.fromPrefix === '/docs/getting-started/');
+  assert.ok(moved, 'the #457 getting-started -> start move must be in the manifest');
+  assert.equal(moved.preserveSuffix, true);
+  assert.equal(moved.status, 308);
+  assert.match(renderRedirectsFile([moved]), /^\/docs\/getting-started\/\* \/docs\/start\/:splat 308$/mu);
 });
 
 test('full Foundation validation has no violations', () => {

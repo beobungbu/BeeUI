@@ -18,7 +18,7 @@ export const STARTERS = [
     path: 'examples/expo-package-consumer',
     model: 'Packed package boundary',
     purpose: 'Expo SDK 57 / Metro consumer using the same package boundary intended for public distribution.',
-    onboarding: '/docs/getting-started/expo/',
+    onboarding: '/docs/start/expo/',
     commands: ['pnpm build', 'cd examples/expo-package-consumer', 'bash setup.sh', 'bash bundle.sh'],
   },
   {
@@ -27,7 +27,7 @@ export const STARTERS = [
     path: 'examples/bare-rn-consumer',
     model: 'Packed package boundary',
     purpose: 'Bare React Native / Metro consumer proving BeeUI works without Expo application ownership.',
-    onboarding: '/docs/getting-started/bare-react-native/',
+    onboarding: '/docs/start/bare-react-native/',
     commands: ['pnpm build', 'cd examples/bare-rn-consumer', 'bash setup.sh', 'bash bundle.sh'],
   },
   {
@@ -36,7 +36,7 @@ export const STARTERS = [
     path: 'examples/web-consumer',
     model: 'Packed package boundary',
     purpose: 'Vite + react-native-web consumer with a real production build and browser interaction coverage.',
-    onboarding: '/docs/getting-started/web/',
+    onboarding: '/docs/start/web/',
     commands: ['pnpm build', 'cd examples/web-consumer', 'bash setup.sh', 'npm run build'],
   },
   {
@@ -201,7 +201,7 @@ function renderHub({ contract, components, patterns, featured }) {
   <p class="eyebrow">Examples · recipes · starters · v${escapeHtml(contract.buildTruth.version)}</p>
   <h1>Build from working BeeUI source.</h1>
   <p class="examples-lede">Browse source-equal component examples, complete production screen recipes, and isolated consumer starters. Every preview links back to the real Showcase or committed source; there is no second examples-only runtime.</p>
-  <div class="examples-actions"><a class="button primary" href="#featured">Browse recipes</a><a class="button secondary" href="/showcase/">Open Showcase</a><a class="text-link" href="/docs/getting-started/">Getting started</a></div>
+  <div class="examples-actions"><a class="button primary" href="#featured">Browse recipes</a><a class="button secondary" href="/showcase/">Open Showcase</a><a class="text-link" href="/docs/start/">Start</a></div>
   <div class="examples-stats" aria-label="Examples inventory">
     <div><strong>${components.length}</strong><span>component recipes</span></div>
     <div><strong>${patterns.length}</strong><span>production patterns</span></div>
