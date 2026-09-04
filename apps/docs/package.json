@@ -4,12 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "node ../../scripts/public-component-reference.mjs && node ../../scripts/public-component-previews.mjs && node ../../scripts/public-pattern-reference.mjs && node ../../scripts/public-guide-data.mjs && node ../../scripts/generate-docs-foundation.mjs",
+    "predev": "node ../../scripts/public-component-reference.mjs && node ../../scripts/public-component-previews.mjs && node ../../scripts/public-pattern-reference.mjs && node ../../scripts/public-reference.mjs && node ../../scripts/public-guide-data.mjs && node ../../scripts/generate-docs-foundation.mjs",
     "dev": "astro dev",
-    "prebuild": "node ../../scripts/public-component-reference.mjs && node ../../scripts/public-component-previews.mjs && node ../../scripts/public-pattern-reference.mjs && node ../../scripts/public-guide-data.mjs && node ../../scripts/generate-docs-foundation.mjs",
+    "prebuild": "node ../../scripts/public-component-reference.mjs && node ../../scripts/public-component-previews.mjs && node ../../scripts/public-pattern-reference.mjs && node ../../scripts/public-reference.mjs && node ../../scripts/public-guide-data.mjs && node ../../scripts/generate-docs-foundation.mjs",
     "build": "astro build",
     "preview": "astro preview",
-    "pretypecheck": "node ../../scripts/public-component-reference.mjs && node ../../scripts/public-component-previews.mjs && node ../../scripts/public-pattern-reference.mjs && node ../../scripts/public-guide-data.mjs && node ../../scripts/generate-docs-foundation.mjs",
+    "pretypecheck": "node ../../scripts/public-component-reference.mjs && node ../../scripts/public-component-previews.mjs && node ../../scripts/public-pattern-reference.mjs && node ../../scripts/public-reference.mjs && node ../../scripts/public-guide-data.mjs && node ../../scripts/generate-docs-foundation.mjs",
     "typecheck": "astro check"
   },
   "dependencies": {
