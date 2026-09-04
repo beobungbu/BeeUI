@@ -1,0 +1,46 @@
+{
+  "$schema-note": "Primary documentation ownership policy for the generated BeeUI public-surface inventory (#473). Inventory rows are derived from package manifests/barrels, tokens, CLI help and Registry data. `acknowledgedSourceBlobs` is intentionally review-controlled: changing a canonical public-surface source fails docs:surface:check until this policy is explicitly re-acknowledged after docs ownership is reviewed (`pnpm docs:surface:acknowledge` rewrites the map once the derived diff has been reviewed). Owner routes must resolve inside a ratified docs IA section from web/public-site.config.json#docsFoundation.sections, and each derived row records whether its owner page is already published or still planned so coverage is never overstated.",
+  "schemaVersion": 1,
+  "owners": {
+    "uiComponent": "/docs/components/{component}/",
+    "uiPackage": "/docs/reference/components/",
+    "tokens": "/docs/reference/tokens/",
+    "styling": "/docs/reference/styling/",
+    "core": "/docs/reference/core/",
+    "cli": "/docs/reference/cli/",
+    "registry": "/docs/reference/registry/",
+    "release": "/docs/reference/release/",
+    "machine": "/docs/reference/ai-machine/"
+  },
+  "coreClassification": {
+    "normalConsumer": ["cn"],
+    "advancedConsumerPrefixes": ["calendar", "date", "clock", "resolveAnchored", "computeAnchored", "overlay", "dismiss", "keyboard", "safeArea"],
+    "default": "advanced-consumer"
+  },
+  "tokenStylingSubpaths": ["./theme.css"],
+  "machineTokenSubpaths": ["./tokens.json", "./tokens.resolver.json", "./lifecycle.json"],
+  "acknowledgedSourceBlobs": {
+    "packages/ui/package.json": "79e4564c647c167162d81b54b8e75e46435551e8",
+    "packages/ui/src/index.ts": "181d1af5d2ddb02c3b0c762b58270c77ae2d664f",
+    "packages/tokens/package.json": "b6f35d1e531cdf19ed5aff9fa0737a9934f60a91",
+    "packages/tokens/tokens.json": "4eb33b6450f5f9347f7f69cb6ca37c8ff559ffc3",
+    "packages/tokens/src/index.ts": "a21a9d3bcc8589c811ca19aaf9d1126b1acf352c",
+    "packages/tokens/src/registry.ts": "493d3fdbf060764d1ed2c8cf8844c7e8cc491466",
+    "packages/tokens/src/theme-overrides.ts": "0df9d73600a65d9c22f7a2dcf17569bd0dd284a5",
+    "packages/tokens/src/token-reader.ts": "eb66ebf91b39f518e0c299fca4fe0ea1d48ec555",
+    "packages/tokens/src/motion-runtime.ts": "a18a48ab526602dea2250dd58f03d527124e51d9",
+    "packages/core/package.json": "9cf51f8876d884ff475704d5419d05189afa5e31",
+    "packages/core/src/index.ts": "8bc4dd7cd94583aa191188c52dc6c4ba883ca56a",
+    "packages/cli/src/beeui.mjs": "b3d6eccecb6c5ec814b90bcf29083d2e55c0f796",
+    "registry/registry.json": "fb8c1ea6022ed55c6fbf5a16722d9670d57eed1d"
+  },
+  "ignoredExportSubpaths": ["./package.json"],
+  "requiredMachineMirrors": ["llms-components.txt", "llms-patterns.txt"],
+  "releaseTruthReadmes": [
+    "README.md",
+    "packages/core/README.md",
+    "packages/tokens/README.md",
+    "packages/ui/README.md",
+    "packages/cli/README.md"
+  ]
+}

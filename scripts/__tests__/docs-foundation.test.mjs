@@ -8,6 +8,7 @@ import {
   buildShowcaseHref,
   indexPolicyForEnvironment,
 } from '../../apps/docs/src/lib/foundation-contract.ts';
+import { showcaseHref } from '../../apps/showcase/showcase-target.ts';
 import {
   buildDocsFoundationManifest,
   buildRedirectRules,
@@ -121,7 +122,13 @@ test('Showcase href builder is deterministic and rejects missing target identity
       theme: 'dark',
       density: 'compact',
     }),
-    '/showcase/?surface=component&id=select&owner=select&example=controlled&state=open&theme=dark&density=compact',
+    // ownerId is documentation metadata and is deliberately absent from runtime target identity.
+    '/showcase/?surface=component&id=select&example=controlled&state=open&theme=dark&density=compact',
+  );
+  assert.equal(
+    buildShowcaseHref({ surface: 'component', id: 'select', example: 'controlled' }),
+    showcaseHref({ surface: 'component', id: 'select', example: 'controlled' }),
+    'docs href builder must delegate to the canonical Showcase target serializer',
   );
   assert.throws(() => buildShowcaseHref({ surface: 'component', id: '   ' }), /must be non-empty/u);
 });
