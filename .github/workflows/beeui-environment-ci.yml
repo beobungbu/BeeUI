@@ -41,10 +41,21 @@ jobs:
           corepack prepare "pnpm@${PNPM_VERSION}" --activate
           test "$(node --version)" = "v${NODE_VERSION}"
           test "$(pnpm --version)" = "${PNPM_VERSION}"
+          pnpm config set store-dir "$HOME/.pnpm-store"
+
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
 
       - name: Install workspace dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --prefer-offline
 
+      # Complete integration remains intentionally after merge. PR CI is
+      # affected/fast; development/staging are the backstop that proves the
+      # whole repository still composes before promotion.
       - name: Run complete repository type contract
         run: pnpm typecheck
 
@@ -59,5 +70,6 @@ jobs:
             echo "### BeeUI environment integration CI"
             echo "- Branch: \`${GITHUB_REF_NAME}\`"
             echo "- Exact SHA: \`${GITHUB_SHA}\`"
+            echo "- Full-repository mode: \`true\`"
             echo "- Cloudflare credentials available: \`false\`"
           } >> "$GITHUB_STEP_SUMMARY"

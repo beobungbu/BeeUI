@@ -7,273 +7,207 @@ import path from 'node:path';
 
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(testDir, '../..');
-const workflowPath = path.join(repoRoot, '.github/workflows/ci.yml');
-const runtimeWorkflowPath = path.join(repoRoot, '.github/workflows/runtime-native.yml');
-const expoConsumerWorkflowPath = path.join(repoRoot, '.github/workflows/expo-consumer.yml');
-const webConsumerWorkflowPath = path.join(repoRoot, '.github/workflows/web-consumer.yml');
-const webA11yWorkflowPath = path.join(repoRoot, '.github/workflows/web-a11y.yml');
-const visualWebWorkflowPath = path.join(repoRoot, '.github/workflows/visual-web.yml');
-const bareScriptPath = path.join(repoRoot, 'scripts/verify-bare-consumer.sh');
-const expoScriptPath = path.join(repoRoot, 'scripts/verify-expo-consumer.sh');
-const showcasePackagePath = path.join(repoRoot, 'apps/showcase/package.json');
-const showcaseBuildPrereqPath = path.join(repoRoot, 'apps/showcase/scripts/ensure-workspace-build.mjs');
-const runtimeCommonFlowPath = path.join(repoRoot, 'apps/showcase/runtime-smoke/maestro/common.yaml');
-const androidRuntimeScriptPath = path.join(repoRoot, 'scripts/runtime-smoke/android.sh');
+
+async function read(relativePath) {
+  return readFile(path.join(repoRoot, relativePath), 'utf8');
+}
 
 async function sources() {
   const [
-    workflow,
-    runtimeWorkflow,
-    expoConsumerWorkflow,
-    webConsumerWorkflow,
-    webA11yWorkflow,
-    visualWebWorkflow,
+    ci,
+    runtime,
+    expo,
+    webConsumer,
+    webA11y,
+    visual,
+    visualConfig,
+    beeuiWeb,
+    environmentCi,
     bareScript,
     expoScript,
-    showcasePackageRaw,
-    showcaseBuildPrereq,
-    runtimeCommonFlow,
-    androidRuntimeScript,
   ] = await Promise.all([
-    readFile(workflowPath, 'utf8'),
-    readFile(runtimeWorkflowPath, 'utf8'),
-    readFile(expoConsumerWorkflowPath, 'utf8'),
-    readFile(webConsumerWorkflowPath, 'utf8'),
-    readFile(webA11yWorkflowPath, 'utf8'),
-    readFile(visualWebWorkflowPath, 'utf8'),
-    readFile(bareScriptPath, 'utf8'),
-    readFile(expoScriptPath, 'utf8'),
-    readFile(showcasePackagePath, 'utf8'),
-    readFile(showcaseBuildPrereqPath, 'utf8'),
-    readFile(runtimeCommonFlowPath, 'utf8'),
-    readFile(androidRuntimeScriptPath, 'utf8'),
+    read('.github/workflows/ci.yml'),
+    read('.github/workflows/runtime-native.yml'),
+    read('.github/workflows/expo-consumer.yml'),
+    read('.github/workflows/web-consumer.yml'),
+    read('.github/workflows/web-a11y.yml'),
+    read('.github/workflows/visual-web.yml'),
+    read('apps/visual-regression/playwright.config.ts'),
+    read('.github/workflows/beeui-web.yml'),
+    read('.github/workflows/beeui-environment-ci.yml'),
+    read('scripts/verify-bare-consumer.sh'),
+    read('scripts/verify-expo-consumer.sh'),
   ]);
-  return {
-    workflow,
-    runtimeWorkflow,
-    expoConsumerWorkflow,
-    webConsumerWorkflow,
-    webA11yWorkflow,
-    visualWebWorkflow,
-    bareScript,
-    expoScript,
-    showcasePackage: JSON.parse(showcasePackageRaw),
-    showcaseBuildPrereq,
-    runtimeCommonFlow,
-    androidRuntimeScript,
-  };
+  return { ci, runtime, expo, webConsumer, webA11y, visual, visualConfig, beeuiWeb, environmentCi, bareScript, expoScript };
 }
 
-test('Showcase iOS uses job-local DerivedData with compilation caching but no Actions DerivedData cache', async () => {
-  const { workflow } = await sources();
-  assert.match(workflow, /derived_data="\$HOME\/Library\/Developer\/Xcode\/DerivedData\/showcase/);
-  assert.match(workflow, /COMPILATION_CACHE_ENABLE_CACHING=YES/);
-  assert.match(workflow, /-showBuildTimingSummary/);
-  assert.doesNotMatch(workflow, /- name: Cache Xcode DerivedData/);
+test('PR CI is affected-first instead of eight verification lanes plus three export jobs', async () => {
+  const { ci } = await sources();
+  assert.match(ci, /^  classify:\n/m);
+  assert.match(ci, /^  verify-fast:\n/m);
+  assert.match(ci, /^  verify-docs:\n/m);
+  assert.match(ci, /^  verify-tokens:\n/m);
+  assert.match(ci, /^  verify-runtime:\n/m);
+  assert.doesNotMatch(ci, /^  verify-lane:\n/m);
+  assert.doesNotMatch(ci, /platform: \[web, android, ios\]/);
+  assert.doesNotMatch(ci, /^  showcase-bundle:\n/m);
 });
 
-test('bare RN iOS keeps deterministic job-local compiler/Ruby paths', async () => {
-  const { bareScript } = await sources();
-  assert.match(bareScript, /Library\/Caches\/BeeUI/);
-  assert.match(bareScript, /bundle\/ruby-/);
-  assert.match(bareScript, /DerivedData\/bare-rn-/);
-  assert.match(bareScript, /COMPILATION_CACHE_ENABLE_CACHING=YES/);
-});
-
-test('classifier is minimal and keeps verification policy tests off its critical path', async () => {
-  const { workflow } = await sources();
-  assert.match(workflow, /^  classify:\n/m);
-  assert.match(workflow, /git diff --name-only --no-renames "\$BEEUI_BASE_SHA" "\$BEEUI_HEAD_SHA"/);
-  const classifyBlock = workflow.slice(workflow.indexOf('  classify:'), workflow.indexOf('  verify-lane:'));
-  assert.doesNotMatch(classifyBlock, /Test native CI policy/);
+test('classifier stays on the shortest path and emits reusable scope/native outputs', async () => {
+  const { ci } = await sources();
+  const classifyBlock = ci.slice(ci.indexOf('  classify:'), ci.indexOf('  verify-fast:'));
+  assert.match(classifyBlock, /fetch-depth: 0/);
+  assert.match(classifyBlock, /node \.\/scripts\/ci-scope\.mjs/);
+  assert.match(classifyBlock, /node \.\/scripts\/classify-ci-changes\.mjs/);
+  assert.doesNotMatch(classifyBlock, /pnpm install/);
   assert.doesNotMatch(classifyBlock, /node --test/);
 });
 
-test('verification decomposes historical typecheck/test chains into eight parallel lanes', async () => {
-  const { workflow } = await sources();
-  assert.match(workflow, /^  verify-lane:\n/m);
-  for (const task of ['quality', 'tokens', 'contracts', 'docs', 'types', 'showcase-registry', 'bench', 'release']) {
-    assert.match(workflow, new RegExp(`\\s+- ${task.replace('-', '\\-')}(?:\\n|$)`));
+test('normal PR fast lane owns CI policy contracts while expensive checks are conditional', async () => {
+  const { ci } = await sources();
+  const fast = ci.slice(ci.indexOf('  verify-fast:'), ci.indexOf('  verify-docs:'));
+  assert.match(fast, /classify-ci-changes\.test\.mjs/);
+  assert.match(fast, /ci-scope\.test\.mjs/);
+  assert.match(fast, /ios-build-cache-contract\.test\.mjs/);
+
+  for (const job of ['verify-docs', 'verify-tokens', 'verify-runtime', 'verify-release', 'verify-benchmark', 'bare-consumer']) {
+    const start = ci.indexOf(`  ${job}:`);
+    assert.ok(start >= 0, job);
+    // The next job header, not merely the next two-space-indented line: job
+    // bodies are indented deeper, so anchoring on `\n  ` alone would slice the
+    // block down to its own header and make the `if:` assertion vacuous.
+    const rest = ci.slice(start + job.length + 3);
+    const next = rest.search(/\n {2}[A-Za-z][\w-]*:/);
+    const block = rest.slice(0, next >= 0 ? next : undefined);
+    assert.match(block, /\n {4}if: /, job);
   }
-  assert.doesNotMatch(workflow, /^  verify-lane:\n\s+needs:/m);
-  assert.match(workflow, /contracts\)[\s\S]*classify-ci-changes\.test\.mjs[\s\S]*ios-build-cache-contract\.test\.mjs/);
 });
 
-test('only the token verification lane requests full Git history', async () => {
-  const { workflow } = await sources();
-  const verifyBlock = workflow.slice(workflow.indexOf('  verify-lane:'), workflow.indexOf('  showcase-bundle:'));
-  assert.match(verifyBlock, /fetch-depth: \$\{\{ matrix\.task == 'tokens' && '0' \|\| '1' \}\}/);
-  assert.equal((verifyBlock.match(/fetch-depth:/g) ?? []).length, 1);
+test('stable verify fan-in blocks any selected lane failure including native', async () => {
+  const { ci } = await sources();
+  const block = ci.slice(ci.indexOf('  verify:'));
+  for (const need of ['verify-fast', 'verify-docs', 'verify-runtime', 'bare-consumer', 'android-native', 'ios-native']) {
+    assert.match(block, new RegExp(`- ${need.replace('-', '\\-')}`), need);
+  }
+  assert.match(block, /success\|skipped/);
+  assert.match(block, /test "\$CLASSIFY" = success/);
 });
 
-test('Showcase tests always rebuild current workspace artifacts before executing', async () => {
-  const { showcasePackage, showcaseBuildPrereq } = await sources();
-  assert.equal(showcasePackage.scripts.pretest, 'node ./scripts/ensure-workspace-build.mjs');
-  assert.match(showcaseBuildPrereq, /'--filter', '@beemvp\/beeui-ui\.\.\.', 'run', 'build'/);
-  assert.doesNotMatch(showcaseBuildPrereq, /artifactState\.every\(Boolean\)/);
-  assert.doesNotMatch(showcaseBuildPrereq, /requiredArtifacts/);
-  assert.doesNotMatch(showcaseBuildPrereq, /from 'node:fs\/promises'/);
+test('iOS native proofs share one macOS runner and persist only Xcode compilation cache', async () => {
+  const { ci, bareScript } = await sources();
+  assert.match(ci, /^  ios-native:\n/m);
+  assert.doesNotMatch(ci, /^  ios-showcase:\n/m);
+  assert.doesNotMatch(ci, /^  ios-bare:\n/m);
+  assert.match(ci, /Cache Xcode compilation results/);
+  assert.match(ci, /CompilationCache\.noindex/);
+  assert.match(ci, /xcode-cas-v1-/);
+  assert.doesNotMatch(ci, /Cache Xcode DerivedData/);
+  assert.match(ci, /COMPILATION_CACHE_ENABLE_CACHING="\$BEEUI_XCODE_COMPILATION_CACHE"/);
+  assert.match(bareScript, /COMPILATION_CACHE_ENABLE_CACHING=YES/);
 });
 
-function assertPlaywrightCacheHitContract(source) {
-  assert.match(source, /Provision Chromium and Linux dependencies on cache miss[\s\S]*if: steps\.pw-cache\.outputs\.cache-hit != 'true'[\s\S]*playwright install --with-deps chromium/);
-  assert.match(source, /Verify cached Chromium on cache hit[\s\S]*if: steps\.pw-cache\.outputs\.cache-hit == 'true'[\s\S]*playwright install chromium/);
-  assert.doesNotMatch(source, /cache-hit == 'true' && '' \|\| '--with-deps'/);
-}
-
-test('all Playwright workflows skip full Linux dependency provisioning on a browser cache hit', async () => {
-  const { webConsumerWorkflow, webA11yWorkflow, visualWebWorkflow } = await sources();
-  assertPlaywrightCacheHitContract(webConsumerWorkflow);
-  assertPlaywrightCacheHitContract(webA11yWorkflow);
-  assertPlaywrightCacheHitContract(visualWebWorkflow);
+test('Android builds use Gradle setup action instead of manually caching Gradle User Home', async () => {
+  const { ci, runtime, expo } = await sources();
+  const pin = /gradle\/actions\/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb/;
+  assert.match(ci, pin);
+  assert.match(runtime, pin);
+  assert.match(expo, pin);
+  assert.doesNotMatch(ci, /- name: Cache Gradle\n\s+uses: actions\/cache/);
+  assert.doesNotMatch(runtime, /- name: Cache Gradle\n\s+uses: actions\/cache/);
+  assert.doesNotMatch(expo, /- name: Cache Gradle\n\s+uses: actions\/cache/);
+  assert.match(ci, /cache-encryption-key: \$\{\{ secrets\.GRADLE_ENCRYPTION_KEY \}\}/);
+  assert.match(expo, /cache-encryption-key: \$\{\{ secrets\.GRADLE_ENCRYPTION_KEY \}\}/);
 });
 
-test('visual warm-cache path installs only deterministic glyph fallback and avoids a redundant global font-cache rebuild', async () => {
-  const { visualWebWorkflow } = await sources();
-  const warmCacheBlock = visualWebWorkflow.slice(
-    visualWebWorkflow.indexOf('      - name: Verify cached Chromium on cache hit'),
-    visualWebWorkflow.indexOf('      - name: Report visual browser versions'),
-  );
-  assert.match(warmCacheBlock, /apt-get install -y --no-install-recommends fonts-unifont/);
-  assert.doesNotMatch(warmCacheBlock, /--with-deps/);
-  assert.doesNotMatch(warmCacheBlock, /^\s*fc-cache -f\s*$/m);
+test('runtime Android weekly schedule is clean-room for task/configuration outputs', async () => {
+  const { runtime } = await sources();
+  assert.match(runtime, /github\.event_name == 'schedule' && 'false' \|\| 'true'/);
+  assert.match(runtime, /-Dorg\.gradle\.caching=/);
+  assert.match(runtime, /-Dorg\.gradle\.configuration-cache=/);
+  assert.match(runtime, /force-avd-creation: true/);
+  assert.doesNotMatch(runtime, /Cache Android AVD/);
 });
 
-test('Web consumer artifact upload follows the harness work-root nesting and fails closed', async () => {
-  const { webConsumerWorkflow } = await sources();
-  assert.match(webConsumerWorkflow, /path: \$\{\{ runner\.temp \}\}\/beeui-web-consumer\/web-consumer\/app\/dist/);
-  assert.match(webConsumerWorkflow, /if-no-files-found: error/);
+test('Expo consumer has one JS proof job and native jobs are change-gated', async () => {
+  const { expo } = await sources();
+  assert.match(expo, /^  scope:\n/m);
+  assert.match(expo, /^  expo-consumer:\n/m);
+  assert.doesNotMatch(expo, /^  platform-export:\n/m);
+  assert.doesNotMatch(expo, /matrix:\n\s+platform: \[android, ios\]/);
+  assert.match(expo, /^  android-native:\n\s+needs: \[scope\]\n\s+if: needs\.scope\.outputs\.native-required == 'true'/m);
+  assert.match(expo, /^  ios-native:\n\s+needs: \[scope\]\n\s+if: needs\.scope\.outputs\.native-required == 'true'/m);
+  assert.doesNotMatch(expo, /head\.repo\.full_name == github\.repository \|\|/);
+  assert.match(expo, /Cache Xcode compilation results/);
 });
 
-test('Showcase exports run as three independent matrix jobs', async () => {
-  const { workflow } = await sources();
-  assert.match(workflow, /^  showcase-bundle:\n/m);
-  assert.match(workflow, /platform: \[web, android, ios\]/);
-  assert.doesNotMatch(workflow, /^  showcase-bundle:\n\s+needs:/m);
+test('required Web consumer check skips browser work when package surface is unchanged', async () => {
+  const { webConsumer } = await sources();
+  assert.match(webConsumer, /^  web-consumer:\n/m);
+  assert.match(webConsumer, /node \.\/scripts\/ci-scope\.mjs/);
+  assert.match(webConsumer, /if: steps\.scope\.outputs\.consumer != 'true'/);
+  assert.match(webConsumer, /if: steps\.scope\.outputs\.consumer == 'true'/);
+  assert.match(webConsumer, /BEEUI_WEB_CONSUMER_CLEAN: '1'/);
 });
 
-test('stable verify check is only a fan-in aggregator', async () => {
-  const { workflow } = await sources();
-  assert.match(workflow, /^  verify:\n\s+needs: \[classify, verify-lane, showcase-bundle\]\n\s+if: always\(\)/m);
-  assert.match(workflow, /needs\.verify-lane\.result/);
-  assert.match(workflow, /needs\.showcase-bundle\.result/);
+test('required accessibility check skips Playwright provisioning when visual surface is unchanged', async () => {
+  const { webA11y } = await sources();
+  assert.match(webA11y, /^  web-a11y:\n/m);
+  assert.match(webA11y, /node \.\/scripts\/ci-scope\.mjs/);
+  assert.match(webA11y, /if: steps\.scope\.outputs\.visual != 'true'/);
+  assert.match(webA11y, /if: steps\.scope\.outputs\.visual == 'true'/);
 });
 
-test('native scheduling saturates hosted capacity without oversubscribing required checks', async () => {
-  const { workflow } = await sources();
-  assert.match(workflow, /^  ios-bare:\n\s+needs: \[classify\]/m);
-  assert.match(workflow, /^  bare-bundle:\n\s+needs: \[classify, showcase-bundle\]/m);
-  assert.match(workflow, /^  bare-android:\n\s+needs: \[classify, showcase-bundle\]/m);
-  assert.match(workflow, /^  ios-showcase:\n\s+needs: \[classify, showcase-bundle\]/m);
-  assert.match(workflow, /bare-bundle:\n\s+needs: \[classify, showcase-bundle\]\n\s+if: >\n\s+always\(\) &&/m);
-  assert.match(workflow, /bare-android:\n\s+needs: \[classify, showcase-bundle\]\n\s+if: >\n\s+always\(\) &&/m);
-  assert.match(workflow, /ios-showcase:\n\s+needs: \[classify, showcase-bundle\]\n\s+if: >\n\s+always\(\) &&/m);
+test('development PR visual proof is targeted while full pushes use three duration-balanced semantic lanes', async () => {
+  const { visual, visualConfig } = await sources();
+  const prBlock = visual.slice(visual.indexOf('  visual-web-report:'), visual.indexOf('  visual-web-full:'));
+  assert.match(prBlock, /if: github\.event_name == 'pull_request'/);
+  assert.match(prBlock, /--project=mobile-light/);
+  assert.match(prBlock, /--project=showcase-acceptance-smoke/);
+  assert.doesNotMatch(prBlock, /--shard=/);
+  assert.doesNotMatch(prBlock, /matrix:/);
+
+  const fullBlock = visual.slice(visual.indexOf('  visual-web-full:'));
+  assert.match(fullBlock, /if: github\.event_name == 'push'/);
+  assert.match(fullBlock, /lane: \[canonical-and-smoke, showcase-integration, showcase-acceptance-matrix\]/);
+  assert.match(fullBlock, /--project='mobile-\*'/);
+  assert.match(fullBlock, /--project='desktop-\*'/);
+  assert.match(fullBlock, /--project=showcase-integration/);
+  assert.match(fullBlock, /--project=showcase-acceptance-matrix/);
+  assert.doesNotMatch(fullBlock, /--shard=/);
+
+  assert.match(visualConfig, /name: 'showcase-integration'[\s\S]*testIgnore: rootShowcaseSpec/);
+  assert.match(visualConfig, /name: 'showcase-acceptance-matrix'[\s\S]*grep: fullAcceptanceMatrix/);
+  assert.match(visualConfig, /name: 'showcase-acceptance-smoke'[\s\S]*grepInvert: fullAcceptanceMatrix/);
 });
 
-test('bare bundle and Android compile remain independent native proofs', async () => {
-  const { workflow } = await sources();
-  assert.match(workflow, /bare-bundle:[\s\S]*Bundle bare consumer for Android and iOS/);
-  assert.match(workflow, /bare-android:[\s\S]*Compile bare Android debug APK/);
+test('Playwright cache-hit paths avoid full dependency provisioning', async () => {
+  const { webConsumer, webA11y, visual } = await sources();
+  for (const source of [webConsumer, webA11y, visual]) {
+    assert.match(source, /Provision Chromium and Linux dependencies on cache miss[\s\S]*cache-hit != 'true'/);
+    assert.match(source, /Verify cached Chromium on cache hit[\s\S]*cache-hit == 'true'/);
+  }
 });
 
-test('Showcase and bare iOS compiles remain independent macOS jobs', async () => {
-  const { workflow } = await sources();
-  assert.match(workflow, /ios-showcase:[\s\S]*Compile Showcase for iOS Simulator/);
-  assert.match(workflow, /ios-bare:[\s\S]*Compile bare React Native consumer for iOS Simulator/);
-  assert.doesNotMatch(workflow, /^  ios-bare:\n\s+needs: \[ios-showcase\]/m);
+test('public Web workflow uses PR path filtering while environment pushes remain unconditional', async () => {
+  const { beeuiWeb } = await sources();
+  assert.match(beeuiWeb, /pull_request:\n\s+paths:/);
+  assert.match(beeuiWeb, /- 'web\/\*\*'/);
+  assert.match(beeuiWeb, /- 'docs\/\*\*'/);
+  assert.match(beeuiWeb, /push:\n\s+branches:\n\s+- development\n\s+- staging\n\s+- main/);
 });
 
-test('native fan-out preserves specific classifier gates', async () => {
-  const { workflow } = await sources();
-  assert.match(workflow, /bare-bundle:[\s\S]*package-boundary-required == 'true'[\s\S]*bare-native-required == 'true'/);
-  assert.match(workflow, /bare-android:[\s\S]*needs\.classify\.outputs\.bare-native-required == 'true'/);
-  assert.match(workflow, /ios-showcase:[\s\S]*needs\.classify\.outputs\.showcase-native-required == 'true'/);
-  assert.match(workflow, /ios-bare:[\s\S]*if: needs\.classify\.outputs\.bare-native-required == 'true'/);
+test('development and staging retain complete repository integration after merge', async () => {
+  const { environmentCi } = await sources();
+  assert.match(environmentCi, /branches:\n\s+- development\n\s+- staging/);
+  assert.match(environmentCi, /pnpm typecheck/);
+  assert.match(environmentCi, /pnpm test/);
+  assert.match(environmentCi, /Cache pnpm store/);
 });
 
-test('iOS jobs cache CocoaPods but not Xcode DerivedData', async () => {
-  const { workflow } = await sources();
-  assert.match(workflow, /run: pod install\b/);
-  assert.match(workflow, /Cache CocoaPods/);
-  assert.match(workflow, /~\/\.cocoapods/);
-  assert.doesNotMatch(workflow, /key: dd-macos-/);
-});
-
-test('weekly backstop forces the full native graph', async () => {
-  const { workflow } = await sources();
-  assert.match(workflow, /schedule:\n\s+- cron: '47 2 \* \* 1'/);
-  assert.match(workflow, /BEEUI_FORCE_NATIVE:[\s\S]*github\.event_name == 'schedule'/);
-});
-
-test('Expo independent-consumer iOS harness still performs a real simulator compile', async () => {
-  const { expoScript } = await sources();
-  assert.doesNotMatch(expoScript, /\n\s*bundle install\b/);
-  assert.match(expoScript, /\n\s*pod install\b/);
-  assert.match(expoScript, /xcodebuild[\s\S]*-sdk iphonesimulator[\s\S]*\n\s*build\b/);
-  assert.match(expoScript, /xcodebuild -workspace "\$\{workspace\}" -list -json/);
-});
-
-test('runtime magic branch cannot self-trigger device smoke from a fork', async () => {
-  const { runtimeWorkflow } = await sources();
-  const guard = /github\.event\.pull_request\.head\.repo\.full_name == github\.repository\)\s*&&\s*github\.head_ref == 'test\/runtime-device-smoke'/g;
-  assert.equal([...runtimeWorkflow.matchAll(guard)].length, 2);
-  assert.equal((runtimeWorkflow.match(/contains\(github\.event\.pull_request\.labels\.\*\.name, 'ci:runtime'\)/g) ?? []).length, 2);
-});
-
-test('runtime fork opt-in checks out and verifies the exact fork head', async () => {
-  const { runtimeWorkflow } = await sources();
-  const repoSelection = /repository: \$\{\{ github\.event_name == 'pull_request' && github\.event\.pull_request\.head\.repo\.full_name \|\| github\.repository \}\}/g;
-  assert.equal([...runtimeWorkflow.matchAll(repoSelection)].length, 2);
-  assert.equal((runtimeWorkflow.match(/ref: \$\{\{ env\.BEEUI_RUNTIME_HEAD_SHA \}\}/g) ?? []).length, 2);
-  assert.equal((runtimeWorkflow.match(/git rev-parse HEAD/g) ?? []).length, 2);
-});
-
-test('Expo iOS native capacity is automatic only for same-repository PRs', async () => {
-  const { expoConsumerWorkflow } = await sources();
-  const iosBlock = expoConsumerWorkflow.slice(expoConsumerWorkflow.indexOf('  ios-native:'));
-  assert.match(iosBlock, /github\.event_name != 'pull_request'/);
-  assert.match(iosBlock, /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
-  assert.match(iosBlock, /contains\(github\.event\.pull_request\.labels\.\*\.name, 'ci:native'\)/);
-});
-
-test('generated Android projects use cache keys derived from checked-in inputs', async () => {
-  const { workflow, runtimeWorkflow, expoConsumerWorkflow } = await sources();
-  assert.match(workflow, /key: gradle-bare-v2-\$\{\{ runner\.os \}\}-\$\{\{ hashFiles\('pnpm-lock\.yaml','scripts\/verify-bare-consumer\.sh'\) \}\}/);
-  assert.match(runtimeWorkflow, /key: gradle-runtime-v2-\$\{\{ runner\.os \}\}-\$\{\{ hashFiles\('pnpm-lock\.yaml'/);
-  assert.match(expoConsumerWorkflow, /key: gradle-expo-v2-\$\{\{ runner\.os \}\}-\$\{\{ hashFiles\('pnpm-lock\.yaml'/);
-  assert.doesNotMatch(workflow, /hashFiles\('\*\*\/\*\.gradle\*'/);
-  assert.doesNotMatch(runtimeWorkflow, /hashFiles\('\*\*\/\*\.gradle\*'/);
-  assert.doesNotMatch(expoConsumerWorkflow, /hashFiles\('\*\*\/\*\.gradle\*'/);
-});
-
-test('runtime smoke avoids multi-GB AVD cache and separates concurrency event classes', async () => {
-  const { runtimeWorkflow, expoConsumerWorkflow, webConsumerWorkflow } = await sources();
-  assert.match(runtimeWorkflow, /group: native-runtime-smoke-\$\{\{ github\.event_name \}\}-/);
-  assert.match(expoConsumerWorkflow, /group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.event_name \}\}-/);
-  assert.match(webConsumerWorkflow, /group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.event_name \}\}-/);
-  assert.doesNotMatch(runtimeWorkflow, /Cache Android AVD/);
-  assert.match(runtimeWorkflow, /force-avd-creation: true/);
-});
-
-test('runtime common flow scrolls and retries verified first-home navigation', async () => {
-  const { runtimeCommonFlow } = await sources();
-  const scrollIndex = runtimeCommonFlow.indexOf('- scrollUntilVisible:\n    element:\n      id: "showcase-open-components"');
-  const firstLauncherIdIndex = runtimeCommonFlow.indexOf('id: "showcase-open-components"');
-  const retryIndex = runtimeCommonFlow.indexOf('- retry:', firstLauncherIdIndex);
-  const tapLauncherIdIndex = runtimeCommonFlow.indexOf('id: "showcase-open-components"', firstLauncherIdIndex + 1);
-  const destinationIndex = runtimeCommonFlow.indexOf('id: "component-gallery"', tapLauncherIdIndex);
-  assert.ok(scrollIndex >= 0);
-  assert.ok(scrollIndex < retryIndex);
-  assert.ok(retryIndex < tapLauncherIdIndex);
-  assert.ok(tapLauncherIdIndex < destinationIndex);
-});
-
-test('Android A7 centers the dialog trigger and retries tap plus verified destination', async () => {
-  const { androidRuntimeScript } = await sources();
-  const start = androidRuntimeScript.indexOf("run_inline_maestro a7-open <<'EOF_FLOW'");
-  const end = androidRuntimeScript.indexOf('real_back "A7 Back #1', start);
-  assert.ok(start >= 0 && end > start);
-  const a7Open = androidRuntimeScript.slice(start, end);
-  assert.match(a7Open, /id: "runtime-stress-dialog-trigger"[\s\S]*timeout: 30000[\s\S]*visibilityPercentage: 80[\s\S]*centerElement: true/);
-  assert.match(a7Open, /- retry:\n\s+maxRetries: 4[\s\S]*- tapOn:\n\s+id: "runtime-stress-dialog-trigger"[\s\S]*- extendedWaitUntil:\n\s+visible:\n\s+id: "runtime-stress-dialog-content"/);
+test('consumer scripts still perform real native compiles', async () => {
+  const { bareScript, expoScript } = await sources();
+  assert.match(bareScript, /\.\/gradlew[\s\S]*assembleDebug/);
+  assert.match(bareScript, /xcodebuild[\s\S]*-sdk iphonesimulator/);
+  assert.match(expoScript, /\.\/gradlew[\s\S]*assembleDebug/);
+  assert.match(expoScript, /xcodebuild[\s\S]*-sdk iphonesimulator/);
 });

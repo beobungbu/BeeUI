@@ -8,6 +8,7 @@ on:
       - main
   schedule:
     - cron: '47 2 * * 1'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
@@ -19,21 +20,30 @@ permissions:
 env:
   NODE_VERSION: 24.13.1
   PNPM_VERSION: 10.15.0
-  XCODE_MIN_VERSION: "26.4"
+  XCODE_MIN_VERSION: '26.4'
 
 jobs:
+  # Stable required check. This is the only job that always needs full history;
+  # it decides which expensive proof lanes are actually relevant to the PR.
   classify:
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     outputs:
-      ios-native-required: ${{ steps.native-changes.outputs.ios-native }}
-      ios-native-reason: ${{ steps.native-changes.outputs.reason }}
-      package-boundary-required: ${{ steps.native-changes.outputs.package-boundary }}
-      package-boundary-reason: ${{ steps.native-changes.outputs.package-boundary-reason }}
-      bare-native-required: ${{ steps.native-changes.outputs.bare-native }}
-      bare-native-reason: ${{ steps.native-changes.outputs.bare-native-reason }}
-      showcase-native-required: ${{ steps.native-changes.outputs.showcase-native }}
-      showcase-native-reason: ${{ steps.native-changes.outputs.showcase-native-reason }}
-      bare-consumer-required: ${{ steps.native-changes.outputs.bare-consumer }}
+      full-ci: ${{ steps.mode.outputs.full-ci }}
+      docs-required: ${{ steps.scope.outputs.docs }}
+      web-required: ${{ steps.scope.outputs.web }}
+      visual-required: ${{ steps.scope.outputs.visual }}
+      package-required: ${{ steps.scope.outputs.package }}
+      tokens-required: ${{ steps.scope.outputs.tokens }}
+      showcase-required: ${{ steps.scope.outputs.showcase }}
+      consumer-required: ${{ steps.scope.outputs.consumer }}
+      expo-consumer-required: ${{ steps.scope.outputs.expo-consumer }}
+      release-required: ${{ steps.scope.outputs.release }}
+      benchmark-required: ${{ steps.scope.outputs.benchmark }}
+      package-boundary-required: ${{ steps.native.outputs.package-boundary }}
+      bare-native-required: ${{ steps.native.outputs.bare-native }}
+      showcase-native-required: ${{ steps.native.outputs.showcase-native }}
+      ios-native-required: ${{ steps.native.outputs.ios-native }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
@@ -46,51 +56,55 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           package-manager-cache: false
 
-      # Keep classification itself on the shortest possible critical path.
-      # Policy/contract tests run in the parallel contracts lane below.
-      - name: Classify package boundary and native graph verification
-        id: native-changes
+      - name: Resolve CI mode and changed paths
+        id: mode
+        shell: bash
         env:
-          BEEUI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          BEEUI_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          BEEUI_FORCE_NATIVE: ${{ github.event_name == 'push' || github.event_name == 'schedule' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci:native')) }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          FORCE_FULL: ${{ github.event_name != 'pull_request' || github.event.pull_request.base.ref != 'development' || contains(github.event.pull_request.labels.*.name, 'ci:full') }}
+          FORCE_NATIVE: ${{ github.event_name != 'pull_request' || github.event.pull_request.base.ref != 'development' || contains(github.event.pull_request.labels.*.name, 'ci:native') }}
         run: |
           set -euo pipefail
-          if [ "$BEEUI_FORCE_NATIVE" = "true" ]; then
-            printf '' | node ./scripts/classify-ci-changes.mjs
-            exit 0
+          changed="$RUNNER_TEMP/beeui-changed-paths.txt"
+          if [ "${{ github.event_name }}" = 'pull_request' ]; then
+            test -n "$BASE_SHA"
+            test -n "$HEAD_SHA"
+            git diff --name-only --no-renames "$BASE_SHA" "$HEAD_SHA" > "$changed"
+          else
+            : > "$changed"
           fi
-          test -n "$BEEUI_BASE_SHA"
-          test -n "$BEEUI_HEAD_SHA"
-          git diff --name-only --no-renames "$BEEUI_BASE_SHA" "$BEEUI_HEAD_SHA" \
-            | node ./scripts/classify-ci-changes.mjs
+          echo "changed-file=$changed" >> "$GITHUB_OUTPUT"
+          echo "full-ci=$FORCE_FULL" >> "$GITHUB_OUTPUT"
+          echo "force-native=$FORCE_NATIVE" >> "$GITHUB_OUTPUT"
+          {
+            echo '### CI impact classification'
+            echo "- full CI: \`$FORCE_FULL\`"
+            echo "- forced native: \`$FORCE_NATIVE\`"
+            echo '- changed paths:'
+            sed 's/^/  - `/' "$changed" | sed 's/$/`/' || true
+          } >> "$GITHUB_STEP_SUMMARY"
 
-  # package.json's historical `typecheck` + `test` commands are intentionally
-  # decomposed here. Each lane preserves the same checks while eliminating the
-  # long serial chain from CI's critical path.
-  verify-lane:
-    name: verify-${{ matrix.task }}
+      - name: Classify affected verification scopes
+        id: scope
+        env:
+          BEEUI_FORCE_FULL_CI: ${{ steps.mode.outputs.full-ci }}
+        run: node ./scripts/ci-scope.mjs < "${{ steps.mode.outputs.changed-file }}"
+
+      - name: Classify package boundary and native graphs
+        id: native
+        env:
+          BEEUI_FORCE_NATIVE: ${{ steps.mode.outputs.force-native }}
+        run: node ./scripts/classify-ci-changes.mjs < "${{ steps.mode.outputs.changed-file }}"
+
+  # One always-on fast lane instead of eight parallel verification jobs.
+  verify-fast:
+    needs: [classify]
     runs-on: ubuntu-latest
-    timeout-minutes: 35
-    strategy:
-      fail-fast: false
-      matrix:
-        task:
-          - quality
-          - tokens
-          - contracts
-          - docs
-          - types
-          - showcase-registry
-          - bench
-          - release
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
-        with:
-          # Token-removal policy compares history; the other seven lanes only
-          # consume the checked-out tree and can avoid full-history transfer.
-          fetch-depth: ${{ matrix.task == 'tokens' && '0' || '1' }}
 
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -98,18 +112,13 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           package-manager-cache: false
 
-      - name: Enable pnpm via Corepack
+      - name: Enable pinned pnpm
         run: |
           npm install -g corepack@0.33.0
           corepack enable
           corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
-      - name: Verify JavaScript toolchain
-        run: |
-          test "$(node --version)" = "v${NODE_VERSION}"
-          test "$(pnpm --version)" = "${PNPM_VERSION}"
-
-      - name: pnpm store dir
+      - name: Configure pnpm store
         run: pnpm config set store-dir "$HOME/.pnpm-store"
 
       - name: Cache pnpm store
@@ -120,133 +129,128 @@ jobs:
           restore-keys: pnpm-${{ runner.os }}-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --prefer-offline
 
-      - name: Run verification lane
-        env:
-          BEEUI_VERIFY_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Run fast repository policy and CI contracts
         run: |
-          set -euo pipefail
-          case "${{ matrix.task }}" in
-            quality)
-              pnpm hygiene:check
-              pnpm release-control-plane:check
-              pnpm lint
-              pnpm release-control-plane:test
-              ;;
-            tokens)
-              pnpm tokens:check
-              pnpm tokens:consumption-check
-              pnpm tokens:test
-              ;;
-            contracts)
-              pnpm compat:check
-              pnpm compat:test
-              pnpm release-ruleset:check
-              pnpm release-ruleset:test
-              pnpm dist-policy:check
-              pnpm dist-policy:test
-              node --test \
-                ./scripts/__tests__/classify-ci-changes.test.mjs \
-                ./scripts/__tests__/ios-build-cache-contract.test.mjs
-              ;;
-            docs)
-              pnpm docs:foundation:check
-              pnpm docs:foundation:test
-              pnpm llms:check
-              pnpm llms:test
-              pnpm ai-contract:check
-              pnpm ai-contract:test
-              pnpm docs:contract:check
-              pnpm docs:contract:test
-              pnpm docs:examples:check
-              pnpm docs:examples:test
-              pnpm docs:patterns:check
-              pnpm docs:patterns:test
-              ;;
-            types)
-              pnpm build
-              pnpm -r --if-present typecheck
-              pnpm ui-exports:check
-              node --test \
-                ./scripts/__tests__/generate-ui-exports.test.mjs \
-                ./scripts/__tests__/verify-ui-export-map.test.mjs
-              ;;
-            showcase-registry)
-              pnpm --filter @beemvp/beeui-showcase test
-              pnpm registry:verify
-              pnpm registry:test
-              ;;
-            bench)
-              pnpm bench:test
-              ;;
-            release)
-              pnpm release:verify
-              ;;
-            *)
-              echo "Unknown verification lane: ${{ matrix.task }}"
-              exit 2
-              ;;
-          esac
+          pnpm hygiene:check
+          pnpm release-control-plane:check
+          pnpm release-control-plane:test
+          pnpm lint
+          pnpm compat:check
+          pnpm compat:test
+          pnpm dist-policy:check
+          pnpm dist-policy:test
+          node --test \
+            ./scripts/__tests__/classify-ci-changes.test.mjs \
+            ./scripts/__tests__/ci-scope.test.mjs \
+            ./scripts/__tests__/ios-build-cache-contract.test.mjs
 
-      - name: Upload release verification report
-        if: matrix.task == 'release'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: release-verification-${{ github.event.pull_request.head.sha || github.sha }}
-          path: .artifacts/release-verification.json
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Pack prerelease-equivalent artifacts
-        if: matrix.task == 'release' && github.event_name != 'pull_request'
-        env:
-          BEEUI_RELEASE_CANDIDATE_SHA: ${{ github.sha }}
-        run: pnpm pack:artifacts
-
-      - name: Upload prerelease-equivalent artifacts
-        if: matrix.task == 'release' && github.event_name != 'pull_request'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: release-candidate-artifacts-${{ github.sha }}
-          path: .artifacts/pack
-          if-no-files-found: error
-          retention-days: 14
-
-  showcase-bundle:
-    name: showcase-bundle-${{ matrix.platform }}
+  verify-docs:
+    needs: [classify]
+    if: needs.classify.outputs.full-ci == 'true' || needs.classify.outputs.docs-required == 'true' || needs.classify.outputs.web-required == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [web, android, ios]
+    timeout-minutes: 25
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
-
-      - name: Setup Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           package-manager-cache: false
-
-      - name: Enable pnpm via Corepack
+      - name: Enable pinned pnpm
         run: |
           npm install -g corepack@0.33.0
           corepack enable
           corepack prepare "pnpm@${PNPM_VERSION}" --activate
-
-      - name: pnpm store dir
-        run: pnpm config set store-dir "$HOME/.pnpm-store"
-
+          pnpm config set store-dir "$HOME/.pnpm-store"
       - name: Cache pnpm store
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.pnpm-store
           key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pnpm-${{ runner.os }}-
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Verify public docs and Web source contracts
+        run: |
+          pnpm docs:public-truth:check
+          pnpm docs:public-truth:test
+          pnpm site:contract:check
+          pnpm site:contract:test
+          pnpm docs:foundation:check
+          pnpm docs:foundation:test
+          pnpm web:check
+          pnpm web:test
+          pnpm llms:check
+          pnpm llms:test
+          pnpm ai-contract:check
+          pnpm ai-contract:test
+          pnpm docs:contract:check
+          pnpm docs:contract:test
+          pnpm docs:examples:check
+          pnpm docs:examples:test
+          pnpm docs:patterns:check
+          pnpm docs:patterns:test
 
+  verify-tokens:
+    needs: [classify]
+    if: needs.classify.outputs.full-ci == 'true' || needs.classify.outputs.tokens-required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - name: Enable pinned pnpm
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+          pnpm config set store-dir "$HOME/.pnpm-store"
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Verify token lifecycle
+        run: |
+          pnpm tokens:check
+          pnpm tokens:consumption-check
+          pnpm tokens:test
+
+  # Package, Showcase and registry checks share one install/build instead of
+  # competing as several independent jobs. Platform exports are sequential here;
+  # they are fast Metro proofs, not native compiles.
+  verify-runtime:
+    needs: [classify]
+    if: needs.classify.outputs.full-ci == 'true' || needs.classify.outputs.package-required == 'true' || needs.classify.outputs.showcase-required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - name: Enable pinned pnpm
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+          pnpm config set store-dir "$HOME/.pnpm-store"
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
       - name: Cache Metro/Expo
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
@@ -256,136 +260,155 @@ jobs:
             .expo
           key: metro-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml','apps/showcase/app.json') }}
           restore-keys: metro-${{ runner.os }}-
-
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Bundle Showcase for ${{ matrix.platform }}
-        run: >
-          pnpm --filter @beemvp/beeui-showcase exec expo export
-          --platform "${{ matrix.platform }}"
-          --output-dir "dist-${{ matrix.platform }}"
-
-  verify:
-    needs: [classify, verify-lane, showcase-bundle]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Require every verification lane to pass
+        run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Verify package build/types/exports
+        if: needs.classify.outputs.full-ci == 'true' || needs.classify.outputs.package-required == 'true'
         run: |
-          test "${{ needs.classify.result }}" = "success"
-          test "${{ needs.verify-lane.result }}" = "success"
-          test "${{ needs.showcase-bundle.result }}" = "success"
+          pnpm build
+          pnpm -r --if-present typecheck
+          pnpm ui-exports:check
+          node --test \
+            ./scripts/__tests__/generate-ui-exports.test.mjs \
+            ./scripts/__tests__/verify-ui-export-map.test.mjs
+      - name: Verify Showcase and registry
+        if: needs.classify.outputs.full-ci == 'true' || needs.classify.outputs.showcase-required == 'true'
+        run: |
+          pnpm --filter @beemvp/beeui-showcase test
+          pnpm registry:verify
+          pnpm registry:test
+      - name: Export Showcase for Web, Android and iOS
+        if: needs.classify.outputs.full-ci == 'true' || needs.classify.outputs.showcase-required == 'true'
+        run: |
+          pnpm --filter @beemvp/beeui-showcase exec expo export --platform web --output-dir dist-web
+          pnpm --filter @beemvp/beeui-showcase exec expo export --platform android --output-dir dist-android
+          pnpm --filter @beemvp/beeui-showcase exec expo export --platform ios --output-dir dist-ios
 
-  # Keep one long macOS proof (ios-bare) eligible immediately after classify.
-  # Stage the other native jobs behind Showcase exports so the initial global
-  # demand stays within the hosted 20-job budget and required checks are not
-  # randomly displaced. `always()` preserves native diagnostics even if an
-  # export fails; showcase-bundle is a scheduling barrier, not a correctness
-  # prerequisite for these native jobs.
-  bare-bundle:
-    needs: [classify, showcase-bundle]
-    if: >
-      always() &&
-      needs.classify.result == 'success' &&
-      (
-        needs.classify.outputs.package-boundary-required == 'true' ||
-        needs.classify.outputs.bare-native-required == 'true'
-      )
+  verify-release:
+    needs: [classify]
+    if: needs.classify.outputs.full-ci == 'true' || needs.classify.outputs.release-required == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 25
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
-
-      - name: Setup Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           package-manager-cache: false
-
-      - name: Enable pnpm via Corepack
+      - name: Enable pinned pnpm
         run: |
           npm install -g corepack@0.33.0
           corepack enable
           corepack prepare "pnpm@${PNPM_VERSION}" --activate
-
-      - name: pnpm store dir
-        run: pnpm config set store-dir "$HOME/.pnpm-store"
-
+          pnpm config set store-dir "$HOME/.pnpm-store"
       - name: Cache pnpm store
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.pnpm-store
           key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pnpm-${{ runner.os }}-
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Verify release surface
+        env:
+          BEEUI_VERIFY_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: pnpm release:verify
+      - name: Pack release-equivalent artifacts
+        if: github.event_name != 'pull_request'
+        env:
+          BEEUI_RELEASE_CANDIDATE_SHA: ${{ github.sha }}
+        run: pnpm pack:artifacts
+      - name: Upload release verification report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-verification-${{ github.event.pull_request.head.sha || github.sha }}
+          path: .artifacts/release-verification.json
+          if-no-files-found: warn
+          retention-days: 14
 
-      - name: Install workspace dependencies
-        run: pnpm install --frozen-lockfile
+  verify-benchmark:
+    needs: [classify]
+    if: needs.classify.outputs.full-ci == 'true' || needs.classify.outputs.benchmark-required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - name: Enable pinned pnpm
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+          pnpm config set store-dir "$HOME/.pnpm-store"
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Run benchmark contract tests
+        run: pnpm bench:test
 
+  bare-consumer:
+    needs: [classify]
+    if: needs.classify.outputs.full-ci == 'true' || needs.classify.outputs.consumer-required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - name: Enable pinned pnpm
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+          pnpm config set store-dir "$HOME/.pnpm-store"
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
       - name: Prepare true bare React Native consumer
         run: ./scripts/verify-bare-consumer.sh prepare
-
       - name: Bundle bare consumer for Android and iOS
         run: ./scripts/verify-bare-consumer.sh bundle
 
-  bare-android:
-    needs: [classify, showcase-bundle]
-    if: >
-      always() &&
-      needs.classify.result == 'success' &&
-      needs.classify.outputs.bare-native-required == 'true'
+  android-native:
+    needs: [classify]
+    if: needs.classify.outputs.bare-native-required == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
-
-      - name: Setup Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           package-manager-cache: false
-
-      - name: Enable pnpm via Corepack
-        run: |
-          npm install -g corepack@0.33.0
-          corepack enable
-          corepack prepare "pnpm@${PNPM_VERSION}" --activate
-
-      - name: pnpm store dir
-        run: pnpm config set store-dir "$HOME/.pnpm-store"
-
-      - name: Cache pnpm store
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: ~/.pnpm-store
-          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: pnpm-${{ runner.os }}-
-
-      # The bare Android project is generated by the prepare step below, so the
-      # cache key must come from checked-in inputs that exist before generation.
-      - name: Cache Gradle
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-bare-v2-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml','scripts/verify-bare-consumer.sh') }}
-          restore-keys: gradle-bare-v2-${{ runner.os }}-
-
-      - name: Install workspace dependencies
-        run: pnpm install --frozen-lockfile
-
       - name: Setup Java
         uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v5.0.0
         with:
           distribution: temurin
           java-version: '21'
-
+      - name: Setup Gradle cache
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-read-only: ${{ github.event_name == 'schedule' }}
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+          add-job-summary: always
       - name: Setup Android SDK
         uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.0
-
       - name: Install Android build dependencies
         run: |
           sdkmanager "platform-tools" \
@@ -395,188 +418,57 @@ jobs:
             "build-tools;36.0.0" \
             "ndk;27.1.12297006" \
             "cmake;3.22.1"
-
-      - name: Prepare true bare React Native consumer
-        run: ./scripts/verify-bare-consumer.sh prepare
-
-      - name: Compile bare Android debug APK
-        run: ./scripts/verify-bare-consumer.sh android-build
-
-  ios-showcase:
-    needs: [classify, showcase-bundle]
-    if: >
-      always() &&
-      needs.classify.result == 'success' &&
-      needs.classify.outputs.showcase-native-required == 'true'
-    runs-on: macos-latest
-    timeout-minutes: 90
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
-
-      - name: Add Homebrew to PATH
-        run: echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
-
-      - name: Select Xcode ${{ env.XCODE_MIN_VERSION }}+
-        run: |
-          set -euo pipefail
-          selected_developer_dir=""
-          selected_version=""
-          version_is_supported() {
-            local version="$1" min_version="$2"
-            local major minor min_major min_minor
-            IFS='.' read -r major minor _ <<< "$version"
-            IFS='.' read -r min_major min_minor _ <<< "$min_version"
-            (( ${major:-0} > ${min_major:-0} || (${major:-0} == ${min_major:-0} && ${minor:-0} >= ${min_minor:-0}) ))
-          }
-          for app in $(ls -d /Applications/Xcode*.app 2>/dev/null | sort -rV); do
-            [ -d "$app/Contents/Developer" ] || continue
-            candidate="$app/Contents/Developer"
-            version="$(DEVELOPER_DIR="$candidate" /usr/bin/xcodebuild -version | awk 'NR == 1 { print $2 }')"
-            if version_is_supported "$version" "$XCODE_MIN_VERSION"; then
-              selected_developer_dir="$candidate"
-              selected_version="$version"
-              break
-            fi
-          done
-          test -n "$selected_developer_dir"
-          echo "DEVELOPER_DIR=$selected_developer_dir" >> "$GITHUB_ENV"
-          echo "BEEUI_XCODE_VERSION=$selected_version" >> "$GITHUB_ENV"
-          export DEVELOPER_DIR="$selected_developer_dir"
-          /usr/bin/xcodebuild -version
-
-      - name: Setup Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          package-manager-cache: false
-
-      - name: Enable pnpm via Corepack
+      - name: Enable pinned pnpm
         run: |
           npm install -g corepack@0.33.0
           corepack enable
           corepack prepare "pnpm@${PNPM_VERSION}" --activate
-
-      - name: pnpm store dir
-        run: pnpm config set store-dir "$HOME/.pnpm-store"
-
+          pnpm config set store-dir "$HOME/.pnpm-store"
       - name: Cache pnpm store
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.pnpm-store
           key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pnpm-${{ runner.os }}-
-
-      - name: Cache CocoaPods
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: |
-            ~/.cocoapods
-            ~/Library/Caches/CocoaPods
-          key: pods-macos-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: pods-macos-
-
-      - name: Install darwin-arm64 workspace dependencies
-        run: >
-          pnpm install --frozen-lockfile --prefer-offline
-          --store-dir "$HOME/.pnpm-store/beeui-v10"
-
-      - name: Generate native projects with Expo Prebuild
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Prepare true bare React Native consumer
+        run: ./scripts/verify-bare-consumer.sh prepare
+      - name: Compile bare Android debug APK
         env:
-          EXPO_NO_GIT_STATUS: 1
-        working-directory: apps/showcase
-        run: pnpm exec expo prebuild --clean --no-install
+          BEEUI_ANDROID_FRESH_BUILD: ${{ github.event_name == 'schedule' && '1' || '0' }}
+        run: ./scripts/verify-bare-consumer.sh android-build
 
-      - name: Install iOS pods locally
-        working-directory: apps/showcase/ios
-        run: pod install
-
-      - name: Pin Node binary for Xcode build scripts
-        working-directory: apps/showcase/ios
-        run: printf 'export NODE_BINARY="%s"\n' "$(command -v node)" > .xcode.env.local
-
-      - name: Discover generated Xcode workspace and scheme
-        id: xcode
-        working-directory: apps/showcase/ios
-        run: |
-          set -euo pipefail
-          workspace="$(find . -maxdepth 1 -type d -name '*.xcworkspace' -print -quit)"
-          test -n "$workspace"
-          scheme="$({ xcodebuild -workspace "$workspace" -list -json; } | node -e '
-            let input = "";
-            process.stdin.on("data", chunk => input += chunk);
-            process.stdin.on("end", () => {
-              const data = JSON.parse(input);
-              const schemes = data.workspace?.schemes ?? [];
-              if (!schemes.length) process.exit(2);
-              process.stdout.write(schemes[0]);
-            });
-          ')"
-          test -n "$scheme"
-          echo "workspace=$workspace" >> "$GITHUB_OUTPUT"
-          echo "scheme=$scheme" >> "$GITHUB_OUTPUT"
-
-      - name: Compile Showcase for iOS Simulator
-        working-directory: apps/showcase/ios
-        env:
-          WORKSPACE: ${{ steps.xcode.outputs.workspace }}
-          SCHEME: ${{ steps.xcode.outputs.scheme }}
-        run: |
-          set -euo pipefail
-          test -f Podfile.lock
-          safe_xcode_version="$(printf '%s' "$BEEUI_XCODE_VERSION" | tr -cs '[:alnum:].-' '_')"
-          pod_hash="$(shasum -a 256 Podfile.lock | awk '{ print $1 }')"
-          derived_data="$HOME/Library/Developer/Xcode/DerivedData/showcase/xcode-${safe_xcode_version}/pods-${pod_hash}"
-          mkdir -p "$derived_data"
-          log="$RUNNER_TEMP/beeui-xcodebuild.log"
-          xcodebuild \
-            -workspace "$WORKSPACE" \
-            -scheme "$SCHEME" \
-            -configuration Debug \
-            -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath "$derived_data" \
-            -showBuildTimingSummary \
-            COMPILATION_CACHE_ENABLE_CACHING=YES \
-            CODE_SIGNING_ALLOWED=NO \
-            build 2>&1 | tee "$log"
-
-      - name: Upload xcodebuild log
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: ios-showcase-xcodebuild-${{ github.run_id }}
-          path: ${{ runner.temp }}/beeui-xcodebuild.log
-          if-no-files-found: warn
-          retention-days: 2
-
-  ios-bare:
+  # Both independent iOS proofs share one macOS VM and one dependency/toolchain
+  # setup. Only the affected native graph is compiled. Xcode's content-addressed
+  # CompilationCache is persisted across normal runs; weekly clean-room runs do
+  # not restore it and explicitly disable compilation caching.
+  ios-native:
     needs: [classify]
-    if: needs.classify.outputs.bare-native-required == 'true'
+    if: needs.classify.outputs.ios-native-required == 'true'
     runs-on: macos-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
+    env:
+      BEEUI_XCODE_COMPILATION_CACHE: ${{ github.event_name == 'schedule' && 'NO' || 'YES' }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
-
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
       - name: Add Homebrew to PATH
-        run: echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
-
+        run: echo '/opt/homebrew/bin' >> "$GITHUB_PATH"
       - name: Select Xcode ${{ env.XCODE_MIN_VERSION }}+
+        id: select-xcode
         run: |
           set -euo pipefail
-          selected_developer_dir=""
-          selected_version=""
+          selected_developer_dir=''
+          selected_version=''
           version_is_supported() {
-            local version="$1" min_version="$2"
-            local major minor min_major min_minor
+            local version="$1" min_version="$2" major minor min_major min_minor
             IFS='.' read -r major minor _ <<< "$version"
             IFS='.' read -r min_major min_minor _ <<< "$min_version"
             (( ${major:-0} > ${min_major:-0} || (${major:-0} == ${min_major:-0} && ${minor:-0} >= ${min_minor:-0}) ))
           }
           for app in $(ls -d /Applications/Xcode*.app 2>/dev/null | sort -rV); do
-            [ -d "$app/Contents/Developer" ] || continue
             candidate="$app/Contents/Developer"
+            [ -d "$candidate" ] || continue
             version="$(DEVELOPER_DIR="$candidate" /usr/bin/xcodebuild -version | awk 'NR == 1 { print $2 }')"
             if version_is_supported "$version" "$XCODE_MIN_VERSION"; then
               selected_developer_dir="$candidate"
@@ -590,59 +482,160 @@ jobs:
           echo "DEVELOPER_DIR=$selected_developer_dir" >> "$GITHUB_ENV"
           echo "BEEUI_XCODE_VERSION=$selected_version" >> "$GITHUB_ENV"
           echo "BEEUI_IOS_CACHE_ROOT=$cache_root" >> "$GITHUB_ENV"
-          export DEVELOPER_DIR="$selected_developer_dir"
-          /usr/bin/xcodebuild -version
-
-      - name: Setup Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+          echo "version=$selected_version" >> "$GITHUB_OUTPUT"
+          DEVELOPER_DIR="$selected_developer_dir" /usr/bin/xcodebuild -version
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           package-manager-cache: false
-
-      - name: Enable pnpm via Corepack
+      - name: Enable pinned pnpm
         run: |
           npm install -g corepack@0.33.0
           corepack enable
           corepack prepare "pnpm@${PNPM_VERSION}" --activate
-
-      - name: pnpm store dir
-        run: pnpm config set store-dir "$HOME/.pnpm-store"
-
+          pnpm config set store-dir "$HOME/.pnpm-store"
       - name: Cache pnpm store
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.pnpm-store
           key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pnpm-${{ runner.os }}-
-
-      - name: Cache CocoaPods
+      - name: Cache CocoaPods and bare Bundler state
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.cocoapods
             ~/Library/Caches/CocoaPods
+            ~/Library/Caches/BeeUI/bundle
           key: pods-macos-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pods-macos-
-
+      - name: Cache Xcode compilation results
+        if: github.event_name != 'schedule'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/Library/Caches/BeeUI/DerivedData/**/CompilationCache.noindex
+            ~/Library/Developer/Xcode/DerivedData/showcase/**/CompilationCache.noindex
+          key: xcode-cas-v1-${{ runner.arch }}-${{ steps.select-xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            xcode-cas-v1-${{ runner.arch }}-${{ steps.select-xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            xcode-cas-v1-${{ runner.arch }}-${{ steps.select-xcode.outputs.version }}-
       - name: Install darwin-arm64 workspace dependencies
-        run: >
-          pnpm install --frozen-lockfile --prefer-offline
-          --store-dir "$HOME/.pnpm-store/beeui-v10"
+        run: pnpm install --frozen-lockfile --prefer-offline --store-dir "$HOME/.pnpm-store/beeui-v10"
 
-      - name: Prepare true bare React Native consumer for iOS
-        run: ./scripts/verify-bare-consumer.sh prepare
-
-      - name: Compile bare React Native consumer for iOS Simulator
+      - name: Generate Showcase native project
+        if: needs.classify.outputs.showcase-native-required == 'true'
+        working-directory: apps/showcase
+        env:
+          EXPO_NO_GIT_STATUS: 1
+        run: pnpm exec expo prebuild --clean --no-install
+      - name: Install Showcase iOS pods
+        if: needs.classify.outputs.showcase-native-required == 'true'
+        working-directory: apps/showcase/ios
+        run: pod install
+      - name: Pin Node for Showcase Xcode phases
+        if: needs.classify.outputs.showcase-native-required == 'true'
+        working-directory: apps/showcase/ios
+        run: printf 'export NODE_BINARY="%s"\n' "$(command -v node)" > .xcode.env.local
+      - name: Discover Showcase workspace and scheme
+        if: needs.classify.outputs.showcase-native-required == 'true'
+        id: showcase-xcode
+        working-directory: apps/showcase/ios
         run: |
           set -euo pipefail
-          log="$RUNNER_TEMP/beeui-bare-ios-xcodebuild.log"
-          ./scripts/verify-bare-consumer.sh ios-build 2>&1 | tee "$log"
+          workspace="$(find . -maxdepth 1 -type d -name '*.xcworkspace' -print -quit)"
+          test -n "$workspace"
+          scheme="$({ xcodebuild -workspace "$workspace" -list -json; } | node -e '
+            let input="";
+            process.stdin.on("data", chunk => input += chunk);
+            process.stdin.on("end", () => {
+              const data=JSON.parse(input);
+              const schemes=data.workspace?.schemes ?? [];
+              if (!schemes.length) process.exit(2);
+              process.stdout.write(schemes[0]);
+            });
+          ')"
+          echo "workspace=$workspace" >> "$GITHUB_OUTPUT"
+          echo "scheme=$scheme" >> "$GITHUB_OUTPUT"
+      - name: Compile Showcase for iOS Simulator
+        if: needs.classify.outputs.showcase-native-required == 'true'
+        working-directory: apps/showcase/ios
+        env:
+          WORKSPACE: ${{ steps.showcase-xcode.outputs.workspace }}
+          SCHEME: ${{ steps.showcase-xcode.outputs.scheme }}
+        run: |
+          set -euo pipefail
+          safe_xcode_version="$(printf '%s' "$BEEUI_XCODE_VERSION" | tr -cs '[:alnum:].-' '_')"
+          pod_hash="$(shasum -a 256 Podfile.lock | awk '{ print $1 }')"
+          derived_data="$HOME/Library/Developer/Xcode/DerivedData/showcase/xcode-${safe_xcode_version}/pods-${pod_hash}"
+          mkdir -p "$derived_data"
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$derived_data" \
+            -showBuildTimingSummary \
+            COMPILATION_CACHE_ENABLE_CACHING="$BEEUI_XCODE_COMPILATION_CACHE" \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee "$RUNNER_TEMP/beeui-showcase-ios.log"
 
-      - name: Upload bare iOS xcodebuild log
+      - name: Prepare bare React Native consumer for iOS
+        if: needs.classify.outputs.bare-native-required == 'true'
+        run: ./scripts/verify-bare-consumer.sh prepare
+      - name: Compile bare React Native consumer for iOS Simulator
+        if: needs.classify.outputs.bare-native-required == 'true'
+        run: ./scripts/verify-bare-consumer.sh ios-build 2>&1 | tee "$RUNNER_TEMP/beeui-bare-ios.log"
+
+      - name: Upload iOS build logs
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: bare-ios-xcodebuild-${{ github.run_id }}
-          path: ${{ runner.temp }}/beeui-bare-ios-xcodebuild.log
+          name: ios-native-xcodebuild-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/beeui-showcase-ios.log
+            ${{ runner.temp }}/beeui-bare-ios.log
           if-no-files-found: warn
           retention-days: 2
+
+  # Stable required fan-in. Optional jobs may be skipped; any job that actually
+  # ran must succeed. Native failures therefore block native-sensitive PRs but
+  # are absent from docs/runtime-only PR critical paths.
+  verify:
+    needs:
+      - classify
+      - verify-fast
+      - verify-docs
+      - verify-tokens
+      - verify-runtime
+      - verify-release
+      - verify-benchmark
+      - bare-consumer
+      - android-native
+      - ios-native
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every selected CI lane to pass
+        env:
+          CLASSIFY: ${{ needs.classify.result }}
+          FAST: ${{ needs.verify-fast.result }}
+          DOCS: ${{ needs.verify-docs.result }}
+          TOKENS: ${{ needs.verify-tokens.result }}
+          RUNTIME: ${{ needs.verify-runtime.result }}
+          RELEASE: ${{ needs.verify-release.result }}
+          BENCHMARK: ${{ needs.verify-benchmark.result }}
+          BARE_CONSUMER: ${{ needs.bare-consumer.result }}
+          ANDROID_NATIVE: ${{ needs.android-native.result }}
+          IOS_NATIVE: ${{ needs.ios-native.result }}
+        run: |
+          set -euo pipefail
+          test "$CLASSIFY" = success
+          for result in "$FAST" "$DOCS" "$TOKENS" "$RUNTIME" "$RELEASE" "$BENCHMARK" "$BARE_CONSUMER" "$ANDROID_NATIVE" "$IOS_NATIVE"; do
+            case "$result" in
+              success|skipped) ;;
+              *) echo "::error::selected CI lane ended as '$result'"; exit 1 ;;
+            esac
+          done

@@ -35,6 +35,22 @@ const canonicalProjects = viewportNames.flatMap((viewportName) =>
   })),
 );
 
+const showcaseUse = {
+  colorScheme: 'light' as const,
+  deviceScaleFactor: 1,
+  viewport: { width: 390, height: 844 },
+};
+
+// Historical blob evidence from visual-web run 33832785919 showed that the
+// old numeric 3-way sharding had almost identical test counts (176/174/175)
+// but radically different runtime because showcase.spec.ts dominated shard 3.
+// Split the one ~103s full acceptance matrix from the three smaller smoke
+// cases so CI can compose duration-balanced semantic lanes without adding a
+// fourth runner slot. The exact-file regex intentionally does not match
+// date-picker-showcase.spec.ts and the other *-showcase.spec.ts files.
+const rootShowcaseSpec = /[\\/]showcase\.spec\.ts$/;
+const fullAcceptanceMatrix = /runs the full 37-screen acceptance matrix without PNG baselines/;
+
 export default defineConfig({
   testDir: './tests',
   snapshotPathTemplate: '{testDir}/__screenshots__/{arg}{ext}',
@@ -75,11 +91,20 @@ export default defineConfig({
     {
       name: 'showcase-integration',
       testMatch: /(showcase|overlay-context)\.spec\.ts/,
-      use: {
-        colorScheme: 'light' as const,
-        deviceScaleFactor: 1,
-        viewport: { width: 390, height: 844 },
-      },
+      testIgnore: rootShowcaseSpec,
+      use: showcaseUse,
+    },
+    {
+      name: 'showcase-acceptance-matrix',
+      testMatch: rootShowcaseSpec,
+      grep: fullAcceptanceMatrix,
+      use: showcaseUse,
+    },
+    {
+      name: 'showcase-acceptance-smoke',
+      testMatch: rootShowcaseSpec,
+      grepInvert: fullAcceptanceMatrix,
+      use: showcaseUse,
     },
     // #145 — dedicated axe + Playwright Web accessibility audit gate. Kept as
     // its own project (not folded into canonicalProjects) so the audit runs
