@@ -204,6 +204,31 @@ test('development and staging retain complete repository integration after merge
   assert.match(environmentCi, /Cache pnpm store/);
 });
 
+// GitHub's default runner shell is `bash -e {0}`: errexit without pipefail, so
+// `xcodebuild ... | tee log` reports the exit status of tee and a failed compile
+// passes. Every piped run step must opt into pipefail explicitly.
+test('piped native compile steps cannot mask a failure through tee', async () => {
+  const { ci, expo } = await sources();
+  for (const [name, workflow] of [['ci.yml', ci], ['expo-consumer.yml', expo]]) {
+    const lines = workflow.split('\n');
+    for (const [index, line] of lines.entries()) {
+      if (!line.includes('| tee ')) continue;
+      // Walk back to the owning step and require either `shell: bash` on it or
+      // `set -euo pipefail` inside a block run:.
+      let guarded = false;
+      for (let i = index; i >= 0; i -= 1) {
+        if (/^\s+- (name|uses|run):/.test(lines[i]) && i !== index) {
+          guarded ||= lines.slice(i, index).some((l) => /^\s+shell: bash\s*$/.test(l));
+          break;
+        }
+        if (/set -euo pipefail/.test(lines[i])) { guarded = true; break; }
+        if (/^\s+shell: bash\s*$/.test(lines[i])) { guarded = true; break; }
+      }
+      assert.ok(guarded, `${name}:${index + 1} pipes to tee without pipefail: ${line.trim()}`);
+    }
+  }
+});
+
 test('consumer scripts still perform real native compiles', async () => {
   const { bareScript, expoScript } = await sources();
   assert.match(bareScript, /\.\/gradlew[\s\S]*assembleDebug/);

@@ -6,13 +6,13 @@ This documents the live GitHub configuration that protects `main`, protects rele
 
 BeeUI optimizes CI for wall-clock latency on public GitHub-hosted runners. Expensive independent work fans out immediately; stable required status names fan results back in.
 
-`ci.yml` starts `classify`, eight `verify-lane` jobs (`quality`, `tokens`, `contracts`, `docs`, `types`, `showcase-registry`, `bench`, `release`) and three Showcase bundle jobs (`web`, `android`, `ios`) in parallel. The branch-protection-required `verify` job is a lightweight `if: always()` aggregator over those lanes, preserving the required status name while any failed upstream lane still blocks it.
+`ci.yml` starts `classify`, then fans out `verify-fast` plus the change-scoped lanes `verify-docs`, `verify-tokens`, `verify-runtime`, `verify-release`, `verify-benchmark`, `bare-consumer`, `android-native` and `ios-native`. The branch-protection-required `verify` job is a lightweight `if: always()` aggregator over all of them, preserving the required status name while any failed upstream lane still blocks it.
 
-The historical top-level `pnpm typecheck` and `pnpm test` commands remain useful local commands, but CI decomposes their constituent checks across the eight lanes instead of executing the two long serial chains. The `contracts` lane also runs classifier/native-CI topology tests, so `classify` itself stays on the shortest possible path to native fan-out.
+The historical top-level `pnpm typecheck` and `pnpm test` commands remain useful local commands, and still run in full on every `development`/`staging` push (`beeui-environment-ci.yml`). On pull requests CI decomposes their constituent checks across the lanes above instead of executing the two long serial chains. `verify-fast` runs unconditionally and owns the CI policy contracts — including `release-ruleset:check`/`release-ruleset:test`, which pin this document to the real workflow topology — so a change to the required-check graph cannot land without re-validating it.
 
-`classify` controls only conditional native/package-boundary work. `bare-bundle` and `bare-android` are independent Linux jobs; `ios-showcase` and `ios-bare` are independent macOS jobs. Legitimate docs/test-only PRs can skip those jobs, so none is branch-protection-required.
+`classify` controls which lanes run at all. Every lane except `verify-fast` carries a job-level `if:`, so legitimate docs/test-only PRs skip the expensive work; none of them is branch-protection-required, because GitHub reports a skipped required check as unsatisfied.
 
-`expo-consumer.yml` stages three jobs at initial PR fan-out (`typecheck-web`, Android export, iOS export). Together with required/core workflows this targets the 20-job hosted concurrency budget instead of oversubscribing it at t=0. Expo native compiles become eligible after `typecheck-web` frees a slot.
+`expo-consumer.yml` runs one combined JS proof job (typecheck plus the Web/Android/iOS Metro exports) and gates its native compiles on the same classifier.
 
 The same conditional-status rule applies to `runtime-native.yml`'s `ios-runtime`/`android-runtime`, which are gated by main push, schedule/manual dispatch, or explicit PR runtime intent.
 
@@ -32,18 +32,18 @@ Standard GitHub-hosted runners are isolated, ephemeral VMs; BeeUI grants these w
 | Check | Workflow | Why it is always present |
 | --- | --- | --- |
 | `classify` | `ci.yml` | No job-level `if:`; emits optional native-work decisions for every PR. |
-| `verify` | `ci.yml` | `if: always()` fan-in over `classify`, all eight verification lanes and all three Showcase platform exports; it fails unless every required upstream lane succeeds. |
+| `verify` | `ci.yml` | `if: always()` fan-in over `classify` and every verification lane; it fails unless each selected lane succeeded or was legitimately skipped, and it fails outright if `classify` did not succeed. |
 | `web-a11y` | `web-a11y.yml` | No conditional gate; axe-core/Playwright accessibility verification always runs. |
-| `visual-web-report` | `visual-web.yml` | `if: always()` aggregate for the full visual shard matrix. |
+| `visual-web-report` | `visual-web.yml` | Gated only on `github.event_name == 'pull_request'`, which every pull request satisfies, so the context is always reported where branch protection evaluates it. |
 | `web-consumer` | `web-consumer.yml` | No conditional gate; the independent Vite + react-native-web consumer always runs. |
 
 ### Intentionally excluded conditional/per-shard jobs
 
 These remain real gates when scheduled, but are not branch-protection-required because legitimate PRs can skip them:
 
-- `ci.yml`: `bare-bundle`, `bare-android`, `ios-showcase`, `ios-bare` — classifier-controlled package/native work, split so independent compiles run concurrently.
+- `ci.yml`: `verify-docs`, `verify-tokens`, `verify-runtime`, `verify-release`, `verify-benchmark`, `bare-consumer`, `android-native`, `ios-native` — classifier-controlled work, split so independent compiles run concurrently.
 - `runtime-native.yml`: `ios-runtime`, `android-runtime` — main push, weekly/manual, or explicit runtime PR intent.
-- `visual-web.yml`: `visual-web (1/2/3)` — matrix shards; `visual-web-report` is the stable aggregate signal.
+- `visual-web.yml`: `visual-web-full` — the push-only, duration-balanced lane matrix; `visual-web-report` is the stable pull-request signal.
 
 A push to `main` forces the full compile graph in `ci.yml`, and `runtime-native.yml` also runs simulator/emulator smoke on exact main. Weekly scheduled backstops catch hosted-runner/toolchain drift without duplicating the same work nightly.
 
