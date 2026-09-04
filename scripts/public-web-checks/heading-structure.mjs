@@ -22,12 +22,34 @@ function markdownFiles(absDir) {
 }
 
 // A `# ` line inside a fenced block is sample content, not a heading.
+//
+// CommonMark accepts more h1 forms than `# `: up to three leading spaces (4.2), a tab as the
+// opening-sequence terminator, and the setext form `Title` over `===` (4.3). A regex that only
+// matched `^# ` passed all three, which is the same shape as the defect this file exists to
+// catch — the check green because the case that would have disagreed was out of scope.
+const ATX_H1 = /^ {0,3}#(?:[ \t]|$)/u;
+const SETEXT_H1_UNDERLINE = /^ {0,3}=+\s*$/u;
+
 function bodyHeadingLines(body) {
   const found = [];
+  const lines = body.split('\n');
   let fenced = false;
-  body.split('\n').forEach((line, index) => {
-    if (/^\s*(?:```|~~~)/u.test(line)) fenced = !fenced;
-    else if (!fenced && /^# /u.test(line)) found.push({ line: index + 1, text: line });
+  lines.forEach((line, index) => {
+    if (/^\s*(?:```|~~~)/u.test(line)) {
+      fenced = !fenced;
+      return;
+    }
+    if (fenced) return;
+    if (ATX_H1.test(line)) {
+      found.push({ line: index + 1, text: line });
+      return;
+    }
+    // Setext: a non-blank line followed by a line of `=`. An indented code block cannot open a
+    // setext heading, so a four-space-indented text line is skipped.
+    const next = lines[index + 1];
+    if (next !== undefined && SETEXT_H1_UNDERLINE.test(next) && line.trim() && !/^ {4}/u.test(line)) {
+      found.push({ line: index + 1, text: line });
+    }
   });
   return found;
 }

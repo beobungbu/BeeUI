@@ -126,16 +126,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Section** is actually used: 46 lines in 6 places, of 14 in total — open the fixture for the remaining 8. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
-
-[lines 380–383](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L380-L383):
-
-````tsx
-      <Section
-        description="Provider-scoped transient notifications. Up to three are visible; overflow waits FIFO. Close visible items to inspect queue promotion."
-        title="Toast notifications"
-      >
-````
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Section** is actually used: 38 lines in 4 places, of 14 in total — open the fixture for the remaining 10. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 [lines 528–542](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L528-L542):
 
@@ -193,15 +184,6 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               >
                 <ThemeScopeOverlays />
               </Section>
-````
-
-[lines 952–955](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L952-L955):
-
-````tsx
-              <Section
-                description="Layout, history, and application composition without router ownership."
-                title="Application composition"
-              >
 ````
 
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.

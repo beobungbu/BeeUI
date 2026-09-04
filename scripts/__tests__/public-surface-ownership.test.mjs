@@ -12,6 +12,7 @@ import {
   validateAcknowledgedSurfaceSources,
   validateContributorSurfaceDocs,
   extractDocSection,
+  ACKNOWLEDGE_WARNING_ANCHOR,
   CONTRIBUTOR_DOC_HEADING,
   REQUIRED_WORKFLOW_COMMANDS,
   REQUIRED_WORKFLOW_FILES,
@@ -126,7 +127,8 @@ function goodSection({ commands = REQUIRED_WORKFLOW_COMMANDS, files = REQUIRED_W
     ...commands.map((name) => `Run \`pnpm ${name}\`.`),
     ...files.map((file) => `Edit \`${file}\`.`),
     '',
-    '`pnpm docs:surface:acknowledge` is not the fix for the error it silences.',
+    ACKNOWLEDGE_WARNING_ANCHOR,
+  'Run acknowledge last; it is not the remedy for the staleness error.',
     '',
     '## Next section',
     '',
@@ -152,7 +154,7 @@ test('a section stripped down to the acknowledge warning fails the gate', () => 
   const gutted = [
     CONTRIBUTOR_DOC_HEADING,
     '',
-    'Docs are handled elsewhere. `pnpm docs:surface:acknowledge` is not the fix for the error it silences.',
+    `Docs are handled elsewhere. ${ACKNOWLEDGE_WARNING_ANCHOR} \`pnpm docs:surface:acknowledge\` is the last step.`,
     '',
     '## Next section',
     '',
@@ -219,23 +221,44 @@ test('a documented control file that no longer exists fails the gate', () => {
 });
 
 test('dropping the acknowledge warning fails the gate', () => {
-  const section = goodSection().replace('is not the fix for the error it silences.', 'is the final step.');
+  const section = goodSection().replace(ACKNOWLEDGE_WARNING_ANCHOR, '');
   withFixture(section, (rootDir) => {
     const violations = validateContributorSurfaceDocs(rootDir);
     assert.equal(violations.length, 1);
-    assert.match(violations[0], /must keep warning/u);
+    assert.match(violations[0], /must keep the .*acknowledge-is-not-the-fix.*marker/u);
   });
 });
 
 // A fenced block may open a line with `## `. Slicing the section at the next such line would
 // truncate it and hide every later step from the assertions above.
+test('an unterminated code fence is rejected rather than swallowing the rest of the file', () => {
+  const section = [
+    CONTRIBUTOR_DOC_HEADING,
+    '',
+    '```bash',
+    'pnpm docs:surface:generate',
+    '',
+    '## Some later section that happens to contain every required string',
+    '',
+    ...REQUIRED_WORKFLOW_COMMANDS.map((name) => `\`pnpm ${name}\``),
+    ...REQUIRED_WORKFLOW_FILES.map((file) => `\`${file}\``),
+    ACKNOWLEDGE_WARNING_ANCHOR,
+    '',
+  ].join('\n');
+  withFixture(section, (rootDir) => {
+    const violations = validateContributorSurfaceDocs(rootDir);
+    assert.equal(violations.length, 1);
+    assert.match(violations[0], /unterminated code fence/u);
+  });
+});
+
 test('a fenced code block containing a markdown heading does not truncate the section', () => {
   const section = goodSection().replace(
     '## Next section',
     '```text\n## not a heading\n```\n\n## Next section',
   );
   withFixture(section, (rootDir) => assert.deepEqual(validateContributorSurfaceDocs(rootDir), []));
-  assert.equal(extractDocSection('## A\ntext\n\n## B\nmore\n', '## A'), 'text\n');
+  assert.deepEqual(extractDocSection('## A\ntext\n\n## B\nmore\n', '## A'), { body: 'text\n', unterminatedFence: false });
 });
 
 test('the ownership gate is clean on the current tree', () => {

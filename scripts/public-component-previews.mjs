@@ -74,6 +74,8 @@ const MERGE_GAP_LINES = 3;
 // how many were left out.
 const MAX_EXCERPT_LINES = 120;
 const MAX_EXCERPT_REGIONS = 6;
+// Below this a region is a declaration or a lone opening tag — true, but not an example.
+const SUBSTANTIVE_REGION_LINES = 3;
 // A layout wrapper's element spans everything it contains — `<Screen>` opened at line 472 and
 // closed at 1071 — so quoting the whole element quotes the whole file again. Past this size the
 // useful part is the opening tag and its props, which is what a reader is looking for anyway.
@@ -85,8 +87,39 @@ const LARGE_ELEMENT_LINES = 40;
 // `Checkbox` source on the Accordion page. The fixture is still the right source; showing all
 // of it is not. This finds the JSX regions where the family is actually used, so the excerpt
 // is a real, locatable slice of the same executable file rather than a curated retelling.
+// The names a family reaches the fixture under: its own exports, plus any binding introduced by
+// calling one of them (`const toast = useToast()`). Exported separately so the check that an
+// excerpt really shows the family can re-derive this from the file on disk rather than trusting
+// the range computation it is supposed to be checking.
+export function derivedBindingNames(source, component, fileName = 'fixture.tsx') {
+  const names = new Set(component.values);
+  const sourceFile = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const derived = new Set();
+
+  const walk = (node) => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      ts.isCallExpression(node.initializer) &&
+      ts.isIdentifier(node.initializer.expression) &&
+      names.has(node.initializer.expression.text)
+    ) {
+      derived.add(node.name.text);
+    }
+    ts.forEachChild(node, walk);
+  };
+  walk(sourceFile);
+  return derived;
+}
+
 export function familyUsageRanges(source, component, fileName = 'fixture.tsx') {
   const names = new Set(component.values);
+  // `useToast()` is the export, but the usage worth showing is `toast.show({...})` on the value
+  // it returns. Matching only the export name reduced toast.md's entire "Verified example
+  // source" to `const toast = useToast();` while eight real `toast.show` calls went unshown —
+  // and, because that was the only region found, the page reported it as complete usage.
+  const derived = derivedBindingNames(source, component, fileName);
   const sourceFile = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const lineOf = (pos) => sourceFile.getLineAndCharacterOfPosition(pos).line + 1;
   const ranges = [];
@@ -100,6 +133,7 @@ export function familyUsageRanges(source, component, fileName = 'fixture.tsx') {
   // A family is not always used as a JSX tag: `useToast` is called, `beeTokenReader` is read.
   // Matching only JSX left those families falling through to the whole-file branch, which is
   // exactly the case this excerpting exists to fix.
+  // eslint-disable-next-line no-unused-vars -- referenced by both collectors below.
   const enclosingStatement = (node) => {
     let current = node;
     while (current.parent && !ts.isStatement(current) && !ts.isJsxElement(current) && !ts.isJsxSelfClosingElement(current)) {
@@ -108,18 +142,49 @@ export function familyUsageRanges(source, component, fileName = 'fixture.tsx') {
     return current;
   };
 
+  // Walks outward to the smallest enclosing JSX element that is a readable example, stopping
+  // before anything large enough to be the file's layout rather than a usage of this family.
+  const enclosingExample = (node, start, end) => {
+    let current = node.parent;
+    while (current) {
+      if (ts.isJsxElement(current)) {
+        const outerStart = lineOf(current.getStart(sourceFile));
+        const outerEnd = lineOf(current.getEnd());
+        if (outerEnd - outerStart + 1 > LARGE_ELEMENT_LINES) break;
+        if (outerEnd - outerStart + 1 >= SUBSTANTIVE_REGION_LINES) return { start: outerStart, end: outerEnd };
+      }
+      current = current.parent;
+    }
+    return { start, end };
+  };
+
   const visit = (node) => {
+    // `toast.show(...)` — a call on a value the family's hook produced.
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      ts.isIdentifier(node.expression.expression) &&
+      derived.has(node.expression.expression.text)
+    ) {
+      const statement = enclosingStatement(node);
+      ranges.push({ start: lineOf(statement.getStart(sourceFile)), end: lineOf(statement.getEnd()) });
+      return;
+    }
     if ((ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node)) && names.has(tagName(node))) {
       const start = lineOf(node.getStart(sourceFile));
       const end = lineOf(node.getEnd());
       if (end - start + 1 <= LARGE_ELEMENT_LINES) {
-        ranges.push({ start, end });
+        // `<Spinner />` on its own is a true but empty example. Show the smallest enclosing JSX
+        // element that still reads as an example, so the reader sees the props and the context
+        // the component is used in rather than a bare self-closing tag.
+        const context = end - start + 1 < SUBSTANTIVE_REGION_LINES ? enclosingExample(node, start, end) : { start, end };
+        ranges.push(context);
         return; // Nested uses of the same family are already inside this range.
       }
       // Keep the opening tag, then keep descending: a nested use of the same family further in
       // is a separate, smaller example worth showing on its own.
       const opening = ts.isJsxElement(node) ? node.openingElement : node;
-      ranges.push({ start, end: lineOf(opening.getEnd()) });
+      ranges.push({ start, end: lineOf(opening.getEnd()), openingTagOnly: true });
     }
     if (
       ts.isIdentifier(node) &&
@@ -147,6 +212,8 @@ export function familyUsageRanges(source, component, fileName = 'fixture.tsx') {
       const previous = merged.at(-1);
       if (previous && range.start - previous.end <= MERGE_GAP_LINES) {
         previous.end = Math.max(previous.end, range.end);
+        // A merged region is no longer just an opening tag.
+        if (previous.end !== lineOf(sourceFile.getStart())) previous.openingTagOnly = previous.openingTagOnly && range.openingTagOnly;
         return merged;
       }
       return [...merged, { ...range }];
@@ -166,9 +233,16 @@ export function excerptFixture(source, component, fixturePath) {
 
   const withText = ranges.map((range) => ({ ...range, text: lines.slice(range.start - 1, range.end).join('\n') }));
 
+  // Smallest-first alone let a one-line region — `const toast = useToast();` — stand as the
+  // whole example while multi-line calls went unshown. A region that is only a declaration or a
+  // bare opening tag teaches nothing on its own, so substantive regions get the budget first.
+  const bySize = (a, b) => (a.end - a.start) - (b.end - b.start);
+  const substantive = withText.filter((range) => range.end - range.start + 1 >= SUBSTANTIVE_REGION_LINES).sort(bySize);
+  const trivial = withText.filter((range) => range.end - range.start + 1 < SUBSTANTIVE_REGION_LINES).sort(bySize);
+
   const kept = [];
   let budget = MAX_EXCERPT_LINES;
-  for (const range of [...withText].sort((a, b) => (a.end - a.start) - (b.end - b.start))) {
+  for (const range of [...substantive, ...trivial]) {
     const size = range.end - range.start + 1;
     if (kept.length >= MAX_EXCERPT_REGIONS || size > budget) continue;
     budget -= size;
@@ -178,10 +252,15 @@ export function excerptFixture(source, component, fixturePath) {
   // section with no code would be worse than a long one.
   if (!kept.length) kept.push(withText.reduce((a, b) => (b.end - b.start < a.end - a.start ? b : a)));
 
+  // A bare opening tag earns its place only when it is all there is — a layout wrapper used once.
+  // Printed alongside complete examples it is an unbalanced JSX fragment that reads as noise.
+  const complete = kept.filter((range) => !range.openingTagOnly);
+  const selected = complete.length ? complete : kept;
+
   return {
     whole: false,
-    excerpts: kept.sort((a, b) => a.start - b.start),
-    omittedRegions: withText.length - kept.length,
+    excerpts: selected.sort((a, b) => a.start - b.start),
+    omittedRegions: withText.length - selected.length,
     totalRegions: withText.length,
     source,
   };
@@ -230,6 +309,11 @@ function renderVerifiedSource(descriptor) {
   });
 
   const places = `${descriptor.excerpt.excerpts.length} ${descriptor.excerpt.excerpts.length === 1 ? 'place' : 'places'}`;
+  // `<Screen>` opens at the top of the gallery and closes at the bottom, so what is left out of
+  // its excerpt is mostly Screen's own children — saying "other families" there would be false.
+  const remainder = descriptor.excerpt.excerpts.every((part) => part.openingTagOnly)
+    ? 'What follows the tag in the fixture is this family\'s own content, which the live preview above already renders.'
+    : 'The rest of that file exercises other families and is not reproduced here.';
   const omitted = descriptor.excerpt.omittedRegions
     ? `, of ${descriptor.excerpt.totalRegions} in total — open the fixture for the remaining ${descriptor.excerpt.omittedRegions}`
     : '';
@@ -238,7 +322,7 @@ function renderVerifiedSource(descriptor) {
     `${descriptor.fixtureLineCount} lines — where **${descriptor.title}** is actually used: ` +
     `${excerptLines} ${excerptLines === 1 ? 'line' : 'lines'} in ${places}` +
     `${omitted}. Each block is copied verbatim from the line range named above it, so it is the same executable ` +
-    'source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.',
+    `source, not a retelling of it. ${remainder}`,
     '',
     ...blocks,
     'Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from ' +
@@ -310,23 +394,36 @@ export function collectPublicComponentPreviewViolations(rootDir = ROOT_DIR) {
         violations.push(`${component.name}: displayed code drifted from running fixture source.`);
       }
     } else {
-      const fixtureLines = descriptor.source.split('\n');
+      // Read the fixture back off disk rather than reusing `descriptor.source`. Both the
+      // excerpt text and the earlier comparison were sliced from the same in-memory string, so
+      // they could never disagree: an independent review corrupted the line derivation by five
+      // lines and this guard stayed green while the page quoted unrelated `const filler` lines
+      // under a heading claiming they were where the family is used.
+      const onDisk = fs.readFileSync(path.join(rootDir, descriptor.fixture), 'utf8').split('\n');
       if (!descriptor.excerpt.excerpts.length) {
         violations.push(`${component.name}: fixture was excerpted to nothing.`);
       }
       for (const part of descriptor.excerpt.excerpts) {
-        const actual = fixtureLines.slice(part.start - 1, part.end).join('\n');
-        if (actual !== part.text || !addon.includes(part.text)) {
+        if (onDisk.slice(part.start - 1, part.end).join('\n') !== part.text || !addon.includes(part.text)) {
           violations.push(
             `${component.name}: displayed excerpt does not match ${descriptor.fixture} lines ${part.start}-${part.end}.`,
+          );
+        }
+        // The heading says these are the lines where the family is used. Checking that the
+        // family appears somewhere in the file does not check that; this does.
+        const vocabulary = [
+          ...component.values,
+          ...derivedBindingNames(onDisk.join('\n'), component, path.basename(descriptor.fixture)),
+        ];
+        if (!vocabulary.some((name) => new RegExp(`\\b${name}\\b`, 'u').test(part.text))) {
+          violations.push(
+            `${component.name}: the excerpt at ${descriptor.fixture} lines ${part.start}-${part.end} does not ` +
+            'mention any export of this family, so it is not where the family is used.',
           );
         }
         if (!addon.includes(`#L${part.start}-L${part.end}`)) {
           violations.push(`${component.name}: excerpt at lines ${part.start}-${part.end} is not linked to those lines.`);
         }
-      }
-      if (!familyUsageRanges(descriptor.source, component, path.basename(descriptor.fixture)).length) {
-        violations.push(`${component.name}: fixture was excerpted although the family is never used in it.`);
       }
     }
     if (!addon.includes('loading="lazy"')) violations.push(`${component.name}: Showcase preview must lazy-load.`);

@@ -137,12 +137,75 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Toast** is actually used: 1 line in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Toast** is actually used: 54 lines in 3 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 [line 375](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L375-L375):
 
 ````tsx
   const toast = useToast();
+````
+
+[lines 385–431](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L385-L431):
+
+````tsx
+          <Button
+            onPress={() => toast.show({ title: 'Saved', description: 'Default toast with a 5 second timeout.' })}
+            size="sm"
+            variant="outline"
+          >
+            Default
+          </Button>
+          <Button
+            onPress={() => toast.show({ title: 'Published', description: 'Changes are live.', variant: 'success' })}
+            size="sm"
+            variant="outline"
+          >
+            Success
+          </Button>
+          <Button
+            onPress={() => toast.show({ title: 'Check settings', description: 'One option needs attention.', variant: 'warning' })}
+            size="sm"
+            variant="outline"
+          >
+            Warning
+          </Button>
+          <Button
+            onPress={() => toast.show({ title: 'Save failed', description: 'Try the operation again.', variant: 'destructive' })}
+            size="sm"
+            variant="outline"
+          >
+            Error
+          </Button>
+          <Button
+            onPress={() => toast.show({
+              title: 'Item archived',
+              description: 'You can undo this action.',
+              variant: 'info',
+              action: { label: 'Undo', onPress: () => setLastAction('Undo pressed') },
+            })}
+            size="sm"
+            variant="outline"
+          >
+            Action
+          </Button>
+          <Button
+            onPress={() => toast.show({ title: 'Persistent notice', description: 'Dismiss this explicitly.', duration: 'persistent', variant: 'info' })}
+            size="sm"
+            variant="outline"
+          >
+            Persistent
+          </Button>
+````
+
+[lines 435–440](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L435-L440):
+
+````tsx
+                toast.show({
+                  title: `Queued toast ${index}`,
+                  description: index <= 3 ? 'Initially visible.' : 'Promotes FIFO after a visible toast closes.',
+                  duration: 'persistent',
+                  variant: index % 2 === 0 ? 'info' : 'neutral',
+                });
 ````
 
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.

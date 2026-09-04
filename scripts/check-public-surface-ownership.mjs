@@ -70,6 +70,9 @@ export const REQUIRED_WORKFLOW_COMMANDS = [
   'docs:surface:check',
 ];
 
+// Marks the paragraph that must survive any rewrite of this section.
+export const ACKNOWLEDGE_WARNING_ANCHOR = '<!-- surface-workflow: acknowledge-is-not-the-fix -->';
+
 export const REQUIRED_WORKFLOW_FILES = [
   'docs/public-surface.inventory.json',
   'docs/public-surface-owners.json',
@@ -89,7 +92,10 @@ export function extractDocSection(doc, heading) {
     if (!fenced && /^## /u.test(line)) break;
     body.push(line);
   }
-  return body.join('\n');
+  // An unterminated fence swallows every following section, so the strings this gate looks for
+  // could be satisfied by unrelated parts of the file.
+  if (fenced) return { body: body.join('\n'), unterminatedFence: true };
+  return { body: body.join('\n'), unterminatedFence: false };
 }
 
 export function validateContributorSurfaceDocs(rootDir = ROOT_DIR) {
@@ -97,13 +103,20 @@ export function validateContributorSurfaceDocs(rootDir = ROOT_DIR) {
   const docPath = path.join(rootDir, CONTRIBUTOR_DOC_FILE);
   if (!fs.existsSync(docPath)) return [`${CONTRIBUTOR_DOC_FILE} is missing; the public-surface workflow is undocumented.`];
 
-  const section = extractDocSection(fs.readFileSync(docPath, 'utf8'), CONTRIBUTOR_DOC_HEADING);
-  if (section === null) {
+  const extracted = extractDocSection(fs.readFileSync(docPath, 'utf8'), CONTRIBUTOR_DOC_HEADING);
+  if (extracted === null) {
     return [
       `${CONTRIBUTOR_DOC_FILE} has no "${CONTRIBUTOR_DOC_HEADING}" section. Adding a public ` +
       'surface fails this gate, so the remediation sequence must stay documented.',
     ];
   }
+  if (extracted.unterminatedFence) {
+    return [
+      `${CONTRIBUTOR_DOC_FILE}'s "${CONTRIBUTOR_DOC_HEADING}" section has an unterminated code ` +
+      'fence, so its boundary — and everything this gate checks inside it — is undefined.',
+    ];
+  }
+  const section = extracted.body;
 
   const scripts = readJson('package.json', rootDir).scripts ?? {};
   for (const name of REQUIRED_WORKFLOW_COMMANDS) {
@@ -149,10 +162,13 @@ export function validateContributorSurfaceDocs(rootDir = ROOT_DIR) {
     }
   }
 
-  if (!/not the fix for the error it silences/u.test(section)) {
+  // Anchored on a marker rather than an exact sentence: freezing prose blocks any rewording,
+  // and the point is that the warning is present, not that it is phrased one way.
+  if (!section.includes(ACKNOWLEDGE_WARNING_ANCHOR)) {
     violations.push(
-      `${CONTRIBUTOR_DOC_FILE}'s "${CONTRIBUTOR_DOC_HEADING}" section must keep warning that ` +
-      '`docs:surface:acknowledge` is run last and is not the remedy for the staleness error.',
+      `${CONTRIBUTOR_DOC_FILE}'s "${CONTRIBUTOR_DOC_HEADING}" section must keep the ` +
+      `${ACKNOWLEDGE_WARNING_ANCHOR} marker on the paragraph warning that ` +
+      '`docs:surface:acknowledge` runs last and is not the remedy for the staleness error.',
     );
   }
 

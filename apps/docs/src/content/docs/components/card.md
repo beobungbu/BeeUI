@@ -124,13 +124,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Card** is actually used: 99 lines in 6 places, of 7 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
-
-[line 379](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L379-L379):
-
-````tsx
-    <Card className="gap-4" variant="raised">
-````
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Card** is actually used: 96 lines in 3 places, of 7 in total — open the fixture for the remaining 4. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 [lines 527–563](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L527-L563):
 
@@ -199,18 +193,6 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                 description="The server could not load this section."
               />
             </Card>
-````
-
-[line 594](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L594-L594):
-
-````tsx
-            <Card className="gap-4">
-````
-
-[line 680](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L680-L680):
-
-````tsx
-            <Card className="gap-5" variant="raised">
 ````
 
 [lines 1017–1053](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1017-L1053):

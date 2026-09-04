@@ -142,7 +142,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Button** is actually used: 29 lines in 6 places, of 8 in total — open the fixture for the remaining 2. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Button** is actually used: 64 lines in 6 places, of 7 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 [lines 126–134](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L126-L134):
 
@@ -156,6 +156,22 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
     >
       {`Theme: ${activeTheme}`}
     </Button>
+````
+
+[lines 193–203](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L193-L203):
+
+````tsx
+      <Button
+        onPress={() => {
+          setDialogOpen(true);
+          setMenuOpen(true);
+          setRootOpen(true);
+        }}
+        testID="overlay-context-casec-open"
+        variant="outline"
+      >
+        Open CASE C
+      </Button>
 ````
 
 [lines 480–488](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L480-L488):
@@ -172,9 +188,10 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               </Button>
 ````
 
-[lines 534–540](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L534-L540):
+[lines 533–541](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L533-L541):
 
 ````tsx
+                <Box className="gap-3">
                   <Button>Primary action</Button>
                   <Button variant="secondary">Secondary action</Button>
                   <Button variant="outline">Outline action</Button>
@@ -182,25 +199,43 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                   <Button variant="destructive">Destructive action</Button>
                   <Button disabled>Disabled action</Button>
                   <Button loading>Loading action</Button>
+                </Box>
 ````
 
-[line 579](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L579-L579):
+[lines 567–588](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L567-L588):
 
 ````tsx
+            <Card className="gap-4">
+              <Text variant="heading">Loading and state surfaces</Text>
+              <Box className="flex-row items-center gap-3">
+                <Skeleton className="h-12 w-12" variant="circle" />
+                <Box className="flex-1 gap-2">
+                  <Skeleton className="w-2/3" variant="text" />
+                  <Skeleton className="w-full" variant="text" />
+                </Box>
+              </Box>
+              <Skeleton className="h-24 w-full" />
+              <Separator />
+              <EmptyState
                 action={<Button size="sm">Create record</Button>}
-````
-
-[line 585](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L585-L585):
-
-````tsx
+                description="Create your first record to get started."
+                title="No records yet"
+              />
+              <Separator />
+              <ErrorState
                 action={<Button size="sm" variant="outline">Try again</Button>}
+                description="The server could not load this section."
+              />
+            </Card>
 ````
 
-[lines 1067–1068](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1067-L1068):
+[lines 1066–1069](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1066-L1069):
 
 ````tsx
+        <BottomActionBar>
           <Button size="sm" variant="ghost">Cancel</Button>
           <Button size="sm">Save changes</Button>
+        </BottomActionBar>
 ````
 
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.

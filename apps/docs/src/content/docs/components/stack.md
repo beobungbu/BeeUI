@@ -147,7 +147,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Stack** is actually used: 28 lines in 6 places, of 11 in total — open the fixture for the remaining 5. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Stack** is actually used: 51 lines in 6 places, of 11 in total — open the fixture for the remaining 5. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 [lines 140–143](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L140-L143):
 
@@ -158,16 +158,21 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
     </VStack>
 ````
 
-[line 237](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L237-L237):
+[lines 479–490](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L479-L490):
 
 ````tsx
-      <VStack gap="sm">
-````
-
-[line 384](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L384-L384):
-
-````tsx
-        <HStack gap="sm" wrap>
+            <HStack gap="sm">
+              <Button
+                accessibilityLabel="Back to Showcase home"
+                testID="component-gallery-back"
+                onPress={onBack}
+                size="sm"
+                variant="ghost"
+              >
+                Back
+              </Button>
+              <Avatar accessibilityLabel="BeeUI" fallback="BU" />
+            </HStack>
 ````
 
 [lines 748–753](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L748-L753):
@@ -194,6 +199,24 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                     </TooltipContent>
                   </Tooltip>
                 </HStack>
+````
+
+[lines 961–973](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L961-L973):
+
+````tsx
+                <Stack gap="lg">
+                  <HStack gap="lg" wrap>
+                    <Stat className="min-w-32 flex-1">
+                      <StatLabel>API surface</StatLabel>
+                      <StatValue>Public</StatValue>
+                      <StatHelpText>Only @beemvp/beeui-ui exports</StatHelpText>
+                    </Stat>
+                    <Stat className="min-w-32 flex-1">
+                      <StatLabel>Verification</StatLabel>
+                      <StatValue>Cross-platform</StatValue>
+                      <StatHelpText>Web, Android, and iOS gates</StatHelpText>
+                    </Stat>
+                  </HStack>
 ````
 
 [lines 1055–1060](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1055-L1060):

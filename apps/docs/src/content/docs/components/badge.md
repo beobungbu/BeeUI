@@ -129,23 +129,59 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Badge** is actually used: 7 lines in 2 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Badge** is actually used: 43 lines in 2 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
-[lines 548–553](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L548-L553):
+[lines 547–554](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L547-L554):
 
 ````tsx
+              <Box className="flex-row flex-wrap gap-2">
                 <Badge>Primary</Badge>
                 <Badge variant="secondary">Secondary</Badge>
                 <Badge variant="success">Success</Badge>
                 <Badge variant="warning">Warning</Badge>
                 <Badge variant="destructive">Error</Badge>
                 <Badge variant="info">Info</Badge>
+              </Box>
 ````
 
-[line 1033](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1033-L1033):
+[lines 1018–1052](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1018-L1052):
 
 ````tsx
+              <Section description="Read-only application information patterns." title="Metadata and rows">
+                <DescriptionList>
+                  <DescriptionItem label="Runtime" value="React Native 0.86.2" />
+                  <DescriptionItem label="Styling" value="Uniwind 1.10.1" />
+                  <DescriptionItem
+                    description="Generated and compiled in CI"
+                    label="Native verification"
+                    value="Expo + bare RN"
+                  />
+                </DescriptionList>
+                <Separator />
+                <ListItem
+                  description="Open your profile"
+                  onPress={() => undefined}
+                  title="Profile"
                   trailing={<Badge variant="success">Active</Badge>}
+                />
+                <SettingsItem
+                  description="Changes app appearance"
+                  onPress={() => undefined}
+                  title="Appearance"
+                  value={theme}
+                />
+                <SettingsItem
+                  description="Native preference control"
+                  title="Push notifications"
+                  trailing={
+                    <Switch
+                      accessibilityLabel="Push notifications"
+                      onValueChange={setNotifications}
+                      value={notifications}
+                    />
+                  }
+                />
+              </Section>
 ````
 
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.

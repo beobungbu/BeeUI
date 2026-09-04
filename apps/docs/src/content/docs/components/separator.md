@@ -123,24 +123,57 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Separator** is actually used: 6 lines in 6 places, of 14 in total — open the fixture for the remaining 8. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Separator** is actually used: 114 lines in 6 places, of 13 in total — open the fixture for the remaining 7. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
-[line 555](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L555-L555):
+[lines 545–563](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L545-L563):
 
 ````tsx
+            <Card className="gap-4" variant="muted">
+              <Text variant="heading">Status and feedback</Text>
+              <Box className="flex-row flex-wrap gap-2">
+                <Badge>Primary</Badge>
+                <Badge variant="secondary">Secondary</Badge>
+                <Badge variant="success">Success</Badge>
+                <Badge variant="warning">Warning</Badge>
+                <Badge variant="destructive">Error</Badge>
+                <Badge variant="info">Info</Badge>
+              </Box>
               <Separator />
+              <Box className="flex-row items-center gap-5">
+                <Spinner testID="spinner-default" />
+                <Spinner tone="success" />
+                <Spinner tone="warning" />
+                <Spinner testID="spinner-destructive" tone="destructive" />
+              </Box>
+              <Progress accessibilityLabel="Profile completion" value={72} />
+            </Card>
 ````
 
-[line 577](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L577-L577):
+[lines 567–588](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L567-L588):
 
 ````tsx
+            <Card className="gap-4">
+              <Text variant="heading">Loading and state surfaces</Text>
+              <Box className="flex-row items-center gap-3">
+                <Skeleton className="h-12 w-12" variant="circle" />
+                <Box className="flex-1 gap-2">
+                  <Skeleton className="w-2/3" variant="text" />
+                  <Skeleton className="w-full" variant="text" />
+                </Box>
+              </Box>
+              <Skeleton className="h-24 w-full" />
               <Separator />
-````
-
-[line 583](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L583-L583):
-
-````tsx
+              <EmptyState
+                action={<Button size="sm">Create record</Button>}
+                description="Create your first record to get started."
+                title="No records yet"
+              />
               <Separator />
+              <ErrorState
+                action={<Button size="sm" variant="outline">Try again</Button>}
+                description="The server could not load this section."
+              />
+            </Card>
 ````
 
 [line 620](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L620-L620):
@@ -155,10 +188,85 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               <Separator />
 ````
 
-[line 742](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L742-L742):
+[lines 914–949](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L914-L949):
 
 ````tsx
+            <Card className="gap-4">
+              <Text variant="heading">Tabs and disclosure</Text>
+              <Tabs onValueChange={setTab} value={tab}>
+                <TabsList>
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="details">Details</TabsTrigger>
+                </TabsList>
+                <TabsContent value="overview">
+                  <Text tone="muted">Overview content is mounted for the active tab.</Text>
+                </TabsContent>
+                <TabsContent value="details">
+                  <Text tone="muted">Details content is mounted only when selected.</Text>
+                </TabsContent>
+              </Tabs>
               <Separator />
+              <Collapsible>
+                <CollapsibleTrigger>Advanced options</CollapsibleTrigger>
+                <CollapsibleContent>
+                  <Text tone="muted">Hidden until expanded.</Text>
+                </CollapsibleContent>
+              </Collapsible>
+              <Accordion defaultValue="account">
+                <AccordionItem value="account">
+                  <AccordionTrigger>Account</AccordionTrigger>
+                  <AccordionContent>
+                    <Text tone="muted">Account preferences and identity.</Text>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="billing">
+                  <AccordionTrigger>Billing</AccordionTrigger>
+                  <AccordionContent>
+                    <Text tone="muted">Invoices and payment settings.</Text>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </Card>
+````
+
+[lines 1018–1052](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1018-L1052):
+
+````tsx
+              <Section description="Read-only application information patterns." title="Metadata and rows">
+                <DescriptionList>
+                  <DescriptionItem label="Runtime" value="React Native 0.86.2" />
+                  <DescriptionItem label="Styling" value="Uniwind 1.10.1" />
+                  <DescriptionItem
+                    description="Generated and compiled in CI"
+                    label="Native verification"
+                    value="Expo + bare RN"
+                  />
+                </DescriptionList>
+                <Separator />
+                <ListItem
+                  description="Open your profile"
+                  onPress={() => undefined}
+                  title="Profile"
+                  trailing={<Badge variant="success">Active</Badge>}
+                />
+                <SettingsItem
+                  description="Changes app appearance"
+                  onPress={() => undefined}
+                  title="Appearance"
+                  value={theme}
+                />
+                <SettingsItem
+                  description="Native preference control"
+                  title="Push notifications"
+                  trailing={
+                    <Switch
+                      accessibilityLabel="Push notifications"
+                      onValueChange={setNotifications}
+                      value={notifications}
+                    />
+                  }
+                />
+              </Section>
 ````
 
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.

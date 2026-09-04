@@ -200,6 +200,7 @@ until it is regenerated.
 
 Three things about that sequence are easy to get wrong.
 
+<!-- surface-workflow: acknowledge-is-not-the-fix -->
 **`pnpm docs:surface:acknowledge` is not the fix for the error it silences.** The gate hashes
 each canonical source file, so editing `packages/ui/src/index.ts` produces:
 

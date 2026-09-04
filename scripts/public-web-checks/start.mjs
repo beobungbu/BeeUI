@@ -39,8 +39,21 @@ const STARTER_STYLE_ENTRIES = [
 // own directory, and every other check passed the whole time — measured on the Expo starter,
 // the emitted CSS went from 15,996 to 36,200 bytes once the globs resolved, and `bg-muted`,
 // `bg-destructive`, `text-muted-foreground` and `rounded-md` appeared for the first time.
+function workspacePackageDirs(rootDir) {
+  const dirs = new Map();
+  for (const entry of fs.readdirSync(path.join(rootDir, 'packages'), { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const manifest = path.join(rootDir, 'packages', entry.name, 'package.json');
+    if (!fs.existsSync(manifest)) continue;
+    dirs.set(JSON.parse(fs.readFileSync(manifest, 'utf8')).name, path.join('packages', entry.name));
+  }
+  return dirs;
+}
+
 export function collectStarterSourceGlobViolations(rootDir = ROOT_DIR, docs = null) {
   const violations = [];
+  const packageDirs = workspacePackageDirs(rootDir);
+
   for (const entry of STARTER_STYLE_ENTRIES) {
     const cssPath = path.join(rootDir, entry.css);
     const cssDir = path.resolve(rootDir, entry.cssRuntimeDir);
@@ -51,26 +64,57 @@ export function collectStarterSourceGlobViolations(rootDir = ROOT_DIR, docs = nu
       violations.push(`${entry.css} declares no @source glob, so Tailwind never scans BeeUI's own source.`);
       continue;
     }
+
     for (const glob of globs) {
-      // The glob is resolved from where the CSS file is read at build time, not where it is
-      // committed, and must land inside the tree this starter actually installs into.
+      // Resolved from where the CSS file is read at build time, not where it is committed.
       const resolved = path.resolve(cssDir, glob);
       if (resolved !== installDir && !resolved.startsWith(`${installDir}${path.sep}`)) {
         violations.push(
           `${entry.css} declares @source '${glob}', which resolves to ${path.relative(rootDir, resolved)} — ` +
           `outside ${entry.installDir}, where this starter installs. Tailwind would scan nothing and ship no BeeUI classes.`,
         );
+        continue;
+      }
+
+      // Containment is not enough: a glob that stays inside the install root and still points at
+      // nothing — a typo'd package name, an invented path — fails in the same silent way.
+      // node_modules is absent at check time, so the target is resolved against the workspace
+      // package the glob names, which is what npm installs there.
+      const [nodeModules, scope, name, ...rest] = path.relative(installDir, resolved).split(path.sep);
+      if (nodeModules !== 'node_modules') {
+        violations.push(`${entry.css} declares @source '${glob}', which does not point into this starter's node_modules.`);
+        continue;
+      }
+      const packageName = scope?.startsWith('@') ? `${scope}/${name}` : scope;
+      const subPath = (scope?.startsWith('@') ? rest : [name, ...rest]).filter(Boolean);
+      const packageDir = packageDirs.get(packageName);
+      if (!packageDir) {
+        violations.push(
+          `${entry.css} declares @source '${glob}', but "${packageName}" is not a workspace package. ` +
+          'Tailwind scans nothing and reports nothing when the path does not exist.',
+        );
+        continue;
+      }
+      if (!fs.existsSync(path.join(rootDir, packageDir, ...subPath))) {
+        violations.push(
+          `${entry.css} declares @source '${glob}', but ${path.join(packageDir, ...subPath)} does not exist in ` +
+          `${packageName}. Tailwind scans nothing and reports nothing when the path does not exist.`,
+        );
       }
     }
 
-    // The page reproduces this block and calls it verbatim. If the fixture moves and the page
-    // does not, the page teaches a glob that resolves to nothing on the reader's machine.
+    // The page reproduces this block and calls it verbatim. Checking only that each fixture glob
+    // appears on the page leaves the other direction open: a page carrying both correct globs
+    // plus a stale extra one — the exact shape just removed from these starters — passed.
     const page = docs?.[entry.doc];
     if (page) {
-      for (const glob of globs) {
-        if (!page.includes(`@source '${glob}';`)) {
-          violations.push(`${entry.doc} no longer reproduces ${entry.css}'s @source '${glob}' verbatim.`);
-        }
+      const fixtureSet = [...new Set(globs)].sort();
+      const pageSet = [...new Set([...page.matchAll(/@source\s+'([^']+)';/gu)].map(([, glob]) => glob))].sort();
+      if (fixtureSet.join('\n') !== pageSet.join('\n')) {
+        violations.push(
+          `${entry.doc} reproduces @source globs [${pageSet.join(', ') || 'none'}] but ${entry.css} declares ` +
+          `[${fixtureSet.join(', ')}]. The page teaches a stylesheet the starter does not ship.`,
+        );
       }
     }
   }
