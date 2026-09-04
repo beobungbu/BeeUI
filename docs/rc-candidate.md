@@ -65,8 +65,7 @@ reproducibility proof, **not** a registry claim.
 ### The label vs. the machine-stamped artifact version (do not conflate)
 
 Three distinct version strings are in play; keeping them separate is deliberate
-([docs/dist-tag-policy.md](dist-tag-policy.md), "`1.0.0-rc.N` vs. the internal `-rc-ready.<sha>`
-artifact version"):
+([docs/dist-tag-policy.md](dist-tag-policy.md), "Published prerelease vs internal rc-ready artifact"):
 
 - **`1.0.0-rc-ready.1`** — this document's human evidence label for the candidate (the `.N`
   counter). It names the candidate; it is **not** written into any `package.json`.
