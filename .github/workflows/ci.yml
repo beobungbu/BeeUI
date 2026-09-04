@@ -23,7 +23,14 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # Superseding a pull request run is the point; superseding a push run is
+  # not. The group carries no SHA, so one merge cancelled the previous
+  # merge's run and lost the native cache warm-up and the post-merge native proof.
+  # Merges land faster than the native jobs finish, so that was not rare.
+  # main keeps newest-wins: beeui-web-delivery's production gate waits at most
+  # 30 minutes for `verify`, already spends 12-14 of them, and main pushes have
+  # landed 7 seconds apart here — a queued run would miss that deadline.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/main' }}
 
 permissions:
   contents: read
