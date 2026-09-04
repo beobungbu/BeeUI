@@ -47,9 +47,9 @@ The first bootstrap must use an owner-approved prerelease `20260902.0.0-rc.N` an
 3. `@beemvp/beeui-ui`
 4. `@beemvp/beeui-cli`
 
-The bootstrap uses provenance and a temporary `NPM_BOOTSTRAP_TOKEN` stored only in the `release` environment. Because this is a non-interactive first publication, that temporary token may need npm's bypass-2FA capability. It must be revoked immediately after the packages exist and Trusted Publisher is configured.
+The bootstrap uses provenance and a temporary `NPM_BOOTSTRAP_TOKEN` stored only in the `release` environment. The workflow exposes that token only to the final direct-publish step; install/build/verify/pack and registry probes run without it. Because this is a non-interactive first publication, that temporary token may need npm's bypass-2FA capability. It must be revoked immediately after the packages exist and Trusted Publisher is configured.
 
-A partial bootstrap is a STOP condition. Do not silently retry or republish already-created package versions. Reconcile exact registry state, artifact hashes, provenance, and missing packages first.
+A partial bootstrap is a STOP condition. Do not silently retry or republish already-created package versions. Reconcile exact registry state, artifact hashes, provenance, and missing packages first. Any owner-authorized recovery must target only the missing package/version pairs using the exact previously reviewed tarballs; it is a separate explicit/manual recovery action (or separately reviewed recovery workflow), not a normal `bootstrap-rc` rerun.
 
 ## Trusted Publishing and staged RCs
 
@@ -119,7 +119,7 @@ The block below is parsed by `scripts/check-distribution-policy.mjs`. `published
   "distTags": ["latest", "next"],
   "prereleaseDistTag": "next",
   "stableDistTag": "latest",
-  "atomicPromotionTag": "latest",
+  "stablePromotionTag": "latest",
   "lockstepPackages": [
     "@beemvp/beeui-core",
     "@beemvp/beeui-tokens",
