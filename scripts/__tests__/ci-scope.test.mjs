@@ -171,3 +171,12 @@ test('no exception outlives the file it was written for', () => {
   const stale = NO_LANE_REQUIRED.filter((entry) => !files.some((file) => file.startsWith(entry.prefix)));
   assert.deepEqual(stale.map((entry) => entry.prefix), [], 'remove exceptions whose paths no longer exist');
 });
+
+test('a dependency-graph bump runs build, tests and screenshots, not only the native lanes', () => {
+  for (const file of ['pnpm-lock.yaml', 'pnpm-workspace.yaml', '.npmrc']) {
+    const scope = classifyCiScope([file]);
+    assert.equal(scope.package, true, `${file} must select the build/typecheck lane`);
+    assert.equal(scope.visual, true, `${file} must select the visual lane`);
+    assert.equal(scope.showcase, true, `${file} must select the showcase lane`);
+  }
+});

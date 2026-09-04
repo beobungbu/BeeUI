@@ -127,12 +127,22 @@ const BUILD_ONLY_PREFIXES = ['packages/cli/'];
 // it out of the native graph so a scripts-only edit does not boot a simulator.
 const BUILD_CONFIG_EXACT = new Set([
   'package.json',
-  'pnpm-workspace.yaml',
   'tsconfig.base.json',
   'eslint.config.mjs',
   '.nvmrc',
   '.node-version',
 ]);
+
+// A dependency-graph change can alter anything the workspace compiles or
+// renders. react-native, reanimated and expo bumps are the highest-risk change
+// class in this repo, and they used to select the consumer lanes and a
+// 120-minute macOS job while skipping build, typecheck, tests and every
+// screenshot — the cost and the coverage were inverted.
+const DEPENDENCY_GRAPH_EXACT = new Set(['pnpm-lock.yaml', 'pnpm-workspace.yaml', '.npmrc']);
+
+function isDependencyGraphPath(file) {
+  return DEPENDENCY_GRAPH_EXACT.has(file);
+}
 
 // Generated public artifacts and the code that produces or asserts them.
 const DOC_ARTIFACT_RE = /^llms(?:-[a-z]+)?\.txt$/;
@@ -293,13 +303,17 @@ export function classifyCiScope(values, { forceFull = false } = {}) {
   // consumption gate scans packages/ui/src, and every screenshot renders it.
   // Without this inheritance a component edit skips the very gates that exist
   // to police it, and the drift only surfaces on someone else's later PR.
-  const visualChanged = sourceChanged || files.some((file) => matchesWithCompanion(file, isVisualPath));
+  const dependencyGraphChanged = files.some(isDependencyGraphPath);
+
+  const visualChanged =
+    sourceChanged || dependencyGraphChanged || files.some((file) => matchesWithCompanion(file, isVisualPath));
   const docsChanged = sourceChanged || files.some((file) => matchesWithCompanion(file, isDocsPath));
   const tokensChanged = sourceChanged || files.some((file) => matchesWithCompanion(file, isTokenPath));
 
   const webChanged = docsChanged || files.some((file) => matchesWithCompanion(file, isWebPath));
   const showcaseChanged =
     sourceChanged ||
+    dependencyGraphChanged ||
     files.some(
       (file) =>
         file.startsWith('apps/showcase/') ||
@@ -313,7 +327,7 @@ export function classifyCiScope(values, { forceFull = false } = {}) {
     docs: docsChanged,
     web: webChanged,
     visual: visualChanged,
-    package: sourceChanged || files.some((file) => matchesWithCompanion(file, isBuildPath)),
+    package: sourceChanged || dependencyGraphChanged || files.some((file) => matchesWithCompanion(file, isBuildPath)),
     tokens: tokensChanged,
     showcase: showcaseChanged,
     consumer: files.some((file) => matchesWithCompanion(file, isConsumerPath)),
