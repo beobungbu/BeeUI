@@ -68,7 +68,12 @@ test('npm release workflow keeps registry mutation manual, environment-gated, an
   assert.match(workflow, /environment: release/);
   assert.match(workflow, /BEEUI_RC_RELEASE/);
   assert.match(workflow, /NODE_AUTH_TOKEN: \$\{\{ secrets\.NPM_BOOTSTRAP_TOKEN \}\}/);
+  assert.match(
+    workflow,
+    /bootstrap-rc:[\s\S]*?permissions:[\s\S]*?id-token: write[\s\S]*?env:\n      NODE_AUTH_TOKEN:/,
+  );
   assert.match(workflow, /stage-rc:[\s\S]*?permissions:\n      contents: read\n      id-token: write/);
+  assert.match(workflow, /npm publish .*--tag next --provenance/);
   assert.match(workflow, /npm stage publish .*--tag next --provenance/);
   assert.doesNotMatch(workflow, /npm dist-tag/);
 });
