@@ -81,6 +81,8 @@ jobs:
           test "$version" = "$EXPECTED_VERSION_INPUT"
 
           if [ "$OPERATION" != "verify" ]; then
+            # Public RC mutation is allowed only from the integrated trunk.
+            test "$GITHUB_REF" = "refs/heads/main"
             test "$CONFIRMATION" = "BEEUI_RC_RELEASE"
             printf '%s\n' "$version" | grep -Eq '^20260902\.0\.0-rc\.(0|[1-9][0-9]*)$'
           fi
