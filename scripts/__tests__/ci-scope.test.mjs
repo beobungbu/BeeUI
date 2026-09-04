@@ -3,6 +3,23 @@ import test from 'node:test';
 
 import { classifyCiScope } from '../ci-scope.mjs';
 
+const ALL_SCOPES = [
+  'docs',
+  'web',
+  'visual',
+  'package',
+  'tokens',
+  'showcase',
+  'consumer',
+  'expoConsumer',
+  'release',
+  'benchmark',
+];
+
+function assertFull(result) {
+  for (const key of ALL_SCOPES) assert.equal(result[key], true, key);
+}
+
 test('package READMEs are docs-only and never package/consumer work', () => {
   const result = classifyCiScope([
     'packages/core/README.md',
@@ -12,6 +29,7 @@ test('package READMEs are docs-only and never package/consumer work', () => {
   assert.equal(result.docs, true);
   assert.equal(result.web, true);
   assert.equal(result.package, false);
+  assert.equal(result.tokens, false);
   assert.equal(result.consumer, false);
   assert.equal(result.expoConsumer, false);
   assert.equal(result.visual, false);
@@ -24,6 +42,13 @@ test('BeeUI package source routes package, showcase, visual and consumers', () =
   assert.equal(result.visual, true);
   assert.equal(result.consumer, true);
   assert.equal(result.expoConsumer, true);
+});
+
+test('token source additionally routes the token lifecycle lane', () => {
+  const result = classifyCiScope(['packages/tokens/src/theme.css']);
+  assert.equal(result.tokens, true);
+  assert.equal(result.package, true);
+  assert.equal(result.visual, true);
 });
 
 test('public docs implementation routes docs/web without native consumer work', () => {
@@ -54,10 +79,19 @@ test('release and benchmark checks are independently scoped', () => {
   assert.equal(classifyCiScope(['docs/guide.md']).benchmark, false);
 });
 
-test('empty input and explicit full mode fail safe to every lane', () => {
-  for (const result of [classifyCiScope([]), classifyCiScope(['docs/guide.md'], { forceFull: true })]) {
-    for (const key of ['docs', 'web', 'visual', 'package', 'showcase', 'consumer', 'expoConsumer', 'release', 'benchmark']) {
-      assert.equal(result[key], true, key);
-    }
+test('central CI control-plane changes force one full self-validation run', () => {
+  for (const file of [
+    '.github/workflows/ci.yml',
+    'scripts/ci-scope.mjs',
+    'scripts/classify-ci-changes.mjs',
+  ]) {
+    const result = classifyCiScope([file]);
+    assertFull(result);
+    assert.match(result.reason, /CI control-plane changed/);
   }
+});
+
+test('empty input and explicit full mode fail safe to every lane', () => {
+  assertFull(classifyCiScope([]));
+  assertFull(classifyCiScope(['docs/guide.md'], { forceFull: true }));
 });
