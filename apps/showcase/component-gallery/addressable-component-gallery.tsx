@@ -14,6 +14,7 @@ import * as React from 'react';
 import { ScrollView } from 'react-native';
 import { focusComponentTarget } from '../component-target-focus';
 import { componentExamples, findShowcaseExample } from '../example-registry';
+import { writeShowcaseTargetToLocation } from '../showcase-location';
 import type { ShowcaseTarget } from '../showcase-target';
 import { SettingsScreenShell } from '../patterns/account-settings/components/settings-screen-shell';
 import { ComponentGallery } from './component-gallery';
@@ -29,6 +30,18 @@ function PrimitiveFixture({ ownerId }: { ownerId: string }) {
   if (ownerId === 'card') return <Card padding="lg" variant="raised"><Text>Card exact fixture</Text></Card>;
   if (ownerId === 'stack') return <Stack gap="sm"><Text>Stack item one</Text><Text>Stack item two</Text></Stack>;
   return <Text variant="heading">Text exact fixture</Text>;
+}
+
+function hasDedicatedFixture(sourcePath: string) {
+  return [
+    '/select-showcase.tsx',
+    '/table-showcase.tsx',
+    '/date-picker-showcase.tsx',
+    '/date-time-picker-showcase.tsx',
+    '/public-doc-fixtures.tsx',
+    '/settings-screen-shell.tsx',
+    '/addressable-component-gallery.tsx',
+  ].some((suffix) => sourcePath.endsWith(suffix));
 }
 
 function ExactFixture({ sourcePath, ownerId }: { sourcePath: string; ownerId: string }) {
@@ -49,8 +62,7 @@ function ExactFixture({ sourcePath, ownerId }: { sourcePath: string; ownerId: st
       </SettingsScreenShell>
     );
   }
-  if (sourcePath.endsWith('/addressable-component-gallery.tsx')) return <PrimitiveFixture ownerId={ownerId} />;
-  return null;
+  return <PrimitiveFixture ownerId={ownerId} />;
 }
 
 function TargetInspector({
@@ -96,11 +108,21 @@ export function AddressableComponentGallery({
   target,
 }: {
   onBack: () => void;
-  onTargetChange: (target: ShowcaseTarget) => void;
+  onTargetChange?: (target: ShowcaseTarget) => void;
   target: ShowcaseTarget;
 }) {
-  const example = findShowcaseExample(target);
-  const dedicated = example ? ExactFixture({ sourcePath: example.sourcePath, ownerId: example.ownerId }) : null;
+  const [activeTarget, setActiveTarget] = React.useState(target);
+
+  React.useEffect(() => setActiveTarget(target), [target.surface, target.id, target.example, target.state, target.theme, target.density, target.fixture]);
+
+  const example = findShowcaseExample(activeTarget);
+  const dedicated = Boolean(example && hasDedicatedFixture(example.sourcePath));
+
+  const changeTarget = React.useCallback((nextTarget: ShowcaseTarget) => {
+    setActiveTarget(nextTarget);
+    if (onTargetChange) onTargetChange(nextTarget);
+    else writeShowcaseTargetToLocation(nextTarget, 'push');
+  }, [onTargetChange]);
 
   React.useEffect(() => {
     if (!example) return undefined;
@@ -109,7 +131,7 @@ export function AddressableComponentGallery({
         ? { focusTestId: example.focusTestId ?? 'showcase-exact-fixture', focusText: example.focusText }
         : { focusTestId: example.focusTestId, focusText: example.focusText },
     );
-  }, [dedicated, example]);
+  }, [dedicated, example?.id, example?.ownerId, example?.focusTestId, example?.focusText]);
 
   if (!example) return <ComponentGallery onBack={onBack} />;
 
@@ -119,7 +141,7 @@ export function AddressableComponentGallery({
         <SafeArea className="bg-surface" edges={['top', 'left', 'right']}>
           <Box className="mx-auto w-full max-w-4xl gap-3 px-4 py-3">
             <Button onPress={onBack} size="sm" testID="component-gallery-back" variant="ghost">Back</Button>
-            <TargetInspector example={example} onTargetChange={onTargetChange} />
+            <TargetInspector example={example} onTargetChange={changeTarget} />
           </Box>
         </SafeArea>
         <SafeArea className="flex-1 bg-background" edges={['left', 'right', 'bottom']}>
@@ -128,7 +150,7 @@ export function AddressableComponentGallery({
               className="mx-auto w-full max-w-4xl gap-6 px-5 py-6"
               testID="showcase-exact-fixture"
             >
-              {dedicated}
+              <ExactFixture ownerId={example.ownerId} sourcePath={example.sourcePath} />
             </Box>
           </ScrollView>
         </SafeArea>
@@ -140,10 +162,10 @@ export function AddressableComponentGallery({
     <Box className="flex-1" testID="addressable-component-gallery">
       <ComponentGallery onBack={onBack} />
       <Box
-        className="pointer-events-box-none absolute left-3 right-3 top-3 z-50 items-center"
+        className="absolute left-3 right-3 top-3 z-50 items-center"
         testID="showcase-active-example"
       >
-        <TargetInspector example={example} onTargetChange={onTargetChange} />
+        <TargetInspector example={example} onTargetChange={changeTarget} />
       </Box>
     </Box>
   );
