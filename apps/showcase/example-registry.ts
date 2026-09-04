@@ -1,17 +1,23 @@
+import {
+  COMPONENT_COVERAGE,
+  COVERAGE_RATIONALE,
+  coverageForComponent,
+  type ExampleCoverageClass,
+} from './component-coverage';
 import { defaultPatternState, findPatternScreen, patternCatalog } from './pattern-gallery/pattern-catalog';
+import { PRODUCTION_PATTERN_USAGE } from './production-pattern-usage';
 import type { ShowcaseTarget } from './showcase-target';
 
 export type ShowcasePlatform = 'web' | 'ios' | 'android';
-export type ExampleCoverageClass =
-  | 'basic'
-  | 'variants'
-  | 'states'
-  | 'controlled'
-  | 'uncontrolled'
-  | 'composition'
-  | 'accessibility'
-  | 'platform'
-  | 'production';
+export { COVERAGE_RATIONALE, coverageForComponent };
+export type { ExampleCoverageClass };
+
+export type ShowcaseScreenshotTarget = {
+  /** Canonical target the screenshot must open. */
+  target: ShowcaseTarget;
+  /** Stable evidence name; screenshots that drift to another target change this name. */
+  name: string;
+};
 
 export type ShowcaseExample = {
   id: string;
@@ -29,6 +35,13 @@ export type ShowcaseExample = {
   focusText?: string;
   stateIds?: readonly string[];
   docsRoute?: string;
+  /**
+   * #472 section 2's `production` class: the real pattern targets that compose this component.
+   * It is a mapping rather than an example row because the pattern lives on another surface.
+   */
+  productionTargets?: readonly ShowcaseTarget[];
+  /** #472 section 11: stable identity for generated screenshot/visual evidence. */
+  screenshotTarget?: ShowcaseScreenshotTarget;
 };
 
 const MAIN_GALLERY = 'apps/showcase/component-gallery/component-gallery.tsx';
@@ -99,138 +112,13 @@ const COMPONENT_FIXTURES: readonly [string, string][] = [
   ['visually-hidden', PUBLIC_DOC_FIXTURES],
 ];
 
-const COMPLEX_COMPONENTS = new Set([
-  'alert-dialog',
-  'calendar',
-  'checkbox',
-  'date-picker',
-  'date-time-picker',
-  'dialog',
-  'dropdown-menu',
-  'field',
-  'input',
-  'otp-input',
-  'pagination',
-  'password-input',
-  'popover',
-  'radio',
-  'select',
-  'sheet',
-  'switch',
-  'table',
-  'tabs',
-  'toast',
-  'tooltip',
-]);
-
 const PLATFORM_SPLIT_COMPONENTS = new Set(['date-picker', 'date-time-picker', 'sheet', 'table', 'tooltip']);
-
-type FocusSpec = Pick<ShowcaseExample, 'focusTestId' | 'focusText'>;
-
-const COMPONENT_FOCUS: Readonly<Record<string, FocusSpec>> = {
-  accordion: { focusText: 'Account' },
-  'alert-banner': { focusText: 'Hands-on playground' },
-  'alert-dialog': { focusText: 'Delete project' },
-  'app-header': { focusTestId: 'component-gallery-header' },
-  avatar: { focusText: 'BU' },
-  badge: { focusText: 'Primary' },
-  'bottom-action-bar': { focusText: 'Save changes' },
-  box: { focusText: 'Foundation' },
-  breadcrumb: { focusText: 'Projects' },
-  button: { focusText: 'Primary action' },
-  calendar: { focusText: 'Calendar' },
-  card: { focusText: 'Actions' },
-  checkbox: { focusText: 'Accept terms' },
-  chip: { focusText: 'Mobile' },
-  collapsible: { focusText: 'Advanced options' },
-  'date-picker': { focusText: 'DatePicker' },
-  'date-time-picker': { focusText: 'DateTimePicker' },
-  'description-list': { focusText: 'Runtime' },
-  dialog: { focusText: 'Open Dialog' },
-  'dropdown-menu': { focusText: 'Workspace menu' },
-  field: { focusTestId: 'component-gallery-field' },
-  'form-group': { focusText: 'Subscription plan' },
-  'form-message': { focusText: 'Example validation message' },
-  'icon-button': { focusText: '＋' },
-  input: { focusText: 'you@example.com' },
-  label: { focusText: 'Project name' },
-  link: { focusText: 'Open documentation' },
-  'list-group': { focusText: 'Workspace' },
-  'list-item': { focusText: 'Profile' },
-  'metadata-row': { focusText: 'colors.primary' },
-  'otp-input': { focusText: 'Verification code' },
-  pagination: { focusText: 'Page' },
-  'password-input': { focusText: 'Password' },
-  popover: { focusText: 'bottom' },
-  progress: { focusText: 'Status and feedback' },
-  radio: { focusText: 'Starter plan' },
-  'safe-area': { focusTestId: 'component-gallery' },
-  screen: { focusTestId: 'component-gallery' },
-  'search-input': { focusText: 'Search' },
-  section: { focusText: 'Actions' },
-  'segmented-control': { focusText: 'View' },
-  select: { focusTestId: 'select-showcase-controlled-trigger' },
-  separator: { focusText: 'Status and feedback' },
-  sheet: { focusTestId: 'sheet-demo-trigger' },
-  skeleton: { focusText: 'Loading and state surfaces' },
-  spinner: { focusText: 'Status and feedback' },
-  stack: { focusText: 'Application composition' },
-  stat: { focusText: 'API surface' },
-  'state-message': { focusText: 'No records yet' },
-  stepper: { focusText: 'Application composition' },
-  switch: { focusText: 'Notifications' },
-  tabs: { focusText: 'Tabs and disclosure' },
-  text: { focusText: 'Component Gallery' },
-  textarea: { focusText: 'Notes' },
-  'theme-scope': { focusText: 'Scoped theme (BeeThemeScope)' },
-  timeline: { focusText: 'Native portability' },
-  toast: { focusText: 'Toast notifications' },
-  tooltip: { focusTestId: 'tooltip-demo-trigger' },
-  'use-bee-token': { focusText: 'colors.primary' },
-  'visually-hidden': { focusText: 'Visible companion text for the assistive-only content rendered immediately after it.' },
-};
-
-const EXAMPLE_FOCUS: Readonly<Record<string, FocusSpec>> = {
-  'select:controlled': { focusTestId: 'select-showcase-controlled-trigger' },
-  'select:states': { focusTestId: 'select-showcase-disabled-trigger' },
-  'select:uncontrolled': { focusTestId: 'select-showcase-placeholder-trigger' },
-  'select:composition': { focusTestId: 'select-showcase-group-trigger' },
-  'select:accessibility': { focusTestId: 'select-showcase-controlled-trigger' },
-  'sheet:states': { focusTestId: 'sheet-demo-trigger' },
-  'sheet:uncontrolled': { focusTestId: 'sheet-demo-trigger' },
-  'sheet:composition': { focusTestId: 'sheet-demo-trigger' },
-  'tooltip:states': { focusTestId: 'tooltip-demo-trigger' },
-  'tooltip:uncontrolled': { focusTestId: 'tooltip-demo-trigger' },
-  'tooltip:accessibility': { focusTestId: 'tooltip-demo-trigger' },
-};
 
 function titleFromSlug(slug: string) {
   return slug
     .split('-')
     .map((part) => part === 'otp' ? 'OTP' : part === 'bee' ? 'Bee' : `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
     .join(' ');
-}
-
-function applicableCoverageForComponent(ownerId: string): readonly ExampleCoverageClass[] {
-  const coverage = new Set<ExampleCoverageClass>(['basic']);
-  if (COMPLEX_COMPONENTS.has(ownerId)) {
-    coverage.add('states');
-    coverage.add('accessibility');
-  }
-  if (['checkbox', 'field', 'input', 'otp-input', 'pagination', 'radio', 'select', 'switch', 'tabs'].includes(ownerId)) {
-    coverage.add('controlled');
-  }
-  if (['dialog', 'popover', 'select', 'sheet', 'tooltip'].includes(ownerId)) coverage.add('uncontrolled');
-  if (['alert-dialog', 'dialog', 'dropdown-menu', 'field', 'popover', 'select', 'sheet', 'tabs'].includes(ownerId)) {
-    coverage.add('composition');
-  }
-  if (['button', 'badge', 'spinner'].includes(ownerId)) coverage.add('variants');
-  if (PLATFORM_SPLIT_COMPONENTS.has(ownerId)) coverage.add('platform');
-  return [...coverage];
-}
-
-function focusFor(ownerId: string, exampleId: string): FocusSpec {
-  return EXAMPLE_FOCUS[`${ownerId}:${exampleId}`] ?? COMPONENT_FOCUS[ownerId] ?? {};
 }
 
 function componentExample(
@@ -240,7 +128,7 @@ function componentExample(
   applicableCoverageClasses: readonly ExampleCoverageClass[],
 ): ShowcaseExample {
   const title = titleFromSlug(ownerId);
-  const focus = focusFor(ownerId, exampleId);
+  const focus = COMPONENT_COVERAGE[ownerId]?.[exampleId] ?? {};
   return {
     id: exampleId,
     ownerType: 'component',
@@ -248,20 +136,34 @@ function componentExample(
     title: `${title} · ${exampleId}`,
     intent: exampleId === 'basic'
       ? `Inspect the canonical executable ${title} usage selected by BeeUI's public component preview contract.`
-      : `Inspect the ${exampleId} behavior already exercised by the canonical executable ${title} fixture.`,
+      : `Inspect the ${exampleId} behavior exercised by a distinct ${title} example in the canonical executable fixture.`,
     sourcePath,
-    platform: ['web', 'ios', 'android'] as const,
-    expectedResult: `Showcase opens ${title} / ${exampleId} and positions the canonical executable fixture at the selected behavior.`,
+    platform: PLATFORM_SPLIT_COMPONENTS.has(ownerId)
+      ? (['web', 'ios', 'android'] as const)
+      : (['web', 'ios', 'android'] as const),
+    expectedResult: `Showcase opens ${title} / ${exampleId} and positions the canonical executable fixture at that example.`,
     showcaseTarget: { surface: 'component', id: ownerId, example: exampleId },
     coverageClasses: [exampleId],
     applicableCoverageClasses,
     ...focus,
     docsRoute: `/docs/components/reference/${ownerId}/`,
+    ...(exampleId === 'basic' && PRODUCTION_PATTERN_USAGE[ownerId]?.length
+      ? {
+        productionTargets: PRODUCTION_PATTERN_USAGE[ownerId].map((patternId) => ({
+          surface: 'pattern' as const,
+          id: patternId,
+        })),
+      }
+      : {}),
+    screenshotTarget: {
+      target: { surface: 'component', id: ownerId, example: exampleId },
+      name: `component-${ownerId}-${exampleId}`,
+    },
   };
 }
 
 export const componentExamples: readonly ShowcaseExample[] = COMPONENT_FIXTURES.flatMap(([ownerId, sourcePath]) => {
-  const applicable = applicableCoverageForComponent(ownerId);
+  const applicable = coverageForComponent(ownerId);
   return applicable.map((exampleId) => componentExample(ownerId, sourcePath, exampleId, applicable));
 });
 
@@ -291,6 +193,10 @@ export const patternExamples: readonly ShowcaseExample[] = patternCatalog.flatMa
       applicableCoverageClasses: ['basic', 'states', 'production'] as const,
       stateIds: states,
       docsRoute: `/docs/patterns/reference/${screen.id}/`,
+      screenshotTarget: {
+        target: { surface: 'pattern' as const, id: screen.id, state },
+        name: `pattern-${screen.id}-${state}`,
+      },
     };
   }),
 );

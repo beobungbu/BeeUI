@@ -34,11 +34,11 @@ test('opens a form target at the actual Field fixture', async ({ page }) => {
 });
 
 test('selects distinct Select examples and synchronizes Back/Forward with the URL', async ({ page }) => {
-  await page.goto(targetUrl('surface=component&id=select&example=controlled'), { waitUntil: 'load' });
+  await page.goto(targetUrl('surface=component&id=select&example=uncontrolled'), { waitUntil: 'load' });
 
-  await expectActiveTarget(page, 'select / controlled');
-  await expect(page.getByTestId('select-showcase-controlled-trigger')).toBeVisible();
-  await expect(page.getByTestId('select-showcase-controlled-trigger')).toHaveAttribute('data-showcase-target-active', 'true');
+  await expectActiveTarget(page, 'select / uncontrolled');
+  await expect(page.getByTestId('select-showcase-placeholder-trigger')).toBeVisible();
+  await expect(page.getByTestId('select-showcase-placeholder-trigger')).toHaveAttribute('data-showcase-target-active', 'true');
 
   await page.getByTestId('showcase-example-states').click();
   await expect(page).toHaveURL(/surface=component&id=select&example=states/u);
@@ -46,12 +46,32 @@ test('selects distinct Select examples and synchronizes Back/Forward with the UR
   await expect(page.getByTestId('select-showcase-disabled-trigger')).toHaveAttribute('data-showcase-target-active', 'true');
 
   await page.goBack();
-  await expect(page).toHaveURL(/surface=component&id=select&example=controlled/u);
-  await expectActiveTarget(page, 'select / controlled');
+  await expect(page).toHaveURL(/surface=component&id=select&example=uncontrolled/u);
+  await expectActiveTarget(page, 'select / uncontrolled');
+  await expect(page.getByTestId('select-showcase-placeholder-trigger')).toHaveAttribute('data-showcase-target-active', 'true');
 
   await page.goForward();
   await expect(page).toHaveURL(/surface=component&id=select&example=states/u);
   await expectActiveTarget(page, 'select / states');
+});
+
+test('opens each claimed coverage class at a different element', async ({ page }) => {
+  // Guards the #472 rule that a complex component cannot satisfy coverage with one sample:
+  // two classes of the same component must not highlight the same node.
+  const seen = new Map<string, string>();
+
+  for (const example of ['basic', 'states', 'accessibility', 'composition']) {
+    await page.goto(targetUrl(`surface=component&id=toast&example=${example}`), { waitUntil: 'load' });
+    await expectActiveTarget(page, `toast / ${example}`);
+    const active = page.locator('[data-showcase-target-active="true"]');
+    await expect(active).toHaveCount(1);
+    const label = (await active.textContent())?.trim() ?? '';
+    expect(label).not.toBe('');
+    expect([...seen.values()]).not.toContain(label);
+    seen.set(example, label);
+  }
+
+  expect(seen.size).toBe(4);
 });
 
 test('opens representative overlay, data and date/time component fixtures exactly', async ({ page }) => {

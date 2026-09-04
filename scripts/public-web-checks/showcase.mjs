@@ -32,8 +32,7 @@ export function collectViolations(rootDir) {
     if (component.showcaseHref !== expected) violations.push(`${component.name}: generated component preview escaped canonical Showcase target contract.`);
   }
   for (const pattern of buildPublicPatternManifest(rootDir)) {
-    const runtimeId = pattern.slug.replace(/-screen$/, '');
-    const expected = `${showcaseHref({ surface: 'pattern', id: runtimeId })}&embed=1`;
+    const expected = `${showcaseHref({ surface: 'pattern', id: pattern.runtimeId })}&embed=1`;
     if (pattern.showcaseHref !== expected) violations.push(`${pattern.pack}/${pattern.slug}: generated pattern preview escaped canonical Showcase target contract.`);
   }
   return violations;

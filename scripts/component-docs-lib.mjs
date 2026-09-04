@@ -175,6 +175,58 @@ export function usageForComponent(component, usageIndex) {
   return [...files].sort((a, b) => a.localeCompare(b));
 }
 
+// Maps each canonical pattern screen file to the screen id the runtime Pattern Gallery
+// actually uses. The file slug is NOT that id (settings-screen.tsx is `settings-home`), so
+// deep links must be built from the catalog rather than by stripping "-screen" from a filename.
+export function getPatternRuntimeIds(rootDir = ROOT_DIR) {
+  const domainsDir = path.join(rootDir, 'apps/showcase/pattern-gallery/domains');
+  const byComponent = new Map();
+
+  for (const abs of listSourceFiles(domainsDir)) {
+    const source = fs.readFileSync(abs, 'utf8');
+    let lastId = null;
+    const token = /id:\s*'([^']+)'|source:\s*([A-Za-z0-9_]+)/g;
+    let match;
+    while ((match = token.exec(source))) {
+      if (match[1]) lastId = match[1];
+      else if (match[2] && lastId) {
+        byComponent.set(match[2], { id: lastId, states: statesForScreenSource(source, match.index) });
+      }
+    }
+  }
+
+  const byFile = new Map();
+  for (const [componentName, entry] of byComponent) {
+    const fileSlug = componentName
+      .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+      .toLowerCase();
+    byFile.set(`${fileSlug}.tsx`, entry);
+  }
+  return byFile;
+}
+
+// The named public states a pattern screen exposes, read from the same runtime catalog that
+// resolves `?surface=pattern&id=...&state=...`, so docs cannot link a state the gallery lacks.
+function statesForScreenSource(source, sourceIndex) {
+  const marker = source.indexOf('states: [', sourceIndex);
+  if (marker === -1) return [];
+
+  // Stop if another screen's `source:` starts before this `states:` block.
+  const nextSource = source.indexOf('source: ', sourceIndex + 1);
+  if (nextSource !== -1 && nextSource < marker) return [];
+
+  let depth = 0;
+  let end = marker + 'states: '.length;
+  for (let index = end; index < source.length; index += 1) {
+    if (source[index] === '[') depth += 1;
+    else if (source[index] === ']') {
+      depth -= 1;
+      if (depth === 0) { end = index; break; }
+    }
+  }
+  return [...source.slice(marker, end).matchAll(/id:\s*'([^']+)'/g)].map((match) => match[1]);
+}
+
 // --- Pattern gallery derivation ---------------------------------------------
 
 // Discovers the production pattern screens on disk: one entry per

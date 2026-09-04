@@ -5,12 +5,19 @@ import path from 'node:path';
 
 import {
   ROOT_DIR,
+  getPatternRuntimeIds,
   getPatternScreens,
   getPublicComponents,
   buildShowcaseUsageIndex,
   usageForComponent,
 } from '../../../scripts/component-docs-lib.mjs';
+import { coverageForComponent } from '../component-coverage.ts';
+import { buildPublicPatternManifest } from '../../../scripts/public-pattern-reference.mjs';
 import { selectPreviewFixture } from '../../../scripts/public-component-previews.mjs';
+import {
+  buildProductionPatternUsage,
+  renderProductionPatternUsage,
+} from '../../../scripts/generate-production-pattern-usage.mjs';
 
 const REGISTRY_SOURCE = 'apps/showcase/example-registry.ts';
 
@@ -67,18 +74,49 @@ export function validateExampleRegistry() {
     }
   }
 
+  // #472 section 2's `production` mapping is derived from real pattern imports, so a pattern
+  // that stops composing a component must invalidate the committed mapping rather than rot.
+  const renderedUsage = renderProductionPatternUsage(buildProductionPatternUsage(ROOT_DIR));
+  if (read('apps/showcase/production-pattern-usage.ts') !== renderedUsage) {
+    violations.push('production pattern usage mapping is stale. Run `pnpm showcase:production-usage:generate`.');
+  }
+
   const patternSources = getPatternScreens(ROOT_DIR);
   if (patternSources.length === 0) violations.push('canonical pattern screen inventory is empty.');
   for (const pattern of patternSources) {
     if (!fs.existsSync(path.join(ROOT_DIR, pattern.file))) violations.push(`pattern source is missing: ${pattern.file}.`);
   }
 
-  const foundation = read('apps/docs/src/lib/foundation-contract.ts');
-  if (!foundation.includes("params.set('surface', target.surface)") || !foundation.includes("params.set('id', target.id)")) {
-    violations.push('Foundation docs URL builder no longer serializes canonical surface/id target identity.');
+  // #472 section 13: a generated docs link that names an example or state the runtime cannot
+  // resolve must fail CI rather than send a reader to the target-recovery screen.
+  const runtimeIds = getPatternRuntimeIds(ROOT_DIR);
+  const runtimeStates = new Map(
+    [...runtimeIds.values()].map((entry) => [entry.id, new Set(entry.states)]),
+  );
+  for (const pattern of buildPublicPatternManifest(ROOT_DIR)) {
+    if (!runtimeStates.has(pattern.runtimeId)) {
+      violations.push(`${pattern.slug}: generated docs link names pattern id ${pattern.runtimeId}, which the runtime Pattern Gallery does not expose.`);
+      continue;
+    }
+    for (const { state } of pattern.stateTargets) {
+      if (!runtimeStates.get(pattern.runtimeId).has(state)) {
+        violations.push(`${pattern.slug}: generated docs link names unknown pattern state ${state}.`);
+      }
+    }
   }
-  if (foundation.includes("params.set('owner', target.ownerId)")) {
-    violations.push('Foundation docs URL builder serializes owner metadata outside the canonical runtime target identity.');
+  for (const component of canonical) {
+    const claimed = new Set(coverageForComponent(component.name));
+    if (!claimed.has('basic')) {
+      violations.push(`${component.name}: declared coverage does not include the required basic example.`);
+    }
+  }
+
+  const foundation = read('apps/docs/src/lib/foundation-contract.ts');
+  if (!foundation.includes("from '../../../showcase/showcase-target.ts'") || !foundation.includes('return showcaseHref({')) {
+    violations.push('Foundation docs URL builder no longer delegates to the canonical Showcase target serializer.');
+  }
+  if (foundation.includes('new URLSearchParams()')) {
+    violations.push('Foundation docs URL builder reintroduced a second Showcase target serializer.');
   }
 
   const publicComponentReference = read('scripts/public-component-reference.mjs');

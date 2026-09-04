@@ -1,3 +1,5 @@
+import { showcaseHref } from '../../../showcase/showcase-target.ts';
+
 export type PublicationStatus = 'unpublished' | 'prerelease' | 'stable';
 export type DocumentationStatus = 'stable' | 'experimental' | 'deprecated' | 'internal';
 export type PlatformId = 'expo' | 'bare-react-native' | 'web' | 'ios' | 'android';
@@ -163,13 +165,15 @@ export function buildPageMetadata(input: PageMetadataInput): PageMetadata {
 export function buildShowcaseHref(target: ShowcaseLinkIntent): string {
   if (!target.id.trim()) throw new Error('Showcase target id must be non-empty.');
 
-  const params = new URLSearchParams();
-  params.set('surface', target.surface);
-  params.set('id', target.id);
-  if (target.example) params.set('example', target.example);
-  if (target.state) params.set('state', target.state);
-  if (target.theme) params.set('theme', target.theme);
-  if (target.density) params.set('density', target.density);
-
-  return `/showcase/?${params.toString()}`;
+  // Serialization itself belongs to the runtime target contract, so this seam validates
+  // documentation intent and then delegates. A second serializer here would be a second
+  // definition of target identity that could drift from what Showcase actually parses.
+  return showcaseHref({
+    surface: target.surface,
+    id: target.id,
+    ...(target.example ? { example: target.example } : {}),
+    ...(target.state ? { state: target.state } : {}),
+    ...(target.theme ? { theme: target.theme } : {}),
+    ...(target.density ? { density: target.density } : {}),
+  });
 }
