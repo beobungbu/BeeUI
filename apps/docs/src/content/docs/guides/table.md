@@ -1,5 +1,7 @@
 ---
-title: Table
+title: Build a data table
+sidebar:
+  label: Table
 description: Build a sortable, selectable, responsive data table with BeeUI's composable Table primitives on native and Web.
 ---
 

@@ -7,8 +7,12 @@ import { fileURLToPath } from 'node:url';
 
 import {
   buildTypeIndex,
+  diffPlatformObjectShape,
+  diffPlatformPropsShape,
   extractConsumedProps,
   extractDefaults,
+  getBehaviorGuardKnownNames,
+  getComponentTypeDocs,
   resolveComponentTypeEntry,
   resolveDeclaration,
 } from '../component-props-lib.mjs';
@@ -30,6 +34,20 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 
 function index(files) {
   return buildTypeIndex(files);
+}
+
+// `getComponentTypeDocs`/`getBehaviorGuardKnownNames` read real files under
+// `<rootDir>/packages/ui/src/components/*` — a synthetic tmp directory shaped the same way
+// lets those integration-level code paths run against small, purpose-built fixtures instead of
+// the real 62-family repository.
+function makeSyntheticComponentsRoot(files) {
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'public-component-reference-fixture-'));
+  const dir = path.join(tmpRoot, 'packages/ui/src/components');
+  fs.mkdirSync(dir, { recursive: true });
+  for (const [filename, source] of Object.entries(files)) {
+    fs.writeFileSync(path.join(dir, filename), source);
+  }
+  return tmpRoot;
 }
 
 test('intersection with an external base cites it without expanding it', () => {
@@ -377,4 +395,463 @@ test('a Props type that only narrows an upstream type still documents what the f
   assert.equal(consumed.get('value'), 'false');
   // `...props` is the passthrough, not a prop anyone looks up.
   assert.equal(consumed.has('props'), false);
+});
+
+// --- Default-value resolution (MINOR: select.md's `resolveDirection()`/`SELECT_DEFAULT_PLACEHOLDER`) ---
+
+test('extractDefaults resolves a bare identifier default to the literal a local `const` binds it to', () => {
+  const files = [
+    {
+      path: 'components/select.tsx',
+      source: [
+        "const SELECT_DEFAULT_PLACEHOLDER = 'Select an option';",
+        'export const Select = React.forwardRef<unknown, SelectProps>(',
+        '  ({ placeholder = SELECT_DEFAULT_PLACEHOLDER, ...rest }, ref) => null,',
+        ');',
+      ].join('\n'),
+    },
+  ];
+  const defaults = extractDefaults(files, new Set(['SelectProps']));
+  assert.equal(defaults.get('placeholder'), "'Select an option'");
+});
+
+test('extractDefaults never prints a call expression default — an unreadable symbol is dropped, not guessed at', () => {
+  const files = [
+    {
+      path: 'components/select.tsx',
+      source: [
+        'export const Select = React.forwardRef<unknown, SelectProps>(',
+        '  ({ direction = resolveDirection(), ...rest }, ref) => null,',
+        ');',
+      ].join('\n'),
+    },
+  ];
+  const defaults = extractDefaults(files, new Set(['SelectProps']));
+  assert.equal(defaults.has('direction'), false);
+});
+
+test('extractDefaults drops an identifier default that does not resolve to a local literal const', () => {
+  const files = [
+    {
+      path: 'components/select.tsx',
+      source: [
+        'import { IMPORTED_DEFAULT } from "./constants";',
+        'export const Select = React.forwardRef<unknown, SelectProps>(',
+        '  ({ tone = IMPORTED_DEFAULT, ...rest }, ref) => null,',
+        ');',
+      ].join('\n'),
+    },
+  ];
+  const defaults = extractDefaults(files, new Set(['SelectProps']));
+  assert.equal(defaults.has('tone'), false);
+});
+
+// --- Platform-split shape diffing (MAJOR M4) ---------------------------------
+
+test('diffPlatformObjectShape reports native-only, Web-only, and changed fields, plus a changed base', () => {
+  const nativeShape = {
+    kind: 'object',
+    bases: ["Omit<ViewProps, 'children'>"],
+    fields: [
+      { name: 'colSpan', optional: true, type: 'number', description: '', default: '1' },
+      { name: 'label', optional: true, type: 'string', description: '' },
+    ],
+  };
+  const webShape = {
+    kind: 'object',
+    bases: ["Omit<React.HTMLAttributes<HTMLElement>, 'children'>"],
+    fields: [
+      { name: 'label', optional: true, type: 'React.ReactNode', description: '' },
+      { name: 'testID', optional: true, type: 'string', description: '' },
+    ],
+  };
+  const diff = diffPlatformObjectShape(nativeShape, webShape);
+  assert.deepEqual(diff.nativeOnly.map((f) => f.name), ['colSpan']);
+  assert.deepEqual(diff.webOnly.map((f) => f.name), ['testID']);
+  assert.deepEqual(diff.changed.map((c) => c.name), ['label']);
+  assert.equal(diff.changed[0].typeChanged, true);
+  assert.equal(diff.changed[0].defaultChanged, false);
+  assert.equal(diff.basesChanged, true);
+});
+
+test('diffPlatformObjectShape returns null when both platforms resolve to the identical shape', () => {
+  const shape = {
+    kind: 'object',
+    bases: ["Omit<ViewProps, 'children'>"],
+    fields: [{ name: 'children', optional: true, type: 'React.ReactNode', description: '' }],
+  };
+  assert.equal(diffPlatformObjectShape(shape, { ...shape, fields: [...shape.fields] }), null);
+});
+
+test('diffPlatformPropsShape returns `unsupported` when native is a union and Web is a plain object', () => {
+  const nativeEntry = { kind: 'union', variants: [{ name: 'A', kind: 'object', bases: [], fields: [] }] };
+  const webShape = { kind: 'object', bases: [], fields: [] };
+  assert.deepEqual(diffPlatformPropsShape(nativeEntry, webShape), { kind: 'unsupported' });
+});
+
+test('diffPlatformPropsShape diffs matching union variants by name and reports genuinely unmatched ones', () => {
+  const nativeEntry = {
+    kind: 'union',
+    variants: [
+      { name: 'Controlled', kind: 'object', bases: [], fields: [{ name: 'open', optional: false, type: 'boolean', description: '' }] },
+      { name: 'NativeOnly', kind: 'object', bases: [], fields: [] },
+    ],
+  };
+  const webShape = {
+    kind: 'union',
+    variants: [
+      { name: 'Controlled', kind: 'object', bases: [], fields: [{ name: 'open', optional: true, type: 'boolean', description: '' }] },
+    ],
+  };
+  const diff = diffPlatformPropsShape(nativeEntry, webShape);
+  assert.equal(diff.kind, 'union');
+  assert.deepEqual(diff.variantDiffs[0].variantName, 'Controlled');
+  assert.deepEqual(diff.variantDiffs[0].diff.changed[0].name, 'open');
+  assert.equal(diff.variantDiffs[0].diff.changed[0].optionalChanged, true);
+  assert.deepEqual(diff.unmatched, ['NativeOnly']);
+});
+
+test('getComponentTypeDocs attaches a webShape only when the Web file locally redeclares the same type name', () => {
+  const rootDir = makeSyntheticComponentsRoot({
+    'widget.tsx': [
+      "export type WidgetProps = Omit<ViewProps, 'children'> & {",
+      '  label?: string;',
+      '};',
+    ].join('\n'),
+    'widget.web.tsx': [
+      "export type WidgetProps = Omit<React.HTMLAttributes<HTMLElement>, 'children'> & {",
+      '  label?: string;',
+      '  testID?: string;',
+      '};',
+    ].join('\n'),
+    'shared-widget.tsx': "export type SharedWidgetLayout = 'a' | 'b';",
+  });
+  try {
+    const component = {
+      name: 'widget',
+      types: ['WidgetProps'],
+      source: 'packages/ui/src/components/widget.tsx',
+      allSources: [
+        'packages/ui/src/components/widget.tsx',
+        'packages/ui/src/components/widget.web.tsx',
+        'packages/ui/src/components/shared-widget.tsx',
+      ],
+    };
+    const [entry] = getComponentTypeDocs(component, rootDir);
+    assert.ok(entry.webShape, 'expected a webShape to be attached for a Web-redeclared type');
+    assert.equal(entry.webSource, 'packages/ui/src/components/widget.web.tsx');
+    const diff = diffPlatformPropsShape(entry, entry.webShape);
+    assert.deepEqual(diff.diff.webOnly.map((f) => f.name), ['testID']);
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('getComponentTypeDocs does not attach a webShape when only a shared (non-`.web.`-local) declaration exists', () => {
+  const rootDir = makeSyntheticComponentsRoot({
+    'widget.native.tsx': "export { Widget } from './widget-shared';",
+    'widget.web.tsx': "export { Widget } from './widget-shared';",
+    'widget-shared.tsx': [
+      'export type WidgetProps = {',
+      '  label?: string;',
+      '};',
+      'export const Widget = (props: WidgetProps) => null;',
+    ].join('\n'),
+  });
+  try {
+    const component = {
+      name: 'widget',
+      types: ['WidgetProps'],
+      source: 'packages/ui/src/components/widget-shared.tsx',
+      allSources: [
+        'packages/ui/src/components/widget-shared.tsx',
+        'packages/ui/src/components/widget.native.tsx',
+        'packages/ui/src/components/widget.web.tsx',
+      ],
+    };
+    const [entry] = getComponentTypeDocs(component, rootDir);
+    assert.equal(entry.webShape, undefined);
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+// `applyDefaults` (component-props-lib.mjs) and its call site inside `getComponentTypeDocs`
+// have no direct test: deleting that call site blanks the Default column on every page with a
+// green suite everywhere else, because every other test either constructs a typeDocs entry by
+// hand (bypassing `getComponentTypeDocs`) or does not assert on `.default`. This drives the
+// real `getComponentTypeDocs` entry point against a synthetic fixture and asserts the
+// destructured default actually lands on the field.
+test('getComponentTypeDocs applies a real destructured default to its field (proves the applyDefaults call site)', () => {
+  const rootDir = makeSyntheticComponentsRoot({
+    'widget.tsx': [
+      'export type WidgetProps = {',
+      "  layout?: 'scroll' | 'stacked';",
+      '};',
+      'export const Widget = React.forwardRef<unknown, WidgetProps>(',
+      "  ({ layout = 'scroll', ...rest }, ref) => null,",
+      ');',
+    ].join('\n'),
+  });
+  try {
+    const component = {
+      name: 'widget',
+      types: ['WidgetProps'],
+      source: 'packages/ui/src/components/widget.tsx',
+      allSources: ['packages/ui/src/components/widget.tsx'],
+    };
+    const [entry] = getComponentTypeDocs(component, rootDir);
+    const layout = entry.fields.find((field) => field.name === 'layout');
+    assert.equal(layout.default, "'scroll'");
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+// --- Behavior-prose prop guard (MAJOR M8) ------------------------------------
+
+test('getBehaviorGuardKnownNames credits own fields, cva() variant keys, and one level of a local base\'s fields', () => {
+  const rootDir = makeSyntheticComponentsRoot({
+    'button.tsx': [
+      "import { cva } from 'class-variance-authority';",
+      "const buttonVariants = cva('base', { variants: { variant: { primary: 'x' }, size: { md: 'y' } } });",
+      "export type ButtonProps = Omit<PressableProps, 'children'> & VariantProps<typeof buttonVariants> & {",
+      '  loading?: boolean;',
+      '};',
+      'export const Button = (props: ButtonProps) => null;',
+    ].join('\n'),
+    'icon-button.tsx': [
+      "export type IconButtonProps = Omit<ButtonProps, 'children'> & {",
+      '  accessibilityLabel: string;',
+      '};',
+      'export const IconButton = (props: IconButtonProps) => null;',
+    ].join('\n'),
+  });
+  try {
+    const iconButton = {
+      name: 'icon-button',
+      values: ['IconButton'],
+      types: ['IconButtonProps'],
+      source: 'packages/ui/src/components/icon-button.tsx',
+      allSources: ['packages/ui/src/components/icon-button.tsx'],
+    };
+    const typeDocs = getComponentTypeDocs(iconButton, rootDir);
+    const known = getBehaviorGuardKnownNames(iconButton, typeDocs, rootDir);
+    // Own field.
+    assert.ok(known.has('accessibilityLabel'));
+    // One level into the locally-resolvable `Omit<ButtonProps, …>` base.
+    assert.ok(known.has('loading'), 'expected `loading` resolved from the ButtonProps base');
+    // Not a real name anywhere in this fixture.
+    assert.equal(known.has('somethingMadeUp'), false);
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('getBehaviorGuardKnownNames credits cva() variant keys directly declared on the family itself', () => {
+  const rootDir = makeSyntheticComponentsRoot({
+    'badge.tsx': [
+      "import { cva } from 'class-variance-authority';",
+      "const badgeVariants = cva('base', { variants: { variant: { primary: 'x' } } });",
+      'export type BadgeProps = VariantProps<typeof badgeVariants> & {',
+      '  className?: string;',
+      '};',
+      'export const Badge = (props: BadgeProps) => null;',
+    ].join('\n'),
+  });
+  try {
+    const badge = {
+      name: 'badge',
+      values: ['Badge'],
+      types: ['BadgeProps'],
+      source: 'packages/ui/src/components/badge.tsx',
+      allSources: ['packages/ui/src/components/badge.tsx'],
+    };
+    const typeDocs = getComponentTypeDocs(badge, rootDir);
+    const known = getBehaviorGuardKnownNames(badge, typeDocs, rootDir);
+    assert.ok(known.has('variant'));
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('collectPublicComponentReferenceViolations flags a behavior string that references a prop the family does not have', () => {
+  // Real (fixture) rootDir, same symlink pattern as the missing-behavior test above: proves
+  // the guard fires against the true 62-family surface, not a mock. Reverts `progress.behavior`
+  // to its actual pre-fix wording ("`value` is clamped to its `min`/`max` range") — `min` was
+  // never a `ProgressProps` field — and asserts the guard names exactly that identifier.
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'public-component-reference-behavior-prop-'));
+  try {
+    fs.symlinkSync(path.join(REPO_ROOT, 'registry'), path.join(tmpRoot, 'registry'));
+    fs.symlinkSync(path.join(REPO_ROOT, 'packages'), path.join(tmpRoot, 'packages'));
+    fs.mkdirSync(path.join(tmpRoot, 'docs'), { recursive: true });
+    const content = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'docs/component-reference.content.json'), 'utf8'));
+    content.components.progress.behavior =
+      "Stateless clamped determinate progress bar; `value` is clamped to its `min`/`max` range and exposes native progressbar semantics — there is no indeterminate mode.";
+    fs.writeFileSync(path.join(tmpRoot, 'docs/component-reference.content.json'), JSON.stringify(content));
+
+    const violations = collectPublicComponentReferenceViolations(tmpRoot);
+    assert.ok(
+      violations.includes('progress: behavior references `min`, which is not a known prop or exported value of this family.'),
+      `expected a \`min\` mismatch violation for progress, got: ${JSON.stringify(violations)}`,
+    );
+  } finally {
+    fs.rmSync(tmpRoot, { recursive: true, force: true });
+  }
+});
+
+test('the committed content.json behavior strings reference only real props/exported values', () => {
+  const violations = collectPublicComponentReferenceViolations();
+  assert.deepEqual(violations.filter((v) => v.includes('is not a known prop or exported value')), []);
+});
+
+// --- BeeUI-owned base linking (MEDIUM D2) ------------------------------------
+
+test('renderPublicComponentPage links a base that resolves to another public family\'s own Props type, and drops "upstream"', () => {
+  const base = getPublicComponents().find((c) => c.name === 'textarea');
+  const component = {
+    ...base,
+    title: 'Textarea',
+    purpose: 'p',
+    behavior: 'b',
+    limitations: '',
+    notes: '',
+    typeDocs: [
+      {
+        name: 'TextareaProps',
+        docKind: 'props',
+        kind: 'object',
+        bases: ["Omit<InputProps, 'multiline' | 'size'>"],
+        fields: [],
+      },
+    ],
+    examples: [],
+    category: 'Forms & selection',
+    providerRequired: false,
+    exampleTargets: [],
+    showcaseHref: '/showcase/',
+    sourceHref: 'https://example.com',
+    registryHref: 'https://example.com',
+  };
+  const page = renderPublicComponentPage(component);
+  assert.match(page, /Also carries every prop of `Omit<InputProps, 'multiline' \\\| 'size'>` — documented on the \[Input\]\(\/docs\/components\/input\/\) page, not reproduced here\./);
+  assert.doesNotMatch(page, /upstream contract/);
+});
+
+test('renderPublicComponentPage keeps the "upstream" wording for a genuinely external base, and collapses bracket-adjacent whitespace', () => {
+  const base = getPublicComponents().find((c) => c.name === 'table');
+  const component = {
+    ...base,
+    title: 'Table',
+    purpose: 'p',
+    behavior: 'b',
+    limitations: '',
+    notes: '',
+    typeDocs: [
+      {
+        name: 'TableProps',
+        docKind: 'props',
+        kind: 'object',
+        bases: ["Omit<\n  ViewProps,\n  'children' | 'style'\n>"],
+        fields: [],
+      },
+    ],
+    examples: [],
+    category: 'Data display',
+    providerRequired: false,
+    exampleTargets: [],
+    showcaseHref: '/showcase/',
+    sourceHref: 'https://example.com',
+    registryHref: 'https://example.com',
+  };
+  const page = renderPublicComponentPage(component);
+  assert.match(page, /Also carries every prop of `Omit<ViewProps, 'children' \\\| 'style'>` — that upstream contract is not reproduced here\./);
+  assert.doesNotMatch(page, /Omit<\s+ViewProps/, 'expected the bracket-adjacent space to be collapsed');
+  assert.doesNotMatch(page, /'style'\s+>/, 'expected the bracket-adjacent space to be collapsed');
+});
+
+// --- Platform-diff rendering (MAJOR M4, render layer) ------------------------
+
+function baseSyntheticComponentForRender() {
+  const base = getPublicComponents().find((c) => c.name === 'table');
+  return {
+    ...base,
+    title: 'Widget',
+    purpose: 'p',
+    behavior: 'b',
+    limitations: '',
+    notes: '',
+    examples: [],
+    category: 'Data display',
+    providerRequired: false,
+    exampleTargets: [],
+    showcaseHref: '/showcase/',
+    sourceHref: 'https://example.com',
+    registryHref: 'https://example.com',
+  };
+}
+
+test('renderPublicComponentPage renders explicit platform-difference bullets for an object-kind entry', () => {
+  const component = {
+    ...baseSyntheticComponentForRender(),
+    typeDocs: [
+      {
+        name: 'WidgetProps',
+        docKind: 'props',
+        kind: 'object',
+        bases: ["Omit<ViewProps, 'children'>"],
+        fields: [{ name: 'colSpan', optional: true, type: 'number', description: '', default: '1' }],
+        webShape: {
+          kind: 'object',
+          bases: ["Omit<React.HTMLAttributes<HTMLElement>, 'children'>"],
+          fields: [{ name: 'testID', optional: true, type: 'string', description: '' }],
+        },
+        webSource: 'packages/ui/src/components/widget.web.tsx',
+      },
+    ],
+  };
+  const page = renderPublicComponentPage(component);
+  assert.match(page, /\*\*Platform differences \(native vs\. \[Web\]/);
+  assert.match(page, /`colSpan` is declared on native only \(native default `1`\)\./);
+  assert.match(page, /`testID` is declared on Web only\./);
+  assert.match(page, /Base type differs: native carries `Omit<ViewProps, 'children'>`; Web carries `Omit<React\.HTMLAttributes<HTMLElement>, 'children'>`\./);
+});
+
+test('renderPublicComponentPage prints no platform-difference note when the Web shape is identical', () => {
+  const component = {
+    ...baseSyntheticComponentForRender(),
+    typeDocs: [
+      {
+        name: 'WidgetProps',
+        docKind: 'props',
+        kind: 'object',
+        bases: [],
+        fields: [{ name: 'label', optional: true, type: 'string', description: '' }],
+        webShape: { kind: 'object', bases: [], fields: [{ name: 'label', optional: true, type: 'string', description: '' }] },
+        webSource: 'packages/ui/src/components/widget.web.tsx',
+      },
+    ],
+  };
+  const page = renderPublicComponentPage(component);
+  assert.doesNotMatch(page, /Platform differences/);
+  assert.doesNotMatch(page, /Platform note/);
+});
+
+test('renderPublicComponentPage falls back to an explicit native-only note when the two shapes are not diffable', () => {
+  const component = {
+    ...baseSyntheticComponentForRender(),
+    typeDocs: [
+      {
+        name: 'WidgetProps',
+        docKind: 'props',
+        kind: 'union',
+        variants: [{ name: 'A', kind: 'object', bases: [], fields: [] }],
+        webShape: { kind: 'object', bases: [], fields: [] },
+        webSource: 'packages/ui/src/components/widget.web.tsx',
+      },
+    ],
+  };
+  const page = renderPublicComponentPage(component);
+  assert.match(page, /\*\*Platform note:\*\* this table documents the native declaration only\./);
+  assert.match(page, /\[`packages\/ui\/src\/components\/widget\.web\.tsx`\]/);
 });

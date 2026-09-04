@@ -42,7 +42,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Controlled/uncontrolled one-time-code input; entered text is normalized to digits, and the completion callback fires exactly once per completed value — it does not re-fire on further keystrokes while already complete, only after the value becomes incomplete again.
+Controlled/uncontrolled one-time-code input; entered text is normalized to digits only when `mode` is `'numeric'` (the default) — `mode: 'text'` accepts any character unnormalized — and the completion callback fires exactly once per completed value — it does not re-fire on further keystrokes while already complete, only after the value becomes incomplete again.
 
 ### Props
 
@@ -57,7 +57,7 @@ Controlled/uncontrolled one-time-code input; entered text is normalized to digit
 | `onValueChange` | `(value: string) => void` | — | — |
 | `value` | `string` | — | — |
 
-Also carries every prop of `Omit<InputProps, 'defaultValue' \| 'inputMode' \| 'keyboardType' \| 'maxLength' \| 'onChangeText' \| 'value'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<InputProps, 'defaultValue' \| 'inputMode' \| 'keyboardType' \| 'maxLength' \| 'onChangeText' \| 'value'>` — documented on the [Input](/docs/components/input/) page, not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

@@ -23,7 +23,7 @@ This index is generated from the public Registry + `@beemvp/beeui-ui` export map
 - **[Separator](/docs/components/separator/)** — Decorative-by-default divider (semantic when requested); vertical orientation stretches across the cross axis. · [Showcase](/showcase/?surface=component&id=separator&example=basic)
 - **[Stat](/docs/components/stat/)** — Layout-only metric composition (label/value/help text) with no formatting or state ownership. · [Showcase](/showcase/?surface=component&id=stat&example=basic)
 - **[Table](/docs/components/table/)** — Semantic data-table primitives that render real table/th scope/aria-sort semantics on Web. · [Showcase](/showcase/?surface=component&id=table&example=basic)
-- **[Text](/docs/components/text/)** — Semantic typography primitive with type/tone variants that honors OS/browser font scaling. · [Showcase](/showcase/?surface=component&id=text&example=basic)
+- **[Text](/docs/components/text/)** — Semantic typography primitive with variant/tone styling that honors OS/browser font scaling. · [Showcase](/showcase/?surface=component&id=text&example=basic)
 - **[Timeline](/docs/components/timeline/)** — Read-only ordered history composition with semantic marker states; owns no workflow state. · [Showcase](/showcase/?surface=component&id=timeline&example=basic)
 
 ## Forms & selection

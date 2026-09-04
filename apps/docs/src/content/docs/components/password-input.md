@@ -58,7 +58,7 @@ Uncontrolled-by-default text field (same contract as `Input`) with a visibility-
 | `toggleClassName` | `string` | — | — |
 | `visible` | `boolean` | — | — |
 
-Also carries every prop of `Omit<InputProps, 'secureTextEntry'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<InputProps, 'secureTextEntry'>` — documented on the [Input](/docs/components/input/) page, not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

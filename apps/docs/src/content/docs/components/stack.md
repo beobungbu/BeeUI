@@ -58,7 +58,7 @@ This type adds no fields of its own. These are the props the implementation read
 | `align` | `'center'` |
 
 
-Also carries every prop of `Omit<StackProps, 'direction'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<StackProps, 'direction'>` — documented on the [Stack](/docs/components/stack/) page, not reproduced here.
 
 #### `StackProps`
 
@@ -72,7 +72,7 @@ Also carries every prop of `ViewProps` and `VariantProps<typeof stackVariants>` 
 
 _No own fields; this type is exactly the base(s) below._
 
-Also carries every prop of `Omit<StackProps, 'direction'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<StackProps, 'direction'>` — documented on the [Stack](/docs/components/stack/) page, not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

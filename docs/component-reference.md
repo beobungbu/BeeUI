@@ -722,7 +722,7 @@ The documentation contract, its required sections, and how it is enforced are de
 
 ## `text`
 
-- **Purpose:** Semantic typography primitive with type/tone variants that honors OS/browser font scaling.
+- **Purpose:** Semantic typography primitive with variant/tone styling that honors OS/browser font scaling.
 - **Import:** `import { Text, textVariants } from '@beemvp/beeui-ui';`
 - **API:** `Text`, `textVariants` — source [`packages/ui/src/components/text.tsx`](../packages/ui/src/components/text.tsx). Typed props: `TextProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add text` (copies the source file into your app; see [registry CLI](registry-cli.md)).

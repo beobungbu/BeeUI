@@ -58,7 +58,7 @@ This type adds no fields of its own. These are the props the implementation read
 | `tone` | `'muted'` |
 
 
-Also carries every prop of `Omit<TextProps, 'variant'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<TextProps, 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 
 #### `StatLabelProps`
 
@@ -69,7 +69,7 @@ This type adds no fields of its own. These are the props the implementation read
 | `tone` | `'muted'` |
 
 
-Also carries every prop of `Omit<TextProps, 'variant'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<TextProps, 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 
 #### `StatProps`
 
@@ -83,7 +83,7 @@ Also carries every prop of `ViewProps` — that upstream contract is not reprodu
 
 _No own fields; this type is exactly the base(s) below._
 
-Also carries every prop of `Omit<TextProps, 'variant'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<TextProps, 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

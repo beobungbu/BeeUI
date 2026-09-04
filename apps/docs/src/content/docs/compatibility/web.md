@@ -1,5 +1,7 @@
 ---
-title: Web
+title: Web compatibility
+sidebar:
+  label: Web
 description: BeeUI's Web support boundary — browser engine, bundlers, and the independent consumer proof.
 ---
 

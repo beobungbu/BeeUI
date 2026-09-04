@@ -65,7 +65,7 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | --- | --- | --- | --- |
 | `title` | `React.ReactNode` | `'Something went wrong'` | — |
 
-Also carries every prop of `Omit<EmptyStateProps, 'title'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<EmptyStateProps, 'title'>` — documented on the [State Message](/docs/components/state-message/) page, not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

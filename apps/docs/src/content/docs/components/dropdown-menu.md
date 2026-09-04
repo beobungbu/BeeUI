@@ -74,7 +74,7 @@ Also carries every prop of `Omit<DropdownMenuItemBaseProps, 'closeOnSelect' \| '
 | `avoidSafeArea` | `boolean` | `true` | — |
 | `closeOnOutsidePress` | `boolean` | `true` | — |
 | `collisionPadding` | `DropdownMenuCollisionPadding` | `8` | — |
-| `direction` | `DropdownMenuDirection` | `resolveDirection()` | — |
+| `direction` | `DropdownMenuDirection` | — | — |
 | `flip` | `boolean` | `true` | — |
 | `outsidePressProps` | `Omit<PressableProps, 'children' \| 'onPress' \| 'style'>` | — | — |
 | `outsidePressTestID` | `string` | — | — |
@@ -108,7 +108,7 @@ This type adds no fields of its own. These are the props the implementation read
 | `className` | — |
 
 
-Also carries every prop of `Omit<TextProps, 'role' \| 'variant'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<TextProps, 'role' \| 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 
 #### `DropdownMenuProps`
 

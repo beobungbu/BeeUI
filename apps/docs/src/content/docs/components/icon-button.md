@@ -53,7 +53,7 @@ Stateless 44px icon-only pressable sharing Button's `disabled`/`loading` semanti
 | `accessibilityLabel` **(required)** | `string` | — | — |
 | `children` **(required)** | `React.ReactNode` | — | — |
 
-Also carries every prop of `Omit<ButtonProps, 'accessibilityLabel' \| 'children' \| 'labelClassName' \| 'size'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ButtonProps, 'accessibilityLabel' \| 'children' \| 'labelClassName' \| 'size'>` — documented on the [Button](/docs/components/button/) page, not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

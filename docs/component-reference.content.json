@@ -57,7 +57,7 @@
     },
     "chip": {
       "purpose": "Standalone toggle or value-scoped group item with button/radio/checkbox semantics.",
-      "behavior": "Standalone toggle (`pressed`/`onPressedChange`) or, nested in `ChipGroup`, a value-scoped selection item; a grouped `Chip` rendered without a `value` fails safe as disabled and warns in development, and `ChipGroup` supports controlled/uncontrolled single- or multiple-selection."
+      "behavior": "Standalone toggle (`selected`/`onSelectedChange`) or, nested in `ChipGroup`, a value-scoped selection item; a grouped `Chip` rendered without a `value` fails safe as disabled and warns in development, and `ChipGroup` supports controlled/uncontrolled single- or multiple-selection."
     },
     "collapsible": {
       "purpose": "Controlled/uncontrolled single-region disclosure with content mounted only while open.",
@@ -134,7 +134,7 @@
     },
     "otp-input": {
       "purpose": "Controlled/uncontrolled one-time-code input with numeric normalization and per-value completion callbacks.",
-      "behavior": "Controlled/uncontrolled one-time-code input; entered text is normalized to digits, and the completion callback fires exactly once per completed value — it does not re-fire on further keystrokes while already complete, only after the value becomes incomplete again."
+      "behavior": "Controlled/uncontrolled one-time-code input; entered text is normalized to digits only when `mode` is `'numeric'` (the default) — `mode: 'text'` accepts any character unnormalized — and the completion callback fires exactly once per completed value — it does not re-fire on further keystrokes while already complete, only after the value becomes incomplete again."
     },
     "pagination": {
       "purpose": "Controlled page/page-count context with normalized boundaries and type-enforced page/prev/next items.",
@@ -150,11 +150,11 @@
     },
     "progress": {
       "purpose": "Clamped determinate progress bar with native progressbar semantics.",
-      "behavior": "Stateless clamped determinate progress bar; `value` is clamped to its `min`/`max` range and exposes native progressbar semantics — there is no indeterminate mode."
+      "behavior": "Stateless clamped determinate progress bar; there is no lower-bound prop — `value` is clamped between `0` and `max`, and `max` itself falls back to `100` when non-finite or `<= 0` — and it exposes native progressbar semantics with no indeterminate mode."
     },
     "radio": {
       "purpose": "Controlled radio item and RadioGroup coordinator with native radiogroup semantics.",
-      "behavior": "Standalone `Radio` supports both selection and deselection through `onCheckedChange`; grouped through `RadioGroup` (`value`/`onValueChange` controlled, or `defaultValue` uncontrolled) radios become mutually exclusive and can no longer deselect. Enabled usage without the matching callback warns in development."
+      "behavior": "Standalone `Radio` supports both selection and deselection through `onCheckedChange`; grouped through `RadioGroup` (`value`/`onValueChange`, fully controlled — there is no uncontrolled mode) radios become mutually exclusive and can no longer deselect. Enabled usage without the matching callback warns in development."
     },
     "safe-area": {
       "purpose": "BeeUIProvider application root plus an explicit SafeArea surface with caller-owned edge selection.",
@@ -225,11 +225,11 @@
     },
     "tabs": {
       "purpose": "Controlled tab set sharing state across list/triggers/content; inactive panels are not mounted.",
-      "behavior": "Controlled (`value`/`onValueChange`) or uncontrolled (`defaultValue`) tab state shared across `TabsList`/`TabsTrigger`/`TabsContent`; enabled usage without `onValueChange` warns in development, and an inactive `TabsContent` panel is not mounted."
+      "behavior": "Fully controlled (`value`/`onValueChange`, required — there is no uncontrolled mode) tab state shared across `TabsList`/`TabsTrigger`/`TabsContent`; enabled usage without `onValueChange` warns in development, and an inactive `TabsContent` panel is not mounted."
     },
     "text": {
-      "purpose": "Semantic typography primitive with type/tone variants that honors OS/browser font scaling.",
-      "behavior": "Stateless semantic typography primitive; `type`/`tone` variants apply typed styling, and text always honors OS/browser font scaling — BeeUI never sets `allowFontScaling={false}`."
+      "purpose": "Semantic typography primitive with variant/tone styling that honors OS/browser font scaling.",
+      "behavior": "Stateless semantic typography primitive; `variant`/`tone` apply typed styling, and text always honors OS/browser font scaling — BeeUI never sets `allowFontScaling={false}`."
     },
     "textarea": {
       "purpose": "Multiline text input using the same semantic contract as Input.",

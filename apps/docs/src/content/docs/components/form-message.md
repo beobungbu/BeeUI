@@ -53,7 +53,7 @@ Stateless destructive form-feedback text with polite live-region semantics by de
 | --- | --- | --- | --- |
 | `className` | `string` | — | — |
 
-Also carries every prop of `Omit<TextProps, 'tone' \| 'variant'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<TextProps, 'tone' \| 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 
 #### `HelperTextProps`
 
@@ -61,7 +61,7 @@ Also carries every prop of `Omit<TextProps, 'tone' \| 'variant'>` — that upstr
 | --- | --- | --- | --- |
 | `className` | `string` | — | — |
 
-Also carries every prop of `Omit<TextProps, 'tone' \| 'variant'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<TextProps, 'tone' \| 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

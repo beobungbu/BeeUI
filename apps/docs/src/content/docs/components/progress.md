@@ -43,7 +43,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Stateless clamped determinate progress bar; `value` is clamped to its `min`/`max` range and exposes native progressbar semantics — there is no indeterminate mode.
+Stateless clamped determinate progress bar; there is no lower-bound prop — `value` is clamped between `0` and `max`, and `max` itself falls back to `100` when non-finite or `<= 0` — and it exposes native progressbar semantics with no indeterminate mode.
 
 ### Props
 

@@ -62,6 +62,11 @@ Composable primitive family with no owned fetching, sort/filter/selection state,
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
+**Platform differences (native vs. [Web](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/table.web.tsx)):**
+
+- `testID` is declared on Web only.
+- Base type differs: native carries `Omit<ViewProps, 'children'>`; Web carries `Omit<React.HTMLAttributes<HTMLElement>, 'children'>`.
+
 #### `TableCaptionProps`
 
 | Prop | Type | Default | Description |
@@ -70,6 +75,11 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | `className` | `string` | — | — |
 
 Also carries every prop of `Omit<React.ComponentProps<typeof Text>, 'children'>` — that upstream contract is not reproduced here.
+
+**Platform differences (native vs. [Web](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/table.web.tsx)):**
+
+- `testID` is declared on Web only.
+- Base type differs: native carries `Omit<React.ComponentProps<typeof Text>, 'children'>`; Web carries `Omit<React.HTMLAttributes<HTMLElement>, 'children'>`.
 
 #### `TableCellProps`
 
@@ -82,6 +92,12 @@ Also carries every prop of `Omit<React.ComponentProps<typeof Text>, 'children'>`
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
+**Platform differences (native vs. [Web](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/table.web.tsx)):**
+
+- `colSpan` is declared on native only (native default `1`).
+- `testID` is declared on Web only.
+- Base type differs: native carries `Omit<ViewProps, 'children'>`; Web carries `Omit<React.TdHTMLAttributes<HTMLElement>, 'children'>`.
+
 #### `TableFooterProps`
 
 | Prop | Type | Default | Description |
@@ -91,6 +107,11 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
+**Platform differences (native vs. [Web](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/table.web.tsx)):**
+
+- `testID` is declared on Web only.
+- Base type differs: native carries `Omit<ViewProps, 'children'>`; Web carries `Omit<React.HTMLAttributes<HTMLElement>, 'children'>`.
+
 #### `TableHeaderProps`
 
 | Prop | Type | Default | Description |
@@ -99,6 +120,11 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | `className` | `string` | — | — |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
+
+**Platform differences (native vs. [Web](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/table.web.tsx)):**
+
+- `testID` is declared on Web only.
+- Base type differs: native carries `Omit<ViewProps, 'children'>`; Web carries `Omit<React.HTMLAttributes<HTMLElement>, 'children'>`.
 
 #### `TableHeadProps`
 
@@ -112,6 +138,11 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
+**Platform differences (native vs. [Web](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/table.web.tsx)):**
+
+- `testID` is declared on Web only.
+- Base type differs: native carries `Omit<ViewProps, 'children'>`; Web carries `Omit<React.ThHTMLAttributes<HTMLElement>, 'children' \| 'scope'>`.
+
 #### `TableProps`
 
 | Prop | Type | Default | Description |
@@ -122,6 +153,11 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
+**Platform differences (native vs. [Web](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/table.web.tsx)):**
+
+- `testID` is declared on Web only.
+- Base type differs: native carries `Omit<ViewProps, 'children'>`; Web carries `Omit<React.HTMLAttributes<HTMLDivElement>, 'children'>`.
+
 #### `TableRowProps`
 
 | Prop | Type | Default | Description |
@@ -131,6 +167,11 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | `selected` | `boolean` | `false` | Visual highlight for a caller-selected row. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
+
+**Platform differences (native vs. [Web](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/table.web.tsx)):**
+
+- `testID` is declared on Web only.
+- Base type differs: native carries `Omit<ViewProps, 'children'>`; Web carries `Omit<React.HTMLAttributes<HTMLElement>, 'children'>`.
 
 **Related exported types:**
 

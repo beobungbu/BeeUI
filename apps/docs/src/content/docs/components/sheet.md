@@ -87,6 +87,10 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \
 
 Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'accessibilityViewIsModal' \| 'role'>` — that upstream contract is not reproduced here.
 
+**Platform differences (native vs. [Web](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/sheet.web.tsx)):**
+
+- `modalProps` type differs: native `SheetModalProps`, Web `Record<string, unknown>`.
+
 #### `SheetDescriptionProps`
 
 This type adds no fields of its own. These are the props the implementation reads from the base type below; everything else is passed straight through.
@@ -99,7 +103,7 @@ This type adds no fields of its own. These are the props the implementation read
 | `nativeID` | — |
 
 
-Also carries every prop of `Omit<TextProps, 'tone' \| 'variant'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<TextProps, 'tone' \| 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 
 #### `SheetFooterProps`
 
@@ -154,7 +158,7 @@ This type adds no fields of its own. These are the props the implementation read
 | `nativeID` | — |
 
 
-Also carries every prop of `Omit<TextProps, 'accessibilityRole' \| 'role' \| 'variant'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<TextProps, 'accessibilityRole' \| 'role' \| 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 
 #### `SheetTriggerProps`
 

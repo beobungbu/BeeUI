@@ -85,7 +85,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \
 | --- | --- | --- | --- |
 | `cancelOnRequestClose` | `boolean` | `true` | Whether native request-close paths (Android hardware back and accessibility escape) should behave like cancellation. |
 
-Also carries every prop of `Omit<DialogContentProps, 'closeOnBackdropPress' \| 'dismissOnEscape' \| 'dismissOnRequestClose'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<DialogContentProps, 'closeOnBackdropPress' \| 'dismissOnEscape' \| 'dismissOnRequestClose'>` — documented on the [Dialog](/docs/components/dialog/) page, not reproduced here.
 
 #### `AlertDialogDescriptionProps`
 
@@ -93,7 +93,7 @@ Also carries every prop of `Omit<DialogContentProps, 'closeOnBackdropPress' \| '
 
 _No own fields; this type is exactly the base(s) below._
 
-Also carries every prop of `Omit<TextProps, 'tone' \| 'variant'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<TextProps, 'tone' \| 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 
 #### `AlertDialogFooterProps`
 
@@ -133,7 +133,7 @@ Also carries every prop of `ViewProps` — that upstream contract is not reprodu
 
 _No own fields; this type is exactly the base(s) below._
 
-Also carries every prop of `Omit<TextProps, 'accessibilityRole' \| 'role' \| 'variant'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<TextProps, 'accessibilityRole' \| 'role' \| 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 
 #### `AlertDialogTriggerProps`
 

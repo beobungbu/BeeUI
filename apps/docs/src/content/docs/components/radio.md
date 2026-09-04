@@ -44,7 +44,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Standalone `Radio` supports both selection and deselection through `onCheckedChange`; grouped through `RadioGroup` (`value`/`onValueChange` controlled, or `defaultValue` uncontrolled) radios become mutually exclusive and can no longer deselect. Enabled usage without the matching callback warns in development.
+Standalone `Radio` supports both selection and deselection through `onCheckedChange`; grouped through `RadioGroup` (`value`/`onValueChange`, fully controlled — there is no uncontrolled mode) radios become mutually exclusive and can no longer deselect. Enabled usage without the matching callback warns in development.
 
 ### Props
 

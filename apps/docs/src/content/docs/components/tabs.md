@@ -45,7 +45,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Controlled (`value`/`onValueChange`) or uncontrolled (`defaultValue`) tab state shared across `TabsList`/`TabsTrigger`/`TabsContent`; enabled usage without `onValueChange` warns in development, and an inactive `TabsContent` panel is not mounted.
+Fully controlled (`value`/`onValueChange`, required — there is no uncontrolled mode) tab state shared across `TabsList`/`TabsTrigger`/`TabsContent`; enabled usage without `onValueChange` warns in development, and an inactive `TabsContent` panel is not mounted.
 
 ### Props
 

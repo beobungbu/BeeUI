@@ -294,12 +294,60 @@ function getBareTypeReferenceName(typeNode) {
   return undefined;
 }
 
+function isLiteralConstExpression(node) {
+  if (ts.isStringLiteralLike(node) || ts.isNumericLiteral(node)) return true;
+  if (
+    node.kind === ts.SyntaxKind.TrueKeyword ||
+    node.kind === ts.SyntaxKind.FalseKeyword ||
+    node.kind === ts.SyntaxKind.NullKeyword
+  ) {
+    return true;
+  }
+  return ts.isPrefixUnaryExpression(node) && node.operator === ts.SyntaxKind.MinusToken && ts.isNumericLiteral(node.operand);
+}
+
+// Looks for a top-level `const NAME = <literal>;` in `sourceFile` and returns the literal's
+// own text. Only a `const` bound directly to a literal counts — anything else (a `let`, a
+// non-literal initializer, or a name this file never declares) is not something a reader can
+// resolve by looking at the page, so the caller treats it as unresolved rather than guessing.
+function resolveLocalConstantLiteralText(sourceFile, name) {
+  let literalText;
+  walk(sourceFile, (node) => {
+    if (literalText !== undefined || !ts.isVariableStatement(node)) return;
+    if (!(node.declarationList.flags & ts.NodeFlags.Const)) return;
+    for (const declaration of node.declarationList.declarations) {
+      if (
+        ts.isIdentifier(declaration.name) &&
+        declaration.name.text === name &&
+        declaration.initializer &&
+        isLiteralConstExpression(declaration.initializer)
+      ) {
+        literalText = declaration.initializer.getText(sourceFile);
+      }
+    }
+  });
+  return literalText;
+}
+
+// A destructured default that is already a literal (`'md'`, `false`, `1`) is exactly what a
+// reader wants and is returned verbatim. A bare identifier is resolved to the literal it names
+// when that identifier is a local `const` in the same file (`SELECT_DEFAULT_PLACEHOLDER` ->
+// `'Select an option'`) — otherwise (imported from elsewhere, or not a literal) it is
+// unresolved. A call expression (`resolveDirection()`) is computed at render time, not a fixed
+// value a reader can read off the page, so it is always unresolved. `undefined` here means "no
+// documented default", never an unreadable symbol printed into the Default column.
+function resolveDefaultInitializerText(initializer, sourceFile) {
+  if (ts.isIdentifier(initializer)) return resolveLocalConstantLiteralText(sourceFile, initializer.text);
+  if (ts.isCallExpression(initializer)) return undefined;
+  return initializer.getText(sourceFile);
+}
+
 function collectDefaultsFromBindingPattern(pattern, sourceFile, defaults) {
   for (const element of pattern.elements) {
     if (!ts.isBindingElement(element) || !element.initializer || !ts.isIdentifier(element.name)) continue;
-    if (!defaults.has(element.name.text)) {
-      defaults.set(element.name.text, element.initializer.getText(sourceFile));
-    }
+    if (defaults.has(element.name.text)) continue;
+    const resolved = resolveDefaultInitializerText(element.initializer, sourceFile);
+    if (resolved !== undefined) defaults.set(element.name.text, resolved);
   }
 }
 
@@ -407,6 +455,194 @@ function applyDefaults(shape, defaults) {
   }
 }
 
+// --- Platform-split shape diffing (WBS-G060 M4) -------------------------------
+//
+// A platform-split family (a `.web.tsx` file among `component.allSources`) sometimes
+// redeclares the same exported `*Props` name with a genuinely different shape — see
+// `table.web.tsx` (own `testID` field, no `colSpan` default, a `React.HTMLAttributes` base
+// instead of `ViewProps`) or `sheet.web.tsx` (`modalProps` typed `Record<string, unknown>`
+// instead of native's `SheetModalProps`). `resolveDeclaration`'s primary/family
+// disambiguation always prefers the native declaration for the rendered table, so without an
+// explicit diff the reader never learns Web adds/removes a field, changes a default, or
+// widens/narrows a base — the props table silently presents one platform's shape as if it were
+// the whole contract. These helpers make that diff explicit and derivable instead of a
+// hand-written caveat.
+
+function normalizeTypeText(text) {
+  return String(text ?? '').replace(/\s+/gu, ' ').trim();
+}
+
+function normalizeBaseList(bases) {
+  return [...(bases ?? [])].map(normalizeTypeText).sort().join(' ');
+}
+
+function diffFieldLists(nativeFields, webFields) {
+  const nativeByName = new Map(nativeFields.map((field) => [field.name, field]));
+  const webByName = new Map(webFields.map((field) => [field.name, field]));
+  const nativeOnly = [];
+  const webOnly = [];
+  const changed = [];
+  for (const [name, field] of nativeByName) {
+    const webField = webByName.get(name);
+    if (!webField) {
+      nativeOnly.push(field);
+      continue;
+    }
+    const typeChanged = normalizeTypeText(field.type) !== normalizeTypeText(webField.type);
+    const defaultChanged = (field.default ?? null) !== (webField.default ?? null);
+    const optionalChanged = Boolean(field.optional) !== Boolean(webField.optional);
+    if (typeChanged || defaultChanged || optionalChanged) {
+      changed.push({ name, native: field, web: webField, typeChanged, defaultChanged, optionalChanged });
+    }
+  }
+  for (const [name, field] of webByName) {
+    if (!nativeByName.has(name)) webOnly.push(field);
+  }
+  return { nativeOnly, webOnly, changed };
+}
+
+// Compares one platform's resolved "object" shape (own fields + cited bases) against the
+// other's. Returns `null` when there is genuinely no observable difference — most
+// platform-split families redeclare an identical shape per file for signature parity, and a
+// diff note there would be noise, not signal.
+export function diffPlatformObjectShape(nativeShape, webShape) {
+  const { nativeOnly, webOnly, changed } = diffFieldLists(nativeShape.fields ?? [], webShape.fields ?? []);
+  const basesChanged = normalizeBaseList(nativeShape.bases) !== normalizeBaseList(webShape.bases);
+  if (!nativeOnly.length && !webOnly.length && !changed.length && !basesChanged) return null;
+  return { nativeOnly, webOnly, changed, basesChanged, nativeBases: nativeShape.bases ?? [], webBases: webShape.bases ?? [] };
+}
+
+// Compares a full resolved `*Props` doc entry (an "object" shape, or a "union" of variants)
+// against its Web counterpart. Returns `{ kind: 'unsupported' }` when the two shapes are not
+// directly comparable (e.g. one platform is a union and the other a plain object) — the caller
+// must fall back to an explicit "this table documents the native shape only" note rather than
+// guess at a diff it cannot derive. Returns `null` when every comparable part is identical.
+export function diffPlatformPropsShape(nativeEntry, webShape) {
+  if (nativeEntry.kind === 'object' && webShape.kind === 'object') {
+    const diff = diffPlatformObjectShape(nativeEntry, webShape);
+    return diff ? { kind: 'object', diff } : null;
+  }
+  if (nativeEntry.kind === 'union' && webShape.kind === 'union') {
+    const webByName = new Map(webShape.variants.map((variant) => [variant.name, variant]));
+    const nativeNames = new Set(nativeEntry.variants.map((variant) => variant.name));
+    const variantDiffs = [];
+    for (const variant of nativeEntry.variants) {
+      const webVariant = webByName.get(variant.name);
+      if (!webVariant) continue;
+      const diff = diffPlatformObjectShape(variant, webVariant);
+      if (diff) variantDiffs.push({ variantName: variant.name, diff });
+    }
+    const unmatched = [
+      ...nativeEntry.variants.filter((variant) => !webByName.has(variant.name)).map((variant) => variant.name),
+      ...webShape.variants.filter((variant) => !nativeNames.has(variant.name)).map((variant) => variant.name),
+    ];
+    if (!variantDiffs.length && !unmatched.length) return null;
+    return { kind: 'union', variantDiffs, unmatched };
+  }
+  return { kind: 'unsupported' };
+}
+
+// --- Prop-name universe for the content.json prose guard (WBS-G060 M8) -------
+//
+// `Omit<X, 'a' | 'b'>` — a generic type reference — is deliberately never expanded even when
+// `X` is itself a BeeUI-local type (see `tryEmbed`'s `node.typeArguments` guard): it is cited
+// as a base, not flattened into fields. That is correct for the rendered table, but it means a
+// real BeeUI prop like `icon-button`'s `loading` (inherited via `Omit<ButtonProps, …>`) never
+// appears in this module's own field list. The behavior-prose guard needs a broader "does this
+// family actually have a prop by this name" universe than the table does, so it separately
+// resolves one level into any locally-declared base, plus `cva()` variant keys (`variant`,
+// `size`, `tone`, …) that the same `VariantProps<typeof xVariants>` base convention never
+// expands either.
+export function extractOmitPickOrBareTypeName(baseText) {
+  const generic = normalizeTypeText(baseText).match(/^(?:Omit|Pick)<\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*,/);
+  if (generic) return generic[1];
+  const bare = normalizeTypeText(baseText);
+  return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(bare) ? bare : null;
+}
+
+function addLocalBaseFieldNames(index, baseText, known) {
+  const name = extractOmitPickOrBareTypeName(baseText);
+  if (!name) return;
+  let resolved;
+  try {
+    resolved = resolveDeclaration(index, name, {});
+  } catch {
+    // Ambiguous across files with no family context to disambiguate — not worth resolving for
+    // a best-effort guard; the caller's explicit allowlist covers real cases that land here.
+    return;
+  }
+  if (!resolved) return;
+  const sourceFile = index.perFile.get(resolved.path).sourceFile;
+  if (ts.isInterfaceDeclaration(resolved.node)) {
+    for (const field of extractFields(resolved.node, sourceFile)) known.add(field.name);
+    return;
+  }
+  if (ts.isTypeAliasDeclaration(resolved.node)) {
+    const typeNode = resolved.node.type;
+    if (ts.isTypeLiteralNode(typeNode)) {
+      for (const field of extractFields(typeNode, sourceFile)) known.add(field.name);
+    } else if (ts.isIntersectionTypeNode(typeNode)) {
+      for (const member of typeNode.types) {
+        if (ts.isTypeLiteralNode(member)) {
+          for (const field of extractFields(member, sourceFile)) known.add(field.name);
+        }
+      }
+    }
+  }
+}
+
+function collectCvaVariantKeys(sourceFile, known) {
+  walk(sourceFile, (node) => {
+    if (!ts.isCallExpression(node)) return;
+    const callee = node.expression;
+    const calleeName = ts.isIdentifier(callee) ? callee.text : ts.isPropertyAccessExpression(callee) ? callee.name.text : undefined;
+    if (calleeName !== 'cva') return;
+    for (const arg of node.arguments) {
+      if (!ts.isObjectLiteralExpression(arg)) continue;
+      for (const prop of arg.properties) {
+        if (!ts.isPropertyAssignment(prop) || !ts.isIdentifier(prop.name) || prop.name.text !== 'variants') continue;
+        if (!ts.isObjectLiteralExpression(prop.initializer)) continue;
+        for (const variantProp of prop.initializer.properties) {
+          const name = variantProp.name && ts.isIdentifier(variantProp.name) ? variantProp.name.text : undefined;
+          if (name) known.add(name);
+        }
+      }
+    }
+  });
+}
+
+// The "does this family have a prop by this name" universe the content.json prose guard checks
+// backticked identifiers against. Deliberately broader than a single `*Props` type's own field
+// list (see the module comment above); still not exhaustive — genuinely external bases
+// (`PressableProps`, `TextInputProps`, react-native-safe-area-context's `SafeAreaView`) and
+// imperative hook-return members (`useToast().dismiss`) are not resolvable this way at all, and
+// the caller (`public-component-reference.mjs`) carries a small, explicit, documented allowlist
+// for those.
+export function getBehaviorGuardKnownNames(component, typeDocs, rootDir = ROOT_DIR) {
+  const index = getComponentsIndex(rootDir);
+  const known = new Set(component.values);
+
+  const visit = (shape) => {
+    if (shape.fields) for (const field of shape.fields) known.add(field.name);
+    if (shape.bases) for (const base of shape.bases) addLocalBaseFieldNames(index, base, known);
+    if (shape.consumed) for (const prop of shape.consumed) known.add(prop.name);
+    if (shape.variants) for (const variant of shape.variants) visit(variant);
+  };
+  for (const entry of typeDocs) {
+    if (entry.docKind !== 'props') continue;
+    visit(entry);
+  }
+
+  for (const relPath of component.allSources) {
+    const abs = path.join(rootDir, relPath);
+    if (!fs.existsSync(abs)) continue;
+    const sourceFile = ts.createSourceFile(relPath, fs.readFileSync(abs, 'utf8'), ts.ScriptTarget.Latest, true, scriptKindFor(relPath));
+    collectCvaVariantKeys(sourceFile, known);
+  }
+
+  return known;
+}
+
 // --- Public entry points -------------------------------------------------------
 
 // Resolves one exported type name (as it appears in `component.types`) to a
@@ -459,6 +695,20 @@ function getComponentsIndex(rootDir) {
   return indexCache.get(rootDir);
 }
 
+// A `.web.tsx` file among `allSources` that is not itself the family's primary/native source —
+// the platform-split shape this module diffs against.
+function findWebSourcePath(allSources, primaryPath) {
+  return allSources.find((relPath) => relPath !== primaryPath && /\.web\.tsx?$/.test(relPath));
+}
+
+function fillConsumedFallback(shape, files, names) {
+  if (shape.kind === 'object' && !shape.fields?.length) {
+    shape.consumed = [...extractConsumedProps(files, names)]
+      .map(([name, defaultText]) => ({ name, default: defaultText }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+}
+
 // Full derived-types model for one public component family, in the same
 // (already-sorted) order as `component.types` from `getPublicComponents()`.
 // This is the only function `public-component-reference.mjs` needs.
@@ -469,21 +719,37 @@ export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
     familyPaths: component.allSources,
     primaryPath: component.source,
   };
+  const webPath = findWebSourcePath(component.allSources, component.source);
+  const files = component.allSources.map((relPath) => ({
+    path: relPath,
+    source: fs.readFileSync(path.join(rootDir, relPath), 'utf8'),
+  }));
 
   return component.types.map((typeName) => {
     const entry = resolveComponentTypeEntry(index, typeName, { ...opts, errorLabel: `${component.name}: ${typeName}` });
     if (entry.docKind === 'props') {
-      const files = component.allSources.map((relPath) => ({
-        path: relPath,
-        source: fs.readFileSync(path.join(rootDir, relPath), 'utf8'),
-      }));
       applyDefaults(entry, extractDefaults(files, entry.names));
       // A pure alias of an upstream type documents nothing on its own; fall back to the props
       // the implementation actually reads out of it.
-      if (!entry.fields?.length) {
-        entry.consumed = [...extractConsumedProps(files, entry.names)]
-          .map(([name, defaultText]) => ({ name, default: defaultText }))
-          .sort((a, b) => a.name.localeCompare(b.name));
+      fillConsumedFallback(entry, files, entry.names);
+
+      // The Web file only sometimes redeclares this exact type name locally (a genuine
+      // platform-split shape, e.g. `table.web.tsx`'s own `TableProps`) — most platform-split
+      // families share one declaration for a given type (e.g. `date-picker-shared.tsx`'s
+      // `DatePickerProps`), which `resolveDeclaration` already resolves identically for both
+      // platforms, so there is nothing to diff and this stays undefined for them.
+      if (webPath && index.perFile.get(webPath)?.declarations.has(typeName)) {
+        const webCtx = {
+          index,
+          errorLabel: `${component.name}: ${typeName} (Web)`,
+          names: new Set([typeName]),
+          resolveOpts: { fromPath: webPath, primaryPath: webPath, familyPaths: component.allSources },
+        };
+        const webShape = resolveNamedTypeShape(typeName, webCtx);
+        applyDefaults(webShape, extractDefaults(files, webCtx.names));
+        fillConsumedFallback(webShape, files, webCtx.names);
+        entry.webShape = webShape;
+        entry.webSource = webPath;
       }
     }
     return entry;

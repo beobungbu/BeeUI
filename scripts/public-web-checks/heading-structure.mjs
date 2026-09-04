@@ -54,8 +54,19 @@ function bodyHeadingLines(body) {
   return found;
 }
 
+// Two pages sharing a `<title>` are indistinguishable in a browser tab, a search result and a
+// bookmark. `/docs/compatibility/web/` and `/docs/start/web/` both shipped "Web | BeeUI", and
+// `/docs/components/table/` and `/docs/guides/table/` both shipped "Table | BeeUI" — #474's
+// H071 requires unique metadata, and nothing checked it. Starlight renders the frontmatter
+// title, so uniqueness is decidable from source without building the site.
+function frontmatterTitle(frontmatter) {
+  const match = /^title:\s*(.+?)\s*$/mu.exec(frontmatter);
+  return match ? match[1].replace(/^["']|["']$/gu, '') : null;
+}
+
 export function collectViolations(rootDir = ROOT_DIR) {
   const violations = [];
+  const titles = new Map();
   for (const file of markdownFiles(path.join(rootDir, DOCS_CONTENT_DIR))) {
     const relative = path.relative(rootDir, file).replaceAll(path.sep, '/');
     const source = fs.readFileSync(file, 'utf8');
@@ -64,8 +75,11 @@ export function collectViolations(rootDir = ROOT_DIR) {
       violations.push(`${relative} has no frontmatter, so Starlight cannot render its title.`);
       continue;
     }
-    if (!/^title:\s*\S/mu.test(frontmatter[1])) {
+    const title = frontmatterTitle(frontmatter[1]);
+    if (!title) {
       violations.push(`${relative} has no frontmatter title.`);
+    } else {
+      titles.set(title, [...(titles.get(title) ?? []), relative]);
     }
     for (const heading of bodyHeadingLines(source.slice(frontmatter[0].length))) {
       violations.push(
@@ -74,5 +88,16 @@ export function collectViolations(rootDir = ROOT_DIR) {
       );
     }
   }
+
+  for (const [title, pages] of titles) {
+    if (pages.length > 1) {
+      violations.push(
+        `${pages.join(' and ')} both use the title "${title}", so they are indistinguishable in a ` +
+        'browser tab, a search result and a bookmark. Give each a distinct title; keep the short ' +
+        'form as `sidebar.label` if the navigation needs it.',
+      );
+    }
+  }
+
   return violations;
 }

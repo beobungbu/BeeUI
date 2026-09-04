@@ -43,7 +43,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Standalone toggle (`pressed`/`onPressedChange`) or, nested in `ChipGroup`, a value-scoped selection item; a grouped `Chip` rendered without a `value` fails safe as disabled and warns in development, and `ChipGroup` supports controlled/uncontrolled single- or multiple-selection.
+Standalone toggle (`selected`/`onSelectedChange`) or, nested in `ChipGroup`, a value-scoped selection item; a grouped `Chip` rendered without a `value` fails safe as disabled and warns in development, and `ChipGroup` supports controlled/uncontrolled single- or multiple-selection.
 
 ### Props
 

@@ -52,7 +52,7 @@ Uncontrolled-by-default search-keyboard field layered on `Input`; clearing a pre
 | --- | --- | --- | --- |
 | `onSearch` | `(value: string) => void` | — | — |
 
-Also carries every prop of `Omit<InputProps, 'inputMode' \| 'returnKeyType'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<InputProps, 'inputMode' \| 'returnKeyType'>` — documented on the [Input](/docs/components/input/) page, not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

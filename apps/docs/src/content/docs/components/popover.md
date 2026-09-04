@@ -74,7 +74,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \
 | `avoidSafeArea` | `boolean` | `true` | — |
 | `closeOnOutsidePress` | `boolean` | `true` | — |
 | `collisionPadding` | `PopoverCollisionPadding` | `8` | — |
-| `direction` | `PopoverDirection` | `resolveDirection()` | — |
+| `direction` | `PopoverDirection` | — | — |
 | `flip` | `boolean` | `true` | — |
 | `outsidePressProps` | `Omit<PressableProps, 'children' \| 'onPress' \| 'style'>` | — | — |
 | `outsidePressTestID` | `string` | — | — |
@@ -96,7 +96,7 @@ This type adds no fields of its own. These are the props the implementation read
 | `nativeID` | — |
 
 
-Also carries every prop of `Omit<TextProps, 'tone' \| 'variant'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<TextProps, 'tone' \| 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 
 #### `PopoverProps`
 
@@ -132,7 +132,7 @@ This type adds no fields of its own. These are the props the implementation read
 | `nativeID` | — |
 
 
-Also carries every prop of `Omit<TextProps, 'accessibilityRole' \| 'role' \| 'variant'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<TextProps, 'accessibilityRole' \| 'role' \| 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 
 #### `PopoverTriggerProps`
 

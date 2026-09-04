@@ -59,7 +59,7 @@ Controlled (`open`+`onOpenChange`) or uncontrolled (`defaultOpen`) non-interacti
 | `children` | `React.ReactNode` | — | — |
 | `style` | `StyleProp<ViewStyle>` | — | — |
 | `collisionPadding` | `TooltipCollisionPadding` | `8` | — |
-| `direction` | `TooltipDirection` | `resolveDirection()` | — |
+| `direction` | `TooltipDirection` | — | — |
 | `flip` | `boolean` | `true` | — |
 | `placement` | `TooltipPlacement` | `'top'` | — |
 | `shift` | `boolean` | `true` | — |
@@ -76,8 +76,8 @@ one of the following mutually exclusive variants:
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | — |
-| `openDelay` | `number` | `DEFAULT_OPEN_DELAY` | Hover-only open delay in milliseconds (default **500**, ADR-005). |
-| `closeDelay` | `number` | `DEFAULT_CLOSE_DELAY` | Hover-out-only close delay in milliseconds (default **300**, ADR-005) — lets a pointer travel from the trigger onto `TooltipContent` without closing mid-transit (WCAG 1.4.13 "hoverable"). |
+| `openDelay` | `number` | `500` | Hover-only open delay in milliseconds (default **500**, ADR-005). |
+| `closeDelay` | `number` | `300` | Hover-out-only close delay in milliseconds (default **300**, ADR-005) — lets a pointer travel from the trigger onto `TooltipContent` without closing mid-transit (WCAG 1.4.13 "hoverable"). |
 | `defaultOpen` | `never` | `false` | — |
 | `onOpenChange` **(required)** | `(open: boolean) => void` | — | — |
 | `open` **(required)** | `boolean` | — | — |
@@ -87,8 +87,8 @@ one of the following mutually exclusive variants:
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | — |
-| `openDelay` | `number` | `DEFAULT_OPEN_DELAY` | Hover-only open delay in milliseconds (default **500**, ADR-005). |
-| `closeDelay` | `number` | `DEFAULT_CLOSE_DELAY` | Hover-out-only close delay in milliseconds (default **300**, ADR-005) — lets a pointer travel from the trigger onto `TooltipContent` without closing mid-transit (WCAG 1.4.13 "hoverable"). |
+| `openDelay` | `number` | `500` | Hover-only open delay in milliseconds (default **500**, ADR-005). |
+| `closeDelay` | `number` | `300` | Hover-out-only close delay in milliseconds (default **300**, ADR-005) — lets a pointer travel from the trigger onto `TooltipContent` without closing mid-transit (WCAG 1.4.13 "hoverable"). |
 | `defaultOpen` | `boolean` | `false` | — |
 | `onOpenChange` | `(open: boolean) => void` | — | — |
 | `open` | `undefined` | — | — |

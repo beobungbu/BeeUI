@@ -62,7 +62,7 @@ Controlled (`value`/`onValueChange`) or uncontrolled (`defaultValue`) persistent
 | `avoidSafeArea` | `boolean` | `true` | — |
 | `closeOnOutsidePress` | `boolean` | `true` | — |
 | `collisionPadding` | `SelectCollisionPadding` | `8` | — |
-| `direction` | `SelectDirection` | `resolveDirection()` | — |
+| `direction` | `SelectDirection` | — | — |
 | `flip` | `boolean` | `true` | — |
 | `maxHeight` | `number` | — | — |
 | `outsidePressProps` | `Omit<PressableProps, 'children' \| 'onPress' \| 'style'>` | — | — |
@@ -137,7 +137,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'childre
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `className` | `string` | — | — |
-| `placeholder` | `React.ReactNode` | `SELECT_DEFAULT_PLACEHOLDER` | — |
+| `placeholder` | `React.ReactNode` | `'Select an option'` | — |
 
 Also carries every prop of `Omit<RNTextProps, 'children' \| 'role'>` — that upstream contract is not reproduced here.
 
