@@ -110,9 +110,9 @@ ${scripts ? '<script src="/assets/examples.js" defer></script>' : ''}
 <header class="site-header">
   <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">B</span><span>BeeUI</span></a>
   <nav class="desktop-nav" aria-label="Primary">
-    <a href="/docs/">Docs</a><a href="/docs/components/">Components</a><a href="/docs/patterns/reference/">Patterns</a><a href="/showcase/">Showcase</a><a href="/demo/">Demo</a>
+    <a href="/docs/">Docs</a><a href="/docs/components/">Components</a><a href="/docs/patterns/">Patterns</a><a href="/showcase/">Showcase</a><a href="/demo/">Demo</a>
   </nav>
-  <details class="mobile-nav"><summary>Menu</summary><nav aria-label="Mobile primary"><a href="/docs/">Docs</a><a href="/docs/components/">Components</a><a href="/docs/patterns/reference/">Patterns</a><a href="/showcase/">Showcase</a><a href="/demo/">Demo</a></nav></details>
+  <details class="mobile-nav"><summary>Menu</summary><nav aria-label="Mobile primary"><a href="/docs/">Docs</a><a href="/docs/components/">Components</a><a href="/docs/patterns/">Patterns</a><a href="/showcase/">Showcase</a><a href="/demo/">Demo</a></nav></details>
 </header>
 ${body}
 </body>
@@ -226,7 +226,7 @@ function renderHub({ contract, components, patterns, featured }) {
     <div class="examples-grid" data-example-collection>${componentCards}</div>
   </div>
   <div class="example-group">
-    <div class="example-group-heading"><h3>Production patterns</h3><a href="/docs/patterns/reference/">Pattern documentation →</a></div>
+    <div class="example-group-heading"><h3>Production patterns</h3><a href="/docs/patterns/">Pattern documentation →</a></div>
     <div class="examples-grid" data-example-collection>${patternCards}</div>
   </div>
 </section>

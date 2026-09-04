@@ -73,13 +73,7 @@ export default defineConfig({
         },
         {
           label: 'Patterns',
-          items: [
-            { label: 'Overview', slug: 'patterns' },
-            {
-              label: 'Pattern library',
-              items: [{ autogenerate: { directory: 'patterns/reference' } }],
-            },
-          ],
+          items: [{ autogenerate: { directory: 'patterns' } }],
         },
         {
           label: 'Accessibility',
