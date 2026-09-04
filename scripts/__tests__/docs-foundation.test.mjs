@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
+  buildCanonicalUrl,
   buildPageMetadata,
   buildShowcaseHref,
   indexPolicyForEnvironment,
@@ -14,7 +15,11 @@ import {
   contentPathToRoute,
   validateDocsFoundation,
 } from '../generate-docs-foundation.mjs';
-import { ROOT_DIR, readPublicSiteConfig } from '../public-site-contract-lib.mjs';
+import {
+  ROOT_DIR,
+  buildPublicSiteContract,
+  readPublicSiteConfig,
+} from '../public-site-contract-lib.mjs';
 
 test('maps Starlight content paths to deterministic public routes', () => {
   assert.equal(contentPathToRoute('apps/docs/src/content/docs/index.md'), '/docs/');
@@ -22,10 +27,21 @@ test('maps Starlight content paths to deterministic public routes', () => {
   assert.equal(contentPathToRoute('apps/docs/src/content/docs/components/button.mdx'), '/docs/components/button/');
 });
 
-test('Foundation manifest exposes the target IA and is deterministic', () => {
-  const first = buildDocsFoundationManifest(ROOT_DIR);
-  const second = buildDocsFoundationManifest(ROOT_DIR);
+test('Foundation manifest exposes the target IA and environment-derived origin deterministically', () => {
+  const first = buildDocsFoundationManifest(ROOT_DIR, { environment: 'development' });
+  const second = buildDocsFoundationManifest(ROOT_DIR, { environment: 'development' });
   assert.deepEqual(first, second);
+  assert.equal(first.environment, 'development');
+  assert.equal(first.canonicalOrigin, 'https://beeui-dev.beemvp.com');
+  assert.equal(first.indexPolicy, 'noindex,nofollow');
+  assert.equal(
+    buildDocsFoundationManifest(ROOT_DIR, { environment: 'staging' }).canonicalOrigin,
+    'https://beeui-stg.beemvp.com',
+  );
+  assert.equal(
+    buildDocsFoundationManifest(ROOT_DIR, { environment: 'production' }).canonicalOrigin,
+    'https://beeui.beemvp.com',
+  );
 
   const routes = new Set(first.currentDocsRoutes.map((entry) => entry.route));
   for (const route of [
@@ -60,17 +76,19 @@ test('release state is derived from canonical policy and remains publication-saf
   assert.equal(state.ownerGate, '#254');
 });
 
-test('page metadata indexes only explicit production and fails closed otherwise', () => {
+test('page metadata uses caller-supplied environment origin and fails closed outside production', () => {
   assert.equal(indexPolicyForEnvironment('production'), 'index,follow');
   for (const environment of ['development', 'staging', 'preview', undefined]) {
     assert.equal(indexPolicyForEnvironment(environment), 'noindex,nofollow');
   }
 
+  const productionSite = buildPublicSiteContract(ROOT_DIR, { environment: 'production' });
   const production = buildPageMetadata({
     title: 'Start',
     description: 'Start with BeeUI.',
     pathname: '/docs/start/',
     imagePath: '/og/start.png',
+    origin: productionSite.origin,
     environment: 'production',
   });
   assert.equal(production.canonical, 'https://beeui.beemvp.com/docs/start/');
@@ -78,13 +96,18 @@ test('page metadata indexes only explicit production and fails closed otherwise'
   assert.equal(production.openGraph.url, production.canonical);
   assert.equal(production.openGraph.image, 'https://beeui.beemvp.com/og/start.png');
 
+  const stagingSite = buildPublicSiteContract(ROOT_DIR, { environment: 'staging' });
   const failClosed = buildPageMetadata({
-    title: 'Preview',
-    description: 'Preview metadata.',
+    title: 'Staging',
+    description: 'Staging metadata.',
     pathname: '/docs/start/',
-    environment: undefined,
+    origin: stagingSite.origin,
+    environment: 'staging',
   });
+  assert.equal(failClosed.canonical, 'https://beeui-stg.beemvp.com/docs/start/');
   assert.equal(failClosed.robots, 'noindex,nofollow');
+
+  assert.throws(() => buildCanonicalUrl('/docs/start/', ''), /origin must be non-empty/u);
 });
 
 test('Showcase href builder is deterministic and rejects missing target identity', () => {
@@ -103,10 +126,11 @@ test('Showcase href builder is deterministic and rejects missing target identity
   assert.throws(() => buildShowcaseHref({ surface: 'component', id: '   ' }), /must be non-empty/u);
 });
 
-test('Foundation documentation names the current executable pattern authority', () => {
+test('Foundation documentation names the current executable pattern authority and environment origin authority', () => {
   const foundationDoc = readFileSync(new URL('../../docs/public-docs-foundation.md', import.meta.url), 'utf8');
   assert.match(foundationDoc, /`apps\/showcase\/patterns`/u);
   assert.doesNotMatch(foundationDoc, /apps\/showcase\/src\/patterns/u);
+  assert.match(foundationDoc, /`web\/public-site\.config\.json` owns the environment-to-origin mapping/u);
 });
 
 test('legacy redirect manifest is deterministic and has unique sources/destinations', () => {
