@@ -22,22 +22,22 @@ test('opens an exact pattern state and keeps Back/Forward deterministic', async 
   await page.goto(targetUrl('surface=pattern&id=sign-in&state=invalid'), { waitUntil: 'load' });
 
   await expect(page.getByTestId('pattern-preview-sign-in')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Show Invalid state' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId('showcase-active-example')).toContainText('sign-in / invalid');
 
   await page.getByRole('button', { name: 'Show Loading state' }).click();
   await expect(page).toHaveURL(/surface=pattern&id=sign-in&state=loading/u);
-  await expect(page.getByRole('button', { name: 'Show Loading state' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId('showcase-active-example')).toContainText('sign-in / loading');
 
   await page.goBack();
   await expect(page).toHaveURL(/surface=pattern&id=sign-in&state=invalid/u);
-  await expect(page.getByRole('button', { name: 'Show Invalid state' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId('showcase-active-example')).toContainText('sign-in / invalid');
 
   await page.goForward();
   await expect(page).toHaveURL(/surface=pattern&id=sign-in&state=loading/u);
-  await expect(page.getByRole('button', { name: 'Show Loading state' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId('showcase-active-example')).toContainText('sign-in / loading');
 
   await page.reload({ waitUntil: 'load' });
-  await expect(page.getByRole('button', { name: 'Show Loading state' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId('showcase-active-example')).toContainText('sign-in / loading');
 });
 
 test('shows explicit recovery for a stale target instead of falling back silently', async ({ page }) => {
