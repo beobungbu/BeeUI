@@ -136,6 +136,8 @@ jobs:
           pnpm hygiene:check
           pnpm release-control-plane:check
           pnpm release-control-plane:test
+          pnpm release-ruleset:check
+          pnpm release-ruleset:test
           pnpm lint
           pnpm compat:check
           pnpm compat:test
@@ -586,6 +588,10 @@ jobs:
         run: ./scripts/verify-bare-consumer.sh prepare
       - name: Compile bare React Native consumer for iOS Simulator
         if: needs.classify.outputs.bare-native-required == 'true'
+        # The default runner shell is `bash -e`, which ignores the exit status of
+        # every command but the last in a pipeline, so a failing xcodebuild would
+        # be masked by tee. `shell: bash` adds -o pipefail.
+        shell: bash
         run: ./scripts/verify-bare-consumer.sh ios-build 2>&1 | tee "$RUNNER_TEMP/beeui-bare-ios.log"
 
       - name: Upload iOS build logs

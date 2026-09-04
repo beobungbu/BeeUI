@@ -193,6 +193,10 @@ jobs:
       - name: Compile Expo consumer Android debug APK
         env:
           BEEUI_EXPO_CONSUMER_WORK_ROOT: ${{ runner.temp }}/beeui-expo-consumer
+          # Matches ci.yml: the weekly run must compile without the Gradle task
+          # output cache, otherwise the clean-room backstop re-uses the very
+          # cache entries it exists to audit.
+          BEEUI_ANDROID_FRESH_BUILD: ${{ github.event_name == 'schedule' && '1' || '0' }}
         run: bash scripts/verify-expo-consumer.sh android-build
 
   ios-native:
@@ -277,6 +281,9 @@ jobs:
       - name: Compile Expo consumer for iOS Simulator
         env:
           BEEUI_EXPO_CONSUMER_WORK_ROOT: ${{ runner.temp }}/beeui-expo-consumer
+        # See ci.yml: the default `bash -e` shell would let tee mask a failing
+        # xcodebuild. `shell: bash` adds -o pipefail.
+        shell: bash
         run: bash scripts/verify-expo-consumer.sh ios-build 2>&1 | tee "$RUNNER_TEMP/beeui-expo-ios.log"
       - name: Upload iOS xcodebuild log
         if: always()
