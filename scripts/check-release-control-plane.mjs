@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const EXPECTED_VERSION = '20260902.0.0';
+export const ALLOWED_VERSION_PATTERN = /^20260902\.0\.0(?:-rc\.(0|[1-9][0-9]*))?$/;
 export const EXPECTED_PACKAGE_NAMES = new Map([
   ['packages/core/package.json', '@beemvp/beeui-core'],
   ['packages/tokens/package.json', '@beemvp/beeui-tokens'],
@@ -21,6 +22,7 @@ const OPERATIONAL_RELEASE_FILES = [
   'docs/rc-ci-matrix.md',
   'docs/registry-cli.md',
   'docs/package-compatibility-report.md',
+  'docs/npm-release-bootstrap.md',
 ];
 
 function walkFiles(directory) {
@@ -37,12 +39,20 @@ function walkFiles(directory) {
 export function collectReleaseControlPlaneViolations(rootDir = ROOT_DIR) {
   const violations = [];
   const rootManifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8'));
-  if (rootManifest.version !== EXPECTED_VERSION) violations.push(`package.json: expected version ${EXPECTED_VERSION}, found ${rootManifest.version}`);
+  const rootVersion = rootManifest.version;
+
+  if (!ALLOWED_VERSION_PATTERN.test(rootVersion)) {
+    violations.push(
+      `package.json: expected BeeUI release-line version ${EXPECTED_VERSION} or ${EXPECTED_VERSION}-rc.N, found ${rootVersion}`,
+    );
+  }
 
   for (const [relative, expectedName] of EXPECTED_PACKAGE_NAMES) {
     const manifest = JSON.parse(fs.readFileSync(path.join(rootDir, relative), 'utf8'));
     if (manifest.name !== expectedName) violations.push(`${relative}: expected name ${expectedName}, found ${manifest.name}`);
-    if (manifest.version !== EXPECTED_VERSION) violations.push(`${relative}: expected version ${EXPECTED_VERSION}, found ${manifest.version}`);
+    if (manifest.version !== rootVersion) {
+      violations.push(`${relative}: expected lockstep version ${rootVersion}, found ${manifest.version}`);
+    }
   }
 
   const workflowFiles = walkFiles(path.join(rootDir, '.github/workflows')).filter(
@@ -72,6 +82,6 @@ if (isCli) {
     for (const violation of violations) console.error(`- ${violation}`);
     process.exitCode = 1;
   } else {
-    console.log(`Release control-plane check passed (lockstep ${EXPECTED_VERSION}, current package scope only).`);
+    console.log(`Release control-plane check passed (lockstep ${EXPECTED_VERSION} release line, current package scope only).`);
   }
 }
