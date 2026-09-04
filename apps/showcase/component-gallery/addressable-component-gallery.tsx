@@ -113,7 +113,10 @@ export function AddressableComponentGallery({
 }) {
   const [activeTarget, setActiveTarget] = React.useState(target);
 
-  React.useEffect(() => setActiveTarget(target), [target.surface, target.id, target.example, target.state, target.theme, target.density, target.fixture]);
+  React.useEffect(
+    () => setActiveTarget(target),
+    [target.surface, target.id, target.example, target.state, target.theme, target.density],
+  );
 
   const example = findShowcaseExample(activeTarget);
   const dedicated = Boolean(example && hasDedicatedFixture(example.sourcePath));
