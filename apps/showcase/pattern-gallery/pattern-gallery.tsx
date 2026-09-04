@@ -13,6 +13,7 @@ import {
 import * as React from 'react';
 import { ScrollView, StatusBar, useWindowDimensions } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
+import type { ShowcaseTarget } from '../showcase-target';
 import {
   defaultPatternState,
   findPatternDomain,
@@ -143,6 +144,7 @@ function StateSelector({
               key={state.id}
               onPress={() => onStateChange(state.id)}
               size="sm"
+              testID={`pattern-state-${state.id}`}
               variant={selected ? 'secondary' : 'ghost'}
             >
               {state.title}
@@ -230,6 +232,9 @@ function PatternPreview({
   const Demo = screen.component;
   const preview = (
     <Box className="flex-1 overflow-hidden bg-background" testID={`pattern-preview-${screen.id}`}>
+      <Box className="border-b border-border bg-surface px-3 py-2" testID="showcase-active-example">
+        <Text variant="caption">{`Exact target · ${screen.id} / ${stateId}`}</Text>
+      </Box>
       <StateSelector onStateChange={onStateChange} screen={screen} stateId={stateId} />
       <Box className="flex-1">
         <Demo key={`${screen.id}:${visitKey}:${stateId}`} stateId={stateId} />
@@ -260,13 +265,33 @@ function PatternPreview({
   );
 }
 
-export function PatternGallery({ onBackToShowcase }: { onBackToShowcase?: () => void }) {
+export function PatternGallery({
+  onBackToShowcase,
+  onTargetChange,
+  target,
+}: {
+  onBackToShowcase?: () => void;
+  onTargetChange?: (target: ShowcaseTarget | null) => void;
+  target?: ShowcaseTarget | null;
+}) {
   const { width } = useWindowDimensions();
   const { theme } = useUniwind();
   const [domainId, setDomainId] = React.useState<string | null>(null);
   const [screenId, setScreenId] = React.useState<string | null>(null);
   const [stateId, setStateId] = React.useState('default');
   const [visitKey, setVisitKey] = React.useState(0);
+
+  React.useEffect(() => {
+    if (target?.surface !== 'pattern') return;
+    const nextDomain = patternCatalog.find((candidate) => candidate.screens.some((candidateScreen) => candidateScreen.id === target.id));
+    const nextScreen = nextDomain?.screens.find((candidate) => candidate.id === target.id);
+    if (!nextDomain || !nextScreen) return;
+    const nextState = target.state ?? defaultPatternState(nextScreen);
+    setDomainId(nextDomain.id);
+    setScreenId(nextScreen.id);
+    setStateId(nextState);
+    setVisitKey((current) => current + 1);
+  }, [target?.surface, target?.id, target?.state]);
 
   const domain = findPatternDomain(domainId);
   const screen = findPatternScreen(domain, screenId);
@@ -276,22 +301,33 @@ export function PatternGallery({ onBackToShowcase }: { onBackToShowcase?: () => 
     setDomainId(nextDomainId);
     setScreenId(null);
     setStateId('default');
-  }, []);
+    onTargetChange?.(null);
+  }, [onTargetChange]);
 
   const openScreen = React.useCallback((nextScreen: PatternScreenDefinition) => {
+    const nextState = defaultPatternState(nextScreen);
     setScreenId(nextScreen.id);
-    setStateId(defaultPatternState(nextScreen));
+    setStateId(nextState);
     setVisitKey((current) => current + 1);
-  }, []);
+    onTargetChange?.({ surface: 'pattern', id: nextScreen.id, state: nextState });
+  }, [onTargetChange]);
+
+  const changeState = React.useCallback((nextState: string) => {
+    if (!screen) return;
+    setStateId(nextState);
+    onTargetChange?.({ surface: 'pattern', id: screen.id, state: nextState });
+  }, [onTargetChange, screen]);
 
   const goBack = () => {
     if (screen) {
       setScreenId(null);
       setStateId('default');
+      onTargetChange?.(null);
       return;
     }
     if (domain) {
       setDomainId(null);
+      onTargetChange?.(null);
     }
   };
 
@@ -343,7 +379,7 @@ export function PatternGallery({ onBackToShowcase }: { onBackToShowcase?: () => 
             domain={domain}
             onOpenDomain={openDomain}
             onOpenScreen={openScreen}
-            onStateChange={setStateId}
+            onStateChange={changeState}
             screen={screen}
             stateId={stateId}
             visitKey={visitKey}
