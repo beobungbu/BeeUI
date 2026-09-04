@@ -8,8 +8,8 @@ import { fileURLToPath } from 'node:url';
 import { buildPublicSeo } from './build-public-seo.mjs';
 import { ROOT_DIR, buildPublicSiteContract } from './public-site-contract-lib.mjs';
 
-function run(command, args, cwd = ROOT_DIR) {
-  const result = spawnSync(command, args, { cwd, stdio: 'inherit', env: process.env });
+function run(command, args, cwd = ROOT_DIR, env = process.env) {
+  const result = spawnSync(command, args, { cwd, stdio: 'inherit', env });
   if (result.status !== 0) throw new Error(`${command} ${args.join(' ')} failed with exit ${result.status}`);
 }
 
@@ -104,10 +104,11 @@ export function buildWorkerSite({ rootDir = ROOT_DIR, environment = process.env.
   // Expo Router's static-render server resolves the package export map under
   // plain Node/Metro conditions. Build the publishable package outputs first
   // so SSR never depends on Metro's source fallback or a stale local dist/.
-  run('pnpm', ['build'], rootDir);
-  run('pnpm', ['docs:build'], rootDir);
-  run('pnpm', ['--filter', '@beemvp/beeui-showcase', 'build:web:public'], rootDir);
-  run('pnpm', ['--filter', '@beemvp/beeui-demo', 'build:web:public'], rootDir);
+  const buildEnv = { ...process.env, BEEUI_WEB_ENV: environment };
+  run('pnpm', ['build'], rootDir, buildEnv);
+  run('pnpm', ['docs:build'], rootDir, buildEnv);
+  run('pnpm', ['--filter', '@beemvp/beeui-showcase', 'build:web:public'], rootDir, buildEnv);
+  run('pnpm', ['--filter', '@beemvp/beeui-demo', 'build:web:public'], rootDir, buildEnv);
   buildPublicSeo({ rootDir, outDir: path.join(rootDir, 'web/dist'), environment });
   return composeWorkerAssets({ rootDir, environment });
 }
