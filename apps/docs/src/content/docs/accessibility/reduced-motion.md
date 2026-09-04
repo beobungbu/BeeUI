@@ -3,8 +3,6 @@ title: Reduced motion
 description: Respect reduced-motion preferences while preserving state changes and feedback.
 ---
 
-# Reduced motion
-
 Motion may clarify state but must not be required to understand or operate a BeeUI flow.
 When the platform reports a reduced-motion preference, decorative/transitional animation
 should reduce or disappear while state, focus, loading and success/error feedback remain

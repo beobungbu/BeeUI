@@ -3,8 +3,6 @@ title: Branding
 description: Put your own brand colors behind BeeUI's semantic tokens without forking component source.
 ---
 
-# Branding
-
 You brand BeeUI by changing **token values**, never token names and never component source.
 Every reusable component consumes semantic roles (`primary`, `surface`, `focus-ring`, …), so
 re-pointing those roles at your palette re-brands every screen at once.

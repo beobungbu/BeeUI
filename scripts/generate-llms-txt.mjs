@@ -108,6 +108,11 @@ function readJson(relPath) {
 
 // Parses `export { A, B, type C } from './components/x';` / `export type { … } from '…';`
 // blocks out of the @beemvp/beeui-ui barrel, grouped by the module specifier they re-export from.
+//
+// A renamed re-export (`export { Foo as Bar }`) is recorded under `Bar`, the name a consumer
+// actually imports. Recording the raw `Foo as Bar` specifier would put a name nobody can import
+// into the public-surface inventory, llms.txt and the generated reference pages at once, since
+// all three read this function.
 export function parseBarrelExports(indexSource) {
   // Strip line comments so commented-out export illustrations never count as real exports.
   const withoutComments = indexSource.replace(/\/\/[^\n]*/g, '');
@@ -122,11 +127,10 @@ export function parseBarrelExports(indexSource) {
     for (const rawSymbol of match[2].split(',')) {
       const symbol = rawSymbol.trim();
       if (!symbol) continue;
-      if (blockIsType || symbol.startsWith('type ')) {
-        entry.types.push(symbol.replace(/^type\s+/, ''));
-      } else {
-        entry.values.push(symbol);
-      }
+      const isType = blockIsType || symbol.startsWith('type ');
+      const exported = symbol.replace(/^type\s+/, '').split(/\s+as\s+/).pop().trim();
+      if (!exported) continue;
+      (isType ? entry.types : entry.values).push(exported);
     }
 
     bySpecifier.set(specifier, entry);

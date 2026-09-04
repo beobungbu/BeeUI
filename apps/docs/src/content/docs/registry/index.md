@@ -3,8 +3,6 @@ title: Registry & source ownership
 description: Understand BeeUI Registry items, dependency closure, integrity, and consumer-owned update behavior.
 ---
 
-# Registry & source ownership
-
 The BeeUI Registry is the machine-readable map that powers source ownership. A Registry item points to public source, transitive BeeUI dependencies, external package requirements and integrity information. It is not a remote code marketplace and it is not a second package manager.
 
 ## Registry item lifecycle

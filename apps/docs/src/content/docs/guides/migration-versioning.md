@@ -3,8 +3,6 @@ title: Migration & versioning
 description: What BeeUI's version number means today, which channel you are on, and what a future upgrade will and will not do to your code.
 ---
 
-# Migration & versioning
-
 **There is nothing to migrate from yet.** BeeUI has never been published, so no released
 version exists to upgrade away from and no historical migration guide exists. What this page
 gives you is the *policy* — the rules an upgrade will follow once there is one — so you can

@@ -36,7 +36,7 @@ The documentation contract, its required sections, and how it is enforced are de
 
 ## `alert-dialog`
 
-- **Purpose:** Confirmation/destructive modal built on the Dialog kernel; only explicit Cancel/Action closes it.
+- **Purpose:** Confirmation/destructive modal built on the Dialog kernel; a backdrop press or Escape never closes it.
 - **Import:** `import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle, AlertDialogTrigger } from '@beemvp/beeui-ui';`
 - **API:** `AlertDialog`, `AlertDialogAction`, `AlertDialogCancel`, `AlertDialogContent`, `AlertDialogDescription`, `AlertDialogFooter`, `AlertDialogTitle`, `AlertDialogTrigger` — source [`packages/ui/src/components/alert-dialog.tsx`](../packages/ui/src/components/alert-dialog.tsx). Typed props: `AlertDialogActionProps`, `AlertDialogCancelProps`, `AlertDialogContentProps`, `AlertDialogDescriptionProps`, `AlertDialogFooterProps`, `AlertDialogProps`, `AlertDialogTitleProps`, `AlertDialogTriggerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add alert-dialog` (copies the source file into your app; see [registry CLI](registry-cli.md)).
@@ -46,7 +46,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`runtime-smoke/runtime-acceptance.tsx`](../apps/showcase/runtime-smoke/runtime-acceptance.tsx), [`__tests__/issue-15-alert-dialog-form-group.test.tsx`](../apps/showcase/__tests__/issue-15-alert-dialog-form-group.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** Never dismisses from backdrop press or Escape; not a general-purpose modal (use Dialog).
+- **Limitations:** Never dismisses from backdrop press or Escape, but native request-close — Android hardware back and accessibility escape — does dismiss it unless `cancelOnRequestClose` is `false`; not a general-purpose modal (use Dialog).
 
 ## `app-header`
 
@@ -722,7 +722,7 @@ The documentation contract, its required sections, and how it is enforced are de
 
 ## `text`
 
-- **Purpose:** Semantic typography primitive with type/tone variants that honors OS/browser font scaling.
+- **Purpose:** Semantic typography primitive with variant/tone styling that honors OS/browser font scaling.
 - **Import:** `import { Text, textVariants } from '@beemvp/beeui-ui';`
 - **API:** `Text`, `textVariants` — source [`packages/ui/src/components/text.tsx`](../packages/ui/src/components/text.tsx). Typed props: `TextProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add text` (copies the source file into your app; see [registry CLI](registry-cli.md)).

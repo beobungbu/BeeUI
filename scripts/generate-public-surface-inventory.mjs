@@ -62,7 +62,10 @@ export function parseDirectExports(source) {
   };
 }
 
-function resolveRelativeModule(fromRelPath, specifier, rootDir = ROOT_DIR) {
+// Exported so scripts/public-reference.mjs can chase the same relative export chain when it
+// resolves a barrel-exported symbol (e.g. packages/core/src/index.ts) to the file that actually
+// declares it, instead of linking every row on a page to the same barrel file.
+export function resolveRelativeModule(fromRelPath, specifier, rootDir = ROOT_DIR) {
   const fromDir = path.posix.dirname(fromRelPath);
   const base = path.posix.normalize(path.posix.join(fromDir, specifier));
   const candidates = [

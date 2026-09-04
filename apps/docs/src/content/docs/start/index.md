@@ -93,6 +93,36 @@ Executable authorities:
 
 When publication opens, the integration code you write against this boundary does not change — only where the tarball comes from.
 
+#### Installing into an app you already own
+
+The platform guides walk the maintained starter. If you are putting BeeUI into an application
+that already exists, the four files those guides give you are not enough on their own —
+`@beemvp/beeui-ui` still has to become resolvable, and the registry install form is not
+available while publication is closed. Use the same packer the starters use:
+
+```bash
+# from the BeeUI checkout root, after `pnpm build`
+node examples/scripts/pack-beeui-packages.mjs --out /absolute/path/to/your-app/.beeui-tarballs --packages core,tokens,ui
+```
+
+It prints three `export …_TARBALL="…"` lines and nothing else, so you can consume them
+directly:
+
+```bash
+# from your application
+eval "$(node /path/to/BeeUI/examples/scripts/pack-beeui-packages.mjs --out "$PWD/.beeui-tarballs" --packages core,tokens,ui)"
+npm install --save-exact "$CORE_TARBALL" "$TOKENS_TARBALL" "$UI_TARBALL"
+```
+
+Two things to know before you run it. `--out` is **deleted and recreated** on every run, so
+point it at a directory you own and nothing else. And `pnpm build` is a hard prerequisite —
+without `packages/<name>/dist` the packer stops with `packages/ui/dist is missing. Run "pnpm
+build" …` rather than producing a partial tarball.
+
+Re-run the packer and re-install after every BeeUI change you want to pick up; a tarball is a
+snapshot, not a link.
+
+
 ### Source ownership
 
 Choose this when you want selected BeeUI component source committed into your own repository, reviewed there, and modified there.

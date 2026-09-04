@@ -3,8 +3,6 @@ title: Date & time
 description: Pick, display and store dates with Calendar, DatePicker and DateTimePicker without a timezone day-shift bug.
 ---
 
-# Date & time
-
 **BeeUI's date values carry no timezone.** A `CalendarDate` is `{ year, month, day }` and a
 `ClockTime` is `{ hour, minute }` — plain objects with no offset, no instant, and no hidden
 `Date` inside. That is the whole design, and it exists to structurally eliminate the single

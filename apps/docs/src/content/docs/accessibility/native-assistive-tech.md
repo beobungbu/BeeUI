@@ -3,8 +3,6 @@ title: VoiceOver & TalkBack
 description: Understand BeeUI native assistive-technology expectations and the evidence boundary.
 ---
 
-# VoiceOver & TalkBack
-
 BeeUI components expose React Native accessibility roles, labels, states and announcements
 appropriate to their contracts. That deterministic structure is necessary but does not
 prove how every combination behaves under a live screen reader.

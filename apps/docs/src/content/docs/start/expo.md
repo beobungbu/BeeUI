@@ -32,7 +32,8 @@ Optional native peers — `@react-native-community/datetimepicker@~9.1.0`, `@gor
 
 ## Starting project state
 
-A clean checkout of this repository with the workspace built, plus an Expo SDK 57 application. The starter *is* that application: `examples/expo-package-consumer` holds a minimal Expo app with `app.json`, `index.js`, `metro.config.js`, `global.css` and `App.tsx` already wired. Work through it first, then apply the same five files to your own app.
+A clean checkout of this repository with the workspace built, plus an Expo SDK 57 application. The starter *is* that application: `examples/expo-package-consumer` holds a minimal Expo app with `app.json`, `index.js`, `metro.config.js`, `global.css` and `App.tsx` already wired. Work through it first, then apply the same five files to your own app. Copying those five
+files does not make `@beemvp/beeui-ui` resolvable on its own — see [Installing into an app you already own](/docs/start/#installing-into-an-app-you-already-own) for the packer invocation that does.
 
 ## 1. Build the workspace and run the clean consumer
 
@@ -67,8 +68,8 @@ BeeUI's Web/theme output is CSS, and Uniwind compiles the Tailwind classes the c
 @import 'uniwind';
 @import '@beemvp/beeui-tokens/theme.css';
 
-@source '../node_modules/@beemvp/beeui-core/src';
-@source '../node_modules/@beemvp/beeui-ui/src';
+@source './node_modules/@beemvp/beeui-core/src';
+@source './node_modules/@beemvp/beeui-ui/src';
 ```
 
 The two `@source` lines matter: without them Tailwind never scans BeeUI's own source, so BeeUI's classes are compiled away and every component renders unstyled.
@@ -88,7 +89,7 @@ module.exports = withUniwindConfig(getDefaultConfig(__dirname), {
 });
 ```
 
-`withUniwindConfig` wraps Expo's default Metro config; `cssEntryFile: './global.css'` is what binds step 2 to the bundler. `extraThemes` is optional — list only the runtime themes you actually ship. CI checks that the three `@import` lines, `withUniwindConfig` and `cssEntryFile: './global.css'` appear in both the fixture and this page, so those five cannot drift apart silently. Nothing guards the `@source` lines, `dtsFile` or `extraThemes` — for those, the fixture is the source of truth.
+`withUniwindConfig` wraps Expo's default Metro config; `cssEntryFile: './global.css'` is what binds step 2 to the bundler. `extraThemes` is optional — list only the runtime themes you actually ship. CI checks that the three `@import` lines, `withUniwindConfig` and `cssEntryFile: './global.css'` appear in both the fixture and this page, so those five cannot drift apart silently. It also resolves every `@source` glob against the directory this starter installs into and fails if one points outside it — a glob that resolves to nothing produces a successful build with no BeeUI styling, so it cannot be left unguarded. `dtsFile` and `extraThemes` are not guarded; for those the fixture is the source of truth.
 
 Register the root component the way Expo expects (`index.js`):
 

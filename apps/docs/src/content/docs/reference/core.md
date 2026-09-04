@@ -3,69 +3,65 @@ title: Core reference
 description: Public values and types exported by @beemvp/beeui-core.
 ---
 
-:::caution[Generated file]
-Do not hand-edit this page. It is written by `scripts/public-reference.mjs` from
-`docs/public-surface.inventory.json`, so it lists exactly the surfaces the #473 ownership
-gate routes here. Prose lives in `docs/reference.content.json`.
-:::
+<!-- Generated file: written by scripts/public-reference.mjs from docs/public-surface.inventory.json. Prose lives in docs/reference.content.json. Do not hand-edit. -->
 
 `@beemvp/beeui-core` holds the platform-free logic the components are built on: calendar-date arithmetic, anchored-overlay positioning, and the overlay-runtime primitives. It has no React dependency and renders nothing.
 
 Most applications never import it directly — the components already do. Reach for it when you are building a surface BeeUI does not provide and you want the same date semantics or positioning maths behind it, which is why most of this surface is classified `advanced-consumer` rather than `consumer`.
 
-`cn` is the exception: it is ordinary consumer API for merging class strings. The calendar-date utilities are the same ones [Dates and times](/docs/guides/date-time/) documents behaviourally.
+The **Classification** column carries exactly two values on this page. `advanced-consumer` means public and supported, but intended for building a surface BeeUI does not provide — not something a typical application imports. `normal-consumer` means ordinary application API. `cn` is the only entry in the second group: it merges class strings. The calendar-date utilities are the same ones [Dates and times](/docs/guides/date-time/) documents behaviourally.
 
 ## Values (25)
 
-| Name | Classification | Source |
-| --- | --- | --- |
-| `addCalendarDays` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `addCalendarMonths` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `addCalendarYears` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `clampCalendarDate` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `clockTimeFromLocalDate` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `cn` | normal-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `compareCalendarDates` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `constrainOverlayViewportToKeyboard` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `createOverlayDismissStack` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `fromLocalDate` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `getCalendarDayOfWeek` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `getCalendarMonthGrid` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `getDaysInMonth` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `getSafeAreaCollisionPadding` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `isCalendarDateDisabled` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `isCalendarDateWithinRange` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `isLeapYear` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `isSameCalendarDate` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `isValidCalendarDate` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `mergeOverlayCollisionPadding` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `parseISODateString` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `resolveAnchoredOverlayPosition` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `toISODateString` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `toLocalDate` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `windowRectToHostRect` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
+| Name | Signature | Description | Classification | Source |
+| --- | --- | --- | --- | --- |
+| `addCalendarDays` | ` (date: CalendarDate, amount: number): CalendarDate ` | Adds (or subtracts, for a negative `amount`) whole days, normalizing month/year overflow. | advanced-consumer | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `addCalendarMonths` | ` (date: CalendarDate, amount: number): CalendarDate ` | Adds (or subtracts) whole calendar months. | advanced-consumer | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `addCalendarYears` | ` (date: CalendarDate, amount: number): CalendarDate ` | Adds (or subtracts) whole years, clamping Feb 29 to Feb 28 in a non-leap target year. | advanced-consumer | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `clampCalendarDate` | ` (date: CalendarDate, min?: CalendarDate \| null, max?: CalendarDate \| null): CalendarDate ` | — | advanced-consumer | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `clockTimeFromLocalDate` | ` (date: Date): ClockTime ` | The `ClockTime` counterpart to `fromLocalDate`: reads local-timezone `getHours()`/`getMinutes()` only — the exact reverse of passing a `time` argument to `toLocalDate`. | advanced-consumer | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `cn` | ` (...inputs: ClassValue[]): string ` | — | normal-consumer | [`packages/core/src/utils/cn.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/cn.ts) |
+| `compareCalendarDates` | ` (a: CalendarDate, b: CalendarDate): number ` | Field-order comparator: negative when `a` is earlier, positive when later, `0` when equal. | advanced-consumer | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `constrainOverlayViewportToKeyboard` | ` (viewportRect: AnchoredOverlayRect, keyboardRect?: AnchoredOverlayRect \| null): AnchoredOverlayRect ` | — | advanced-consumer | [`packages/core/src/utils/overlay-runtime.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/overlay-runtime.ts) |
+| `createOverlayDismissStack` | ` (): OverlayDismissStack ` | — | advanced-consumer | [`packages/core/src/utils/overlay-runtime.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/overlay-runtime.ts) |
+| `fromLocalDate` | ` (date: Date): CalendarDate ` | The sole sanctioned `Date` → `CalendarDate` boundary (ADR-008): reads local-timezone getters only, the exact reverse of `toLocalDate`. | advanced-consumer | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `getCalendarDayOfWeek` | ` (date: CalendarDate): number ` | `0` = Sunday … `6` = Saturday (matches `Date.prototype.getUTCDay()`/`Intl` day-index convention). | advanced-consumer | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `getCalendarMonthGrid` | ` (options: CalendarMonthGridOptions): CalendarMonthGridDay[][] ` | Generates the full-week grid for a month: one array per week, each with exactly 7 `CalendarMonthGridDay` cells (Sunday/Monday-first per `weekStartsOn`). | advanced-consumer | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `getDaysInMonth` | ` (year: number, month: number): number ` | `month` must be an integer 1–12. | advanced-consumer | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `getSafeAreaCollisionPadding` | ` (hostRect: AnchoredOverlayRect, windowRect: AnchoredOverlayRect, safeAreaInsets: Partial<AnchoredOverlayInsets>): AnchoredOverlayInsets ` | — | advanced-consumer | [`packages/core/src/utils/overlay-runtime.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/overlay-runtime.ts) |
+| `isCalendarDateDisabled` | ` (date: CalendarDate, options: CalendarDateDisabledOptions = {}): boolean ` | — | advanced-consumer | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `isCalendarDateWithinRange` | ` (date: CalendarDate, min?: CalendarDate \| null, max?: CalendarDate \| null): boolean ` | — | advanced-consumer | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `isLeapYear` | ` (year: number): boolean ` | — | advanced-consumer | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `isSameCalendarDate` | ` (a: CalendarDate \| null \| undefined, b: CalendarDate \| null \| undefined): boolean ` | — | advanced-consumer | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `isValidCalendarDate` | ` (date: CalendarDate): boolean ` | — | advanced-consumer | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `mergeOverlayCollisionPadding` | ` (first: AnchoredOverlayCollisionPadding \| undefined, second: AnchoredOverlayCollisionPadding \| undefined): AnchoredOverlayInsets ` | — | advanced-consumer | [`packages/core/src/utils/overlay-runtime.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/overlay-runtime.ts) |
+| `parseISODateString` | ` (iso: string): CalendarDate \| null ` | Parses a `"YYYY-MM-DD"` string by splitting/regex-matching its fields directly. | advanced-consumer | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `resolveAnchoredOverlayPosition` | ` (options: ResolveAnchoredOverlayPositionOptions): AnchoredOverlayPosition ` | — | advanced-consumer | [`packages/core/src/utils/anchored-overlay.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/anchored-overlay.ts) |
+| `toISODateString` | ` (date: CalendarDate): string ` | Never round-trips through `Date`/`Date.parse` — direct field formatting only. | advanced-consumer | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `toLocalDate` | ` (date: CalendarDate, time?: ClockTime): Date ` | The sole sanctioned `CalendarDate` → `Date` boundary (ADR-008): constructs via the local-timezone `Date` constructor, so a date-only value always lands on local midnight (or the given local wall-clock time) of the same… | advanced-consumer | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `windowRectToHostRect` | ` (rect: AnchoredOverlayRect, hostRect: AnchoredOverlayRect): AnchoredOverlayRect ` | — | advanced-consumer | [`packages/core/src/utils/overlay-runtime.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/overlay-runtime.ts) |
 
 ## Types (20)
 
-| Name | Classification | Source |
-| --- | --- | --- |
-| `AnchoredOverlayAlign` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `AnchoredOverlayAvailableSpace` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `AnchoredOverlayCollisionPadding` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `AnchoredOverlayDirection` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `AnchoredOverlayInsets` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `AnchoredOverlayOverflow` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `AnchoredOverlayPlacement` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `AnchoredOverlayPosition` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `AnchoredOverlayRect` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `AnchoredOverlaySize` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `CalendarDate` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `CalendarDateDisabledOptions` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `CalendarMonthGridDay` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `CalendarMonthGridOptions` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `CalendarWeekStartsOn` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `ClockTime` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `OverlayDismissHandler` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `OverlayDismissReason` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `OverlayDismissStack` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
-| `ResolveAnchoredOverlayPositionOptions` | advanced-consumer | [`packages/core/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/index.ts) |
+| Name | Signature | Description | Source |
+| --- | --- | --- | --- |
+| `AnchoredOverlayAlign` | ` 'start' \| 'center' \| 'end' ` | — | [`packages/core/src/utils/anchored-overlay.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/anchored-overlay.ts) |
+| `AnchoredOverlayAvailableSpace` | ` AnchoredOverlayInsets ` | — | [`packages/core/src/utils/anchored-overlay.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/anchored-overlay.ts) |
+| `AnchoredOverlayCollisionPadding` | ` number \| Partial<AnchoredOverlayInsets> ` | — | [`packages/core/src/utils/anchored-overlay.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/anchored-overlay.ts) |
+| `AnchoredOverlayDirection` | ` 'ltr' \| 'rtl' ` | — | [`packages/core/src/utils/anchored-overlay.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/anchored-overlay.ts) |
+| `AnchoredOverlayInsets` | ` { top: number; right: number; bottom: number; left: number; } ` | — | [`packages/core/src/utils/anchored-overlay.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/anchored-overlay.ts) |
+| `AnchoredOverlayOverflow` | ` AnchoredOverlayInsets & { total: number; } ` | — | [`packages/core/src/utils/anchored-overlay.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/anchored-overlay.ts) |
+| `AnchoredOverlayPlacement` | ` 'top' \| 'right' \| 'bottom' \| 'left' ` | — | [`packages/core/src/utils/anchored-overlay.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/anchored-overlay.ts) |
+| `AnchoredOverlayPosition` | ` { x: number; y: number; placement: AnchoredOverlayPlacement; align: AnchoredOverlayAlign; flipped: boolean; shifted: boolean; placementOverflow: AnchoredOverlayOverflow; overflow: AnchoredOverlayOverflow; availableSpace: AnchoredOverlayAva… ` | — | [`packages/core/src/utils/anchored-overlay.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/anchored-overlay.ts) |
+| `AnchoredOverlayRect` | ` { x: number; y: number; width: number; height: number; } ` | — | [`packages/core/src/utils/anchored-overlay.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/anchored-overlay.ts) |
+| `AnchoredOverlaySize` | ` { width: number; height: number; } ` | — | [`packages/core/src/utils/anchored-overlay.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/anchored-overlay.ts) |
+| `CalendarDate` | ` { year: number; month: number; day: number; } ` | A plain, timezone-free calendar day. | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `CalendarDateDisabledOptions` | ` { isDateDisabled?: (date: CalendarDate) => boolean; max?: CalendarDate \| null; min?: CalendarDate \| null; } ` | — | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `CalendarMonthGridDay` | ` { date: CalendarDate; isCurrentMonth: boolean; } ` | — | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `CalendarMonthGridOptions` | ` { month: number; weekStartsOn?: CalendarWeekStartsOn; year: number; } ` | — | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `CalendarWeekStartsOn` | ` 1 \| 2 \| 3 \| 4 \| 5 \| 6 \| 7 ` | ISO 8601 / `Intl` `weekInfo` convention: `1` = Monday … `7` = Sunday. | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `ClockTime` | ` { hour: number; minute: number; } ` | A plain, timezone-free wall-clock time. | [`packages/core/src/utils/calendar-date.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/calendar-date.ts) |
+| `OverlayDismissHandler` | ` (reason: OverlayDismissReason) => void ` | — | [`packages/core/src/utils/overlay-runtime.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/overlay-runtime.ts) |
+| `OverlayDismissReason` | ` 'back' \| 'escape' \| 'outside-press' \| 'anchor-unmount' ` | — | [`packages/core/src/utils/overlay-runtime.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/overlay-runtime.ts) |
+| `OverlayDismissStack` | ` { register: (id: string, handler: OverlayDismissHandler) => void; unregister: (id: string) => void; isTopmost: (id: string) => boolean; dismissTop: (reason: OverlayDismissReason) => boolean; dismissIfTopmost: (id: string, reason: OverlayDi… ` | — | [`packages/core/src/utils/overlay-runtime.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/overlay-runtime.ts) |
+| `ResolveAnchoredOverlayPositionOptions` | ` { anchorRect: AnchoredOverlayRect; overlaySize: AnchoredOverlaySize; viewportRect: AnchoredOverlayRect; placement?: AnchoredOverlayPlacement; align?: AnchoredOverlayAlign; direction?: AnchoredOverlayDirection; sideOffset?: number; alignOff… ` | — | [`packages/core/src/utils/anchored-overlay.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/core/src/utils/anchored-overlay.ts) |

@@ -3,8 +3,6 @@ title: CLI & source ownership
 description: Copy BeeUI component source into your repository with the repository-local Registry CLI, and own it safely afterwards.
 ---
 
-# CLI & source ownership
-
 Source ownership means the component source lives in **your** repository: you read it, edit it,
 review its diffs, and decide when to take upstream changes. The BeeUI CLI is the deterministic
 copier for that model. It runs today from a BeeUI checkout.
@@ -163,18 +161,19 @@ paths and both must be requested every single time.
 
 ## What changes after publication
 
-Publication is owner-gated behind issue #254. Nothing below is available yet.
+Publication is owner-gated behind issue [#254](https://github.com/beobungbu/BeeUI/issues/254). Nothing below is available yet.
 
 - **What stays the same:** the command, flag and exit-code contract; the collision and update
   policy; the security boundaries; and the fact that copied source is yours. A consumer who has
   already copied source is never affected by a later CLI release changing what a fresh `add`
   would produce — they must upgrade the CLI and re-run `add` deliberately.
 - **What changes:** the CLI becomes installable from the public registry instead of only from a
-  checkout, so the invocation loses its `pnpm beeui --` repository prefix; the bundled registry
+  checkout, so the invocation loses the `pnpm ` repository-script prefix and becomes plain
+  `beeui <command>`; the bundled registry
   snapshot and its checksum manifest become version-pinned to the installed release rather than
   to your working tree; and `doctor` reports bundled delivery with verified checksums instead of
   dev mode. Package-manager mutation stays out of scope under a separate owner-gated decision
-  (#215) — `add` and `doctor` remain read-only toward your dependencies either way.
+  ([#215](https://github.com/beobungbu/BeeUI/issues/215)) — `add` and `doctor` remain read-only toward your dependencies either way.
 
 Until then, treat every command in this guide as repository-local.
 

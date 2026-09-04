@@ -36,7 +36,7 @@ Two boundaries are worth knowing before you commit. Vite is the only tested Web 
 
 ## Starting project state
 
-A clean checkout of this repository with the workspace built. The starter *is* the Vite application: `examples/web-consumer` ships `index.html`, `vite.config.ts`, `src/main.tsx`, `src/global.css` and `src/App.tsx`. Run it first, then port those files into your own Vite app.
+A clean checkout of this repository with the workspace built. The starter *is* the Vite application: `examples/web-consumer` ships `index.html`, `vite.config.ts`, `src/main.tsx`, `src/global.css` and `src/App.tsx`. Run it first, then port those files into your own Vite app. Porting them does not make `@beemvp/beeui-ui` resolvable on its own — see [Installing into an app you already own](/docs/start/#installing-into-an-app-you-already-own) for the packer invocation that does.
 
 ## 1. Build the workspace and run the clean consumer
 

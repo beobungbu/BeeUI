@@ -3,8 +3,6 @@ title: Architecture & design principles
 description: Understand BeeUI's mobile-first scope, semantic contracts, distribution choices and application ownership boundaries.
 ---
 
-# Architecture & design principles
-
 BeeUI is a mobile-first React Native UI system that treats Expo, bare React Native and Web
 as real targets while keeping behavior APIs independent from an app router, backend or form
 framework.

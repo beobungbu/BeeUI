@@ -53,11 +53,134 @@ export function validateAcknowledgedSurfaceSources(rootDir = ROOT_DIR, policy = 
   return violations;
 }
 
+export const CONTRIBUTOR_DOC_FILE = 'CONTRIBUTING.md';
+export const CONTRIBUTOR_DOC_HEADING = '## Public documentation surfaces';
+
+// The remediation a contributor needs is not derivable from the failure text, and the command
+// that clears the failure — `docs:surface:acknowledge` — clears it whether or not anything was
+// documented. So the written sequence is load-bearing, and this asserts the sequence is still
+// there: each required step must be NAMED, not merely resolvable if mentioned. Checking only
+// that whatever the section happens to name still exists would pass on a section reduced to
+// one sentence, which is the failure this guard exists to prevent.
+export const REQUIRED_WORKFLOW_COMMANDS = [
+  'docs:surface:generate',
+  'llms:generate',
+  'docs:reference:generate',
+  'docs:surface:acknowledge',
+  'docs:surface:check',
+];
+
+// Marks the paragraph that must survive any rewrite of this section.
+export const ACKNOWLEDGE_WARNING_ANCHOR = '<!-- surface-workflow: acknowledge-is-not-the-fix -->';
+
+export const REQUIRED_WORKFLOW_FILES = [
+  'docs/public-surface.inventory.json',
+  'docs/public-surface-owners.json',
+  'docs/reference.content.json',
+];
+
+// A fenced block may contain a line starting with `## `; slicing on the next such line would
+// silently truncate the section and hide whatever follows from every assertion below.
+export function extractDocSection(doc, heading) {
+  const lines = doc.split('\n');
+  const start = lines.findIndex((line) => line === heading);
+  if (start === -1) return null;
+  const body = [];
+  let fenced = false;
+  for (const line of lines.slice(start + 1)) {
+    if (/^\s*```/u.test(line)) fenced = !fenced;
+    if (!fenced && /^## /u.test(line)) break;
+    body.push(line);
+  }
+  // An unterminated fence swallows every following section, so the strings this gate looks for
+  // could be satisfied by unrelated parts of the file.
+  if (fenced) return { body: body.join('\n'), unterminatedFence: true };
+  return { body: body.join('\n'), unterminatedFence: false };
+}
+
+export function validateContributorSurfaceDocs(rootDir = ROOT_DIR) {
+  const violations = [];
+  const docPath = path.join(rootDir, CONTRIBUTOR_DOC_FILE);
+  if (!fs.existsSync(docPath)) return [`${CONTRIBUTOR_DOC_FILE} is missing; the public-surface workflow is undocumented.`];
+
+  const extracted = extractDocSection(fs.readFileSync(docPath, 'utf8'), CONTRIBUTOR_DOC_HEADING);
+  if (extracted === null) {
+    return [
+      `${CONTRIBUTOR_DOC_FILE} has no "${CONTRIBUTOR_DOC_HEADING}" section. Adding a public ` +
+      'surface fails this gate, so the remediation sequence must stay documented.',
+    ];
+  }
+  if (extracted.unterminatedFence) {
+    return [
+      `${CONTRIBUTOR_DOC_FILE}'s "${CONTRIBUTOR_DOC_HEADING}" section has an unterminated code ` +
+      'fence, so its boundary — and everything this gate checks inside it — is undefined.',
+    ];
+  }
+  const section = extracted.body;
+
+  const scripts = readJson('package.json', rootDir).scripts ?? {};
+  for (const name of REQUIRED_WORKFLOW_COMMANDS) {
+    if (!scripts[name]) {
+      violations.push(`\`${name}\` is a required step of the documented workflow but is not a package.json script.`);
+      continue;
+    }
+    if (!section.includes(`pnpm ${name}`)) {
+      violations.push(
+        `${CONTRIBUTOR_DOC_FILE}'s "${CONTRIBUTOR_DOC_HEADING}" section no longer names ` +
+        `\`pnpm ${name}\`, which a contributor must run to make a changed public surface pass this gate.`,
+      );
+    }
+  }
+
+  for (const relPath of REQUIRED_WORKFLOW_FILES) {
+    if (!fs.existsSync(path.join(rootDir, relPath))) {
+      violations.push(`${relPath} is named by the documented workflow but does not exist.`);
+      continue;
+    }
+    if (!section.includes(relPath)) {
+      violations.push(
+        `${CONTRIBUTOR_DOC_FILE}'s "${CONTRIBUTOR_DOC_HEADING}" section no longer names ${relPath}, ` +
+        'which a contributor edits or reads while following the workflow.',
+      );
+    }
+  }
+
+  // Whitespace between `pnpm` and the script name may be a newline after a rewrap, so a
+  // documented command must be found across line breaks too.
+  const flattened = section.replace(/\s+/gu, ' ');
+  for (const [, name] of flattened.matchAll(/\bpnpm ([a-z][a-z0-9]*(?::[a-z0-9-]+)+)/gu)) {
+    if (!scripts[name]) {
+      violations.push(
+        `${CONTRIBUTOR_DOC_FILE} tells contributors to run \`pnpm ${name}\`, which is not a package.json script.`,
+      );
+    }
+  }
+
+  for (const [, relPath] of flattened.matchAll(/`(docs\/[A-Za-z0-9._-]+\.json)`/gu)) {
+    if (!fs.existsSync(path.join(rootDir, relPath))) {
+      violations.push(`${CONTRIBUTOR_DOC_FILE} references ${relPath}, which does not exist.`);
+    }
+  }
+
+  // Anchored on a marker rather than an exact sentence: freezing prose blocks any rewording,
+  // and the point is that the warning is present, not that it is phrased one way.
+  if (!section.includes(ACKNOWLEDGE_WARNING_ANCHOR)) {
+    violations.push(
+      `${CONTRIBUTOR_DOC_FILE}'s "${CONTRIBUTOR_DOC_HEADING}" section must keep the ` +
+      `${ACKNOWLEDGE_WARNING_ANCHOR} marker on the paragraph warning that ` +
+      '`docs:surface:acknowledge` runs last and is not the remedy for the staleness error.',
+    );
+  }
+
+  return [...new Set(violations)];
+}
+
 export function validatePublicSurfaceOwnership(rootDir = ROOT_DIR) {
   return [
     ...validatePublicSurfaceInventory(rootDir),
     ...validateInventoryFreshness(rootDir),
     ...validateAcknowledgedSurfaceSources(rootDir),
+    ...validateContributorSurfaceDocs(rootDir),
   ];
 }
 

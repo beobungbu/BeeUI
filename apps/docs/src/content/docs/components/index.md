@@ -3,8 +3,6 @@ title: All components
 description: Source-driven BeeUI public component reference.
 ---
 
-# All components
-
 This index is generated from the public Registry + `@beemvp/beeui-ui` export map. It currently contains **62** stable public component families; adding or removing a public Registry component changes this inventory automatically and is checked by CI.
 
 ## Actions & controls
@@ -25,7 +23,7 @@ This index is generated from the public Registry + `@beemvp/beeui-ui` export map
 - **[Separator](/docs/components/separator/)** — Decorative-by-default divider (semantic when requested); vertical orientation stretches across the cross axis. · [Showcase](/showcase/?surface=component&id=separator&example=basic)
 - **[Stat](/docs/components/stat/)** — Layout-only metric composition (label/value/help text) with no formatting or state ownership. · [Showcase](/showcase/?surface=component&id=stat&example=basic)
 - **[Table](/docs/components/table/)** — Semantic data-table primitives that render real table/th scope/aria-sort semantics on Web. · [Showcase](/showcase/?surface=component&id=table&example=basic)
-- **[Text](/docs/components/text/)** — Semantic typography primitive with type/tone variants that honors OS/browser font scaling. · [Showcase](/showcase/?surface=component&id=text&example=basic)
+- **[Text](/docs/components/text/)** — Semantic typography primitive with variant/tone styling that honors OS/browser font scaling. · [Showcase](/showcase/?surface=component&id=text&example=basic)
 - **[Timeline](/docs/components/timeline/)** — Read-only ordered history composition with semantic marker states; owns no workflow state. · [Showcase](/showcase/?surface=component&id=timeline&example=basic)
 
 ## Forms & selection
@@ -72,7 +70,7 @@ This index is generated from the public Registry + `@beemvp/beeui-ui` export map
 ## Overlays & feedback
 
 - **[Alert Banner](/docs/components/alert-banner/)** — Inline semantic status callout with live-region announcement for feedback that stays on screen. · [Showcase](/showcase/?surface=component&id=alert-banner&example=basic)
-- **[Alert Dialog](/docs/components/alert-dialog/)** — Confirmation/destructive modal built on the Dialog kernel; only explicit Cancel/Action closes it. · [Showcase](/showcase/?surface=component&id=alert-dialog&example=basic)
+- **[Alert Dialog](/docs/components/alert-dialog/)** — Confirmation/destructive modal built on the Dialog kernel; a backdrop press or Escape never closes it. · [Showcase](/showcase/?surface=component&id=alert-dialog&example=basic)
 - **[Dialog](/docs/components/dialog/)** — Controlled/uncontrolled modal backed by React Native core Modal, with a real Web focus trap and Escape dismissal. · [Showcase](/showcase/?surface=component&id=dialog&example=basic)
 - **[Dropdown Menu](/docs/components/dropdown-menu/)** — Non-modal action menu on the shared anchored-overlay runtime, with items, checkbox items, and radio groups. · [Showcase](/showcase/?surface=component&id=dropdown-menu&example=basic)
 - **[Popover](/docs/components/popover/)** — Non-modal anchored surface on the shared overlay runtime with flip/shift/collision and safe-area policy. · [Showcase](/showcase/?surface=component&id=popover&example=basic)

@@ -3,8 +3,6 @@ title: Keyboard & focus
 description: Keep BeeUI controls operable and focus-visible across Web and native keyboard flows.
 ---
 
-# Keyboard & focus
-
 Use the component's semantic trigger/control rather than wrapping it in a second clickable
 surface. On Web, interactive controls must be reachable in logical order, show visible
 focus, and support the keyboard keys appropriate to their role. Dialog/Popover/Select/

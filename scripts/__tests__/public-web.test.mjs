@@ -79,7 +79,11 @@ test('public component generator emits one reference page per stable public fami
   assert.equal(fs.existsSync(path.join(outDir, 'index.md')), true);
   for (const component of manifest) {
     const page = fs.readFileSync(path.join(outDir, `${component.name}.md`), 'utf8');
-    assert.match(page, new RegExp(`^# ${component.title}`, 'm'));
+    // Starlight renders the frontmatter title as the page's h1. A body `# Title` on top of
+    // that shipped two h1 elements on every generated page; this asserted that shape as
+    // correct. The title must appear in frontmatter and nowhere as a body heading.
+    assert.match(page, new RegExp(`^title: "${component.title}"$`, 'm'));
+    assert.equal(/^# /mu.test(page), false, `${component.name} must not repeat its title as a body h1`);
     assert.match(page, /## Accessibility/);
     assert.match(page, /## Executable examples/);
     assert.match(page, /## Limitations/);
@@ -95,7 +99,21 @@ test('rich component pages lazy-load real Showcase and display exact typechecked
     const descriptor = buildPreviewDescriptor(component, rootDir);
     assert.match(page, /## Live Web preview/);
     assert.match(page, /loading="lazy"/);
-    assert.ok(page.includes(descriptor.source));
+    // A small fixture is shown whole; a large one is excerpted to the regions using this family.
+    // Either way the page must carry byte-identical source, and an excerpt must name the exact
+    // lines it came from — that citation is the whole basis for calling it executable source.
+    if (descriptor.excerpt.whole) {
+      assert.ok(page.includes(descriptor.source), `${component.name} lost its whole-fixture source`);
+    } else {
+      const fixtureLines = descriptor.source.split('\n');
+      assert.ok(descriptor.excerpt.excerpts.length > 0, `${component.name} was excerpted to nothing`);
+      assert.ok(!page.includes(descriptor.source), `${component.name} still inlines the whole fixture`);
+      for (const part of descriptor.excerpt.excerpts) {
+        assert.equal(fixtureLines.slice(part.start - 1, part.end).join('\n'), part.text);
+        assert.ok(page.includes(part.text), `${component.name} excerpt ${part.start}-${part.end} is not on the page`);
+        assert.ok(page.includes(`#L${part.start}-L${part.end}`), `${component.name} excerpt is not linked to its lines`);
+      }
+    }
     assert.ok(page.includes(descriptor.showcaseHref));
     assert.match(page, /### Composition anatomy/);
   }

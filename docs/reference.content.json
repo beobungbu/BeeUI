@@ -12,7 +12,7 @@
       "title": "Core reference",
       "description": "Public values and types exported by @beemvp/beeui-core.",
       "intro": "`@beemvp/beeui-core` holds the platform-free logic the components are built on: calendar-date arithmetic, anchored-overlay positioning, and the overlay-runtime primitives. It has no React dependency and renders nothing.\n\nMost applications never import it directly — the components already do. Reach for it when you are building a surface BeeUI does not provide and you want the same date semantics or positioning maths behind it, which is why most of this surface is classified `advanced-consumer` rather than `consumer`.",
-      "notes": "`cn` is the exception: it is ordinary consumer API for merging class strings. The calendar-date utilities are the same ones [Dates and times](/docs/guides/date-time/) documents behaviourally."
+      "notes": "The **Classification** column carries exactly two values on this page. `advanced-consumer` means public and supported, but intended for building a surface BeeUI does not provide — not something a typical application imports. `normal-consumer` means ordinary application API. `cn` is the only entry in the second group: it merges class strings. The calendar-date utilities are the same ones [Dates and times](/docs/guides/date-time/) documents behaviourally."
     },
     "cli": {
       "title": "CLI reference",

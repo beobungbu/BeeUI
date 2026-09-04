@@ -3,8 +3,6 @@ title: Theming
 description: Apply semantic color, brand, density and runtime theme contracts without coupling product code to the styling engine.
 ---
 
-# Theming
-
 BeeUI components consume **semantic tokens** such as background, surface, foreground,
 border and intent roles. Your application chooses theme/brand/density; reusable component
 behavior should not depend on literal brand colors.

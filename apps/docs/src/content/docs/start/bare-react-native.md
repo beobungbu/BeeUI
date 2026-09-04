@@ -34,7 +34,7 @@ Platform toolchains are the standard React Native ones and BeeUI does not replac
 
 A clean checkout of this repository with the workspace built. The starter scaffolds its own application: `setup.sh` runs the pinned React Native Community CLI to generate `examples/bare-rn-consumer/app/`, then overlays four committed files onto it. The generated `android/` and `ios/` trees are deliberately **not** committed — they are hundreds of mechanically reproducible files, and keeping them out makes the BeeUI-relevant source reviewable.
 
-Those four files in `src-overrides/` are the entire integration contract, and they are what you copy into your own app:
+Those four files in `src-overrides/` are the entire integration contract, and they are what you copy into your own app. Copying them does not make `@beemvp/beeui-ui` resolvable on its own — see [Installing into an app you already own](/docs/start/#installing-into-an-app-you-already-own) for the packer invocation that does:
 
 - `App.tsx` — provider, safe area and components;
 - `index.js` — `AppRegistry` registration;
@@ -77,8 +77,8 @@ The iOS invocation is identical apart from `--platform ios` and `--bundle-output
 @import 'uniwind';
 @import '@beemvp/beeui-tokens/theme.css';
 
-@source '../node_modules/@beemvp/beeui-core/src';
-@source '../node_modules/@beemvp/beeui-ui/src';
+@source './node_modules/@beemvp/beeui-core/src';
+@source './node_modules/@beemvp/beeui-ui/src';
 ```
 
 The `@source` lines point Tailwind at BeeUI's own source. Drop them and every BeeUI class is compiled away, which shows up as a fully unstyled screen rather than an error.

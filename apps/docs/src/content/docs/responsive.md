@@ -3,8 +3,6 @@ title: Responsive & mobile-first
 description: Build BeeUI screens from narrow-phone defaults to medium and expanded layouts.
 ---
 
-# Responsive & mobile-first
-
 BeeUI starts from the **smallest supported logical phone width** and adds layout capability
 as width becomes available. Desktop is an enhancement, not the default design that gets
 shrunk later.
