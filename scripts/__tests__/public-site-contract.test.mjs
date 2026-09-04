@@ -107,6 +107,7 @@ test('resolves environment-specific origin and preview aliases from one config a
   assert.equal(buildPublicSiteContract(root, { environment: 'development-preview' }).origin, 'https://beeui-dev.beemvp.com');
   assert.equal(buildPublicSiteContract(root, { environment: 'staging-preview' }).origin, 'https://beeui-stg.beemvp.com');
   assert.equal(normalizePublicSiteEnvironment('production-candidate'), 'staging');
+  assert.throws(() => normalizePublicSiteEnvironment('typo-env'), /Unsupported BeeUI Web environment/u);
 });
 
 test('selects the longest matching public route', () => {
