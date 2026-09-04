@@ -592,7 +592,7 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
             </PlaygroundHeading>
 
             <Card className="gap-4">
-              <Field description="Used only for account notifications." label="Email" required>
+              <Field description="Used only for account notifications." label="Email" required testID="component-gallery-field">
                 <Input autoCapitalize="none" placeholder="you@example.com" />
               </Field>
               <Field label="Search">

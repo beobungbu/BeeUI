@@ -6,9 +6,7 @@ import {
   HStack,
   SafeArea,
   Screen,
-  Stack,
   Text,
-  VStack,
 } from '@beemvp/beeui-ui';
 import * as React from 'react';
 import { ScrollView } from 'react-native';
@@ -24,27 +22,25 @@ import { PublicDocFixtures } from './public-doc-fixtures';
 import { SelectShowcase } from './select-showcase';
 import { TableShowcase } from './table-showcase';
 
-function PrimitiveFixture({ ownerId }: { ownerId: string }) {
-  if (ownerId === 'badge') return <Badge variant="success">Badge exact fixture</Badge>;
-  if (ownerId === 'box') return <Box className="rounded-lg border border-border p-5"><Text>Box exact fixture</Text></Box>;
-  if (ownerId === 'card') return <Card padding="lg" variant="raised"><Text>Card exact fixture</Text></Card>;
-  if (ownerId === 'stack') return <Stack gap="sm"><Text>Stack item one</Text><Text>Stack item two</Text></Stack>;
-  return <Text variant="heading">Text exact fixture</Text>;
-}
+/**
+ * Registry source paths that are rendered as a standalone fixture rather than as a
+ * position inside the main Component Gallery. Everything else keeps the real gallery
+ * as its executable body and is located inside it by the focus seam.
+ */
+const DEDICATED_FIXTURE_SOURCES = [
+  '/select-showcase.tsx',
+  '/table-showcase.tsx',
+  '/date-picker-showcase.tsx',
+  '/date-time-picker-showcase.tsx',
+  '/public-doc-fixtures.tsx',
+  '/settings-screen-shell.tsx',
+];
 
 function hasDedicatedFixture(sourcePath: string) {
-  return [
-    '/select-showcase.tsx',
-    '/table-showcase.tsx',
-    '/date-picker-showcase.tsx',
-    '/date-time-picker-showcase.tsx',
-    '/public-doc-fixtures.tsx',
-    '/settings-screen-shell.tsx',
-    '/addressable-component-gallery.tsx',
-  ].some((suffix) => sourcePath.endsWith(suffix));
+  return DEDICATED_FIXTURE_SOURCES.some((suffix) => sourcePath.endsWith(suffix));
 }
 
-function ExactFixture({ sourcePath, ownerId }: { sourcePath: string; ownerId: string }) {
+function ExactFixture({ sourcePath }: { sourcePath: string }) {
   if (sourcePath.endsWith('/select-showcase.tsx')) return <SelectShowcase />;
   if (sourcePath.endsWith('/table-showcase.tsx')) return <TableShowcase />;
   if (sourcePath.endsWith('/date-picker-showcase.tsx')) return <DatePickerShowcase />;
@@ -62,7 +58,7 @@ function ExactFixture({ sourcePath, ownerId }: { sourcePath: string; ownerId: st
       </SettingsScreenShell>
     );
   }
-  return <PrimitiveFixture ownerId={ownerId} />;
+  return null;
 }
 
 function TargetInspector({
@@ -102,6 +98,14 @@ function TargetInspector({
   );
 }
 
+/**
+ * Renders the exact component target named by `target`.
+ *
+ * The component is controlled: the caller owns target identity so that browser
+ * Back/Forward and in-app example switching cannot diverge into two sources of truth.
+ * Without a resolvable target it renders the plain Component Gallery, so ordinary
+ * browsing never gains exact-target chrome it did not ask for.
+ */
 export function AddressableComponentGallery({
   onBack,
   onTargetChange,
@@ -109,20 +113,12 @@ export function AddressableComponentGallery({
 }: {
   onBack: () => void;
   onTargetChange?: (target: ShowcaseTarget) => void;
-  target: ShowcaseTarget;
+  target: ShowcaseTarget | null;
 }) {
-  const [activeTarget, setActiveTarget] = React.useState(target);
-
-  React.useEffect(
-    () => setActiveTarget(target),
-    [target.surface, target.id, target.example, target.state, target.theme, target.density],
-  );
-
-  const example = findShowcaseExample(activeTarget);
+  const example = target ? findShowcaseExample(target) : undefined;
   const dedicated = Boolean(example && hasDedicatedFixture(example.sourcePath));
 
   const changeTarget = React.useCallback((nextTarget: ShowcaseTarget) => {
-    setActiveTarget(nextTarget);
     if (onTargetChange) onTargetChange(nextTarget);
     else writeShowcaseTargetToLocation(nextTarget, 'push');
   }, [onTargetChange]);
@@ -153,7 +149,7 @@ export function AddressableComponentGallery({
               className="mx-auto w-full max-w-4xl gap-6 px-5 py-6"
               testID="showcase-exact-fixture"
             >
-              <ExactFixture ownerId={example.ownerId} sourcePath={example.sourcePath} />
+              <ExactFixture sourcePath={example.sourcePath} />
             </Box>
           </ScrollView>
         </SafeArea>
@@ -161,14 +157,17 @@ export function AddressableComponentGallery({
     );
   }
 
+  // The inspector stays in normal document flow above the gallery. An overlay here
+  // would sit on top of the gallery's own header and controls and swallow their taps.
   return (
     <Box className="flex-1" testID="addressable-component-gallery">
-      <ComponentGallery onBack={onBack} />
-      <Box
-        className="absolute left-3 right-3 top-3 z-50 items-center"
-        testID="showcase-active-example"
-      >
-        <TargetInspector example={example} onTargetChange={changeTarget} />
+      <SafeArea className="bg-surface" edges={['top', 'left', 'right']}>
+        <Box className="mx-auto w-full max-w-4xl px-4 py-3" testID="showcase-active-example">
+          <TargetInspector example={example} onTargetChange={changeTarget} />
+        </Box>
+      </SafeArea>
+      <Box className="flex-1">
+        <ComponentGallery onBack={onBack} />
       </Box>
     </Box>
   );

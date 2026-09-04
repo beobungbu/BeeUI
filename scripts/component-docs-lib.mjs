@@ -138,6 +138,14 @@ export function listSourceFiles(absDir) {
   return out;
 }
 
+// Showcase sources that only route to an example rather than being one. They import
+// public symbols for their own chrome, so they would otherwise be cited (and, being
+// alphabetically first under component-gallery/, preferred) as a component's canonical
+// executable example. Documentation must cite the fixture, never the router.
+export const SHOWCASE_TARGET_ROUTERS = new Set([
+  'apps/showcase/component-gallery/addressable-component-gallery.tsx',
+]);
+
 // Builds a reverse index from an exported symbol to the repo-relative showcase
 // files that import it. Used to cite REAL, typechecked example fixtures per
 // component instead of hand-written snippets that can rot.
@@ -146,6 +154,7 @@ export function buildShowcaseUsageIndex(rootDir = ROOT_DIR) {
   const bySymbol = new Map();
   for (const abs of listSourceFiles(showcaseAbs)) {
     const rel = path.relative(rootDir, abs).split(path.sep).join('/');
+    if (SHOWCASE_TARGET_ROUTERS.has(rel)) continue;
     const symbols = extractBeeuiImports(fs.readFileSync(abs, 'utf8'));
     for (const symbol of symbols) {
       if (!bySymbol.has(symbol)) bySymbol.set(symbol, new Set());

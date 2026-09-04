@@ -27,7 +27,10 @@ test('opens a form target at the actual Field fixture', async ({ page }) => {
   await page.goto(targetUrl('surface=component&id=field&example=basic'), { waitUntil: 'load' });
 
   await expectActiveTarget(page, 'field / basic');
-  await expect(page.locator('[data-showcase-target-active="true"]')).toHaveText('Email');
+  // The focused element is the whole Field (label + control + helper text); a required
+  // Field's label renders "Email *", so assert containment rather than exact text.
+  await expect(page.locator('[data-showcase-target-active="true"]')).toContainText('Email');
+  await expect(page.getByTestId('component-gallery-field')).toHaveAttribute('data-showcase-target-active', 'true');
 });
 
 test('selects distinct Select examples and synchronizes Back/Forward with the URL', async ({ page }) => {

@@ -197,10 +197,16 @@ export function ShowcaseRoot() {
   }
 
   if (section === 'components') {
-    if (publicTarget?.surface === 'component') {
-      return <AddressableComponentGallery onBack={goHome} target={publicTarget} />;
-    }
-    return <AddressableComponentGallery onBack={goHome} target={{ surface: 'component', id: 'button', example: 'basic' }} />;
+    // Browsing Components without an addressed target must stay the plain gallery.
+    // Synthesizing a default exact target here would put target chrome over the
+    // gallery for every visitor who never asked for one.
+    return (
+      <AddressableComponentGallery
+        onBack={goHome}
+        onTargetChange={(target) => applyTarget(target, 'push')}
+        target={publicTarget?.surface === 'component' ? publicTarget : null}
+      />
+    );
   }
 
   if (section === 'patterns') {
