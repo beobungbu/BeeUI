@@ -20,7 +20,6 @@ apps/demo/dist-web/
 apps/demo/dist-public-web/
 apps/demo/dist-ios/
 apps/demo/dist-android/
-apps/docs/src/content/docs/components/reference/
 apps/docs/src/content/docs/patterns/reference/
 apps/docs/src/content/docs/compatibility/current.md
 apps/docs/src/content/docs/guides/current-release.md

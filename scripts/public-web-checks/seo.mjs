@@ -54,10 +54,11 @@ export async function collectViolations(rootDir) {
     if (!og.includes('width="1200"') || !og.includes('height="630"')) violations.push('shared OG asset must remain 1200x630.');
 
     const gitignore = fs.readFileSync(path.join(rootDir, '.gitignore'), 'utf8');
-    for (const generatedDir of [
-      'apps/docs/src/content/docs/components/reference/',
-      'apps/docs/src/content/docs/patterns/reference/',
-    ]) {
+    // Component pages are generated but deliberately tracked: docs:surface:check runs before
+    // any docs build, so an untracked page would leave all 444 component surfaces counted as
+    // planned and the coverage number would keep overstating what is written. Their freshness
+    // is gated by public-component-reference.mjs --check instead of by gitignore.
+    for (const generatedDir of ['apps/docs/src/content/docs/patterns/reference/']) {
       if (!gitignore.includes(generatedDir)) violations.push(`generated docs output is not ignored: ${generatedDir}`);
     }
   } finally {

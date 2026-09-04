@@ -181,36 +181,35 @@ const rule = (fromPrefix, toPrefix, aliasOf) => ({
   ...(aliasOf ? { aliasOf } : {}),
 });
 
+const KNOWN = new Set(['/docs/components/', '/docs/start/', '/docs/guides/table/']);
+
 // These drive collectRedirectViolations itself. Asserting properties of the production
 // config instead would only ever exercise the one input already known to pass.
-test('an alias may share a destination with the canonical rule it aliases', () => {
+//
+// Convergence is normal: a section index is reached both from its pre-/docs origin alias and
+// from a child prefix the IA has vacated. The rule that forbade it rejected correct config and,
+// in exchange, never checked the thing that actually strands a visitor.
+test('several sources may converge on one real destination', () => {
   assert.deepEqual(
-    collectRedirectViolations([
-      rule('/docs/getting-started/', '/docs/start/'),
-      rule('/getting-started/', '/docs/start/', '/docs/getting-started/'),
-    ]),
+    collectRedirectViolations(
+      [rule('/components/', '/docs/components/'), rule('/docs/components/reference/', '/docs/components/')],
+      { knownRoutes: KNOWN },
+    ),
     [],
   );
 });
 
-test('two unrelated sources may not claim one destination, even an aliased one', () => {
-  const violations = collectRedirectViolations([
-    rule('/docs/getting-started/', '/docs/start/'),
-    rule('/getting-started/', '/docs/start/', '/docs/getting-started/'),
-    rule('/docs/quickstart/', '/docs/start/'),
-  ]);
-  assert.ok(
-    violations.some((violation) => violation.includes('ambiguous duplicate redirect destination /docs/start/')),
-    violations.join('\n'),
-  );
+test('a redirect that points at no published page is rejected', () => {
+  const violations = collectRedirectViolations([rule('/docs/old/', '/docs/does-not-exist/')], { knownRoutes: KNOWN });
+  assert.ok(violations.some((v) => v.includes('not a published page')), violations.join('\n'));
 });
 
-test('an alias pointing at a source it does not actually alias is rejected', () => {
-  const violations = collectRedirectViolations([
-    rule('/docs/getting-started/', '/docs/start/'),
-    rule('/intro/', '/docs/start/', '/docs/somewhere-else/'),
-  ]);
-  assert.ok(violations.some((violation) => violation.includes('aliases /docs/somewhere-else/')), violations.join('\n'));
+test('an alias naming something that is not a redirect source is rejected', () => {
+  const violations = collectRedirectViolations(
+    [rule('/x/', '/docs/start/', '/docs/never-a-source/')],
+    { knownRoutes: KNOWN },
+  );
+  assert.ok(violations.some((v) => v.includes('not a redirect source')), violations.join('\n'));
 });
 
 test('a redirect source that shadows a more specific source is rejected', () => {

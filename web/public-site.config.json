@@ -46,7 +46,9 @@
       { "fromPrefix": "/docs/theming/density/", "toPrefix": "/docs/guides/density/", "status": 308, "ownerIssue": 458 },
       { "fromPrefix": "/docs/cli/", "toPrefix": "/docs/guides/cli-source-ownership/", "status": 308, "ownerIssue": 458 },
       { "fromPrefix": "/docs/troubleshooting/", "toPrefix": "/docs/guides/troubleshooting/", "status": 308, "ownerIssue": 458 },
-      { "fromPrefix": "/docs/migration/", "toPrefix": "/docs/guides/migration-versioning/", "status": 308, "ownerIssue": 458 }
+      { "fromPrefix": "/docs/migration/", "toPrefix": "/docs/guides/migration-versioning/", "status": 308, "ownerIssue": 458 },
+      { "fromPrefix": "/docs/components/reference/", "toPrefix": "/docs/components/", "status": 308, "ownerIssue": 459 },
+      { "fromPrefix": "/docs/components/calendar-date-time/", "toPrefix": "/docs/guides/date-time/", "status": 308, "ownerIssue": 459 }
     ],
     "metadataContracts": {
       "implementation": "apps/docs/src/lib/foundation-contract.ts",

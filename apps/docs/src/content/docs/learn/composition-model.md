@@ -27,12 +27,12 @@ Every compound family in BeeUI has the same shape, only the names change:
 
 | Family | Root | Typical parts |
 | --- | --- | --- |
-| [`Select`](/docs/components/reference/select/) | `Select` | `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectGroup`, `SelectLabel`, `SelectItem` |
-| [`Dialog`](/docs/components/reference/dialog/) | `Dialog` | `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose` |
-| [`Sheet`](/docs/components/reference/sheet/) | `Sheet` | `SheetTrigger`, `SheetContent`, `SheetHandle`, `SheetTitle`, `SheetDescription`, `SheetFooter`, `SheetClose` |
-| [`Tabs`](/docs/components/reference/tabs/) | `Tabs` | `TabsList`, `TabsTrigger`, `TabsContent` |
-| [`Accordion`](/docs/components/reference/accordion/) | `Accordion` | `AccordionItem`, `AccordionTrigger`, `AccordionContent` |
-| [`Field`](/docs/components/reference/field/) | `Field` | any control as `children`; label, description and error are props |
+| [`Select`](/docs/components/select/) | `Select` | `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectGroup`, `SelectLabel`, `SelectItem` |
+| [`Dialog`](/docs/components/dialog/) | `Dialog` | `DialogTrigger`, `DialogContent`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose` |
+| [`Sheet`](/docs/components/sheet/) | `Sheet` | `SheetTrigger`, `SheetContent`, `SheetHandle`, `SheetTitle`, `SheetDescription`, `SheetFooter`, `SheetClose` |
+| [`Tabs`](/docs/components/tabs/) | `Tabs` | `TabsList`, `TabsTrigger`, `TabsContent` |
+| [`Accordion`](/docs/components/accordion/) | `Accordion` | `AccordionItem`, `AccordionTrigger`, `AccordionContent` |
+| [`Field`](/docs/components/field/) | `Field` | any control as `children`; label, description and error are props |
 
 A minimal, representative composition:
 

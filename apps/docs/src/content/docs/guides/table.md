@@ -15,7 +15,7 @@ loop, so you also control memoization; BeeUI stores nothing, so sorting and sele
 plain React state you already know how to test.
 
 This is the task guide. For the mechanically generated prop and type inventory, use the
-[Table reference](/docs/components/reference/table/).
+[Table reference](/docs/components/table/).
 
 ## Anatomy
 
@@ -286,7 +286,7 @@ BeeUI's benchmark classes and budgets are defined.
 
 ## Related
 
-- [Table reference](/docs/components/reference/table/) — generated props and types.
+- [Table reference](/docs/components/table/) — generated props and types.
 - [Density](/docs/guides/density/) — the axis that drives row and cell metrics.
 - [Responsive](/docs/responsive/) — how BeeUI thinks about width.
 - [Accessibility](/docs/accessibility/) and [Keyboard & focus](/docs/accessibility/keyboard-focus/).

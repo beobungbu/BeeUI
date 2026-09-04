@@ -23,9 +23,9 @@ Three components:
 | `DateTimePicker` | `{ date: CalendarDate; time: ClockTime } \| null` | Same split, plus a time part. |
 
 For the generated prop and type inventory, use the
-[Calendar](/docs/components/reference/calendar/),
-[DatePicker](/docs/components/reference/date-picker/) and
-[DateTimePicker](/docs/components/reference/date-time-picker/) reference pages.
+[Calendar](/docs/components/calendar/),
+[DatePicker](/docs/components/date-picker/) and
+[DateTimePicker](/docs/components/date-time-picker/) reference pages.
 
 ## Value semantics
 
@@ -287,7 +287,7 @@ every week is complete. It is not padded to a fixed row count — expect five or
 
 ## Related
 
-- [Calendar reference](/docs/components/reference/calendar/) · [DatePicker reference](/docs/components/reference/date-picker/) · [DateTimePicker reference](/docs/components/reference/date-time-picker/)
+- [Calendar reference](/docs/components/calendar/) · [DatePicker reference](/docs/components/date-picker/) · [DateTimePicker reference](/docs/components/date-time-picker/)
 - [Accessibility](/docs/accessibility/) and [RTL & localization](/docs/accessibility/rtl/)
 - [Compatibility](/docs/compatibility/) — the optional native picker peer range.
 - [Troubleshooting](/docs/guides/troubleshooting/) — missing native module and overlay symptoms.

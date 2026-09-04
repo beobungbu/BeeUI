@@ -17,4 +17,4 @@ actual Tab/Shift+Tab and Escape, not only pointer clicks.
 Native hardware keyboard/focus behavior is platform runtime behavior; compile success alone
 is insufficient evidence.
 
-See [keyboard/focus acceptance](https://github.com/beobungbu/BeeUI/blob/main/docs/keyboard-focus-acceptance-matrix.md), [anchored overlays](https://github.com/beobungbu/BeeUI/blob/main/docs/anchored-overlays.md), and [Component reference](/docs/components/reference/).
+See [keyboard/focus acceptance](https://github.com/beobungbu/BeeUI/blob/main/docs/keyboard-focus-acceptance-matrix.md), [anchored overlays](https://github.com/beobungbu/BeeUI/blob/main/docs/anchored-overlays.md), and [Component reference](/docs/components/).

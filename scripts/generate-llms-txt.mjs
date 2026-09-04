@@ -79,8 +79,8 @@ export const LINKED_PATHS = [
   'apps/docs/src/content/docs/start/provider-safe-area.md',
   'apps/docs/src/content/docs/guides/cli-source-ownership.md',
   'apps/docs/src/content/docs/components/index.md',
-  'apps/docs/src/content/docs/components/table.md',
-  'apps/docs/src/content/docs/components/calendar-date-time.md',
+  'apps/docs/src/content/docs/guides/table.md',
+  'apps/docs/src/content/docs/guides/date-time.md',
   'apps/docs/src/content/docs/patterns/index.md',
   'apps/docs/src/content/docs/performance/index.md',
   'examples/README.md',
@@ -359,7 +359,7 @@ ${adrs.map(([slug, note]) => `- [ADR-${slug.slice(0, 3)} ${slug.slice(4)}](docs/
 - Authority index: [docs/README.md](docs/README.md)
 - Start: [Expo](apps/docs/src/content/docs/start/expo.md) · [bare RN](apps/docs/src/content/docs/start/bare-react-native.md) · [Web](apps/docs/src/content/docs/start/web.md)
 - CLI: [apps/docs/src/content/docs/guides/cli-source-ownership.md](apps/docs/src/content/docs/guides/cli-source-ownership.md)
-- Components site: [apps/docs/src/content/docs/components/index.md](apps/docs/src/content/docs/components/index.md) (deep dives: [Table](apps/docs/src/content/docs/components/table.md), [Calendar/DatePicker](apps/docs/src/content/docs/components/calendar-date-time.md))
+- Components site: [apps/docs/src/content/docs/components/index.md](apps/docs/src/content/docs/components/index.md) (deep dives: [Table guide](apps/docs/src/content/docs/guides/table.md), [Dates and times guide](apps/docs/src/content/docs/guides/date-time.md))
 - Performance: methodology [docs/benchmark-harness.md](docs/benchmark-harness.md) · baseline report [docs/performance-baseline-report.md](docs/performance-baseline-report.md) · package/bundle footprint [docs/bundle-footprint-baseline.md](docs/bundle-footprint-baseline.md) · docs site [apps/docs/src/content/docs/performance/index.md](apps/docs/src/content/docs/performance/index.md)
 - Release policy: [docs/release.md](docs/release.md) · Changelog: [CHANGELOG.md](CHANGELOG.md) · License: [LICENSE](LICENSE) (MIT)
 
@@ -404,8 +404,8 @@ ${model.privateUtilities.map((name) => `- \`${name}\``).join('\n')}
 
 ## Deep-dive contracts
 - Overlays (Popover/DropdownMenu/Select/Tooltip): [docs/anchored-overlays.md](docs/anchored-overlays.md), [ADR-002](docs/decisions/002-overlay-behavior.md), [ADR-005](docs/decisions/005-tooltip-contract.md), [ADR-010](docs/decisions/010-select-presentation-1-0-decision.md).
-- Sheet: [ADR-006](docs/decisions/006-sheet-gesture-engine.md). Table: [ADR-007](docs/decisions/007-table-datatable-architecture.md), [apps/docs/src/content/docs/components/table.md](apps/docs/src/content/docs/components/table.md).
-- Calendar/DatePicker/DateTimePicker: [ADR-008](docs/decisions/008-datetime-architecture.md), [apps/docs/src/content/docs/components/calendar-date-time.md](apps/docs/src/content/docs/components/calendar-date-time.md).
+- Sheet: [ADR-006](docs/decisions/006-sheet-gesture-engine.md). Table: [ADR-007](docs/decisions/007-table-datatable-architecture.md), [apps/docs/src/content/docs/guides/table.md](apps/docs/src/content/docs/guides/table.md).
+- Calendar/DatePicker/DateTimePicker: [ADR-008](docs/decisions/008-datetime-architecture.md), [apps/docs/src/content/docs/guides/date-time.md](apps/docs/src/content/docs/guides/date-time.md).
 
 ${HEADER_NOTE}
 `;

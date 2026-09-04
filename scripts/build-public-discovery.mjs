@@ -110,9 +110,9 @@ ${scripts ? '<script src="/assets/examples.js" defer></script>' : ''}
 <header class="site-header">
   <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">B</span><span>BeeUI</span></a>
   <nav class="desktop-nav" aria-label="Primary">
-    <a href="/docs/">Docs</a><a href="/docs/components/reference/">Components</a><a href="/docs/patterns/reference/">Patterns</a><a href="/showcase/">Showcase</a><a href="/demo/">Demo</a>
+    <a href="/docs/">Docs</a><a href="/docs/components/">Components</a><a href="/docs/patterns/reference/">Patterns</a><a href="/showcase/">Showcase</a><a href="/demo/">Demo</a>
   </nav>
-  <details class="mobile-nav"><summary>Menu</summary><nav aria-label="Mobile primary"><a href="/docs/">Docs</a><a href="/docs/components/reference/">Components</a><a href="/docs/patterns/reference/">Patterns</a><a href="/showcase/">Showcase</a><a href="/demo/">Demo</a></nav></details>
+  <details class="mobile-nav"><summary>Menu</summary><nav aria-label="Mobile primary"><a href="/docs/">Docs</a><a href="/docs/components/">Components</a><a href="/docs/patterns/reference/">Patterns</a><a href="/showcase/">Showcase</a><a href="/demo/">Demo</a></nav></details>
 </header>
 ${body}
 </body>
@@ -222,7 +222,7 @@ function renderHub({ contract, components, patterns, featured }) {
   <label class="example-search"><span>Filter examples</span><input type="search" placeholder="Try dialog, table, checkout, settings…" data-example-search autocomplete="off" /></label>
   <p class="example-search-status" data-example-search-status aria-live="polite"></p>
   <div class="example-group">
-    <div class="example-group-heading"><h3>Component recipes</h3><a href="/docs/components/reference/">Full component docs →</a></div>
+    <div class="example-group-heading"><h3>Component recipes</h3><a href="/docs/components/">Full component docs →</a></div>
     <div class="examples-grid" data-example-collection>${componentCards}</div>
   </div>
   <div class="example-group">

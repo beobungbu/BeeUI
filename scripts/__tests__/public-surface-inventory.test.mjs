@@ -121,8 +121,18 @@ test('every owner route resolves inside a ratified docs IA section', () => {
     );
     assert.equal(row.ownerStatus, published.has(row.primaryDocsOwner) ? 'published' : 'planned', row.id);
   }
-  // Coverage must never be claimed for pages that do not exist yet.
-  assert.ok(rows.some((row) => row.ownerStatus === 'planned'), 'ownerStatus must distinguish unwritten pages');
+});
+
+// The per-row assertion above already ties ownerStatus to whether the page exists. This
+// proves `planned` is still reachable, which used to be shown by the inventory simply having
+// unwritten pages in it — true while 663 of 683 surfaces were undocumented, and no longer a
+// property of a finished program. Coverage must stay unclaimable for a page nobody wrote,
+// even once every page has been written.
+test('an owner route with no page is planned, not published', () => {
+  const { published } = resolveOwnerRoutes(ROOT_DIR);
+  const unwritten = '/docs/reference/nobody-wrote-this/';
+  assert.equal(published.has(unwritten), false);
+  assert.equal(published.has('/docs/components/button/'), true);
 });
 
 test('an owner route outside the ratified IA is a violation', () => {

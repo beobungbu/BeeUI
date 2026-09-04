@@ -136,7 +136,7 @@ jobs:
           node -e "const fs=require('fs'); const j=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/health.json')); if(!j.ok||j.service!=='beeui-web'||j.commit!==process.env.SOURCE_SHA||j.environment!==process.env.ARTIFACT_ENV) process.exit(1)"
           curl --silent --fail http://127.0.0.1:8787/ >/dev/null
           curl --silent --fail http://127.0.0.1:8787/docs/ >/dev/null
-          curl --silent --fail http://127.0.0.1:8787/docs/components/reference/button/ >/dev/null
+          curl --silent --fail http://127.0.0.1:8787/docs/components/button/ >/dev/null
           curl --silent --fail http://127.0.0.1:8787/docs/patterns/reference/auth/sign-in-screen/ >/dev/null
           curl --silent --fail http://127.0.0.1:8787/showcase/ >/dev/null
           curl --silent --fail http://127.0.0.1:8787/demo/ >/dev/null

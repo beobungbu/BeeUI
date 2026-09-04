@@ -2213,7 +2213,7 @@
       "implementation": "./src/components/accordion",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/accordion/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./alert-banner",
@@ -2224,7 +2224,7 @@
       "implementation": "./src/components/alert-banner",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/alert-banner/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./alert-dialog",
@@ -2235,7 +2235,7 @@
       "implementation": "./src/components/alert-dialog",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/alert-dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./app-header",
@@ -2246,7 +2246,7 @@
       "implementation": "./src/components/app-header",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/app-header/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./avatar",
@@ -2257,7 +2257,7 @@
       "implementation": "./src/components/avatar",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/avatar/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./badge",
@@ -2268,7 +2268,7 @@
       "implementation": "./src/components/badge",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/badge/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./bottom-action-bar",
@@ -2279,7 +2279,7 @@
       "implementation": "./src/components/bottom-action-bar",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/bottom-action-bar/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./box",
@@ -2290,7 +2290,7 @@
       "implementation": "./src/components/box",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/box/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./breadcrumb",
@@ -2301,7 +2301,7 @@
       "implementation": "./src/components/breadcrumb",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/breadcrumb/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./button",
@@ -2312,7 +2312,7 @@
       "implementation": "./src/components/button",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/button/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./calendar",
@@ -2323,7 +2323,7 @@
       "implementation": "./src/components/calendar",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/calendar/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./card",
@@ -2334,7 +2334,7 @@
       "implementation": "./src/components/card",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/card/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./checkbox",
@@ -2345,7 +2345,7 @@
       "implementation": "./src/components/checkbox",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/checkbox/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./chip",
@@ -2356,7 +2356,7 @@
       "implementation": "./src/components/chip",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/chip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./collapsible",
@@ -2367,7 +2367,7 @@
       "implementation": "./src/components/collapsible",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/collapsible/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./date-picker",
@@ -2378,7 +2378,7 @@
       "implementation": "./src/components/date-picker",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/date-picker/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./date-time-picker",
@@ -2389,7 +2389,7 @@
       "implementation": "./src/components/date-time-picker",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/date-time-picker/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./description-list",
@@ -2400,7 +2400,7 @@
       "implementation": "./src/components/description-list",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/description-list/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./dialog",
@@ -2411,7 +2411,7 @@
       "implementation": "./src/components/dialog",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./dropdown-menu",
@@ -2422,7 +2422,7 @@
       "implementation": "./src/components/dropdown-menu",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./field",
@@ -2433,7 +2433,7 @@
       "implementation": "./src/components/field",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/field/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./form-group",
@@ -2444,7 +2444,7 @@
       "implementation": "./src/components/form-group",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/form-group/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./form-message",
@@ -2455,7 +2455,7 @@
       "implementation": "./src/components/form-message",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/form-message/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./icon-button",
@@ -2466,7 +2466,7 @@
       "implementation": "./src/components/icon-button",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/icon-button/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./input",
@@ -2477,7 +2477,7 @@
       "implementation": "./src/components/input",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/input/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./keyboard-aware-screen",
@@ -2488,7 +2488,7 @@
       "implementation": "./src/components/keyboard-aware-screen",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/keyboard-aware-screen/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./label",
@@ -2499,7 +2499,7 @@
       "implementation": "./src/components/label",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/label/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./link",
@@ -2510,7 +2510,7 @@
       "implementation": "./src/components/link",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/link/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./list-group",
@@ -2521,7 +2521,7 @@
       "implementation": "./src/components/list-group",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/list-group/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./list-item",
@@ -2532,7 +2532,7 @@
       "implementation": "./src/components/list-item",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/list-item/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./metadata-row",
@@ -2543,7 +2543,7 @@
       "implementation": "./src/components/metadata-row",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/metadata-row/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./otp-input",
@@ -2554,7 +2554,7 @@
       "implementation": "./src/components/otp-input",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/otp-input/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./pagination",
@@ -2565,7 +2565,7 @@
       "implementation": "./src/components/pagination",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/pagination/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./password-input",
@@ -2576,7 +2576,7 @@
       "implementation": "./src/components/password-input",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/password-input/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./popover",
@@ -2587,7 +2587,7 @@
       "implementation": "./src/components/popover",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/popover/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./progress",
@@ -2598,7 +2598,7 @@
       "implementation": "./src/components/progress",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/progress/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./radio",
@@ -2609,7 +2609,7 @@
       "implementation": "./src/components/radio",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/radio/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./safe-area",
@@ -2620,7 +2620,7 @@
       "implementation": "./src/components/safe-area",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/safe-area/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./screen",
@@ -2631,7 +2631,7 @@
       "implementation": "./src/components/screen",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/screen/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./search-input",
@@ -2642,7 +2642,7 @@
       "implementation": "./src/components/search-input",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/search-input/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./section",
@@ -2653,7 +2653,7 @@
       "implementation": "./src/components/section",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/section/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./segmented-control",
@@ -2664,7 +2664,7 @@
       "implementation": "./src/components/segmented-control",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/segmented-control/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./select",
@@ -2675,7 +2675,7 @@
       "implementation": "./src/components/select",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./separator",
@@ -2686,7 +2686,7 @@
       "implementation": "./src/components/separator",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/separator/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./sheet",
@@ -2697,7 +2697,7 @@
       "implementation": "./src/components/sheet",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/sheet/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./skeleton",
@@ -2708,7 +2708,7 @@
       "implementation": "./src/components/skeleton",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/skeleton/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./spinner",
@@ -2719,7 +2719,7 @@
       "implementation": "./src/components/spinner",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/spinner/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./stack",
@@ -2730,7 +2730,7 @@
       "implementation": "./src/components/stack",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/stack/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./stat",
@@ -2741,7 +2741,7 @@
       "implementation": "./src/components/stat",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/stat/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./state-message",
@@ -2752,7 +2752,7 @@
       "implementation": "./src/components/state-message",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/state-message/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./stepper",
@@ -2763,7 +2763,7 @@
       "implementation": "./src/components/stepper",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/stepper/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./switch",
@@ -2774,7 +2774,7 @@
       "implementation": "./src/components/switch",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/switch/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./table",
@@ -2796,7 +2796,7 @@
       "implementation": "./src/components/tabs",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/tabs/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./text",
@@ -2807,7 +2807,7 @@
       "implementation": "./src/components/text",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/text/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./textarea",
@@ -2818,7 +2818,7 @@
       "implementation": "./src/components/textarea",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/textarea/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./theme-scope",
@@ -2829,7 +2829,7 @@
       "implementation": "./src/components/theme-scope",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/theme-scope/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./timeline",
@@ -2840,7 +2840,7 @@
       "implementation": "./src/components/timeline",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/timeline/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./toast",
@@ -2851,7 +2851,7 @@
       "implementation": "./src/components/toast",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/toast/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./tooltip",
@@ -2862,7 +2862,7 @@
       "implementation": "./src/components/tooltip",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/tooltip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./use-bee-token",
@@ -2873,7 +2873,7 @@
       "implementation": "./src/components/use-bee-token",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/use-bee-token/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:export:./visually-hidden",
@@ -2884,7 +2884,7 @@
       "implementation": "./src/components/visually-hidden",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/visually-hidden/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:AccordionContentProps",
@@ -2895,7 +2895,7 @@
       "source": "packages/ui/src/components/accordion.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/accordion/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:AccordionItemProps",
@@ -2906,7 +2906,7 @@
       "source": "packages/ui/src/components/accordion.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/accordion/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:AccordionProps",
@@ -2917,7 +2917,7 @@
       "source": "packages/ui/src/components/accordion.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/accordion/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:AccordionTriggerProps",
@@ -2928,7 +2928,7 @@
       "source": "packages/ui/src/components/accordion.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/accordion/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:AlertBannerProps",
@@ -2939,7 +2939,7 @@
       "source": "packages/ui/src/components/alert-banner.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/alert-banner/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:AlertDialogActionProps",
@@ -2950,7 +2950,7 @@
       "source": "packages/ui/src/components/alert-dialog.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/alert-dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:AlertDialogCancelProps",
@@ -2961,7 +2961,7 @@
       "source": "packages/ui/src/components/alert-dialog.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/alert-dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:AlertDialogContentProps",
@@ -2972,7 +2972,7 @@
       "source": "packages/ui/src/components/alert-dialog.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/alert-dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:AlertDialogDescriptionProps",
@@ -2983,7 +2983,7 @@
       "source": "packages/ui/src/components/alert-dialog.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/alert-dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:AlertDialogFooterProps",
@@ -2994,7 +2994,7 @@
       "source": "packages/ui/src/components/alert-dialog.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/alert-dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:AlertDialogProps",
@@ -3005,7 +3005,7 @@
       "source": "packages/ui/src/components/alert-dialog.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/alert-dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:AlertDialogTitleProps",
@@ -3016,7 +3016,7 @@
       "source": "packages/ui/src/components/alert-dialog.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/alert-dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:AlertDialogTriggerProps",
@@ -3027,7 +3027,7 @@
       "source": "packages/ui/src/components/alert-dialog.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/alert-dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:AppHeaderProps",
@@ -3038,7 +3038,7 @@
       "source": "packages/ui/src/components/app-header.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/app-header/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:AvatarProps",
@@ -3049,7 +3049,7 @@
       "source": "packages/ui/src/components/avatar.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/avatar/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:BadgeProps",
@@ -3060,7 +3060,7 @@
       "source": "packages/ui/src/components/badge.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/badge/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:BeeThemeScopeProps",
@@ -3071,7 +3071,7 @@
       "source": "packages/ui/src/components/theme-scope.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/theme-scope/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:BeeUIProviderProps",
@@ -3082,7 +3082,7 @@
       "source": "packages/ui/src/components/safe-area.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/safe-area/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:BottomActionBarProps",
@@ -3093,7 +3093,7 @@
       "source": "packages/ui/src/components/bottom-action-bar.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/bottom-action-bar/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:BoxProps",
@@ -3104,7 +3104,7 @@
       "source": "packages/ui/src/components/box.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/box/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:BreadcrumbItemProps",
@@ -3115,7 +3115,7 @@
       "source": "packages/ui/src/components/breadcrumb.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/breadcrumb/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:BreadcrumbProps",
@@ -3126,7 +3126,7 @@
       "source": "packages/ui/src/components/breadcrumb.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/breadcrumb/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:ButtonLabelProps",
@@ -3137,7 +3137,7 @@
       "source": "packages/ui/src/components/button.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/button/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:ButtonProps",
@@ -3148,7 +3148,7 @@
       "source": "packages/ui/src/components/button.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/button/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:CalendarProps",
@@ -3159,7 +3159,7 @@
       "source": "packages/ui/src/components/calendar.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/calendar/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:CalendarVisibleMonth",
@@ -3170,7 +3170,7 @@
       "source": "packages/ui/src/components/calendar.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/calendar/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:CardProps",
@@ -3181,7 +3181,7 @@
       "source": "packages/ui/src/components/card.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/card/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:CheckboxProps",
@@ -3192,7 +3192,7 @@
       "source": "packages/ui/src/components/checkbox.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/checkbox/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:CheckboxValue",
@@ -3203,7 +3203,7 @@
       "source": "packages/ui/src/components/checkbox.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/checkbox/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:ChipGroupProps",
@@ -3214,7 +3214,7 @@
       "source": "packages/ui/src/components/chip.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/chip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:ChipGroupValue",
@@ -3225,7 +3225,7 @@
       "source": "packages/ui/src/components/chip.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/chip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:ChipProps",
@@ -3236,7 +3236,7 @@
       "source": "packages/ui/src/components/chip.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/chip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:ChipSelectionMode",
@@ -3247,7 +3247,7 @@
       "source": "packages/ui/src/components/chip.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/chip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:CollapsibleContentProps",
@@ -3258,7 +3258,7 @@
       "source": "packages/ui/src/components/collapsible.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/collapsible/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:CollapsibleProps",
@@ -3269,7 +3269,7 @@
       "source": "packages/ui/src/components/collapsible.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/collapsible/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:CollapsibleTriggerProps",
@@ -3280,7 +3280,7 @@
       "source": "packages/ui/src/components/collapsible.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/collapsible/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DatePickerAlign",
@@ -3291,7 +3291,7 @@
       "source": "packages/ui/src/components/date-picker.native.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/date-picker/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DatePickerCollisionPadding",
@@ -3302,7 +3302,7 @@
       "source": "packages/ui/src/components/date-picker.native.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/date-picker/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DatePickerDirection",
@@ -3313,7 +3313,7 @@
       "source": "packages/ui/src/components/date-picker.native.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/date-picker/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DatePickerPlacement",
@@ -3324,7 +3324,7 @@
       "source": "packages/ui/src/components/date-picker.native.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/date-picker/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DatePickerProps",
@@ -3335,7 +3335,7 @@
       "source": "packages/ui/src/components/date-picker.native.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/date-picker/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DateTimePickerAlign",
@@ -3346,7 +3346,7 @@
       "source": "packages/ui/src/components/date-time-picker.native.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/date-time-picker/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DateTimePickerCollisionPadding",
@@ -3357,7 +3357,7 @@
       "source": "packages/ui/src/components/date-time-picker.native.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/date-time-picker/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DateTimePickerDirection",
@@ -3368,7 +3368,7 @@
       "source": "packages/ui/src/components/date-time-picker.native.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/date-time-picker/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DateTimePickerPlacement",
@@ -3379,7 +3379,7 @@
       "source": "packages/ui/src/components/date-time-picker.native.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/date-time-picker/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DateTimePickerProps",
@@ -3390,7 +3390,7 @@
       "source": "packages/ui/src/components/date-time-picker.native.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/date-time-picker/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DateTimePickerValue",
@@ -3401,7 +3401,7 @@
       "source": "packages/ui/src/components/date-time-picker.native.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/date-time-picker/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DescriptionItemProps",
@@ -3412,7 +3412,7 @@
       "source": "packages/ui/src/components/description-list.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/description-list/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DescriptionListProps",
@@ -3423,7 +3423,7 @@
       "source": "packages/ui/src/components/description-list.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/description-list/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DialogCloseProps",
@@ -3434,7 +3434,7 @@
       "source": "packages/ui/src/components/dialog.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DialogContentProps",
@@ -3445,7 +3445,7 @@
       "source": "packages/ui/src/components/dialog.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DialogDescriptionProps",
@@ -3456,7 +3456,7 @@
       "source": "packages/ui/src/components/dialog.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DialogFooterProps",
@@ -3467,7 +3467,7 @@
       "source": "packages/ui/src/components/dialog.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DialogProps",
@@ -3478,7 +3478,7 @@
       "source": "packages/ui/src/components/dialog.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DialogTitleProps",
@@ -3489,7 +3489,7 @@
       "source": "packages/ui/src/components/dialog.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DialogTriggerProps",
@@ -3500,7 +3500,7 @@
       "source": "packages/ui/src/components/dialog.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DropdownMenuAlign",
@@ -3511,7 +3511,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DropdownMenuCheckboxItemProps",
@@ -3522,7 +3522,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DropdownMenuCollisionPadding",
@@ -3533,7 +3533,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DropdownMenuContentProps",
@@ -3544,7 +3544,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DropdownMenuDirection",
@@ -3555,7 +3555,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DropdownMenuItemProps",
@@ -3566,7 +3566,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DropdownMenuLabelProps",
@@ -3577,7 +3577,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DropdownMenuPlacement",
@@ -3588,7 +3588,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DropdownMenuProps",
@@ -3599,7 +3599,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DropdownMenuRadioGroupProps",
@@ -3610,7 +3610,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DropdownMenuRadioItemProps",
@@ -3621,7 +3621,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DropdownMenuSeparatorProps",
@@ -3632,7 +3632,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:DropdownMenuTriggerProps",
@@ -3643,7 +3643,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:EmptyStateProps",
@@ -3654,7 +3654,7 @@
       "source": "packages/ui/src/components/state-message.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/state-message/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:ErrorStateProps",
@@ -3665,7 +3665,7 @@
       "source": "packages/ui/src/components/state-message.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/state-message/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:FieldProps",
@@ -3676,7 +3676,7 @@
       "source": "packages/ui/src/components/field.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/field/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:FontFamily",
@@ -3687,7 +3687,7 @@
       "source": "packages/ui/src/components/text.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/text/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:FormGroupProps",
@@ -3698,7 +3698,7 @@
       "source": "packages/ui/src/components/form-group.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/form-group/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:FormMessageProps",
@@ -3709,7 +3709,7 @@
       "source": "packages/ui/src/components/form-message.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/form-message/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:HelperTextProps",
@@ -3720,7 +3720,7 @@
       "source": "packages/ui/src/components/form-message.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/form-message/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:HStackProps",
@@ -3731,7 +3731,7 @@
       "source": "packages/ui/src/components/stack.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/stack/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:IconButtonProps",
@@ -3742,7 +3742,7 @@
       "source": "packages/ui/src/components/icon-button.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/icon-button/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:InputProps",
@@ -3753,7 +3753,7 @@
       "source": "packages/ui/src/components/input.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/input/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:KeyboardAwareScreenContentWidth",
@@ -3764,7 +3764,7 @@
       "source": "packages/ui/src/components/keyboard-aware-screen.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/keyboard-aware-screen/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:KeyboardAwareScreenKeyboardDismissMode",
@@ -3775,7 +3775,7 @@
       "source": "packages/ui/src/components/keyboard-aware-screen.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/keyboard-aware-screen/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:KeyboardAwareScreenProps",
@@ -3786,7 +3786,7 @@
       "source": "packages/ui/src/components/keyboard-aware-screen.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/keyboard-aware-screen/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:KeyboardAwareScreenSafeAreaEdges",
@@ -3797,7 +3797,7 @@
       "source": "packages/ui/src/components/keyboard-aware-screen.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/keyboard-aware-screen/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:LabelProps",
@@ -3808,7 +3808,7 @@
       "source": "packages/ui/src/components/label.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/label/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:LinkProps",
@@ -3819,7 +3819,7 @@
       "source": "packages/ui/src/components/link.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/link/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:ListGroupHeaderProps",
@@ -3830,7 +3830,7 @@
       "source": "packages/ui/src/components/list-group.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/list-group/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:ListGroupProps",
@@ -3841,7 +3841,7 @@
       "source": "packages/ui/src/components/list-group.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/list-group/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:ListItemProps",
@@ -3852,7 +3852,7 @@
       "source": "packages/ui/src/components/list-item.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/list-item/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:MetadataRowProps",
@@ -3863,7 +3863,7 @@
       "source": "packages/ui/src/components/metadata-row.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/metadata-row/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:NumericVariant",
@@ -3874,7 +3874,7 @@
       "source": "packages/ui/src/components/text.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/text/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:OTPInputProps",
@@ -3885,7 +3885,7 @@
       "source": "packages/ui/src/components/otp-input.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/otp-input/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:PaginationItemProps",
@@ -3896,7 +3896,7 @@
       "source": "packages/ui/src/components/pagination.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/pagination/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:PaginationItemType",
@@ -3907,7 +3907,7 @@
       "source": "packages/ui/src/components/pagination.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/pagination/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:PaginationProps",
@@ -3918,7 +3918,7 @@
       "source": "packages/ui/src/components/pagination.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/pagination/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:PasswordInputProps",
@@ -3929,7 +3929,7 @@
       "source": "packages/ui/src/components/password-input.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/password-input/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:PopoverAlign",
@@ -3940,7 +3940,7 @@
       "source": "packages/ui/src/components/popover.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/popover/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:PopoverCloseProps",
@@ -3951,7 +3951,7 @@
       "source": "packages/ui/src/components/popover.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/popover/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:PopoverCollisionPadding",
@@ -3962,7 +3962,7 @@
       "source": "packages/ui/src/components/popover.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/popover/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:PopoverContentProps",
@@ -3973,7 +3973,7 @@
       "source": "packages/ui/src/components/popover.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/popover/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:PopoverDescriptionProps",
@@ -3984,7 +3984,7 @@
       "source": "packages/ui/src/components/popover.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/popover/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:PopoverDirection",
@@ -3995,7 +3995,7 @@
       "source": "packages/ui/src/components/popover.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/popover/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:PopoverPlacement",
@@ -4006,7 +4006,7 @@
       "source": "packages/ui/src/components/popover.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/popover/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:PopoverProps",
@@ -4017,7 +4017,7 @@
       "source": "packages/ui/src/components/popover.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/popover/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:PopoverTitleProps",
@@ -4028,7 +4028,7 @@
       "source": "packages/ui/src/components/popover.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/popover/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:PopoverTriggerProps",
@@ -4039,7 +4039,7 @@
       "source": "packages/ui/src/components/popover.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/popover/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:ProgressProps",
@@ -4050,7 +4050,7 @@
       "source": "packages/ui/src/components/progress.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/progress/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:RadioGroupProps",
@@ -4061,7 +4061,7 @@
       "source": "packages/ui/src/components/radio.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/radio/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:RadioProps",
@@ -4072,7 +4072,7 @@
       "source": "packages/ui/src/components/radio.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/radio/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SafeAreaProps",
@@ -4083,7 +4083,7 @@
       "source": "packages/ui/src/components/safe-area.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/safe-area/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:ScreenProps",
@@ -4094,7 +4094,7 @@
       "source": "packages/ui/src/components/screen.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/screen/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SearchInputProps",
@@ -4105,7 +4105,7 @@
       "source": "packages/ui/src/components/search-input.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/search-input/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SectionProps",
@@ -4116,7 +4116,7 @@
       "source": "packages/ui/src/components/section.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/section/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SegmentedControlItemProps",
@@ -4127,7 +4127,7 @@
       "source": "packages/ui/src/components/segmented-control.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/segmented-control/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SegmentedControlProps",
@@ -4138,7 +4138,7 @@
       "source": "packages/ui/src/components/segmented-control.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/segmented-control/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SelectAlign",
@@ -4149,7 +4149,7 @@
       "source": "packages/ui/src/components/select.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SelectCollisionPadding",
@@ -4160,7 +4160,7 @@
       "source": "packages/ui/src/components/select.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SelectContentProps",
@@ -4171,7 +4171,7 @@
       "source": "packages/ui/src/components/select.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SelectDirection",
@@ -4182,7 +4182,7 @@
       "source": "packages/ui/src/components/select.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SelectGroupProps",
@@ -4193,7 +4193,7 @@
       "source": "packages/ui/src/components/select.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SelectItemProps",
@@ -4204,7 +4204,7 @@
       "source": "packages/ui/src/components/select.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SelectLabelProps",
@@ -4215,7 +4215,7 @@
       "source": "packages/ui/src/components/select.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SelectOptionValue",
@@ -4226,7 +4226,7 @@
       "source": "packages/ui/src/components/select.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SelectPlacement",
@@ -4237,7 +4237,7 @@
       "source": "packages/ui/src/components/select.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SelectProps",
@@ -4248,7 +4248,7 @@
       "source": "packages/ui/src/components/select.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SelectTriggerProps",
@@ -4259,7 +4259,7 @@
       "source": "packages/ui/src/components/select.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SelectValueProps",
@@ -4270,7 +4270,7 @@
       "source": "packages/ui/src/components/select.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SeparatorProps",
@@ -4281,7 +4281,7 @@
       "source": "packages/ui/src/components/separator.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/separator/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SettingsItemProps",
@@ -4292,7 +4292,7 @@
       "source": "packages/ui/src/components/list-item.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/list-item/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SheetCloseProps",
@@ -4303,7 +4303,7 @@
       "source": "packages/ui/src/components/sheet.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/sheet/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SheetContentProps",
@@ -4314,7 +4314,7 @@
       "source": "packages/ui/src/components/sheet.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/sheet/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SheetDescriptionProps",
@@ -4325,7 +4325,7 @@
       "source": "packages/ui/src/components/sheet.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/sheet/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SheetFooterProps",
@@ -4336,7 +4336,7 @@
       "source": "packages/ui/src/components/sheet.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/sheet/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SheetHandleProps",
@@ -4347,7 +4347,7 @@
       "source": "packages/ui/src/components/sheet.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/sheet/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SheetProps",
@@ -4358,7 +4358,7 @@
       "source": "packages/ui/src/components/sheet.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/sheet/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SheetSnapPoint",
@@ -4369,7 +4369,7 @@
       "source": "packages/ui/src/components/sheet.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/sheet/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SheetTitleProps",
@@ -4380,7 +4380,7 @@
       "source": "packages/ui/src/components/sheet.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/sheet/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SheetTriggerProps",
@@ -4391,7 +4391,7 @@
       "source": "packages/ui/src/components/sheet.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/sheet/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SkeletonProps",
@@ -4402,7 +4402,7 @@
       "source": "packages/ui/src/components/skeleton.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/skeleton/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SpinnerProps",
@@ -4413,7 +4413,7 @@
       "source": "packages/ui/src/components/spinner.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/spinner/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:StackProps",
@@ -4424,7 +4424,7 @@
       "source": "packages/ui/src/components/stack.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/stack/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:StatHelpTextProps",
@@ -4435,7 +4435,7 @@
       "source": "packages/ui/src/components/stat.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/stat/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:StatLabelProps",
@@ -4446,7 +4446,7 @@
       "source": "packages/ui/src/components/stat.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/stat/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:StatProps",
@@ -4457,7 +4457,7 @@
       "source": "packages/ui/src/components/stat.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/stat/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:StatValueProps",
@@ -4468,7 +4468,7 @@
       "source": "packages/ui/src/components/stat.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/stat/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:StepperItemProps",
@@ -4479,7 +4479,7 @@
       "source": "packages/ui/src/components/stepper.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/stepper/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:StepperProps",
@@ -4490,7 +4490,7 @@
       "source": "packages/ui/src/components/stepper.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/stepper/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:SwitchProps",
@@ -4501,7 +4501,7 @@
       "source": "packages/ui/src/components/switch.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/switch/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:TableBodyProps",
@@ -4622,7 +4622,7 @@
       "source": "packages/ui/src/components/tabs.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/tabs/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:TabsListProps",
@@ -4633,7 +4633,7 @@
       "source": "packages/ui/src/components/tabs.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/tabs/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:TabsProps",
@@ -4644,7 +4644,7 @@
       "source": "packages/ui/src/components/tabs.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/tabs/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:TabsTriggerProps",
@@ -4655,7 +4655,7 @@
       "source": "packages/ui/src/components/tabs.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/tabs/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:TextareaProps",
@@ -4666,7 +4666,7 @@
       "source": "packages/ui/src/components/textarea.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/textarea/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:TextProps",
@@ -4677,7 +4677,7 @@
       "source": "packages/ui/src/components/text.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/text/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:TimelineItemProps",
@@ -4688,7 +4688,7 @@
       "source": "packages/ui/src/components/timeline.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/timeline/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:TimelineProps",
@@ -4699,7 +4699,7 @@
       "source": "packages/ui/src/components/timeline.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/timeline/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:ToastAction",
@@ -4710,7 +4710,7 @@
       "source": "packages/ui/src/components/toast.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/toast/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:ToastApi",
@@ -4721,7 +4721,7 @@
       "source": "packages/ui/src/components/toast.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/toast/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:ToastDuration",
@@ -4732,7 +4732,7 @@
       "source": "packages/ui/src/components/toast.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/toast/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:ToastId",
@@ -4743,7 +4743,7 @@
       "source": "packages/ui/src/components/toast.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/toast/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:ToastOptions",
@@ -4754,7 +4754,7 @@
       "source": "packages/ui/src/components/toast.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/toast/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:ToastRuntimeProviderProps",
@@ -4765,7 +4765,7 @@
       "source": "packages/ui/src/components/toast.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/toast/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:ToastVariant",
@@ -4776,7 +4776,7 @@
       "source": "packages/ui/src/components/toast.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/toast/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:TooltipAlign",
@@ -4787,7 +4787,7 @@
       "source": "packages/ui/src/components/tooltip-shared.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/tooltip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:TooltipCollisionPadding",
@@ -4798,7 +4798,7 @@
       "source": "packages/ui/src/components/tooltip-shared.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/tooltip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:TooltipContentProps",
@@ -4809,7 +4809,7 @@
       "source": "packages/ui/src/components/tooltip-shared.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/tooltip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:TooltipDirection",
@@ -4820,7 +4820,7 @@
       "source": "packages/ui/src/components/tooltip-shared.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/tooltip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:TooltipPlacement",
@@ -4831,7 +4831,7 @@
       "source": "packages/ui/src/components/tooltip-shared.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/tooltip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:TooltipProps",
@@ -4842,7 +4842,7 @@
       "source": "packages/ui/src/components/tooltip-shared.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/tooltip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:TooltipTriggerProps",
@@ -4853,7 +4853,7 @@
       "source": "packages/ui/src/components/tooltip-shared.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/tooltip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:VisuallyHiddenProps",
@@ -4864,7 +4864,7 @@
       "source": "packages/ui/src/components/visually-hidden.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/visually-hidden/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:type:VStackProps",
@@ -4875,7 +4875,7 @@
       "source": "packages/ui/src/components/stack.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/stack/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Accordion",
@@ -4886,7 +4886,7 @@
       "source": "packages/ui/src/components/accordion.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/accordion/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:AccordionContent",
@@ -4897,7 +4897,7 @@
       "source": "packages/ui/src/components/accordion.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/accordion/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:AccordionItem",
@@ -4908,7 +4908,7 @@
       "source": "packages/ui/src/components/accordion.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/accordion/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:AccordionTrigger",
@@ -4919,7 +4919,7 @@
       "source": "packages/ui/src/components/accordion.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/accordion/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:AlertBanner",
@@ -4930,7 +4930,7 @@
       "source": "packages/ui/src/components/alert-banner.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/alert-banner/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:alertBannerVariants",
@@ -4941,7 +4941,7 @@
       "source": "packages/ui/src/components/alert-banner.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/alert-banner/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:AlertDialog",
@@ -4952,7 +4952,7 @@
       "source": "packages/ui/src/components/alert-dialog.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/alert-dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:AlertDialogAction",
@@ -4963,7 +4963,7 @@
       "source": "packages/ui/src/components/alert-dialog.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/alert-dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:AlertDialogCancel",
@@ -4974,7 +4974,7 @@
       "source": "packages/ui/src/components/alert-dialog.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/alert-dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:AlertDialogContent",
@@ -4985,7 +4985,7 @@
       "source": "packages/ui/src/components/alert-dialog.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/alert-dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:AlertDialogDescription",
@@ -4996,7 +4996,7 @@
       "source": "packages/ui/src/components/alert-dialog.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/alert-dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:AlertDialogFooter",
@@ -5007,7 +5007,7 @@
       "source": "packages/ui/src/components/alert-dialog.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/alert-dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:AlertDialogTitle",
@@ -5018,7 +5018,7 @@
       "source": "packages/ui/src/components/alert-dialog.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/alert-dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:AlertDialogTrigger",
@@ -5029,7 +5029,7 @@
       "source": "packages/ui/src/components/alert-dialog.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/alert-dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:AppHeader",
@@ -5040,7 +5040,7 @@
       "source": "packages/ui/src/components/app-header.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/app-header/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Avatar",
@@ -5051,7 +5051,7 @@
       "source": "packages/ui/src/components/avatar.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/avatar/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:avatarFallbackVariants",
@@ -5062,7 +5062,7 @@
       "source": "packages/ui/src/components/avatar.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/avatar/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:avatarVariants",
@@ -5073,7 +5073,7 @@
       "source": "packages/ui/src/components/avatar.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/avatar/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Badge",
@@ -5084,7 +5084,7 @@
       "source": "packages/ui/src/components/badge.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/badge/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:badgeLabelVariants",
@@ -5095,7 +5095,7 @@
       "source": "packages/ui/src/components/badge.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/badge/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:badgeVariants",
@@ -5106,7 +5106,7 @@
       "source": "packages/ui/src/components/badge.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/badge/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:BeeThemeScope",
@@ -5117,7 +5117,7 @@
       "source": "packages/ui/src/components/theme-scope.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/theme-scope/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:BeeUIProvider",
@@ -5128,7 +5128,7 @@
       "source": "packages/ui/src/components/safe-area.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/safe-area/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:BottomActionBar",
@@ -5139,7 +5139,7 @@
       "source": "packages/ui/src/components/bottom-action-bar.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/bottom-action-bar/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Box",
@@ -5150,7 +5150,7 @@
       "source": "packages/ui/src/components/box.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/box/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Breadcrumb",
@@ -5161,7 +5161,7 @@
       "source": "packages/ui/src/components/breadcrumb.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/breadcrumb/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:BreadcrumbItem",
@@ -5172,7 +5172,7 @@
       "source": "packages/ui/src/components/breadcrumb.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/breadcrumb/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Button",
@@ -5183,7 +5183,7 @@
       "source": "packages/ui/src/components/button.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/button/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:ButtonLabel",
@@ -5194,7 +5194,7 @@
       "source": "packages/ui/src/components/button.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/button/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:buttonLabelVariants",
@@ -5205,7 +5205,7 @@
       "source": "packages/ui/src/components/button.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/button/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:buttonVariants",
@@ -5216,7 +5216,7 @@
       "source": "packages/ui/src/components/button.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/button/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Calendar",
@@ -5227,7 +5227,7 @@
       "source": "packages/ui/src/components/calendar.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/calendar/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Card",
@@ -5238,7 +5238,7 @@
       "source": "packages/ui/src/components/card.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/card/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:cardVariants",
@@ -5249,7 +5249,7 @@
       "source": "packages/ui/src/components/card.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/card/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Checkbox",
@@ -5260,7 +5260,7 @@
       "source": "packages/ui/src/components/checkbox.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/checkbox/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:checkboxIndicatorVariants",
@@ -5271,7 +5271,7 @@
       "source": "packages/ui/src/components/checkbox.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/checkbox/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Chip",
@@ -5282,7 +5282,7 @@
       "source": "packages/ui/src/components/chip.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/chip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:ChipGroup",
@@ -5293,7 +5293,7 @@
       "source": "packages/ui/src/components/chip.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/chip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Collapsible",
@@ -5304,7 +5304,7 @@
       "source": "packages/ui/src/components/collapsible.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/collapsible/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:CollapsibleContent",
@@ -5315,7 +5315,7 @@
       "source": "packages/ui/src/components/collapsible.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/collapsible/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:CollapsibleTrigger",
@@ -5326,7 +5326,7 @@
       "source": "packages/ui/src/components/collapsible.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/collapsible/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:DatePicker",
@@ -5337,7 +5337,7 @@
       "source": "packages/ui/src/components/date-picker.native.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/date-picker/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:DateTimePicker",
@@ -5348,7 +5348,7 @@
       "source": "packages/ui/src/components/date-time-picker.native.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/date-time-picker/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:DescriptionItem",
@@ -5359,7 +5359,7 @@
       "source": "packages/ui/src/components/description-list.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/description-list/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:DescriptionList",
@@ -5370,7 +5370,7 @@
       "source": "packages/ui/src/components/description-list.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/description-list/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Dialog",
@@ -5381,7 +5381,7 @@
       "source": "packages/ui/src/components/dialog.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:DialogClose",
@@ -5392,7 +5392,7 @@
       "source": "packages/ui/src/components/dialog.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:DialogContent",
@@ -5403,7 +5403,7 @@
       "source": "packages/ui/src/components/dialog.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:DialogDescription",
@@ -5414,7 +5414,7 @@
       "source": "packages/ui/src/components/dialog.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:DialogFooter",
@@ -5425,7 +5425,7 @@
       "source": "packages/ui/src/components/dialog.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:DialogTitle",
@@ -5436,7 +5436,7 @@
       "source": "packages/ui/src/components/dialog.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:DialogTrigger",
@@ -5447,7 +5447,7 @@
       "source": "packages/ui/src/components/dialog.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:DropdownMenu",
@@ -5458,7 +5458,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:DropdownMenuCheckboxItem",
@@ -5469,7 +5469,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:DropdownMenuContent",
@@ -5480,7 +5480,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:DropdownMenuItem",
@@ -5491,7 +5491,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:DropdownMenuLabel",
@@ -5502,7 +5502,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:DropdownMenuRadioGroup",
@@ -5513,7 +5513,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:DropdownMenuRadioItem",
@@ -5524,7 +5524,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:DropdownMenuSeparator",
@@ -5535,7 +5535,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:DropdownMenuTrigger",
@@ -5546,7 +5546,7 @@
       "source": "packages/ui/src/components/dropdown-menu.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:EmptyState",
@@ -5557,7 +5557,7 @@
       "source": "packages/ui/src/components/state-message.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/state-message/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:ErrorState",
@@ -5568,7 +5568,7 @@
       "source": "packages/ui/src/components/state-message.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/state-message/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Field",
@@ -5579,7 +5579,7 @@
       "source": "packages/ui/src/components/field.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/field/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:FormGroup",
@@ -5590,7 +5590,7 @@
       "source": "packages/ui/src/components/form-group.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/form-group/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:FormMessage",
@@ -5601,7 +5601,7 @@
       "source": "packages/ui/src/components/form-message.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/form-message/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:getBeeToken",
@@ -5612,7 +5612,7 @@
       "source": "packages/ui/src/components/use-bee-token.ts",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/use-bee-token/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:getTextareaWebMinHeight",
@@ -5623,7 +5623,7 @@
       "source": "packages/ui/src/components/textarea.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/textarea/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:HelperText",
@@ -5634,7 +5634,7 @@
       "source": "packages/ui/src/components/form-message.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/form-message/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:HStack",
@@ -5645,7 +5645,7 @@
       "source": "packages/ui/src/components/stack.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/stack/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:IconButton",
@@ -5656,7 +5656,7 @@
       "source": "packages/ui/src/components/icon-button.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/icon-button/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Input",
@@ -5667,7 +5667,7 @@
       "source": "packages/ui/src/components/input.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/input/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:inputVariants",
@@ -5678,7 +5678,7 @@
       "source": "packages/ui/src/components/input.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/input/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:KeyboardAwareScreen",
@@ -5689,7 +5689,7 @@
       "source": "packages/ui/src/components/keyboard-aware-screen.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/keyboard-aware-screen/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Label",
@@ -5700,7 +5700,7 @@
       "source": "packages/ui/src/components/label.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/label/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Link",
@@ -5711,7 +5711,7 @@
       "source": "packages/ui/src/components/link.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/link/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:ListGroup",
@@ -5722,7 +5722,7 @@
       "source": "packages/ui/src/components/list-group.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/list-group/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:ListGroupHeader",
@@ -5733,7 +5733,7 @@
       "source": "packages/ui/src/components/list-group.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/list-group/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:ListGroupMembershipContext",
@@ -5744,7 +5744,7 @@
       "source": "packages/ui/src/components/list-group.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/list-group/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:ListItem",
@@ -5755,7 +5755,7 @@
       "source": "packages/ui/src/components/list-item.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/list-item/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:MetadataRow",
@@ -5766,7 +5766,7 @@
       "source": "packages/ui/src/components/metadata-row.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/metadata-row/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:OTPInput",
@@ -5777,7 +5777,7 @@
       "source": "packages/ui/src/components/otp-input.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/otp-input/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Pagination",
@@ -5788,7 +5788,7 @@
       "source": "packages/ui/src/components/pagination.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/pagination/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:PaginationItem",
@@ -5799,7 +5799,7 @@
       "source": "packages/ui/src/components/pagination.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/pagination/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:PasswordInput",
@@ -5810,7 +5810,7 @@
       "source": "packages/ui/src/components/password-input.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/password-input/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Popover",
@@ -5821,7 +5821,7 @@
       "source": "packages/ui/src/components/popover.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/popover/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:PopoverClose",
@@ -5832,7 +5832,7 @@
       "source": "packages/ui/src/components/popover.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/popover/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:PopoverContent",
@@ -5843,7 +5843,7 @@
       "source": "packages/ui/src/components/popover.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/popover/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:PopoverDescription",
@@ -5854,7 +5854,7 @@
       "source": "packages/ui/src/components/popover.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/popover/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:PopoverTitle",
@@ -5865,7 +5865,7 @@
       "source": "packages/ui/src/components/popover.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/popover/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:PopoverTrigger",
@@ -5876,7 +5876,7 @@
       "source": "packages/ui/src/components/popover.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/popover/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Progress",
@@ -5887,7 +5887,7 @@
       "source": "packages/ui/src/components/progress.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/progress/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:progressVariants",
@@ -5898,7 +5898,7 @@
       "source": "packages/ui/src/components/progress.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/progress/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Radio",
@@ -5909,7 +5909,7 @@
       "source": "packages/ui/src/components/radio.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/radio/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:RadioGroup",
@@ -5920,7 +5920,7 @@
       "source": "packages/ui/src/components/radio.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/radio/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:radioIndicatorVariants",
@@ -5931,7 +5931,7 @@
       "source": "packages/ui/src/components/radio.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/radio/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:SafeArea",
@@ -5942,7 +5942,7 @@
       "source": "packages/ui/src/components/safe-area.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/safe-area/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Screen",
@@ -5953,7 +5953,7 @@
       "source": "packages/ui/src/components/screen.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/screen/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:SearchInput",
@@ -5964,7 +5964,7 @@
       "source": "packages/ui/src/components/search-input.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/search-input/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Section",
@@ -5975,7 +5975,7 @@
       "source": "packages/ui/src/components/section.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/section/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:SegmentedControl",
@@ -5986,7 +5986,7 @@
       "source": "packages/ui/src/components/segmented-control.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/segmented-control/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:SegmentedControlItem",
@@ -5997,7 +5997,7 @@
       "source": "packages/ui/src/components/segmented-control.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/segmented-control/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Select",
@@ -6008,7 +6008,7 @@
       "source": "packages/ui/src/components/select.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:SelectContent",
@@ -6019,7 +6019,7 @@
       "source": "packages/ui/src/components/select.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:SelectGroup",
@@ -6030,7 +6030,7 @@
       "source": "packages/ui/src/components/select.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:SelectItem",
@@ -6041,7 +6041,7 @@
       "source": "packages/ui/src/components/select.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:SelectLabel",
@@ -6052,7 +6052,7 @@
       "source": "packages/ui/src/components/select.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:SelectTrigger",
@@ -6063,7 +6063,7 @@
       "source": "packages/ui/src/components/select.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:SelectValue",
@@ -6074,7 +6074,7 @@
       "source": "packages/ui/src/components/select.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:semanticTypographyClasses",
@@ -6085,7 +6085,7 @@
       "source": "packages/ui/src/components/text.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/text/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Separator",
@@ -6096,7 +6096,7 @@
       "source": "packages/ui/src/components/separator.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/separator/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:SettingsItem",
@@ -6107,7 +6107,7 @@
       "source": "packages/ui/src/components/list-item.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/list-item/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Sheet",
@@ -6118,7 +6118,7 @@
       "source": "packages/ui/src/components/sheet.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/sheet/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:SheetClose",
@@ -6129,7 +6129,7 @@
       "source": "packages/ui/src/components/sheet.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/sheet/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:SheetContent",
@@ -6140,7 +6140,7 @@
       "source": "packages/ui/src/components/sheet.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/sheet/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:SheetDescription",
@@ -6151,7 +6151,7 @@
       "source": "packages/ui/src/components/sheet.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/sheet/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:SheetFooter",
@@ -6162,7 +6162,7 @@
       "source": "packages/ui/src/components/sheet.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/sheet/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:SheetHandle",
@@ -6173,7 +6173,7 @@
       "source": "packages/ui/src/components/sheet.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/sheet/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:SheetTitle",
@@ -6184,7 +6184,7 @@
       "source": "packages/ui/src/components/sheet.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/sheet/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:SheetTrigger",
@@ -6195,7 +6195,7 @@
       "source": "packages/ui/src/components/sheet.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/sheet/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Skeleton",
@@ -6206,7 +6206,7 @@
       "source": "packages/ui/src/components/skeleton.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/skeleton/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:skeletonVariants",
@@ -6217,7 +6217,7 @@
       "source": "packages/ui/src/components/skeleton.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/skeleton/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Spinner",
@@ -6228,7 +6228,7 @@
       "source": "packages/ui/src/components/spinner.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/spinner/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Stack",
@@ -6239,7 +6239,7 @@
       "source": "packages/ui/src/components/stack.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/stack/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:stackVariants",
@@ -6250,7 +6250,7 @@
       "source": "packages/ui/src/components/stack.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/stack/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Stat",
@@ -6261,7 +6261,7 @@
       "source": "packages/ui/src/components/stat.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/stat/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:StatHelpText",
@@ -6272,7 +6272,7 @@
       "source": "packages/ui/src/components/stat.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/stat/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:StatLabel",
@@ -6283,7 +6283,7 @@
       "source": "packages/ui/src/components/stat.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/stat/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:StatValue",
@@ -6294,7 +6294,7 @@
       "source": "packages/ui/src/components/stat.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/stat/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Stepper",
@@ -6305,7 +6305,7 @@
       "source": "packages/ui/src/components/stepper.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/stepper/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:StepperItem",
@@ -6316,7 +6316,7 @@
       "source": "packages/ui/src/components/stepper.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/stepper/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Switch",
@@ -6327,7 +6327,7 @@
       "source": "packages/ui/src/components/switch.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/switch/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Table",
@@ -6426,7 +6426,7 @@
       "source": "packages/ui/src/components/tabs.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/tabs/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:TabsContent",
@@ -6437,7 +6437,7 @@
       "source": "packages/ui/src/components/tabs.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/tabs/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:TabsList",
@@ -6448,7 +6448,7 @@
       "source": "packages/ui/src/components/tabs.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/tabs/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:TabsTrigger",
@@ -6459,7 +6459,7 @@
       "source": "packages/ui/src/components/tabs.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/tabs/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Text",
@@ -6470,7 +6470,7 @@
       "source": "packages/ui/src/components/text.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/text/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Textarea",
@@ -6481,7 +6481,7 @@
       "source": "packages/ui/src/components/textarea.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/textarea/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:textVariants",
@@ -6492,7 +6492,7 @@
       "source": "packages/ui/src/components/text.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/text/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Timeline",
@@ -6503,7 +6503,7 @@
       "source": "packages/ui/src/components/timeline.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/timeline/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:TimelineItem",
@@ -6514,7 +6514,7 @@
       "source": "packages/ui/src/components/timeline.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/timeline/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:TOAST_DEFAULT_DURATION",
@@ -6525,7 +6525,7 @@
       "source": "packages/ui/src/components/toast.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/toast/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:TOAST_MAX_VISIBLE",
@@ -6536,7 +6536,7 @@
       "source": "packages/ui/src/components/toast.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/toast/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:ToastRuntimeProvider",
@@ -6547,7 +6547,7 @@
       "source": "packages/ui/src/components/toast.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/toast/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:Tooltip",
@@ -6558,7 +6558,7 @@
       "source": "packages/ui/src/components/tooltip-shared.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/tooltip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:TooltipContent",
@@ -6569,7 +6569,7 @@
       "source": "packages/ui/src/components/tooltip-shared.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/tooltip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:TooltipTrigger",
@@ -6580,7 +6580,7 @@
       "source": "packages/ui/src/components/tooltip-shared.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/tooltip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:useBeeToken",
@@ -6591,7 +6591,7 @@
       "source": "packages/ui/src/components/use-bee-token.ts",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/use-bee-token/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:useToast",
@@ -6602,7 +6602,7 @@
       "source": "packages/ui/src/components/toast.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/toast/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:VisuallyHidden",
@@ -6613,7 +6613,7 @@
       "source": "packages/ui/src/components/visually-hidden.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/visually-hidden/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "@beemvp/beeui-ui:value:VStack",
@@ -6624,7 +6624,7 @@
       "source": "packages/ui/src/components/stack.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/stack/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:accordion",
@@ -6634,7 +6634,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/accordion/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:alert-banner",
@@ -6644,7 +6644,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/alert-banner/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:alert-dialog",
@@ -6654,7 +6654,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/alert-dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:app-header",
@@ -6664,7 +6664,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/app-header/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:avatar",
@@ -6674,7 +6674,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/avatar/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:badge",
@@ -6684,7 +6684,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/badge/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:bottom-action-bar",
@@ -6694,7 +6694,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/bottom-action-bar/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:box",
@@ -6704,7 +6704,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/box/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:breadcrumb",
@@ -6714,7 +6714,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/breadcrumb/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:button",
@@ -6724,7 +6724,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/button/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:calendar",
@@ -6734,7 +6734,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/calendar/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:card",
@@ -6744,7 +6744,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/card/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:checkbox",
@@ -6754,7 +6754,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/checkbox/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:chip",
@@ -6764,7 +6764,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/chip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:collapsible",
@@ -6774,7 +6774,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/collapsible/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:date-picker",
@@ -6784,7 +6784,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/date-picker/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:date-time-picker",
@@ -6794,7 +6794,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/date-time-picker/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:description-list",
@@ -6804,7 +6804,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/description-list/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:dialog",
@@ -6814,7 +6814,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dialog/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:dropdown-menu",
@@ -6824,7 +6824,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/dropdown-menu/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:field",
@@ -6834,7 +6834,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/field/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:form-group",
@@ -6844,7 +6844,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/form-group/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:form-message",
@@ -6854,7 +6854,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/form-message/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:icon-button",
@@ -6864,7 +6864,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/icon-button/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:input",
@@ -6874,7 +6874,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/input/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:keyboard-aware-screen",
@@ -6884,7 +6884,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/keyboard-aware-screen/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:label",
@@ -6894,7 +6894,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/label/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:link",
@@ -6904,7 +6904,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/link/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:list-group",
@@ -6914,7 +6914,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/list-group/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:list-item",
@@ -6924,7 +6924,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/list-item/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:metadata-row",
@@ -6934,7 +6934,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/metadata-row/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:otp-input",
@@ -6944,7 +6944,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/otp-input/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:pagination",
@@ -6954,7 +6954,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/pagination/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:password-input",
@@ -6964,7 +6964,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/password-input/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:popover",
@@ -6974,7 +6974,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/popover/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:progress",
@@ -6984,7 +6984,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/progress/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:radio",
@@ -6994,7 +6994,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/radio/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:safe-area",
@@ -7004,7 +7004,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/safe-area/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:screen",
@@ -7014,7 +7014,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/screen/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:search-input",
@@ -7024,7 +7024,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/search-input/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:section",
@@ -7034,7 +7034,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/section/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:segmented-control",
@@ -7044,7 +7044,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/segmented-control/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:select",
@@ -7054,7 +7054,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/select/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:separator",
@@ -7064,7 +7064,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/separator/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:sheet",
@@ -7074,7 +7074,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/sheet/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:skeleton",
@@ -7084,7 +7084,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/skeleton/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:spinner",
@@ -7094,7 +7094,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/spinner/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:stack",
@@ -7104,7 +7104,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/stack/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:stat",
@@ -7114,7 +7114,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/stat/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:state-message",
@@ -7124,7 +7124,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/state-message/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:stepper",
@@ -7134,7 +7134,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/stepper/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:switch",
@@ -7144,7 +7144,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/switch/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:table",
@@ -7164,7 +7164,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/tabs/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:text",
@@ -7174,7 +7174,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/text/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:textarea",
@@ -7184,7 +7184,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/textarea/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:theme-scope",
@@ -7194,7 +7194,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/theme-scope/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:timeline",
@@ -7204,7 +7204,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/timeline/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:toast",
@@ -7214,7 +7214,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/toast/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:tooltip",
@@ -7224,7 +7224,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/tooltip/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:use-bee-token",
@@ -7234,7 +7234,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/use-bee-token/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:component:visually-hidden",
@@ -7244,7 +7244,7 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/visually-hidden/",
-      "ownerStatus": "planned"
+      "ownerStatus": "published"
     },
     {
       "id": "registry:theme:theme",

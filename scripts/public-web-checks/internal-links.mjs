@@ -2,7 +2,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { buildRedirectRules, collectDocsRoutes } from '../generate-docs-foundation.mjs';
-import { buildPublicComponentManifest } from '../public-component-reference.mjs';
 import { buildPublicPatternManifest } from '../public-pattern-reference.mjs';
 import { GENERATED_COMPATIBILITY_PAGE, GENERATED_RELEASE_PAGE } from '../public-guide-data.mjs';
 import { readPublicSiteConfig } from '../public-site-contract-lib.mjs';
@@ -22,7 +21,6 @@ const LINK_RE = /\]\((\/[^)\s#?]*)(?:[?#][^)\s]*)?(?:\s+"[^"]*")?\)/gu;
 // fails.
 function generatedDocsRoutes(rootDir, docsBase) {
   const routes = new Set([
-    `${docsBase}/components/reference/`,
     `${docsBase}/patterns/reference/`,
     // Resolved from the generator that writes them rather than restated here.
     ...[GENERATED_COMPATIBILITY_PAGE, GENERATED_RELEASE_PAGE].map(
@@ -30,9 +28,6 @@ function generatedDocsRoutes(rootDir, docsBase) {
     ),
   ]);
 
-  for (const component of buildPublicComponentManifest(rootDir)) {
-    routes.add(`${docsBase}/components/reference/${component.name}/`);
-  }
   for (const pattern of buildPublicPatternManifest(rootDir)) {
     routes.add(`${docsBase}/patterns/reference/${pattern.pack}/`);
     routes.add(`${docsBase}/patterns/reference/${pattern.pack}/${pattern.slug}/`);

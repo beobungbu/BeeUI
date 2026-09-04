@@ -126,36 +126,29 @@ export function renderRedirectsFile(rules) {
 
 // The redirect invariants, as a pure function over the rule list so tests can drive the
 // guard itself instead of re-implementing it against the one config that already passes.
-export function collectRedirectViolations(rules, { routePrefixes = [] } = {}) {
+export function collectRedirectViolations(rules, { routePrefixes = [], knownRoutes = null } = {}) {
   const violations = [];
   const sources = new Set();
-  const byDestination = new Map();
-
   for (const rule of rules) {
     if (sources.has(rule.fromPrefix)) violations.push(`duplicate redirect source ${rule.fromPrefix}.`);
     if (rule.fromPrefix === rule.toPrefix) violations.push(`redirect loop at ${rule.fromPrefix}.`);
     sources.add(rule.fromPrefix);
-    byDestination.set(rule.toPrefix, [...(byDestination.get(rule.toPrefix) ?? []), rule]);
   }
 
-  // Destinations may converge, but only when the extra rules are aliases of one canonical
-  // rule in the same group. Keying the exemption on the destination instead would switch
-  // ambiguity detection off for that destination entirely, letting any two unrelated
-  // prefixes claim it.
-  for (const [destination, group] of byDestination) {
-    if (group.length === 1) continue;
-    const canonical = group.filter((rule) => !rule.aliasOf);
-    if (canonical.length !== 1) {
-      violations.push(`ambiguous duplicate redirect destination ${destination}.`);
-      continue;
+  // Convergence is normal and this rule used to forbid it. A section index is legitimately
+  // reached from its pre-/docs origin alias *and* from a child prefix the IA has since
+  // vacated, so requiring one canonical source per destination rejected correct config.
+  //
+  // What actually needs guarding is the opposite direction: a rule that sends the visitor
+  // somewhere that does not exist. Destination-uniqueness never caught that — a single rule
+  // pointing at nothing passed it — so it is replaced rather than relaxed. An alias must
+  // still name a real source, because an alias that points at nothing is a config mistake.
+  for (const rule of rules) {
+    if (knownRoutes && !knownRoutes.has(rule.toPrefix)) {
+      violations.push(`redirect ${rule.fromPrefix} points at ${rule.toPrefix}, which is not a published page.`);
     }
-    for (const alias of group.filter((rule) => rule.aliasOf)) {
-      if (alias.aliasOf !== canonical[0].fromPrefix) {
-        violations.push(
-          `redirect ${alias.fromPrefix} shares destination ${destination} but aliases ` +
-          `${alias.aliasOf}, not the canonical source ${canonical[0].fromPrefix}.`,
-        );
-      }
+    if (rule.aliasOf && !sources.has(rule.aliasOf)) {
+      violations.push(`redirect ${rule.fromPrefix} claims to alias ${rule.aliasOf}, which is not a redirect source.`);
     }
   }
 
@@ -324,6 +317,7 @@ export function validateDocsFoundation(rootDir = ROOT_DIR) {
 
   violations.push(...collectRedirectViolations(manifest.redirects, {
     routePrefixes: (config.routes ?? []).map((route) => route.prefix),
+    knownRoutes: docsRoutes,
   }));
 
   // A moved route only stops being a 404 if the source is actually vacated and the

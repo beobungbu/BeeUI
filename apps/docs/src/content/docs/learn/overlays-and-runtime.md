@@ -75,7 +75,7 @@ The second misconception is that nesting `BeeUIProvider` "scopes" overlays. It d
 - [Ownership model](/docs/learn/ownership-model/) — the wider boundary this runtime sits inside.
 - [Composition model](/docs/learn/composition-model/) — why trigger and content must stay together.
 - [Accessibility model](/docs/learn/accessibility-model/) — modal boundaries and focus restoration.
-- [Dialog](/docs/components/reference/dialog/) · [Sheet](/docs/components/reference/sheet/) · [Popover](/docs/components/reference/popover/) · [Dropdown menu](/docs/components/reference/dropdown-menu/) · [Select](/docs/components/reference/select/) · [Tooltip](/docs/components/reference/tooltip/) · [Toast](/docs/components/reference/toast/)
+- [Dialog](/docs/components/dialog/) · [Sheet](/docs/components/sheet/) · [Popover](/docs/components/popover/) · [Dropdown menu](/docs/components/dropdown-menu/) · [Select](/docs/components/select/) · [Tooltip](/docs/components/tooltip/) · [Toast](/docs/components/toast/)
 - [Troubleshooting](/docs/guides/troubleshooting/) — when an overlay is already misbehaving.
 
 ## Source authority
