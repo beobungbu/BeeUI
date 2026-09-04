@@ -98,50 +98,41 @@ export function renderRobotsTxt(contract) {
 
 export function buildPublicSeo({ rootDir = ROOT_DIR, outDir = path.join(rootDir, 'web/dist'), environment } = {}) {
   const contract = buildPublicSiteContract(rootDir, { environment });
-  const previousEnvironment = process.env.BEEUI_WEB_ENV;
-  if (environment) process.env.BEEUI_WEB_ENV = environment;
-  try {
-    buildPublicLanding({ rootDir, outDir });
-    const discovery = buildPublicDiscovery({ rootDir, outDir });
-    const image = `${contract.origin}/assets/og-beeui.svg`;
+  buildPublicLanding({ rootDir, outDir, environment });
+  const discovery = buildPublicDiscovery({ rootDir, outDir });
+  const image = `${contract.origin}/assets/og-beeui.svg`;
 
-    const landingPath = path.join(outDir, 'index.html');
-    const landing = fs.readFileSync(landingPath, 'utf8');
-    fs.writeFileSync(landingPath, addSocialMetadata(landing, {
-      title: 'BeeUI — production-oriented React Native UI',
-      description: 'BeeUI is a mobile-first React Native UI system for Expo, bare React Native, and Web.',
-      canonical: `${contract.origin}/`,
+  const landingPath = path.join(outDir, 'index.html');
+  const landing = fs.readFileSync(landingPath, 'utf8');
+  fs.writeFileSync(landingPath, addSocialMetadata(landing, {
+    title: 'BeeUI — production-oriented React Native UI',
+    description: 'BeeUI is a mobile-first React Native UI system for Expo, bare React Native, and Web.',
+    canonical: `${contract.origin}/`,
+    image,
+    robots: contract.indexPolicy,
+  }).replace('</head>', `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'SoftwareSourceCode', name: 'BeeUI', codeRepository: 'https://github.com/beobungbu/BeeUI', programmingLanguage: ['TypeScript', 'JavaScript'], runtimePlatform: ['React Native', 'Web'], license: 'https://opensource.org/license/mit', version: contract.buildTruth.version })}</script>\n</head>`));
+
+  for (const page of discovery.pages) {
+    const pagePath = path.join(outDir, page.relativePath);
+    const html = fs.readFileSync(pagePath, 'utf8');
+    fs.writeFileSync(pagePath, addSocialMetadata(html, {
+      title: page.title,
+      description: page.description,
+      canonical: `${contract.origin}${page.route}`,
       image,
       robots: contract.indexPolicy,
-    }).replace('</head>', `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'SoftwareSourceCode', name: 'BeeUI', codeRepository: 'https://github.com/beobungbu/BeeUI', programmingLanguage: ['TypeScript', 'JavaScript'], runtimePlatform: ['React Native', 'Web'], license: 'https://opensource.org/license/mit', version: contract.buildTruth.version })}</script>\n</head>`));
-
-    for (const page of discovery.pages) {
-      const pagePath = path.join(outDir, page.relativePath);
-      const html = fs.readFileSync(pagePath, 'utf8');
-      fs.writeFileSync(pagePath, addSocialMetadata(html, {
-        title: page.title,
-        description: page.description,
-        canonical: `${contract.origin}${page.route}`,
-        image,
-        robots: contract.indexPolicy,
-      }));
-    }
-
-    fs.mkdirSync(path.join(outDir, 'changelog'), { recursive: true });
-    fs.writeFileSync(path.join(outDir, 'changelog/index.html'), renderChangelog(fs.readFileSync(path.join(rootDir, 'CHANGELOG.md'), 'utf8'), contract));
-    fs.writeFileSync(path.join(outDir, 'assets/og-beeui.svg'), socialSvg(contract.buildTruth.version));
-
-    const routes = publicRoutes(rootDir, discovery);
-    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${routes.map((route) => `  <url><loc>${contract.origin}${route}</loc></url>`).join('\n')}\n</urlset>\n`;
-    fs.writeFileSync(path.join(outDir, 'sitemap.xml'), sitemap);
-    fs.writeFileSync(path.join(outDir, 'robots.txt'), renderRobotsTxt(contract));
-    return { routes, discovery, outDir, contract };
-  } finally {
-    if (environment) {
-      if (previousEnvironment === undefined) delete process.env.BEEUI_WEB_ENV;
-      else process.env.BEEUI_WEB_ENV = previousEnvironment;
-    }
+    }));
   }
+
+  fs.mkdirSync(path.join(outDir, 'changelog'), { recursive: true });
+  fs.writeFileSync(path.join(outDir, 'changelog/index.html'), renderChangelog(fs.readFileSync(path.join(rootDir, 'CHANGELOG.md'), 'utf8'), contract));
+  fs.writeFileSync(path.join(outDir, 'assets/og-beeui.svg'), socialSvg(contract.buildTruth.version));
+
+  const routes = publicRoutes(rootDir, discovery);
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${routes.map((route) => `  <url><loc>${contract.origin}${route}</loc></url>`).join('\n')}\n</urlset>\n`;
+  fs.writeFileSync(path.join(outDir, 'sitemap.xml'), sitemap);
+  fs.writeFileSync(path.join(outDir, 'robots.txt'), renderRobotsTxt(contract));
+  return { routes, discovery, outDir, contract };
 }
 
 function main() {
