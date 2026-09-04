@@ -4,7 +4,7 @@
   "version": "20260902.0.0",
   "license": "MIT",
   "author": {
-    "name": "Trần Đức Lân",
+    "name": "Tr\u1ea7n \u0110\u1ee9c L\u00e2n",
     "email": "lantranduc@gmail.com"
   },
   "packageManager": "pnpm@10.15.0",
@@ -25,6 +25,7 @@
     "docs:foundation:test": "node --test ./scripts/__tests__/docs-foundation.test.mjs",
     "docs:surface:generate": "node ./scripts/generate-public-surface-inventory.mjs",
     "docs:surface:check": "node ./scripts/check-public-surface-ownership.mjs",
+    "docs:surface:acknowledge": "node ./scripts/check-public-surface-ownership.mjs --acknowledge",
     "docs:surface:test": "node --test ./scripts/__tests__/public-surface-inventory.test.mjs ./scripts/__tests__/public-surface-ownership.test.mjs",
     "site:contract:check": "node ./scripts/check-public-site-contract.mjs",
     "site:contract:test": "node --test ./scripts/__tests__/public-site-contract.test.mjs",

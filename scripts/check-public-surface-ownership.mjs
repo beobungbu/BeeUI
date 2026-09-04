@@ -9,6 +9,8 @@ import { ROOT_DIR } from './component-docs-lib.mjs';
 import {
   OWNER_POLICY_FILE,
   buildPublicSurfaceInventory,
+  summarizePublicSurfaceInventory,
+  validateInventoryFreshness,
   validatePublicSurfaceInventory,
 } from './generate-public-surface-inventory.mjs';
 
@@ -54,11 +56,41 @@ export function validateAcknowledgedSurfaceSources(rootDir = ROOT_DIR, policy = 
 export function validatePublicSurfaceOwnership(rootDir = ROOT_DIR) {
   return [
     ...validatePublicSurfaceInventory(rootDir),
+    ...validateInventoryFreshness(rootDir),
     ...validateAcknowledgedSurfaceSources(rootDir),
   ];
 }
 
+// Re-acknowledgement is an explicit, reviewed action, but the reviewer should not have to
+// hand-compute git blob hashes. Callers run this only after reading the derived surface diff.
+export function acknowledgeSurfaceSources(rootDir = ROOT_DIR) {
+  const policyPath = path.join(rootDir, OWNER_POLICY_FILE);
+  const policy = readJson(OWNER_POLICY_FILE, rootDir);
+  const updated = {};
+  const changed = [];
+  for (const relPath of Object.keys(policy.acknowledgedSourceBlobs ?? {})) {
+    const absPath = path.join(rootDir, relPath);
+    if (!fs.existsSync(absPath)) throw new Error(`${relPath} is acknowledged but no longer exists; update the policy by hand.`);
+    const sha = gitBlobSha(fs.readFileSync(absPath));
+    if (sha !== policy.acknowledgedSourceBlobs[relPath]) changed.push(relPath);
+    updated[relPath] = sha;
+  }
+  policy.acknowledgedSourceBlobs = updated;
+  fs.writeFileSync(policyPath, `${JSON.stringify(policy, null, 2)}\n`);
+  return changed;
+}
+
 function main() {
+  if (process.argv.includes('--acknowledge')) {
+    const changed = acknowledgeSurfaceSources(ROOT_DIR);
+    console.log(
+      changed.length
+        ? `re-acknowledged ${changed.length} public-surface source(s): ${changed.join(', ')}`
+        : 'all acknowledged public-surface sources were already current',
+    );
+    return;
+  }
+
   const violations = validatePublicSurfaceOwnership(ROOT_DIR);
   if (violations.length) {
     console.error('Public-surface documentation ownership gate failed:');
@@ -67,10 +99,11 @@ function main() {
     return;
   }
 
-  const inventory = buildPublicSurfaceInventory(ROOT_DIR);
+  const summary = summarizePublicSurfaceInventory(buildPublicSurfaceInventory(ROOT_DIR));
   console.log(
-    `Public-surface ownership gate passed (${inventory.rows.length} derived rows; ` +
-    'canonical source blobs explicitly acknowledged; no orphan/release-truth violations).',
+    `Public-surface ownership gate passed (${summary.rows} derived rows; ` +
+    `${summary.published} owned by a published docs page, ${summary.planned} by a ratified-but-unwritten page; ` +
+    'inventory fresh; canonical source blobs explicitly acknowledged; no release-truth violations).',
   );
 }
 

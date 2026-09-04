@@ -5,7 +5,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { ROOT_DIR, getPublicComponents } from './component-docs-lib.mjs';
-import { readPublicationState } from './public-site-contract-lib.mjs';
+import { collectDocsRoutes } from './generate-docs-foundation.mjs';
+import { readPublicSiteConfig, readPublicationState } from './public-site-contract-lib.mjs';
 
 export const OWNER_POLICY_FILE = 'docs/public-surface-owners.json';
 export const OUTPUT_FILE = 'docs/public-surface.inventory.json';
@@ -117,7 +118,7 @@ function classifyCoreSymbol(symbol, policy) {
 function packageExportRows(packageDir, policy, rootDir = ROOT_DIR) {
   const manifest = readJson(`${packageDir}/package.json`, rootDir);
   return Object.entries(manifest.exports ?? {})
-    .filter(([subpath]) => subpath !== '.')
+    .filter(([subpath]) => subpath !== '.' && !(policy.ignoredExportSubpaths ?? []).includes(subpath))
     .map(([subpath, value]) => {
       let primaryDocsOwner;
       let classification = 'consumer';
@@ -145,6 +146,44 @@ function packageExportRows(packageDir, policy, rootDir = ROOT_DIR) {
       };
     })
     .sort((a, b) => a.id.localeCompare(b.id));
+}
+
+// Public JS/TS subpaths (`@beemvp/beeui-tokens/motion-runtime`, ...) export real consumer
+// symbols that the root barrel never re-exports, so enumerate them per subpath. Symbols also
+// reachable from the root barrel keep their single canonical row id and are skipped here.
+function subpathSymbolRows(packageDir, kindPrefix, ownerFor, classification, policy, rootDir, seenIds) {
+  const manifest = readJson(`${packageDir}/package.json`, rootDir);
+  const rows = [];
+  for (const [subpath, value] of Object.entries(manifest.exports ?? {})) {
+    if (subpath === '.' || (policy.ignoredExportSubpaths ?? []).includes(subpath)) continue;
+    const source = sourceFromPackageExport(value);
+    if (!source || !source.startsWith('.')) continue;
+    const relPath = resolveRelativeModule(`${packageDir}/package.json`, source, rootDir);
+    if (!relPath || !/\.(ts|tsx|mjs)$/u.test(relPath)) continue;
+    const exports = parseModuleExports(relPath, rootDir);
+    const owner = ownerFor(subpath);
+    for (const [names, kind, rowClassification] of [
+      [exports.values, `${kindPrefix}-value`, classification],
+      [exports.types, `${kindPrefix}-type`, `${classification}-type`],
+    ]) {
+      for (const name of names) {
+        const id = `${manifest.name}:${kind.endsWith('-type') ? 'type' : 'value'}:${name}`;
+        if (seenIds.has(id)) continue;
+        seenIds.add(id);
+        rows.push({
+          id,
+          package: manifest.name,
+          kind,
+          name,
+          subpath,
+          source: relPath,
+          classification: rowClassification,
+          primaryDocsOwner: owner,
+        });
+      }
+    }
+  }
+  return rows.sort((a, b) => a.id.localeCompare(b.id));
 }
 
 function cliRows(policy, rootDir = ROOT_DIR) {
@@ -203,6 +242,32 @@ function registryRows(policy, rootDir = ROOT_DIR) {
       primaryDocsOwner: item.type === 'component' ? ownerForComponent(item.name, policy) : policy.owners.registry,
     }))
     .sort((a, b) => a.id.localeCompare(b.id));
+}
+
+// Owner routes are only meaningful if they live inside the ratified docs IA (#455 owns
+// docsFoundation.sections). `published` holds owner routes whose page already exists, so the
+// gate can report real coverage instead of asserting a `/docs/` string prefix.
+export function resolveOwnerRoutes(rootDir = ROOT_DIR) {
+  const config = readPublicSiteConfig(rootDir);
+  const sectionPrefixes = (config.docsFoundation?.sections ?? []).map((section) => section.route);
+  if (!sectionPrefixes.length) throw new Error('web/public-site.config.json has no docsFoundation.sections.');
+  const published = new Set(collectDocsRoutes(rootDir, config.docsBase).map((entry) => entry.route));
+  return { sectionPrefixes, published };
+}
+
+// A row is only "owned" when its route sits inside a ratified IA section. Returns the violation
+// text, or null when the owner is acceptable.
+export function ownerRouteViolation(row, sectionPrefixes) {
+  if (!row.primaryDocsOwner || !row.primaryDocsOwner.startsWith('/docs/')) {
+    return `${row.id} has no valid primary docs owner.`;
+  }
+  if (!sectionPrefixes.some((prefix) => row.primaryDocsOwner.startsWith(prefix))) {
+    return (
+      `${row.id} is owned by ${row.primaryDocsOwner}, which is outside every ratified docs IA section ` +
+      `(${sectionPrefixes.join(', ')}). Public surfaces may not invent routes outside the #455 IA.`
+    );
+  }
+  return null;
 }
 
 export function buildPublicSurfaceInventory(rootDir = ROOT_DIR) {
@@ -293,6 +358,33 @@ export function buildPublicSurfaceInventory(rootDir = ROOT_DIR) {
     byId.set(row.id, row);
   }
 
+  // Symbols reachable only through a public subpath (`@beemvp/beeui-ui/text`, ...) belong to the
+  // same docs owner as the family that subpath exposes.
+  const componentNames = new Set(uiComponents.map((component) => component.name));
+  const seenIds = new Set(byId.keys());
+  for (const [packageDir, kindPrefix, ownerFor, classification] of [
+    ['packages/tokens', 'token-runtime', () => policy.owners.tokens, 'consumer-runtime'],
+    ['packages/core', 'core', () => policy.owners.core, 'advanced-consumer'],
+    [
+      'packages/ui',
+      'ui',
+      (subpath) => {
+        const component = subpath.replace(/^\.\//u, '');
+        return componentNames.has(component) ? ownerForComponent(component, policy) : policy.owners.uiPackage;
+      },
+      'consumer',
+    ],
+  ]) {
+    for (const row of subpathSymbolRows(packageDir, kindPrefix, ownerFor, classification, policy, rootDir, seenIds)) {
+      byId.set(row.id, row);
+    }
+  }
+
+  const ownerRoutes = resolveOwnerRoutes(rootDir);
+  for (const row of byId.values()) {
+    row.ownerStatus = ownerRoutes.published.has(row.primaryDocsOwner) ? 'published' : 'planned';
+  }
+
   return {
     schemaVersion: 1,
     generatedFrom: [
@@ -305,38 +397,52 @@ export function buildPublicSurfaceInventory(rootDir = ROOT_DIR) {
       'packages/core/src/index.ts',
       'packages/cli/src/beeui.mjs',
       'registry/registry.json',
+      'web/public-site.config.json',
       OWNER_POLICY_FILE,
     ],
     rows: [...byId.values()].sort((a, b) => a.id.localeCompare(b.id)),
   };
 }
 
-function releaseTruthViolations(rootDir, policy) {
-  const publication = readPublicationState(rootDir);
-  if (publication.published) return [];
+const INSTALL_CLAIM = /(?:^|\n)\s*(?:npm\s+(?:i|install)(?:\s+-g)?|npx)\s+@beemvp\/beeui-[^\s`]+/gu;
+// An install command is only truthful while publication is closed if the markdown section that
+// contains it (or an earlier section of the same file) states the package is not available yet.
+// Section scoping is deliberate: a proximity window passes on unrelated nearby prose, and the
+// marker list stays narrow so generic hedges ("future", "not yet") cannot launder a claim.
+const UNAVAILABILITY_MARKER =
+  /(unpublished|not published|not currently available|publication remains|after publication is|once publication is|intended (?:install|global install\/invocation) shape)/u;
+
+export function installClaimViolations(file, source) {
   const violations = [];
-  const installClaim = /(?:^|\n)\s*(?:npm\s+(?:i|install)(?:\s+-g)?|npx)\s+@beemvp\/beeui-[^\s`]+/gu;
-  for (const file of policy.releaseTruthReadmes) {
-    const source = readText(file, rootDir);
-    for (const match of source.matchAll(installClaim)) {
-      const before = source.slice(Math.max(0, match.index - 240), match.index).toLowerCase();
-      if (!/(unpublished|not published|not yet|future|after publication|once published|target shape)/u.test(before)) {
-        violations.push(`${file} presents an install/invoke command as available while publication is closed: ${match[0].trim()}`);
-      }
+  const headingBoundaries = [0, ...[...source.matchAll(/^#{1,6} .*$/gmu)].map((match) => match.index)];
+  for (const match of source.matchAll(INSTALL_CLAIM)) {
+    const sectionStart = headingBoundaries.filter((index) => index <= match.index).pop() ?? 0;
+    const acknowledged =
+      UNAVAILABILITY_MARKER.test(source.slice(sectionStart, match.index).toLowerCase()) ||
+      UNAVAILABILITY_MARKER.test(source.slice(0, sectionStart).toLowerCase());
+    if (!acknowledged) {
+      violations.push(`${file} presents an install/invoke command as available while publication is closed: ${match[0].trim()}`);
     }
   }
   return violations;
+}
+
+function releaseTruthViolations(rootDir, policy) {
+  const publication = readPublicationState(rootDir);
+  if (publication.published) return [];
+  return policy.releaseTruthReadmes.flatMap((file) => installClaimViolations(file, readText(file, rootDir)));
 }
 
 export function validatePublicSurfaceInventory(rootDir = ROOT_DIR) {
   const policy = readJson(OWNER_POLICY_FILE, rootDir);
   const inventory = buildPublicSurfaceInventory(rootDir);
   const violations = [];
+  const { sectionPrefixes } = resolveOwnerRoutes(rootDir);
   for (const row of inventory.rows) {
-    if (!row.primaryDocsOwner || !row.primaryDocsOwner.startsWith('/docs/')) {
-      violations.push(`${row.id} has no valid primary docs owner.`);
-    }
+    const ownerViolation = ownerRouteViolation(row, sectionPrefixes);
+    if (ownerViolation) violations.push(ownerViolation);
     if (!row.classification) violations.push(`${row.id} has no consumer classification.`);
+    if (!row.ownerStatus) violations.push(`${row.id} has no owner page status.`);
   }
 
   const llmsComponents = readText('llms-components.txt', rootDir);
@@ -354,8 +460,28 @@ export function validatePublicSurfaceInventory(rootDir = ROOT_DIR) {
   return violations;
 }
 
+export function summarizePublicSurfaceInventory(inventory) {
+  const published = inventory.rows.filter((row) => row.ownerStatus === 'published').length;
+  return {
+    rows: inventory.rows.length,
+    published,
+    planned: inventory.rows.length - published,
+  };
+}
+
 export function serializePublicSurfaceInventory(rootDir = ROOT_DIR) {
   return `${JSON.stringify(buildPublicSurfaceInventory(rootDir), null, 2)}\n`;
+}
+
+// Read-only freshness check. The committed inventory is the reviewable record of the public
+// surface, so a stale/missing file must fail the gate instead of being silently regenerated.
+export function validateInventoryFreshness(rootDir = ROOT_DIR) {
+  const output = path.join(rootDir, OUTPUT_FILE);
+  if (!fs.existsSync(output)) return [`${OUTPUT_FILE} is missing. Run \`pnpm docs:surface:generate\`.`];
+  if (fs.readFileSync(output, 'utf8') !== serializePublicSurfaceInventory(rootDir)) {
+    return [`${OUTPUT_FILE} is stale. Run \`pnpm docs:surface:generate\` and review the derived surface diff.`];
+  }
+  return [];
 }
 
 export function writePublicSurfaceInventory(rootDir = ROOT_DIR) {
@@ -366,25 +492,11 @@ export function writePublicSurfaceInventory(rootDir = ROOT_DIR) {
 }
 
 function main() {
-  const check = process.argv.includes('--check');
   const violations = validatePublicSurfaceInventory(ROOT_DIR);
   if (violations.length) {
     console.error('Public-surface documentation contract failed:');
     for (const violation of violations) console.error(`- ${violation}`);
     process.exitCode = 1;
-    return;
-  }
-  if (check) {
-    const inventory = buildPublicSurfaceInventory(ROOT_DIR);
-    const output = path.join(ROOT_DIR, OUTPUT_FILE);
-    const actual = fs.existsSync(output) ? fs.readFileSync(output, 'utf8') : '';
-    const expected = serializePublicSurfaceInventory(ROOT_DIR);
-    if (actual !== expected) {
-      console.error(`${OUTPUT_FILE} is missing or stale. Run \`pnpm docs:surface:generate\`.`);
-      process.exitCode = 1;
-      return;
-    }
-    console.log(`Public-surface documentation contract passed (${inventory.rows.length} derived rows, zero orphan owners; generated inventory is fresh).`);
     return;
   }
   console.log(`generated ${writePublicSurfaceInventory(ROOT_DIR)}`);

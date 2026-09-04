@@ -1,8 +1,8 @@
 {
-  "$schema-note": "Primary documentation ownership policy for the generated BeeUI public-surface inventory (#473). Inventory rows are derived from package manifests/barrels, tokens, CLI help and Registry data. `acknowledgedSourceBlobs` is intentionally review-controlled: changing a canonical public-surface source fails docs:surface:check until this policy is explicitly re-acknowledged after docs ownership is reviewed.",
+  "$schema-note": "Primary documentation ownership policy for the generated BeeUI public-surface inventory (#473). Inventory rows are derived from package manifests/barrels, tokens, CLI help and Registry data. `acknowledgedSourceBlobs` is intentionally review-controlled: changing a canonical public-surface source fails docs:surface:check until this policy is explicitly re-acknowledged after docs ownership is reviewed (`pnpm docs:surface:acknowledge` rewrites the map once the derived diff has been reviewed). Owner routes must resolve inside a ratified docs IA section from web/public-site.config.json#docsFoundation.sections, and each derived row records whether its owner page is already published or still planned so coverage is never overstated.",
   "schemaVersion": 1,
   "owners": {
-    "uiComponent": "/docs/components/reference/{component}/",
+    "uiComponent": "/docs/components/{component}/",
     "uiPackage": "/docs/reference/components/",
     "tokens": "/docs/reference/tokens/",
     "styling": "/docs/reference/styling/",
@@ -34,6 +34,7 @@
     "packages/cli/src/beeui.mjs": "b3d6eccecb6c5ec814b90bcf29083d2e55c0f796",
     "registry/registry.json": "fb8c1ea6022ed55c6fbf5a16722d9670d57eed1d"
   },
+  "ignoredExportSubpaths": ["./package.json"],
   "requiredMachineMirrors": ["llms-components.txt", "llms-patterns.txt"],
   "releaseTruthReadmes": [
     "README.md",
