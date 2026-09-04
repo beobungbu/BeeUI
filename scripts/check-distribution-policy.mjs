@@ -114,13 +114,18 @@ export function collectDistTagPolicyViolations({ policy, packageVersions, releas
   if (!Array.isArray(tags) || tags.length !== expectedTags.length || !expectedTags.every((t) => tags.includes(t))) {
     violations.push(`${label}: "distTags" must be exactly ${JSON.stringify(expectedTags)}, got ${JSON.stringify(tags)}.`);
   }
-  for (const key of ['stableDistTag', 'prereleaseDistTag', 'atomicPromotionTag']) {
+  for (const key of ['stableDistTag', 'prereleaseDistTag', 'stablePromotionTag']) {
     if (Array.isArray(tags) && !tags.includes(policy[key])) {
       violations.push(`${label}: "${key}" ${JSON.stringify(policy[key])} must be one of distTags ${JSON.stringify(tags)}.`);
     }
   }
   if (policy.stableDistTag !== 'latest') {
     violations.push(`${label}: "stableDistTag" must be "latest".`);
+  }
+  if (policy.stablePromotionTag !== policy.stableDistTag) {
+    violations.push(
+      `${label}: "stablePromotionTag" ${JSON.stringify(policy.stablePromotionTag)} must equal stableDistTag ${JSON.stringify(policy.stableDistTag)}.`,
+    );
   }
   if (policy.prereleaseDistTag === policy.stableDistTag) {
     violations.push(`${label}: prereleaseDistTag and stableDistTag must differ (prereleases never publish to latest).`);
