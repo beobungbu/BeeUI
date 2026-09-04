@@ -263,6 +263,27 @@ test('piped native compile steps cannot mask a failure through tee', async () =>
   }
 });
 
+// Retargeting a pull request fires `pull_request.edited` and nothing else. The
+// classifier decides full CI from base.ref, so a workflow that ignores `edited`
+// lets a PR keep the reduced-scope checks it earned against development and
+// spend them on main's branch protection.
+test('pull request workflows re-validate when the base branch changes', async () => {
+  const { ci, visual, webConsumer, webA11y, expo } = await sources();
+  for (const [name, workflow] of [
+    ['ci.yml', ci],
+    ['visual-web.yml', visual],
+    ['web-consumer.yml', webConsumer],
+    ['web-a11y.yml', webA11y],
+    ['expo-consumer.yml', expo],
+  ]) {
+    const types = /pull_request:[\s\S]*?types: \[([^\]]+)\]/.exec(workflow);
+    assert.ok(types, `${name} has no pull_request types list`);
+    const listed = types[1].split(',').map((entry) => entry.trim());
+    assert.ok(listed.includes('edited'), `${name} ignores pull_request.edited, so a base-branch change never re-validates`);
+    assert.ok(listed.includes('synchronize'), `${name} must still re-run on new commits`);
+  }
+});
+
 test('consumer scripts still perform real native compiles', async () => {
   const { bareScript, expoScript } = await sources();
   assert.match(bareScript, /\.\/gradlew[\s\S]*assembleDebug/);
