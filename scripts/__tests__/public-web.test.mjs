@@ -38,6 +38,22 @@ test('environment SEO and Worker headers fail closed outside production', () => 
   assert.doesNotMatch(productionHeaders, /X-Robots-Tag: noindex/u);
 });
 
+test('generated Examples canonical follows the explicit environment', () => {
+  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-examples-origin-'));
+  try {
+    buildPublicDiscovery({ rootDir, outDir, environment: 'production' });
+    const productionHub = fs.readFileSync(path.join(outDir, 'examples/index.html'), 'utf8');
+    assert.match(productionHub, /rel="canonical" href="https:\/\/beeui\.beemvp\.com\/examples\/"/u);
+    assert.doesNotMatch(productionHub, /beeui-dev\.beemvp\.com/u);
+
+    buildPublicDiscovery({ rootDir, outDir, environment: 'staging' });
+    const stagingHub = fs.readFileSync(path.join(outDir, 'examples/index.html'), 'utf8');
+    assert.match(stagingHub, /rel="canonical" href="https:\/\/beeui-stg\.beemvp\.com\/examples\/"/u);
+  } finally {
+    fs.rmSync(outDir, { recursive: true, force: true });
+  }
+});
+
 test('landing build writes deterministic HTML and CSS without unresolved placeholders', () => {
   const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-landing-'));
   buildPublicLanding({ rootDir, outDir });
