@@ -521,6 +521,7 @@ jobs:
             ~/.cocoapods
             ~/Library/Caches/CocoaPods
             ~/Library/Caches/BeeUI/bundle
+            ~/Library/Caches/ReactNative
           key: pods-macos-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pods-macos-
       - name: Restore Xcode compilation results
@@ -620,6 +621,7 @@ jobs:
             ~/.cocoapods
             ~/Library/Caches/CocoaPods
             ~/Library/Caches/BeeUI/bundle
+            ~/Library/Caches/ReactNative
           key: pods-macos-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Save Xcode compilation results
         if: github.event_name == 'push'

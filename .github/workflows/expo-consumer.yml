@@ -270,6 +270,7 @@ jobs:
           path: |
             ~/.cocoapods
             ~/Library/Caches/CocoaPods
+            ~/Library/Caches/ReactNative
           key: pods-expo-consumer-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pods-expo-consumer-
       - name: Restore Xcode compilation results
@@ -303,6 +304,7 @@ jobs:
           path: |
             ~/.cocoapods
             ~/Library/Caches/CocoaPods
+            ~/Library/Caches/ReactNative
           key: pods-expo-consumer-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Save Xcode compilation results
         if: github.event_name == 'push'
