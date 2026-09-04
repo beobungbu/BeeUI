@@ -6,7 +6,7 @@ BeeUI's public npm scope is `@beemvp`. The repository-side release control plane
 
 As of 2026-09-04, the owner has confirmed that the npm organization/scope `@beemvp` exists and that 2FA is enabled on the npm owner account. No BeeUI package publication is implied by those account-level actions.
 
-The release workflow filename is `.github/workflows/npm-release.yml`. Its mutating jobs use the protected GitHub environment `release`; the OIDC staging job grants `id-token: write` only at the job level.
+The release workflow filename is `.github/workflows/npm-release.yml`. Its mutating jobs use the protected GitHub environment `release`. Both registry-mutating jobs grant `id-token: write` only at the job level, but for different purposes: bootstrap uses it only to mint provenance for a token-authenticated direct publish, while steady-state staging uses it for npm Trusted Publishing/OIDC (and provenance).
 
 ## Important npm bootstrap constraint
 
@@ -16,7 +16,7 @@ BeeUI therefore uses this sequence:
 
 1. Prepare an owner-approved prerelease version `20260902.0.0-rc.N` across root, core, tokens, ui and cli.
 2. Run `npm-release` with `operation=verify` first. This is non-mutating.
-3. For the first-ever package publication only, run `operation=bootstrap-rc` through the protected `release` environment. This path publishes the RC under `next` with provenance and requires the temporary environment secret `NPM_BOOTSTRAP_TOKEN`.
+3. For the first-ever package publication only, run `operation=bootstrap-rc` through the protected `release` environment. This path publishes the RC under `next` with provenance and requires the temporary environment secret `NPM_BOOTSTRAP_TOKEN`. Registry authentication comes from that token; the job-local OIDC permission exists only so npm/Sigstore can generate provenance.
 4. Immediately after the four packages exist, configure npm Trusted Publisher for every package using the exact values below.
 5. Revoke the bootstrap token and delete `NPM_BOOTSTRAP_TOKEN` from the GitHub `release` environment.
 6. For later RCs, use `operation=stage-rc`. The workflow authenticates with OIDC, stages each package, and stops. The owner reviews and approves each staged package with 2FA on npm.
@@ -53,7 +53,9 @@ The bootstrap token is intentionally exceptional. It exists only because npm can
 
 Create a granular npm access token with the minimum scope that can create the four public `@beemvp/beeui-*` packages. Because the one-time bootstrap happens in non-interactive GitHub Actions, npm direct publishing may require the token to bypass the interactive 2FA challenge. Store it only as the `NPM_BOOTSTRAP_TOKEN` secret in the protected GitHub `release` environment, never as a repository-level secret and never in `.npmrc`, source, logs or issue comments.
 
-Revoke it immediately after bootstrap and Trusted Publisher configuration. The steady state is OIDC only.
+The bootstrap job also has job-local `id-token: write`, but that permission is not used for npm registry authentication. It is required by `npm publish --provenance` so the GitHub-hosted runner can mint the Sigstore/OIDC provenance attestation for the token-authenticated first publish.
+
+Revoke the bootstrap token immediately after bootstrap and Trusted Publisher configuration. The steady state is OIDC-only registry authentication through Trusted Publishing.
 
 ## Workflow guardrails
 
