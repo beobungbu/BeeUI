@@ -2,28 +2,57 @@ import { appendFileSync, readFileSync } from 'node:fs';
 
 import { isPackageBoundarySensitivePath } from './classify-ci-changes.mjs';
 
+// `git diff --name-only` quotes any path with non-ASCII or special characters
+// and escapes the bytes in octal (core.quotePath defaults to true). Decoding it
+// here keeps a component named `bézier.tsx` from classifying as no lane at all,
+// even if a caller forgets `-c core.quotePath=false -z`.
+function decodeQuotedPath(value) {
+  if (!value.startsWith('"') || !value.endsWith('"') || value.length < 2) return value;
+  const body = value.slice(1, -1);
+  const bytes = [];
+  for (let i = 0; i < body.length; i += 1) {
+    if (body[i] !== '\\') {
+      bytes.push(body.charCodeAt(i));
+      continue;
+    }
+    const octal = /^[0-7]{3}/.exec(body.slice(i + 1, i + 4));
+    if (octal) {
+      bytes.push(parseInt(octal[0], 8));
+      i += 3;
+      continue;
+    }
+    const escapes = { n: 10, t: 9, r: 13, '"': 34, '\\': 92 };
+    const mapped = escapes[body[i + 1]];
+    if (mapped === undefined) return value;
+    bytes.push(mapped);
+    i += 1;
+  }
+  return new TextDecoder('utf-8').decode(Uint8Array.from(bytes));
+}
+
 function normalizePath(value) {
-  return String(value ?? '')
-    .trim()
-    .replaceAll('\\', '/')
-    .replace(/^\.\//, '');
+  const raw = String(value ?? '').trim();
+  // Backslashes are legal inside a POSIX filename, so only rewrite them once
+  // the git quoting has been removed.
+  return decodeQuotedPath(raw).replaceAll('\\', '/').replace(/^\.\//, '');
 }
 
 function uniqueFiles(values) {
   return [...new Set(values.map(normalizePath).filter(Boolean))].sort();
 }
 
-const PACKAGE_DOC_RE = /^packages\/(?:core|ui|tokens)\/(?:README\.md|CHANGELOG\.md|docs\/)/;
+const PACKAGE_DOC_RE = /^packages\/(?:core|ui|tokens)\/(?:README\.md$|CHANGELOG\.md$|docs\/)/;
 const PACKAGE_MANIFEST_RE = /^packages\/(?:core|ui|tokens)\/package\.json$/;
 
 // The central orchestrator and its two classifiers are self-hosting CI policy.
 // Any change to them gets one intentionally expensive full validation run so a
 // broken optimization cannot teach CI to skip the evidence that would catch it.
-const CI_CONTROL_PLANE_EXACT = new Set([
-  '.github/workflows/ci.yml',
-  'scripts/ci-scope.mjs',
-  'scripts/classify-ci-changes.mjs',
-]);
+const CI_CONTROL_PLANE_EXACT = new Set(['scripts/ci-scope.mjs', 'scripts/classify-ci-changes.mjs']);
+const CI_CONTROL_PLANE_PREFIXES = ['.github/workflows/'];
+
+function isControlPlanePath(file) {
+  return CI_CONTROL_PLANE_EXACT.has(file) || CI_CONTROL_PLANE_PREFIXES.some((prefix) => file.startsWith(prefix));
+}
 
 const DOC_EXACT = new Set(['README.md', 'CHANGELOG.md']);
 const DOC_PREFIXES = ['docs/', 'apps/docs/'];
@@ -41,7 +70,11 @@ const VISUAL_PREFIXES = [
   'registry/',
 ];
 
-const TOKEN_PREFIXES = ['packages/tokens/src/', 'scripts/tokens/', 'scripts/__tests__/token'];
+const TOKEN_PREFIXES = ['packages/tokens/src/', 'scripts/tokens/'];
+// Token behaviour suites are named after the token surface they cover
+// (density-tokens, responsive-layout-tokens, theme-overrides-tokens), not after
+// a script, so match the suffix rather than a script name.
+const TOKEN_TEST_RE = /^scripts\/__tests__\/[a-z0-9-]*tokens?[a-z0-9-]*\.test\.mjs$/;
 const TOKEN_EXACT = new Set([
   'packages/tokens/package.json',
   'packages/tokens/tokens.json',
@@ -85,17 +118,91 @@ const RELEASE_PREFIXES = ['.changeset/', 'scripts/release/'];
 const BENCH_PREFIXES = ['scripts/benchmark/'];
 const BENCH_EXACT = new Set(['scripts/__tests__/benchmark-statistics.test.mjs']);
 
+// packages/cli publishes the `beeui` binary but has no native surface, so it
+// needs the build/typecheck lane without pulling in the native compilers.
+const BUILD_ONLY_PREFIXES = ['packages/cli/'];
+
+// Anything that decides how the whole workspace compiles. Root package.json is
+// listed here for the JS lanes only; classify-ci-changes.mjs deliberately keeps
+// it out of the native graph so a scripts-only edit does not boot a simulator.
+const BUILD_CONFIG_EXACT = new Set([
+  'package.json',
+  'pnpm-workspace.yaml',
+  'tsconfig.base.json',
+  'eslint.config.mjs',
+  '.nvmrc',
+  '.node-version',
+]);
+
+// Generated public artifacts and the code that produces or asserts them.
+const DOC_ARTIFACT_RE = /^llms(?:-[a-z]+)?\.txt$/;
+const DOC_EXTRA_EXACT = new Set(['AGENTS.md']);
+const DOC_LIB_RE = /^scripts\/(?:component-docs-lib|public-component-reference|public-pattern-reference|public-guide-data|generate-production-pattern-usage)\.mjs$/;
+
+const WEB_PREFIXES_EXTRA = ['scripts/public-web-checks/', 'examples/', '.github/deployment/'];
+const WEB_LIB_RE = /^scripts\/(?:public-site-contract-lib|public-component-previews)\.mjs$/;
+const WEB_TEST_RE = /^scripts\/__tests__\/public-[a-z0-9-]+\.test\.mjs$/;
+
+const TOKEN_EXTRA_PREFIXES = ['scripts/vendor/dtcg/'];
+const TOKEN_EXTRA_EXACT = new Set([
+  'scripts/token-lifecycle.mjs',
+  'scripts/validate-dtcg-schemas.mjs',
+  'scripts/generate-token-migration-report.mjs',
+]);
+
+const SHOWCASE_EXTRA_EXACT = new Set([
+  'scripts/beeui.mjs',
+  'scripts/registry-lib.mjs',
+  'scripts/verify-registry.mjs',
+]);
+// The CLI suites exercise `beeui add` against the registry.
+const SHOWCASE_TEST_RE = /^scripts\/__tests__\/beeui[a-z0-9-]*\.test\.mjs$/;
+
+// The export-map suite is named after what it verifies rather than after the
+// generator script, so the companion rule cannot derive it.
+const PACKAGE_EXTRA_EXACT = new Set([
+  'scripts/generate-ui-exports.mjs',
+  'scripts/__tests__/verify-ui-export-map.test.mjs',
+]);
+
+// A `scripts/__tests__/x.test.mjs` file exists to verify a script named after
+// it, so it routes exactly like that script. Deriving this beats maintaining a
+// second list that silently drifts out of step with the first. Repo convention
+// prefixes the implementation with check-/generate-/verify-, so try each.
+const COMPANION_SCRIPT_PREFIXES = ['', 'check-', 'generate-', 'verify-'];
+
+function companionScriptPaths(file) {
+  const match = /^scripts\/__tests__\/(.+)\.test\.mjs$/.exec(file);
+  if (!match) return [];
+  return COMPANION_SCRIPT_PREFIXES.map((prefix) => `scripts/${prefix}${match[1]}.mjs`);
+}
+
+// Routes a path through `predicate`, also trying the scripts a test may cover.
+function matchesWithCompanion(file, predicate) {
+  if (predicate(file)) return true;
+  return companionScriptPaths(file).some(predicate);
+}
+
 function isDocsPath(file) {
   return (
     DOC_EXACT.has(file) ||
     PACKAGE_DOC_RE.test(file) ||
     DOC_PREFIXES.some((prefix) => file.startsWith(prefix)) ||
-    DOC_SCRIPT_RE.test(file)
+    DOC_SCRIPT_RE.test(file) ||
+    DOC_EXTRA_EXACT.has(file) ||
+    DOC_ARTIFACT_RE.test(file) ||
+    DOC_LIB_RE.test(file)
   );
 }
 
 function isWebPath(file) {
-  return WEB_PREFIXES.some((prefix) => file.startsWith(prefix)) || WEB_SCRIPT_RE.test(file);
+  return (
+    WEB_PREFIXES.some((prefix) => file.startsWith(prefix)) ||
+    WEB_PREFIXES_EXTRA.some((prefix) => file.startsWith(prefix)) ||
+    WEB_SCRIPT_RE.test(file) ||
+    WEB_LIB_RE.test(file) ||
+    WEB_TEST_RE.test(file)
+  );
 }
 
 function isVisualPath(file) {
@@ -103,7 +210,19 @@ function isVisualPath(file) {
 }
 
 function isTokenPath(file) {
-  return TOKEN_EXACT.has(file) || TOKEN_PREFIXES.some((prefix) => file.startsWith(prefix));
+  return (
+    TOKEN_EXACT.has(file) ||
+    TOKEN_EXTRA_EXACT.has(file) ||
+    TOKEN_PREFIXES.some((prefix) => file.startsWith(prefix)) ||
+    TOKEN_EXTRA_PREFIXES.some((prefix) => file.startsWith(prefix)) ||
+    TOKEN_TEST_RE.test(file)
+  );
+}
+
+// The build/typecheck lane: the published package graph plus anything that
+// changes how it compiles.
+function isBuildPath(file) {
+  return BUILD_CONFIG_EXACT.has(file) || BUILD_ONLY_PREFIXES.some((prefix) => file.startsWith(prefix)) || PACKAGE_EXTRA_EXACT.has(file);
 }
 
 function isConsumerPath(file) {
@@ -161,30 +280,46 @@ export function classifyCiScope(values, { forceFull = false } = {}) {
   if (forceFull) return fullResult(files, 'full CI explicitly requested');
   if (files.length === 0) return fullResult(files, 'no changed paths supplied; failing safe to full CI');
 
-  const controlPlaneFiles = files.filter((file) => CI_CONTROL_PLANE_EXACT.has(file));
+  const controlPlaneFiles = files.filter(isControlPlanePath);
   if (controlPlaneFiles.length > 0) {
     return fullResult(files, `CI control-plane changed: ${controlPlaneFiles.join(', ')}`);
   }
 
-  const packageChanged = files.some(isPackageBoundarySensitivePath);
-  const visualChanged = files.some(isVisualPath);
-  const docsChanged = files.some(isDocsPath);
-  const webChanged = docsChanged || files.some(isWebPath);
+  const sourceChanged = files.some((file) => matchesWithCompanion(file, isPackageBoundarySensitivePath));
+
+  // Lanes are named after where a file lives, but the gates inside them are
+  // named after what they read, and three of them read published package
+  // source: the docs artifacts are generated from it, the semantic-token
+  // consumption gate scans packages/ui/src, and every screenshot renders it.
+  // Without this inheritance a component edit skips the very gates that exist
+  // to police it, and the drift only surfaces on someone else's later PR.
+  const visualChanged = sourceChanged || files.some((file) => matchesWithCompanion(file, isVisualPath));
+  const docsChanged = sourceChanged || files.some((file) => matchesWithCompanion(file, isDocsPath));
+  const tokensChanged = sourceChanged || files.some((file) => matchesWithCompanion(file, isTokenPath));
+
+  const webChanged = docsChanged || files.some((file) => matchesWithCompanion(file, isWebPath));
   const showcaseChanged =
-    packageChanged || files.some((file) => file.startsWith('apps/showcase/') || file.startsWith('registry/'));
+    sourceChanged ||
+    files.some(
+      (file) =>
+        file.startsWith('apps/showcase/') ||
+        file.startsWith('registry/') ||
+        SHOWCASE_EXTRA_EXACT.has(file) ||
+        SHOWCASE_TEST_RE.test(file),
+    );
 
   return {
     files,
     docs: docsChanged,
     web: webChanged,
     visual: visualChanged,
-    package: packageChanged,
-    tokens: files.some(isTokenPath),
+    package: sourceChanged || files.some((file) => matchesWithCompanion(file, isBuildPath)),
+    tokens: tokensChanged,
     showcase: showcaseChanged,
-    consumer: files.some(isConsumerPath),
-    expoConsumer: files.some(isExpoPath),
-    release: files.some(isReleasePath),
-    benchmark: files.some(isBenchmarkPath),
+    consumer: files.some((file) => matchesWithCompanion(file, isConsumerPath)),
+    expoConsumer: files.some((file) => matchesWithCompanion(file, isExpoPath)),
+    release: files.some((file) => matchesWithCompanion(file, isReleasePath)),
+    benchmark: files.some((file) => matchesWithCompanion(file, isBenchmarkPath)),
     reason: 'changed-path scope classification',
   };
 }
@@ -203,7 +338,9 @@ function writeOutput(result) {
 }
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
-  const files = readFileSync(0, 'utf8').split(/\r?\n/).filter(Boolean);
+  // Callers pass `git diff -z`, which separates paths with NUL so a filename
+  // containing a newline cannot split into two bogus paths.
+  const files = readFileSync(0, 'utf8').split(/\r?\n|\0/).filter(Boolean);
   const result = classifyCiScope(files, { forceFull: envFlag('BEEUI_FORCE_FULL_CI') });
   console.log(JSON.stringify(result, null, 2));
   writeOutput(result);

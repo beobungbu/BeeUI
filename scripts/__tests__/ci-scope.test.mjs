@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { classifyCiScope } from '../ci-scope.mjs';
+import { execFileSync } from 'node:child_process';
 
 const ALL_SCOPES = [
   'docs',
@@ -94,4 +95,79 @@ test('central CI control-plane changes force one full self-validation run', () =
 test('empty input and explicit full mode fail safe to every lane', () => {
   assertFull(classifyCiScope([]));
   assertFull(classifyCiScope(['docs/guide.md'], { forceFull: true }));
+});
+
+// Every tracked file either selects a verification lane or is listed here with
+// the reason it needs none. Without this the routing table can only be reviewed
+// by inspection, and a path that silently selects nothing looks identical to a
+// path that is genuinely inert — which is how packages/cli, tsconfig.base.json
+// and the whole packages/core source tree ended up unverified on pull requests.
+const LANES = ['docs', 'web', 'visual', 'package', 'tokens', 'showcase', 'consumer', 'expoConsumer', 'release', 'benchmark'];
+
+const NO_LANE_REQUIRED = [
+  // verify-fast has no job-level `if:`, so it runs these on every pull request.
+  { prefix: 'scripts/check-compatibility-matrix', why: 'verify-fast runs compat:check/compat:test unconditionally' },
+  { prefix: 'scripts/check-distribution-policy', why: 'verify-fast runs dist-policy:check/dist-policy:test unconditionally' },
+  { prefix: 'scripts/check-release-control-plane', why: 'verify-fast runs release-control-plane:* unconditionally' },
+  { prefix: 'scripts/check-release-ruleset', why: 'verify-fast runs release-ruleset:* unconditionally' },
+  { prefix: 'scripts/check-repo-hygiene', why: 'verify-fast runs hygiene:check unconditionally' },
+  { prefix: 'scripts/__tests__/check-compatibility-matrix', why: 'run by verify-fast' },
+  { prefix: 'scripts/__tests__/check-distribution-policy', why: 'run by verify-fast' },
+  { prefix: 'scripts/__tests__/release-control-plane', why: 'run by verify-fast' },
+  { prefix: 'scripts/__tests__/release-ruleset-contract', why: 'run by verify-fast' },
+  { prefix: 'scripts/__tests__/ci-scope', why: 'run by verify-fast' },
+  { prefix: 'scripts/__tests__/classify-ci-changes', why: 'run by verify-fast' },
+  { prefix: 'scripts/__tests__/ios-build-cache-contract', why: 'run by verify-fast' },
+
+  // Exercised only by the scheduled runtime-native workflow, which no pull
+  // request lane can trigger.
+  { prefix: 'scripts/runtime-smoke/', why: 'scheduled runtime-native workflow only' },
+  { prefix: 'scripts/ci-native-error-reader', why: 'log summariser for the scheduled native workflows' },
+  { prefix: 'scripts/__tests__/ci-native-error-reader', why: 'covers the scheduled-workflow log summariser' },
+  { prefix: 'scripts/__tests__/fixtures/ci-logs/', why: 'fixtures for the native log summariser' },
+
+  // Repository meta: no build, test or published artifact reads these.
+  { prefix: '.claude/', why: 'agent working notes' },
+  { prefix: 'plans/', why: 'planning and review records' },
+  { prefix: '.github/ISSUE_TEMPLATE/', why: 'issue forms' },
+  { prefix: '.github/PULL_REQUEST_TEMPLATE.md', why: 'PR template' },
+  { prefix: '.github/CODEOWNERS', why: 'review routing' },
+  { prefix: '.github/dependabot.yml', why: 'dependency bot schedule' },
+  { prefix: '.editorconfig', why: 'editor hint' },
+  { prefix: '.gitattributes', why: 'git metadata' },
+  { prefix: '.gitignore', why: 'git metadata' },
+  { prefix: 'LICENSE', why: 'licence text' },
+  { prefix: 'packages/core/LICENSE', why: 'licence text' },
+  { prefix: 'packages/tokens/LICENSE', why: 'licence text' },
+  { prefix: 'packages/ui/LICENSE', why: 'licence text' },
+  { prefix: 'CODE_OF_CONDUCT.md', why: 'community policy' },
+  { prefix: 'CONTRIBUTING.md', why: 'community policy' },
+  { prefix: 'SECURITY.md', why: 'community policy' },
+];
+
+function trackedFiles() {
+  return execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8', maxBuffer: 1024 * 1024 * 64 })
+    .split('\0')
+    .filter(Boolean);
+}
+
+test('every tracked file selects a lane or is an explicit, reasoned exception', () => {
+  const unmapped = [];
+  for (const file of trackedFiles()) {
+    const scope = classifyCiScope([file]);
+    if (LANES.some((lane) => scope[lane])) continue;
+    if (NO_LANE_REQUIRED.some((entry) => file.startsWith(entry.prefix))) continue;
+    unmapped.push(file);
+  }
+  assert.deepEqual(
+    unmapped,
+    [],
+    `these paths select no verification lane and are not listed in NO_LANE_REQUIRED:\n${unmapped.join('\n')}`,
+  );
+});
+
+test('no exception outlives the file it was written for', () => {
+  const files = trackedFiles();
+  const stale = NO_LANE_REQUIRED.filter((entry) => !files.some((file) => file.startsWith(entry.prefix)));
+  assert.deepEqual(stale.map((entry) => entry.prefix), [], 'remove exceptions whose paths no longer exist');
 });

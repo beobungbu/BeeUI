@@ -46,7 +46,7 @@ jobs:
           BEEUI_FORCE_FULL_CI: ${{ github.event.pull_request.base.ref != 'development' || contains(github.event.pull_request.labels.*.name, 'ci:full') }}
         run: |
           set -euo pipefail
-          git diff --name-only --no-renames "$BASE_SHA" "$HEAD_SHA" | node ./scripts/ci-scope.mjs
+          git -c core.quotePath=false diff --name-only -z --no-renames "$BASE_SHA" "$HEAD_SHA" | node ./scripts/ci-scope.mjs
           echo "full=${BEEUI_FORCE_FULL_CI}" >> "$GITHUB_OUTPUT"
       - name: Record skipped visual proof
         if: steps.scope.outputs.visual != 'true'
