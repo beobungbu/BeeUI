@@ -15,8 +15,15 @@ import * as React from 'react';
 import { ScrollView, StatusBar } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
 import appConfig from './app.json';
-import { ComponentGallery } from './component-gallery';
+import { AddressableComponentGallery } from './component-gallery/addressable-component-gallery';
+import { resolveShowcaseTarget } from './example-registry';
 import { PatternGallery } from './pattern-gallery';
+import {
+  readShowcaseTargetFromLocation,
+  subscribeToShowcaseHistory,
+  writeShowcaseTargetToLocation,
+} from './showcase-location';
+import type { ShowcaseTarget } from './showcase-target';
 import {
   DynamicTypeAcceptance,
   L10nStressAcceptance,
@@ -35,11 +42,6 @@ type ShowcaseSection =
   | 'runtime-stress'
   | 'tokens';
 
-// Build identity for preview/release evidence (#224/#225). The version is the
-// single source in app.json; the commit SHA is injected at export time via the
-// Expo public env var (`EXPO_PUBLIC_BUILD_SHA=$(git rev-parse --short HEAD)`).
-// When the SHA is unset (local dev, jest) the row still shows the version and
-// the honest unpublished-status note, so no environment is assumed.
 const SHOWCASE_VERSION = appConfig.expo.version;
 const SHOWCASE_BUILD_SHA = process.env.EXPO_PUBLIC_BUILD_SHA ?? '';
 
@@ -78,36 +80,163 @@ function ShowcaseThemeControl() {
   );
 }
 
+function sectionForTarget(target: ShowcaseTarget): ShowcaseSection {
+  if (target.surface === 'component') return 'components';
+  if (target.surface === 'pattern') return 'patterns';
+  if (target.surface === 'tokens') return 'tokens';
+  if (target.id === 'dynamic-type') return 'dynamic-type';
+  if (target.id === 'l10n-stress') return 'l10n-stress';
+  return 'home';
+}
+
+function TargetRecovery({
+  reason,
+  recoveryTarget,
+  onRecover,
+  onHome,
+}: {
+  reason: string;
+  recoveryTarget?: ShowcaseTarget;
+  onRecover: (target: ShowcaseTarget) => void;
+  onHome: () => void;
+}) {
+  return (
+    <Screen testID="showcase-target-error">
+      <SafeArea className="flex-1 bg-background" edges={['top', 'left', 'right', 'bottom']}>
+        <Box className="mx-auto w-full max-w-xl flex-1 justify-center gap-5 px-5 py-8">
+          <Badge variant="warning">Target recovery</Badge>
+          <VStack gap="sm">
+            <Text variant="title">Example not found</Text>
+            <Text testID="showcase-target-error-message" tone="muted">{reason}</Text>
+            <Text tone="subtle" variant="caption">
+              The URL was preserved as an explicit error instead of silently pretending that Showcase Home is the requested example.
+            </Text>
+          </VStack>
+          <HStack gap="sm" wrap>
+            {recoveryTarget ? (
+              <Button onPress={() => onRecover(recoveryTarget)} testID="showcase-target-recover">
+                Open canonical target
+              </Button>
+            ) : null}
+            <Button onPress={onHome} testID="showcase-target-home" variant="outline">
+              Browse Showcase
+            </Button>
+          </HStack>
+          <ShowcaseBuildIdentity />
+        </Box>
+      </SafeArea>
+    </Screen>
+  );
+}
+
 export function ShowcaseRoot() {
   const { theme } = useUniwind();
-  const [section, setSection] = React.useState<ShowcaseSection>('home');
+  const initialTarget = React.useMemo(() => readShowcaseTargetFromLocation(), []);
+  const initialResolution = React.useMemo(
+    () => initialTarget ? resolveShowcaseTarget(initialTarget) : null,
+    [initialTarget],
+  );
+  const [section, setSection] = React.useState<ShowcaseSection>(() =>
+    initialResolution?.ok ? sectionForTarget(initialResolution.target) : 'home',
+  );
+  const [publicTarget, setPublicTarget] = React.useState<ShowcaseTarget | null>(() =>
+    initialResolution?.ok ? initialResolution.target : initialTarget,
+  );
+  const [targetError, setTargetError] = React.useState<
+    { reason: string; recoveryTarget?: ShowcaseTarget } | null
+  >(() => initialResolution && !initialResolution.ok
+    ? { reason: initialResolution.reason, recoveryTarget: initialResolution.recoveryTarget }
+    : null);
+
+  const applyTarget = React.useCallback((target: ShowcaseTarget | null, mode: 'push' | 'replace' | 'history' = 'push') => {
+    if (!target) {
+      setPublicTarget(null);
+      setTargetError(null);
+      if (mode === 'history') setSection('home');
+      if (mode !== 'history') writeShowcaseTargetToLocation(null, mode);
+      return;
+    }
+
+    const resolved = resolveShowcaseTarget(target);
+    if (!resolved.ok) {
+      setPublicTarget(target);
+      setTargetError({ reason: resolved.reason, recoveryTarget: resolved.recoveryTarget });
+      if (mode !== 'history') writeShowcaseTargetToLocation(target, mode);
+      return;
+    }
+
+    setTargetError(null);
+    setPublicTarget(resolved.target);
+    setSection(sectionForTarget(resolved.target));
+    if (mode !== 'history') writeShowcaseTargetToLocation(resolved.target, mode);
+  }, []);
+
+  React.useEffect(() => subscribeToShowcaseHistory((target) => applyTarget(target, 'history')), [applyTarget]);
+
+  const goHome = React.useCallback(() => {
+    setSection('home');
+    applyTarget(null, 'push');
+  }, [applyTarget]);
+
+  const openSection = React.useCallback((nextSection: ShowcaseSection) => {
+    setSection(nextSection);
+    setPublicTarget(null);
+    setTargetError(null);
+    writeShowcaseTargetToLocation(null, 'push');
+  }, []);
+
+  if (targetError) {
+    return (
+      <TargetRecovery
+        onHome={goHome}
+        onRecover={(target) => applyTarget(target, 'replace')}
+        reason={targetError.reason}
+        recoveryTarget={targetError.recoveryTarget}
+      />
+    );
+  }
 
   if (section === 'components') {
-    return <ComponentGallery onBack={() => setSection('home')} />;
+    if (publicTarget?.surface === 'component') {
+      return <AddressableComponentGallery onBack={goHome} target={publicTarget} />;
+    }
+    return <AddressableComponentGallery onBack={goHome} target={{ surface: 'component', id: 'button', example: 'basic' }} />;
   }
 
   if (section === 'patterns') {
-    return <PatternGallery onBackToShowcase={() => setSection('home')} />;
+    return (
+      <PatternGallery
+        onBackToShowcase={goHome}
+        onTargetChange={(target) => {
+          if (target) applyTarget(target, 'push');
+          else {
+            setPublicTarget(null);
+            writeShowcaseTargetToLocation(null, 'push');
+          }
+        }}
+        target={publicTarget?.surface === 'pattern' ? publicTarget : null}
+      />
+    );
   }
 
   if (section === 'tokens') {
-    return <ThemeInspector onBack={() => setSection('home')} />;
+    return <ThemeInspector onBack={goHome} />;
   }
 
   if (section === 'runtime') {
-    return <RuntimeAcceptance onBack={() => setSection('home')} />;
+    return <RuntimeAcceptance onBack={goHome} />;
   }
 
   if (section === 'runtime-stress') {
-    return <RuntimeStressAcceptance onBack={() => setSection('home')} />;
+    return <RuntimeStressAcceptance onBack={goHome} />;
   }
 
   if (section === 'dynamic-type') {
-    return <DynamicTypeAcceptance onBack={() => setSection('home')} />;
+    return <DynamicTypeAcceptance onBack={goHome} />;
   }
 
   if (section === 'l10n-stress') {
-    return <L10nStressAcceptance onBack={() => setSection('home')} />;
+    return <L10nStressAcceptance onBack={goHome} />;
   }
 
   return (
@@ -117,173 +246,165 @@ export function ShowcaseRoot() {
       />
       <SafeArea className="flex-1 bg-background" edges={['top', 'left', 'right', 'bottom']}>
         <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 64 }}>
-          {/*
-            The header scrolls with the catalog instead of sitting above it as
-            fixed chrome: at large font scales (~2x) its scaled title/description
-            alone can exceed the viewport height, and any fixed region that tall
-            would leave the scrollable launcher list zero usable height, making
-            every surface below unreachable (runtime automation included). Home
-            must stay navigable at every audited Dynamic Type scale.
-          */}
           <Box className="bg-surface">
             <AppHeader
-description="Inspect the public component system, semantic theme foundation, production pattern library, and native runtime acceptance from one executable Showcase."
-title="BeeUI Showcase"
-trailing={<ShowcaseThemeControl />}
+              description="Inspect the public component system, semantic theme foundation, production pattern library, and native runtime acceptance from one executable Showcase."
+              title="BeeUI Showcase"
+              trailing={<ShowcaseThemeControl />}
             />
           </Box>
-<Box className="mx-auto w-full max-w-4xl gap-6 px-5 py-8">
-  <VStack gap="sm">
-    <Text variant="title">Choose an inspection surface</Text>
-    <Text tone="muted">
-      Only the selected surface is mounted. Showcase navigation uses local React state and owns no router.
-    </Text>
-  </VStack>
+          <Box className="mx-auto w-full max-w-4xl gap-6 px-5 py-8">
+            <VStack gap="sm">
+              <Text variant="title">Choose an inspection surface</Text>
+              <Text tone="muted">
+                Public example identity is serialized into the URL on Web without introducing an application router. Native selection remains local React state.
+              </Text>
+            </VStack>
 
-  <Box className="flex-row flex-wrap gap-4">
-    <Card className="min-w-[260px] flex-1 gap-5" padding="lg" variant="raised">
-      <VStack gap="sm">
-        <HStack align="start" justify="between" wrap>
-          <Text variant="heading">Components</Text>
-          <Badge variant="secondary">Interactive</Badge>
-        </HStack>
-        <Text tone="muted">
-          Inspect foundation, forms, feedback, overlays, selection, navigation, disclosure, data, and application composition.
-        </Text>
-      </VStack>
-      <Button
-        accessibilityLabel="Open Components"
-        onPress={() => setSection('components')}
-        testID="showcase-open-components"
-        variant="outline"
-      >
-        Browse components
-      </Button>
-    </Card>
+            <Box className="flex-row flex-wrap gap-4">
+              <Card className="min-w-[260px] flex-1 gap-5" padding="lg" variant="raised">
+                <VStack gap="sm">
+                  <HStack align="start" justify="between" wrap>
+                    <Text variant="heading">Components</Text>
+                    <Badge variant="secondary">Interactive</Badge>
+                  </HStack>
+                  <Text tone="muted">
+                    Inspect foundation, forms, feedback, overlays, selection, navigation, disclosure, data, and application composition.
+                  </Text>
+                </VStack>
+                <Button
+                  accessibilityLabel="Open Components"
+                  onPress={() => openSection('components')}
+                  testID="showcase-open-components"
+                  variant="outline"
+                >
+                  Browse components
+                </Button>
+              </Card>
 
-    <Card className="min-w-[260px] flex-1 gap-5" padding="lg" variant="raised">
-      <VStack gap="sm">
-        <HStack align="start" justify="between" wrap>
-          <Text variant="heading">Theme & tokens</Text>
-          <Badge variant="secondary">v2</Badge>
-        </HStack>
-        <Text tone="muted">
-          Inspect semantic colors, typography, sizing, elevation, focus, motion policy, and Brand A/B light-dark switching.
-        </Text>
-      </VStack>
-      <Button
-        accessibilityLabel="Open Theme and tokens"
-        onPress={() => setSection('tokens')}
-        testID="showcase-open-theme-tokens"
-        variant="outline"
-      >
-        Inspect theme
-      </Button>
-    </Card>
+              <Card className="min-w-[260px] flex-1 gap-5" padding="lg" variant="raised">
+                <VStack gap="sm">
+                  <HStack align="start" justify="between" wrap>
+                    <Text variant="heading">Theme & tokens</Text>
+                    <Badge variant="secondary">v2</Badge>
+                  </HStack>
+                  <Text tone="muted">
+                    Inspect semantic colors, typography, sizing, elevation, focus, motion policy, and Brand A/B light-dark switching.
+                  </Text>
+                </VStack>
+                <Button
+                  accessibilityLabel="Open Theme and tokens"
+                  onPress={() => openSection('tokens')}
+                  testID="showcase-open-theme-tokens"
+                  variant="outline"
+                >
+                  Inspect theme
+                </Button>
+              </Card>
 
-    <Card className="min-w-[260px] flex-1 gap-5" padding="lg" variant="raised">
-      <VStack gap="sm">
-        <HStack align="start" justify="between" wrap>
-          <Text variant="heading">Patterns</Text>
-          <Badge variant="secondary">37 screens</Badge>
-        </HStack>
-        <Text tone="muted">
-          Browse four production domains with controlled demo state, responsive previews, state inspection, and light/dark support.
-        </Text>
-      </VStack>
-      <Button
-        accessibilityLabel="Open Patterns"
-        onPress={() => setSection('patterns')}
-        testID="showcase-open-patterns"
-        variant="outline"
-      >
-        Browse patterns
-      </Button>
-    </Card>
+              <Card className="min-w-[260px] flex-1 gap-5" padding="lg" variant="raised">
+                <VStack gap="sm">
+                  <HStack align="start" justify="between" wrap>
+                    <Text variant="heading">Patterns</Text>
+                    <Badge variant="secondary">37 screens</Badge>
+                  </HStack>
+                  <Text tone="muted">
+                    Browse four production domains with controlled demo state, responsive previews, state inspection, and light/dark support.
+                  </Text>
+                </VStack>
+                <Button
+                  accessibilityLabel="Open Patterns"
+                  onPress={() => openSection('patterns')}
+                  testID="showcase-open-patterns"
+                  variant="outline"
+                >
+                  Browse patterns
+                </Button>
+              </Card>
 
-    <Card className="min-w-[260px] flex-1 gap-5" padding="lg" variant="raised">
-      <VStack gap="sm">
-        <HStack align="start" justify="between" wrap>
-          <Text variant="heading">Runtime acceptance</Text>
-          <Badge variant="info">QA</Badge>
-        </HStack>
-        <Text tone="muted">
-          Stable native-only fixtures for simulator/emulator smoke, sheet presentation, hardware Back, keyboard, safe area, and evidence capture.
-        </Text>
-      </VStack>
-      <Button
-        accessibilityLabel="Open Runtime Acceptance"
-        onPress={() => setSection('runtime')}
-        testID="showcase-open-runtime"
-        variant="outline"
-      >
-        Open runtime acceptance
-      </Button>
-    </Card>
+              <Card className="min-w-[260px] flex-1 gap-5" padding="lg" variant="raised">
+                <VStack gap="sm">
+                  <HStack align="start" justify="between" wrap>
+                    <Text variant="heading">Runtime acceptance</Text>
+                    <Badge variant="info">QA</Badge>
+                  </HStack>
+                  <Text tone="muted">
+                    Stable native-only fixtures for simulator/emulator smoke, sheet presentation, hardware Back, keyboard, safe area, and evidence capture.
+                  </Text>
+                </VStack>
+                <Button
+                  accessibilityLabel="Open Runtime Acceptance"
+                  onPress={() => openSection('runtime')}
+                  testID="showcase-open-runtime"
+                  variant="outline"
+                >
+                  Open runtime acceptance
+                </Button>
+              </Card>
 
-    <Card className="min-w-[260px] flex-1 gap-5" padding="lg" variant="raised">
-      <VStack gap="sm">
-        <HStack align="start" justify="between" wrap>
-          <Text variant="heading">Runtime stress</Text>
-          <Badge variant="info">QA</Badge>
-        </HStack>
-        <Text tone="muted">
-          Isolated #126 native movement/scroll/keyboard stress: root Select, Popover movement coherence, and modal-local child overlays under a real keyboard.
-        </Text>
-      </VStack>
-      <Button
-        accessibilityLabel="Open Runtime Stress fixture"
-        onPress={() => setSection('runtime-stress')}
-        testID="showcase-open-runtime-stress"
-        variant="outline"
-      >
-        Open Runtime Stress fixture
-      </Button>
-    </Card>
+              <Card className="min-w-[260px] flex-1 gap-5" padding="lg" variant="raised">
+                <VStack gap="sm">
+                  <HStack align="start" justify="between" wrap>
+                    <Text variant="heading">Runtime stress</Text>
+                    <Badge variant="info">QA</Badge>
+                  </HStack>
+                  <Text tone="muted">
+                    Isolated #126 native movement/scroll/keyboard stress: root Select, Popover movement coherence, and modal-local child overlays under a real keyboard.
+                  </Text>
+                </VStack>
+                <Button
+                  accessibilityLabel="Open Runtime Stress fixture"
+                  onPress={() => openSection('runtime-stress')}
+                  testID="showcase-open-runtime-stress"
+                  variant="outline"
+                >
+                  Open Runtime Stress fixture
+                </Button>
+              </Card>
 
-    <Card className="min-w-[260px] flex-1 gap-5" padding="lg" variant="raised">
-      <VStack gap="sm">
-        <HStack align="start" justify="between" wrap>
-          <Text variant="heading">Dynamic Type</Text>
-          <Badge variant="info">QA</Badge>
-        </HStack>
-        <Text tone="muted">
-          Deterministic font-scaling fixture: audited growable rows and allow-listed fixed-height exceptions, measurable one tap from home without gallery traversal.
-        </Text>
-      </VStack>
-      <Button
-        accessibilityLabel="Open Dynamic Type fixture"
-        onPress={() => setSection('dynamic-type')}
-        testID="showcase-open-dynamic-type"
-        variant="outline"
-      >
-        Open Dynamic Type fixture
-      </Button>
-    </Card>
+              <Card className="min-w-[260px] flex-1 gap-5" padding="lg" variant="raised">
+                <VStack gap="sm">
+                  <HStack align="start" justify="between" wrap>
+                    <Text variant="heading">Dynamic Type</Text>
+                    <Badge variant="info">QA</Badge>
+                  </HStack>
+                  <Text tone="muted">
+                    Deterministic font-scaling fixture: audited growable rows and allow-listed fixed-height exceptions, measurable one tap from home without gallery traversal.
+                  </Text>
+                </VStack>
+                <Button
+                  accessibilityLabel="Open Dynamic Type fixture"
+                  onPress={() => applyTarget({ surface: 'fixture', id: 'dynamic-type' }, 'push')}
+                  testID="showcase-open-dynamic-type"
+                  variant="outline"
+                >
+                  Open Dynamic Type fixture
+                </Button>
+              </Card>
 
-    <Card className="min-w-[260px] flex-1 gap-5" padding="lg" variant="raised">
-      <VStack gap="sm">
-        <HStack align="start" justify="between" wrap>
-          <Text variant="heading">Localization stress</Text>
-          <Badge variant="info">QA</Badge>
-        </HStack>
-        <Text tone="muted">
-          Deterministic long-content/localization fixture: long words, CJK, Arabic RTL, and pseudo-localized profiles across Tooltip, Sheet, Table, DatePicker, forms, Settings, Toast, and navigation chrome.
-        </Text>
-      </VStack>
-      <Button
-        accessibilityLabel="Open Localization stress fixture"
-        onPress={() => setSection('l10n-stress')}
-        testID="showcase-open-l10n-stress"
-        variant="outline"
-      >
-        Open Localization stress fixture
-      </Button>
-    </Card>
-  </Box>
+              <Card className="min-w-[260px] flex-1 gap-5" padding="lg" variant="raised">
+                <VStack gap="sm">
+                  <HStack align="start" justify="between" wrap>
+                    <Text variant="heading">Localization stress</Text>
+                    <Badge variant="info">QA</Badge>
+                  </HStack>
+                  <Text tone="muted">
+                    Deterministic long-content/localization fixture: long words, CJK, Arabic RTL, and pseudo-localized profiles across Tooltip, Sheet, Table, DatePicker, forms, Settings, Toast, and navigation chrome.
+                  </Text>
+                </VStack>
+                <Button
+                  accessibilityLabel="Open Localization stress fixture"
+                  onPress={() => applyTarget({ surface: 'fixture', id: 'l10n-stress' }, 'push')}
+                  testID="showcase-open-l10n-stress"
+                  variant="outline"
+                >
+                  Open Localization stress fixture
+                </Button>
+              </Card>
+            </Box>
 
-  <ShowcaseBuildIdentity />
-</Box>
+            <ShowcaseBuildIdentity />
+          </Box>
         </ScrollView>
       </SafeArea>
     </Screen>
