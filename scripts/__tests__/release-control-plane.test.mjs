@@ -58,3 +58,17 @@ test('rejects package version drift from the root candidate', () => {
   assert.ok(violations.some((entry) => entry.includes('packages/core/package.json: expected lockstep version 20260902.0.0-rc.2')));
   fs.rmSync(root, { recursive: true, force: true });
 });
+
+test('npm release workflow keeps registry mutation manual, environment-gated, and OIDC-scoped', () => {
+  const workflow = fs.readFileSync(path.resolve('.github/workflows/npm-release.yml'), 'utf8');
+
+  assert.match(workflow, /^on:\n  workflow_dispatch:/m);
+  assert.doesNotMatch(workflow, /^  (push|pull_request|schedule):/m);
+  assert.match(workflow, /default: verify/);
+  assert.match(workflow, /environment: release/);
+  assert.match(workflow, /BEEUI_RC_RELEASE/);
+  assert.match(workflow, /NODE_AUTH_TOKEN: \$\{\{ secrets\.NPM_BOOTSTRAP_TOKEN \}\}/);
+  assert.match(workflow, /stage-rc:[\s\S]*?permissions:\n      contents: read\n      id-token: write/);
+  assert.match(workflow, /npm stage publish .*--tag next --provenance/);
+  assert.doesNotMatch(workflow, /npm dist-tag/);
+});
