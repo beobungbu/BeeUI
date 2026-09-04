@@ -88,7 +88,7 @@ module.exports = withUniwindConfig(getDefaultConfig(__dirname), {
 });
 ```
 
-`withUniwindConfig` wraps Expo's default Metro config; `cssEntryFile: './global.css'` is what binds step 2 to the bundler. `extraThemes` is optional — list only the runtime themes you actually ship. These files are drift-guarded against this page, so treat the fixture as executable source if the details ever change.
+`withUniwindConfig` wraps Expo's default Metro config; `cssEntryFile: './global.css'` is what binds step 2 to the bundler. `extraThemes` is optional — list only the runtime themes you actually ship. CI checks that the three `@import` lines, `withUniwindConfig` and `cssEntryFile: './global.css'` appear in both the fixture and this page, so those five cannot drift apart silently. Nothing guards the `@source` lines, `dtsFile` or `extraThemes` — for those, the fixture is the source of truth.
 
 Register the root component the way Expo expects (`index.js`):
 

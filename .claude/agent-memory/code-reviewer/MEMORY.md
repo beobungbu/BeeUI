@@ -1,0 +1,1 @@
+- [WBS #474 docs-portal wave](project_474_docs_portal_wave.md) — per-check verification (pnpm typecheck is blocked by a pre-existing release-ruleset failure); ask what green checks don't cover

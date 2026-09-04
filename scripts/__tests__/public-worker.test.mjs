@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { handleRequest } from '../../web/worker/src/index.mjs';
+import { buildComposedRootFiles } from '../build-public-worker.mjs';
+import { ROOT_DIR } from '../public-site-contract-lib.mjs';
 
 function createEnv() {
   return {
@@ -48,4 +50,26 @@ test('health fails closed without exposing asset/runtime details when identity i
   const response = await handleRequest(new Request('https://example.test/api/health'), env);
   assert.equal(response.status, 503);
   assert.deepEqual(await response.json(), { ok: false, service: 'beeui-web', error: 'build_identity_unavailable' });
+});
+
+// The composed root owns three files the copy step never produces. The redirect manifest
+// was declared in config, published into route-manifest.json and validated for duplicates,
+// loops and cycles, yet nothing wrote it to disk — so every legacy URL 404ed in production
+// while every check stayed green. Assert the write set itself, so deleting a write is a
+// test failure rather than an invisible regression.
+test('the composed worker root owns build identity, headers and redirects', () => {
+  const identity = { service: 'beeui-web', version: '20260902.0.0', commit: 'abc123', environment: 'production' };
+  const files = buildComposedRootFiles({
+    rootDir: ROOT_DIR,
+    contract: { indexPolicy: 'index,follow' },
+    identity,
+  });
+
+  assert.deepEqual(Object.keys(files).sort(), ['_headers', '_redirects', 'build-identity.json']);
+  for (const [name, contents] of Object.entries(files)) {
+    assert.ok(contents.trim().length > 0, `${name} must not be written empty`);
+  }
+  assert.deepEqual(JSON.parse(files['build-identity.json']), identity);
+  assert.match(files._headers, /X-Content-Type-Options: nosniff/u);
+  assert.match(files._redirects, /^\/docs\/getting-started\/\* \/docs\/start\/:splat 308$/mu);
 });

@@ -106,7 +106,7 @@ pnpm beeui -- add button
 pnpm beeui -- doctor
 ```
 
-`examples/source-ownership-starter` runs exactly this flow and then asserts that the resulting application does **not** resolve `@beemvp/beeui-ui` at all. Owning the source changes who owns the file; it does not create a different accessibility, behavior or token contract. Details are in [CLI & source ownership](/docs/cli/) and [Registry](/docs/registry/).
+`examples/source-ownership-starter` proves the same boundary from an isolated application. It runs a narrower sequence — `init`, then `add button popover`, then `doctor` — through the packed CLI binary rather than `pnpm beeui`, and then asserts that the resulting application does **not** resolve `@beemvp/beeui-ui` at all. Owning the source changes who owns the file; it does not create a different accessibility, behavior or token contract. Details are in [CLI & source ownership](/docs/cli/) and [Registry](/docs/registry/).
 
 ## First BeeUI shell
 

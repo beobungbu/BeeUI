@@ -149,15 +149,17 @@ The starter's `App.tsx` goes further and wires `BackHandler` so the Android hard
 
 ## 5. Verify
 
-| Checkpoint | Command | Expected result |
-| --- | --- | --- |
-| Packages built | `pnpm build` at the repository root | exits `0`; `packages/ui/dist` exists |
-| App scaffolded and installed | `bash setup.sh` | ends with `==> Setup complete. Run: bash bundle.sh`; the Expo isolation guard did not trip |
-| Expo really absent | `cd app && node -e "require.resolve('expo')"` | fails — a success here means the isolation contract is broken |
-| Metro bundling succeeds | `bash bundle.sh` | ends with `OK: both Android and iOS Metro bundles produced non-empty output.` |
-| Output on disk | — | `app/build/index.android.bundle` and `app/build/main.jsbundle` both exist and are non-empty (the recorded run produced roughly 2.3 MB each) |
-| Android compiles | `bash scripts/verify-bare-consumer.sh android-build` | Gradle produces `app/build/outputs/apk/debug/app-debug.apk`; needs a JDK and the Android SDK |
-| iOS compiles | `bash scripts/verify-bare-consumer.sh ios-build` | `pod install` then `xcodebuild` against the iOS simulator SDK succeeds; needs Xcode and CocoaPods |
+Rows 1 and 6-7 run from the repository root; rows 2-5 run from `examples/bare-rn-consumer`.
+
+| Checkpoint | Run from | Command | Expected result |
+| --- | --- | --- | --- |
+| Packages built | repository root | `pnpm build` | exits `0`; `packages/ui/dist` exists |
+| App scaffolded and installed | `examples/bare-rn-consumer` | `bash setup.sh` | ends with `==> Setup complete. Run: bash bundle.sh`; the Expo isolation guard did not trip |
+| Expo really absent | `examples/bare-rn-consumer` | `cd app && node -e "require.resolve('expo')"` | fails — a success here means the isolation contract is broken |
+| Metro bundling succeeds | `examples/bare-rn-consumer` | `bash bundle.sh` | ends with `OK: both Android and iOS Metro bundles produced non-empty output.` |
+| Output on disk | `examples/bare-rn-consumer` | — | `app/build/index.android.bundle` and `app/build/main.jsbundle` both exist and are non-empty (the recorded run produced roughly 2.3 MB each) |
+| Android compiles | repository root | `bash scripts/verify-bare-consumer.sh android-build` | Gradle produces `app/build/outputs/apk/debug/app-debug.apk`; needs a JDK and the Android SDK |
+| iOS compiles | repository root | `bash scripts/verify-bare-consumer.sh ios-build` | `pod install` then `xcodebuild` against the iOS simulator SDK succeeds; needs Xcode and CocoaPods |
 
 **What this proves, and what it does not.** A passing `bundle.sh` is *packed-package resolution plus bare Metro bundle evidence* for Android and iOS. It is not a Gradle or Xcode compile, and not simulator or device interaction. BeeUI's CI lane (`scripts/verify-bare-consumer.sh`) adds those as separate, heavier gates — `./gradlew assembleDebug` producing `app-debug.apk`, and `pod install` plus `xcodebuild` against the iOS simulator SDK. Report each class for what it is.
 
