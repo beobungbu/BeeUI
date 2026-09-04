@@ -189,8 +189,8 @@ test('development and staging retain complete repository integration after merge
 
 test('consumer scripts still perform real native compiles', async () => {
   const { bareScript, expoScript } = await sources();
-  assert.match(bareScript, /\.\/gradlew assembleDebug/);
+  assert.match(bareScript, /\.\/gradlew[\s\S]*assembleDebug/);
   assert.match(bareScript, /xcodebuild[\s\S]*-sdk iphonesimulator/);
-  assert.match(expoScript, /\.\/gradlew assembleDebug/);
+  assert.match(expoScript, /\.\/gradlew[\s\S]*assembleDebug/);
   assert.match(expoScript, /xcodebuild[\s\S]*-sdk iphonesimulator/);
 });
