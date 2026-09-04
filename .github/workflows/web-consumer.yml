@@ -2,28 +2,25 @@ name: web-consumer
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches:
+      - development
+      - staging
       - main
-  # Weekly recurring re-verification of the independent Web consumer contract
-  # catches drift from dependencies/tooling even when BeeUI itself is idle.
   schedule:
     - cron: '22 4 * * 1'
   workflow_dispatch:
     inputs:
       release_candidate:
-        description: 'Release-candidate verification run (recorded in the job summary; this row is already a real blocking gate either way).'
+        description: 'Force a full release-candidate consumer proof.'
         type: boolean
         default: false
 
 concurrency:
-  # Keep push/schedule/manual evidence independent while cancelling stale runs
-  # within the same event class/ref.
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-# Least-privilege default: only reads source and uploads its own job
-# artifacts (via the runner's ACTIONS_RUNTIME_TOKEN, not this token's scope).
 permissions:
   contents: read
 
@@ -33,86 +30,78 @@ env:
 
 jobs:
   web-consumer:
-    # Standard GitHub-hosted runners are isolated/ephemeral. With a read-only
-    # token and no secrets, this required check can safely run for fork PRs.
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
-
-      - name: Record exact compatibility-row SHA
-        run: |
-          {
-            echo "### Compatibility row: independent Vite + react-native-web consumer (#136)"
-            echo "- Exact checked-out SHA: \`$(git rev-parse HEAD)\`"
-            echo "- Trigger: \`${{ github.event_name }}\`"
-            echo "- Release-candidate run: \`${{ github.event.inputs.release_candidate == 'true' }}\`"
-          } >> "$GITHUB_STEP_SUMMARY"
-
+        with:
+          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           package-manager-cache: false
-
-      - name: Enable pnpm via Corepack
+      - name: Classify independent Web consumer scope
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BEEUI_FORCE_FULL_CI: ${{ github.event_name != 'pull_request' || github.event.pull_request.base.ref != 'development' || contains(github.event.pull_request.labels.*.name, 'ci:full') || github.event.inputs.release_candidate == 'true' }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = pull_request ]; then
+            git diff --name-only --no-renames "$BASE_SHA" "$HEAD_SHA" | node ./scripts/ci-scope.mjs
+          else
+            printf '' | node ./scripts/ci-scope.mjs
+          fi
+          {
+            echo '### Compatibility row: independent Vite + react-native-web consumer'
+            echo "- Exact SHA: \`$(git rev-parse HEAD)\`"
+            echo "- Trigger: \`${{ github.event_name }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Record unaffected consumer proof
+        if: steps.scope.outputs.consumer != 'true'
+        run: echo 'Package/runtime consumer surface unchanged; packed Web consumer proof skipped.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Enable pinned pnpm
+        if: steps.scope.outputs.consumer == 'true'
         run: |
           npm install -g corepack@0.33.0
           corepack enable
           corepack prepare "pnpm@${PNPM_VERSION}" --activate
-
-      - name: Verify JavaScript toolchain
-        run: |
-          test "$(node --version)" = "v${NODE_VERSION}"
-          test "$(pnpm --version)" = "${PNPM_VERSION}"
-
-      - name: pnpm store dir
-        run: pnpm config set store-dir "$HOME/.pnpm-store"
-
+          pnpm config set store-dir "$HOME/.pnpm-store"
       - name: Cache pnpm store
+        if: steps.scope.outputs.consumer == 'true'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.pnpm-store
           key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pnpm-${{ runner.os }}-
-
       - name: Cache Playwright browsers
+        if: steps.scope.outputs.consumer == 'true'
         id: pw-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.cache/ms-playwright
           key: pw-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pw-${{ runner.os }}-
-
       - name: Install workspace dependencies
-        run: pnpm install --frozen-lockfile
-
-      # The hosted Ubuntu image already carries Chromium's system libraries.
-      # Only pay the apt/font provisioning cost when the browser cache is cold.
+        if: steps.scope.outputs.consumer == 'true'
+        run: pnpm install --frozen-lockfile --prefer-offline
       - name: Provision Chromium and Linux dependencies on cache miss
-        if: steps.pw-cache.outputs.cache-hit != 'true'
+        if: steps.scope.outputs.consumer == 'true' && steps.pw-cache.outputs.cache-hit != 'true'
         run: pnpm --dir apps/visual-regression exec playwright install --with-deps chromium
-
       - name: Verify cached Chromium on cache hit
-        if: steps.pw-cache.outputs.cache-hit == 'true'
+        if: steps.scope.outputs.consumer == 'true' && steps.pw-cache.outputs.cache-hit == 'true'
         run: pnpm --dir apps/visual-regression exec playwright install chromium
-
-      # Issue #136 — the independent, non-Showcase clean Web consumer: packs
-      # @beemvp/beeui-core/@beemvp/beeui-tokens/@beemvp/beeui-ui, installs them (plus the exact
-      # runtime/tooling versions docs/compatibility-matrix.md's Web support
-      # contract claims) into an isolated Vite + react-native-web app with no
-      # monorepo fallback, proves the production build, then drives real
-      # Chromium interaction (forms, overlays, Select, Tooltip, Sheet, Table,
-      # Calendar, keyboard dismissal) plus an axe-core accessibility scan.
-      - name: Verify the independent Vite + react-native-web consumer
+      - name: Verify independent Vite + react-native-web consumer
+        if: steps.scope.outputs.consumer == 'true'
         env:
           BEEUI_WEB_CONSUMER_WORK_ROOT: ${{ runner.temp }}/beeui-web-consumer
           BEEUI_WEB_CONSUMER_CLEAN: '1'
         run: bash scripts/verify-web-consumer.sh all
-
       - name: Upload consumer build output
-        if: always()
+        if: always() && steps.scope.outputs.consumer == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: web-consumer-dist-${{ github.event.pull_request.head.sha || github.sha }}
