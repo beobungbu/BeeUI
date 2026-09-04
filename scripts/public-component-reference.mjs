@@ -345,10 +345,14 @@ function renderPlatformDiffBullets(diff) {
     const withDefault = field.default !== undefined ? ` (Web default \`${escapeCell(field.default)}\`)` : '';
     lines.push(`- \`${field.name}\` is declared explicitly on Web${withDefault}${inheritedNote('native', bases.native)}.`);
   }
-  for (const name of diff.inert ?? []) {
+  const inert = new Set(diff.inert ?? []);
+  for (const name of inert) {
     lines.push(`- \`${name}\` is accepted on Web for API parity but has no effect there.`);
   }
   for (const change of diff.changed) {
+    // A prop Web never reads needs no note about how its type differs there; the bullet above
+    // already says the value is ignored, and two bullets on one prop read as a contradiction.
+    if (inert.has(change.name)) continue;
     if (change.typeChanged) {
       lines.push(
         `- \`${change.name}\` type differs: native \`${escapeCell(change.native.type)}\`, Web \`${escapeCell(change.web.type)}\`.`,

@@ -449,3 +449,64 @@ test('widening a lone short use stops before the enclosing element gets large', 
   assert.equal(excerpts.length, 1);
   assert.equal(excerpts[0].text.trim(), '<Accordion />');
 });
+
+// Three of the four positional checks added with the label pairing were unpinned: only the
+// visible-label comparison had a test, so the href comparison, the block-text comparison and
+// the rendered-count guard could each be deleted with a green suite.
+
+test('the citation guard rejects a link that points somewhere other than its block', () => {
+  const fixture = guardFixture({
+    pageMutator: (page) => page.replace(/#L(\d+)-L(\d+)/u, (_m, a, b) => `#L${Number(a) + 300}-L${Number(b) + 300}`),
+  });
+  try {
+    assert.ok(guardViolations(fixture).some((v) => /link points at/u.test(v)), guardViolations(fixture).join(' | '));
+  } finally {
+    fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+  }
+});
+
+test('the citation guard rejects a code block that is not the excerpt cited above it', () => {
+  const fixture = guardFixture({
+    pageMutator: (page) => page.replace('  <AccordionItem />', '  <AccordionItem replaced />'),
+  });
+  try {
+    const violations = guardViolations(fixture);
+    assert.ok(violations.some((v) => /is not the excerpt cited there|renders \d+ cited code block/u.test(v)), violations.join(' | '));
+  } finally {
+    fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+  }
+});
+
+test('the citation guard rejects a page that renders fewer blocks than the excerpt carries', () => {
+  const fixture = guardFixture({
+    extraSource: ['<Accordion value="second">', '  <AccordionItem />', '</Accordion>'],
+    pageMutator: (page) => page.replace(/\[lines \d+–\d+\]\([^)]*\):\n\n````tsx\n[\s\S]*?\n````\n\n/u, ''),
+  });
+  try {
+    assert.ok(guardViolations(fixture).some((v) => /renders \d+ cited code block/u.test(v)), guardViolations(fixture).join(' | '));
+  } finally {
+    fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+  }
+});
+
+// A merged span covers more than the tag it started from, so it is no longer opening-tag-only —
+// the flag decides which "what is not shown" sentence the page prints.
+test('merging a bare opening tag with a following region clears the opening-tag flag', () => {
+  // The nested use must fall within MERGE_GAP_LINES of the opening tag for the two to merge.
+  const body = Array.from({ length: 60 }, (_, index) => `  <Other id={${index}} />`);
+  const source = fixtureOf(['<Accordion testID="wrapper">', '  <AccordionItem />', ...body, '</Accordion>']);
+  const merged = familyUsageRanges(source, FAMILY, 'merge-flag.tsx');
+  const spanning = merged.find((range) => range.start === 1 && range.end > 1);
+  assert.ok(spanning, `expected the opening tag to merge with the following use: ${JSON.stringify(merged)}`);
+  assert.notEqual(spanning.openingTagOnly, true, 'a merged span is not an opening tag alone');
+});
+
+// Without the fallback a family whose only region exceeds the budget would publish a
+// "Verified example source" heading with no code under it.
+test('a single region larger than the budget is still shown rather than dropped', () => {
+  const huge = ['<Accordion>', ...Array.from({ length: 200 }, () => '  <AccordionItem />'), '</Accordion>'];
+  const result = excerptFixture(fixtureOf(huge), FAMILY, 'huge.tsx');
+  assert.equal(result.whole, false);
+  assert.equal(result.excerpts.length, 1);
+  assert.ok(result.excerpts[0].end - result.excerpts[0].start + 1 > 120);
+});

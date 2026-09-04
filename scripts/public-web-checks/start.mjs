@@ -59,8 +59,8 @@ export function collectStarterSourceGlobViolations(rootDir = ROOT_DIR, docs = nu
     const cssDir = path.resolve(rootDir, entry.cssRuntimeDir);
     const installDir = path.resolve(rootDir, entry.installDir);
     // CSS accepts either quote, so matching only `'…'` left a double-quoted glob unchecked here
-      // and invisible to the page comparison below.
-      const globs = [...fs.readFileSync(cssPath, 'utf8').matchAll(/@source\s+['"]([^'"]+)['"]/gu)].map(([, glob]) => glob);
+    // and invisible to the page comparison below.
+    const globs = [...fs.readFileSync(cssPath, 'utf8').matchAll(/@source\s+['"]([^'"]+)['"]/gu)].map(([, glob]) => glob);
 
     if (!globs.length) {
       violations.push(`${entry.css} declares no @source glob, so Tailwind never scans BeeUI's own source.`);

@@ -92,7 +92,6 @@ Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'accessibilit
 - `avoidKeyboard` is accepted on Web for API parity but has no effect there.
 - `enableSwipeToDismiss` is accepted on Web for API parity but has no effect there.
 - `modalProps` is accepted on Web for API parity but has no effect there.
-- `modalProps` type differs: native `SheetModalProps`, Web `Record<string, unknown>`.
 
 #### `SheetDescriptionProps`
 

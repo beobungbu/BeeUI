@@ -416,7 +416,12 @@ export function excerptMatchesAnchor(text, anchor) {
   // range carries an anchor, so a missing one is itself a defect rather than a free pass — an
   // earlier version returned `!anchor || …`, which let unanchored ranges through vacuously.
   if (!anchor) return false;
-  return text.split('\n')[0].trim() === anchor;
+  // Containment within the FIRST line, not equality with it: an element does not have to begin
+  // its line — `{condition && <Accordion …>}` is ordinary, and apps/showcase already has 181
+  // such starts. Equality rejected those correct citations and hard-failed docs generation.
+  // Scoping to the first line still refuses a duplicate occurrence further down, which is what
+  // plain `includes` over the whole excerpt allowed.
+  return text.split('\n')[0].includes(anchor);
 }
 
 export function isSyntacticallyWholeExcerpt(text, openingTagOnly = false) {

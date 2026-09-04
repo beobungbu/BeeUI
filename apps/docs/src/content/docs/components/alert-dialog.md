@@ -49,7 +49,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Confirmation/destructive modal sharing Dialog's controlled (`open`+`onOpenChange`, both required together) or uncontrolled (`defaultOpen`) contract; unlike Dialog it never closes from a backdrop press or an Escape keypress. It does still close on a native request-close — Android's hardware back button — because `cancelOnRequestClose` defaults to `true`; set it to `false` when only an explicit `AlertDialogCancel`/`AlertDialogAction` may dismiss the dialog.
+Confirmation/destructive modal sharing Dialog's controlled (`open`+`onOpenChange`, both required together) or uncontrolled (`defaultOpen`) contract; unlike Dialog it never closes from a backdrop press or an Escape keypress. It does still close on a native request-close — Android's hardware back button, and iOS accessibility escape — because `cancelOnRequestClose` defaults to `true`; set it to `false` when only an explicit `AlertDialogCancel`/`AlertDialogAction` may dismiss the dialog.
 
 ### Props
 
@@ -253,7 +253,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-Never dismisses from backdrop press or Escape, but Android's hardware back does dismiss it unless `cancelOnRequestClose` is `false`; not a general-purpose modal (use Dialog).
+Never dismisses from backdrop press or Escape, but native request-close — Android hardware back and accessibility escape — does dismiss it unless `cancelOnRequestClose` is `false`; not a general-purpose modal (use Dialog).
 
 ## Related
 

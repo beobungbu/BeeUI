@@ -11,8 +11,8 @@
     },
     "alert-dialog": {
       "purpose": "Confirmation/destructive modal built on the Dialog kernel; a backdrop press or Escape never closes it.",
-      "behavior": "Confirmation/destructive modal sharing Dialog's controlled (`open`+`onOpenChange`, both required together) or uncontrolled (`defaultOpen`) contract; unlike Dialog it never closes from a backdrop press or an Escape keypress. It does still close on a native request-close — Android's hardware back button — because `cancelOnRequestClose` defaults to `true`; set it to `false` when only an explicit `AlertDialogCancel`/`AlertDialogAction` may dismiss the dialog.",
-      "limitations": "Never dismisses from backdrop press or Escape, but Android's hardware back does dismiss it unless `cancelOnRequestClose` is `false`; not a general-purpose modal (use Dialog)."
+      "behavior": "Confirmation/destructive modal sharing Dialog's controlled (`open`+`onOpenChange`, both required together) or uncontrolled (`defaultOpen`) contract; unlike Dialog it never closes from a backdrop press or an Escape keypress. It does still close on a native request-close — Android's hardware back button, and iOS accessibility escape — because `cancelOnRequestClose` defaults to `true`; set it to `false` when only an explicit `AlertDialogCancel`/`AlertDialogAction` may dismiss the dialog.",
+      "limitations": "Never dismisses from backdrop press or Escape, but native request-close — Android hardware back and accessibility escape — does dismiss it unless `cancelOnRequestClose` is `false`; not a general-purpose modal (use Dialog)."
     },
     "app-header": {
       "purpose": "Title/description/leading/trailing screen-header composition; owns no navigation library.",

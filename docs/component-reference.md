@@ -46,7 +46,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`runtime-smoke/runtime-acceptance.tsx`](../apps/showcase/runtime-smoke/runtime-acceptance.tsx), [`__tests__/issue-15-alert-dialog-form-group.test.tsx`](../apps/showcase/__tests__/issue-15-alert-dialog-form-group.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** Never dismisses from backdrop press or Escape, but Android's hardware back does dismiss it unless `cancelOnRequestClose` is `false`; not a general-purpose modal (use Dialog).
+- **Limitations:** Never dismisses from backdrop press or Escape, but native request-close — Android hardware back and accessibility escape — does dismiss it unless `cancelOnRequestClose` is `false`; not a general-purpose modal (use Dialog).
 
 ## `app-header`
 
