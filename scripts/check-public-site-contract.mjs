@@ -4,21 +4,55 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { ROOT_DIR, buildPublicSiteContract } from './public-site-contract-lib.mjs';
+import { ROOT_DIR, buildPublicSiteContract, readPublicSiteConfig } from './public-site-contract-lib.mjs';
 
 const REQUIRED_ROUTES = ['landing', 'docs', 'showcase', 'demo', 'examples', 'changelog', 'llms', 'api'];
 const REQUIRED_NAV = ['/docs/', '/docs/components/', '/docs/patterns/', '/showcase/', '/demo/'];
+const DEPLOYMENT_CONFIGS = {
+  development: '.github/deployment/wrangler-development.jsonc',
+  staging: '.github/deployment/wrangler-staging.jsonc',
+  production: '.github/deployment/wrangler-production.jsonc',
+};
+const WORKER_WRANGLER = 'web/worker/wrangler.jsonc';
+const DELIVERY_WORKFLOW = '.github/workflows/beeui-web-delivery.yml';
+
+function readJson(rootDir, relativePath) {
+  return JSON.parse(fs.readFileSync(path.join(rootDir, relativePath), 'utf8'));
+}
+
+function readWranglerRouteHost(rootDir, relativePath) {
+  const config = readJson(rootDir, relativePath);
+  const customDomain = (config.routes ?? []).find((route) => route.custom_domain === true)?.pattern;
+  if (!customDomain) throw new Error(`${relativePath} is missing its custom-domain route.`);
+  return customDomain;
+}
+
+function readWorkerEnvironmentHost(rootDir, environment) {
+  const config = readJson(rootDir, WORKER_WRANGLER);
+  const customDomain = (config.env?.[environment]?.routes ?? []).find((route) => route.custom_domain === true)?.pattern;
+  if (!customDomain) throw new Error(`${WORKER_WRANGLER} is missing ${environment} custom-domain route.`);
+  return customDomain;
+}
+
+function deliveryProjectionMatches(rootDir, branch, origin, configFile) {
+  const workflow = fs.readFileSync(path.join(rootDir, DELIVERY_WORKFLOW), 'utf8');
+  const escapedBranch = branch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escapedOrigin = origin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escapedConfig = configFile.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`['\"]${escapedBranch}['\"]:\\s*\\(['\"]${escapedOrigin}['\"],\\s*['\"]${escapedConfig}['\"]\\)`, 'u').test(workflow);
+}
 
 export function collectPublicSiteContractViolations(rootDir = ROOT_DIR) {
   const violations = [];
   let contract;
+  let rawConfig;
   try {
     contract = buildPublicSiteContract(rootDir);
+    rawConfig = readPublicSiteConfig(rootDir);
   } catch (error) {
     return [error.message];
   }
 
-  if (contract.origin !== 'https://beeui.beemvp.com') violations.push('origin must be https://beeui.beemvp.com.');
   if (contract.productionRuntime !== 'cloudflare-workers') violations.push('productionRuntime must remain cloudflare-workers.');
   if (contract.docsBase !== '/docs') violations.push('docsBase must remain /docs.');
   if (contract.buildTruth.publication.published !== false) {
@@ -26,6 +60,60 @@ export function collectPublicSiteContractViolations(rootDir = ROOT_DIR) {
   }
   if (contract.buildTruth.version !== contract.buildTruth.publication.currentVersion) {
     violations.push(`workspace version ${contract.buildTruth.version} does not match distribution currentVersion ${contract.buildTruth.publication.currentVersion}.`);
+  }
+
+  const environmentNames = Object.keys(rawConfig.environments ?? {});
+  for (const required of Object.keys(DEPLOYMENT_CONFIGS)) {
+    if (!environmentNames.includes(required)) violations.push(`missing required public-site environment ${required}.`);
+  }
+  const origins = new Set();
+  for (const [environment, deploymentConfig] of Object.entries(DEPLOYMENT_CONFIGS)) {
+    const profile = rawConfig.environments?.[environment];
+    if (!profile) continue;
+    let parsedOrigin;
+    try {
+      parsedOrigin = new URL(profile.origin);
+    } catch {
+      violations.push(`environment ${environment} origin must be an absolute URL.`);
+      continue;
+    }
+    if (parsedOrigin.protocol !== 'https:') violations.push(`environment ${environment} origin must use https.`);
+    if (parsedOrigin.pathname !== '/') violations.push(`environment ${environment} origin must not contain a path.`);
+    if (origins.has(profile.origin)) violations.push(`environment origin ${profile.origin} is duplicated.`);
+    origins.add(profile.origin);
+    const expectedPolicy = environment === 'production' ? 'index,follow' : 'noindex,nofollow';
+    if (profile.indexPolicy !== expectedPolicy) {
+      violations.push(`environment ${environment} indexPolicy must be ${expectedPolicy}.`);
+    }
+    if (environment !== 'production' && !(profile.robotsDisallow ?? []).includes('/')) {
+      violations.push(`environment ${environment} robots policy must disallow /.`);
+    }
+    try {
+      const deploymentHost = readWranglerRouteHost(rootDir, deploymentConfig);
+      if (parsedOrigin.hostname !== deploymentHost) {
+        violations.push(`environment ${environment} origin host ${parsedOrigin.hostname} does not match ${deploymentConfig} host ${deploymentHost}.`);
+      }
+    } catch (error) {
+      violations.push(error.message);
+    }
+    try {
+      const workerHost = readWorkerEnvironmentHost(rootDir, environment);
+      if (parsedOrigin.hostname !== workerHost) {
+        violations.push(`environment ${environment} origin host ${parsedOrigin.hostname} does not match ${WORKER_WRANGLER} host ${workerHost}.`);
+      }
+    } catch (error) {
+      violations.push(error.message);
+    }
+
+    const deliveryBranch = environment === 'production' ? 'main' : environment;
+    const deploymentFilename = path.basename(deploymentConfig);
+    try {
+      if (!deliveryProjectionMatches(rootDir, deliveryBranch, profile.origin, deploymentFilename)) {
+        violations.push(`${DELIVERY_WORKFLOW} projection for ${deliveryBranch} must match ${profile.origin} and ${deploymentFilename}.`);
+      }
+    } catch (error) {
+      violations.push(error.message);
+    }
   }
 
   const ids = new Set(contract.routes.map((route) => route.id));
@@ -83,7 +171,7 @@ function main() {
     process.exitCode = 1;
     return;
   }
-  console.log('Public site architecture contract passed (routes, sources, publication state and outputs are consistent).');
+  console.log('Public site architecture contract passed (environment origins, delivery projections, routes, sources, publication state and outputs are consistent).');
 }
 
 const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);

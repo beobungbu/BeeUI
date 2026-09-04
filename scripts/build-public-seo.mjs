@@ -46,9 +46,10 @@ function publicRoutes(rootDir, discovery) {
   return [...routes].sort();
 }
 
-function addSocialMetadata(html, { title, description, canonical, image }) {
+function addSocialMetadata(html, { title, description, canonical, image, robots }) {
   if (!html.includes('</head>')) throw new Error(`cannot inject metadata into ${canonical}: missing </head>`);
   const meta = `
+<meta name="robots" content="${escapeHtml(robots)}" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="BeeUI" />
 <meta property="og:title" content="${escapeHtml(title)}" />
@@ -79,6 +80,7 @@ function renderChangelog(markdown, contract) {
     description: 'Consumer-facing BeeUI change history sourced from the repository CHANGELOG.',
     canonical,
     image,
+    robots: contract.indexPolicy,
   });
 }
 
@@ -86,10 +88,18 @@ function socialSvg(version) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc"><title id="title">BeeUI</title><desc id="desc">Native-first product UI for React Native and Web.</desc><rect width="1200" height="630" fill="#0a0b0d"/><circle cx="1050" cy="100" r="260" fill="#f4b942" opacity="0.16"/><circle cx="1040" cy="540" r="340" fill="#7c6cff" opacity="0.12"/><rect x="72" y="74" width="92" height="92" rx="24" fill="#f4b942"/><text x="118" y="139" text-anchor="middle" font-family="system-ui,sans-serif" font-size="54" font-weight="800" fill="#0a0b0d">B</text><text x="72" y="278" font-family="system-ui,sans-serif" font-size="86" font-weight="800" fill="#ffffff">BeeUI</text><text x="72" y="358" font-family="system-ui,sans-serif" font-size="38" font-weight="600" fill="#d8d9df">Native-first product UI.</text><text x="72" y="414" font-family="system-ui,sans-serif" font-size="29" fill="#a8abb5">Expo · bare React Native · Web</text><text x="72" y="536" font-family="ui-monospace,monospace" font-size="22" fill="#f4b942">v${escapeHtml(version)} · public source · unpublished distribution</text></svg>`;
 }
 
-export function buildPublicSeo({ rootDir = ROOT_DIR, outDir = path.join(rootDir, 'web/dist') } = {}) {
-  buildPublicLanding({ rootDir, outDir });
-  const discovery = buildPublicDiscovery({ rootDir, outDir });
-  const contract = buildPublicSiteContract(rootDir);
+export function renderRobotsTxt(contract) {
+  const rules = ['User-agent: *'];
+  if (contract.indexPolicy === 'index,follow') rules.push('Allow: /');
+  for (const pathname of contract.robotsDisallow ?? []) rules.push(`Disallow: ${pathname}`);
+  rules.push(`Sitemap: ${contract.origin}/sitemap.xml`);
+  return `${rules.join('\n')}\n`;
+}
+
+export function buildPublicSeo({ rootDir = ROOT_DIR, outDir = path.join(rootDir, 'web/dist'), environment } = {}) {
+  const contract = buildPublicSiteContract(rootDir, { environment });
+  buildPublicLanding({ rootDir, outDir, environment });
+  const discovery = buildPublicDiscovery({ rootDir, outDir, environment });
   const image = `${contract.origin}/assets/og-beeui.svg`;
 
   const landingPath = path.join(outDir, 'index.html');
@@ -99,6 +109,7 @@ export function buildPublicSeo({ rootDir = ROOT_DIR, outDir = path.join(rootDir,
     description: 'BeeUI is a mobile-first React Native UI system for Expo, bare React Native, and Web.',
     canonical: `${contract.origin}/`,
     image,
+    robots: contract.indexPolicy,
   }).replace('</head>', `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'SoftwareSourceCode', name: 'BeeUI', codeRepository: 'https://github.com/beobungbu/BeeUI', programmingLanguage: ['TypeScript', 'JavaScript'], runtimePlatform: ['React Native', 'Web'], license: 'https://opensource.org/license/mit', version: contract.buildTruth.version })}</script>\n</head>`));
 
   for (const page of discovery.pages) {
@@ -109,6 +120,7 @@ export function buildPublicSeo({ rootDir = ROOT_DIR, outDir = path.join(rootDir,
       description: page.description,
       canonical: `${contract.origin}${page.route}`,
       image,
+      robots: contract.indexPolicy,
     }));
   }
 
@@ -119,13 +131,13 @@ export function buildPublicSeo({ rootDir = ROOT_DIR, outDir = path.join(rootDir,
   const routes = publicRoutes(rootDir, discovery);
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${routes.map((route) => `  <url><loc>${contract.origin}${route}</loc></url>`).join('\n')}\n</urlset>\n`;
   fs.writeFileSync(path.join(outDir, 'sitemap.xml'), sitemap);
-  fs.writeFileSync(path.join(outDir, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${contract.origin}/sitemap.xml\n`);
-  return { routes, discovery, outDir };
+  fs.writeFileSync(path.join(outDir, 'robots.txt'), renderRobotsTxt(contract));
+  return { routes, discovery, outDir, contract };
 }
 
 function main() {
-  const { routes, outDir } = buildPublicSeo();
-  console.log(`Built SEO/changelog assets (${routes.length} indexable routes) into ${path.relative(ROOT_DIR, outDir)}.`);
+  const { routes, outDir, contract } = buildPublicSeo();
+  console.log(`Built SEO/changelog assets (${routes.length} routes) into ${path.relative(ROOT_DIR, outDir)} for ${contract.environment}.`);
 }
 
 const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);

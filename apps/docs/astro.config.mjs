@@ -1,11 +1,9 @@
-import { readFileSync } from 'node:fs';
-
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 
-const publicSite = JSON.parse(
-  readFileSync(new URL('../../web/public-site.config.json', import.meta.url), 'utf8'),
-);
+import { buildPublicSiteContract } from '../../scripts/public-site-contract-lib.mjs';
+
+const publicSite = buildPublicSiteContract();
 
 // W2 (#414) owns global public-site route/IA authority. Content workstreams may
 // add pages and sidebar-local entries, but canonical origin/base paths and

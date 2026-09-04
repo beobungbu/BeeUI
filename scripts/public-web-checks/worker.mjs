@@ -1,26 +1,35 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { readPublicSiteConfig } from '../public-site-contract-lib.mjs';
+
 const TARGETS = Object.freeze({
   development: {
     worker: 'beeui-dev',
-    domain: 'beeui-dev.beemvp.com',
     workersDev: true,
     previewUrls: true,
   },
   staging: {
     worker: 'beeui-stg',
-    domain: 'beeui-stg.beemvp.com',
     workersDev: true,
     previewUrls: true,
   },
   production: {
     worker: 'beeui',
-    domain: 'beeui.beemvp.com',
     workersDev: false,
     previewUrls: false,
   },
 });
+
+function environmentDomain(publicSite, target) {
+  const origin = publicSite.environments?.[target]?.origin;
+  if (!origin) return null;
+  try {
+    return new URL(origin).hostname;
+  } catch {
+    return null;
+  }
+}
 
 export async function collectViolations(rootDir) {
   const violations = [];
@@ -55,6 +64,7 @@ export async function collectViolations(rootDir) {
   }
   if (violations.length) return violations;
 
+  const publicSite = readPublicSiteConfig(rootDir);
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   if (config.main !== './src/index.mjs') violations.push('Wrangler main must remain ./src/index.mjs.');
   if (config.assets?.directory !== './dist' || config.assets?.binding !== 'ASSETS') {
@@ -68,6 +78,11 @@ export async function collectViolations(rootDir) {
   }
 
   for (const [target, expected] of Object.entries(TARGETS)) {
+    const expectedDomain = environmentDomain(publicSite, target);
+    if (!expectedDomain) {
+      violations.push(`public-site config is missing a valid ${target} origin.`);
+      continue;
+    }
     const environment = config.env?.[target];
     if (!environment) {
       violations.push(`Wrangler source config is missing ${target}.`);
@@ -76,13 +91,15 @@ export async function collectViolations(rootDir) {
     if (environment.name !== expected.worker) violations.push(`${target} must target Worker ${expected.worker}.`);
     if (environment.workers_dev !== expected.workersDev) violations.push(`${target} workers_dev contract drifted.`);
     if (environment.preview_urls !== expected.previewUrls) violations.push(`${target} preview_urls contract drifted.`);
-    const route = environment.routes?.find((candidate) => candidate.pattern === expected.domain);
-    if (!route?.custom_domain) violations.push(`${target} is missing Custom Domain ${expected.domain}.`);
+    const route = environment.routes?.find((candidate) => candidate.pattern === expectedDomain);
+    if (!route?.custom_domain) violations.push(`${target} is missing Custom Domain ${expectedDomain}.`);
   }
 
   for (const [target, trustedPath] of Object.entries(trustedConfigPaths)) {
     const trusted = JSON.parse(fs.readFileSync(trustedPath, 'utf8'));
     const expected = TARGETS[target];
+    const expectedDomain = environmentDomain(publicSite, target);
+    if (!expectedDomain) continue;
     if (trusted.name !== expected.worker) violations.push(`trusted ${target} config must target ${expected.worker}.`);
     if (trusted.main !== './worker.mjs') violations.push(`trusted ${target} config must consume only prebuilt worker.mjs.`);
     if (trusted.assets?.directory !== './dist' || trusted.assets?.binding !== 'ASSETS') {
@@ -95,8 +112,8 @@ export async function collectViolations(rootDir) {
     if (trusted.workers_dev !== expected.workersDev || trusted.preview_urls !== expected.previewUrls) {
       violations.push(`trusted ${target} preview/workers.dev policy drifted.`);
     }
-    const route = trusted.routes?.find((candidate) => candidate.pattern === expected.domain);
-    if (!route?.custom_domain) violations.push(`trusted ${target} config is missing ${expected.domain}.`);
+    const route = trusted.routes?.find((candidate) => candidate.pattern === expectedDomain);
+    if (!route?.custom_domain) violations.push(`trusted ${target} config is missing ${expectedDomain}.`);
   }
 
   const worker = fs.readFileSync(workerPath, 'utf8');
@@ -111,8 +128,19 @@ export async function collectViolations(rootDir) {
   for (const token of ['apps/docs/dist', 'apps/showcase/dist-public-web', 'apps/demo/dist-public-web', 'web/worker/dist', 'asset collision', 'build-identity.json', '_headers']) {
     if (!build.includes(token)) violations.push(`composed Worker build contract missing ${token}.`);
   }
-  if (!build.includes("run('pnpm', ['build'], rootDir)")) {
-    violations.push('composed Worker build must materialize package exports before Expo Router static SSR.');
+  if (!build.includes('const buildEnv = { ...process.env, BEEUI_WEB_ENV: environment }')) {
+    violations.push('composed Worker build must create one explicit environment for every child build.');
+  }
+  for (const command of [
+    "run('pnpm', ['build'], rootDir, buildEnv)",
+    "run('pnpm', ['docs:build'], rootDir, buildEnv)",
+    "run('pnpm', ['--filter', '@beemvp/beeui-showcase', 'build:web:public'], rootDir, buildEnv)",
+    "run('pnpm', ['--filter', '@beemvp/beeui-demo', 'build:web:public'], rootDir, buildEnv)",
+  ]) {
+    if (!build.includes(command)) violations.push(`composed Worker build is missing environment-bound command ${command}.`);
+  }
+  if (!build.includes('buildPublicSeo({ rootDir, outDir: path.join(rootDir, \'web/dist\'), environment })')) {
+    violations.push('composed Worker SEO build must receive the same explicit environment.');
   }
 
   const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));

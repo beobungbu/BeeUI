@@ -8,8 +8,8 @@ import { fileURLToPath } from 'node:url';
 import { buildPublicSeo } from './build-public-seo.mjs';
 import { ROOT_DIR, buildPublicSiteContract } from './public-site-contract-lib.mjs';
 
-function run(command, args, cwd = ROOT_DIR) {
-  const result = spawnSync(command, args, { cwd, stdio: 'inherit', env: process.env });
+function run(command, args, cwd = ROOT_DIR, env = process.env) {
+  const result = spawnSync(command, args, { cwd, stdio: 'inherit', env });
   if (result.status !== 0) throw new Error(`${command} ${args.join(' ')} failed with exit ${result.status}`);
 }
 
@@ -39,12 +39,15 @@ function copyOutput(sourceDir, destinationDir, composedRoot, claimed, label) {
   }
 }
 
-function writeHeaders(outDir) {
-  const headers = `/*
+export function renderWorkerHeaders(contract) {
+  const globalRobots = contract.indexPolicy === 'index,follow'
+    ? ''
+    : '  X-Robots-Tag: noindex, nofollow\n';
+  return `/*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-
+${globalRobots}
 /docs/_astro/*
   Cache-Control: public, max-age=31556952, immutable
 
@@ -61,9 +64,12 @@ function writeHeaders(outDir) {
   Cache-Control: no-store
 
 https://:version.:subdomain.workers.dev/*
-  X-Robots-Tag: noindex
+  X-Robots-Tag: noindex, nofollow
 `;
-  fs.writeFileSync(path.join(outDir, '_headers'), headers);
+}
+
+function writeHeaders(outDir, contract) {
+  fs.writeFileSync(path.join(outDir, '_headers'), renderWorkerHeaders(contract));
 }
 
 export function composeWorkerAssets({
@@ -72,7 +78,7 @@ export function composeWorkerAssets({
   environment = process.env.BEEUI_WEB_ENV || 'local',
   commit,
 } = {}) {
-  const contract = buildPublicSiteContract(rootDir);
+  const contract = buildPublicSiteContract(rootDir, { environment });
   const exactCommit = commit || execFileSync('git', ['rev-parse', 'HEAD'], { cwd: rootDir, encoding: 'utf8' }).trim();
   fs.rmSync(outDir, { recursive: true, force: true });
   fs.mkdirSync(outDir, { recursive: true });
@@ -90,19 +96,20 @@ export function composeWorkerAssets({
     environment,
   };
   fs.writeFileSync(path.join(outDir, 'build-identity.json'), `${JSON.stringify(identity, null, 2)}\n`);
-  writeHeaders(outDir);
-  return { claimed, identity, outDir };
+  writeHeaders(outDir, contract);
+  return { claimed, identity, outDir, contract };
 }
 
 export function buildWorkerSite({ rootDir = ROOT_DIR, environment = process.env.BEEUI_WEB_ENV || 'local' } = {}) {
   // Expo Router's static-render server resolves the package export map under
   // plain Node/Metro conditions. Build the publishable package outputs first
   // so SSR never depends on Metro's source fallback or a stale local dist/.
-  run('pnpm', ['build'], rootDir);
-  run('pnpm', ['docs:build'], rootDir);
-  run('pnpm', ['--filter', '@beemvp/beeui-showcase', 'build:web:public'], rootDir);
-  run('pnpm', ['--filter', '@beemvp/beeui-demo', 'build:web:public'], rootDir);
-  buildPublicSeo({ rootDir, outDir: path.join(rootDir, 'web/dist') });
+  const buildEnv = { ...process.env, BEEUI_WEB_ENV: environment };
+  run('pnpm', ['build'], rootDir, buildEnv);
+  run('pnpm', ['docs:build'], rootDir, buildEnv);
+  run('pnpm', ['--filter', '@beemvp/beeui-showcase', 'build:web:public'], rootDir, buildEnv);
+  run('pnpm', ['--filter', '@beemvp/beeui-demo', 'build:web:public'], rootDir, buildEnv);
+  buildPublicSeo({ rootDir, outDir: path.join(rootDir, 'web/dist'), environment });
   return composeWorkerAssets({ rootDir, environment });
 }
 
