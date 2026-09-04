@@ -99,7 +99,7 @@ export function renderRobotsTxt(contract) {
 export function buildPublicSeo({ rootDir = ROOT_DIR, outDir = path.join(rootDir, 'web/dist'), environment } = {}) {
   const contract = buildPublicSiteContract(rootDir, { environment });
   buildPublicLanding({ rootDir, outDir, environment });
-  const discovery = buildPublicDiscovery({ rootDir, outDir });
+  const discovery = buildPublicDiscovery({ rootDir, outDir, environment });
   const image = `${contract.origin}/assets/og-beeui.svg`;
 
   const landingPath = path.join(outDir, 'index.html');
