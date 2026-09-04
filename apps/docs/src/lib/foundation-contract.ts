@@ -157,7 +157,8 @@ export function buildPageMetadata(input: PageMetadataInput): PageMetadata {
  *
  * #472 owns the final target inventory/parser/runtime behavior. Docs code must call this
  * helper instead of constructing Showcase query strings by hand so target identity can
- * evolve in one place.
+ * evolve in one place. ownerId remains documentation metadata; it is deliberately not
+ * serialized into the runtime target identity.
  */
 export function buildShowcaseHref(target: ShowcaseLinkIntent): string {
   if (!target.id.trim()) throw new Error('Showcase target id must be non-empty.');
@@ -165,7 +166,6 @@ export function buildShowcaseHref(target: ShowcaseLinkIntent): string {
   const params = new URLSearchParams();
   params.set('surface', target.surface);
   params.set('id', target.id);
-  if (target.ownerId) params.set('owner', target.ownerId);
   if (target.example) params.set('example', target.example);
   if (target.state) params.set('state', target.state);
   if (target.theme) params.set('theme', target.theme);
