@@ -12,12 +12,12 @@ import {
 // ---- fixtures mirroring the real repository state ----
 
 const PACKAGE_VERSIONS = {
-  '@beemvp/beeui-core': '0.1.0',
-  '@beemvp/beeui-tokens': '0.1.0',
-  '@beemvp/beeui-ui': '0.1.0',
+  '@beemvp/beeui-core': '20260902.0.0',
+  '@beemvp/beeui-tokens': '20260902.0.0',
+  '@beemvp/beeui-ui': '20260902.0.0',
 };
 const RELEASE_ENVIRONMENT = 'release';
-const ROOT_VERSION = '0.1.0';
+const ROOT_VERSION = '20260902.0.0';
 
 const UI_PEERS = {
   react: '>=19 <20',
@@ -46,10 +46,10 @@ const MATRIX_SNAPSHOT = {
 
 const GOOD_POLICY = {
   published: false,
-  currentVersion: '0.1.0',
-  candidateStableVersion: '1.0.0',
-  prereleaseVersionPattern: '^1\\.0\\.0-rc\\.(0|[1-9][0-9]*)$',
-  prereleaseExample: '1.0.0-rc.1',
+  currentVersion: '20260902.0.0',
+  candidateStableVersion: '20260902.0.0',
+  prereleaseVersionPattern: '^20260902\\.0\\.0-rc\\.(0|[1-9][0-9]*)$',
+  prereleaseExample: '20260902.0.0-rc.1',
   distTags: ['latest', 'next'],
   prereleaseDistTag: 'next',
   stableDistTag: 'latest',
@@ -61,7 +61,7 @@ const GOOD_POLICY = {
 const GOOD_REPORT = {
   published: false,
   packageSet: ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui'],
-  candidateVersion: '0.1.0',
+  candidateVersion: '20260902.0.0',
   cleanConsumerScripts: [
     'scripts/verify-bare-consumer.sh',
     'scripts/verify-web-consumer.sh',
@@ -115,17 +115,17 @@ test('currentVersion must equal the lockstep package version', () => {
 });
 
 test('prerelease pattern must reject the stable version', () => {
-  // A pattern that also matches "1.0.0" would let a stable version pose as a prerelease.
-  const v = policyViolations({ prereleaseVersionPattern: '^1\\.0\\.0(-rc\\.[0-9]+)?$' });
+  // A pattern that also matches the stable version would let it pose as a prerelease.
+  const v = policyViolations({ prereleaseVersionPattern: '^20260902\\.0\\.0(-rc\\.[0-9]+)?$' });
   assert.ok(v.some((m) => /must NOT match the stable version/.test(m)));
 });
 
 test('prerelease example must match the pattern', () => {
-  assert.ok(policyViolations({ prereleaseExample: '1.0.0' }).some((v) => /prereleaseExample/.test(v)));
+  assert.ok(policyViolations({ prereleaseExample: '20260902.0.0' }).some((v) => /prereleaseExample/.test(v)));
 });
 
 test('an invalid prerelease regex is reported', () => {
-  assert.ok(policyViolations({ prereleaseVersionPattern: '^1\\.0\\.0-rc\\.(' }).some((v) => /valid regex/.test(v)));
+  assert.ok(policyViolations({ prereleaseVersionPattern: '^20260902\\.0\\.0-rc\\.(' }).some((v) => /valid regex/.test(v)));
 });
 
 test('distTags must be exactly latest and next', () => {
@@ -142,14 +142,18 @@ test('releaseEnvironment must match the ruleset', () => {
   assert.ok(policyViolations({ releaseEnvironment: 'prod' }).some((v) => /releaseEnvironment/.test(v)));
 });
 
-test('a package already at the stable candidate is rejected', () => {
+// Under #407 the stable candidate is the lockstep date version itself, so the two must agree.
+// A candidate that drifts from the shipped version is how the policy block and its own prose
+// came apart: the block said 1.0.0 while every package and the prose said 20260902.0.0, and the
+// generated release page rendered "Stable target: 1.0.0" beside "Workspace version: 20260902.0.0".
+test('a stable candidate that differs from the current version is rejected', () => {
   const v = collectDistTagPolicyViolations({
-    policy: GOOD_POLICY,
-    packageVersions: { '@beemvp/beeui-core': '1.0.0', '@beemvp/beeui-tokens': '1.0.0', '@beemvp/beeui-ui': '1.0.0' },
+    policy: { ...GOOD_POLICY, candidateStableVersion: '1.0.0', prereleaseVersionPattern: '^1\\.0\\.0-rc\\.(0|[1-9][0-9]*)$', prereleaseExample: '1.0.0-rc.1' },
+    packageVersions: PACKAGE_VERSIONS,
     releaseEnvironment: RELEASE_ENVIRONMENT,
     existsSync: alwaysExists,
   });
-  assert.ok(v.some((m) => /candidateStableVersion/.test(m)));
+  assert.ok(v.some((m) => /candidateStableVersion/.test(m)), v.join('\n'));
 });
 
 // ---- consumer compatibility report ----

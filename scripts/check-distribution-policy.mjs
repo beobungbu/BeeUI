@@ -87,10 +87,20 @@ export function collectDistTagPolicyViolations({ policy, packageVersions, releas
     );
   }
 
-  // No package is at the stable candidate yet (pre-publication).
-  if (Object.values(packageVersions).includes(policy.candidateStableVersion)) {
+  // The stable candidate is the lockstep date version itself. Owner decision #407 replaced
+  // the 0.x -> 1.0.0 scheme with date labels (20260902.0.0), so the workspace legitimately
+  // sits *at* the candidate from the start and "no package has reached it yet" became
+  // unsatisfiable — it could only be kept by letting this block contradict its own prose.
+  //
+  // What that rule was protecting is still enforced, just not by a version comparison:
+  // `published` must be false (checked above), the docs foundation refuses an install CTA,
+  // an available CLI or a missing #254 owner gate while unpublished, and verify-release
+  // asserts the root manifest stays private. Publication remains an owner action, not a
+  // consequence of a version number.
+  if (policy.candidateStableVersion !== policy.currentVersion) {
     violations.push(
-      `${label}: a package is already at candidateStableVersion ${JSON.stringify(policy.candidateStableVersion)}; the stable candidate must not be reached before publication.`,
+      `${label}: "candidateStableVersion" ${JSON.stringify(policy.candidateStableVersion)} must equal ` +
+      `"currentVersion" ${JSON.stringify(policy.currentVersion)} under the date-version scheme (#407).`,
     );
   }
 
