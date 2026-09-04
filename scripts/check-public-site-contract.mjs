@@ -13,11 +13,23 @@ const DEPLOYMENT_CONFIGS = {
   staging: '.github/deployment/wrangler-staging.jsonc',
   production: '.github/deployment/wrangler-production.jsonc',
 };
+const WORKER_WRANGLER = 'web/worker/wrangler.jsonc';
+
+function readJson(rootDir, relativePath) {
+  return JSON.parse(fs.readFileSync(path.join(rootDir, relativePath), 'utf8'));
+}
 
 function readWranglerRouteHost(rootDir, relativePath) {
-  const config = JSON.parse(fs.readFileSync(path.join(rootDir, relativePath), 'utf8'));
+  const config = readJson(rootDir, relativePath);
   const customDomain = (config.routes ?? []).find((route) => route.custom_domain === true)?.pattern;
   if (!customDomain) throw new Error(`${relativePath} is missing its custom-domain route.`);
+  return customDomain;
+}
+
+function readWorkerEnvironmentHost(rootDir, environment) {
+  const config = readJson(rootDir, WORKER_WRANGLER);
+  const customDomain = (config.env?.[environment]?.routes ?? []).find((route) => route.custom_domain === true)?.pattern;
+  if (!customDomain) throw new Error(`${WORKER_WRANGLER} is missing ${environment} custom-domain route.`);
   return customDomain;
 }
 
@@ -57,6 +69,7 @@ export function collectPublicSiteContractViolations(rootDir = ROOT_DIR) {
       continue;
     }
     if (parsedOrigin.protocol !== 'https:') violations.push(`environment ${environment} origin must use https.`);
+    if (parsedOrigin.pathname !== '/') violations.push(`environment ${environment} origin must not contain a path.`);
     if (origins.has(profile.origin)) violations.push(`environment origin ${profile.origin} is duplicated.`);
     origins.add(profile.origin);
     const expectedPolicy = environment === 'production' ? 'index,follow' : 'noindex,nofollow';
@@ -67,9 +80,17 @@ export function collectPublicSiteContractViolations(rootDir = ROOT_DIR) {
       violations.push(`environment ${environment} robots policy must disallow /.`);
     }
     try {
-      const wranglerHost = readWranglerRouteHost(rootDir, deploymentConfig);
-      if (parsedOrigin.hostname !== wranglerHost) {
-        violations.push(`environment ${environment} origin host ${parsedOrigin.hostname} does not match ${deploymentConfig} host ${wranglerHost}.`);
+      const deploymentHost = readWranglerRouteHost(rootDir, deploymentConfig);
+      if (parsedOrigin.hostname !== deploymentHost) {
+        violations.push(`environment ${environment} origin host ${parsedOrigin.hostname} does not match ${deploymentConfig} host ${deploymentHost}.`);
+      }
+    } catch (error) {
+      violations.push(error.message);
+    }
+    try {
+      const workerHost = readWorkerEnvironmentHost(rootDir, environment);
+      if (parsedOrigin.hostname !== workerHost) {
+        violations.push(`environment ${environment} origin host ${parsedOrigin.hostname} does not match ${WORKER_WRANGLER} host ${workerHost}.`);
       }
     } catch (error) {
       violations.push(error.message);
