@@ -147,7 +147,7 @@ function isDependencyGraphPath(file) {
 // Generated public artifacts and the code that produces or asserts them.
 const DOC_ARTIFACT_RE = /^llms(?:-[a-z]+)?\.txt$/;
 const DOC_EXTRA_EXACT = new Set(['AGENTS.md']);
-const DOC_LIB_RE = /^scripts\/(?:component-docs-lib|public-component-reference|public-pattern-reference|public-reference|public-guide-data|generate-production-pattern-usage)\.mjs$/;
+const DOC_LIB_RE = /^scripts\/(?:component-docs-lib|public-component-reference|public-pattern-reference|public-reference|public-guide-data|public-portal-shell|generate-production-pattern-usage)\.mjs$/;
 
 const WEB_PREFIXES_EXTRA = ['scripts/public-web-checks/', 'examples/', '.github/deployment/'];
 const WEB_LIB_RE = /^scripts\/(?:public-site-contract-lib|public-component-previews)\.mjs$/;
