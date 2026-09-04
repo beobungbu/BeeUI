@@ -2,7 +2,6 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import {
   ROOT_DIR,
@@ -11,6 +10,7 @@ import {
   buildShowcaseUsageIndex,
   usageForComponent,
 } from '../../../scripts/component-docs-lib.mjs';
+import { selectPreviewFixture } from '../../../scripts/public-component-previews.mjs';
 
 const REGISTRY_SOURCE = 'apps/showcase/example-registry.ts';
 
@@ -56,8 +56,14 @@ export function validateExampleRegistry() {
       continue;
     }
     const component = canonical.find((candidate) => candidate.name === entry.ownerId);
-    if (component && !usageForComponent(component, usageIndex).includes(fixture)) {
+    if (!component) continue;
+    if (!usageForComponent(component, usageIndex).includes(fixture)) {
       violations.push(`${entry.ownerId}: ${fixture} is not a real Showcase usage of any public symbol in that family.`);
+      continue;
+    }
+    const docsFixture = selectPreviewFixture(component, ROOT_DIR).fixture;
+    if (fixture !== docsFixture) {
+      violations.push(`${entry.ownerId}: Example Registry fixture ${fixture} drifted from docs preview authority ${docsFixture}.`);
     }
   }
 
@@ -70,6 +76,17 @@ export function validateExampleRegistry() {
   const foundation = read('apps/docs/src/lib/foundation-contract.ts');
   if (!foundation.includes("params.set('surface', target.surface)") || !foundation.includes("params.set('id', target.id)")) {
     violations.push('Foundation docs URL builder no longer serializes canonical surface/id target identity.');
+  }
+  if (foundation.includes("params.set('owner', target.ownerId)")) {
+    violations.push('Foundation docs URL builder serializes owner metadata outside the canonical runtime target identity.');
+  }
+
+  const publicComponentReference = read('scripts/public-component-reference.mjs');
+  if (!publicComponentReference.includes("showcaseHref({ surface: 'component', id: component.name, example: 'basic' })")) {
+    violations.push('generated component docs no longer use the canonical Showcase target builder.');
+  }
+  if (publicComponentReference.includes('?component=')) {
+    violations.push('generated component docs still emit the legacy ?component= query contract.');
   }
 
   return violations;
