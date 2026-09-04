@@ -1,4 +1,4 @@
-import { defaultPatternState, findPatternDomain, findPatternScreen, patternCatalog } from './pattern-gallery/pattern-catalog';
+import { defaultPatternState, findPatternScreen, patternCatalog } from './pattern-gallery/pattern-catalog';
 import type { ShowcaseTarget } from './showcase-target';
 
 export type ShowcasePlatform = 'web' | 'ios' | 'android';
@@ -57,7 +57,7 @@ const COMPONENT_FIXTURES: readonly [string, string][] = [
   ['form-message', PUBLIC_DOC_FIXTURES],
   ['icon-button', MAIN_GALLERY],
   ['input', MAIN_GALLERY],
-  ['keyboard-aware-screen', MAIN_GALLERY],
+  ['keyboard-aware-screen', 'apps/showcase/runtime-smoke/runtime-acceptance.tsx'],
   ['label', PUBLIC_DOC_FIXTURES],
   ['link', MAIN_GALLERY],
   ['list-group', MAIN_GALLERY],
