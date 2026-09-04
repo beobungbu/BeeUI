@@ -192,7 +192,7 @@ export const patternExamples: readonly ShowcaseExample[] = patternCatalog.flatMa
       coverageClasses: ['basic', 'states', 'production'] as const,
       applicableCoverageClasses: ['basic', 'states', 'production'] as const,
       stateIds: states,
-      docsRoute: `/docs/patterns/reference/${screen.id}/`,
+      docsRoute: `/docs/patterns/${screen.id}/`,
       screenshotTarget: {
         target: { surface: 'pattern' as const, id: screen.id, state },
         name: `pattern-${screen.id}-${state}`,

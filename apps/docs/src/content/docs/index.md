@@ -13,7 +13,7 @@ separate the stable target API from the distribution actions that are actually a
 
 - **[Start](/docs/start/)** — choose Expo, bare React Native or Web and run a real packed/workspace consumer.
 - **[Components](/docs/components/)** — complete source-driven public component reference.
-- **[Production patterns](/docs/patterns/reference/)** — reusable screen compositions from the Pattern Gallery.
+- **[Production patterns](/docs/patterns/)** — reusable screen compositions from the Pattern Gallery.
 - **[Showcase](/showcase/)** — inspect the real interactive Web runtime or follow the native preview path.
 - **[Production reference app](/demo/)** — routed Dashboard/Records/Schedule/Settings consumer application.
 

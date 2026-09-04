@@ -137,7 +137,7 @@ jobs:
           curl --silent --fail http://127.0.0.1:8787/ >/dev/null
           curl --silent --fail http://127.0.0.1:8787/docs/ >/dev/null
           curl --silent --fail http://127.0.0.1:8787/docs/components/button/ >/dev/null
-          curl --silent --fail http://127.0.0.1:8787/docs/patterns/reference/auth/sign-in-screen/ >/dev/null
+          curl --silent --fail http://127.0.0.1:8787/docs/patterns/auth/sign-in-screen/ >/dev/null
           curl --silent --fail http://127.0.0.1:8787/showcase/ >/dev/null
           curl --silent --fail http://127.0.0.1:8787/demo/ >/dev/null
           curl --silent --fail http://127.0.0.1:8787/examples/ >/dev/null

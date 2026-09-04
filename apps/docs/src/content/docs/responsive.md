@@ -29,7 +29,7 @@ Check narrow phones, short-height landscape, 200% Web zoom/large text, long loca
 RTL and keyboard-visible states. Fixed-height rows are exceptions that need an explicit
 reason; text-bearing controls should be able to grow.
 
-See the [Pattern library](/docs/patterns/reference/), [reference app](/demo/), and canonical
+See the [Pattern library](/docs/patterns/), [reference app](/demo/), and canonical
 [responsive layout contract](https://github.com/beobungbu/BeeUI/blob/main/docs/responsive-layout.md).
 BeeUI intentionally does not own your router, navigation information architecture, data
 fetching or product-specific adaptive decisions.
