@@ -63,7 +63,7 @@ The owner/admin gate in `docs/beeui-1.0-owner-gates.md` remains authoritative ev
 
 Its registry-mutating operations are:
 
-- `bootstrap-rc`: one-time first-package prerelease bootstrap under `next`; protected by `environment: release`; uses only the temporary environment secret `NPM_BOOTSTRAP_TOKEN`; no OIDC permission is granted to this token path.
+- `bootstrap-rc`: one-time first-package prerelease bootstrap under `next`; protected by `environment: release`; registry authentication uses only the temporary environment secret `NPM_BOOTSTRAP_TOKEN`. The job also grants job-local `id-token: write` solely because `npm publish --provenance` needs OIDC to mint the provenance attestation; that permission is not Trusted Publisher authentication for the bootstrap.
 - `stage-rc`: steady-state prerelease staging after package bootstrap; protected by `environment: release`; grants `contents: read` plus job-local `id-token: write`; uses npm Trusted Publishing/OIDC and no long-lived publish token.
 
 Both mutation paths require an exact `20260902.0.0-rc.N` workspace version and the explicit confirmation string `BEEUI_RC_RELEASE`; preflight runs release-control-plane, distribution-policy and packed-release verification before the environment-gated job can mutate the registry.
@@ -82,7 +82,7 @@ After the first package bootstrap, each `@beemvp/beeui-*` package should bind np
 - environment `release`
 - allowed action `npm stage publish` only
 
-Only the OIDC staging job has `id-token: write`. Ordinary CI and bootstrap-token jobs do not. The temporary bootstrap token must live only in the protected `release` environment and must be revoked/deleted after OIDC is configured and proven.
+Both registry-mutating jobs have job-local `id-token: write`, but only `stage-rc` uses OIDC as npm registry authentication. `bootstrap-rc` authenticates with the temporary token and uses OIDC only for provenance. Ordinary CI has neither publication credentials nor `id-token: write`. The temporary bootstrap token must live only in the protected `release` environment and must be revoked/deleted after OIDC Trusted Publishing is configured and proven.
 
 ## CODEOWNERS
 
@@ -90,12 +90,12 @@ Only the OIDC staging job has `id-token: write`. Ordinary CI and bootstrap-token
 
 ## Hosted-runner assumptions
 
-BeeUI release correctness/security assumes standard GitHub-hosted runners for OIDC publication work.
+BeeUI release correctness/security assumes standard GitHub-hosted runners for provenance and OIDC publication work.
 
 - jobs are treated as ephemeral;
 - ordinary workflow permissions default to `contents: read`;
 - PR workflows receive no npm publication authority;
-- the OIDC publish/stage job uses `id-token: write` only where required;
+- registry-mutating jobs receive `id-token: write` only at job scope and only where required for provenance/Trusted Publishing;
 - no correctness rule assumes persistent self-hosted state;
 - release builds do not depend on mutable local runner caches for evidence.
 
