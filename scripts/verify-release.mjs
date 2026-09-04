@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ALLOWED_VERSION_PATTERN } from './check-release-control-plane.mjs';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(SCRIPT_DIR, '..');
@@ -204,10 +205,6 @@ const FORBIDDEN_PACKED_PATTERNS = [
   { pattern: /(^|\/)tsconfig.*\.json$/, label: 'a tsconfig file (repository-private config; not a runtime asset)' },
 ];
 
-// Reverse of exportTargetExists: proves a package's declared export target is
-// not merely present on disk pre-pack but actually shipped inside the real
-// tarball produced by `npm pack`/`pnpm pack` — the #202 DoD's "granular
-// subpath targets all resolve to real packed files".
 function exportTargetPacked(packedFiles, target) {
   const packedPath = `package/${target.slice(2)}`;
   const hasExtension = /\.[a-z0-9]+$/i.test(path.basename(target));
@@ -217,18 +214,6 @@ function exportTargetPacked(packedFiles, target) {
   return packedFiles.some((file) => file === packedPath || file.startsWith(prefix));
 }
 
-// A "source" condition target may intentionally omit an extension (#201,
-// `docs/decisions/012-granular-subpath-exports.md`): components with
-// platform-only implementations (e.g. `date-picker`, `tooltip` — no base
-// `.tsx`, only `.native.tsx`/`.web.tsx` plus a `.d.ts` type shim) cannot name
-// a single literal source file, so their `source`/`react-native`/`browser`
-// targets rely on Metro's and TypeScript's own platform-extension probing —
-// the exact mechanism `packages/ui/src/index.ts`'s own extensionless
-// `./components/<name>` re-exports already depend on. For an extensionless
-// target this checks that at least one platform/type variant exists on disk
-// (still failing loudly on a typo'd or deleted component); every
-// extension-bearing target (the common case) is still required to exist
-// exactly as named.
 function exportTargetExists(packageDir, target) {
   const hasExtension = /\.[a-z0-9]+$/i.test(path.basename(target));
   if (hasExtension) return fs.existsSync(path.join(packageDir, target));
@@ -268,7 +253,11 @@ try {
   record('generated token artifacts are current');
 
   assert(rootPackage.private === true, 'workspace root remains private');
-  assert(rootVersion === '20260902.0.0', 'workspace uses the owner-approved release version', rootVersion);
+  assert(
+    ALLOWED_VERSION_PATTERN.test(rootVersion),
+    'workspace uses the owner-approved stable/RC release line',
+    rootVersion,
+  );
 
   // D2/D3 (ADR-011): the built dist/ output is the primary published artifact,
   // so it must exist on disk before the exports/packed-file checks below can
@@ -314,7 +303,7 @@ try {
     assert(
       Array.isArray(manifest.keywords) && manifest.keywords.length > 0,
       `${spec.name} declares keywords`,
-      manifest.keywords?.join(', '),
+      manifest.keywords?.join(', ') ?? 'missing',
     );
     assert(manifest.sideEffects === false, `${spec.name} declares sideEffects: false`);
     assert(
@@ -323,7 +312,6 @@ try {
       JSON.stringify(manifest.publishConfig),
     );
 
-    // #200 output format: dist/ (built) ships alongside src/ (source-ownership).
     const expectedFiles = spec.name === '@beemvp/beeui-tokens' ? ['dist', 'src', 'tokens.json'] : ['dist', 'src'];
     assert(
       Array.isArray(manifest.files) && expectedFiles.every((entry) => manifest.files.includes(entry)) && manifest.files.length === expectedFiles.length,
@@ -332,9 +320,6 @@ try {
     );
 
     if (spec.kind === 'cli') {
-      // The CLI is a bin-only package (no importable JS API), so it declares
-      // `bin` instead of `main`/`module`/`types`/`exports` — those library
-      // conditions (D3/D4) do not apply to it.
       assert(
         typeof manifest.bin?.beeui === 'string',
         `${spec.name} declares the beeui bin entry`,
@@ -363,10 +348,6 @@ try {
         assert(exportTargetExists(packageDir, target), `${spec.name} export target exists`, target);
       }
 
-      // D3/D4: every subpath's "." export must expose the conditions consumers
-      // and bundlers rely on — types for TypeScript, source for the
-      // monorepo/source-ownership path, react-native for Metro, import/require
-      // for dual ESM+CJS, and browser/default for generic bundlers.
       const dotExport = manifest.exports?.['.'];
       const requiredConditions = ['source', 'react-native', 'import', 'require', 'browser', 'default'];
       for (const condition of requiredConditions) {
@@ -400,13 +381,6 @@ try {
   for (const [peer, range] of Object.entries(expectedUiPeers)) {
     assert(uiManifest.peerDependencies?.[peer] === range, `@beemvp/beeui-ui peer range is explicit for ${peer}`, range);
   }
-  // @beemvp/beeui-ui itself only reaches for react-dom in its web (createPortal)
-  // transport, so its own direct peer stays optional. Note this is not the whole
-  // package-manager story: react-native-teleport declares react-dom as one of its
-  // peers, so a strict resolver may still require a matching react-dom even in a
-  // native-only consumer (see docs/anchored-overlays.md and the bare-native smoke,
-  // which installs react-dom for exactly this reason). Assert the direct-peer
-  // contract stays optional here.
   assert(
     uiManifest.peerDependencies?.['react-dom'] === '>=19 <20',
     '@beemvp/beeui-ui declares the react-dom (web) peer range',
@@ -453,22 +427,14 @@ try {
       assert(packedFiles.includes(requiredFile), `${spec.name} tarball contains ${requiredFile}`);
     }
 
-    // #202: npm always includes LICENSE regardless of the `files` allowlist,
-    // but that only holds if the file actually exists in the package
-    // directory — assert it landed in the real tarball, not just on disk.
     assert(packedFiles.includes('package/LICENSE'), `${spec.name} tarball includes LICENSE`);
     assert(packedFiles.includes('package/README.md'), `${spec.name} tarball includes README.md`);
 
-    // #202 Reject list: no generated build junk, test fixtures, or
-    // repository-private config leaks into the tarball a consumer installs.
     for (const { pattern, label } of FORBIDDEN_PACKED_PATTERNS) {
       const offender = packedFiles.find((file) => pattern.test(file));
       assert(!offender, `${spec.name} tarball excludes ${label}`, offender ?? 'clean');
     }
 
-    // #202: every granular subpath (and the barrel) declared in `exports`
-    // must resolve to a file that is actually inside this tarball, not just
-    // present on the repo's disk pre-pack.
     const packedExportTargets = collectExportTargets(manifests.get(spec.name).exports);
     for (const target of packedExportTargets) {
       assert(
@@ -478,11 +444,6 @@ try {
       );
     }
 
-    // #202: spot-check that a representative source map keeps paths relative
-    // (ADR-011 Reject list: "source maps containing sensitive paths if not
-    // intentional"). `src/` is intentionally packed alongside `dist/` (D2),
-    // so a relative reference back into it is the desired shape; an absolute
-    // filesystem path would leak the machine/CI workspace layout instead.
     const sampleMapEntry = packedFiles.find((file) => file === 'package/dist/module/index.js.map');
     if (sampleMapEntry) {
       const sampleMap = JSON.parse(run('tar', ['-xOzf', tarball, sampleMapEntry]));
@@ -546,9 +507,6 @@ try {
 
   assert(!fs.existsSync(path.join(consumerDir, 'node_modules', 'expo')), 'release package smoke does not pull the Expo runtime');
 
-  // #209: prove the packed @beemvp/beeui-cli tarball is actually executable once
-  // installed standalone into a clean consumer (no monorepo tree present),
-  // not just that its files exist in the tarball.
   const cliBin = path.join(consumerDir, 'node_modules', '.bin', 'beeui');
   assert(fs.existsSync(cliBin), '@beemvp/beeui-cli installs its beeui bin link into a clean consumer');
   const helpOutput = run(cliBin, ['help'], { cwd: consumerDir });
