@@ -37,6 +37,9 @@ export function PublicDocFixtures() {
               label="colors.primary"
               value={String(primary)}
             />
+            <Text testID="use-bee-token-value">
+              {`useBeeToken('colors.primary') resolves to ${String(primary)} for the active theme.`}
+            </Text>
             <Text>
               Visible companion text for the assistive-only content rendered immediately after it.
             </Text>

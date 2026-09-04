@@ -13,9 +13,11 @@
     "build:web:public": "BEEUI_PUBLIC_BASE_URL=/showcase EXPO_PUBLIC_BUILD_SHA=$(git rev-parse --short HEAD) expo export --platform web --output-dir dist-public-web",
     "bundle:ios": "expo export --platform ios --output-dir dist-ios",
     "bundle:android": "expo export --platform android --output-dir dist-android",
+    "example-registry:check": "node ./scripts/check-example-registry.mjs",
+    "pretypecheck": "pnpm example-registry:check",
     "typecheck": "tsc -p tsconfig.json",
     "pretest": "node ./scripts/ensure-workspace-build.mjs",
-    "test": "jest --runInBand",
+    "test": "pnpm example-registry:check && jest --runInBand",
     "bench": "jest --runInBand --testPathPattern=__tests__/perf-"
   },
   "dependencies": {

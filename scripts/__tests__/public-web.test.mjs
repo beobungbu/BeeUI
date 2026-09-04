@@ -15,6 +15,7 @@ import { buildPreviewDescriptor, enhanceGeneratedPublicComponentPages } from '..
 import { buildPublicPatternManifest, generatePublicPatternPages } from '../public-pattern-reference.mjs';
 
 const rootDir = path.resolve(new URL('../..', import.meta.url).pathname);
+const htmlHref = (value) => value.replaceAll('&', '&amp;');
 
 test('current repository satisfies the aggregate public Web contract', async () => {
   assert.deepEqual(await collectPublicWebViolations(rootDir), []);
@@ -138,12 +139,13 @@ test('examples hub materializes every canonical component and pattern as preview
     assert.match(componentPage, /role="tablist"/);
     assert.match(componentPage, /data-copy-target=/);
     assert.match(componentPage, /Live Web preview/);
-    assert.ok(componentPage.includes(component.showcaseHref));
+    assert.ok(componentPage.includes(htmlHref(component.showcaseHref)));
 
     const pattern = patterns.find((candidate) => candidate.slug === 'sign-in-screen') ?? patterns[0];
     const patternPage = fs.readFileSync(path.join(outDir, 'examples/patterns', pattern.pack, pattern.slug, 'index.html'), 'utf8');
     assert.match(patternPage, /Principal BeeUI exports/);
     assert.match(patternPage, /data-copy-target=/);
+    assert.ok(patternPage.includes(htmlHref(pattern.showcaseHref)));
     assert.ok(patternPage.includes(pattern.sourceHref));
 
     assert.equal(fs.existsSync(path.join(outDir, 'assets/examples.css')), true);

@@ -47,6 +47,8 @@
     "llms:test": "node --test ./scripts/__tests__/generate-llms-txt.test.mjs",
     "ai-contract:check": "node ./scripts/check-ai-agent-contract.mjs",
     "ai-contract:test": "node --test ./scripts/__tests__/ai-agent-contract.test.mjs",
+    "showcase:production-usage:generate": "node ./scripts/generate-production-pattern-usage.mjs",
+    "showcase:production-usage:check": "node ./scripts/generate-production-pattern-usage.mjs --check",
     "docs:contract:generate": "node ./scripts/generate-component-reference.mjs",
     "docs:contract:check": "node ./scripts/generate-component-reference.mjs --check",
     "docs:contract:test": "node --test ./scripts/__tests__/component-reference.test.mjs",

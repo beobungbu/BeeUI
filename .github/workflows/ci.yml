@@ -151,6 +151,8 @@ jobs:
                 ./scripts/__tests__/ios-build-cache-contract.test.mjs
               ;;
             docs)
+              pnpm docs:foundation:check
+              pnpm docs:foundation:test
               pnpm llms:check
               pnpm llms:test
               pnpm ai-contract:check
