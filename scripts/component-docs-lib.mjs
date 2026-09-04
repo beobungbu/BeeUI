@@ -108,11 +108,22 @@ export function getPublicComponents(rootDir = ROOT_DIR) {
 
 // Extracts the set of symbols imported from '@beemvp/beeui-ui' in a source file.
 // Handles `import { A, B, type C } from '@beemvp/beeui-ui';` across multiple lines.
+//
+// The brace body is [^}] rather than a lazy [\s\S]*?: lazy still matches across an
+// earlier import from a different package, so `import { spacing } from
+// '@beemvp/beeui-tokens'` followed anywhere later by a beeui-ui import captured
+// everything in between — prose included — and reported it as undeclared symbols.
+// [^}] still spans newlines, so multi-line import lists keep working.
 export function extractBeeuiImports(source) {
   const symbols = new Set();
-  const re = /import\s+(?:type\s+)?\{([\s\S]*?)\}\s*from\s*['"]@beemvp\/beeui-ui['"]/g;
+  // A `}` inside a block comment in the import list would end the body early and drop every
+  // symbol, so those are removed first. Line comments are deliberately left alone: stripping
+  // to end-of-line would also eat anything after a `//` in a URL, and a `}` in a line comment
+  // inside an import list is not a shape that appears in documentation.
+  const scannable = source.replace(/\/\*[\s\S]*?\*\//gu, '');
+  const re = /import\s+(?:type\s+)?\{([^}]*)\}\s*from\s*['"]@beemvp\/beeui-ui['"]/g;
   let match;
-  while ((match = re.exec(source))) {
+  while ((match = re.exec(scannable))) {
     for (const raw of match[1].split(',')) {
       const symbol = raw.trim().replace(/^type\s+/, '');
       if (symbol) symbols.add(symbol);

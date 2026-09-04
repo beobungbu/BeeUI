@@ -176,7 +176,7 @@ Two platform differences are worth planning around. Browsers report no system in
 
 - Browse [Components](/docs/components/) for the overlay, Toast and layout components this runtime serves.
 - Compose real shells with [Patterns](/docs/patterns/).
-- Diagnose a stuck provider or overlay in [Troubleshooting](/docs/troubleshooting/).
+- Diagnose a stuck provider or overlay in [Troubleshooting](/docs/guides/troubleshooting/).
 - Pick a platform: [Expo](/docs/start/expo/), [Bare React Native](/docs/start/bare-react-native/) or [Web](/docs/start/web/), then confirm exact versions in [Compatibility](/docs/compatibility/).
 
 ## Source authority

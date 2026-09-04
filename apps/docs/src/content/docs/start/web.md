@@ -178,7 +178,7 @@ The starter's recorded acceptance run produced 568 transformed modules, `dist/in
 
 - Browse [Components](/docs/components/) for the generated per-component reference.
 - Compose real screens with [Patterns](/docs/patterns/).
-- Work through a stuck build in [Troubleshooting](/docs/troubleshooting/).
+- Work through a stuck build in [Troubleshooting](/docs/guides/troubleshooting/).
 - Read [Compatibility → Web](/docs/compatibility/web/) for the tested browser and bundler contract, and [Accessibility](/docs/accessibility/) before shipping.
 
 ## Source authority

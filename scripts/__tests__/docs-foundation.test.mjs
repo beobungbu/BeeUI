@@ -142,6 +142,20 @@ test('Foundation documentation names the current executable pattern authority an
   assert.match(foundationDoc, /`web\/public-site\.config\.json` owns the environment-to-origin mapping/u);
 });
 
+// Astro drops dots from a slug. The manifest used to record the literal filename, so
+// current.generated.md was published as /compatibility/current.generated/ while the site
+// served /compatibility/currentgenerated/ — two live 404s that every in-repo link pointed at.
+test('a dotted filename maps to the route Astro actually serves', () => {
+  assert.equal(
+    contentPathToRoute('apps/docs/src/content/docs/compatibility/current.generated.md'),
+    '/docs/compatibility/currentgenerated/',
+  );
+  assert.equal(
+    contentPathToRoute('apps/docs/src/content/docs/guides/current-release.md'),
+    '/docs/guides/current-release/',
+  );
+});
+
 test('redirect manifest is deterministic and has unique sources', () => {
   const redirects = buildRedirectRules(readPublicSiteConfig(ROOT_DIR));
   assert.equal(new Set(redirects.map((rule) => rule.fromPrefix)).size, redirects.length);

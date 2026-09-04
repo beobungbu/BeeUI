@@ -151,7 +151,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md). Platform-split module (native/web files resolve at build time).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`__tests__/perf-render-commit.test.tsx`](../apps/showcase/__tests__/perf-render-commit.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Executable examples:** [`__tests__/issue-172-calendar.test.tsx`](../apps/showcase/__tests__/issue-172-calendar.test.tsx), [`__tests__/issue-175-date-i18n-component-matrix.test.tsx`](../apps/showcase/__tests__/issue-175-date-i18n-component-matrix.test.tsx), [`__tests__/issue-176-calendar-date-a11y.test.tsx`](../apps/showcase/__tests__/issue-176-calendar-date-a11y.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 
 ## `card`
 
@@ -757,7 +757,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/issue-68-theme-scope.test.tsx`](../apps/showcase/__tests__/issue-68-theme-scope.test.tsx), [`__tests__/issue-72-token-reader.test.tsx`](../apps/showcase/__tests__/issue-72-token-reader.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Notes:** See docs/theme-scope.md for the scoping and precedence rules.
 
 ## `timeline`

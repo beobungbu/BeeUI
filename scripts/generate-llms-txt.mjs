@@ -77,7 +77,7 @@ export const LINKED_PATHS = [
   'apps/docs/src/content/docs/start/bare-react-native.md',
   'apps/docs/src/content/docs/start/web.md',
   'apps/docs/src/content/docs/start/provider-safe-area.md',
-  'apps/docs/src/content/docs/cli/index.md',
+  'apps/docs/src/content/docs/guides/cli-source-ownership.md',
   'apps/docs/src/content/docs/components/index.md',
   'apps/docs/src/content/docs/components/table.md',
   'apps/docs/src/content/docs/components/calendar-date-time.md',
@@ -358,7 +358,7 @@ ${adrs.map(([slug, note]) => `- [ADR-${slug.slice(0, 3)} ${slug.slice(4)}](docs/
 - AI-agent contract + prompt cookbook: [docs/ai-agent-cookbook.md](docs/ai-agent-cookbook.md)
 - Authority index: [docs/README.md](docs/README.md)
 - Start: [Expo](apps/docs/src/content/docs/start/expo.md) · [bare RN](apps/docs/src/content/docs/start/bare-react-native.md) · [Web](apps/docs/src/content/docs/start/web.md)
-- CLI: [apps/docs/src/content/docs/cli/index.md](apps/docs/src/content/docs/cli/index.md)
+- CLI: [apps/docs/src/content/docs/guides/cli-source-ownership.md](apps/docs/src/content/docs/guides/cli-source-ownership.md)
 - Components site: [apps/docs/src/content/docs/components/index.md](apps/docs/src/content/docs/components/index.md) (deep dives: [Table](apps/docs/src/content/docs/components/table.md), [Calendar/DatePicker](apps/docs/src/content/docs/components/calendar-date-time.md))
 - Performance: methodology [docs/benchmark-harness.md](docs/benchmark-harness.md) · baseline report [docs/performance-baseline-report.md](docs/performance-baseline-report.md) · package/bundle footprint [docs/bundle-footprint-baseline.md](docs/bundle-footprint-baseline.md) · docs site [apps/docs/src/content/docs/performance/index.md](apps/docs/src/content/docs/performance/index.md)
 - Release policy: [docs/release.md](docs/release.md) · Changelog: [CHANGELOG.md](CHANGELOG.md) · License: [LICENSE](LICENSE) (MIT)

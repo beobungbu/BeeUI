@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { extractBeeuiImports } from '../component-docs-lib.mjs';
 import {
   extractBeeuiAddItems,
   extractShowcaseLinks,
@@ -52,6 +53,31 @@ test('the barrel exposes the real component symbols and theme is an add target',
   const addTargets = readPublicAddTargets();
   assert.ok(addTargets.has('button'));
   assert.ok(addTargets.has('theme'));
+});
+
+// A lazy brace body matched across an earlier import from a different package, so a
+// tokens import followed anywhere later by a beeui-ui import swallowed the prose between
+// them and reported it as undeclared symbols. Docs were being written around the bug by
+// ordering their imports.
+test('a beeui-ui import is not confused by an earlier import from another package', () => {
+  const source = [
+    "import { spacing } from '@beemvp/beeui-tokens';",
+    '',
+    'Prose between the two imports, containing { braces } and commas.',
+    '',
+    "import { Button } from '@beemvp/beeui-ui';",
+  ].join('\n');
+  assert.deepEqual([...extractBeeuiImports(source)], ['Button']);
+});
+
+test('a block comment inside the import list does not truncate it', () => {
+  const source = "import { Button, /* } */ Text } from '@beemvp/beeui-ui';";
+  assert.deepEqual([...extractBeeuiImports(source)].sort(), ['Button', 'Text']);
+});
+
+test('a multi-line beeui-ui import list still resolves every symbol', () => {
+  const source = "import {\n  Button,\n  type ButtonProps,\n} from '@beemvp/beeui-ui';";
+  assert.deepEqual([...extractBeeuiImports(source)].sort(), ['Button', 'ButtonProps']);
 });
 
 // --- Integration test (against the real repo) -------------------------------

@@ -180,7 +180,7 @@ Rows 1 and 6-7 run from the repository root; rows 2-5 run from `examples/bare-rn
 
 - Browse [Components](/docs/components/) for the generated per-component reference.
 - Compose real screens with [Patterns](/docs/patterns/).
-- Work through a stuck setup in [Troubleshooting](/docs/troubleshooting/).
+- Work through a stuck setup in [Troubleshooting](/docs/guides/troubleshooting/).
 - Read [Provider & safe area](/docs/start/provider-safe-area/) for edge ownership, and [Compatibility → Native](/docs/compatibility/native/) for what native verification does and does not prove.
 
 ## Source authority

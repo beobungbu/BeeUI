@@ -5,7 +5,7 @@ description: Tested BeeUI React, React Native, Expo, Web and styling/runtime com
 
 # Compatibility
 
-Start with [Current tested versions](/docs/compatibility/current.generated/). That table is
+Start with [Current tested versions](/docs/compatibility/current/). That table is
 generated from BeeUI's machine-checked compatibility snapshot, so its Node/React/RN/Expo/
 RNW/Uniwind/Tailwind/native-infrastructure pins cannot drift independently from the
 canonical contract.
