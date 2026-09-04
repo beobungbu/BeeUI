@@ -1,4 +1,7 @@
-import type { ComponentTargetFocus } from './component-target-focus';
+type ComponentTargetFocus = {
+  focusTestId?: string;
+  focusText?: string;
+};
 
 function cssString(value: string) {
   return value.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
