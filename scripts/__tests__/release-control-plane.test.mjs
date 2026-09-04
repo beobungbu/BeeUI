@@ -59,6 +59,12 @@ test('rejects package version drift from the root candidate', () => {
   fs.rmSync(root, { recursive: true, force: true });
 });
 
+test('release verifier shares the RC-aware version authority', () => {
+  const verifier = fs.readFileSync(path.resolve('scripts/verify-release.mjs'), 'utf8');
+  assert.match(verifier, /ALLOWED_VERSION_PATTERN\.test\(rootVersion\)/);
+  assert.doesNotMatch(verifier, /rootVersion === '20260902\.0\.0'/);
+});
+
 test('npm release workflow keeps registry mutation manual, environment-gated, and OIDC-scoped', () => {
   const workflow = fs.readFileSync(path.resolve('.github/workflows/npm-release.yml'), 'utf8');
 
