@@ -106,7 +106,7 @@ pnpm beeui add button
 pnpm beeui doctor
 ```
 
-`examples/source-ownership-starter` proves the same boundary from an isolated application. It runs a narrower sequence — `init`, then `add button popover`, then `doctor` — through the packed CLI binary rather than `pnpm beeui`, and then asserts that the resulting application does **not** resolve `@beemvp/beeui-ui` at all. Owning the source changes who owns the file; it does not create a different accessibility, behavior or token contract. Details are in [CLI & source ownership](/docs/cli/) and [Registry](/docs/registry/).
+`examples/source-ownership-starter` proves the same boundary from an isolated application. It runs a narrower sequence — `init`, then `add button popover`, then `doctor` — through the packed CLI binary rather than `pnpm beeui`, and then asserts that the resulting application does **not** resolve `@beemvp/beeui-ui` at all. Owning the source changes who owns the file; it does not create a different accessibility, behavior or token contract. Details are in [CLI & source ownership](/docs/guides/cli-source-ownership/) and [Registry](/docs/registry/).
 
 ## First BeeUI shell
 
@@ -161,13 +161,13 @@ Work through these checkpoints in order. Each one has an observable result.
 | A starter resolves the Expo runtime when it should not | leftover `node_modules` from an earlier experiment in the same directory | delete the starter's `node_modules` (and `app/` for the bare starter) and re-run `bash setup.sh` |
 | Components render but are completely unstyled | the CSS entry with the Tailwind, Uniwind and BeeUI theme imports was never wired or never imported | follow the styling step in your platform guide; the entry file is part of the starter, not optional |
 
-More symptom-indexed diagnosis lives in [Troubleshooting](/docs/troubleshooting/).
+More symptom-indexed diagnosis lives in [Troubleshooting](/docs/guides/troubleshooting/).
 
 ## Next steps
 
 - Browse [Components](/docs/components/) for the generated per-component reference.
 - Compose real screens with [Patterns](/docs/patterns/).
-- Diagnose a stuck setup with [Troubleshooting](/docs/troubleshooting/).
+- Diagnose a stuck setup with [Troubleshooting](/docs/guides/troubleshooting/).
 - Confirm exact versions in [Compatibility](/docs/compatibility/), then customize semantics in [Theming](/docs/theming/).
 - Read [Accessibility](/docs/accessibility/) and [Responsive layout](/docs/responsive/) before shipping a production shell.
 

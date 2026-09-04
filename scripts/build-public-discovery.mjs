@@ -344,7 +344,7 @@ ${tabs}
   <article><p class="eyebrow">Composition</p><h2>Principal BeeUI exports</h2><div class="composition-links">${compositionLinks(pattern, components)}</div><p>Each linked symbol opens its component preview-and-code recipe.</p></article>
   <article><p class="eyebrow">Application boundary</p><h2>Intentionally excluded</h2><p>${escapeHtml(pattern.excluded)}</p><p>Caller contract: ${pattern.propsType ? `<code>${escapeHtml(pattern.propsType)}</code>` : 'caller-owned props'} · ${callbacks}</p></article>
 </section>
-<section class="recipe-related"><p class="eyebrow">Adapt safely</p><h2>Copy the composition, keep app ownership explicit.</h2><p>This screen source is a production composition recipe. Fetching, persistence, routing, authentication/business rules, and backend side effects stay in the consuming application.</p><div class="examples-actions"><a class="button secondary" href="/docs/responsive/">Responsive contract</a><a class="button secondary" href="/docs/accessibility/">Accessibility contract</a><a class="button secondary" href="/docs/cli/">Source ownership</a></div></section>
+<section class="recipe-related"><p class="eyebrow">Adapt safely</p><h2>Copy the composition, keep app ownership explicit.</h2><p>This screen source is a production composition recipe. Fetching, persistence, routing, authentication/business rules, and backend side effects stay in the consuming application.</p><div class="examples-actions"><a class="button secondary" href="/docs/responsive/">Responsive contract</a><a class="button secondary" href="/docs/accessibility/">Accessibility contract</a><a class="button secondary" href="/docs/guides/cli-source-ownership/">Source ownership</a></div></section>
 </main>`;
 
   return {

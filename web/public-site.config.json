@@ -41,7 +41,12 @@
       { "id": "reference", "route": "/docs/reference/", "ownerIssue": 463, "status": "foundation" }
     ],
     "movedRoutes": [
-      { "fromPrefix": "/docs/getting-started/", "toPrefix": "/docs/start/", "status": 308, "ownerIssue": 457 }
+      { "fromPrefix": "/docs/getting-started/", "toPrefix": "/docs/start/", "status": 308, "ownerIssue": 457 },
+      { "fromPrefix": "/docs/theming/branding/", "toPrefix": "/docs/guides/branding/", "status": 308, "ownerIssue": 458 },
+      { "fromPrefix": "/docs/theming/density/", "toPrefix": "/docs/guides/density/", "status": 308, "ownerIssue": 458 },
+      { "fromPrefix": "/docs/cli/", "toPrefix": "/docs/guides/cli-source-ownership/", "status": 308, "ownerIssue": 458 },
+      { "fromPrefix": "/docs/troubleshooting/", "toPrefix": "/docs/guides/troubleshooting/", "status": 308, "ownerIssue": 458 },
+      { "fromPrefix": "/docs/migration/", "toPrefix": "/docs/guides/migration-versioning/", "status": 308, "ownerIssue": 458 }
     ],
     "metadataContracts": {
       "implementation": "apps/docs/src/lib/foundation-contract.ts",

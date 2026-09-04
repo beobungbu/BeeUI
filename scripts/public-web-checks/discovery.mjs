@@ -10,7 +10,7 @@ const LLM_FILES = ['llms.txt', 'llms-full.txt', 'llms-components.txt', 'llms-pat
 
 export async function collectViolations(rootDir) {
   const violations = [];
-  const cliPath = path.join(rootDir, 'apps/docs/src/content/docs/cli/index.md');
+  const cliPath = path.join(rootDir, 'apps/docs/src/content/docs/guides/cli-source-ownership.md');
   const registryPath = path.join(rootDir, 'apps/docs/src/content/docs/registry/index.md');
   const aiPath = path.join(rootDir, 'apps/docs/src/content/docs/ai/index.md');
 

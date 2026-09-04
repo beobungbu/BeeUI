@@ -5,7 +5,7 @@ description: Reach a visible BeeUI screen in an isolated Expo SDK 57 application
 
 This is the path for an Expo application on SDK 57 — a new app you are about to create, or an existing one you want BeeUI inside. It is the fastest way to get BeeUI rendering on Android, iOS and Web from one codebase.
 
-Choose a different guide if you run React Native without the Expo runtime ([Bare React Native](/docs/start/bare-react-native/)), if you ship a browser-only product ([Web](/docs/start/web/)), or if you want the component source committed into your own repository ([CLI & source ownership](/docs/cli/)).
+Choose a different guide if you run React Native without the Expo runtime ([Bare React Native](/docs/start/bare-react-native/)), if you ship a browser-only product ([Web](/docs/start/web/)), or if you want the component source committed into your own repository ([CLI & source ownership](/docs/guides/cli-source-ownership/)).
 
 :::caution[Public distribution is closed]
 BeeUI packages and the BeeUI CLI are not published to the public npm registry yet, so there is no public install command to copy. This guide uses `examples/expo-package-consumer`, which packs the real package artifacts locally and installs them into an isolated app — the same boundary an external consumer will use once publication opens.
@@ -164,7 +164,7 @@ The starter's recorded acceptance run (Expo SDK 57, RN 0.86.2) exported a Web bu
 
 - Browse [Components](/docs/components/) for the generated reference of everything the provider makes available.
 - Compose real screens with [Patterns](/docs/patterns/).
-- Diagnose anything this page did not cover in [Troubleshooting](/docs/troubleshooting/).
+- Diagnose anything this page did not cover in [Troubleshooting](/docs/guides/troubleshooting/).
 - Set edge ownership properly with [Provider & safe area](/docs/start/provider-safe-area/), and confirm pins in [Compatibility](/docs/compatibility/).
 
 ## Source authority

@@ -8,11 +8,11 @@ Use **Guides** when you already know the outcome you want: configure a theme, ch
 This route is the stable home for #458. Existing task-oriented material remains canonical while the guide set is expanded:
 
 - [Theming](/docs/theming/)
-- [Branding](/docs/theming/branding/)
-- [Density](/docs/theming/density/)
-- [CLI & source ownership](/docs/cli/)
-- [Migration & versioning](/docs/migration/)
-- [Troubleshooting](/docs/troubleshooting/)
+- [Branding](/docs/guides/branding/)
+- [Density](/docs/guides/density/)
+- [CLI & source ownership](/docs/guides/cli-source-ownership/)
+- [Migration & versioning](/docs/guides/migration-versioning/)
+- [Troubleshooting](/docs/guides/troubleshooting/)
 - [Table](/docs/components/table/)
 - [Calendar & date/time](/docs/components/calendar-date-time/)
 

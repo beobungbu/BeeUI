@@ -9,9 +9,9 @@ This route is the stable home for #463. Until the reference set is expanded, use
 
 - [Component reference](/docs/components/)
 - [Compatibility](/docs/compatibility/)
-- [CLI & source ownership](/docs/cli/)
+- [CLI & source ownership](/docs/guides/cli-source-ownership/)
 - [Release & security](/docs/release-security/)
-- [Migration & versioning](/docs/migration/)
+- [Migration & versioning](/docs/guides/migration-versioning/)
 - [Performance](/docs/performance/)
 
 :::caution[Publication truth]

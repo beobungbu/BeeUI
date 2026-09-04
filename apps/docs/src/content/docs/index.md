@@ -20,10 +20,10 @@ separate the stable target API from the distribution actions that are actually a
 ## Design and platform guides
 
 - [Theming](/docs/theming/) · [Responsive & mobile-first](/docs/responsive/) · [Accessibility](/docs/accessibility/)
-- [Current compatibility](/docs/compatibility/current.generated/) · [Migration & versioning](/docs/migration/)
-- [Troubleshooting](/docs/troubleshooting/) · [Performance](/docs/performance/)
+- [Current compatibility](/docs/compatibility/current.generated/) · [Migration & versioning](/docs/guides/migration-versioning/)
+- [Troubleshooting](/docs/guides/troubleshooting/) · [Performance](/docs/performance/)
 - [Release & security](/docs/release-security/) · [Architecture](/docs/architecture/)
-- [CLI & source ownership](/docs/cli/)
+- [CLI & source ownership](/docs/guides/cli-source-ownership/)
 
 For deep maintainer contracts, source history and exact evidence records, the public GitHub
 repository remains the authority: [`docs/`](https://github.com/beobungbu/BeeUI/tree/main/docs).

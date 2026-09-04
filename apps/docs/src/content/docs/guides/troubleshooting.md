@@ -39,7 +39,7 @@ Start with the [responsive guide](/docs/responsive/) and component reference. Ke
 horizontal scrolling off; give genuinely wide data/code its own bounded scroll region.
 
 ## Registry verify/doctor fails
-Run the repository-local CLI exactly as documented in [CLI & source ownership](/docs/cli/)
+Run the repository-local CLI exactly as documented in [CLI & source ownership](/docs/guides/cli-source-ownership/)
 and inspect the reported source/dependency drift before updating files.
 
 ## Web keyboard behavior is wrong

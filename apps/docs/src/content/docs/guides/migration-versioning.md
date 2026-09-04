@@ -5,7 +5,7 @@ description: Upgrade BeeUI packages, tokens and source-owned components without 
 
 # Migration & versioning
 
-Read [Current release status](/docs/migration/current-release.generated/) first. It is
+Read [Current release status](/docs/guides/current-release.generated/) first. It is
 generated from the workspace manifest and canonical dist-tag policy.
 
 ## Package consumption

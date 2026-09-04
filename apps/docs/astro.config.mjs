@@ -39,8 +39,8 @@ export default defineConfig({
           label: 'Theming',
           items: [
             { label: 'Overview', slug: 'theming' },
-            { label: 'Branding', slug: 'theming/branding' },
-            { label: 'Density', slug: 'theming/density' },
+            { label: 'Branding', slug: 'guides/branding' },
+            { label: 'Density', slug: 'guides/density' },
           ],
         },
         {
@@ -75,7 +75,7 @@ export default defineConfig({
         },
         {
           label: 'CLI & source ownership',
-          items: [{ label: 'Overview', slug: 'cli' }],
+          items: [{ label: 'Overview', slug: 'guides/cli-source-ownership' }],
         },
         {
           label: 'Compatibility',
@@ -87,11 +87,11 @@ export default defineConfig({
         },
         {
           label: 'Migration & versioning',
-          items: [{ label: 'Overview', slug: 'migration' }],
+          items: [{ label: 'Overview', slug: 'guides/migration-versioning' }],
         },
         {
           label: 'Troubleshooting',
-          items: [{ label: 'Overview', slug: 'troubleshooting' }],
+          items: [{ label: 'Overview', slug: 'guides/troubleshooting' }],
         },
         {
           label: 'Performance',

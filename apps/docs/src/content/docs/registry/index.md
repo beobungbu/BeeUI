@@ -30,7 +30,7 @@ A normal `add`/`update` must not silently destroy a differing destination file. 
 
 ## Package boundary vs Registry
 
-Registry ownership is not inherently “better” than package consumption. It trades centralized upgrades for source visibility and customization. See [CLI & source ownership](/docs/cli/) for the decision table and commands, and [Examples](/examples/) for buildable consumers of both models.
+Registry ownership is not inherently “better” than package consumption. It trades centralized upgrades for source visibility and customization. See [CLI & source ownership](/docs/guides/cli-source-ownership/) for the decision table and commands, and [Examples](/examples/) for buildable consumers of both models.
 
 ## Canonical sources
 
