@@ -65,7 +65,7 @@ test('release verifier shares the RC-aware version authority', () => {
   assert.doesNotMatch(verifier, /rootVersion === '20260902\.0\.0'/);
 });
 
-test('npm release workflow keeps registry mutation manual, environment-gated, and OIDC-scoped', () => {
+test('npm release workflow keeps registry mutation manual, main-only, environment-gated, and OIDC-scoped', () => {
   const workflow = fs.readFileSync(path.resolve('.github/workflows/npm-release.yml'), 'utf8');
   const bootstrapMatch = /\n  bootstrap-rc:\n([\s\S]*?)\n  stage-rc:\n/.exec(workflow);
   assert.ok(bootstrapMatch, 'bootstrap-rc job must exist');
@@ -74,6 +74,7 @@ test('npm release workflow keeps registry mutation manual, environment-gated, an
   assert.match(workflow, /^on:\n  workflow_dispatch:/m);
   assert.doesNotMatch(workflow, /^  (push|pull_request|schedule):/m);
   assert.match(workflow, /default: verify/);
+  assert.match(workflow, /test "\$GITHUB_REF" = "refs\/heads\/main"/);
   assert.match(workflow, /environment: release/);
   assert.match(workflow, /BEEUI_RC_RELEASE/);
   assert.match(bootstrap, /permissions:[\s\S]*?id-token: write/);
