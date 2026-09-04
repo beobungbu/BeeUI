@@ -34,9 +34,13 @@ describe('Showcase public target contract', () => {
   });
 
   it('resolves exact component examples and returns explicit stale-example recovery', () => {
-    const ok = resolveShowcaseTarget({ surface: 'component', id: 'select', example: 'basic' });
-    expect(ok.ok).toBe(true);
-    if (ok.ok) expect(ok.example?.sourcePath).toContain('select-showcase.tsx');
+    const controlled = resolveShowcaseTarget({ surface: 'component', id: 'select', example: 'controlled' });
+    expect(controlled.ok).toBe(true);
+    if (controlled.ok) {
+      expect(controlled.example?.sourcePath).toContain('select-showcase.tsx');
+      expect(controlled.example?.focusTestId).toBe('select-showcase-controlled-trigger');
+      expect(controlled.example?.coverageClasses).toEqual(['controlled']);
+    }
 
     const stale = resolveShowcaseTarget({ surface: 'component', id: 'select', example: 'removed' });
     expect(stale.ok).toBe(false);
@@ -64,15 +68,39 @@ describe('Showcase public target contract', () => {
     }
   });
 
-  it('maintains one basic example identity for every registered component owner', () => {
-    expect(componentExamples.length).toBeGreaterThan(50);
-    expect(new Set(componentExamples.map((entry) => entry.ownerId)).size).toBe(componentExamples.length);
-    for (const entry of componentExamples) {
-      expect(entry.id).toBe('basic');
-      expect(entry.coverageClasses).toContain('basic');
-      expect(entry.sourcePath).toMatch(/^apps\/showcase\//);
-      expect(entry.showcaseTarget).toEqual({ surface: 'component', id: entry.ownerId, example: 'basic' });
+  it('maintains one basic example for every component and one addressable row for every applicable class', () => {
+    const basicExamples = componentExamples.filter((entry) => entry.id === 'basic');
+    expect(basicExamples.length).toBeGreaterThan(50);
+    expect(new Set(basicExamples.map((entry) => entry.ownerId)).size).toBe(basicExamples.length);
+
+    for (const basic of basicExamples) {
+      expect(basic.coverageClasses).toEqual(['basic']);
+      expect(basic.sourcePath).toMatch(/^apps\/showcase\//);
+      expect(basic.showcaseTarget).toEqual({ surface: 'component', id: basic.ownerId, example: 'basic' });
+      expect(basic.focusTestId || basic.focusText).toBeTruthy();
+
+      for (const coverageClass of basic.applicableCoverageClasses ?? []) {
+        const addressable = componentExamples.find(
+          (entry) => entry.ownerId === basic.ownerId && entry.id === coverageClass,
+        );
+        expect(addressable).toBeTruthy();
+        expect(addressable?.coverageClasses).toEqual([coverageClass]);
+        expect(addressable?.showcaseTarget).toEqual({
+          surface: 'component',
+          id: basic.ownerId,
+          example: coverageClass,
+        });
+      }
     }
+  });
+
+  it('does not let one basic row masquerade as complex coverage', () => {
+    const selectRows = componentExamples.filter((entry) => entry.ownerId === 'select');
+    const ids = new Set(selectRows.map((entry) => entry.id));
+    for (const required of ['basic', 'states', 'controlled', 'uncontrolled', 'composition', 'accessibility']) {
+      expect(ids.has(required)).toBe(true);
+    }
+    expect(selectRows.find((entry) => entry.id === 'basic')?.coverageClasses).toEqual(['basic']);
   });
 
   it('uses stable unique owner/example/state identities across the registry', () => {
