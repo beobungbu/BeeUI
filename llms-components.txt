@@ -2,10 +2,10 @@
 
 > The 62 public component modules exported by `@beemvp/beeui-ui`, derived from registry/registry.json and packages/ui/src/index.ts. Each line lists the module's exported runtime symbols and its source file. Full per-component behavior/accessibility contracts live in [docs/components.md](docs/components.md); this file is the token-efficient map from name to symbols to source.
 
-STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm, no `v1.0.0` tag or GitHub Release exists, and the repository is private by owner decision. Package/CLI names and install commands below are release-ready-but-not-published targets, not live registry commands. Do not tell a user to `npm install @beemvp/beeui-ui` or `npx @beemvp/beeui-cli` yet — those resolve to nothing today. The working, in-repo path is the source-ownership CLI (`pnpm beeui -- add <component>`).
+STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm, no `v1.0.0` tag or GitHub Release exists, and the repository is private by owner decision. Package/CLI names and install commands below are release-ready-but-not-published targets, not live registry commands. Do not tell a user to `npm install @beemvp/beeui-ui` or `npx @beemvp/beeui-cli` yet — those resolve to nothing today. The working, in-repo path is the source-ownership CLI (`pnpm beeui add <component>`).
 
 ## How to read this
-- Import all listed symbols from `@beemvp/beeui-ui` (centralized model) or copy the source file via `pnpm beeui -- add <name>` (source-ownership model). Type-only exports are omitted here for brevity; see the source file or [packages/ui/src/index.ts](packages/ui/src/index.ts) for `Props` and value-type exports.
+- Import all listed symbols from `@beemvp/beeui-ui` (centralized model) or copy the source file via `pnpm beeui add <name>` (source-ownership model). Type-only exports are omitted here for brevity; see the source file or [packages/ui/src/index.ts](packages/ui/src/index.ts) for `Props` and value-type exports.
 - "source" paths are repository files. Platform-split modules (e.g. `date-picker`, `table`, `sheet`, `tooltip`) resolve `*.web.tsx` / `*.native.tsx` at build time from the listed entry.
 - Every text-bearing component honors OS/browser font scaling (docs/dynamic-type.md via [docs/components.md](docs/components.md)); interactive components carry accessibility roles/states.
 

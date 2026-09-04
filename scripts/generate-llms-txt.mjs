@@ -203,7 +203,7 @@ const UNPUBLISHED_NOTE =
   'GitHub Release exists, and the repository is private by owner decision. Package/CLI names and install ' +
   'commands below are release-ready-but-not-published targets, not live registry commands. Do not tell a ' +
   'user to `npm install @beemvp/beeui-ui` or `npx @beemvp/beeui-cli` yet — those resolve to nothing today. The working, ' +
-  'in-repo path is the source-ownership CLI (`pnpm beeui -- add <component>`).';
+  'in-repo path is the source-ownership CLI (`pnpm beeui add <component>`).';
 
 function buildIndex(model) {
   const { packages } = model;
@@ -222,7 +222,7 @@ BeeUI ships ${model.componentCount} public component modules from \`@beemvp/beeu
 
 ## Install (both models, targets are unpublished)
 - Centralized (release-ready target, NOT yet on npm): \`npm i @beemvp/beeui-ui @beemvp/beeui-core @beemvp/beeui-tokens\`, then \`import { Button } from '@beemvp/beeui-ui'\` and wire the Web theme via \`@import '@beemvp/beeui-tokens/theme.css'\`. See [docs/decisions/011-distribution-architecture.md](docs/decisions/011-distribution-architecture.md).
-- Source ownership (works today, repo-local): \`pnpm beeui -- add <component>\` copies component source into the consumer and rewrites \`@beemvp/beeui-core\` imports. The published CLI target is \`@beemvp/beeui-cli\` (binary \`beeui\`), invoked \`npx @beemvp/beeui-cli add <component>\` once released — NOT \`npx beeui\`. See [docs/registry-cli.md](docs/registry-cli.md) and [docs/distribution-names.md](docs/distribution-names.md).
+- Source ownership (works today, repo-local): \`pnpm beeui add <component>\` copies component source into the consumer and rewrites \`@beemvp/beeui-core\` imports. The published CLI target is \`@beemvp/beeui-cli\` (binary \`beeui\`), invoked \`npx @beemvp/beeui-cli add <component>\` once released — NOT \`npx beeui\`. See [docs/registry-cli.md](docs/registry-cli.md) and [docs/distribution-names.md](docs/distribution-names.md).
 
 ## Start here
 - [README.md](README.md): project overview, quick start, safe-area/overlay/toast foundations.
@@ -285,7 +285,7 @@ BeeUI is a reusable, mobile-first React Native UI foundation for long-lived clie
 
 ## Consumption models
 1. Centralized packages (release-ready target, NOT on npm): \`npm i @beemvp/beeui-ui\` pulls \`@beemvp/beeui-core\` + \`@beemvp/beeui-tokens\`; import components from \`@beemvp/beeui-ui\`; wire Web theme with \`@import '@beemvp/beeui-tokens/theme.css'\`.
-2. Source ownership (works today, repo-local): \`pnpm beeui -- add <component>\` copies component source in-tree and rewrites \`@beemvp/beeui-core\` imports via \`rewrite-beeui-core-cn\` / \`rewrite-beeui-core-module\`. Run \`pnpm beeui -- list\` for the canonical component list (generated from registry/registry.json). Future published CLI: \`@beemvp/beeui-cli\` (binary \`beeui\`), \`npx @beemvp/beeui-cli add <component>\` — never \`npx beeui\` (the unscoped name is an npm tombstone; see [docs/distribution-names.md](docs/distribution-names.md)).
+2. Source ownership (works today, repo-local): \`pnpm beeui add <component>\` copies component source in-tree and rewrites \`@beemvp/beeui-core\` imports via \`rewrite-beeui-core-cn\` / \`rewrite-beeui-core-module\`. Run \`pnpm beeui list\` for the canonical component list (generated from registry/registry.json). Future published CLI: \`@beemvp/beeui-cli\` (binary \`beeui\`), \`npx @beemvp/beeui-cli add <component>\` — never \`npx beeui\` (the unscoped name is an npm tombstone; see [docs/distribution-names.md](docs/distribution-names.md)).
 
 See [docs/decisions/011-distribution-architecture.md](docs/decisions/011-distribution-architecture.md) and [docs/registry-cli.md](docs/registry-cli.md).
 
@@ -383,7 +383,7 @@ function buildComponents(model) {
 ${UNPUBLISHED_NOTE}
 
 ## How to read this
-- Import all listed symbols from \`@beemvp/beeui-ui\` (centralized model) or copy the source file via \`pnpm beeui -- add <name>\` (source-ownership model). Type-only exports are omitted here for brevity; see the source file or [packages/ui/src/index.ts](packages/ui/src/index.ts) for \`Props\` and value-type exports.
+- Import all listed symbols from \`@beemvp/beeui-ui\` (centralized model) or copy the source file via \`pnpm beeui add <name>\` (source-ownership model). Type-only exports are omitted here for brevity; see the source file or [packages/ui/src/index.ts](packages/ui/src/index.ts) for \`Props\` and value-type exports.
 - "source" paths are repository files. Platform-split modules (e.g. \`date-picker\`, \`table\`, \`sheet\`, \`tooltip\`) resolve \`*.web.tsx\` / \`*.native.tsx\` at build time from the listed entry.
 - Every text-bearing component honors OS/browser font scaling (docs/dynamic-type.md via [docs/components.md](docs/components.md)); interactive components carry accessibility roles/states.
 

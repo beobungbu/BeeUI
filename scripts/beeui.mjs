@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Repository-local dev entry point. `pnpm beeui -- <command>` delegates to the
+// Repository-local dev entry point. `pnpm beeui <command>` delegates to the
 // same CLI engine shipped as the publishable `@beemvp/beeui-cli` package
 // (packages/cli/src/beeui.mjs) so the repo-local and published code paths
 // never fork (#209). This file only exists so `pnpm beeui` keeps working

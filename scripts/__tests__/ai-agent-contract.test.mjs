@@ -31,17 +31,17 @@ test('extractRepoRelativeLinks drops external URLs and anchors, strips fragments
 });
 
 test('extractBeeuiSubcommands skips option flags and captures the subcommand', () => {
-  const text = 'run `pnpm beeui -- add --dry-run button` then `pnpm beeui -- doctor` and `pnpm beeui -- list`';
+  const text = 'run `pnpm beeui add --dry-run button` then `pnpm beeui doctor` and `pnpm beeui list`';
   assert.deepEqual(extractBeeuiSubcommands(text), ['add', 'doctor', 'list']);
 });
 
 test('extractBeeuiAddItems captures real component tokens and ignores placeholders', () => {
-  const text = '`pnpm beeui -- add button` and `pnpm beeui -- add --overwrite popover sheet` and `pnpm beeui -- add <component>`';
+  const text = '`pnpm beeui add button` and `pnpm beeui add --overwrite popover sheet` and `pnpm beeui add <component>`';
   assert.deepEqual(extractBeeuiAddItems(text), ['button', 'popover', 'sheet']);
 });
 
 test('extractPnpmScripts excludes the beeui CLI runner', () => {
-  const text = '`pnpm typecheck` `pnpm test` `pnpm registry:verify` `pnpm beeui -- add button`';
+  const text = '`pnpm typecheck` `pnpm test` `pnpm registry:verify` `pnpm beeui add button`';
   assert.deepEqual(extractPnpmScripts(text), ['registry:verify', 'test', 'typecheck']);
 });
 
@@ -100,7 +100,7 @@ test('the cookbook cross-links the whole llms.txt family', () => {
 test('the cookbook states UNPUBLISHED status and never claims npm availability', () => {
   const text = readCookbook();
   assert.match(text, /UNPUBLISHED/);
-  assert.match(text, /pnpm beeui -- add/);
+  assert.match(text, /pnpm beeui add/);
   assert.doesNotMatch(text, /available on npm/i);
 });
 

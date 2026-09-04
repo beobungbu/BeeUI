@@ -2,7 +2,7 @@
 
 > Expanded stable-API, setup, compatibility, and architecture-contract detail for coding agents. Companion to llms.txt (compact index), llms-components.txt (component inventory), and llms-patterns.txt (patterns).
 
-STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm, no `v1.0.0` tag or GitHub Release exists, and the repository is private by owner decision. Package/CLI names and install commands below are release-ready-but-not-published targets, not live registry commands. Do not tell a user to `npm install @beemvp/beeui-ui` or `npx @beemvp/beeui-cli` yet — those resolve to nothing today. The working, in-repo path is the source-ownership CLI (`pnpm beeui -- add <component>`).
+STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm, no `v1.0.0` tag or GitHub Release exists, and the repository is private by owner decision. Package/CLI names and install commands below are release-ready-but-not-published targets, not live registry commands. Do not tell a user to `npm install @beemvp/beeui-ui` or `npx @beemvp/beeui-cli` yet — those resolve to nothing today. The working, in-repo path is the source-ownership CLI (`pnpm beeui add <component>`).
 
 ## What BeeUI is
 BeeUI is a reusable, mobile-first React Native UI foundation for long-lived client apps. The public component API stops at `@beemvp/beeui-ui`; applications should not need to know the styling engine. Web support is additive and native ergonomics remain first-class. See [docs/architecture.md](docs/architecture.md).
@@ -16,7 +16,7 @@ BeeUI is a reusable, mobile-first React Native UI foundation for long-lived clie
 
 ## Consumption models
 1. Centralized packages (release-ready target, NOT on npm): `npm i @beemvp/beeui-ui` pulls `@beemvp/beeui-core` + `@beemvp/beeui-tokens`; import components from `@beemvp/beeui-ui`; wire Web theme with `@import '@beemvp/beeui-tokens/theme.css'`.
-2. Source ownership (works today, repo-local): `pnpm beeui -- add <component>` copies component source in-tree and rewrites `@beemvp/beeui-core` imports via `rewrite-beeui-core-cn` / `rewrite-beeui-core-module`. Run `pnpm beeui -- list` for the canonical component list (generated from registry/registry.json). Future published CLI: `@beemvp/beeui-cli` (binary `beeui`), `npx @beemvp/beeui-cli add <component>` — never `npx beeui` (the unscoped name is an npm tombstone; see [docs/distribution-names.md](docs/distribution-names.md)).
+2. Source ownership (works today, repo-local): `pnpm beeui add <component>` copies component source in-tree and rewrites `@beemvp/beeui-core` imports via `rewrite-beeui-core-cn` / `rewrite-beeui-core-module`. Run `pnpm beeui list` for the canonical component list (generated from registry/registry.json). Future published CLI: `@beemvp/beeui-cli` (binary `beeui`), `npx @beemvp/beeui-cli add <component>` — never `npx beeui` (the unscoped name is an npm tombstone; see [docs/distribution-names.md](docs/distribution-names.md)).
 
 See [docs/decisions/011-distribution-architecture.md](docs/decisions/011-distribution-architecture.md) and [docs/registry-cli.md](docs/registry-cli.md).
 

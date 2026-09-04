@@ -71,7 +71,7 @@ stack and the `@source`/`@import` `global.css` contract.
 ### G2 — No standalone-consumer install path while unpublished (blocking)
 
 The cookbook is emphatic that npm install is wrong and that source-ownership
-`pnpm beeui -- add` is the working path — but source ownership copies files into an
+`pnpm beeui add` is the working path — but source ownership copies files into an
 *existing* consumer and still needs `@beemvp/beeui-tokens` (a package). For a
 **new, standalone external app** that wants the centralized-package model, the AI
 docs offer no working mechanism: the `pnpm pack` → `file:*.tgz` → `npm install`

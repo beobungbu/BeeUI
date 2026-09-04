@@ -34,7 +34,7 @@ test('findHallucinatedSymbols passes when all imports are real', () => {
 });
 
 test('extractBeeuiAddItems captures real tokens and skips placeholders', () => {
-  const text = '`pnpm beeui -- add button` `pnpm beeui -- add --overwrite popover theme` `pnpm beeui -- add <component>`';
+  const text = '`pnpm beeui add button` `pnpm beeui add --overwrite popover theme` `pnpm beeui add <component>`';
   assert.deepEqual(extractBeeuiAddItems(text), ['button', 'popover', 'theme']);
 });
 

@@ -394,7 +394,7 @@ export async function readConfig(projectRoot) {
   const configPath = path.join(projectRoot, CONFIG_FILENAME);
   await assertNoSymlinkPath(projectRoot, configPath, 'config');
   const stat = await statIfExists(configPath);
-  invariant(stat, `BeeUI is not initialized in this project; run 'pnpm beeui -- init' first`);
+  invariant(stat, `BeeUI is not initialized in this project; run 'pnpm beeui init' first`);
   invariant(stat.isFile(), `${CONFIG_FILENAME} is not a file`);
   let config;
   try {

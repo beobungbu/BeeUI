@@ -11,7 +11,7 @@
 ## Who this guide is for
 
 You consumed BeeUI before 1.0 — from the **repository shape** (workspace links, the
-repo-local `pnpm beeui -- add …` shim, or `@import`-ing the theme through a monorepo path) —
+repo-local `pnpm beeui add …` shim, or `@import`-ing the theme through a monorepo path) —
 and you are moving to the published 1.0 packages. This guide maps the pre-1.0 shape to the
 final 1.0 shape and gives validated upgrade steps.
 
@@ -28,7 +28,7 @@ change here is [docs/semver-audit.md](semver-audit.md).
 | Imports | barrel-only, resolved through the workspace | barrel **and** 62 granular per-component subpaths (`@beemvp/beeui-ui/button`) | Additive |
 | Theme CSS | `@import` through a monorepo path | `@import '@beemvp/beeui-tokens/theme.css'` (package subpath) | Breaking (path) |
 | Tokens package | internal / `private: true` | published public package; a real runtime dependency for source-owned components | Breaking (visibility) |
-| CLI | repo-local `pnpm beeui -- add …` shim | `@beemvp/beeui-cli` (binary `beeui`); `npx @beemvp/beeui-cli add …` once published | Distribution |
+| CLI | repo-local `pnpm beeui add …` shim | `@beemvp/beeui-cli` (binary `beeui`); `npx @beemvp/beeui-cli add …` once published | Distribution |
 | Tokens vocabulary | Theme Tokens v3 (DTCG source, scoping, density, overrides, lifecycle) | same, frozen as the stable token contract | Stable |
 | New surfaces | Tooltip/Sheet/Table/Calendar/date-time were in progress | all shipped and public | Additive |
 
@@ -138,7 +138,7 @@ required package and you install it. Nothing to change in your own code — just
 
 ### 5. CLI invocation name
 
-The repo-local `pnpm beeui -- add …` shim becomes `npx @beemvp/beeui-cli add …` (binary
+The repo-local `pnpm beeui add …` shim becomes `npx @beemvp/beeui-cli add …` (binary
 `beeui`) once published. The command/flag/exit-code contract is identical
 ([docs/registry-cli.md](registry-cli.md)); only the invocation prefix changes.
 

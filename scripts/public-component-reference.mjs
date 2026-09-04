@@ -86,7 +86,7 @@ export function collectPublicComponentReferenceViolations(rootDir = ROOT_DIR) {
     }
     if (!component.values.length) violations.push(`${component.name}: no public runtime exports.`);
     if (!component.examples.length) violations.push(`${component.name}: no executable Showcase example.`);
-    if (!component.cliAdd.startsWith('pnpm beeui -- add ')) {
+    if (!component.cliAdd.startsWith('pnpm beeui add ')) {
       violations.push(`${component.name}: registry identity is not the repository-local source-ownership command.`);
     }
     if (!component.route.startsWith('/docs/components/reference/')) {

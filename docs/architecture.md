@@ -72,7 +72,7 @@ The Gallery layer uses structural assertions and in-memory screenshots. It does 
 
 Own the current source-ownership distribution path. The engine is a single shared
 implementation in `packages/cli/src/` (`@beemvp/beeui-cli`, #209), used both as the repo-local
-`pnpm beeui -- <command>` and as a publication-ready packed CLI (`docs/registry-cli.md`).
+`pnpm beeui <command>` and as a publication-ready packed CLI (`docs/registry-cli.md`).
 It is implemented and tested, but not yet a public `npx @beemvp/beeui-cli` or remote registry
 product.
 
