@@ -1,7 +1,19 @@
 import type { ComponentTargetFocus } from './component-target-focus';
 
+function cssString(value: string) {
+  return value.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
+}
+
 function findByExactText(text: string) {
-  const candidates = Array.from(document.querySelectorAll<HTMLElement>('button, [role="button"], [data-testid], h1, h2, h3, p, span, div'));
+  const escaped = cssString(text);
+  const byPlaceholder = document.querySelector<HTMLElement>(
+    `input[placeholder="${escaped}"], textarea[placeholder="${escaped}"]`,
+  );
+  if (byPlaceholder) return byPlaceholder;
+
+  const candidates = Array.from(
+    document.querySelectorAll<HTMLElement>('button, [role="button"], [data-testid], h1, h2, h3, p, span, div'),
+  );
   return candidates.find((element) => element.textContent?.trim() === text) ?? null;
 }
 
@@ -21,7 +33,7 @@ export function focusComponentTarget({ focusTestId, focusText }: ComponentTarget
     if (cancelled) return;
     clearPreviousTarget();
     const byTestId = focusTestId
-      ? document.querySelector<HTMLElement>(`[data-testid="${focusTestId.replaceAll('"', '\\"')}"]`)
+      ? document.querySelector<HTMLElement>(`[data-testid="${cssString(focusTestId)}"]`)
       : null;
     const target = byTestId ?? (focusText ? findByExactText(focusText) : null);
     if (!target) return;
