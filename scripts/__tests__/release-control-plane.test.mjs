@@ -67,18 +67,25 @@ test('release verifier shares the RC-aware version authority', () => {
 
 test('npm release workflow keeps registry mutation manual, environment-gated, and OIDC-scoped', () => {
   const workflow = fs.readFileSync(path.resolve('.github/workflows/npm-release.yml'), 'utf8');
+  const bootstrapMatch = /\n  bootstrap-rc:\n([\s\S]*?)\n  stage-rc:\n/.exec(workflow);
+  assert.ok(bootstrapMatch, 'bootstrap-rc job must exist');
+  const bootstrap = bootstrapMatch[1];
 
   assert.match(workflow, /^on:\n  workflow_dispatch:/m);
   assert.doesNotMatch(workflow, /^  (push|pull_request|schedule):/m);
   assert.match(workflow, /default: verify/);
   assert.match(workflow, /environment: release/);
   assert.match(workflow, /BEEUI_RC_RELEASE/);
-  assert.match(workflow, /NODE_AUTH_TOKEN: \$\{\{ secrets\.NPM_BOOTSTRAP_TOKEN \}\}/);
+  assert.match(bootstrap, /permissions:[\s\S]*?id-token: write/);
+  assert.doesNotMatch(bootstrap, /^    env:\n      NODE_AUTH_TOKEN:/m);
   assert.match(
-    workflow,
-    /bootstrap-rc:[\s\S]*?permissions:[\s\S]*?id-token: write[\s\S]*?env:\n      NODE_AUTH_TOKEN:/,
+    bootstrap,
+    /- name: Bootstrap the first RC under next\n        env:\n          NODE_AUTH_TOKEN: \$\{\{ secrets\.NPM_BOOTSTRAP_TOKEN \}\}/,
   );
+  assert.match(bootstrap, /Refuse reused versions and registry probe errors[\s\S]*?E404\|404 Not Found/);
+  assert.match(bootstrap, /registry probe for \$\{spec\} failed unexpectedly/);
   assert.match(workflow, /stage-rc:[\s\S]*?permissions:\n      contents: read\n      id-token: write/);
+  assert.match(workflow, /Require existing package bootstrap and a fresh RC version[\s\S]*?E404\|404 Not Found/);
   assert.match(workflow, /npm publish .*--tag next --provenance/);
   assert.match(workflow, /npm stage publish .*--tag next --provenance/);
   assert.doesNotMatch(workflow, /npm dist-tag/);
