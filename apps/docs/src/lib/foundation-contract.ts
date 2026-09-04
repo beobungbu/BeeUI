@@ -102,6 +102,7 @@ export interface PageMetadataInput {
   title: string;
   description: string;
   pathname: string;
+  origin: string;
   imagePath?: string;
   environment: DeploymentEnvironment;
 }
@@ -119,14 +120,13 @@ export interface PageMetadata {
   };
 }
 
-export const PUBLIC_SITE_ORIGIN = 'https://beeui.beemvp.com' as const;
-
 function normalizeAbsolutePath(pathname: string): string {
   const value = pathname.startsWith('/') ? pathname : `/${pathname}`;
   return value.replace(/\/{2,}/g, '/');
 }
 
-export function buildCanonicalUrl(pathname: string, origin = PUBLIC_SITE_ORIGIN): string {
+export function buildCanonicalUrl(pathname: string, origin: string): string {
+  if (!origin.trim()) throw new Error('Canonical origin must be non-empty.');
   return new URL(normalizeAbsolutePath(pathname), origin).toString();
 }
 
@@ -137,7 +137,7 @@ export function indexPolicyForEnvironment(
 }
 
 export function buildPageMetadata(input: PageMetadataInput): PageMetadata {
-  const canonical = buildCanonicalUrl(input.pathname);
+  const canonical = buildCanonicalUrl(input.pathname, input.origin);
   return {
     title: input.title,
     description: input.description,
@@ -147,7 +147,7 @@ export function buildPageMetadata(input: PageMetadataInput): PageMetadata {
       title: input.title,
       description: input.description,
       url: canonical,
-      ...(input.imagePath ? { image: buildCanonicalUrl(input.imagePath) } : {}),
+      ...(input.imagePath ? { image: buildCanonicalUrl(input.imagePath, input.origin) } : {}),
     },
   };
 }
