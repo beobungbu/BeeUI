@@ -52,7 +52,7 @@ const GOOD_POLICY = {
   distTags: ['latest', 'next'],
   prereleaseDistTag: 'next',
   stableDistTag: 'latest',
-  atomicPromotionTag: 'latest',
+  stablePromotionTag: 'latest',
   lockstepPackages: [
     '@beemvp/beeui-core',
     '@beemvp/beeui-tokens',
@@ -141,6 +141,10 @@ test('an invalid prerelease regex is reported', () => {
 
 test('distTags must be exactly latest and next', () => {
   assert.ok(policyViolations({ distTags: ['latest', 'next', 'beta'] }).some((v) => /distTags/.test(v)));
+});
+
+test('stable promotion tag must match the stable dist-tag', () => {
+  assert.ok(policyViolations({ stablePromotionTag: 'next' }).some((v) => /stablePromotionTag/.test(v)));
 });
 
 test('prerelease must not publish to the stable dist-tag', () => {
