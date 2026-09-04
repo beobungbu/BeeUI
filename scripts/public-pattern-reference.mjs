@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { showcaseHref } from '../apps/showcase/showcase-target.ts';
 import { ROOT_DIR, PATTERN_PACKS, getPatternScreens, readJson } from './component-docs-lib.mjs';
 import { buildPublicComponentManifest } from './public-component-reference.mjs';
 
@@ -33,6 +34,7 @@ export function buildPublicPatternManifest(rootDir = ROOT_DIR) {
   const content = readJson('docs/pattern-library.content.json', rootDir);
   return getPatternScreens(rootDir).map((screen) => {
     const curated = content.screens?.[screen.slug] ?? {};
+    const runtimeId = screen.slug.replace(/-screen$/, '');
     return {
       ...screen,
       source: screen.file,
@@ -40,7 +42,7 @@ export function buildPublicPatternManifest(rootDir = ROOT_DIR) {
       purpose: curated.purpose ?? '',
       excluded: curated.excluded ?? '',
       route: `/docs/patterns/reference/${screen.pack}/${screen.slug}/`,
-      showcaseHref: `/showcase/?pattern=${encodeURIComponent(`${screen.pack}/${screen.slug}`)}&embed=1`,
+      showcaseHref: `${showcaseHref({ surface: 'pattern', id: runtimeId })}&embed=1`,
       sourceHref: githubHref(screen.file),
     };
   });
@@ -65,7 +67,8 @@ export function collectPublicPatternViolations(rootDir = ROOT_DIR) {
     if (pattern.source !== pattern.file) violations.push(`${key}: source projection drifted from canonical screen file.`);
     if (!fs.existsSync(path.join(rootDir, pattern.source))) violations.push(`${key}: source file is missing.`);
     if (!pattern.beeuiComponents.length) violations.push(`${key}: no direct public BeeUI composition metadata.`);
-    if (!pattern.showcaseHref.startsWith('/showcase/?pattern=')) violations.push(`${key}: missing canonical Showcase deep link.`);
+    const expectedTarget = `${showcaseHref({ surface: 'pattern', id: pattern.slug.replace(/-screen$/, '') })}&embed=1`;
+    if (pattern.showcaseHref !== expectedTarget) violations.push(`${key}: missing canonical Showcase deep link.`);
   }
 
   const contentNames = Object.keys(readJson('docs/pattern-library.content.json', rootDir).screens ?? {});
