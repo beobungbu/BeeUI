@@ -10,7 +10,7 @@ This document freezes the Foundation boundary for the BeeUI developer portal. It
 
 ## Route and IA ownership
 
-`web/public-site.config.json` remains the public-site authority for origin, route mounts, top-level public owners, legacy redirect families, navigation, source classes, build outputs, SEO/index policy, and the target docs sections.
+`web/public-site.config.json` remains the public-site authority for environment origins, route mounts, top-level public owners, legacy redirect families, navigation, source classes, build outputs, SEO/index policy, and the target docs sections.
 
 `apps/docs/src/content/docs/**` remains the human-authored/static-route owner for Starlight content. `scripts/generate-docs-foundation.mjs` scans that source tree deterministically and generates `apps/docs/public/route-manifest.json` during docs dev/build/typecheck preparation. The generated manifest is build output and must not be hand-edited.
 
@@ -45,7 +45,7 @@ The machine-readable `json dist-tag-policy` block in `docs/dist-tag-policy.md` i
 
 `scripts/generate-docs-foundation.mjs` combines those sources into `apps/docs/public/release-state.json`. `apps/docs/src/lib/release-state.ts` is the typed UI access point. UI code must not maintain a second `published` boolean or advertise npm/CLI availability independently.
 
-While #254 is closed to publication:
+While publication remains unauthorized by owner gate #254:
 
 - `published = false`;
 - public install commands are unavailable;
@@ -105,19 +105,26 @@ Legacy docs prefix families are defined once in `web/public-site.config.json`. T
 
 Cloudflare delivery is intentionally not changed in #455. A later delivery owner consumes this manifest rather than copying mappings to a second list.
 
-## SEO and index policy
+## SEO, environment origin and index policy
 
-The canonical production origin is `https://beeui.beemvp.com`; `apps/docs/astro.config.mjs` receives it through `site` and keeps `/docs` as its base.
+`web/public-site.config.json` owns the environment-to-origin mapping. Current deployable origins are:
 
-Policy is centralized in `web/public-site.config.json`:
+- development: `https://beeui-dev.beemvp.com`;
+- staging: `https://beeui-stg.beemvp.com`;
+- production: `https://beeui.beemvp.com`.
+
+`scripts/public-site-contract-lib.mjs` resolves the active environment and exposes the corresponding origin to Astro, landing/SEO generation, Foundation manifests and metadata callers. The config is also validated against `.github/deployment/wrangler-*.jsonc`, so a domain change in either place cannot silently drift.
+
+Index policy is environment-owned in the same config:
 
 - production: `index,follow`;
-- development/staging/preview: `noindex,nofollow`;
+- development/staging and preview/candidate aliases: `noindex,nofollow`;
 - non-production robots: disallow `/`;
-- production runtime paths such as `/api/` stay non-indexable;
-- sitemap architecture is enabled when Astro has its canonical `site`.
+- production runtime paths such as `/api/` stay non-indexable.
 
-`foundation-contract.ts` provides canonical URL, index-policy, and shared page metadata helpers. `PageMetadataInput.environment` is required for typed callers, and the runtime policy is fail-closed: any missing/unknown environment resolves to `noindex,nofollow`, never production indexing. Actual deployment/runtime robot-header delivery remains with the existing Cloudflare workflow and later launch-quality work; #455 does not introduce a second deployment control plane.
+`foundation-contract.ts` provides canonical URL, index-policy, and shared page metadata helpers. `PageMetadataInput.origin` and `PageMetadataInput.environment` are required for typed callers; the helper does not contain a second hard-coded production origin. Only explicit `production` indexing is allowed; missing/unknown environment policy resolves fail-closed to `noindex,nofollow`.
+
+The composed Worker artifact also enforces the environment policy: non-production builds emit a global `X-Robots-Tag: noindex, nofollow`, while generated `robots.txt`, canonical URLs, OG URLs and sitemap URLs use the environment origin resolved from the same contract.
 
 ## Generated output discipline
 
