@@ -411,16 +411,15 @@ export function renderPreviewAddon(descriptor) {
 // disagree and the citation is wrong. Used by the generator (fails the build) and by the
 // citation guard (fails the check), so one predicate pins both.
 export function excerptMatchesAnchor(text, anchor) {
-  // Equality on the first line, not containment: `text.includes(anchor)` is satisfied by any
-  // duplicate occurrence, and 20 of 52 excerpted families have a non-unique first line. Every
-  // range carries an anchor, so a missing one is itself a defect rather than a free pass — an
-  // earlier version returned `!anchor || …`, which let unanchored ranges through vacuously.
+  // Every range carries an anchor, so a missing one is a defect rather than a free pass: an
+  // earlier version returned `!anchor || …` and let unanchored ranges through vacuously.
   if (!anchor) return false;
-  // Containment within the FIRST line, not equality with it: an element does not have to begin
-  // its line — `{condition && <Accordion …>}` is ordinary, and apps/showcase already has 181
-  // such starts. Equality rejected those correct citations and hard-failed docs generation.
-  // Scoping to the first line still refuses a duplicate occurrence further down, which is what
-  // plain `includes` over the whole excerpt allowed.
+  // Containment within the FIRST line. Two earlier versions were wrong in opposite directions.
+  // `text.includes(anchor)` over the whole excerpt is satisfied by a duplicate occurrence
+  // further down, and 20 of 52 excerpted families have a non-unique first line. Equality with
+  // the first line rejects correct citations instead: an element need not begin its line —
+  // `{condition && <Accordion …>}` is ordinary, apps/showcase has 181 such starts — and the
+  // failure is a hard docs-build error accusing the derivation of being wrong when it is right.
   return text.split('\n')[0].includes(anchor);
 }
 

@@ -350,10 +350,11 @@ function renderPlatformDiffBullets(diff) {
     lines.push(`- \`${name}\` is accepted on Web for API parity but has no effect there.`);
   }
   for (const change of diff.changed) {
-    // A prop Web never reads needs no note about how its type differs there; the bullet above
-    // already says the value is ignored, and two bullets on one prop read as a contradiction.
-    if (inert.has(change.name)) continue;
-    if (change.typeChanged) {
+    // A prop Web never reads needs no note about how its *type* differs there; the bullet above
+    // already says the value is ignored, and two bullets on one prop read as a contradiction. A
+    // default or optionality difference is still worth stating — the native side of it is real —
+    // so only the type note is suppressed, not the whole prop.
+    if (change.typeChanged && !inert.has(change.name)) {
       lines.push(
         `- \`${change.name}\` type differs: native \`${escapeCell(change.native.type)}\`, Web \`${escapeCell(change.web.type)}\`.`,
       );

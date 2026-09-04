@@ -860,3 +860,41 @@ test('renderPublicComponentPage falls back to an explicit native-only note when 
   assert.match(page, /\*\*Platform note:\*\* this table documents the native declaration only\./);
   assert.match(page, /\[`packages\/ui\/src\/components\/widget\.web\.tsx`\]/);
 });
+
+// A prop the Web implementation destructures into an underscore binding is accepted for API
+// parity and never read, so its type there is moot. Suppressing the type note must not suppress
+// a default or optionality difference, which is real on the native side.
+test('an inert Web prop suppresses only its type-difference note', () => {
+  const component = {
+    ...baseSyntheticComponentForRender(),
+    typeDocs: [
+      {
+        name: 'WidgetProps',
+        docKind: 'props',
+        kind: 'object',
+        bases: [],
+        fields: [
+          { name: 'modalProps', optional: true, type: 'WidgetModalProps', description: '' },
+          { name: 'avoidKeyboard', optional: true, type: 'boolean', description: '', default: 'true' },
+        ],
+        webShape: {
+          kind: 'object',
+          bases: [],
+          inert: ['modalProps', 'avoidKeyboard'],
+          fields: [
+            { name: 'modalProps', optional: true, type: 'Record<string, unknown>', description: '' },
+            { name: 'avoidKeyboard', optional: false, type: 'boolean', description: '', default: 'false' },
+          ],
+        },
+        webSource: 'packages/ui/src/components/widget.web.tsx',
+      },
+    ],
+  };
+  const page = renderPublicComponentPage(component);
+
+  assert.match(page, /`modalProps` is accepted on Web for API parity but has no effect there\./u);
+  assert.equal(/`modalProps` type differs/u.test(page), false, 'the type note is redundant for an inert prop');
+  // A default or optionality difference is real on the native side and must survive the skip.
+  assert.match(page, /`avoidKeyboard` default differs/u);
+  assert.match(page, /`avoidKeyboard` is optional on native but required on Web/u);
+});
