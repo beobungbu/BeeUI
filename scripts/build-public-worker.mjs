@@ -108,11 +108,23 @@ export function composeWorkerAssets({
     commit: exactCommit,
     environment,
   };
-  for (const [name, contents] of Object.entries(buildComposedRootFiles({ rootDir, contract, identity }))) {
+  const rootFiles = buildComposedRootFiles({ rootDir, contract, identity });
+  for (const [name, contents] of Object.entries(rootFiles)) {
     if (claimed.has(name)) throw new Error(`asset collision: ${name} from composed root conflicts with ${claimed.get(name)}`);
     claimed.set(name, 'composed root');
     fs.writeFileSync(path.join(outDir, name), contents);
   }
+
+  // Read back what the composed root declared. The redirect manifest was declared,
+  // published and validated for a year while never reaching disk, and every check stayed
+  // green because they all sat upstream of the write. Verifying the write here means
+  // dropping it fails the build itself rather than waiting for someone to notice a 404.
+  for (const [name, contents] of Object.entries(rootFiles)) {
+    const written = path.join(outDir, name);
+    if (!fs.existsSync(written)) throw new Error(`composed root declared ${name} but never wrote it`);
+    if (fs.readFileSync(written, 'utf8') !== contents) throw new Error(`composed root wrote ${name} with unexpected contents`);
+  }
+
   return { claimed, identity, outDir, contract };
 }
 
