@@ -1,0 +1,251 @@
+name: npm-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Non-mutating verify, first-ever RC bootstrap, or staged RC via Trusted Publishing
+        required: true
+        type: choice
+        default: verify
+        options:
+          - verify
+          - bootstrap-rc
+          - stage-rc
+      expected_version:
+        description: Exact lockstep package version expected at this workflow SHA
+        required: true
+        default: 20260902.0.0
+        type: string
+      confirmation:
+        description: For registry mutations enter BEEUI_RC_RELEASE exactly
+        required: false
+        default: ''
+        type: string
+
+concurrency:
+  group: npm-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 24.13.1
+  PNPM_VERSION: 10.15.0
+  NPM_VERSION: 11.19.1
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout exact workflow SHA
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Pin npm and pnpm
+        run: |
+          set -euo pipefail
+          npm install --global "npm@${NPM_VERSION}"
+          npm install --global corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+          test "$(node --version)" = "v${NODE_VERSION}"
+          test "$(npm --version)" = "${NPM_VERSION}"
+          test "$(pnpm --version)" = "${PNPM_VERSION}"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify exact SHA and release version
+        id: version
+        env:
+          EXPECTED_VERSION_INPUT: ${{ inputs.expected_version }}
+          OPERATION: ${{ inputs.operation }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          version="$(node -p "require('./package.json').version")"
+          test "$version" = "$EXPECTED_VERSION_INPUT"
+
+          if [ "$OPERATION" != "verify" ]; then
+            test "$CONFIRMATION" = "BEEUI_RC_RELEASE"
+            printf '%s\n' "$version" | grep -Eq '^20260902\.0\.0-rc\.(0|[1-9][0-9]*)$'
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Run release control-plane checks
+        run: |
+          set -euo pipefail
+          pnpm release-control-plane:check
+          pnpm dist-policy:check
+          pnpm release:verify
+
+  bootstrap-rc:
+    if: ${{ inputs.operation == 'bootstrap-rc' }}
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      contents: read
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_BOOTSTRAP_TOKEN }}
+      RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
+    steps:
+      - name: Checkout exact workflow SHA
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Pin npm and pnpm
+        run: |
+          set -euo pipefail
+          npm install --global "npm@${NPM_VERSION}"
+          npm install --global corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Refuse non-bootstrap or reused versions
+        run: |
+          set -euo pipefail
+          test -n "${NODE_AUTH_TOKEN:-}"
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          for package in \
+            @beemvp/beeui-core \
+            @beemvp/beeui-tokens \
+            @beemvp/beeui-ui \
+            @beemvp/beeui-cli
+          do
+            if npm view "${package}@${RELEASE_VERSION}" version >/dev/null 2>&1; then
+              echo "Refusing bootstrap: ${package}@${RELEASE_VERSION} already exists." >&2
+              exit 1
+            fi
+          done
+
+      - name: Build, pack, and bootstrap the first RC under next
+        run: |
+          set -euo pipefail
+          pnpm release:verify
+          artifact_root="$RUNNER_TEMP/beeui-npm-bootstrap"
+          rm -rf "$artifact_root"
+          mkdir -p "$artifact_root"
+
+          publish_one() {
+            package_dir="$1"
+            key="$2"
+            package_out="$artifact_root/$key"
+            mkdir -p "$package_out"
+            (cd "$package_dir" && pnpm pack --pack-destination "$package_out")
+            shopt -s nullglob
+            tarballs=("$package_out"/*.tgz)
+            test "${#tarballs[@]}" -eq 1
+            npm publish "${tarballs[0]}" --access public --tag next --provenance
+          }
+
+          # Dependency order; never parallelize registry mutation.
+          publish_one packages/core core
+          publish_one packages/tokens tokens
+          publish_one packages/ui ui
+          publish_one packages/cli cli
+
+  stage-rc:
+    if: ${{ inputs.operation == 'stage-rc' }}
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
+    steps:
+      - name: Checkout exact workflow SHA
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Pin npm and pnpm
+        run: |
+          set -euo pipefail
+          npm install --global "npm@${NPM_VERSION}"
+          npm install --global corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Require existing package bootstrap and a fresh RC version
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          for package in \
+            @beemvp/beeui-core \
+            @beemvp/beeui-tokens \
+            @beemvp/beeui-ui \
+            @beemvp/beeui-cli
+          do
+            npm view "$package" name >/dev/null
+            if npm view "${package}@${RELEASE_VERSION}" version >/dev/null 2>&1; then
+              echo "Refusing stage: ${package}@${RELEASE_VERSION} is already public." >&2
+              exit 1
+            fi
+          done
+
+      - name: Build, pack, and stage the RC under next via OIDC
+        run: |
+          set -euo pipefail
+          pnpm release:verify
+          artifact_root="$RUNNER_TEMP/beeui-npm-stage"
+          rm -rf "$artifact_root"
+          mkdir -p "$artifact_root"
+
+          stage_one() {
+            package_dir="$1"
+            key="$2"
+            package_out="$artifact_root/$key"
+            mkdir -p "$package_out"
+            (cd "$package_dir" && pnpm pack --pack-destination "$package_out")
+            shopt -s nullglob
+            tarballs=("$package_out"/*.tgz)
+            test "${#tarballs[@]}" -eq 1
+            npm stage publish "${tarballs[0]}" --access public --tag next --provenance
+          }
+
+          # Staging is sequential and approval remains a separate owner 2FA action on npm.
+          stage_one packages/core core
+          stage_one packages/tokens tokens
+          stage_one packages/ui ui
+          stage_one packages/cli cli
