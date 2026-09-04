@@ -61,6 +61,46 @@ export function parseDirectExports(source) {
   };
 }
 
+function resolveRelativeModule(fromRelPath, specifier, rootDir = ROOT_DIR) {
+  const fromDir = path.posix.dirname(fromRelPath);
+  const base = path.posix.normalize(path.posix.join(fromDir, specifier));
+  const candidates = [
+    base,
+    `${base}.ts`,
+    `${base}.tsx`,
+    `${base}.mjs`,
+    path.posix.join(base, 'index.ts'),
+    path.posix.join(base, 'index.tsx'),
+  ];
+  return candidates.find((candidate) => fs.existsSync(path.join(rootDir, candidate))) ?? null;
+}
+
+export function parseModuleExports(relPath, rootDir = ROOT_DIR, seen = new Set()) {
+  if (seen.has(relPath)) return { values: [], types: [] };
+  seen.add(relPath);
+
+  const source = readText(relPath, rootDir);
+  const direct = parseDirectExports(source);
+  const values = new Set(direct.values);
+  const types = new Set(direct.types);
+  const stripped = source.replace(/\/\*[\s\S]*?\*\//gu, '').replace(/\/\/[^\n]*/gu, '');
+
+  for (const match of stripped.matchAll(/export\s+\*\s+from\s+['"]([^'"]+)['"]\s*;/gu)) {
+    const specifier = match[1];
+    if (!specifier.startsWith('.')) continue;
+    const resolved = resolveRelativeModule(relPath, specifier, rootDir);
+    if (!resolved) throw new Error(`${relPath}: cannot resolve export * source ${specifier}`);
+    const nested = parseModuleExports(resolved, rootDir, seen);
+    for (const name of nested.values) values.add(name);
+    for (const name of nested.types) types.add(name);
+  }
+
+  return {
+    values: [...values].sort((a, b) => a.localeCompare(b)),
+    types: [...types].sort((a, b) => a.localeCompare(b)),
+  };
+}
+
 function tokenGroups(rootDir = ROOT_DIR) {
   const source = readJson('packages/tokens/tokens.json', rootDir);
   return Object.keys(source.tokens ?? {}).sort((a, b) => a.localeCompare(b));
@@ -219,7 +259,7 @@ export function buildPublicSurfaceInventory(rootDir = ROOT_DIR) {
   ]) {
     const pkg = readJson(`${packageDir}/package.json`, rootDir);
     const sourcePath = `${packageDir}/src/index.ts`;
-    const exports = parseDirectExports(readText(sourcePath, rootDir));
+    const exports = parseModuleExports(sourcePath, rootDir);
     for (const name of exports.values) {
       rows.push({
         id: `${pkg.name}:value:${name}`,
@@ -314,9 +354,14 @@ export function validatePublicSurfaceInventory(rootDir = ROOT_DIR) {
   return violations;
 }
 
+export function serializePublicSurfaceInventory(rootDir = ROOT_DIR) {
+  return `${JSON.stringify(buildPublicSurfaceInventory(rootDir), null, 2)}\n`;
+}
+
 export function writePublicSurfaceInventory(rootDir = ROOT_DIR) {
   const output = path.join(rootDir, OUTPUT_FILE);
-  fs.writeFileSync(output, `${JSON.stringify(buildPublicSurfaceInventory(rootDir), null, 2)}\n`);
+  fs.mkdirSync(path.dirname(output), { recursive: true });
+  fs.writeFileSync(output, serializePublicSurfaceInventory(rootDir));
   return OUTPUT_FILE;
 }
 
@@ -331,7 +376,15 @@ function main() {
   }
   if (check) {
     const inventory = buildPublicSurfaceInventory(ROOT_DIR);
-    console.log(`Public-surface documentation contract passed (${inventory.rows.length} derived rows, zero orphan owners).`);
+    const output = path.join(ROOT_DIR, OUTPUT_FILE);
+    const actual = fs.existsSync(output) ? fs.readFileSync(output, 'utf8') : '';
+    const expected = serializePublicSurfaceInventory(ROOT_DIR);
+    if (actual !== expected) {
+      console.error(`${OUTPUT_FILE} is missing or stale. Run \`pnpm docs:surface:generate\`.`);
+      process.exitCode = 1;
+      return;
+    }
+    console.log(`Public-surface documentation contract passed (${inventory.rows.length} derived rows, zero orphan owners; generated inventory is fresh).`);
     return;
   }
   console.log(`generated ${writePublicSurfaceInventory(ROOT_DIR)}`);
