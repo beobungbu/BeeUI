@@ -225,9 +225,16 @@ the default non-virtualized render costs **well under 1 ms per full render pass 
 500 rows** on a representative dev host, far inside a 16 ms frame budget. That is why no
 virtualization adapter is currently justified.
 
-Two committed reports state different exact medians for the same `web/table-render-100` and
-`web/table-render-500` scenarios, so this guide deliberately does not restate a precise figure.
-Measure your own host instead — that is the number that governs your product:
+Measured on an Apple M1 dev host at Node 24.13.1, the figures the baseline report records
+reproduce exactly:
+
+| Scenario | Rows | Median render pass | Coefficient of variation |
+| --- | --- | ---: | ---: |
+| `web/table-render-100` | 100 | ~0.073 ms | 4.3% over 40 samples |
+| `web/table-render-500` | 500 | ~0.36 ms | 7.2% over 25 samples |
+
+Both are the `cn()`-based per-row/per-cell Web hot path, not an end-to-end render. Measure your
+own host rather than treating these as a universal promise:
 
 ```bash
 pnpm bench:web

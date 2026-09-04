@@ -26,8 +26,8 @@ numbers; see `docs/benchmark-harness.md` for the full methodology:
 
 | Scenario | Rows | Median render pass |
 | --- | --- | --- |
-| `web/table-render-100` | 100 | ~0.10ms |
-| `web/table-render-500` | 500 | ~0.44ms |
+| `web/table-render-100` | 100 | ~0.073ms |
+| `web/table-render-500` | 500 | ~0.36ms |
 
 Both stay comfortably inside a 16ms frame budget, so the default (non-
 virtualized) render meets the accepted 100/500-row envelope — no virtualization
