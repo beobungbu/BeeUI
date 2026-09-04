@@ -2,7 +2,13 @@ name: web-a11y
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled]
+    # `edited` fires when a pull request's base branch changes, and the full-CI
+    # decision keys off base.ref: a PR opened against development carries
+    # affected-first, reduced-scope checks, and retargeting it to main would
+    # otherwise satisfy that branch's protection with the old run. Editing a
+    # title or body re-runs the same lanes the diff already selects, which is
+    # the cost `labeled`/`unlabeled` above already accept.
+    types: [opened, synchronize, reopened, labeled, unlabeled, edited]
   push:
     branches:
       - development
