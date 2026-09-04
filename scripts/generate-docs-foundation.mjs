@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   ROOT_DIR,
+  buildPublicSiteContract,
   readCliDistributionState,
   readPublicSiteConfig,
   readPublicationState,
@@ -105,15 +106,18 @@ export function buildReleaseState(rootDir = ROOT_DIR) {
   };
 }
 
-export function buildDocsFoundationManifest(rootDir = ROOT_DIR) {
+export function buildDocsFoundationManifest(rootDir = ROOT_DIR, { environment } = {}) {
   const config = readPublicSiteConfig(rootDir);
+  const siteContract = buildPublicSiteContract(rootDir, { environment });
   if (!config.docsFoundation) {
     throw new Error('web/public-site.config.json is missing docsFoundation.');
   }
 
   return {
     schemaVersion: config.docsFoundation.schemaVersion,
-    canonicalOrigin: config.origin,
+    environment: siteContract.environment,
+    canonicalOrigin: siteContract.origin,
+    indexPolicy: siteContract.indexPolicy,
     productionRuntime: config.productionRuntime,
     currentRouteMounts: config.routes.map(({ id, prefix, owner, visibility, indexable }) => ({
       id,
@@ -229,12 +233,16 @@ export function validateDocsFoundation(rootDir = ROOT_DIR) {
     }
   }
 
-  const seo = manifest.seo;
-  if (seo?.canonicalOrigin !== config.origin) violations.push('SEO canonicalOrigin must match the canonical public origin.');
-  if (seo?.productionIndexPolicy !== 'index,follow') violations.push('production index policy must be index,follow.');
-  if (seo?.nonProductionIndexPolicy !== 'noindex,nofollow') violations.push('non-production index policy must be noindex,nofollow.');
-  if (!seo?.sitemap?.enabledWhenSiteConfigured) violations.push('sitemap architecture must be enabled when Astro site is configured.');
-  if (!seo?.robots?.nonProduction?.disallow?.includes('/')) violations.push('non-production robots policy must disallow crawling.');
+  const environments = config.environments ?? {};
+  if (environments.production?.indexPolicy !== 'index,follow') {
+    violations.push('production index policy must be index,follow.');
+  }
+  for (const environment of ['development', 'staging']) {
+    const profile = environments[environment];
+    if (profile?.indexPolicy !== 'noindex,nofollow') violations.push(`${environment} index policy must be noindex,nofollow.`);
+    if (!profile?.robotsDisallow?.includes('/')) violations.push(`${environment} robots policy must disallow crawling.`);
+  }
+  if (!manifest.seo?.sitemap?.includeIndexableRoutes) violations.push('sitemap architecture must include indexable routes.');
 
   const showcaseBuilder = config.docsFoundation.showcaseAddressability?.urlBuilder;
   const showcaseViolation = validateSymbolReference(rootDir, showcaseBuilder, 'Showcase URL-builder contract');
@@ -274,7 +282,7 @@ function run() {
   }
 
   if (check) {
-    console.log('Docs foundation contract passed (routes, redirects, SEO, source pipelines and release truth are consistent).');
+    console.log('Docs foundation contract passed (routes, redirects, environment SEO, source pipelines and release truth are consistent).');
     return;
   }
 
