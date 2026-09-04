@@ -53,7 +53,7 @@ because the natural instinct — "install the library from npm" — is wrong tod
 The path that **works today** is repository-local source ownership:
 
 ```sh
-pnpm beeui -- add <component>
+pnpm beeui add <component>
 ```
 
 Whenever you write install/setup instructions, present the package model as a
@@ -65,7 +65,7 @@ BeeUI deliberately supports two models. Pick per the consumer's needs.
 
 | | Centralized packages | Source ownership |
 | --- | --- | --- |
-| Command | `npm i @beemvp/beeui-ui @beemvp/beeui-core @beemvp/beeui-tokens` (**target, not yet on npm**) | `pnpm beeui -- add <component>` (**works today, repo-local**) |
+| Command | `npm i @beemvp/beeui-ui @beemvp/beeui-core @beemvp/beeui-tokens` (**target, not yet on npm**) | `pnpm beeui add <component>` (**works today, repo-local**) |
 | Consumer gets | a dependency on `@beemvp/beeui-*` | copied component **source files it now owns** |
 | Import | `import { Button } from '@beemvp/beeui-ui'` | imports rewritten to consumer-local copies (e.g. `@beemvp/beeui-core` → copied `cn`) |
 | Upgrades | bump the package | re-run `add`, or hand-maintain the owned copy |
@@ -88,18 +88,18 @@ published install would, with no invented npm entry. Worked reference:
 [examples/web-consumer](../examples/web-consumer) and [examples/README.md](../examples/README.md);
 expanded in [llms-full.txt](../llms-full.txt) ("Consuming the packages before release").
 This is distinct from source ownership: use tarballs when you want the centralized
-package dependency; use `pnpm beeui -- add` when you want to own the copied source.
+package dependency; use `pnpm beeui add` when you want to own the copied source.
 
 The source-ownership CLI:
 
-- `pnpm beeui -- init` — create `beeui.config.json` in the consumer.
-- `pnpm beeui -- list` — list the supported public components (generated from the registry).
-- `pnpm beeui -- add <items...>` — resolve transitive BeeUI dependencies and copy source in
+- `pnpm beeui init` — create `beeui.config.json` in the consumer.
+- `pnpm beeui list` — list the supported public components (generated from the registry).
+- `pnpm beeui add <items...>` — resolve transitive BeeUI dependencies and copy source in
   deterministic order. It **does not** install npm packages, **does not** fetch remote
   executable code, and **does not** create a dependency back to this monorepo.
-- `pnpm beeui -- add --dry-run <items...>` — print the deterministic plan with no filesystem
+- `pnpm beeui add --dry-run <items...>` — print the deterministic plan with no filesystem
   mutation. Prefer this first when reasoning about impact.
-- `pnpm beeui -- doctor` — validate the registry and local config.
+- `pnpm beeui doctor` — validate the registry and local config.
 
 Copied source may declare external peers/dependencies (e.g. `@beemvp/beeui-tokens`, and for `sheet`
 the `@gorhom/bottom-sheet` / Reanimated / Gesture-Handler / Worklets native stack). The CLI
@@ -216,9 +216,9 @@ must do:
 
 | Symptom | Cause | Recovery |
 | --- | --- | --- |
-| `npm install @beemvp/beeui-ui` fails / 404 | package is unpublished | Use `pnpm beeui -- add <component>` (source ownership). Do not invent a registry. |
-| `npx beeui add ...` does nothing / wrong package | `beeui` unscoped is a tombstone; CLI is repo-local | Use `pnpm beeui -- add ...` inside the repo. |
-| Copied component fails to resolve `@beemvp/beeui-core` | expected — imports are rewritten to a local copy | Ensure `pnpm beeui -- add` ran fully; it copies `core-cn`/`core-overlay` and rewrites imports. |
+| `npm install @beemvp/beeui-ui` fails / 404 | package is unpublished | Use `pnpm beeui add <component>` (source ownership). Do not invent a registry. |
+| `npx beeui add ...` does nothing / wrong package | `beeui` unscoped is a tombstone; CLI is repo-local | Use `pnpm beeui add ...` inside the repo. |
+| Copied component fails to resolve `@beemvp/beeui-core` | expected — imports are rewritten to a local copy | Ensure `pnpm beeui add` ran fully; it copies `core-cn`/`core-overlay` and rewrites imports. |
 | `Sheet` throws at runtime on native | missing gesture/bottom-sheet providers | Add `GestureHandlerRootView` + `BottomSheetModalProvider` at the app root (ADR-006) and install the native peers the CLI reported. |
 | Overlay renders in the wrong place / no dismiss | second overlay authority introduced | Use the shared anchored-overlay contract; do not add a parallel portal. |
 | Dates shift by a day across timezones | expecting BeeUI to own timezones | It does not (ADR-008). Do the timezone conversion in the app. |
@@ -241,14 +241,14 @@ The canonical dispatcher prompt these align with is
 
 > Read [llms.txt](../llms.txt) first, then the specific docs it links. BeeUI is pre-1.0 and
 > UNPUBLISHED: never use `npm install @beemvp/beeui-*` or `npx @beemvp/beeui-cli`; the working path is
-> `pnpm beeui -- add <component>`. Derive the current base with `git fetch` + record the
+> `pnpm beeui add <component>`. Derive the current base with `git fetch` + record the
 > `origin/main` SHA. Prefer semantic tokens; keep domain composition in the app. Stop and
 > report `BLOCKED_BY_DEPENDENCY` or `OWNER_ACTION_REQUIRED` rather than guessing.
 
 ### Recipe A — Add and use a component (source ownership)
 
 > Goal: add `<component>` to `<consumer app>` using BeeUI source ownership. Steps: run
-> `pnpm beeui -- add --dry-run <component>` and show me the plan; then `pnpm beeui -- add
+> `pnpm beeui add --dry-run <component>` and show me the plan; then `pnpm beeui add
 > <component>`; wire the app shell with `BeeUIProvider` + `SafeArea`; import from the copied
 > local path (not `@beemvp/beeui-ui`, which is unpublished). Install any external peers the CLI
 > reports. Do not add a router, data layer, or form library.

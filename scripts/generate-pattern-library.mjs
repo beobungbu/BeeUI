@@ -46,7 +46,7 @@ const HEADER_NOTE =
 
 const UNPUBLISHED_NOTE =
   'STATUS: BeeUI is pre-1.0 and UNPUBLISHED. The Pattern Gallery is an in-repo reference application, not a ' +
-  'published template. Screens are original BeeUI compositions you own via source-ownership (`pnpm beeui -- add <component>`), ' +
+  'published template. Screens are original BeeUI compositions you own via source-ownership (`pnpm beeui add <component>`), ' +
   'not a redistributable third-party template.';
 
 export function readContent(rootDir = ROOT_DIR) {
@@ -79,7 +79,7 @@ function screenSection(screen, content) {
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via \`pnpm beeui -- add <component>\`; the screen source is [\`${screen.file.replace('apps/showcase/', '')}\`](../${screen.file}).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via \`pnpm beeui add <component>\`; the screen source is [\`${screen.file.replace('apps/showcase/', '')}\`](../${screen.file}).
 - **Excluded application logic:** ${entry.excluded}
 `;
 }

@@ -7,8 +7,8 @@
 // cookbook to canonical, machine-derived facts so drift fails CI instead of misleading an
 // agent:
 //   - every repo-relative link in the cookbook must resolve to a real file;
-//   - every `pnpm beeui -- <sub>` subcommand must be a real CLI subcommand;
-//   - every `pnpm beeui -- add <item>` must name a real PUBLIC registry component;
+//   - every `pnpm beeui <sub>` subcommand must be a real CLI subcommand;
+//   - every `pnpm beeui add <item>` must name a real PUBLIC registry component;
 //   - every `pnpm <script>` must be a real package.json script;
 //   - every component symbol in the machine-checked manifest must be a real @beemvp/beeui-ui export;
 //   - the cookbook must cross-link the whole llms.txt family (and those files must exist);
@@ -95,19 +95,19 @@ export function collectBrokenLinks(rootDir = ROOT_DIR) {
   return extractRepoRelativeLinks(text).filter((target) => !fs.existsSync(path.resolve(cookbookDir, target)));
 }
 
-// Subcommand tokens used after `pnpm beeui -- ` (skips option flags like --dry-run).
+// Subcommand tokens used after `pnpm beeui ` (skips option flags like --dry-run).
 export function extractBeeuiSubcommands(text) {
   const subs = new Set();
-  const re = /pnpm beeui -- ((?:--?[a-z-]+\s+)*)([a-z-]+)/g;
+  const re = /pnpm beeui ((?:--?[a-z-]+\s+)*)([a-z-]+)/g;
   let m;
   while ((m = re.exec(text))) subs.add(m[2]);
   return [...subs].sort();
 }
 
-// Component items requested via `pnpm beeui -- add [flags] <item> [<item>...]`.
+// Component items requested via `pnpm beeui add [flags] <item> [<item>...]`.
 export function extractBeeuiAddItems(text) {
   const items = new Set();
-  const re = /pnpm beeui -- add((?:\s+--[a-z-]+)*)\s+([a-z][a-z0-9 -]*)/g;
+  const re = /pnpm beeui add((?:\s+--[a-z-]+)*)\s+([a-z][a-z0-9 -]*)/g;
   let m;
   while ((m = re.exec(text))) {
     for (const token of m[2].trim().split(/\s+/)) {
@@ -199,7 +199,7 @@ export function runChecks(rootDir = ROOT_DIR) {
 
   // Unpublished-status rules present.
   add('states the UNPUBLISHED status', /UNPUBLISHED/.test(text), 'must carry the unpublished-status rules');
-  add('documents the working source-ownership command', /pnpm beeui -- add/.test(text), 'must present the repo-local `pnpm beeui -- add` path');
+  add('documents the working source-ownership command', /pnpm beeui add/.test(text), 'must present the repo-local `pnpm beeui add` path');
 
   // No false "published / available on npm" claim.
   add('never claims availability on npm', !/available on npm/i.test(text), 'must not present the packages as available on npm');

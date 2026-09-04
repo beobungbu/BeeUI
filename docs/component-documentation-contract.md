@@ -12,7 +12,7 @@ machine check that fails CI when the fields are missing or the facts drift.
 > STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm.
 > Import/install lines in the generated reference are release-ready-but-not-published
 > targets; the working, in-repo path is the source-ownership CLI
-> (`pnpm beeui -- add <component>`). See [llms.txt](../llms.txt) for the full status.
+> (`pnpm beeui add <component>`). See [llms.txt](../llms.txt) for the full status.
 
 ## Scope
 
@@ -34,7 +34,7 @@ from canonical sources; fields marked _curated_ are authored in
 | **Purpose** | curated | What the component is for, in one sentence (anatomy where it matters). |
 | **Import** | derived | The exact `import { … } from '@beemvp/beeui-ui'` line with the real exported symbols. |
 | **API** | derived | The exported runtime symbols, typed props, and the source file. |
-| **Source ownership** | derived | The `pnpm beeui -- add <name>` command that copies the source into a consumer. |
+| **Source ownership** | derived | The `pnpm beeui add <name>` command that copies the source into a consumer. |
 | **Dependencies / provider** | derived | Peer dependencies, whether a `BeeUIProvider` ancestor is required, and the registry dependencies source-ownership pulls in. |
 | **Accessibility** | derived | Link to the authoritative accessibility contract and font-scaling behavior. |
 | **Platform (iOS / Android / Web)** | derived | Link to the compatibility matrix and web support contract; platform-split modules are flagged. |

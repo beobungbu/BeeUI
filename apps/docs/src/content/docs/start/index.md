@@ -100,10 +100,10 @@ Choose this when you want selected BeeUI component source committed into your ow
 The repository-local Registry CLI owns the inspect, add, diff and update semantics:
 
 ```bash
-pnpm beeui -- list
-pnpm beeui -- add --dry-run button
-pnpm beeui -- add button
-pnpm beeui -- doctor
+pnpm beeui list
+pnpm beeui add --dry-run button
+pnpm beeui add button
+pnpm beeui doctor
 ```
 
 `examples/source-ownership-starter` proves the same boundary from an isolated application. It runs a narrower sequence — `init`, then `add button popover`, then `doctor` — through the packed CLI binary rather than `pnpm beeui`, and then asserts that the resulting application does **not** resolve `@beemvp/beeui-ui` at all. Owning the source changes who owns the file; it does not create a different accessibility, behavior or token contract. Details are in [CLI & source ownership](/docs/cli/) and [Registry](/docs/registry/).

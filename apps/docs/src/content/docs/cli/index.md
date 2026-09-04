@@ -25,13 +25,13 @@ Use source ownership when local source visibility/customization is valuable and 
 Run these from the BeeUI repository while evaluating a consumer:
 
 ```bash
-pnpm beeui -- init
-pnpm beeui -- list
-pnpm beeui -- add button
-pnpm beeui -- add --dry-run dialog select
-pnpm beeui -- doctor
-pnpm beeui -- diff
-pnpm beeui -- update
+pnpm beeui init
+pnpm beeui list
+pnpm beeui add button
+pnpm beeui add --dry-run dialog select
+pnpm beeui doctor
+pnpm beeui diff
+pnpm beeui update
 ```
 
 `add` resolves transitive BeeUI Registry dependencies and copies them in deterministic order. `--dry-run` prints the plan without mutation. `doctor`/`verify` validates the Registry, consumer config and dependency compatibility. `diff` is read-only; `update` refuses to overwrite conflicting local edits unless the explicit force path is chosen.
@@ -46,10 +46,10 @@ For provider and native setup after copying source, follow [Provider & safe area
 
 ## Safe update workflow
 
-1. Run `pnpm beeui -- add --dry-run <items...>` before first copy.
+1. Run `pnpm beeui add --dry-run <items...>` before first copy.
 2. Commit the copied files in your consumer repository.
-3. Before updating, run `pnpm beeui -- diff [items...]` and review upstream/local changes.
-4. Run `pnpm beeui -- update [items...]` only after reviewing the plan.
+3. Before updating, run `pnpm beeui diff [items...]` and review upstream/local changes.
+4. Run `pnpm beeui update [items...]` only after reviewing the plan.
 5. Re-run the consumer's typecheck, build and relevant runtime tests.
 
 Source ownership is not a hidden dependency on this monorepo: copied source must not retain `workspace:*` or private monorepo imports.

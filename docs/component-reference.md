@@ -4,7 +4,7 @@
 
 > Per-component documentation contract for the 62 public `@beemvp/beeui-ui` components. Each entry documents the same required sections so a new public component cannot silently ship without docs. Derived from registry/registry.json, packages/ui/src/index.ts, and the @beemvp/beeui-showcase app; enforced by `pnpm docs:contract:check`. The behavior-contract link points at the authoritative [component catalog](components.md); this file is the coverage-enforced per-component index, not a second copy of it.
 
-STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm. The install / import lines below are release-ready-but-not-published targets; the working, in-repo path today is the source-ownership CLI (`pnpm beeui -- add <component>`).
+STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm. The install / import lines below are release-ready-but-not-published targets; the working, in-repo path today is the source-ownership CLI (`pnpm beeui add <component>`).
 
 The documentation contract, its required sections, and how it is enforced are defined in [component-documentation-contract.md](component-documentation-contract.md). For the token-efficient name→symbol→source map see [llms-components.txt](../llms-components.txt); for composed screens see the [pattern library](pattern-library.md).
 
@@ -13,7 +13,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Single-value controlled/uncontrolled disclosure group where one item expands at a time.
 - **Import:** `import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@beemvp/beeui-ui';`
 - **API:** `Accordion`, `AccordionContent`, `AccordionItem`, `AccordionTrigger` — source [`packages/ui/src/components/accordion.tsx`](../packages/ui/src/components/accordion.tsx). Typed props: `AccordionContentProps`, `AccordionItemProps`, `AccordionProps`, `AccordionTriggerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add accordion` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add accordion` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -26,7 +26,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Inline semantic status callout with live-region announcement for feedback that stays on screen.
 - **Import:** `import { AlertBanner, alertBannerVariants } from '@beemvp/beeui-ui';`
 - **API:** `AlertBanner`, `alertBannerVariants` — source [`packages/ui/src/components/alert-banner.tsx`](../packages/ui/src/components/alert-banner.tsx). Typed props: `AlertBannerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add alert-banner` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add alert-banner` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `box`, `core-cn`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -39,7 +39,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Confirmation/destructive modal built on the Dialog kernel; only explicit Cancel/Action closes it.
 - **Import:** `import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle, AlertDialogTrigger } from '@beemvp/beeui-ui';`
 - **API:** `AlertDialog`, `AlertDialogAction`, `AlertDialogCancel`, `AlertDialogContent`, `AlertDialogDescription`, `AlertDialogFooter`, `AlertDialogTitle`, `AlertDialogTrigger` — source [`packages/ui/src/components/alert-dialog.tsx`](../packages/ui/src/components/alert-dialog.tsx). Typed props: `AlertDialogActionProps`, `AlertDialogCancelProps`, `AlertDialogContentProps`, `AlertDialogDescriptionProps`, `AlertDialogFooterProps`, `AlertDialogProps`, `AlertDialogTitleProps`, `AlertDialogTriggerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add alert-dialog` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add alert-dialog` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `dialog`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -53,7 +53,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Title/description/leading/trailing screen-header composition; owns no navigation library.
 - **Import:** `import { AppHeader } from '@beemvp/beeui-ui';`
 - **API:** `AppHeader` — source [`packages/ui/src/components/app-header.tsx`](../packages/ui/src/components/app-header.tsx). Typed props: `AppHeaderProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add app-header` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add app-header` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `box`, `core-cn`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -66,7 +66,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Image-with-fallback identity surface with size variants and source-keyed failure reset.
 - **Import:** `import { Avatar, avatarFallbackVariants, avatarVariants } from '@beemvp/beeui-ui';`
 - **API:** `Avatar`, `avatarFallbackVariants`, `avatarVariants` — source [`packages/ui/src/components/avatar.tsx`](../packages/ui/src/components/avatar.tsx). Typed props: `AvatarProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add avatar` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add avatar` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -79,7 +79,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Compact semantic status label with paired foreground/background tokens.
 - **Import:** `import { Badge, badgeLabelVariants, badgeVariants } from '@beemvp/beeui-ui';`
 - **API:** `Badge`, `badgeLabelVariants`, `badgeVariants` — source [`packages/ui/src/components/badge.tsx`](../packages/ui/src/components/badge.tsx). Typed props: `BadgeProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add badge` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add badge` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -92,7 +92,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Bottom-anchored primary-action surface; safe-area ownership stays with the app shell.
 - **Import:** `import { BottomActionBar } from '@beemvp/beeui-ui';`
 - **API:** `BottomActionBar` — source [`packages/ui/src/components/bottom-action-bar.tsx`](../packages/ui/src/components/bottom-action-bar.tsx). Typed props: `BottomActionBarProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add bottom-action-bar` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add bottom-action-bar` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -106,7 +106,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Thin View primitive with no design assumptions, for ad-hoc layout.
 - **Import:** `import { Box } from '@beemvp/beeui-ui';`
 - **API:** `Box` — source [`packages/ui/src/components/box.tsx`](../packages/ui/src/components/box.tsx). Typed props: `BoxProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add box` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add box` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -119,7 +119,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Router-neutral breadcrumb trail with decorative separators hidden from accessibility.
 - **Import:** `import { Breadcrumb, BreadcrumbItem } from '@beemvp/beeui-ui';`
 - **API:** `Breadcrumb`, `BreadcrumbItem` — source [`packages/ui/src/components/breadcrumb.tsx`](../packages/ui/src/components/breadcrumb.tsx). Typed props: `BreadcrumbItemProps`, `BreadcrumbProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add breadcrumb` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add breadcrumb` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `text`, `theme`, `use-direction`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -132,7 +132,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Accessible pressable with variant/size/loading/disabled states and an optional label primitive.
 - **Import:** `import { Button, ButtonLabel, buttonLabelVariants, buttonVariants } from '@beemvp/beeui-ui';`
 - **API:** `Button`, `ButtonLabel`, `buttonLabelVariants`, `buttonVariants` — source [`packages/ui/src/components/button.tsx`](../packages/ui/src/components/button.tsx). Typed props: `ButtonLabelProps`, `ButtonProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add button` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add button` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -145,7 +145,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Month-grid date-selection surface; owns no field, popover, or input chrome.
 - **Import:** `import { Calendar } from '@beemvp/beeui-ui';`
 - **API:** `Calendar` — source [`packages/ui/src/components/calendar.tsx`](../packages/ui/src/components/calendar.tsx). Typed props: `CalendarProps`, `CalendarVisibleMonth` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add calendar` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add calendar` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `core-overlay`, `icon-button`, `stack`, `text`, `theme`, `use-direction`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md). Platform-split module (native/web files resolve at build time).
@@ -158,7 +158,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Elevated/outlined surface with variant and spacing contract.
 - **Import:** `import { Card, cardVariants } from '@beemvp/beeui-ui';`
 - **API:** `Card`, `cardVariants` — source [`packages/ui/src/components/card.tsx`](../packages/ui/src/components/card.tsx). Typed props: `CardProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add card` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add card` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -171,7 +171,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Controlled boolean/indeterminate checkbox; enabled usage without onCheckedChange warns in development.
 - **Import:** `import { Checkbox, checkboxIndicatorVariants } from '@beemvp/beeui-ui';`
 - **API:** `Checkbox`, `checkboxIndicatorVariants` — source [`packages/ui/src/components/checkbox.tsx`](../packages/ui/src/components/checkbox.tsx). Typed props: `CheckboxProps`, `CheckboxValue` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add checkbox` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add checkbox` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `text`, `theme`, `use-required-callback-warning`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -184,7 +184,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Standalone toggle or value-scoped group item with button/radio/checkbox semantics.
 - **Import:** `import { Chip, ChipGroup } from '@beemvp/beeui-ui';`
 - **API:** `Chip`, `ChipGroup` — source [`packages/ui/src/components/chip.tsx`](../packages/ui/src/components/chip.tsx). Typed props: `ChipGroupProps`, `ChipGroupValue`, `ChipProps`, `ChipSelectionMode` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add chip` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add chip` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -197,7 +197,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Controlled/uncontrolled single-region disclosure with content mounted only while open.
 - **Import:** `import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@beemvp/beeui-ui';`
 - **API:** `Collapsible`, `CollapsibleContent`, `CollapsibleTrigger` — source [`packages/ui/src/components/collapsible.tsx`](../packages/ui/src/components/collapsible.tsx). Typed props: `CollapsibleContentProps`, `CollapsibleProps`, `CollapsibleTriggerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add collapsible` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add collapsible` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -210,7 +210,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Native system date-picker field backed by @react-native-community/datetimepicker.
 - **Import:** `import { DatePicker } from '@beemvp/beeui-ui';`
 - **API:** `DatePicker` — source [`packages/ui/src/components/date-picker.native.tsx`](../packages/ui/src/components/date-picker.native.tsx). Typed props: `DatePickerAlign`, `DatePickerCollisionPadding`, `DatePickerDirection`, `DatePickerPlacement`, `DatePickerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add date-picker` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add date-picker` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `@react-native-community/datetimepicker`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `button`, `calendar`, `core-overlay`, `dialog`, `field-context`, `icon-button`, `popover`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md). Platform-split module (native/web files resolve at build time).
@@ -224,7 +224,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Native combined date-and-time picker field backed by @react-native-community/datetimepicker.
 - **Import:** `import { DateTimePicker } from '@beemvp/beeui-ui';`
 - **API:** `DateTimePicker` — source [`packages/ui/src/components/date-time-picker.native.tsx`](../packages/ui/src/components/date-time-picker.native.tsx). Typed props: `DateTimePickerAlign`, `DateTimePickerCollisionPadding`, `DateTimePickerDirection`, `DateTimePickerPlacement`, `DateTimePickerProps`, `DateTimePickerValue` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add date-time-picker` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add date-time-picker` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `@react-native-community/datetimepicker`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `button`, `calendar`, `core-overlay`, `dialog`, `field-context`, `icon-button`, `input`, `popover`, `segmented-control`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md). Platform-split module (native/web files resolve at build time).
@@ -238,7 +238,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Read-only grouped label/value metadata composition with no data-state ownership.
 - **Import:** `import { DescriptionItem, DescriptionList } from '@beemvp/beeui-ui';`
 - **API:** `DescriptionItem`, `DescriptionList` — source [`packages/ui/src/components/description-list.tsx`](../packages/ui/src/components/description-list.tsx). Typed props: `DescriptionItemProps`, `DescriptionListProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add description-list` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add description-list` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `metadata-row`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -251,7 +251,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Controlled/uncontrolled modal backed by React Native core Modal, with a real Web focus trap and Escape dismissal.
 - **Import:** `import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle, DialogTrigger } from '@beemvp/beeui-ui';`
 - **API:** `Dialog`, `DialogClose`, `DialogContent`, `DialogDescription`, `DialogFooter`, `DialogTitle`, `DialogTrigger` — source [`packages/ui/src/components/dialog.tsx`](../packages/ui/src/components/dialog.tsx). Typed props: `DialogCloseProps`, `DialogContentProps`, `DialogDescriptionProps`, `DialogFooterProps`, `DialogProps`, `DialogTitleProps`, `DialogTriggerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add dialog` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add dialog` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `button`, `core-cn`, `overlay-runtime`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -265,7 +265,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Non-modal action menu on the shared anchored-overlay runtime, with items, checkbox items, and radio groups.
 - **Import:** `import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@beemvp/beeui-ui';`
 - **API:** `DropdownMenu`, `DropdownMenuCheckboxItem`, `DropdownMenuContent`, `DropdownMenuItem`, `DropdownMenuLabel`, `DropdownMenuRadioGroup`, `DropdownMenuRadioItem`, `DropdownMenuSeparator`, `DropdownMenuTrigger` — source [`packages/ui/src/components/dropdown-menu.tsx`](../packages/ui/src/components/dropdown-menu.tsx). Typed props: `DropdownMenuAlign`, `DropdownMenuCheckboxItemProps`, `DropdownMenuCollisionPadding`, `DropdownMenuContentProps`, `DropdownMenuDirection`, `DropdownMenuItemProps`, `DropdownMenuLabelProps`, `DropdownMenuPlacement`, `DropdownMenuProps`, `DropdownMenuRadioGroupProps`, `DropdownMenuRadioItemProps`, `DropdownMenuSeparatorProps`, `DropdownMenuTriggerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add dropdown-menu` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add dropdown-menu` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `button`, `core-overlay`, `overlay-runtime`, `text`, `theme`, `use-direction`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -278,7 +278,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Label/description/error composition for text-entry controls; wires accessible label and required relationships to text inputs only.
 - **Import:** `import { Field } from '@beemvp/beeui-ui';`
 - **API:** `Field` — source [`packages/ui/src/components/field.tsx`](../packages/ui/src/components/field.tsx). Typed props: `FieldProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add field` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add field` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `field-context`, `label`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -292,7 +292,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Structural legend/description/error grouping for related controls without becoming one accessible parent element.
 - **Import:** `import { FormGroup } from '@beemvp/beeui-ui';`
 - **API:** `FormGroup` — source [`packages/ui/src/components/form-group.tsx`](../packages/ui/src/components/form-group.tsx). Typed props: `FormGroupProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add form-group` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add form-group` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `form-group-context`, `label`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -305,7 +305,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Destructive form feedback (with muted HelperText variant) using polite live-region semantics.
 - **Import:** `import { FormMessage, HelperText } from '@beemvp/beeui-ui';`
 - **API:** `FormMessage`, `HelperText` — source [`packages/ui/src/components/form-message.tsx`](../packages/ui/src/components/form-message.tsx). Typed props: `FormMessageProps`, `HelperTextProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add form-message` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add form-message` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -318,7 +318,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** 44px icon-only action; an accessible label is required.
 - **Import:** `import { IconButton } from '@beemvp/beeui-ui';`
 - **API:** `IconButton` — source [`packages/ui/src/components/icon-button.tsx`](../packages/ui/src/components/icon-button.tsx). Typed props: `IconButtonProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add icon-button` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add icon-button` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `button`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -331,7 +331,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Single-line text input with semantic focus/invalid/disabled states and Field-provided accessibility.
 - **Import:** `import { Input, inputVariants } from '@beemvp/beeui-ui';`
 - **API:** `Input`, `inputVariants` — source [`packages/ui/src/components/input.tsx`](../packages/ui/src/components/input.tsx). Typed props: `InputProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add input` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add input` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `field-context`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -344,7 +344,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Scrollable form-screen shell with bounded width, explicit safe-area ownership, and platform keyboard handling.
 - **Import:** `import { KeyboardAwareScreen } from '@beemvp/beeui-ui';`
 - **API:** `KeyboardAwareScreen` — source [`packages/ui/src/components/keyboard-aware-screen.tsx`](../packages/ui/src/components/keyboard-aware-screen.tsx). Typed props: `KeyboardAwareScreenContentWidth`, `KeyboardAwareScreenKeyboardDismissMode`, `KeyboardAwareScreenProps`, `KeyboardAwareScreenSafeAreaEdges` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add keyboard-aware-screen` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add keyboard-aware-screen` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `safe-area`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -358,7 +358,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Semantic form/control label with accessible required-state wording and optional nativeID linkage.
 - **Import:** `import { Label } from '@beemvp/beeui-ui';`
 - **API:** `Label` — source [`packages/ui/src/components/label.tsx`](../packages/ui/src/components/label.tsx). Typed props: `LabelProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add label` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add label` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -371,7 +371,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Link semantics over Pressable; owns no navigation library or routing behavior.
 - **Import:** `import { Link } from '@beemvp/beeui-ui';`
 - **API:** `Link` — source [`packages/ui/src/components/link.tsx`](../packages/ui/src/components/link.tsx). Typed props: `LinkProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add link` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add link` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -384,7 +384,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Bordered grouped-row surface with list container semantics and an aligned header.
 - **Import:** `import { ListGroup, ListGroupHeader } from '@beemvp/beeui-ui';`
 - **API:** `ListGroup`, `ListGroupHeader` — source [`packages/ui/src/components/list-group.tsx`](../packages/ui/src/components/list-group.tsx). Typed props: `ListGroupHeaderProps`, `ListGroupProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add list-group` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add list-group` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `box`, `core-cn`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -397,7 +397,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Grouped row (with a settings-row specialization) that synthesizes accessible names from primitive content when interactive.
 - **Import:** `import { ListItem, SettingsItem } from '@beemvp/beeui-ui';`
 - **API:** `ListItem`, `SettingsItem` — source [`packages/ui/src/components/list-item.tsx`](../packages/ui/src/components/list-item.tsx). Typed props: `ListItemProps`, `SettingsItemProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add list-item` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add list-item` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `box`, `core-cn`, `list-group`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -410,7 +410,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Read-only label/value metadata row primitive.
 - **Import:** `import { MetadataRow } from '@beemvp/beeui-ui';`
 - **API:** `MetadataRow` — source [`packages/ui/src/components/metadata-row.tsx`](../packages/ui/src/components/metadata-row.tsx). Typed props: `MetadataRowProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add metadata-row` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add metadata-row` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `box`, `core-cn`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -423,7 +423,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Controlled/uncontrolled one-time-code input with numeric normalization and per-value completion callbacks.
 - **Import:** `import { OTPInput } from '@beemvp/beeui-ui';`
 - **API:** `OTPInput` — source [`packages/ui/src/components/otp-input.tsx`](../packages/ui/src/components/otp-input.tsx). Typed props: `OTPInputProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add otp-input` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add otp-input` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `input`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -436,7 +436,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Controlled page/page-count context with normalized boundaries and type-enforced page/prev/next items.
 - **Import:** `import { Pagination, PaginationItem } from '@beemvp/beeui-ui';`
 - **API:** `Pagination`, `PaginationItem` — source [`packages/ui/src/components/pagination.tsx`](../packages/ui/src/components/pagination.tsx). Typed props: `PaginationItemProps`, `PaginationItemType`, `PaginationProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add pagination` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add pagination` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `text`, `theme`, `use-direction`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -449,7 +449,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Password field with visibility toggle and safe keyboard/autofill defaults; caller overrides remain authoritative.
 - **Import:** `import { PasswordInput } from '@beemvp/beeui-ui';`
 - **API:** `PasswordInput` — source [`packages/ui/src/components/password-input.tsx`](../packages/ui/src/components/password-input.tsx). Typed props: `PasswordInputProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add password-input` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add password-input` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `box`, `button`, `core-cn`, `input`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -462,7 +462,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Non-modal anchored surface on the shared overlay runtime with flip/shift/collision and safe-area policy.
 - **Import:** `import { Popover, PopoverClose, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger } from '@beemvp/beeui-ui';`
 - **API:** `Popover`, `PopoverClose`, `PopoverContent`, `PopoverDescription`, `PopoverTitle`, `PopoverTrigger` — source [`packages/ui/src/components/popover.tsx`](../packages/ui/src/components/popover.tsx). Typed props: `PopoverAlign`, `PopoverCloseProps`, `PopoverCollisionPadding`, `PopoverContentProps`, `PopoverDescriptionProps`, `PopoverDirection`, `PopoverPlacement`, `PopoverProps`, `PopoverTitleProps`, `PopoverTriggerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add popover` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add popover` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `button`, `core-overlay`, `overlay-runtime`, `text`, `theme`, `use-direction`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -475,7 +475,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Clamped determinate progress bar with native progressbar semantics.
 - **Import:** `import { Progress, progressVariants } from '@beemvp/beeui-ui';`
 - **API:** `Progress`, `progressVariants` — source [`packages/ui/src/components/progress.tsx`](../packages/ui/src/components/progress.tsx). Typed props: `ProgressProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add progress` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add progress` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -488,7 +488,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Controlled radio item and RadioGroup coordinator with native radiogroup semantics.
 - **Import:** `import { Radio, RadioGroup, radioIndicatorVariants } from '@beemvp/beeui-ui';`
 - **API:** `Radio`, `RadioGroup`, `radioIndicatorVariants` — source [`packages/ui/src/components/radio.tsx`](../packages/ui/src/components/radio.tsx). Typed props: `RadioGroupProps`, `RadioProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add radio` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add radio` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `form-group-context`, `text`, `theme`, `use-required-callback-warning`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -501,7 +501,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** BeeUIProvider application root plus an explicit SafeArea surface with caller-owned edge selection.
 - **Import:** `import { BeeUIProvider, SafeArea } from '@beemvp/beeui-ui';`
 - **API:** `BeeUIProvider`, `SafeArea` — source [`packages/ui/src/components/safe-area.tsx`](../packages/ui/src/components/safe-area.tsx). Typed props: `BeeUIProviderProps`, `SafeAreaProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add safe-area` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add safe-area` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Exports `BeeUIProvider`, the application root that supplies safe-area measurement, the Toast runtime, and the shared anchored-overlay runtime. Mount it once at the top of the app.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -515,7 +515,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Base application surface with semantic background and optional spacing; owns no safe-area or scroll behavior.
 - **Import:** `import { Screen } from '@beemvp/beeui-ui';`
 - **API:** `Screen` — source [`packages/ui/src/components/screen.tsx`](../packages/ui/src/components/screen.tsx). Typed props: `ScreenProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add screen` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add screen` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -528,7 +528,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Search-keyboard input layered on Input; clearing a non-empty query emits one onSearch('') reset.
 - **Import:** `import { SearchInput } from '@beemvp/beeui-ui';`
 - **API:** `SearchInput` — source [`packages/ui/src/components/search-input.tsx`](../packages/ui/src/components/search-input.tsx). Typed props: `SearchInputProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add search-input` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add search-input` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `input`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -541,7 +541,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Title/description/action/content composition for screen sections.
 - **Import:** `import { Section } from '@beemvp/beeui-ui';`
 - **API:** `Section` — source [`packages/ui/src/components/section.tsx`](../packages/ui/src/components/section.tsx). Typed props: `SectionProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add section` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add section` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `box`, `core-cn`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -554,7 +554,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Compact mutually-exclusive selection surface with radiogroup semantics.
 - **Import:** `import { SegmentedControl, SegmentedControlItem } from '@beemvp/beeui-ui';`
 - **API:** `SegmentedControl`, `SegmentedControlItem` — source [`packages/ui/src/components/segmented-control.tsx`](../packages/ui/src/components/segmented-control.tsx). Typed props: `SegmentedControlItemProps`, `SegmentedControlProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add segmented-control` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add segmented-control` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `text`, `theme`, `use-required-callback-warning`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -567,7 +567,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Persistent single string-value selection with anchored option surface and listbox semantics on Web.
 - **Import:** `import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@beemvp/beeui-ui';`
 - **API:** `Select`, `SelectContent`, `SelectGroup`, `SelectItem`, `SelectLabel`, `SelectTrigger`, `SelectValue` — source [`packages/ui/src/components/select.tsx`](../packages/ui/src/components/select.tsx). Typed props: `SelectAlign`, `SelectCollisionPadding`, `SelectContentProps`, `SelectDirection`, `SelectGroupProps`, `SelectItemProps`, `SelectLabelProps`, `SelectOptionValue`, `SelectPlacement`, `SelectProps`, `SelectTriggerProps`, `SelectValueProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add select` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add select` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `core-overlay`, `overlay-runtime`, `text`, `theme`, `use-direction`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -580,7 +580,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Decorative-by-default divider (semantic when requested); vertical orientation stretches across the cross axis.
 - **Import:** `import { Separator } from '@beemvp/beeui-ui';`
 - **API:** `Separator` — source [`packages/ui/src/components/separator.tsx`](../packages/ui/src/components/separator.tsx). Typed props: `SeparatorProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add separator` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add separator` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -593,7 +593,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Gesture-driven bottom sheet with detents on the shared overlay runtime.
 - **Import:** `import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHandle, SheetTitle, SheetTrigger } from '@beemvp/beeui-ui';`
 - **API:** `Sheet`, `SheetClose`, `SheetContent`, `SheetDescription`, `SheetFooter`, `SheetHandle`, `SheetTitle`, `SheetTrigger` — source [`packages/ui/src/components/sheet.tsx`](../packages/ui/src/components/sheet.tsx). Typed props: `SheetCloseProps`, `SheetContentProps`, `SheetDescriptionProps`, `SheetFooterProps`, `SheetHandleProps`, `SheetProps`, `SheetSnapPoint`, `SheetTitleProps`, `SheetTriggerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add sheet` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add sheet` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `@gorhom/bottom-sheet`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `button`, `core-cn`, `overlay-runtime`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md). Platform-split module (native/web files resolve at build time).
@@ -607,7 +607,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Decorative static loading placeholder surface.
 - **Import:** `import { Skeleton, skeletonVariants } from '@beemvp/beeui-ui';`
 - **API:** `Skeleton`, `skeletonVariants` — source [`packages/ui/src/components/skeleton.tsx`](../packages/ui/src/components/skeleton.tsx). Typed props: `SkeletonProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add skeleton` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add skeleton` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -620,7 +620,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Native activity indicator with semantic tone mapping.
 - **Import:** `import { Spinner } from '@beemvp/beeui-ui';`
 - **API:** `Spinner` — source [`packages/ui/src/components/spinner.tsx`](../packages/ui/src/components/spinner.tsx). Typed props: `SpinnerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add spinner` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add spinner` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -633,7 +633,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Typed direction/gap/alignment/wrap layout over View, with HStack/VStack specializations.
 - **Import:** `import { HStack, Stack, stackVariants, VStack } from '@beemvp/beeui-ui';`
 - **API:** `HStack`, `Stack`, `stackVariants`, `VStack` — source [`packages/ui/src/components/stack.tsx`](../packages/ui/src/components/stack.tsx). Typed props: `HStackProps`, `StackProps`, `VStackProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add stack` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add stack` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -646,7 +646,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Layout-only metric composition (label/value/help text) with no formatting or state ownership.
 - **Import:** `import { Stat, StatHelpText, StatLabel, StatValue } from '@beemvp/beeui-ui';`
 - **API:** `Stat`, `StatHelpText`, `StatLabel`, `StatValue` — source [`packages/ui/src/components/stat.tsx`](../packages/ui/src/components/stat.tsx). Typed props: `StatHelpTextProps`, `StatLabelProps`, `StatProps`, `StatValueProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add stat` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add stat` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -659,7 +659,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Empty-state and error-state (with retry) composition for zero/failure surfaces.
 - **Import:** `import { EmptyState, ErrorState } from '@beemvp/beeui-ui';`
 - **API:** `EmptyState`, `ErrorState` — source [`packages/ui/src/components/state-message.tsx`](../packages/ui/src/components/state-message.tsx). Typed props: `EmptyStateProps`, `ErrorStateProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add state-message` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add state-message` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -672,7 +672,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Controlled current-step context with finite normalization and duplicate-step fail-safe; owns no workflow state.
 - **Import:** `import { Stepper, StepperItem } from '@beemvp/beeui-ui';`
 - **API:** `Stepper`, `StepperItem` — source [`packages/ui/src/components/stepper.tsx`](../packages/ui/src/components/stepper.tsx). Typed props: `StepperItemProps`, `StepperProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add stepper` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add stepper` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `box`, `core-cn`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -685,7 +685,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Controlled native switch with semantic track/thumb colors; enabled usage without onValueChange warns in development.
 - **Import:** `import { Switch } from '@beemvp/beeui-ui';`
 - **API:** `Switch` — source [`packages/ui/src/components/switch.tsx`](../packages/ui/src/components/switch.tsx). Typed props: `SwitchProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add switch` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add switch` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `theme`, `use-required-callback-warning`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -698,7 +698,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Semantic data-table primitives that render real table/th scope/aria-sort semantics on Web.
 - **Import:** `import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@beemvp/beeui-ui';`
 - **API:** `Table`, `TableBody`, `TableCaption`, `TableCell`, `TableFooter`, `TableHead`, `TableHeader`, `TableRow` — source [`packages/ui/src/components/table.tsx`](../packages/ui/src/components/table.tsx). Typed props: `TableBodyProps`, `TableCaptionProps`, `TableCellProps`, `TableFooterProps`, `TableHeaderProps`, `TableHeadProps`, `TableLayout`, `TableProps`, `TableRowProps`, `TableSortDirection` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add table` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add table` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `text`, `theme`, `use-direction`, `use-required-callback-warning`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md). Platform-split module (native/web files resolve at build time).
@@ -712,7 +712,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Controlled tab set sharing state across list/triggers/content; inactive panels are not mounted.
 - **Import:** `import { Tabs, TabsContent, TabsList, TabsTrigger } from '@beemvp/beeui-ui';`
 - **API:** `Tabs`, `TabsContent`, `TabsList`, `TabsTrigger` — source [`packages/ui/src/components/tabs.tsx`](../packages/ui/src/components/tabs.tsx). Typed props: `TabsContentProps`, `TabsListProps`, `TabsProps`, `TabsTriggerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add tabs` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add tabs` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `text`, `theme`, `use-required-callback-warning`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -725,7 +725,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Semantic typography primitive with type/tone variants that honors OS/browser font scaling.
 - **Import:** `import { Text, textVariants } from '@beemvp/beeui-ui';`
 - **API:** `Text`, `textVariants` — source [`packages/ui/src/components/text.tsx`](../packages/ui/src/components/text.tsx). Typed props: `TextProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add text` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add text` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -738,7 +738,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Multiline text input using the same semantic contract as Input.
 - **Import:** `import { Textarea } from '@beemvp/beeui-ui';`
 - **API:** `Textarea` — source [`packages/ui/src/components/textarea.tsx`](../packages/ui/src/components/textarea.tsx). Typed props: `TextareaProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add textarea` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add textarea` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `input`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -751,7 +751,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** BeeThemeScope subtree boundary that applies a scoped theme override to its descendants.
 - **Import:** `import { BeeThemeScope } from '@beemvp/beeui-ui';`
 - **API:** `BeeThemeScope` — source [`packages/ui/src/components/theme-scope.tsx`](../packages/ui/src/components/theme-scope.tsx). Typed props: `BeeThemeScopeProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add theme-scope` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add theme-scope` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `uniwind`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -765,7 +765,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Read-only ordered history composition with semantic marker states; owns no workflow state.
 - **Import:** `import { Timeline, TimelineItem } from '@beemvp/beeui-ui';`
 - **API:** `Timeline`, `TimelineItem` — source [`packages/ui/src/components/timeline.tsx`](../packages/ui/src/components/timeline.tsx). Typed props: `TimelineItemProps`, `TimelineProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add timeline` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add timeline` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `box`, `core-cn`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -778,7 +778,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Provider-scoped toast runtime exposed via useToast (show/dismiss/dismissAll) with FIFO queueing and safe-area-aware stacking.
 - **Import:** `import { TOAST_DEFAULT_DURATION, TOAST_MAX_VISIBLE, useToast } from '@beemvp/beeui-ui';`
 - **API:** `TOAST_DEFAULT_DURATION`, `TOAST_MAX_VISIBLE`, `useToast` — source [`packages/ui/src/components/toast.tsx`](../packages/ui/src/components/toast.tsx). Typed props: `ToastAction`, `ToastApi`, `ToastDuration`, `ToastId`, `ToastOptions`, `ToastVariant` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add toast` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add toast` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `react-native-safe-area-context`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -792,7 +792,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Non-interactive contextual annotation (ADR-005): a hover/focus delay state machine plus an anchored, non-focusable bubble.
 - **Import:** `import { Tooltip, TooltipContent, TooltipTrigger } from '@beemvp/beeui-ui';`
 - **API:** `Tooltip`, `TooltipContent`, `TooltipTrigger` — source [`packages/ui/src/components/tooltip-shared.tsx`](../packages/ui/src/components/tooltip-shared.tsx). Typed props: `TooltipAlign`, `TooltipCollisionPadding`, `TooltipContentProps`, `TooltipDirection`, `TooltipPlacement`, `TooltipProps`, `TooltipTriggerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add tooltip` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add tooltip` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `button`, `core-overlay`, `overlay-runtime`, `text`, `theme`, `use-direction`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md). Platform-split module (native/web files resolve at build time).
@@ -806,7 +806,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Read resolved design-token values at runtime via useBeeToken (hook) and getBeeToken (imperative).
 - **Import:** `import { getBeeToken, useBeeToken } from '@beemvp/beeui-ui';`
 - **API:** `getBeeToken`, `useBeeToken` — source [`packages/ui/src/components/use-bee-token.ts`](../packages/ui/src/components/use-bee-token.ts).
-- **Source ownership:** `pnpm beeui -- add use-bee-token` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add use-bee-token` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `uniwind`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
@@ -819,7 +819,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Purpose:** Keeps non-interactive assistive content in the accessibility tree while removing it from visual layout.
 - **Import:** `import { VisuallyHidden } from '@beemvp/beeui-ui';`
 - **API:** `VisuallyHidden` — source [`packages/ui/src/components/visually-hidden.tsx`](../packages/ui/src/components/visually-hidden.tsx). Typed props: `VisuallyHiddenProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
-- **Source ownership:** `pnpm beeui -- add visually-hidden` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Source ownership:** `pnpm beeui add visually-hidden` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).

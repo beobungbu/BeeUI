@@ -51,7 +51,7 @@ const HEADER_NOTE =
 const UNPUBLISHED_NOTE =
   'STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm. The install / ' +
   'import lines below are release-ready-but-not-published targets; the working, in-repo path today is the ' +
-  'source-ownership CLI (`pnpm beeui -- add <component>`).';
+  'source-ownership CLI (`pnpm beeui add <component>`).';
 
 export function readContent(rootDir = ROOT_DIR) {
   return JSON.parse(fs.readFileSync(path.join(rootDir, CONTENT_FILE), 'utf8'));

@@ -20,7 +20,7 @@ export async function collectViolations(rootDir) {
 
   if (fs.existsSync(cliPath)) {
     const cli = fs.readFileSync(cliPath, 'utf8');
-    for (const token of ['pnpm beeui -- add --dry-run', 'pnpm beeui -- doctor', 'pnpm beeui -- diff', 'pnpm beeui -- update']) {
+    for (const token of ['pnpm beeui add --dry-run', 'pnpm beeui doctor', 'pnpm beeui diff', 'pnpm beeui update']) {
       if (!cli.includes(token)) violations.push(`CLI guide is missing canonical repository-local command: ${token}`);
     }
     if (/```[^`]*(?:npx\s+(?:@beemvp\/beeui-cli|beeui)|npm\s+(?:i|install)\s+@beemvp\/beeui-ui)/s.test(cli)) {

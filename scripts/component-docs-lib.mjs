@@ -98,7 +98,7 @@ export function getPublicComponents(rootDir = ROOT_DIR) {
         peerDependencies: Object.keys(item.peerDependencies ?? {}).sort((a, b) => a.localeCompare(b)),
         registryDependencies: [...registryDependencies].sort((a, b) => a.localeCompare(b)),
         providerRequired: isProviderRequired(item.name, registryDependencies),
-        cliAdd: `pnpm beeui -- add ${item.name}`,
+        cliAdd: `pnpm beeui add ${item.name}`,
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));

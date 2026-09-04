@@ -9,7 +9,7 @@
 //
 //   - every symbol a doc imports from '@beemvp/beeui-ui' must be a real barrel export
 //     (value or type) — hand-written examples cannot reference dead APIs;
-//   - every `pnpm beeui -- add <item>` in the docs must name a real PUBLIC component;
+//   - every `pnpm beeui add <item>` in the docs must name a real PUBLIC component;
 //   - every `@beemvp/beeui-showcase` file the generated references cite as an executable
 //     example must resolve to a real file (the fixtures themselves are typechecked
 //     by `pnpm --filter @beemvp/beeui-showcase typecheck`, so a resolving link is a
@@ -51,7 +51,7 @@ export function readBarrelSymbols(rootDir = ROOT_DIR) {
   return symbols;
 }
 
-// Every PUBLIC registry item name is a valid `pnpm beeui -- add` target — that
+// Every PUBLIC registry item name is a valid `pnpm beeui add` target — that
 // includes the public `theme` item, not just `type: "component"` items. Private
 // utilities (public: false) are not addable and stay out of the set.
 export function readPublicAddTargets(rootDir = ROOT_DIR) {
@@ -90,10 +90,10 @@ export function findHallucinatedSymbols(source, validSymbols) {
   return imported.filter((symbol) => !validSymbols.has(symbol));
 }
 
-// `pnpm beeui -- add [flags] <item> …` tokens used across a doc.
+// `pnpm beeui add [flags] <item> …` tokens used across a doc.
 export function extractBeeuiAddItems(text) {
   const items = new Set();
-  const re = /pnpm beeui -- add((?:\s+--[a-z-]+)*)\s+([a-z][a-z0-9 -]*)/g;
+  const re = /pnpm beeui add((?:\s+--[a-z-]+)*)\s+([a-z][a-z0-9 -]*)/g;
   let match;
   while ((match = re.exec(text))) {
     for (const token of match[2].trim().split(/\s+/)) {
@@ -132,7 +132,7 @@ export function runChecks(rootDir = ROOT_DIR) {
   }
   add('doc @beemvp/beeui-ui imports are real exports', hallucinated.length === 0, hallucinated.length ? hallucinated.slice(0, 12).join(', ') : `scanned ${listDocFiles(rootDir).length} docs`);
 
-  // 2. Every `pnpm beeui -- add <item>` names a real public component.
+  // 2. Every `pnpm beeui add <item>` names a real public component.
   const badAdds = new Set();
   for (const rel of listDocFiles(rootDir)) {
     const source = fs.readFileSync(path.join(rootDir, rel), 'utf8');

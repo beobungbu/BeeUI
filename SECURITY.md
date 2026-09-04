@@ -1,7 +1,7 @@
 # Security Policy
 
 BeeUI is a source-owned React Native UI system: most consumers copy component source into
-their own project (via `pnpm beeui -- add <component>`) rather than depending on a published
+their own project (via `pnpm beeui add <component>`) rather than depending on a published
 package. Security responsibility is therefore split between what BeeUI ships and what a
 consumer subsequently owns and builds.
 
@@ -105,9 +105,9 @@ a security fix in this repository does not automatically reach a consumer's proj
 security advisory affects a component you have already copied:
 
 - the advisory will name the affected component(s)/file(s) and the corrected source;
-- re-run `pnpm beeui -- add <component>` (or manually re-apply the diff) against the fixed
+- re-run `pnpm beeui add <component>` (or manually re-apply the diff) against the fixed
   version, then re-review any local modifications you layered on top of the copied file;
-- `pnpm beeui -- doctor` can help detect drift between your copy and the current registry
+- `pnpm beeui doctor` can help detect drift between your copy and the current registry
   source, but it does not itself apply a security fix.
 
 Consumers who instead depend on the workspace packages directly (`@beemvp/beeui-core`,

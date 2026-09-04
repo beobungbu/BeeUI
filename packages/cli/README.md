@@ -4,7 +4,7 @@ BeeUI's source-ownership CLI: copies BeeUI component source and its transitive d
 
 ## Distribution state
 
-**Unpublished:** `@beemvp/beeui-cli` is not currently available from the public npm registry and must not be presented as an available global install or `npx` command. Publication remains owner-gated by issue #254. The supported evaluation path today is the repository-local command, for example `pnpm beeui -- help` or `pnpm beeui -- add button`.
+**Unpublished:** `@beemvp/beeui-cli` is not currently available from the public npm registry and must not be presented as an available global install or `npx` command. Publication remains owner-gated by issue #254. The supported evaluation path today is the repository-local command, for example `pnpm beeui help` or `pnpm beeui add button`.
 
 After publication is explicitly authorized, the intended global install/invocation shapes are:
 
@@ -21,11 +21,11 @@ npx @beemvp/beeui-cli add button
 Current repository-local usage:
 
 ```bash
-pnpm beeui -- help
-pnpm beeui -- list
-pnpm beeui -- add <component> [<component> ...]
-pnpm beeui -- doctor
-pnpm beeui -- verify
+pnpm beeui help
+pnpm beeui list
+pnpm beeui add <component> [<component> ...]
+pnpm beeui doctor
+pnpm beeui verify
 ```
 
 See [`docs/registry-cli.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/registry-cli.md) for the full command/flag reference, dependency resolution model, and collision/overwrite semantics.
