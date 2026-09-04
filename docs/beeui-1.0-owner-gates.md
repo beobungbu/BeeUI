@@ -37,6 +37,8 @@ The agent may verify availability using authorized access and prepare naming alt
 
 The agent may prepare workflow/configuration and verify least-privilege design. Any account-level setup, environment approval, or credential/provenance authority requiring owner/admin interaction must stop at the gate. No registry publication is allowed.
 
+The concrete npm-side bootstrap, temporary-token teardown, and Trusted Publisher binding handoff is documented in [docs/npm-release-bootstrap.md](npm-release-bootstrap.md).
+
 ### #234 — independent real-world consumer
 
 If the selected external application is private/customer-owned or otherwise requires owner choice/access, the agent must request that selection/access rather than guessing a codebase.
