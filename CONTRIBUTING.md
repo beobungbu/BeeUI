@@ -173,26 +173,32 @@ inlining the helper into every consumer.
 ## Public documentation surfaces
 
 Every public symbol, token, CLI command, package export subpath and Registry item is derived
-into `docs/public-surface.inventory.json` and must be owned by a **published** documentation
-page. `pnpm docs:surface:check` (part of `pnpm typecheck`) fails otherwise, so adding one
-export to a public barrel is a documentation change as well as a code change.
+into `docs/public-surface.inventory.json` and must be owned by a documentation page.
+`pnpm docs:surface:check` (part of `pnpm typecheck`) fails otherwise, so adding one export to
+a public barrel is a documentation change as well as a code change.
 
-The gate reads two things you can change by hand — `docs/public-surface-owners.json` (which
-route owns which surface) and the curated prose files (`docs/reference.content.json`,
-`docs/component-reference.content.json`, `docs/pattern-library.content.json`) — and one thing
-you must never hand-edit: the inventory itself, and every page generated from it.
+You can hand-edit two kinds of file: `docs/public-surface-owners.json`, which decides which
+route owns which surface, and the curated prose files
+(`docs/reference.content.json`, `docs/component-reference.content.json`,
+`docs/pattern-library.content.json`). You must never hand-edit the inventory, or any page
+generated from it.
 
 When you add, rename or remove a public surface:
 
 ```bash
 pnpm docs:surface:generate      # re-derive the inventory from source
 git diff docs/public-surface.inventory.json   # read the derived surface/owner diff
+pnpm llms:generate              # refresh the machine mirrors the gate cross-checks
 pnpm docs:reference:generate    # rewrite the generated Reference pages
 pnpm docs:surface:acknowledge   # last: record that you reviewed the diff
 pnpm docs:surface:check         # must pass before you open the PR
 ```
 
-Two things about that sequence are easy to get wrong.
+`pnpm llms:generate` is not optional when you add or rename a **component family**: the gate
+reads `llms-components.txt` and fails with `machine docs are missing public component <name>`
+until it is regenerated.
+
+Three things about that sequence are easy to get wrong.
 
 **`pnpm docs:surface:acknowledge` is not the fix for the error it silences.** The gate hashes
 each canonical source file, so editing `packages/ui/src/index.ts` produces:
@@ -211,9 +217,13 @@ Reference owner that has no entry in `docs/reference.content.json`,
 `pnpm docs:reference:check` fails rather than publishing a bare table of symbol names. Add
 the `title`, `description` and `intro` for that owner.
 
-You do not need to run the component, pattern or portal page generators by hand — `pnpm
-docs:build` and `pnpm --filter @beemvp/beeui-docs typecheck` run them first. Those pages are
-generated output: fix the generator or the content JSON, never the `.md` file.
+**Portal pages and repository documents are different artifacts.** The pages under
+`apps/docs/src/content/docs/{components,patterns,reference}/` are written by the
+`scripts/public-*-reference.mjs` generators, which `apps/docs`'s own `prebuild` and
+`pretypecheck` run for you. `pnpm docs:contract:generate` and `pnpm docs:patterns:generate`
+write something else — the repository documents `docs/component-reference.md` and
+`docs/pattern-library.md` — and nothing runs them for you. Run them by hand when you change a
+component or pattern contract, or their `--check` steps fail in `pnpm typecheck`.
 
 ## Review discipline
 

@@ -3,11 +3,7 @@ title: Tokens reference
 description: Every public token group, runtime value, runtime type and machine-readable export in @beemvp/beeui-tokens.
 ---
 
-:::caution[Generated file]
-Do not hand-edit this page. It is written by `scripts/public-reference.mjs` from
-`docs/public-surface.inventory.json`, so it lists exactly the surfaces the #473 ownership
-gate routes here. Prose lives in `docs/reference.content.json`.
-:::
+<!-- Generated file: written by scripts/public-reference.mjs from docs/public-surface.inventory.json. Prose lives in docs/reference.content.json. Do not hand-edit. -->
 
 This is the exact inventory of what `@beemvp/beeui-tokens` exposes. Use it to check whether a name exists and where it comes from; use [Branding](/docs/guides/branding/) and [Density](/docs/guides/density/) when you want to change something, and [Theming](/docs/theming/) for the model behind the names.
 
@@ -17,169 +13,169 @@ Only `colors`, `radius` and `motionDuration` are runtime-overridable. Everything
 
 ## Token groups (21)
 
-| Name | Classification | Source |
+| Group | Values | Source |
 | --- | --- | --- |
-| `avatarSize` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.avatarSize` |
-| `breakpoint` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.breakpoint` |
-| `contentWidth` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.contentWidth` |
-| `controlSize` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.controlSize` |
-| `elevation` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.elevation` |
-| `focusRing` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.focusRing` |
-| `fontFamily` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.fontFamily` |
-| `fontSize` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.fontSize` |
-| `fontWeight` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.fontWeight` |
-| `formGap` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.formGap` |
-| `iconSize` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.iconSize` |
-| `layer` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.layer` |
-| `letterSpacing` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.letterSpacing` |
-| `lineHeight` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.lineHeight` |
-| `motionDuration` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.motionDuration` |
-| `motionEasing` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.motionEasing` |
-| `pageGutter` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.pageGutter` |
-| `radius` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.radius` |
-| `rowGap` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.rowGap` |
-| `rowHeight` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.rowHeight` |
-| `spacing` | consumer-token | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.spacing` |
+| `avatarSize` | `lg`: 48px, `md`: 40px, `sm`: 32px, `xl`: 64px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.avatarSize` |
+| `breakpoint` | `expanded`: 1280px, `medium`: 768px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.breakpoint` |
+| `contentWidth` | `dialog`: 512px, `form`: 512px, `page`: 1152px, `reading`: 704px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.contentWidth` |
+| `controlSize` | `compact`: 36px, `default`: 44px, `icon`: 44px, `large`: 48px, `touchTarget`: 44px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.controlSize` |
+| `elevation` | `flat`: 0 0 #0000, `overlay`: 0 16px 40px rgb(16 24 40 / 0.18), `raised`: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1) | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.elevation` |
+| `focusRing` | `offset`: 2px, `width`: 2px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.focusRing` |
+| `fontFamily` | `mono`: [ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace], `sans`: "system" | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.fontFamily` |
+| `fontSize` | `body`: 16px, `caption`: 12px, `display`: 32px, `heading`: 18px, `label`: 14px, `title`: 24px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.fontSize` |
+| `fontWeight` | `bold`: 700, `medium`: 500, `regular`: 400, `semibold`: 600 | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.fontWeight` |
+| `formGap` | `comfortable`: 8px, `compact`: 4px, `spacious`: 12px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.formGap` |
+| `iconSize` | `lg`: 24px, `md`: 20px, `sm`: 16px, `xs`: 12px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.iconSize` |
+| `layer` | `base`: 0, `overlay`: 100, `toast`: 1000 | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.layer` |
+| `letterSpacing` | `normal`: 0px, `tight`: -0.2px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.letterSpacing` |
+| `lineHeight` | `body`: 24px, `caption`: 16px, `display`: 40px, `heading`: 24px, `label`: 20px, `title`: 32px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.lineHeight` |
+| `motionDuration` | `fast`: 120ms, `normal`: 200ms, `slow`: 320ms | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.motionDuration` |
+| `motionEasing` | `emphasized`: [0.2, 0, 0, 1.2], `standard`: [0.2, 0, 0, 1] | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.motionEasing` |
+| `pageGutter` | `compact`: 16px, `regular`: 20px, `spacious`: 24px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.pageGutter` |
+| `radius` | `2xl`: 24px, `full`: 9999px, `lg`: 14px, `md`: 10px, `sm`: 6px, `xl`: 18px, `xs`: 4px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.radius` |
+| `rowGap` | `comfortable`: 12px, `compact`: 8px, `spacious`: 16px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.rowGap` |
+| `rowHeight` | `comfortable`: 56px, `compact`: 44px, `spacious`: 64px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.rowHeight` |
+| `spacing` | `0`: 0px, `1`: 4px, `10`: 40px, `12`: 48px, `16`: 64px, `2`: 8px, `2.5`: 10px, `3`: 12px, `4`: 16px, `5`: 20px, `6`: 24px, `8`: 32px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.spacing` |
 
 ## Runtime values (67)
 
-| Name | Classification | Source |
-| --- | --- | --- |
-| `applyDensity` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `applyThemeOverrides` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `avatarSize` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `beeAccessibilityBrandNames` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `beeAccessibilityRuntimeThemeByBrand` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `beeAccessibilityRuntimeThemeNames` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `beeAccessibilityThemeRegistry` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `beeBrandNames` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `beeRuntimeThemeByBrand` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `beeRuntimeThemeNames` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `beeThemeNames` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `beeThemeRegistry` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `beeTokenReader` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `beeTokenReaderCategories` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `breakpoint` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `chartColorTokens` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `chartColorVariable` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `chartContrastContract` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `contentWidth` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `contrastContract` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `controlSize` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `createThemeOverridesDefiner` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `defaultDensityMode` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `defineSemanticColorOverrides` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `defineThemeOverrides` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `defineThemeRegistry` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `defineTokenReader` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `densityMetrics` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `densityMetricVariables` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `densityModeDescriptions` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `densityModes` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `densityPresets` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `elevation` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `focusRing` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `fontFamily` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `fontSize` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `fontWeight` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `getBeeAccessibilityThemeSelection` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `getBeeThemeSelection` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `iconSize` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `isBeeDarkRuntimeTheme` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `layer` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `layerVariable` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `letterSpacing` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `lineHeight` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `monoFontFamily` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `motion` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `motionDuration` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `motionDurationVariable` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `motionEasing` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `motionIntents` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `normalizeTokenValue` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `numericVariants` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `pageGutter` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `radius` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `radiusVariable` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `readTokenValue` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `resolveBeeAccessibilityRuntimeTheme` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `resolveBeeRuntimeTheme` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `resolveDensityOverrides` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `resolveMotion` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `resolveNativeMotion` | consumer-runtime | [`packages/tokens/src/motion-runtime.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/motion-runtime.ts) |
-| `responsiveLayoutClassification` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `semanticColorTokens` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `semanticColorVariable` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `spacing` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `themeOverrideClassification` | consumer-runtime | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| Name | Signature | Description | Source |
+| --- | --- | --- | --- |
+| `applyDensity` | ` (uniwind: UniwindCSSVariableClient<RuntimeThemeName>, runtimeTheme: RuntimeThemeName, mode: DensityMode): void ` | Apply one density mode to a named Uniwind runtime theme. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `applyThemeOverrides` | ` (uniwind: UniwindCSSVariableClient<RuntimeThemeName>, runtimeTheme: RuntimeThemeName, overrides: CompiledThemeOverrides): void ` | Apply already-compiled overrides to one named Uniwind runtime theme. | [`packages/tokens/src/theme-overrides.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/theme-overrides.ts) |
+| `avatarSize` | ` { "sm": 32, "md": 40, "lg": 48, "xl": 64 } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `beeAccessibilityBrandNames` | ` readonly BeeBrandName[] ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `beeAccessibilityRuntimeThemeByBrand` | ` Record<BeeAccessibilityBrandName, Record<BeeThemeName, BeeAccessibilityRuntimeThemeName>> ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `beeAccessibilityRuntimeThemeNames` | ` [ "high-contrast-light", "high-contrast-dark" ] ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `beeAccessibilityThemeRegistry` | ` defineThemeRegistry(beeAccessibilityRuntimeThemeByBrand) ` | Accessibility (high-contrast) variant registry: a second, optional `brand -> appearance -> runtime-theme` mapping built from the exact same `defineThemeRegistry` primitive as `beeThemeRegistry`. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `beeBrandNames` | ` [ "bee", "violet" ] ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `beeRuntimeThemeByBrand` | ` Record<BeeBrandName, Record<BeeThemeName, BeeRuntimeThemeName>> ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `beeRuntimeThemeNames` | ` [ "light", "dark", "violet-light", "violet-dark" ] ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `beeThemeNames` | ` [ "light", "dark" ] ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `beeThemeRegistry` | ` defineThemeRegistry(beeRuntimeThemeByBrand) ` | The default BeeUI theme registry (Bee + Violet). | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `beeTokenReader` | ` defineTokenReader(beeTokenReaderCategories) ` | BeeUI's typed runtime-token reader. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `beeTokenReaderCategories` | ` TokenCategoryMap ` | BeeUI's typed runtime-token-read category vocabulary, instantiated from canonical, codegen-derived data. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `breakpoint` | ` { "medium": 768, "expanded": 1280 } ` | Minimum stable responsive breakpoints (min-width thresholds, px). | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `chartColorTokens` | ` [ "series-1", "series-2", "series-3", "series-4", "positive", "negative", "neutral", "highlight", "grid", "axis" ] ` | Semantic data-visualization (chart) color tokens — a distinct color vocabulary from `semanticColorTokens` above, never a component/status color. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `chartColorVariable` | ` (token: SemanticChartToken): SemanticChartVariableName ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `chartContrastContract` | ` ChartContrastContract ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `contentWidth` | ` { "form": 512, "reading": 704, "page": 1152, "dialog": 512 } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `contrastContract` | ` ContrastContract ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `controlSize` | ` { "compact": 36, "default": 44, "large": 48, "icon": 44, "touchTarget": 44 } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `createThemeOverridesDefiner` | ` (categories: Categories) ` | Build a `defineThemeOverrides` function bound to a fixed, codegen-derived set of override categories. | [`packages/tokens/src/theme-overrides.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/theme-overrides.ts) |
+| `defaultDensityMode` | ` DensityMode ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `defineSemanticColorOverrides` | ` (overrides: T): Readonly<T> ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `defineThemeOverrides` | ` createThemeOverridesDefiner(themeOverrideCategories) ` | Typed, validated runtime-override definer for the supported safe runtime-overridable public token categories. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `defineThemeRegistry` | ` (definition: Def): ThemeRegistry<Def> ` | Define a type-safe theme registry from a `brand -> appearance -> runtime-theme` mapping. | [`packages/tokens/src/registry.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/registry.ts) |
+| `defineTokenReader` | ` (categories: Categories): TokenReader<Categories> ` | Build a `TokenReader` from a fixed, codegen-derived set of readable categories. | [`packages/tokens/src/token-reader.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/token-reader.ts) |
+| `densityMetrics` | ` { "rowHeight": { "compact": 44, "comfortable": 56, "spacious": 64 }, "rowGap": { "compact": 8, "comfortable": 12, "spacious": 16 }, "formGap": { "compact": 4, "comfortable": 8, "spacious": 12 } } ` | Per-mode pixel values for every density-sensitive metric, read from canonical tokens.json. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `densityMetricVariables` | ` Record<DensityMetric, string> ` | Uniwind CSS-variable name for one density metric (e.g. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `densityModeDescriptions` | ` Record<DensityMode, string> ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `densityModes` | ` [ "compact", "comfortable", "spacious" ] ` | BeeUI issue — application density semantic axis. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `densityPresets` | ` Readonly<Record<DensityMode, CompiledThemeOverrides>> ` | One precompiled-shaped `CompiledThemeOverrides` per approved density mode, built at module init from `densityMetrics`. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `elevation` | ` { "flat": { "web": "none", "nativeElevation": 0 }, "raised": { "web": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)", "nativeElevation": 2 }, "overlay": { "web": "0 16px 40px rgb(16 24 40 / 0.18)", "nativeElevation": 8 } } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `focusRing` | ` { width: number; offset: number; colorToken: SemanticColorToken; webVisibility: 'focus-visible'; nativeVisibility: 'platform-focus'; } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `fontFamily` | ` { "sans": "system", "mono": [ "ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "Liberation Mono", "monospace" ] } ` | `system` means the platform default font. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `fontSize` | ` { "caption": 12, "label": 14, "body": 16, "heading": 18, "title": 24, "display": 32 } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `fontWeight` | ` { "regular": 400, "medium": 500, "semibold": 600, "bold": 700 } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `getBeeAccessibilityThemeSelection` | ` (runtimeTheme: string): { brand: BeeAccessibilityBrandName; theme: BeeThemeName; } \| undefined ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `getBeeThemeSelection` | ` (runtimeTheme: string): { brand: BeeBrandName; theme: BeeThemeName; } \| undefined ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `iconSize` | ` { "xs": 12, "sm": 16, "md": 20, "lg": 24 } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `isBeeDarkRuntimeTheme` | ` (runtimeTheme: string) ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `layer` | ` { "base": 0, "overlay": 100, "toast": 1000 } ` | Semantic z-order (stacking) contract. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `layerVariable` | ` (name: LayerName): LayerVariableName ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `letterSpacing` | ` { "normal": 0, "tight": -0.2 } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `lineHeight` | ` { "caption": 16, "label": 20, "body": 24, "heading": 24, "title": 32, "display": 40 } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `monoFontFamily` | ` { "webUtilityClass": "font-mono", "cssVariable": "--font-mono", "stack": [ "ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "Liberation Mono", "monospace" ], "native": { "ios": "Menlo", "android": "monospace", "default": "monospace"… ` | System-monospace family for reference codes, IDs, and technical values. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `motion` | ` { "overlay-enter": { "web": { "durationMs": 200, "easing": "cubic-bezier(0.2, 0, 0, 1)", "properties": [ "opacity", "transform" ] }, "native": { "type": "spring", "stiffness": 260, "damping": 26, "mass": 1 }, "reducedMotion": "opacity-or-s… ` | Semantic motion vocabulary for recurring spatial/state transitions. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `motionDuration` | ` { "fast": 120, "normal": 200, "slow": 320 } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `motionDurationVariable` | ` (name: MotionDurationName): MotionDurationVariableName ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `motionEasing` | ` { "standard": "cubic-bezier(0.2, 0, 0, 1)", "emphasized": "cubic-bezier(0.2, 0, 0, 1.2)" } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `motionIntents` | ` [ "overlay-enter", "overlay-exit", "sheet-enter", "sheet-exit", "disclosure" ] ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `normalizeTokenValue` | ` (resolved: ResolvedTokenPath, raw: string \| number): string \| number ` | Normalize one raw value Uniwind's `useCSSVariable`/`Uniwind.getCSSVariable` returned into BeeUI's documented per-kind representation: - `color` — the CSS color string unchanged (Uniwind itself already normalizes valid c… | [`packages/tokens/src/token-reader.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/token-reader.ts) |
+| `numericVariants` | ` { "tabular": { "webUtilityClass": "bee-tabular-nums", "cssProperty": "font-variant-numeric", "cssValue": "tabular-nums", "nativeFontVariant": [ "tabular-nums" ] } } ` | Composable numeric typography features. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `pageGutter` | ` { "compact": 16, "regular": 20, "spacious": 24 } ` | Semantic horizontal page-edge padding (px). | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `radius` | ` { "xs": 4, "sm": 6, "md": 10, "lg": 14, "xl": 18, "2xl": 24, "full": 9999 } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `radiusVariable` | ` (name: RadiusName): RadiusVariableName ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `readTokenValue` | ` (reader: TokenReader<Categories>, path: Path, raw: string \| number \| undefined): TokenValueForPath<Categories, Path> ` | Resolve + normalize one raw Uniwind CSS-variable read into the exact typed value `useBeeToken`/`getBeeToken` return for `path`. | [`packages/tokens/src/token-reader.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/token-reader.ts) |
+| `resolveBeeAccessibilityRuntimeTheme` | ` (brand: BeeAccessibilityBrandName, theme: BeeThemeName): BeeAccessibilityRuntimeThemeName ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `resolveBeeRuntimeTheme` | ` (brand: BeeBrandName, theme: BeeThemeName): BeeRuntimeThemeName ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `resolveDensityOverrides` | ` (mode: DensityMode): CompiledThemeOverrides ` | Resolve one density mode's precompiled override bundle. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `resolveMotion` | ` (intent: MotionIntent, options: { reducedMotion?: boolean; } = {}): ResolvedMotion ` | Resolve a semantic motion intent against the caller-supplied reduced-motion signal. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `resolveNativeMotion` | ` (intent: MotionIntent, options: { reducedMotion?: boolean; } = {}): NativeMotionPlan ` | Resolves the native animation configuration for a semantic intent. | [`packages/tokens/src/motion-runtime.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/motion-runtime.ts) |
+| `responsiveLayoutClassification` | ` { "breakpoint": { "layer": "web-responsive", "binding": "build-time-constant", "runtimeOverridable": false, "engine": "tailwind-uniwind" }, "pageGutter": { "layer": "cross-platform", "binding": "value", "runtimeOverridable": false }, "cont… ` | Build-time vs runtime classification for the responsive-layout token groups. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `semanticColorTokens` | ` [ "background", "foreground", "surface", "surface-muted", "surface-raised", "muted", "muted-foreground", "subtle-foreground", "primary", "primary-foreground", "primary-hover", "primary-pressed", "secondary", "secondary-foreground", "second… ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `semanticColorVariable` | ` (token: SemanticColorToken): SemanticColorVariableName ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `spacing` | ` { "0": 0, "1": 4, "2": 8, "3": 12, "4": 16, "5": 20, "6": 24, "8": 32, "10": 40, "12": 48, "16": 64, "2.5": 10 } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `themeOverrideClassification` | ` { "spacing": { "runtimeOverridable": false }, "radius": { "layer": "cross-platform", "binding": "value", "runtimeOverridable": true, "engine": "tailwind-uniwind" }, "fontFamily": { "runtimeOverridable": false }, "fontSize": { "runtimeOverr… ` | Runtime-override safety classification for every canonical token group, generated straight from each group's `$extensions.com.beeui` metadata (see tokens.json). | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
 
 ## Runtime types (63)
 
-| Name | Classification | Source |
-| --- | --- | --- |
-| `BeeAccessibilityBrandName` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `BeeAccessibilityRuntimeThemeName` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `BeeBrandName` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `BeeRuntimeThemeName` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `BeeThemeName` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `BeeTokenPath` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `BeeTokenValue` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `BreakpointName` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `ChartContrastContract` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `ChartContrastException` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `ChartContrastPair` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `CompiledThemeOverrides` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `ContentWidthName` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `ContrastBoundaryPair` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `ContrastContract` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `ContrastException` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `ContrastFeedbackFillPair` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `ContrastIndicatorPair` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `ContrastTextPair` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `DensityMetric` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `DensityMode` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `ElevationLevel` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `FontFamilyToken` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `LayerName` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `LayerVariableName` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `MotionDurationName` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `MotionDurationVariableName` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `MotionIntent` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `MotionReducedMotionPolicy` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `MotionSpec` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `NativeImmediateMotionPlan` | consumer-runtime-type | [`packages/tokens/src/motion-runtime.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/motion-runtime.ts) |
-| `NativeMotionPlan` | consumer-runtime-type | [`packages/tokens/src/motion-runtime.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/motion-runtime.ts) |
-| `NativeSpringMotionPlan` | consumer-runtime-type | [`packages/tokens/src/motion-runtime.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/motion-runtime.ts) |
-| `NativeTimingMotionPlan` | consumer-runtime-type | [`packages/tokens/src/motion-runtime.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/motion-runtime.ts) |
-| `NumericVariant` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `OverrideCategoryDefinition` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `OverrideCategoryMap` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `PageGutterName` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `RadiusName` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `RadiusVariableName` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `RegistryAppearance` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `RegistryBrand` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `RegistryRuntimeTheme` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `ResolvedMotion` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `ResolvedTokenPath` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `SemanticChartToken` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `SemanticChartVariableName` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `SemanticColorOverrides` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `SemanticColorToken` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `SemanticColorVariableName` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `ThemeOverrides` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `ThemeOverridesInput` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `ThemeRegistry` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `ThemeRegistryDefinition` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `ThemeSelection` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `TokenCategoryDefinition` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `TokenCategoryMap` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `TokenPath` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `TokenReader` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `TokenValueForPath` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `TokenValueKind` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `TypographyRole` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `UniwindCSSVariableClient` | consumer-runtime-type | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| Name | Signature | Description | Source |
+| --- | --- | --- | --- |
+| `BeeAccessibilityBrandName` | ` (typeof beeAccessibilityBrandNames)[number] ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `BeeAccessibilityRuntimeThemeName` | ` (typeof beeAccessibilityRuntimeThemeNames)[number] ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `BeeBrandName` | ` (typeof beeBrandNames)[number] ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `BeeRuntimeThemeName` | ` (typeof beeRuntimeThemeNames)[number] ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `BeeThemeName` | ` (typeof beeThemeNames)[number] ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `BeeTokenPath` | ` TokenPath<typeof beeTokenReaderCategories> ` | Every valid runtime-readable token path, e.g. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `BeeTokenValue` | ` TokenValueForPath<typeof beeTokenReaderCategories, Path> ` | The normalized TypeScript return type for one specific `BeeTokenPath`. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `BreakpointName` | ` keyof typeof breakpoint ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `ChartContrastContract` | ` { readonly description: string; readonly requiredPairs: readonly ChartContrastPair[]; readonly exceptions: readonly ChartContrastException[]; } ` | Centralized, deterministic chart-token contrast-relationship metadata -- the data-visualization counterpart to `contrastContract` above, kept as its own export (never merged into `contrastContract`) because its `indicat… | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `ChartContrastException` | ` { readonly token: SemanticChartToken; readonly category: string; readonly reason: string; } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `ChartContrastPair` | ` { readonly indicator: SemanticChartToken; readonly adjacent: readonly SemanticColorToken[]; readonly minRatio: number; readonly usage: string; } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `CompiledThemeOverrides` | ` Readonly<{ readonly cssVariables: Readonly<Record<string, string>>; }> ` | The result of `defineThemeOverrides()`: a deterministic, exact Uniwind CSS-variable-name -> value map. | [`packages/tokens/src/theme-overrides.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/theme-overrides.ts) |
+| `ContentWidthName` | ` keyof typeof contentWidth ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `ContrastBoundaryPair` | ` { readonly boundary: SemanticColorToken; readonly adjacent: readonly SemanticColorToken[]; readonly minRatio: number; readonly usage: string; } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `ContrastContract` | ` { readonly description: string; readonly canvasTokens: readonly SemanticColorToken[]; readonly textPairs: readonly ContrastTextPair[]; readonly filledActionPairs: readonly ContrastTextPair[]; readonly feedbackFillPairs: readonly ContrastFe… ` | Centralized, deterministic semantic contrast-relationship metadata. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `ContrastException` | ` { readonly token: SemanticColorToken; readonly category: string; readonly reason: string; } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `ContrastFeedbackFillPair` | ` { readonly fill: SemanticColorToken; readonly foreground: SemanticColorToken; readonly minRatio: number; readonly usage: string; } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `ContrastIndicatorPair` | ` { readonly indicator: SemanticColorToken; readonly adjacent: readonly SemanticColorToken[]; readonly minRatio: number; readonly usage: string; } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `ContrastTextPair` | ` { readonly foreground: SemanticColorToken; readonly backgrounds: readonly SemanticColorToken[]; readonly minRatio: number; readonly usage: string; } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `DensityMetric` | ` keyof typeof densityMetrics ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `DensityMode` | ` (typeof densityModes)[number] ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `ElevationLevel` | ` keyof typeof elevation ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `FontFamilyToken` | ` keyof typeof fontFamily ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `LayerName` | ` keyof typeof layer ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `LayerVariableName` | `` `--layer-${LayerName}` `` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `MotionDurationName` | ` keyof typeof motionDuration ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `MotionDurationVariableName` | `` `--motion-duration-${MotionDurationName}` `` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `MotionIntent` | ` (typeof motionIntents)[number] ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `MotionReducedMotionPolicy` | ` 'immediate' \| 'opacity-or-state' \| 'shorten' \| 'remove-spatial' ` | Reduced-motion policy per intent. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `MotionSpec` | ` (typeof motion)[MotionIntent] ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `NativeImmediateMotionPlan` | ` { type: 'immediate'; } ` | — | [`packages/tokens/src/motion-runtime.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/motion-runtime.ts) |
+| `NativeMotionPlan` | ` NativeSpringMotionPlan \| NativeTimingMotionPlan \| NativeImmediateMotionPlan ` | — | [`packages/tokens/src/motion-runtime.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/motion-runtime.ts) |
+| `NativeSpringMotionPlan` | ` { type: 'spring'; stiffness: number; damping: number; mass: number; } ` | — | [`packages/tokens/src/motion-runtime.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/motion-runtime.ts) |
+| `NativeTimingMotionPlan` | ` { type: 'timing'; durationMs: number; easing: readonly [ number, number, number, number ]; } ` | — | [`packages/tokens/src/motion-runtime.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/motion-runtime.ts) |
+| `NumericVariant` | ` keyof typeof numericVariants ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `OverrideCategoryDefinition` | ` { readonly keys: readonly Key[] readonly valueKind: 'number' \| 'string' readonly variable: (key: Key) => string readonly format: (value: Value, key: Key) => string } ` | One runtime-overridable token category (e.g. | [`packages/tokens/src/theme-overrides.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/theme-overrides.ts) |
+| `OverrideCategoryMap` | ` Readonly<Record<string, OverrideCategoryDefinition<any, any>>> ` | A fixed set of override categories, keyed by their public category name (e.g. | [`packages/tokens/src/theme-overrides.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/theme-overrides.ts) |
+| `PageGutterName` | ` keyof typeof pageGutter ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `RadiusName` | ` keyof typeof radius ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `RadiusVariableName` | `` `--radius-${RadiusName}` `` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `RegistryAppearance` | ` keyof Def[RegistryBrand<Def>] & string ` | Appearance union inferred from the definition. | [`packages/tokens/src/registry.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/registry.ts) |
+| `RegistryBrand` | ` keyof Def & string ` | Brand-name union inferred from the definition's top-level keys. | [`packages/tokens/src/registry.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/registry.ts) |
+| `RegistryRuntimeTheme` | ` Def[RegistryBrand<Def>][RegistryAppearance<Def>] & string ` | Runtime-theme-name union inferred from the definition's mapped values. | [`packages/tokens/src/registry.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/registry.ts) |
+| `ResolvedMotion` | ` { animate: boolean; durationMs: number; spatial: boolean; reducedMotionApplied: boolean; } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `ResolvedTokenPath` | ` { readonly category: string readonly key: string readonly variable: string readonly kind: TokenValueKind } ` | The result of resolving one token path against a `TokenReader`. | [`packages/tokens/src/token-reader.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/token-reader.ts) |
+| `SemanticChartToken` | ` (typeof chartColorTokens)[number] ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `SemanticChartVariableName` | `` `--chart-${SemanticChartToken}` `` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `SemanticColorOverrides` | ` Partial<Record<SemanticColorVariableName, string>> ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `SemanticColorToken` | ` (typeof semanticColorTokens)[number] ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `SemanticColorVariableName` | `` `--color-${SemanticColorToken}` `` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `ThemeOverrides` | ` ThemeOverridesInput<typeof themeOverrideCategories> ` | The exact object shape `defineThemeOverrides` accepts. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `ThemeOverridesInput` | ` { [C in keyof Categories]?: Categories[C] extends OverrideCategoryDefinition<infer Key, infer Value> ? Partial<Record<Key, Value>> : never; } ` | The exact input shape `defineThemeOverrides` accepts for a fixed `Categories` map. | [`packages/tokens/src/theme-overrides.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/theme-overrides.ts) |
+| `ThemeRegistry` | ` { readonly map: Def readonly brands: readonly RegistryBrand<Def>[] readonly appearances: readonly RegistryAppearance<Def>[] readonly runtimeThemes: readonly RegistryRuntimeTheme<Def>[] resolve<B extends RegistryBrand<Def>, A extends keyof… ` | An immutable, fully-typed theme registry. | [`packages/tokens/src/registry.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/registry.ts) |
+| `ThemeRegistryDefinition` | ` Readonly<Record<string, Readonly<Record<string, string>>>> ` | The shape a consumer passes to `defineThemeRegistry`: a mapping from semantic brand name -> appearance name -> Uniwind runtime-theme name. | [`packages/tokens/src/registry.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/registry.ts) |
+| `ThemeSelection` | ` { readonly brand: RegistryBrand<Def> readonly appearance: RegistryAppearance<Def> } ` | Result of a deterministic reverse lookup from a runtime-theme name. | [`packages/tokens/src/registry.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/registry.ts) |
+| `TokenCategoryDefinition` | ` { readonly kind: TokenValueKind readonly keys: readonly Key[] readonly variable: (key: Key) => string } ` | One runtime-readable token category (e.g. | [`packages/tokens/src/token-reader.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/token-reader.ts) |
+| `TokenCategoryMap` | ` Readonly<Record<string, TokenCategoryDefinition<any>>> ` | A fixed set of readable categories, keyed by their public category name. | [`packages/tokens/src/token-reader.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/token-reader.ts) |
+| `TokenPath` | `` { [C in keyof Categories & string]: Categories[C] extends TokenCategoryDefinition<infer Key> ? `${C}.${Key}` : never; }[keyof Categories & string] `` | Every valid `"category.key"` path for a fixed `Categories` map. | [`packages/tokens/src/token-reader.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/token-reader.ts) |
+| `TokenReader` | ` { readonly paths: readonly TokenPath<Categories>[] isValidPath(path: string): path is TokenPath<Categories> resolve(path: TokenPath<Categories>): ResolvedTokenPath } ` | A pure, stateless reader over a fixed set of runtime-readable token categories. | [`packages/tokens/src/token-reader.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/token-reader.ts) |
+| `TokenValueForPath` | `` Path extends `${infer C}.${string}` ? C extends keyof Categories ? ValueForKind<Categories[C]['kind']> : never : never `` | The normalized TypeScript return type for one specific token path. | [`packages/tokens/src/token-reader.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/token-reader.ts) |
+| `TokenValueKind` | ` 'color' \| 'dimension' \| 'duration' ` | The normalized value shape BeeUI returns for one token category. | [`packages/tokens/src/token-reader.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/token-reader.ts) |
+| `TypographyRole` | ` keyof typeof fontSize ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `UniwindCSSVariableClient` | ` { updateCSSVariables(theme: RuntimeThemeName, cssVariables: Record<string, string \| number>): void } ` | Structural shape of the subset of Uniwind's API `applyThemeOverrides` needs (`Uniwind.updateCSSVariables` from the `uniwind` package). | [`packages/tokens/src/theme-overrides.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/theme-overrides.ts) |
 
 ## Package export subpaths (4)
 

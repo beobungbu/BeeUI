@@ -3,8 +3,6 @@ title: Use BeeUI with coding agents
 description: Give coding agents the canonical BeeUI context and verification boundaries without hidden maintainer knowledge.
 ---
 
-# Use BeeUI with coding agents
-
 BeeUI publishes a small family of generated text files for coding-agent context. They are model-agnostic and generated from the same public package, Registry, compatibility, component and pattern authorities used by human docs.
 
 ## Pick the smallest useful context

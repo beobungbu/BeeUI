@@ -3,8 +3,6 @@ title: Performance
 description: Understand BeeUI benchmark classes, bundle footprint and regression budgets without turning one machine into a universal promise.
 ---
 
-# Performance
-
 BeeUI measures repeatable component operations and package/bundle footprint so regressions
 can be detected against a controlled baseline. Benchmark classes include representative
 Table work, overlay open/close/positioning, theme/token operations and package footprint.

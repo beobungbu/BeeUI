@@ -3,8 +3,6 @@ title: Guides
 description: Task-oriented BeeUI recipes — start with the outcome you want and end with a result you can verify.
 ---
 
-# Guides
-
 Use **Guides** when you already know the outcome you want and need the shortest correct path
 to it: brand the tokens, choose a density, own the source, upgrade safely, fix a specific
 error, or build a table or a date picker properly the first time.
@@ -24,6 +22,7 @@ Every guide leads with the answer and puts the evidence underneath it.
 | --- | --- |
 | [CLI & source ownership](/docs/guides/cli-source-ownership/) | You want the component source inside your repository, and need the exact `init` / `add` / `doctor` / `diff` / `update` contract. |
 | [Migration & versioning](/docs/guides/migration-versioning/) | You need to know which channel you are on, what the version number means, and what a future upgrade will and will not do to your code. |
+| [Current release](/docs/guides/current-release/) | You need the exact version, channel and distribution state this documentation was generated from. Generated, not hand-written. |
 
 ## Build specific surfaces
 

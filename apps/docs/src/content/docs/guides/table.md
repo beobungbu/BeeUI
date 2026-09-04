@@ -3,8 +3,6 @@ title: Table
 description: Build a sortable, selectable, responsive data table with BeeUI's composable Table primitives on native and Web.
 ---
 
-# Table
-
 BeeUI's `Table` is a **composable primitive family**, not a data grid. You keep your rows,
 your sort state, and your selection set; BeeUI owns the semantic markup, the density,
 the accessibility, and the responsive presentation. There is no `columns` prop and no

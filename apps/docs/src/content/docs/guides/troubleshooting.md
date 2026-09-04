@@ -3,8 +3,6 @@ title: Troubleshooting
 description: Search your exact error string and get the cause, the fix, and the command that proves the fix worked.
 ---
 
-# Troubleshooting
-
 Search this page for the **exact text your console printed**. Every entry below is derived
 from a real failure this repository actually produces — a thrown provider error, a starter
 script guard, a CI verification script, or a CLI validation message — not from a generic

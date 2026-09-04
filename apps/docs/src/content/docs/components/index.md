@@ -3,8 +3,6 @@ title: All components
 description: Source-driven BeeUI public component reference.
 ---
 
-# All components
-
 This index is generated from the public Registry + `@beemvp/beeui-ui` export map. It currently contains **62** stable public component families; adding or removing a public Registry component changes this inventory automatically and is checked by CI.
 
 ## Actions & controls

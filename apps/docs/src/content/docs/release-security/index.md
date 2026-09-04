@@ -3,8 +3,6 @@ title: Release & security
 description: BeeUI publication state, release channels, security reporting and license.
 ---
 
-# Release & security
-
 BeeUI's current engineering candidate is **unpublished**. See the machine-sourced [current
 release status](/docs/guides/current-release/). A green verification matrix or
 release-ready artifact is not the same event as publishing packages/CLI or creating a Git

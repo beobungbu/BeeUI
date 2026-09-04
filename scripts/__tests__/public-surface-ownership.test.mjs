@@ -11,7 +11,10 @@ import {
   gitBlobSha,
   validateAcknowledgedSurfaceSources,
   validateContributorSurfaceDocs,
+  extractDocSection,
   CONTRIBUTOR_DOC_HEADING,
+  REQUIRED_WORKFLOW_COMMANDS,
+  REQUIRED_WORKFLOW_FILES,
   validatePublicSurfaceOwnership,
 } from '../check-public-surface-ownership.mjs';
 
@@ -100,82 +103,139 @@ test('acknowledge tooling rewrites only the recorded blob shas', () => {
 
 // `docs:surface:acknowledge` makes the staleness error disappear whether or not anything was
 // documented, so the only thing standing between a contributor and a silently undocumented
-// public surface is a written sequence. These drive the guard with synthetic trees rather than
-// asserting against the real CONTRIBUTING.md, which would pass without the guard existing.
+// public surface is a written sequence. An earlier version of this guard only checked that
+// whatever the section happened to name still resolved — which passed on a section reduced to
+// a single sentence. These drive the guard with synthetic trees; asserting against the real
+// CONTRIBUTING.md would pass without the guard existing at all.
 function contributorFixture(section) {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-contrib-doc-'));
   fs.mkdirSync(path.join(rootDir, 'docs'), { recursive: true });
-  fs.writeFileSync(path.join(rootDir, 'docs/reference.content.json'), '{}\n');
+  for (const file of REQUIRED_WORKFLOW_FILES) fs.writeFileSync(path.join(rootDir, file), '{}\n');
   fs.writeFileSync(
     path.join(rootDir, 'package.json'),
-    `${JSON.stringify({ scripts: { 'docs:surface:generate': 'x', 'docs:surface:acknowledge': 'x' } })}\n`,
+    `${JSON.stringify({ scripts: Object.fromEntries(REQUIRED_WORKFLOW_COMMANDS.map((name) => [name, 'x'])) })}\n`,
   );
   fs.writeFileSync(path.join(rootDir, 'CONTRIBUTING.md'), section);
   return rootDir;
 }
 
-const GOOD_SECTION = [
-  CONTRIBUTOR_DOC_HEADING,
-  '',
-  'Run `pnpm docs:surface:generate`, then `pnpm docs:surface:acknowledge` last.',
-  'Owners live in `docs/reference.content.json`.',
-  '',
-  '`pnpm docs:surface:acknowledge` is not the fix for the error it silences.',
-  '',
-  '## Next section',
-].join('\n');
+function goodSection({ commands = REQUIRED_WORKFLOW_COMMANDS, files = REQUIRED_WORKFLOW_FILES } = {}) {
+  return [
+    CONTRIBUTOR_DOC_HEADING,
+    '',
+    ...commands.map((name) => `Run \`pnpm ${name}\`.`),
+    ...files.map((file) => `Edit \`${file}\`.`),
+    '',
+    '`pnpm docs:surface:acknowledge` is not the fix for the error it silences.',
+    '',
+    '## Next section',
+    '',
+  ].join('\n');
+}
 
-test('the contributor workflow guard accepts a complete section', () => {
-  const rootDir = contributorFixture(GOOD_SECTION);
+function withFixture(section, assertions) {
+  const rootDir = contributorFixture(section);
   try {
-    assert.deepEqual(validateContributorSurfaceDocs(rootDir), []);
+    assertions(rootDir);
   } finally {
     fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+}
+
+test('the contributor workflow guard accepts a complete section', () => {
+  withFixture(goodSection(), (rootDir) => assert.deepEqual(validateContributorSurfaceDocs(rootDir), []));
+});
+
+// The attack that defeated the first version of this guard: keep the one sentence it grepped
+// for, delete the entire workflow.
+test('a section stripped down to the acknowledge warning fails the gate', () => {
+  const gutted = [
+    CONTRIBUTOR_DOC_HEADING,
+    '',
+    'Docs are handled elsewhere. `pnpm docs:surface:acknowledge` is not the fix for the error it silences.',
+    '',
+    '## Next section',
+    '',
+  ].join('\n');
+  withFixture(gutted, (rootDir) => {
+    const violations = validateContributorSurfaceDocs(rootDir);
+    assert.equal(violations.length, REQUIRED_WORKFLOW_COMMANDS.length - 1 + REQUIRED_WORKFLOW_FILES.length);
+    assert.ok(violations.some((v) => v.includes('no longer names `pnpm docs:surface:generate`')));
+    assert.ok(violations.some((v) => v.includes('no longer names docs/public-surface-owners.json')));
+  });
+});
+
+test('dropping any single required step fails the gate', () => {
+  // `docs:surface:acknowledge` is the exception: the mandatory warning sentence names it, so a
+  // section that drops it from the command list still mentions it and the guard is satisfied.
+  // That is the intended behaviour — the warning is what a contributor must not lose.
+  for (const omitted of REQUIRED_WORKFLOW_COMMANDS.filter((name) => name !== 'docs:surface:acknowledge')) {
+    const section = goodSection({ commands: REQUIRED_WORKFLOW_COMMANDS.filter((name) => name !== omitted) });
+    withFixture(section, (rootDir) => {
+      const violations = validateContributorSurfaceDocs(rootDir);
+      assert.equal(violations.length, 1, `omitting ${omitted} must be reported exactly once`);
+      assert.ok(violations[0].includes(`\`pnpm ${omitted}\``), violations[0]);
+    });
+  }
+});
+
+test('dropping any single required control file fails the gate', () => {
+  for (const omitted of REQUIRED_WORKFLOW_FILES) {
+    const section = goodSection({ files: REQUIRED_WORKFLOW_FILES.filter((file) => file !== omitted) });
+    withFixture(section, (rootDir) => {
+      const violations = validateContributorSurfaceDocs(rootDir);
+      assert.equal(violations.length, 1, `omitting ${omitted} must be reported exactly once`);
+      assert.ok(violations[0].includes(`no longer names ${omitted}`), violations[0]);
+    });
   }
 });
 
 test('a deleted or renamed workflow section fails the gate', () => {
-  const rootDir = contributorFixture('## Something else\n\nNo workflow here.\n');
-  try {
+  withFixture('## Something else\n\nNo workflow here.\n', (rootDir) => {
     const violations = validateContributorSurfaceDocs(rootDir);
     assert.equal(violations.length, 1);
     assert.match(violations[0], /has no "## Public documentation surfaces" section/u);
-  } finally {
-    fs.rmSync(rootDir, { recursive: true, force: true });
-  }
+  });
 });
 
-test('a documented command that is not a package script fails the gate', () => {
-  const rootDir = contributorFixture(GOOD_SECTION.replace('docs:surface:generate', 'docs:surface:regenerate'));
-  try {
-    const violations = validateContributorSurfaceDocs(rootDir);
-    assert.deepEqual(violations, [
-      'CONTRIBUTING.md tells contributors to run `pnpm docs:surface:regenerate`, which is not a package.json script.',
+// A command name may be split across a line break by a rewrap; the guard flattens whitespace
+// before matching so a wrapped `pnpm docs:build` is still validated rather than skipped.
+test('a documented command that is not a package script fails the gate, even wrapped', () => {
+  const section = goodSection().replace('## Next section', 'Also run `pnpm\ndocs:regenerate` afterwards.\n\n## Next section');
+  withFixture(section, (rootDir) => {
+    assert.deepEqual(validateContributorSurfaceDocs(rootDir), [
+      'CONTRIBUTING.md tells contributors to run `pnpm docs:regenerate`, which is not a package.json script.',
     ]);
-  } finally {
-    fs.rmSync(rootDir, { recursive: true, force: true });
-  }
+  });
 });
 
 test('a documented control file that no longer exists fails the gate', () => {
-  const rootDir = contributorFixture(GOOD_SECTION.replace('docs/reference.content.json', 'docs/renamed.content.json'));
-  try {
-    const violations = validateContributorSurfaceDocs(rootDir);
-    assert.deepEqual(violations, ['CONTRIBUTING.md references docs/renamed.content.json, which does not exist.']);
-  } finally {
-    fs.rmSync(rootDir, { recursive: true, force: true });
-  }
+  const section = goodSection().replace('## Next section', 'See `docs/Renamed_Content.json` too.\n\n## Next section');
+  withFixture(section, (rootDir) => {
+    assert.deepEqual(validateContributorSurfaceDocs(rootDir), [
+      'CONTRIBUTING.md references docs/Renamed_Content.json, which does not exist.',
+    ]);
+  });
 });
 
 test('dropping the acknowledge warning fails the gate', () => {
-  const rootDir = contributorFixture(GOOD_SECTION.replace('is not the fix for the error it silences.', 'is the final step.'));
-  try {
+  const section = goodSection().replace('is not the fix for the error it silences.', 'is the final step.');
+  withFixture(section, (rootDir) => {
     const violations = validateContributorSurfaceDocs(rootDir);
     assert.equal(violations.length, 1);
     assert.match(violations[0], /must keep warning/u);
-  } finally {
-    fs.rmSync(rootDir, { recursive: true, force: true });
-  }
+  });
+});
+
+// A fenced block may open a line with `## `. Slicing the section at the next such line would
+// truncate it and hide every later step from the assertions above.
+test('a fenced code block containing a markdown heading does not truncate the section', () => {
+  const section = goodSection().replace(
+    '## Next section',
+    '```text\n## not a heading\n```\n\n## Next section',
+  );
+  withFixture(section, (rootDir) => assert.deepEqual(validateContributorSurfaceDocs(rootDir), []));
+  assert.equal(extractDocSection('## A\ntext\n\n## B\nmore\n', '## A'), 'text\n');
 });
 
 test('the ownership gate is clean on the current tree', () => {

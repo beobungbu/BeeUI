@@ -3,8 +3,6 @@ title: Production reference app
 description: See BeeUI inside one coherent routed support-workspace application.
 ---
 
-# Production reference app
-
 **[Open the live reference app](/demo/)** to see BeeUI used as a consumer would use it: one
 routed Expo application with its own navigation, mock service layer, feature state and
 responsive shell.

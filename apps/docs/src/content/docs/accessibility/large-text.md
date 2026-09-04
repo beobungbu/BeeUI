@@ -5,8 +5,8 @@ description: Dynamic Type, large text, and 200% zoom behavior.
 
 BeeUI does not implement an in-app font-scale override, slider, or preference store. Text
 scaling is entirely owned by the platform — iOS/Android Dynamic Type on native, browser
-zoom and OS/browser text-size preferences on Web. This is `docs/dynamic-type.md` in the
-source repository (BeeUI issue #143).
+zoom and OS/browser text-size preferences on Web. This is [`docs/dynamic-type.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dynamic-type.md) in the
+source repository (BeeUI issue [#143](https://github.com/beobungbu/BeeUI/issues/143)).
 
 ## The model
 
@@ -60,4 +60,4 @@ does and does not prove, lives in `docs/dynamic-type.md`.
 
 Localized/long-content stress testing beyond BeeUI's existing stress-length Latin-script
 fixtures (CJK text, long translated strings, complex-script line breaking) is tracked
-separately and remains open (BeeUI issue #144).
+separately and remains open (BeeUI issue [#144](https://github.com/beobungbu/BeeUI/issues/144)).

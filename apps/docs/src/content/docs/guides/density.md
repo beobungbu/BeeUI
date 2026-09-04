@@ -3,8 +3,6 @@ title: Density
 description: Coordinate list-row and form-field spacing across an application with the compact, comfortable and spacious density modes.
 ---
 
-# Density
-
 BeeUI ships exactly three density modes — **`compact`**, **`comfortable`** (the default) and
 **`spacious`** — and they coordinate three metrics only: list-row height, list-row gap, and
 form-field gap. Density is an *application* intent, not a component size prop and not a global

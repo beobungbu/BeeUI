@@ -1,1 +1,1 @@
-- [WBS #474 docs-portal wave](project_474_docs_portal_wave.md) — check `gh pr checks` first (bodies are warm-tree); cold-checkout divergence, Astro slug rules, the dead `pnpm beeui --` form
+- [WBS #474 docs-portal wave](project_474_docs_portal_wave.md) — warm-tree PR bodies, cold-checkout divergence, meta-guards that check references not content, typecheck step ordering, shared worktree

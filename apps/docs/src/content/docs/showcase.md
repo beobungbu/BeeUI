@@ -3,8 +3,6 @@ title: Showcase & native preview
 description: Inspect the real BeeUI Web runtime and run the same Showcase on iOS or Android.
 ---
 
-# Showcase & native preview
-
 The public **[BeeUI Showcase](/showcase/)** is the same Expo application used by repository
 Web/native verification. It is not a docs mock and the docs do not bundle a second React
 Native runtime. Component pages deep-link with `?component=<registry-family>`; pattern pages
