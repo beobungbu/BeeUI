@@ -6,7 +6,10 @@ import test from 'node:test';
 
 import { buildPublicDiscovery } from '../build-public-discovery.mjs';
 import { buildPublicLanding, renderPublicLanding } from '../build-public-landing.mjs';
+import { renderRobotsTxt } from '../build-public-seo.mjs';
+import { renderWorkerHeaders } from '../build-public-worker.mjs';
 import { collectPublicWebViolations } from '../check-public-web.mjs';
+import { buildPublicSiteContract } from '../public-site-contract-lib.mjs';
 import { buildPublicComponentManifest, generatePublicComponentPages } from '../public-component-reference.mjs';
 import { buildPreviewDescriptor, enhanceGeneratedPublicComponentPages } from '../public-component-previews.mjs';
 import { buildPublicPatternManifest, generatePublicPatternPages } from '../public-pattern-reference.mjs';
@@ -15,6 +18,24 @@ const rootDir = path.resolve(new URL('../..', import.meta.url).pathname);
 
 test('current repository satisfies the aggregate public Web contract', async () => {
   assert.deepEqual(await collectPublicWebViolations(rootDir), []);
+});
+
+test('environment SEO and Worker headers fail closed outside production', () => {
+  const development = buildPublicSiteContract(rootDir, { environment: 'development' });
+  const staging = buildPublicSiteContract(rootDir, { environment: 'staging' });
+  const production = buildPublicSiteContract(rootDir, { environment: 'production' });
+
+  assert.match(renderRobotsTxt(development), /Disallow: \/\n/u);
+  assert.doesNotMatch(renderRobotsTxt(development), /Allow: \/\n/u);
+  assert.match(renderRobotsTxt(staging), /beeui-stg\.beemvp\.com\/sitemap\.xml/u);
+  assert.match(renderWorkerHeaders(development), /X-Robots-Tag: noindex, nofollow/u);
+  assert.match(renderWorkerHeaders(staging), /X-Robots-Tag: noindex, nofollow/u);
+
+  assert.match(renderRobotsTxt(production), /Allow: \/\n/u);
+  assert.match(renderRobotsTxt(production), /Disallow: \/api\//u);
+  assert.match(renderRobotsTxt(production), /beeui\.beemvp\.com\/sitemap\.xml/u);
+  const productionHeaders = renderWorkerHeaders(production).split('https://:version.:subdomain.workers.dev/*')[0];
+  assert.doesNotMatch(productionHeaders, /X-Robots-Tag: noindex/u);
 });
 
 test('landing build writes deterministic HTML and CSS without unresolved placeholders', () => {
