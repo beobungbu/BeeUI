@@ -98,7 +98,8 @@ test('iOS native proofs share one macOS runner and persist only Xcode compilatio
   assert.match(ci, /^  ios-native:\n/m);
   assert.doesNotMatch(ci, /^  ios-showcase:\n/m);
   assert.doesNotMatch(ci, /^  ios-bare:\n/m);
-  assert.match(ci, /Cache Xcode compilation results/);
+  assert.match(ci, /Restore Xcode compilation results/);
+  assert.match(ci, /Save Xcode compilation results/);
   assert.match(ci, /CompilationCache\.noindex/);
   assert.match(ci, /xcode-cas-v1-/);
   assert.doesNotMatch(ci, /Cache Xcode DerivedData/);
@@ -137,7 +138,8 @@ test('Expo consumer has one JS proof job and native jobs are change-gated', asyn
   assert.match(expo, /^  android-native:\n\s+needs: \[scope\]\n\s+if: needs\.scope\.outputs\.native-required == 'true'/m);
   assert.match(expo, /^  ios-native:\n\s+needs: \[scope\]\n\s+if: needs\.scope\.outputs\.native-required == 'true'/m);
   assert.doesNotMatch(expo, /head\.repo\.full_name == github\.repository \|\|/);
-  assert.match(expo, /Cache Xcode compilation results/);
+  assert.match(expo, /Restore Xcode compilation results/);
+  assert.match(expo, /Save Xcode compilation results/);
 });
 
 test('required Web consumer check skips browser work when package surface is unchanged', async () => {
@@ -281,6 +283,41 @@ test('pull request workflows re-validate when the base branch changes', async ()
     const listed = types[1].split(',').map((entry) => entry.trim());
     assert.ok(listed.includes('edited'), `${name} ignores pull_request.edited, so a base-branch change never re-validates`);
     assert.ok(listed.includes('synchronize'), `${name} must still re-run on new commits`);
+  }
+});
+
+// A pull request can only restore caches from its own ref, its base branch and
+// the default branch. Every pull request here targets development, so unless
+// development itself runs the native workflows the caches are never warm for
+// anyone: each pull request started cold and rebuilt ~900 MB only it could
+// reuse, which is also what filled the repository cache to 9.6 of 10 GB.
+test('native workflows warm the base branch and never let a pull request write the shared cache', async () => {
+  const { ci, expo } = await sources();
+  for (const [name, workflow] of [['ci.yml', ci], ['expo-consumer.yml', expo]]) {
+    const pushBranches = /push:\n\s+branches:([\s\S]*?)\n\s{2}\w/.exec(workflow);
+    assert.ok(pushBranches, `${name} has no push branches list`);
+    assert.match(pushBranches[1], /- development\b/, `${name} never warms the branch pull requests target`);
+
+    // Gradle writes its cache unless told otherwise, so it needs the same rule.
+    assert.match(
+      workflow,
+      /cache-read-only: \$\{\{ github\.event_name != 'push' \}\}/,
+      `${name} lets a pull request write the Gradle cache`,
+    );
+
+    // Every explicit cache save must be a base-branch run.
+    const lines = workflow.split('\n');
+    for (const [index, line] of lines.entries()) {
+      if (!/uses: actions\/cache\/save@/.test(line)) continue;
+      let start = index;
+      while (start > 0 && !/^\s+- name:/.test(lines[start])) start -= 1;
+      const step = lines.slice(start, index).join('\n');
+      assert.match(
+        step,
+        /if: github\.event_name == 'push'/,
+        `${name}:${index + 1} saves a cache on events other than a base-branch push`,
+      );
+    }
   }
 });
 
