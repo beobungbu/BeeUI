@@ -35,7 +35,7 @@ BeeUI 1.0 uses exactly two npm dist-tags. No other floating tag is published for
 - A default install (`npm i @beemvp/beeui-ui`) resolves `latest`. Because semver ranges exclude
   prerelease identifiers unless a prerelease is requested explicitly, a consumer on a normal
   caret/tilde range **never** receives a `20260902.0.0-rc.N` build by accident. Prereleases are
-  reachable only via `@next` or an exact `@1.0.0-rc.N` request. This is the mechanism by
+  reachable only via `@next` or an exact `@20260902.0.0-rc.N` request. This is the mechanism by
   which consumers "opt into prereleases only after publication is authorized" (#206 DoD).
 - `latest` is only ever promoted to a stable version. The first `latest` BeeUI ever
   publishes is `20260902.0.0` (owner-gated at #254). Until then, `latest` does not exist for
@@ -47,7 +47,7 @@ BeeUI 1.0 uses exactly two npm dist-tags. No other floating tag is published for
 
 
 - Prerelease candidates are named **`20260902.0.0-rc.N`** (`rc.1`, `rc.2`, …), a standard semver
-  prerelease. `1.0.0-rc.1 < 1.0.0-rc.2 < … < 1.0.0` in semver precedence, so `20260902.0.0` (once
+  prerelease. `20260902.0.0-rc.1 < 20260902.0.0-rc.2 < … < 20260902.0.0` in semver precedence, so `20260902.0.0` (once
   published) supersedes every `rc.*` automatically.
 - Prereleases publish under the **`next`** dist-tag only, never `latest`.
 - The stable `20260902.0.0` is published, verified, and only then promoted to `latest`.
@@ -138,9 +138,9 @@ this policy cannot silently drift from reality: `published` must stay `false` an
 {
   "published": false,
   "currentVersion": "20260902.0.0",
-  "candidateStableVersion": "1.0.0",
-  "prereleaseVersionPattern": "^1\\.0\\.0-rc\\.(0|[1-9][0-9]*)$",
-  "prereleaseExample": "1.0.0-rc.1",
+  "candidateStableVersion": "20260902.0.0",
+  "prereleaseVersionPattern": "^20260902\\.0\\.0-rc\\.(0|[1-9][0-9]*)$",
+  "prereleaseExample": "20260902.0.0-rc.1",
   "distTags": ["latest", "next"],
   "prereleaseDistTag": "next",
   "stableDistTag": "latest",
