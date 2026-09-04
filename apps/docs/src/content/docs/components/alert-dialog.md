@@ -49,7 +49,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Confirmation/destructive modal sharing Dialog's controlled (`open`+`onOpenChange`, both required together) or uncontrolled (`defaultOpen`) contract; unlike Dialog it never closes from a backdrop press or Escape — only an explicit `AlertDialogCancel`/`AlertDialogAction` closes it.
+Confirmation/destructive modal sharing Dialog's controlled (`open`+`onOpenChange`, both required together) or uncontrolled (`defaultOpen`) contract; unlike Dialog it never closes from a backdrop press or an Escape keypress. It does still close on a native request-close — Android's hardware back button — because `cancelOnRequestClose` defaults to `true`; set it to `false` when only an explicit `AlertDialogCancel`/`AlertDialogAction` may dismiss the dialog.
 
 ### Props
 

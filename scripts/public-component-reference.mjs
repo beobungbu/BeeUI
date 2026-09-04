@@ -308,15 +308,31 @@ function renderObjectShape(shape) {
 // present on only one platform, a field whose type or default differs, and a base that differs
 // are each their own bullet — never folded into the main table, and never printed as if the
 // native table's own Default/Type column already said so.
+//
+// A field listed on one declaration and not the other is NOT evidence the other platform lacks
+// it: `testID` is explicit in `table.web.tsx` and inherited from `ViewProps` on native, and
+// `colSpan` is the reverse, explicit on native and typed through `TdHTMLAttributes` on Web.
+// Both were published as "declared on Web only" / "on native only", and both were false. The
+// bases are external types this generator does not resolve, so absence is not decidable here
+// and must not be asserted.
 function renderPlatformDiffBullets(diff) {
   const lines = [];
+  const bases = {
+    native: (diff.nativeBases ?? []).join(' & '),
+    web: (diff.webBases ?? []).join(' & '),
+  };
+  const inheritedNote = (otherPlatform, otherBase) =>
+    otherBase
+      ? ` — on ${otherPlatform} it may come from \`${escapeCell(otherBase)}\`, which this table does not reproduce`
+      : ` — whether ${otherPlatform} carries it through its base type is not determined here`;
+
   for (const field of diff.nativeOnly) {
     const withDefault = field.default !== undefined ? ` (native default \`${escapeCell(field.default)}\`)` : '';
-    lines.push(`- \`${field.name}\` is declared on native only${withDefault}.`);
+    lines.push(`- \`${field.name}\` is declared explicitly on native${withDefault}${inheritedNote('Web', bases.web)}.`);
   }
   for (const field of diff.webOnly) {
     const withDefault = field.default !== undefined ? ` (Web default \`${escapeCell(field.default)}\`)` : '';
-    lines.push(`- \`${field.name}\` is declared on Web only${withDefault}.`);
+    lines.push(`- \`${field.name}\` is declared explicitly on Web${withDefault}${inheritedNote('native', bases.native)}.`);
   }
   for (const change of diff.changed) {
     if (change.typeChanged) {

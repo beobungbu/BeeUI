@@ -151,7 +151,9 @@ export function familyUsageRanges(source, component, fileName = 'fixture.tsx') {
         const outerStart = lineOf(current.getStart(sourceFile));
         const outerEnd = lineOf(current.getEnd());
         if (outerEnd - outerStart + 1 > LARGE_ELEMENT_LINES) break;
-        if (outerEnd - outerStart + 1 >= SUBSTANTIVE_REGION_LINES) return { start: outerStart, end: outerEnd };
+        if (outerEnd - outerStart + 1 >= SUBSTANTIVE_REGION_LINES) {
+          return { start: outerStart, end: outerEnd, anchor: current.getText(sourceFile).split('\n')[0].trim() };
+        }
       }
       current = current.parent;
     }
@@ -167,24 +169,36 @@ export function familyUsageRanges(source, component, fileName = 'fixture.tsx') {
       derived.has(node.expression.expression.text)
     ) {
       const statement = enclosingStatement(node);
-      ranges.push({ start: lineOf(statement.getStart(sourceFile)), end: lineOf(statement.getEnd()) });
+      ranges.push({
+        start: lineOf(statement.getStart(sourceFile)),
+        end: lineOf(statement.getEnd()),
+        anchor: statement.getText(sourceFile).split('\n')[0].trim(),
+      });
       return;
     }
     if ((ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node)) && names.has(tagName(node))) {
       const start = lineOf(node.getStart(sourceFile));
       const end = lineOf(node.getEnd());
+      const nodeText = node.getText(sourceFile);
       if (end - start + 1 <= LARGE_ELEMENT_LINES) {
         // `<Spinner />` on its own is a true but empty example. Show the smallest enclosing JSX
         // element that still reads as an example, so the reader sees the props and the context
         // the component is used in rather than a bare self-closing tag.
-        const context = end - start + 1 < SUBSTANTIVE_REGION_LINES ? enclosingExample(node, start, end) : { start, end };
+        const context = end - start + 1 < SUBSTANTIVE_REGION_LINES
+          ? enclosingExample(node, start, end)
+          : { start, end, anchor: nodeText.split('\n')[0].trim() };
         ranges.push(context);
         return; // Nested uses of the same family are already inside this range.
       }
       // Keep the opening tag, then keep descending: a nested use of the same family further in
       // is a separate, smaller example worth showing on its own.
       const opening = ts.isJsxElement(node) ? node.openingElement : node;
-      ranges.push({ start, end: lineOf(opening.getEnd()), openingTagOnly: true });
+      ranges.push({
+        start,
+        end: lineOf(opening.getEnd()),
+        openingTagOnly: true,
+        anchor: opening.getText(sourceFile).split('\n')[0].trim(),
+      });
     }
     if (
       ts.isIdentifier(node) &&
@@ -199,7 +213,11 @@ export function familyUsageRanges(source, component, fileName = 'fixture.tsx') {
       !ts.isJsxClosingElement(node.parent)
     ) {
       const statement = enclosingStatement(node);
-      ranges.push({ start: lineOf(statement.getStart(sourceFile)), end: lineOf(statement.getEnd()) });
+      ranges.push({
+        start: lineOf(statement.getStart(sourceFile)),
+        end: lineOf(statement.getEnd()),
+        anchor: statement.getText(sourceFile).split('\n')[0].trim(),
+      });
       return;
     }
     ts.forEachChild(node, visit);
@@ -231,7 +249,19 @@ export function excerptFixture(source, component, fixturePath) {
   const ranges = familyUsageRanges(source, component, path.basename(fixturePath));
   if (!ranges.length) return { whole: true, excerpts: [], source };
 
-  const withText = ranges.map((range) => ({ ...range, text: lines.slice(range.start - 1, range.end).join('\n') }));
+  const withText = ranges.map((range) => {
+    const text = lines.slice(range.start - 1, range.end).join('\n');
+    // The range comes from line numbers; the anchor comes from the node's own text, which no
+    // line derivation touches. If the two disagree the citation is wrong, and every check that
+    // compares the excerpt against its own cited range would agree with it anyway.
+    if (!excerptMatchesAnchor(text, range.anchor)) {
+      throw new Error(
+        `${fixturePath}: excerpt cited at lines ${range.start}-${range.end} does not contain the source it was ` +
+        `built from (${JSON.stringify(range.anchor.slice(0, 60))}). The line derivation and the AST disagree.`,
+      );
+    }
+    return { ...range, text };
+  });
 
   // Smallest-first alone let a one-line region — `const toast = useToast();` — stand as the
   // whole example while multi-line calls went unshown. A region that is only a declaration or a
@@ -311,9 +341,15 @@ function renderVerifiedSource(descriptor) {
   const places = `${descriptor.excerpt.excerpts.length} ${descriptor.excerpt.excerpts.length === 1 ? 'place' : 'places'}`;
   // `<Screen>` opens at the top of the gallery and closes at the bottom, so what is left out of
   // its excerpt is mostly Screen's own children — saying "other families" there would be false.
+  // Three cases, because two of them were being described with the third's sentence. A wrapper
+  // shown as a bare opening tag is followed by its own children, not other families' code; a
+  // family with regions left out has some of its own uses unshown as well; only the remaining
+  // case can honestly say the rest of the file belongs to other families.
   const remainder = descriptor.excerpt.excerpts.every((part) => part.openingTagOnly)
-    ? 'What follows the tag in the fixture is this family\'s own content, which the live preview above already renders.'
-    : 'The rest of that file exercises other families and is not reproduced here.';
+    ? "What follows the tag in the fixture is this family's own content, which the live preview above already renders."
+    : descriptor.excerpt.omittedRegions
+      ? "Other uses of this family, and the parts of the file exercising other families, are not reproduced here."
+      : 'The rest of that file exercises other families and is not reproduced here.';
   const omitted = descriptor.excerpt.omittedRegions
     ? `, of ${descriptor.excerpt.totalRegions} in total — open the fixture for the remaining ${descriptor.excerpt.omittedRegions}`
     : '';
@@ -361,6 +397,108 @@ export function renderPreviewAddon(descriptor) {
   ].join('\n');
 }
 
+// Every excerpt is cut at a syntactic boundary: a whole JSX element, a whole statement, or a
+// single opening tag. A citation shifted by a few lines slices across those boundaries and
+// leaves brackets unbalanced. That is checkable from the text alone, without re-deriving any
+// line number — which matters because the excerpt text and the cited range are produced
+// together, so a corrupted derivation moves both and no comparison between them can see it.
+// The range comes from line numbers; the anchor is the AST node's own first line, captured
+// without touching a line number. If the sliced text does not contain it, the two derivations
+// disagree and the citation is wrong. Used by the generator (fails the build) and by the
+// citation guard (fails the check), so one predicate pins both.
+export function excerptMatchesAnchor(text, anchor) {
+  return !anchor || text.includes(anchor);
+}
+
+export function isSyntacticallyWholeExcerpt(text, openingTagOnly = false) {
+  // The opening-tag case is deliberately a fragment: `<Screen testID="x">` has no closing tag.
+  if (openingTagOnly) return /^\s*<[A-Za-z]/u.test(text) && text.trimEnd().endsWith('>');
+
+  const stripped = text
+    .replace(/'(?:\\.|[^'\\])*'/gu, "''")
+    .replace(/"(?:\\.|[^"\\])*"/gu, '""')
+    .replace(/`(?:\\.|[^`\\])*`/gu, '``');
+
+  const pairs = { '(': ')', '[': ']', '{': '}' };
+  const stack = [];
+  for (const char of stripped) {
+    if (pairs[char]) stack.push(pairs[char]);
+    else if (Object.values(pairs).includes(char)) {
+      if (stack.pop() !== char) return false;
+    }
+  }
+  // Bracket balance only. Counting JSX tags with a regex was tried and reverted: a multi-line
+  // opening tag with a nested element in an attribute (`leading={<HStack>…</HStack>}`) cannot be
+  // matched without a parser, and the naive version reported 21 correct excerpts as broken. The
+  // anchor comparison in `excerptFixture` is the load-bearing check here; this one is a cheap
+  // second opinion, not the primary defense.
+  return stack.length === 0;
+}
+
+// Everything that checks an excerpt's citation against the file it claims to come from.
+// Extracted so tests can drive it with a synthetic fixture: while this lived inline inside
+// `collectPublicComponentPreviewViolations`, every check in it could be replaced with
+// `if (false)` and the suite stayed green, because nothing exercised the guard at all.
+export function collectExcerptCitationViolations(rootDir, component, descriptor, addon) {
+  const violations = [];
+  // Read the fixture back off disk rather than reusing `descriptor.source`.
+  const onDisk = fs.readFileSync(path.join(rootDir, descriptor.fixture), 'utf8').split('\n');
+  if (!descriptor.excerpt.excerpts.length) {
+    violations.push(`${component.name}: fixture was excerpted to nothing.`);
+  }
+
+  const vocabulary = [
+    ...component.values,
+    ...derivedBindingNames(onDisk.join('\n'), component, path.basename(descriptor.fixture)),
+  ];
+
+  for (const part of descriptor.excerpt.excerpts) {
+    if (onDisk.slice(part.start - 1, part.end).join('\n') !== part.text || !addon.includes(part.text)) {
+      violations.push(
+        `${component.name}: displayed excerpt does not match ${descriptor.fixture} lines ${part.start}-${part.end}.`,
+      );
+    }
+
+    // The anchor is the AST node's own first line, captured without any line number. Comparing
+    // the shown text against it is the only check here that a corrupted line derivation cannot
+    // satisfy by moving both sides together — `excerptFixture` fails generation on it, and this
+    // repeats it so a descriptor assembled any other way is checked too.
+    if (!excerptMatchesAnchor(part.text, part.anchor)) {
+      violations.push(
+        `${component.name}: the excerpt cited at ${descriptor.fixture} lines ${part.start}-${part.end} does not ` +
+        `contain the source it was built from (${JSON.stringify(part.anchor.slice(0, 60))}).`,
+      );
+    }
+
+    // The heading says these are the lines where the family is used. Checking that the family
+    // appears somewhere in the file does not check that; this does.
+    if (!vocabulary.some((name) => new RegExp(`\\b${name}\\b`, 'u').test(part.text))) {
+      violations.push(
+        `${component.name}: the excerpt at ${descriptor.fixture} lines ${part.start}-${part.end} does not ` +
+        'mention any export of this family, so it is not where the family is used.',
+      );
+    }
+
+    if (!isSyntacticallyWholeExcerpt(part.text, part.openingTagOnly)) {
+      violations.push(
+        `${component.name}: the excerpt cited at ${descriptor.fixture} lines ${part.start}-${part.end} is not a ` +
+        'whole syntactic unit, so the cited range does not match how excerpts are cut.',
+      );
+    }
+
+    // The reader sees the prose label, not the anchor. Checking only `#L..-L..` left the visible
+    // "lines N–M" free to say anything.
+    const label = part.start === part.end ? `[line ${part.start}]` : `[lines ${part.start}–${part.end}]`;
+    if (!addon.includes(label)) {
+      violations.push(`${component.name}: the visible line label does not match the cited range ${part.start}-${part.end}.`);
+    }
+    if (!addon.includes(`#L${part.start}-L${part.end}`)) {
+      violations.push(`${component.name}: excerpt at lines ${part.start}-${part.end} is not linked to those lines.`);
+    }
+  }
+  return violations;
+}
+
 export function collectPublicComponentPreviewViolations(rootDir = ROOT_DIR) {
   const violations = [];
   for (const component of buildPublicComponentManifest(rootDir)) {
@@ -394,37 +532,7 @@ export function collectPublicComponentPreviewViolations(rootDir = ROOT_DIR) {
         violations.push(`${component.name}: displayed code drifted from running fixture source.`);
       }
     } else {
-      // Read the fixture back off disk rather than reusing `descriptor.source`. Both the
-      // excerpt text and the earlier comparison were sliced from the same in-memory string, so
-      // they could never disagree: an independent review corrupted the line derivation by five
-      // lines and this guard stayed green while the page quoted unrelated `const filler` lines
-      // under a heading claiming they were where the family is used.
-      const onDisk = fs.readFileSync(path.join(rootDir, descriptor.fixture), 'utf8').split('\n');
-      if (!descriptor.excerpt.excerpts.length) {
-        violations.push(`${component.name}: fixture was excerpted to nothing.`);
-      }
-      for (const part of descriptor.excerpt.excerpts) {
-        if (onDisk.slice(part.start - 1, part.end).join('\n') !== part.text || !addon.includes(part.text)) {
-          violations.push(
-            `${component.name}: displayed excerpt does not match ${descriptor.fixture} lines ${part.start}-${part.end}.`,
-          );
-        }
-        // The heading says these are the lines where the family is used. Checking that the
-        // family appears somewhere in the file does not check that; this does.
-        const vocabulary = [
-          ...component.values,
-          ...derivedBindingNames(onDisk.join('\n'), component, path.basename(descriptor.fixture)),
-        ];
-        if (!vocabulary.some((name) => new RegExp(`\\b${name}\\b`, 'u').test(part.text))) {
-          violations.push(
-            `${component.name}: the excerpt at ${descriptor.fixture} lines ${part.start}-${part.end} does not ` +
-            'mention any export of this family, so it is not where the family is used.',
-          );
-        }
-        if (!addon.includes(`#L${part.start}-L${part.end}`)) {
-          violations.push(`${component.name}: excerpt at lines ${part.start}-${part.end} is not linked to those lines.`);
-        }
-      }
+      violations.push(...collectExcerptCitationViolations(rootDir, component, descriptor, addon));
     }
     if (!addon.includes('loading="lazy"')) violations.push(`${component.name}: Showcase preview must lazy-load.`);
     if (!addon.includes(`title="Live Web preview of ${component.title}"`)) violations.push(`${component.name}: preview iframe lacks an accessible title.`);

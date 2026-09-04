@@ -812,8 +812,13 @@ test('renderPublicComponentPage renders explicit platform-difference bullets for
   };
   const page = renderPublicComponentPage(component);
   assert.match(page, /\*\*Platform differences \(native vs\. \[Web\]/);
-  assert.match(page, /`colSpan` is declared on native only \(native default `1`\)\./);
-  assert.match(page, /`testID` is declared on Web only\./);
+  // A field listed on one declaration and not the other is not evidence the other platform
+  // lacks it: `testID` is explicit on Web and inherited from `ViewProps` on native, `colSpan`
+  // is the reverse. Both were published as exclusive and both were false, so the page must say
+  // where the field is declared and leave the other platform's base type unasserted.
+  assert.match(page, /`colSpan` is declared explicitly on native \(native default `1`\)/u);
+  assert.match(page, /`testID` is declared explicitly on Web/u);
+  assert.equal(/declared on (?:native|Web) only/u.test(page), false, 'must not assert platform exclusivity');
   assert.match(page, /Base type differs: native carries `Omit<ViewProps, 'children'>`; Web carries `Omit<React\.HTMLAttributes<HTMLElement>, 'children'>`\./);
 });
 

@@ -1,1 +1,1 @@
-- [WBS #474 docs-portal wave](project_474_docs_portal_wave.md) — warm-tree PR bodies, cold-checkout divergence, meta-guards that check references not content, typecheck step ordering, shared worktree
+- [WBS #474 docs-portal wave](project_474_docs_portal_wave.md) — meta-guards that check references not content, lane-mapped checks CI never runs, mutation-test the revert not the deletion, review-copy recipe

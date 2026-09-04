@@ -1,7 +1,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { derivedBindingNames, excerptFixture, familyUsageRanges } from '../public-component-previews.mjs';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
+import {
+  collectExcerptCitationViolations,
+  derivedBindingNames,
+  excerptMatchesAnchor,
+  isSyntacticallyWholeExcerpt,
+  excerptFixture,
+  familyUsageRanges,
+  renderPreviewAddon,
+} from '../public-component-previews.mjs';
 
 // The gallery fixture is the right source — it is the largest typechecked surface exercising
 // real public API — but inlining it whole put 1083 lines of unrelated component source on 51 of
@@ -28,7 +40,14 @@ test('a large fixture is reduced to the lines where the family is used', () => {
 
   assert.equal(result.whole, false);
   assert.equal(result.excerpts.length, 1);
-  assert.deepEqual(result.excerpts[0], { start: 201, end: 203, text: '<Accordion value="a">\n  <AccordionItem />\n</Accordion>' });
+  assert.deepEqual(result.excerpts[0], {
+    start: 201,
+    end: 203,
+    // The anchor is the node's own first line, derived without any line number — it is what
+    // lets a corrupted line derivation be caught instead of agreeing with itself.
+    anchor: '<Accordion value="a">',
+    text: '<Accordion value="a">\n  <AccordionItem />\n</Accordion>',
+  });
 });
 
 // The excerpt's line numbers are the whole basis for claiming it is the same executable source.
@@ -62,7 +81,7 @@ test('a wrapper element contributes its opening tag, not everything it contains'
 
   assert.equal(result.whole, false);
   assert.deepEqual(result.excerpts, [
-    { start: 1, end: 1, text: '<Accordion testID="root">', openingTagOnly: true },
+    { start: 1, end: 1, text: '<Accordion testID="root">', openingTagOnly: true, anchor: '<Accordion testID="root">' },
   ]);
   // The page must not then claim the omitted remainder belongs to other families: for a wrapper
   // it is this family's own children.
@@ -182,4 +201,176 @@ test('a lone one-line use is widened to the smallest enclosing example', () => {
   assert.equal(excerpts.length, 1);
   assert.match(excerpts[0].text, /<Box className="flex-row gap-2">/u);
   assert.match(excerpts[0].text, /<Accordion \/>/u);
+});
+
+// --- selection order ----------------------------------------------------------------------
+// An earlier version of this file tested the budget but never the order the budget is spent in,
+// so reverting substantive-first to plain smallest-first left the suite green — while toast's
+// entire example became `const toast = useToast();`.
+test('a one-line declaration does not consume the budget ahead of real examples', () => {
+  const gap = Array.from({ length: 6 }, () => 'const gap = 1;');
+  const block = ['<Accordion>', ...Array.from({ length: 20 }, () => '  <AccordionItem />'), '</Accordion>'];
+  // Seven one-line uses and four 22-line uses: smallest-first spends the whole budget on the
+  // one-liners; substantive-first keeps the blocks.
+  const source = fixtureOf([
+    ...Array.from({ length: 7 }, () => ['const solo = Accordion;', ...gap]).flat(),
+    ...Array.from({ length: 4 }, () => [...block, ...gap]).flat(),
+  ]);
+  const kept = excerptFixture(source, FAMILY, 'order.tsx').excerpts;
+
+  const multiLine = kept.filter((part) => part.end - part.start + 1 > 1);
+  assert.ok(multiLine.length >= 2, `expected real examples to win the budget, kept ${JSON.stringify(kept.map((p) => [p.start, p.end]))}`);
+});
+
+// --- the guard itself ---------------------------------------------------------------------
+// The suite above drives the slicer. Every check inside collectPublicComponentPreviewViolations
+// could be replaced with `if (false)` and stay green, because nothing exercised the guard.
+// These drive it with a synthetic component and fixture on disk.
+function guardFixture({ pageMutator = (page) => page, excerptMutator = (excerpt) => excerpt, extraSource = [] } = {}) {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-preview-guard-'));
+  const fixtureRel = 'fixture/gallery.tsx';
+  fs.mkdirSync(path.join(rootDir, 'fixture'), { recursive: true });
+  const filler = Array.from({ length: 200 }, (_, index) => `const filler${index} = ${index};`);
+  const lines = [
+    "import { Accordion, AccordionItem } from '@beemvp/beeui-ui';",
+    ...filler,
+    '<Accordion value="a">',
+    '  <AccordionItem />',
+    '</Accordion>',
+    ...filler,
+    ...extraSource,
+  ];
+  const source = lines.join('\n');
+  fs.writeFileSync(path.join(rootDir, fixtureRel), source);
+
+  const component = { name: 'accordion', title: 'Accordion', values: ['Accordion', 'AccordionItem'] };
+  const excerpt = excerptMutator(excerptFixture(source, component, fixtureRel), lines);
+  const descriptor = {
+    component: component.name,
+    title: component.title,
+    fixture: fixtureRel,
+    source,
+    excerpt,
+    fixtureLineCount: source.split('\n').length,
+    sourceHref: `https://example.invalid/${fixtureRel}`,
+    showcaseHref: 'https://example.invalid/showcase',
+    anatomy: '- root',
+  };
+  return { rootDir, component, descriptor, page: pageMutator(renderPreviewAddon(descriptor)) };
+}
+
+function guardViolations(fixture) {
+  return collectExcerptCitationViolations(fixture.rootDir, fixture.component, fixture.descriptor, fixture.page);
+}
+
+test('the citation guard accepts a correct excerpt', () => {
+  const fixture = guardFixture();
+  try {
+    assert.deepEqual(guardViolations(fixture), []);
+  } finally {
+    fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+  }
+});
+
+// The anchor is captured from the AST node, so a wrong citation cannot satisfy it by moving
+// both sides together — which is what defeated every comparison between the excerpt and its own
+// cited range.
+test('the citation guard rejects an excerpt that lost the source it was built from', () => {
+  const fixture = guardFixture({
+    excerptMutator: (excerpt) => ({
+      ...excerpt,
+      excerpts: excerpt.excerpts.map((part) => ({ ...part, anchor: '<Accordion value="somethingElse">' })),
+    }),
+  });
+  try {
+    assert.ok(guardViolations(fixture).some((v) => /does not contain the source it was built from/u.test(v)));
+  } finally {
+    fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+  }
+});
+
+test('the citation guard rejects a range that points at other lines', () => {
+  const fixture = guardFixture({
+    excerptMutator: (excerpt) => ({
+      ...excerpt,
+      excerpts: excerpt.excerpts.map((part) => ({ ...part, start: part.start + 40, end: part.end + 40 })),
+    }),
+  });
+  try {
+    const violations = guardViolations(fixture);
+    assert.ok(violations.length > 0, 'a shifted citation must be reported');
+    assert.ok(violations.some((v) => /does not match|occurs at/u.test(v)), violations.join(' | '));
+  } finally {
+    fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+  }
+});
+
+test('the citation guard rejects an excerpt that never mentions the family', () => {
+  const fixture = guardFixture({
+    excerptMutator: (excerpt) => ({
+      ...excerpt,
+      excerpts: excerpt.excerpts.map((part) => ({ ...part, start: 2, end: 4, text: 'const filler0 = 0;\nconst filler1 = 1;\nconst filler2 = 2;' })),
+    }),
+  });
+  try {
+    assert.ok(guardViolations(fixture).some((v) => /does not mention any export/u.test(v)));
+  } finally {
+    fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+  }
+});
+
+test('the citation guard rejects an excerpt whose brackets are left open', () => {
+  const fixture = guardFixture({
+    extraSource: ['<Accordion onPress={() => {', '  doThing();', '}} />'],
+    // Cite only the first two lines of that block: a real slice of the file, containing the
+    // family and its own first line, but cut where an excerpt would never be cut.
+    excerptMutator: (excerpt, lines) => {
+      const start = lines.findIndex((line) => line.startsWith('<Accordion onPress=')) + 1;
+      return {
+        ...excerpt,
+        excerpts: [{
+          start,
+          end: start + 1,
+          anchor: '<Accordion onPress={() => {',
+          text: lines.slice(start - 1, start + 1).join('\n'),
+        }],
+      };
+    },
+  });
+  try {
+    assert.ok(guardViolations(fixture).some((v) => /whole syntactic unit/u.test(v)), guardViolations(fixture).join(' | '));
+  } finally {
+    fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+  }
+});
+
+test('the citation guard rejects a visible label that disagrees with the anchor', () => {
+  const fixture = guardFixture({
+    pageMutator: (page) => page.replace(/\[lines (\d+)–(\d+)\]/u, (_m, a, b) => `[lines ${Number(a) + 500}–${Number(b) + 500}]`),
+  });
+  try {
+    assert.ok(guardViolations(fixture).some((v) => /visible line label/u.test(v)));
+  } finally {
+    fs.rmSync(fixture.rootDir, { recursive: true, force: true });
+  }
+});
+
+// Both the generator and the guard route their anchor comparison through this predicate, so
+// this test pins both call sites rather than only whichever one a fixture happens to reach.
+test('the anchor predicate rejects text that lost the node it was built from', () => {
+  assert.equal(excerptMatchesAnchor('<Accordion value="a">\n  <AccordionItem />', '<Accordion value="a">'), true);
+  assert.equal(excerptMatchesAnchor('const filler0 = 0;', '<Accordion value="a">'), false);
+  // A range with no anchor (a merged span) is not judged by this predicate.
+  assert.equal(excerptMatchesAnchor('anything', undefined), true);
+});
+
+test('the citation guard rejects an excerpt cut across syntactic boundaries', () => {
+  // A window shifted off a statement boundary leaves brackets open — the cheapest signal that a
+  // range was not cut where excerpts are cut.
+  assert.equal(isSyntacticallyWholeExcerpt('<Accordion onPress={() => {\n  doThing();'), false);
+  assert.equal(isSyntacticallyWholeExcerpt('  doThing();\n}} />'), false);
+  assert.equal(isSyntacticallyWholeExcerpt('<Accordion onPress={() => doThing()} />'), true);
+  // The opening-tag case is deliberately a fragment and must stay accepted.
+  assert.equal(isSyntacticallyWholeExcerpt('<Screen testID="root">', true), true);
+  assert.equal(isSyntacticallyWholeExcerpt('const half = {', true), false);
 });

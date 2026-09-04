@@ -109,7 +109,9 @@ export function collectStarterSourceGlobViolations(rootDir = ROOT_DIR, docs = nu
     const page = docs?.[entry.doc];
     if (page) {
       const fixtureSet = [...new Set(globs)].sort();
-      const pageSet = [...new Set([...page.matchAll(/@source\s+'([^']+)';/gu)].map(([, glob]) => glob))].sort();
+      // Without the optional `;` a stale glob quoted in prose rather than in a fenced block was
+      // invisible to this comparison, which is the one direction it was added to close.
+      const pageSet = [...new Set([...page.matchAll(/@source\s+'([^']+)'/gu)].map(([, glob]) => glob))].sort();
       if (fixtureSet.join('\n') !== pageSet.join('\n')) {
         violations.push(
           `${entry.doc} reproduces @source globs [${pageSet.join(', ') || 'none'}] but ${entry.css} declares ` +

@@ -11,7 +11,7 @@
     },
     "alert-dialog": {
       "purpose": "Confirmation/destructive modal built on the Dialog kernel; only explicit Cancel/Action closes it.",
-      "behavior": "Confirmation/destructive modal sharing Dialog's controlled (`open`+`onOpenChange`, both required together) or uncontrolled (`defaultOpen`) contract; unlike Dialog it never closes from a backdrop press or Escape — only an explicit `AlertDialogCancel`/`AlertDialogAction` closes it.",
+      "behavior": "Confirmation/destructive modal sharing Dialog's controlled (`open`+`onOpenChange`, both required together) or uncontrolled (`defaultOpen`) contract; unlike Dialog it never closes from a backdrop press or an Escape keypress. It does still close on a native request-close — Android's hardware back button — because `cancelOnRequestClose` defaults to `true`; set it to `false` when only an explicit `AlertDialogCancel`/`AlertDialogAction` may dismiss the dialog.",
       "limitations": "Never dismisses from backdrop press or Escape; not a general-purpose modal (use Dialog)."
     },
     "app-header": {
