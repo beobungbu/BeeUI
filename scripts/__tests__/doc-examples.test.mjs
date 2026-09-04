@@ -70,6 +70,11 @@ test('a beeui-ui import is not confused by an earlier import from another packag
   assert.deepEqual([...extractBeeuiImports(source)], ['Button']);
 });
 
+test('a block comment inside the import list does not truncate it', () => {
+  const source = "import { Button, /* } */ Text } from '@beemvp/beeui-ui';";
+  assert.deepEqual([...extractBeeuiImports(source)].sort(), ['Button', 'Text']);
+});
+
 test('a multi-line beeui-ui import list still resolves every symbol', () => {
   const source = "import {\n  Button,\n  type ButtonProps,\n} from '@beemvp/beeui-ui';";
   assert.deepEqual([...extractBeeuiImports(source)].sort(), ['Button', 'ButtonProps']);

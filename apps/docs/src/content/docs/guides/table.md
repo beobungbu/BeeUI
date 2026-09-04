@@ -219,16 +219,23 @@ BeeUI's existing direction resolver, so RTL works without a second direction rea
 
 Table ships **no default virtualization**. `TableBody` renders every `TableRow` you supply.
 
-Harness-measured evidence on a representative Apple M1 dev host — reproduce it for your own
-environment rather than treating it as a universal promise:
+The accepted envelope is the one recorded in
+[ADR-007](https://github.com/beobungbu/BeeUI/blob/main/docs/decisions/007-table-datatable-architecture.md):
+the default non-virtualized render costs **well under 1 ms per full render pass at both 100 and
+500 rows** on a representative dev host, far inside a 16 ms frame budget. That is why no
+virtualization adapter is currently justified.
 
-| Scenario | Rows | Median render pass |
-| --- | --- | --- |
-| `web/table-render-100` | 100 | ~0.10 ms |
-| `web/table-render-500` | 500 | ~0.44 ms |
+Two committed reports state different exact medians for the same `web/table-render-100` and
+`web/table-render-500` scenarios, so this guide deliberately does not restate a precise figure.
+Measure your own host instead — that is the number that governs your product:
 
-Both sit far inside a 16 ms frame budget, which is why the accepted 100/500-row envelope is
-met without a virtualization adapter.
+```bash
+pnpm bench:web
+```
+
+Methodology is in
+[`docs/benchmark-harness.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/benchmark-harness.md);
+the machine-enforced guard is `maxOverheadRatio: 15`, not an absolute millisecond target.
 
 The tradeoff to know: because `Table` owns no row state and does not memoize for you, a
 plain `rows.map(...)` re-runs **every** row's render function when any row's props change —
