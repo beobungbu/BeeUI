@@ -14,12 +14,12 @@ npm staged publishing cannot create a brand-new package. `npm stage publish` req
 
 BeeUI therefore uses this sequence:
 
-1. Prepare an owner-approved prerelease version `20260902.0.0-rc.N` across root, core, tokens, ui and cli.
-2. Run `npm-release` with `operation=verify` first. This is non-mutating.
-3. For the first-ever package publication only, run `operation=bootstrap-rc` through the protected `release` environment. This path publishes the RC under `next` with provenance and requires the temporary environment secret `NPM_BOOTSTRAP_TOKEN`. Registry authentication comes from that token; the job-local OIDC permission exists only so npm/Sigstore can generate provenance.
+1. Prepare an owner-approved prerelease version `20260902.0.0-rc.N` across root, core, tokens, ui and cli and merge that exact candidate to `main`.
+2. Run `npm-release` with `operation=verify` first. This is non-mutating and may be used for dry-run verification.
+3. For the first-ever package publication only, dispatch `operation=bootstrap-rc` from `main` through the protected `release` environment. This path publishes the RC under `next` with provenance and requires the temporary environment secret `NPM_BOOTSTRAP_TOKEN`. Registry authentication comes from that token; the job-local OIDC permission exists only so npm/Sigstore can generate provenance.
 4. Immediately after the four packages exist, configure npm Trusted Publisher for every package using the exact values below.
 5. Revoke the bootstrap token and delete `NPM_BOOTSTRAP_TOKEN` from the GitHub `release` environment.
-6. For later RCs, use `operation=stage-rc`. The workflow authenticates with OIDC, stages each package, and stops. The owner reviews and approves each staged package with 2FA on npm.
+6. For later RCs, dispatch `operation=stage-rc` from `main`. The workflow authenticates with OIDC, stages each package, and stops. The owner reviews and approves each staged package with 2FA on npm.
 
 No workflow operation promotes `latest`. Stable publication remains #254 work and must follow `docs/dist-tag-policy.md` plus exact-candidate approval.
 
@@ -63,7 +63,8 @@ Revoke the bootstrap token immediately after bootstrap and Trusted Publisher con
 
 `.github/workflows/npm-release.yml` is manual-dispatch only. Registry-mutating operations require all of the following before their job can run:
 
-- exact workflow SHA checkout;
+- the workflow was dispatched from `refs/heads/main`; feature/topic branches cannot mutate npm;
+- exact workflow SHA checkout (`git rev-parse HEAD == GITHUB_SHA`);
 - exact user-entered version equals the workspace root version;
 - version matches `20260902.0.0-rc.N`;
 - explicit confirmation string `BEEUI_RC_RELEASE`;
