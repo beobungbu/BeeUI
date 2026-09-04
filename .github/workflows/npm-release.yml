@@ -102,11 +102,10 @@ jobs:
     environment: release
     permissions:
       contents: read
-      # Registry auth is still the temporary token below; this OIDC grant is
-      # required only to mint npm/Sigstore provenance for the direct publish.
+      # Registry auth is the temporary token scoped only to the publish step;
+      # this OIDC grant exists solely to mint npm/Sigstore provenance.
       id-token: write
     env:
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_BOOTSTRAP_TOKEN }}
       RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
     steps:
       - name: Checkout exact workflow SHA
@@ -132,24 +131,42 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Refuse non-bootstrap or reused versions
+      - name: Refuse reused versions and registry probe errors
         run: |
           set -euo pipefail
-          test -n "${NODE_AUTH_TOKEN:-}"
           test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+
+          assert_version_absent() {
+            spec="$1"
+            context="$2"
+            err_file="$(mktemp)"
+            if npm view "$spec" version >/dev/null 2>"$err_file"; then
+              rm -f "$err_file"
+              echo "Refusing ${context}: ${spec} already exists." >&2
+              exit 1
+            else
+              status=$?
+              if grep -Eq 'E404|404 Not Found' "$err_file"; then
+                rm -f "$err_file"
+                return 0
+              fi
+              cat "$err_file" >&2
+              rm -f "$err_file"
+              echo "Refusing ${context}: registry probe for ${spec} failed unexpectedly." >&2
+              exit "$status"
+            fi
+          }
+
           for package in \
             @beemvp/beeui-core \
             @beemvp/beeui-tokens \
             @beemvp/beeui-ui \
             @beemvp/beeui-cli
           do
-            if npm view "${package}@${RELEASE_VERSION}" version >/dev/null 2>&1; then
-              echo "Refusing bootstrap: ${package}@${RELEASE_VERSION} already exists." >&2
-              exit 1
-            fi
+            assert_version_absent "${package}@${RELEASE_VERSION}" bootstrap
           done
 
-      - name: Build, pack, and bootstrap the first RC under next
+      - name: Build and pack the first RC
         run: |
           set -euo pipefail
           pnpm release:verify
@@ -157,7 +174,7 @@ jobs:
           rm -rf "$artifact_root"
           mkdir -p "$artifact_root"
 
-          publish_one() {
+          pack_one() {
             package_dir="$1"
             key="$2"
             package_out="$artifact_root/$key"
@@ -166,14 +183,35 @@ jobs:
             shopt -s nullglob
             tarballs=("$package_out"/*.tgz)
             test "${#tarballs[@]}" -eq 1
+          }
+
+          pack_one packages/core core
+          pack_one packages/tokens tokens
+          pack_one packages/ui ui
+          pack_one packages/cli cli
+
+      - name: Bootstrap the first RC under next
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_BOOTSTRAP_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "${NODE_AUTH_TOKEN:-}"
+          artifact_root="$RUNNER_TEMP/beeui-npm-bootstrap"
+
+          publish_one() {
+            key="$1"
+            package_out="$artifact_root/$key"
+            shopt -s nullglob
+            tarballs=("$package_out"/*.tgz)
+            test "${#tarballs[@]}" -eq 1
             npm publish "${tarballs[0]}" --access public --tag next --provenance
           }
 
           # Dependency order; never parallelize registry mutation.
-          publish_one packages/core core
-          publish_one packages/tokens tokens
-          publish_one packages/ui ui
-          publish_one packages/cli cli
+          publish_one core
+          publish_one tokens
+          publish_one ui
+          publish_one cli
 
   stage-rc:
     if: ${{ inputs.operation == 'stage-rc' }}
@@ -214,6 +252,28 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+
+          assert_version_absent() {
+            spec="$1"
+            context="$2"
+            err_file="$(mktemp)"
+            if npm view "$spec" version >/dev/null 2>"$err_file"; then
+              rm -f "$err_file"
+              echo "Refusing ${context}: ${spec} already exists." >&2
+              exit 1
+            else
+              status=$?
+              if grep -Eq 'E404|404 Not Found' "$err_file"; then
+                rm -f "$err_file"
+                return 0
+              fi
+              cat "$err_file" >&2
+              rm -f "$err_file"
+              echo "Refusing ${context}: registry probe for ${spec} failed unexpectedly." >&2
+              exit "$status"
+            fi
+          }
+
           for package in \
             @beemvp/beeui-core \
             @beemvp/beeui-tokens \
@@ -221,10 +281,7 @@ jobs:
             @beemvp/beeui-cli
           do
             npm view "$package" name >/dev/null
-            if npm view "${package}@${RELEASE_VERSION}" version >/dev/null 2>&1; then
-              echo "Refusing stage: ${package}@${RELEASE_VERSION} is already public." >&2
-              exit 1
-            fi
+            assert_version_absent "${package}@${RELEASE_VERSION}" stage
           done
 
       - name: Build, pack, and stage the RC under next via OIDC
