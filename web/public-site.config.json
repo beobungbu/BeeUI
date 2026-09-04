@@ -81,6 +81,12 @@
         "generator": null
       },
       {
+        "id": "reference",
+        "routePrefix": "/docs/reference/",
+        "sources": ["docs/public-surface.inventory.json", "docs/reference.content.json"],
+        "generator": "scripts/public-reference.mjs"
+      },
+      {
         "id": "release",
         "routePrefix": "/docs/reference/release/",
         "sources": ["docs/dist-tag-policy.md", "packages/cli/package.json", "package.json"],

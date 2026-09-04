@@ -1,1 +1,1 @@
-- [WBS #474 docs-portal wave](project_474_docs_portal_wave.md) — per-check verification (pnpm typecheck is blocked by a pre-existing release-ruleset failure); ask what green checks don't cover
+- [WBS #474 docs-portal wave](project_474_docs_portal_wave.md) — check `gh pr checks` first (bodies are warm-tree); cold-checkout divergence, Astro slug rules, the dead `pnpm beeui --` form

@@ -98,6 +98,17 @@ export default defineConfig({
           ],
         },
         {
+          label: 'Reference',
+          items: [
+            { label: 'Overview', slug: 'reference' },
+            { label: 'Tokens', slug: 'reference/tokens' },
+            { label: 'Core', slug: 'reference/core' },
+            { label: 'CLI', slug: 'reference/cli' },
+            { label: 'Registry', slug: 'reference/registry' },
+            { label: 'Styling', slug: 'reference/styling' },
+          ],
+        },
+        {
           label: 'Compatibility',
           items: [
             { label: 'Overview', slug: 'compatibility' },
