@@ -9,7 +9,7 @@ description: Machine-sourced BeeUI version, publication and channel status.
 | --- | --- |
 | Workspace/package version | `20260902.0.0` |
 | Published to npm | **no** |
-| Stable target | `1.0.0` |
+| Stable target | `20260902.0.0` |
 | Stable dist-tag | `latest` |
 | Prerelease dist-tag | `next` |
 | Release environment | `release` |
