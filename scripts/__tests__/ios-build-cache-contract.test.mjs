@@ -180,6 +180,40 @@ test('development PR visual proof is targeted while full pushes use three durati
   assert.match(visualConfig, /name: 'showcase-acceptance-smoke'[\s\S]*grepInvert: fullAcceptanceMatrix/);
 });
 
+// The assertions above only prove visual-web.yml contains the strings this PR
+// wrote. They stay green if someone adds a Playwright project that no lane
+// selects, which drops its screens from CI while the report still passes. This
+// derives the real project list from the visual contract and holds the lanes to
+// it: every project claimed exactly once, no drops and no double runs.
+test('every visual project is claimed by exactly one full-run lane', async () => {
+  const { visualViewports, visualThemes } = await import('../../apps/visual-regression/src/visual-contract.ts');
+  const { visual } = await sources();
+
+  const projects = [
+    ...Object.keys(visualViewports).flatMap((viewport) => visualThemes.map((theme) => `${viewport}-${theme}`)),
+    'showcase-integration',
+    'showcase-acceptance-matrix',
+    'showcase-acceptance-smoke',
+  ];
+
+  const fullBlock = visual.slice(visual.indexOf('  visual-web-full:'));
+  const filters = [...fullBlock.matchAll(/--project=('?)([^'\s\\]+)\1/g)].map((match) => match[2]);
+  assert.ok(filters.length > 0, 'no --project filters found in the visual-web-full job');
+
+  const toRegExp = (glob) => new RegExp(`^${glob.split('*').map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`);
+  const matchers = filters.map((glob) => ({ glob, re: toRegExp(glob) }));
+
+  for (const project of projects) {
+    const claimedBy = matchers.filter((matcher) => matcher.re.test(project)).map((matcher) => matcher.glob);
+    assert.equal(claimedBy.length, 1, `project "${project}" is claimed by ${claimedBy.length} lane filters (${claimedBy.join(', ') || 'none'})`);
+  }
+
+  // A filter that matches nothing is a rename that silently stopped selecting.
+  for (const { glob, re } of matchers) {
+    assert.ok(projects.some((project) => re.test(project)), `lane filter "${glob}" matches no configured project`);
+  }
+});
+
 test('Playwright cache-hit paths avoid full dependency provisioning', async () => {
   const { webConsumer, webA11y, visual } = await sources();
   for (const source of [webConsumer, webA11y, visual]) {

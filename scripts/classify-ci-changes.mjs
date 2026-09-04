@@ -348,7 +348,9 @@ function writeGithubOutput(nativeResult, boundaryResult, bareResult, showcaseRes
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
   const input = readFileSync(0, 'utf8');
-  const files = input.split(/\r?\n/).filter(Boolean);
+  // Callers pass `git diff -z`, which separates paths with NUL so a filename
+  // containing a newline cannot split into two bogus paths.
+  const files = input.split(/\r?\n|\0/).filter(Boolean);
   const forceNative = envFlag('BEEUI_FORCE_NATIVE');
   const boundaryResult = classifyPackageBoundaryChanges(files, { forceNative });
   const bareResult = classifyBareNativeChanges(files, { forceNative });
