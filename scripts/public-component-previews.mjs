@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { showcaseHref } from '../apps/showcase/showcase-target.ts';
 import {
   PUBLIC_COMPONENT_DIR,
   buildPublicComponentManifest,
@@ -95,8 +96,9 @@ export function collectPublicComponentPreviewViolations(rootDir = ROOT_DIR) {
     if (descriptor.fixture.includes('/__tests__/') || descriptor.fixture.includes('/__mocks__/')) {
       violations.push(`${component.name}: live preview selected a test/mock source instead of a runtime Showcase fixture.`);
     }
-    if (!descriptor.showcaseHref.startsWith(`/showcase/?component=${encodeURIComponent(component.name)}`)) {
-      violations.push(`${component.name}: preview is not addressable through the canonical Showcase component query.`);
+    const expectedTarget = `${showcaseHref({ surface: 'component', id: component.name, example: 'basic' })}&embed=1`;
+    if (descriptor.showcaseHref !== expectedTarget) {
+      violations.push(`${component.name}: preview is not addressable through the canonical Showcase component target.`);
     }
     const addon = renderPreviewAddon(descriptor);
     if (!addon.includes(descriptor.source)) violations.push(`${component.name}: displayed code drifted from running fixture source.`);
