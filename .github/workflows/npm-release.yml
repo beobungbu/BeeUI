@@ -102,6 +102,9 @@ jobs:
     environment: release
     permissions:
       contents: read
+      # Registry auth is still the temporary token below; this OIDC grant is
+      # required only to mint npm/Sigstore provenance for the direct publish.
+      id-token: write
     env:
       NODE_AUTH_TOKEN: ${{ secrets.NPM_BOOTSTRAP_TOKEN }}
       RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
