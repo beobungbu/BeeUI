@@ -716,11 +716,18 @@ function collectStateNames(node, states) {
 // Props that select between class strings, read from the code that does the selecting.
 //
 // The axis heuristic recognised only props whose description was generated from a `cva()` call,
-// so Spinner's `tone` (seven entries of `spinnerToneClasses`), Timeline's `status`,
-// KeyboardAwareScreen's `contentWidth` and Toast's `variant` were all invisible, and their pages
-// said the family had no style axis at all. Indexing a table of class strings with a prop is
-// what a style axis *is*; that is the evidence, rather than how the prop's doc comment was
-// produced.
+// so Spinner's `tone` (seven entries of `spinnerToneClasses`) and Timeline's `status` were
+// invisible and both pages published "no style axes of its own"; KeyboardAwareScreen's
+// `contentWidth` and Toast's `variant` said the axes were not enumerated, which was true but
+// less than the source supports. Indexing a table of string constants with a declared prop is
+// the evidence used here.
+//
+// Limit worth knowing: this proves "a declared prop indexes a table of string literals", not
+// "those strings are classes". Two of the twelve such tables in `packages/ui/src` hold
+// something else — `table.tsx`'s `sortGlyphs` holds arrow characters and `text.tsx`'s
+// `monoFontFamilyNative` holds font names — and neither is published today only because its
+// index is not a declared prop. A name-based filter is not the answer: `numericVariantUtilities`
+// holds real utility classes and contains no "class" in its name.
 export function extractClassMapAxes(files) {
   const axes = new Map();
 

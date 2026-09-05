@@ -1082,10 +1082,8 @@ function renderStylingFacts(component, rootDir = ROOT_DIR) {
   const axisLine = accumulator.axes.size
     ? `- **Style axes:** ${[...accumulator.axes]
         .map(
-          ([name, { count, from, listed }]) =>
-            `\`${name}\` (${count} values${from ? `, inherited from \`${from}\`` : ''}${
-              listed || from ? '' : ', not enumerated on this page'
-            })`,
+          ([name, { count, from }]) =>
+            `\`${name}\` (${count} values${from ? `, inherited from \`${from}\`` : ''})`,
         )
         .join(', ')}${
         [...accumulator.axes.values()].every((axis) => axis.listed)

@@ -2027,26 +2027,36 @@ test('the rendered negative and the oracle that refuses it are the same string',
 // asserted by nothing: replacing `scope` with a literal `nonexistent.tsx` regenerated all 62
 // pages and left --check, the whole suite and the freshness check green.
 test('the files an accessibility line names are the files that set something', () => {
+  // Written for the roles line only the first time. The states line's scope could then be
+  // replaced with a fabricated `nonexistent.tsx` on all 62 pages with --check, the whole suite
+  // and the freshness check green — the same hole, one line lower, in the test written to close
+  // it. Both lines are checked here against a list recomputed per file.
+  const lines = [
+    { prefix: '- **Roles this family assigns:**', key: 'roles' },
+    { prefix: '- **Accessibility states and properties it sets:**', key: 'states' },
+  ];
+
   for (const component of buildPublicComponentManifest(REPO_ROOT)) {
     const sources = (component.allSources ?? [component.source]).filter(
       (relPath) => relPath && !relPath.endsWith('.d.ts'),
     );
-    // Recomputed here per file rather than taken from the renderer, so replacing the rendered
-    // scope with a literal — which once left --check, the whole suite and freshness green —
-    // fails this.
-    const setsRole = sources.filter(
-      (relPath) =>
-        extractAccessibilityFacts([
-          { path: relPath, source: fs.readFileSync(path.join(REPO_ROOT, relPath), 'utf8') },
-        ]).roles.length > 0,
-    );
-    const line = renderPublicComponentPage(component, REPO_ROOT)
-      .split('\n')
-      .find((candidate) => candidate.startsWith('- **Roles this family assigns:**'));
-    const named = [...line.matchAll(/`([\w.-]+\.tsx?)`/gu)].map((match) => match[1]);
-    const expected = (setsRole.length ? setsRole : sources).map((relPath) => relPath.split('/').pop());
+    const page = renderPublicComponentPage(component, REPO_ROOT);
 
-    assert.deepEqual(named, expected, `${component.name}: the named files are not the files read`);
+    for (const { prefix, key } of lines) {
+      const contributing = sources.filter(
+        (relPath) =>
+          extractAccessibilityFacts([
+            { path: relPath, source: fs.readFileSync(path.join(REPO_ROOT, relPath), 'utf8') },
+          ])[key].length > 0,
+      );
+      const line = page.split('\n').find((candidate) => candidate.startsWith(prefix));
+      const named = [...line.matchAll(/`([\w.-]+\.tsx?)`/gu)].map((match) => match[1]);
+      const expected = (contributing.length ? contributing : sources).map((relPath) =>
+        relPath.split('/').pop(),
+      );
+
+      assert.deepEqual(named, expected, `${component.name} ${key}: named files are not the files read`);
+    }
   }
 });
 
@@ -2156,5 +2166,20 @@ test('the platform sentence makes no promise about text elsewhere on the page', 
     // "The differences are called out on the affected props above" was true on none of the six
     // pages that carried it.
     assert.equal(/called out on the affected props above/u.test(page), false);
+  }
+});
+
+
+test('the axes line makes no claim about what the rest of the page prints', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  for (const component of manifest) {
+    const line = renderPublicComponentPage(component, REPO_ROOT)
+      .split('\n')
+      .find((candidate) => candidate.startsWith('- **Style axes:**'));
+
+    // ", not enumerated on this page" was false on `screen.md`, whose props row lists
+    // `padding`'s four values, and on `text.md`, which prints `'tabular'` for `numeric`. Every
+    // clause this section wrote about its own page's other content has been wrong once.
+    assert.equal(/not enumerated on this page/u.test(line), false, `${component.name}: ${line}`);
   }
 });
