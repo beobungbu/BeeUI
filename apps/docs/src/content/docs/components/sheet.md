@@ -298,6 +298,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
+- Passing `open` without `onOpenChange` leaves the value read-only: the component renders what you passed and can never change it. It warns in development builds rather than failing silently in production.
 - Requires `@gorhom/bottom-sheet`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets` to be installed by the consuming app. They are optional peers of `@beemvp/beeui-ui`, so nothing installs them for you, and a target that never renders this family does not need it.
 - On Web, `avoidKeyboard`, `enableSwipeToDismiss`, `modalProps` are accepted for API parity and read by nothing: setting them changes no behavior there.
 

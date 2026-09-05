@@ -17,6 +17,7 @@ import {
 import {
   diffPlatformPropsShape,
   extractAccessibilityFacts,
+  extractControlledPropWarnings,
   extractOmitPickOrBareTypeName,
   getBehaviorGuardKnownNames,
   getComponentTypeDocs,
@@ -724,8 +725,24 @@ function renderStylingFacts(component) {
 // there. The page said there was nothing to say while the repository had something to say. Only
 // what is derivable is added; a family with no derivable constraint still says none is curated,
 // because inventing one would be worse than admitting the gap.
-function renderDerivedLimitations(component) {
+function renderDerivedLimitations(component, rootDir) {
   const lines = [];
+
+  // The component states this itself, in a development warning. Skipped when a curated limitation
+  // already says it, so Dialog does not carry the same sentence twice.
+  const files = (component.allSources ?? [component.source]).map((relPath) => ({
+    path: relPath,
+    source: fs.readFileSync(path.join(rootDir, relPath), 'utf8'),
+  }));
+  for (const { prop, handler } of extractControlledPropWarnings(files)) {
+    const curated = component.limitations ?? '';
+    if (curated.includes(prop) && curated.includes(handler)) continue;
+    lines.push(
+      `- Passing \`${prop}\` without \`${handler}\` leaves the value read-only: the component ` +
+      'renders what you passed and can never change it. It warns in development builds rather ' +
+      'than failing silently in production.',
+    );
+  }
 
   const optionalPeers = (component.peerDependencies ?? []).filter((peer) =>
     OPTIONAL_PEER_DEPENDENCIES.has(peer),
@@ -763,7 +780,7 @@ export function renderPublicComponentPage(component, rootDir = ROOT_DIR) {
   const platformSplit = component.allSources.length > 1
     ? 'This family has platform-split source files. The bundler selects the native/Web implementation; do not infer native runtime behavior from the Web preview.'
     : 'The same public family is exposed across the supported target matrix; meaningful platform differences remain governed by the compatibility contract.';
-  const derivedLimitations = renderDerivedLimitations(component);
+  const derivedLimitations = renderDerivedLimitations(component, rootDir);
   const curatedLimitations =
     component.limitations ||
     (derivedLimitations

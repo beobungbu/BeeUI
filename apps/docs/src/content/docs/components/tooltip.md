@@ -245,6 +245,8 @@ Open the fixture itself for the surrounding imports and state. For a smaller app
 
 Never a press target and never interactive content; use Popover for interactive overlays.
 
+- Passing `open` without `onOpenChange` leaves the value read-only: the component renders what you passed and can never change it. It warns in development builds rather than failing silently in production.
+
 ## Related
 
 - [All components](/docs/components/)

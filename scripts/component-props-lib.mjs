@@ -565,6 +565,30 @@ export function extractAccessibilityFacts(files) {
   return { roles: [...roles].sort(), states: [...states].sort() };
 }
 
+// Controlled-prop requirements, read from the development warnings the components already emit.
+//
+// Dialog's curated limitation is exactly this fact — "Controlled open requires onOpenChange" — so
+// the claim that the remaining limitations all need product judgement was too broad: this class is
+// a fact in the code, stated by the component itself, and nine families emit one.
+export function extractControlledPropWarnings(files) {
+  const pairs = new Map();
+
+  for (const { path: filePath, source } of files) {
+    const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, scriptKindFor(filePath));
+    walk(sourceFile, (node) => {
+      if (!ts.isCallExpression(node)) return;
+      if (node.expression.getText(sourceFile) !== 'console.warn') return;
+      for (const argument of node.arguments) {
+        if (!ts.isStringLiteralLike(argument)) continue;
+        const match = /^BeeUI\s+\w+:\s+`(\w+)`\s+requires\s+`(\w+)`/u.exec(argument.text);
+        if (match) pairs.set(match[1], match[2]);
+      }
+    });
+  }
+
+  return [...pairs].map(([prop, handler]) => ({ prop, handler })).sort((a, b) => a.prop.localeCompare(b.prop));
+}
+
 export function extractCvaVariants(files) {
   const byIdentifier = new Map();
 

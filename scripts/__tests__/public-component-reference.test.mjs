@@ -9,6 +9,7 @@ import {
   buildTypeIndex,
   cvaVariantType,
   extractAccessibilityFacts,
+  extractControlledPropWarnings,
   extractCvaVariants,
   variantsIdentifierFromBase,
   diffPlatformObjectShape,
@@ -1517,4 +1518,36 @@ test('a family with nothing derivable still says none is curated', () => {
   const text = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'text');
 
   assert.match(renderPublicComponentPage(text), /No component-specific limitation is curated here/u);
+});
+
+
+// Dialog's curated limitation is "Controlled open requires onOpenChange" — a fact the component
+// states itself in a development warning, so it is derivable rather than product judgement.
+test('a controlled-prop requirement is read from the component own warning', () => {
+  const warning = "console.warn('BeeUI Select: \\`open\\` requires \\`onOpenChange\\`. Falling back.');";
+
+  assert.deepEqual(extractControlledPropWarnings([{ path: 'select.tsx', source: warning }]), [
+    { prop: 'open', handler: 'onOpenChange' },
+  ]);
+});
+
+test('an unrelated console.warn is not read as a controlled-prop requirement', () => {
+  const source = "console.warn('BeeUI Select: something else entirely.');";
+
+  assert.deepEqual(extractControlledPropWarnings([{ path: 'select.tsx', source }]), []);
+});
+
+test('a family that warns publishes the requirement in Limitations', () => {
+  const select = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'select');
+
+  assert.match(renderPublicComponentPage(select), /Passing `open` without `onOpenChange` leaves the value read-only/u);
+});
+
+// Dialog curates the same fact; it must not be said twice on one page.
+test('a derived requirement is skipped when a curated limitation already says it', () => {
+  const dialog = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'dialog');
+  const page = renderPublicComponentPage(dialog);
+
+  assert.match(page, /Controlled open requires onOpenChange/u);
+  assert.equal(/Passing `open` without `onOpenChange` leaves the value read-only/u.test(page), false);
 });
