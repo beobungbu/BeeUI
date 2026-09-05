@@ -159,11 +159,15 @@ function findUnknownBehaviorPropReferences(component, rootDir, field = 'behavior
 // the measured value at the time it was written, so coverage can only go up.
 export const PROP_DESCRIPTION_FLOOR = 624;
 
-// A second floor, because the first one is satisfiable by boilerplate: 22 props were added to
-// the total by one repeated sentence, and a ratio alone cannot tell that apart from 22 props
-// that were actually written about. Reporting `distinct` without gating it left the ratchet
-// exactly as weak as before.
+// Two guards, because coverage alone is satisfiable by boilerplate: 22 props were added to the
+// total by one repeated sentence and the ratio never moved.
+//
+// The absolute floor catches descriptions being collapsed or deleted. It does NOT catch the
+// growth mode — 200 new props each reusing an existing sentence verbatim keeps `distinct` at 280
+// and passes. The ratio catches that, because every added duplicate lowers it. Neither alone is
+// enough; that is why both are here.
 export const PROP_DISTINCT_DESCRIPTION_FLOOR = 280;
+export const PROP_DISTINCT_DESCRIPTION_RATIO_FLOOR = 0.44; // measured 280/624 = 0.4487
 
 // Walks a resolved type entry the same way `applyGlossary` and the renderer do:
 // a `union` entry carries no `fields` of its own, only `variants`, each of which is
@@ -225,6 +229,15 @@ export function collectPropDescriptionViolations(manifest) {
       `distinct prop descriptions dropped to ${distinct} (floor ${PROP_DISTINCT_DESCRIPTION_FLOOR}). ` +
       'Coverage can be held at 100% by repeating one sentence, so the number of different things ' +
       'said is guarded separately.',
+    );
+  }
+
+  const ratio = total === 0 ? 1 : distinct / total;
+  if (ratio < PROP_DISTINCT_DESCRIPTION_RATIO_FLOOR) {
+    violations.push(
+      `only ${distinct} of ${total} prop descriptions are different (${ratio.toFixed(3)}, floor ` +
+      `${PROP_DISTINCT_DESCRIPTION_RATIO_FLOOR}). Props were added faster than things said about ` +
+      'them; write a description for the new props rather than reusing an existing sentence.',
     );
   }
 

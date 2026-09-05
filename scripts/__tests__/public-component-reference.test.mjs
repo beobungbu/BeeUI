@@ -1222,12 +1222,12 @@ test('a boolean cva variant publishes as boolean, not a string union', () => {
 });
 
 
-// cva does not type an object key as text: `{ 1: …, 2: … }` is `1 | 2`, not `'1' | '2'`. Same
-// defect as the boolean case, waiting for the first numeric variant.
-test('cva variant keys publish with the type cva actually gives them', () => {
+test('cva boolean keys publish as boolean, other keys as string literals', () => {
   assert.equal(cvaVariantType(['true', 'false']).type, 'boolean');
-  assert.equal(cvaVariantType(['1', '2']).type, '1 | 2');
   assert.equal(cvaVariantType(['sm', 'md']).type, "'sm' | 'md'");
+  // Numeric keys are NOT special-cased: `extractCvaVariants` strips quotes, so `{ 1: … }` and
+  // `{ '1': … }` are indistinguishable here and guessing was wrong for the quoted form.
+  assert.equal(cvaVariantType(['1', '2']).type, "'1' | '2'");
 });
 
 // A wrapper that forwards a prop can re-default it. Applying the shared cva's own defaults
@@ -1270,4 +1270,40 @@ test('a manifest whose descriptions are all one sentence is a violation', () => 
   const violations = collectPropDescriptionViolations([{ typeDocs: [{ kind: 'object', fields }] }]);
 
   assert.match(violations[0], /distinct prop descriptions dropped to 1/u);
+});
+
+
+// The absolute distinct floor passes when props grow while reusing existing sentences — exactly
+// how 22 props entered the total on one repeated line. The ratio is what catches that.
+test('adding props that reuse an existing description is a violation', () => {
+  const base = Array.from({ length: 624 }, (unused, index) => ({
+    name: `p${index}`,
+    description: `Sentence ${index % 280}.`,
+  }));
+  const grown = [
+    ...base,
+    ...Array.from({ length: 200 }, (unused, index) => ({
+      name: `added${index}`,
+      description: 'Sentence 0.',
+    })),
+  ];
+
+  const violations = collectPropDescriptionViolations([{ typeDocs: [{ kind: 'object', fields: grown }] }]);
+
+  assert.match(violations[0], /only 280 of 824 prop descriptions are different/u);
+});
+
+// forwardRef((props, ref) => { const { x = 'lit' } = props }) — the shape that left 30 rows blank.
+test('a default destructured in a forwardRef body is published', () => {
+  const source = `
+    export const Calendar = React.forwardRef<Ref, CalendarProps>((props, forwardedRef) => {
+      const { readOnly = false, weekdayFormat = 'short' } = props;
+      return null;
+    });
+  `;
+
+  const defaults = extractDefaults([{ path: 'calendar.tsx', source }], new Set(['CalendarProps']));
+
+  assert.equal(defaults.get('readOnly'), 'false');
+  assert.equal(defaults.get('weekdayFormat'), "'short'");
 });

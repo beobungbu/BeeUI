@@ -360,6 +360,27 @@ function collectDefaultsFromBindingPattern(pattern, sourceFile, defaults) {
 // whose typed parameter is destructured inside the body
 // (`function Dialog(props: DialogProps) { const { defaultOpen = false } =
 // props; }`). Returns an empty map — never a guess — when nothing matches.
+// `forwardRef((props, ref) => { const { disabled = false } = props; … })` destructures in the body,
+// not in the parameter. The plain-function branch already read that shape; the forwardRef branch
+// did not, so 30 rows across Calendar, DatePicker and DateTimePicker published no default while a
+// literal one existed in source.
+function collectDefaultsFromBodyDestructure(fn, paramName, sourceFile, defaults) {
+  if (!fn.body || !ts.isBlock(fn.body)) return;
+  walk(fn.body, (inner) => {
+    if (!ts.isVariableStatement(inner)) return;
+    for (const declaration of inner.declarationList.declarations) {
+      if (
+        ts.isObjectBindingPattern(declaration.name) &&
+        declaration.initializer &&
+        ts.isIdentifier(declaration.initializer) &&
+        declaration.initializer.text === paramName
+      ) {
+        collectDefaultsFromBindingPattern(declaration.name, sourceFile, defaults);
+      }
+    }
+  });
+}
+
 // A wrapper can re-default a prop it forwards: `<DialogClose variant={variant ?? 'destructive'} />`.
 // That is the real default a reader gets, and it is not a destructuring default, so the binding
 // walk above cannot see it. Resolving `buttonVariants` globally published `'primary'` for
@@ -377,7 +398,9 @@ function collectDefaultsFromForwardedFallbacks(node, sourceFile, defaults) {
     if (!ts.isIdentifier(expression.left) || expression.left.text !== inner.name.text) return;
     if (!ts.isStringLiteralLike(expression.right)) return;
 
-    defaults.set(inner.name.text, `'${expression.right.text}'`);
+    // First-wins, matching `collectDefaultsFromBindingPattern`: otherwise file order decides
+    // which of two defaults for the same prop is published.
+    if (!defaults.has(inner.name.text)) defaults.set(inner.name.text, `'${expression.right.text}'`);
   });
 }
 
@@ -395,6 +418,8 @@ export function extractDefaults(files, candidateNames) {
           const param = (ts.isArrowFunction(renderFn) || ts.isFunctionExpression(renderFn)) ? renderFn.parameters[0] : undefined;
           if (param && ts.isObjectBindingPattern(param.name)) {
             collectDefaultsFromBindingPattern(param.name, sourceFile, defaults);
+          } else if (param && ts.isIdentifier(param.name) && renderFn) {
+            collectDefaultsFromBodyDestructure(renderFn, param.name.text, sourceFile, defaults);
           }
           if (renderFn) collectDefaultsFromForwardedFallbacks(renderFn, sourceFile, defaults);
         }
@@ -475,19 +500,20 @@ export function extractInertProps(files, candidateNames) {
 // them from there rather than leaving the contract undocumented.
 //
 // Shape handled: `const x = cva(base, { variants: { prop: { value: ... } }, defaultVariants: {...} })`.
-// An object key is always text in the AST, but cva does not type it that way: `{ true: …, false: … }`
-// becomes `boolean` and `{ 1: …, 2: … }` becomes `1 | 2`. Publishing the keys as string literals
-// put `'true' | 'false'` on the Stack page, which the same page contradicts with `<HStack wrap>`;
-// the numeric case is the same defect waiting for the first numeric variant.
+// cva does not type an object key as text: `{ true: …, false: … }` becomes `boolean`. Publishing
+// the keys as string literals put `'true' | 'false'` on the Stack page, which the same page
+// contradicts with `<HStack wrap>`.
+//
+// Numeric keys are deliberately NOT special-cased. cva types `{ 1: … }` as `1` and `{ '1': … }` as
+// `'1'`, but `extractCvaVariants` strips the quotes, so by this point the two are indistinguishable
+// and any guess is wrong half the time — a numeric branch here turned the quoted case, which was
+// correct, into an incorrect one. No cva in packages/ui has a numeric or mixed key set; if one is
+// added, carry the quoting through from the AST rather than inferring it from the text.
 export function cvaVariantType(values) {
   const isBoolean = values.every((value) => value === 'true' || value === 'false');
-  const isNumeric = values.length > 0 && values.every((value) => /^-?\d+(?:\.\d+)?$/u.test(value));
-  const quote = (value) => (isBoolean || isNumeric ? value : `'${value}'`);
+  const quote = (value) => (isBoolean ? value : `'${value}'`);
 
-  return {
-    quote,
-    type: isBoolean ? 'boolean' : values.map(quote).join(' | '),
-  };
+  return { quote, type: isBoolean ? 'boolean' : values.map(quote).join(' | ') };
 }
 
 export function extractCvaVariants(files) {

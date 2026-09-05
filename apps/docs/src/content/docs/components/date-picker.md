@@ -54,11 +54,11 @@ Controlled `value`/`onValueChange` (`CalendarDate | null`) field wrapping the na
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `accessibilityLabel` | `string` | — | Accessible name for the trigger. Falls back to the enclosing `Field`'s label. |
-| `align` | `DatePickerAlign` | — | Web-only: `Popover` content alignment relative to the trigger. Ignored on native. |
+| `align` | `DatePickerAlign` | `'start'` | Web-only: `Popover` content alignment relative to the trigger. Ignored on native. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `clearAccessibilityLabel` | `string` | — | Accessible label for the clear button shown when `clearable` and a value is selected. Defaults to `'Clear date'`. |
-| `clearable` | `boolean` | — | Shows a clear affordance when a value is selected. Defaults to `true`. |
-| `closeOnOutsidePress` | `boolean` | — | Web-only: dismiss the `Popover` on an outside press. Ignored on native. |
+| `clearable` | `boolean` | `true` | Shows a clear affordance when a value is selected. Defaults to `true`. |
+| `closeOnOutsidePress` | `boolean` | `true` | Web-only: dismiss the `Popover` on an outside press. Ignored on native. |
 | `collisionPadding` | `DatePickerCollisionPadding` | — | Web-only: `Popover` collision padding. Ignored on native. |
 | `defaultOpen` | `boolean` | — | Uncontrolled initial `open` state. Ignored once `open` is controlled. |
 | `direction` | `DatePickerDirection` | — | Web-only: logical direction for the `Popover`/`Calendar` content. Ignored on native. |
@@ -75,9 +75,9 @@ Controlled `value`/`onValueChange` (`CalendarDate | null`) field wrapping the na
 | `onValueChange` | `(date: CalendarDate \| null) => void` | — | `null` signals an explicit clear (see `clearable`). |
 | `open` | `boolean` | — | Controls whether the picker (Web `Popover`, native system picker) is open. Requires `onOpenChange`; otherwise falls back to internal open state with a dev-mode warning. |
 | `placeholder` | `string` | — | Text shown on the trigger when no date is selected. Defaults to `'Select a date'`. |
-| `placement` | `DatePickerPlacement` | — | Web-only: `Popover` placement relative to the trigger. Ignored on native. |
+| `placement` | `DatePickerPlacement` | `'bottom'` | Web-only: `Popover` placement relative to the trigger. Ignored on native. |
 | `previousMonthAccessibilityLabel` | `string` | — | Accessible label for the `Calendar`'s "previous month" button. Defaults to `'Previous month'`. |
-| `readOnly` | `boolean` | — | Keeps the trigger focusable/announced but blocks opening and clearing. |
+| `readOnly` | `boolean` | `false` | Keeps the trigger focusable/announced but blocks opening and clearing. |
 | `shift` | `boolean` | — | Web-only: `Popover` collision-shift. Ignored on native. |
 | `sideOffset` | `number` | — | Web-only: `Popover` offset from the trigger. Ignored on native. |
 | `style` | `StyleProp<ViewStyle>` | — | Forwarded to the trigger's root `View`. |
