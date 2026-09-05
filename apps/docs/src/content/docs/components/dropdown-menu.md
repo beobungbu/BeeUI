@@ -198,7 +198,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 ## Platform behavior
 
-This family ships no platform-specific file, but its source branches on `Platform`: some behavior differs by target. The differences are called out on the affected props above rather than summarised here.
+This family ships no platform-specific file, but its source branches on `Platform`, so some behavior differs by target.
 
 The same public family is exposed across the supported target matrix; meaningful platform differences remain governed by the compatibility contract.
 
@@ -213,7 +213,7 @@ Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-m
 
 ## Styling and theming
 
-- **Style axes:** `tone` (8 values, inherited from `TextProps`), `size` (4 values), `variant` (5 values) — the values are in the props tables above.
+- **Style axes:** `tone` (8 values, inherited from `TextProps`), `size` (4 values), `variant` (5 values).
 - **Class-name surfaces:** `className`, `labelClassName`, `textClassName`.
 
 Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.

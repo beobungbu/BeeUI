@@ -214,7 +214,7 @@ Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-m
 
 ## Styling and theming
 
-- **Style axes:** `size` (4 values), `variant` (5 values), `tone` (8 values, inherited from `TextProps`) — the values are in the props tables above.
+- **Style axes:** `size` (4 values), `variant` (5 values), `tone` (8 values, inherited from `TextProps`).
 - **Class-name surfaces:** `className`, `containerClassName`, `handleClassName`, `labelClassName`, `overlayClassName`.
 
 Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.

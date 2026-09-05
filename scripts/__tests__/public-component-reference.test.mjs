@@ -1502,12 +1502,14 @@ test('a family with no variant prop and no base says it has no style axes', () =
 });
 
 test('a prop typed by an alias with no resolved values blocks the absolute negative', () => {
-  const screen = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'keyboard-aware-screen');
+  // KeyboardAwareScreen was this test's subject until `contentWidth` became derivable as a real
+  // axis from the class table it indexes. DatePicker's `placement` and `align` still are not.
+  const picker = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'date-picker');
 
-  const page = renderPublicComponentPage(screen, REPO_ROOT);
+  const page = renderPublicComponentPage(picker, REPO_ROOT);
 
   assert.equal(/\*\*Style axes:\*\* none;/u.test(page), false);
-  assert.match(page, /`contentWidth`.*typed by an alias this page does not resolve to values/u);
+  assert.match(page, /`placement`.*typed by an alias this page does not resolve to values/u);
 });
 
 test('an accessibility property outside accessibilityState is published', () => {
@@ -2007,7 +2009,7 @@ test('the rendered negative and the oracle that refuses it are the same string',
   // gate green and all 62 pages free to publish the negative falsely.
   const withNoRoles = manifest
     .map((component) => renderPublicComponentPage(component, REPO_ROOT))
-    .filter((page) => page.includes('each element keeps the role of the primitive it renders'));
+    .filter((page) => page.includes(ROLES_NONE_CLAIM));
 
   assert.ok(withNoRoles.length > 0, 'no page exercises the negative role line');
   for (const page of withNoRoles) {
@@ -2017,5 +2019,142 @@ test('the rendered negative and the oracle that refuses it are the same string',
       ),
       'the oracle must recognise the sentence the renderer actually prints',
     );
+  }
+});
+
+
+// The scope file names were the whole subject of the commit that introduced them and were
+// asserted by nothing: replacing `scope` with a literal `nonexistent.tsx` regenerated all 62
+// pages and left --check, the whole suite and the freshness check green.
+test('the files an accessibility line names are the files that set something', () => {
+  for (const component of buildPublicComponentManifest(REPO_ROOT)) {
+    const sources = (component.allSources ?? [component.source]).filter(
+      (relPath) => relPath && !relPath.endsWith('.d.ts'),
+    );
+    // Recomputed here per file rather than taken from the renderer, so replacing the rendered
+    // scope with a literal — which once left --check, the whole suite and freshness green —
+    // fails this.
+    const setsRole = sources.filter(
+      (relPath) =>
+        extractAccessibilityFacts([
+          { path: relPath, source: fs.readFileSync(path.join(REPO_ROOT, relPath), 'utf8') },
+        ]).roles.length > 0,
+    );
+    const line = renderPublicComponentPage(component, REPO_ROOT)
+      .split('\n')
+      .find((candidate) => candidate.startsWith('- **Roles this family assigns:**'));
+    const named = [...line.matchAll(/`([\w.-]+\.tsx?)`/gu)].map((match) => match[1]);
+    const expected = (setsRole.length ? setsRole : sources).map((relPath) => relPath.split('/').pop());
+
+    assert.deepEqual(named, expected, `${component.name}: the named files are not the files read`);
+  }
+});
+
+test('a file that sets nothing is not named as a file something is set in', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const tooltip = manifest.find((component) => component.name === 'tooltip');
+
+  const page = renderPublicComponentPage(tooltip, REPO_ROOT);
+  const roleLine = page.split('\n').find((line) => line.startsWith('- **Roles this family assigns:**'));
+
+  // `tooltip.d.ts` says in its own header that it produces no runtime module, and
+  // `tooltip.native.tsx` assigns no role: on iOS and Android Tooltip has none. Listing all four
+  // sources presented alternatives as a conjunction and a declaration file as a component.
+  assert.match(roleLine, /set in `tooltip\.web\.tsx` by the components themselves/u);
+  assert.equal(/tooltip\.d\.ts/u.test(roleLine), false);
+  assert.equal(/tooltip-shared\.tsx/u.test(roleLine), false);
+});
+
+// Hard-wiring the platform branch to `true` flips 47 pages and leaves every gate green.
+test('the platform sentence matches whether the source actually branches on Platform', () => {
+  for (const component of buildPublicComponentManifest(REPO_ROOT)) {
+    const sources = (component.allSources ?? [component.source]).filter(
+      (relPath) => relPath && fs.existsSync(path.join(REPO_ROOT, relPath)),
+    );
+    if (sources.some((relPath) => /\.(native|web|ios|android)\.tsx?$/u.test(relPath))) continue;
+
+    const branches = sources.some((relPath) =>
+      /\bPlatform\s*\.\s*(?:OS|select)\b/u.test(
+        stripSourceComments(fs.readFileSync(path.join(REPO_ROOT, relPath), 'utf8')),
+      ),
+    );
+    const page = renderPublicComponentPage(component, REPO_ROOT);
+
+    assert.equal(
+      /its source branches on `Platform`/u.test(page),
+      branches,
+      `${component.name}: platform sentence disagrees with its own source`,
+    );
+  }
+});
+
+test('a prop that indexes a table of class strings is published as a style axis', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const axisLine = (name) =>
+    renderPublicComponentPage(
+      manifest.find((component) => component.name === name),
+      REPO_ROOT,
+    )
+      .split('\n')
+      .find((line) => line.startsWith('- **Style axes:**'));
+
+  // `spinnerToneClasses[tone]` is what a style axis is; the previous heuristic saw only props
+  // whose description had been generated from a `cva()` call, so these pages said there was none.
+  assert.match(axisLine('spinner'), /`tone` \(7 values/u);
+  assert.match(axisLine('timeline'), /`status` \(4 values/u);
+  assert.match(axisLine('keyboard-aware-screen'), /`contentWidth` \(4 values/u);
+  // `button.tsx` indexes its map with a local `resolvedVariant`, which is not a prop.
+  assert.equal(/resolvedVariant/u.test(axisLine('button')), false);
+});
+
+test('the axes line points at the props table only when the values are in it', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  for (const component of manifest) {
+    const page = renderPublicComponentPage(component, REPO_ROOT);
+    const line = page.split('\n').find((candidate) => candidate.startsWith('- **Style axes:**'));
+    if (!line.includes('the values are in the props tables above')) continue;
+
+    // Spinner's table prints `SpinnerTone`, not its seven values. The Platform sentence shipped
+    // exactly this defect one commit earlier — a true claim followed by a false pointer.
+    const names = [...line.matchAll(/`(\w+)` \(\d+ values/gu)].map((match) => match[1]);
+    for (const name of names) {
+      if (line.includes(`\`${name}\` (`) && line.includes('not enumerated on this page')) continue;
+      assert.ok(
+        new RegExp(`\\| \`${name}\` \\| \`[^|]*'`, 'u').test(page) || page.includes(`— one of `),
+        `${component.name}: points at the props table for \`${name}\`, which does not list its values`,
+      );
+    }
+  }
+});
+
+test('an accessibility attribute set by shorthand is read', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'spinner.tsx',
+      source: 'const p = { ...props, accessibilityLabelledBy, colorClassName: x };',
+    },
+  ]);
+
+  assert.deepEqual(facts.states, ['accessibilityLabelledBy']);
+});
+
+test('a family that delegates to another does not claim its primitive keeps its own role', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const alertDialog = manifest.find((component) => component.name === 'alert-dialog');
+
+  const page = renderPublicComponentPage(alertDialog, REPO_ROOT);
+
+  // `alert-dialog.tsx` is `return <Dialog {...props} />` and `dialog.tsx` sets `role="dialog"`,
+  // so "each element keeps the role of the primitive it renders" was false, not a hedge.
+  assert.equal(/each element keeps the role of the primitive/u.test(page), false);
+});
+
+test('the platform sentence makes no promise about text elsewhere on the page', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  for (const component of manifest) {
+    const page = renderPublicComponentPage(component, REPO_ROOT);
+    // "The differences are called out on the affected props above" was true on none of the six
+    // pages that carried it.
+    assert.equal(/called out on the affected props above/u.test(page), false);
   }
 });

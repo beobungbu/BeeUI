@@ -82,14 +82,14 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 
 ## Accessibility
 
-- **Roles this family assigns:** none set in `otp-input.tsx`; each element keeps the role of the primitive it renders.
+- **Roles this family assigns:** none set in `otp-input.tsx`.
 - **Accessibility states and properties it sets:** none set in `otp-input.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
 ## Styling and theming
 
-- **Style axes:** `size` (3 values, inherited from `InputProps`) — the values are in the props tables above.
+- **Style axes:** `size` (3 values, inherited from `InputProps`).
 - **Class-name surfaces:** `className`.
 
 Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.

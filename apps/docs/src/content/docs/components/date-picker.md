@@ -113,8 +113,8 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 
 ## Accessibility
 
-- **Roles this family assigns:** `button` — set in `date-picker.d.ts`, `date-picker.native.tsx`, `date-picker.web.tsx`, `date-picker-shared.tsx`, `date-picker-locale.ts` by the components themselves, not by the caller.
-- **Accessibility states and properties it sets:** `accessibilityHint`, `accessibilityLabel`, `accessibilityLabelledBy`, `disabled`, `expanded`, `hidden` — read from `date-picker.d.ts`, `date-picker.native.tsx`, `date-picker.web.tsx`, `date-picker-shared.tsx`, `date-picker-locale.ts`.
+- **Roles this family assigns:** `button` — set in `date-picker.native.tsx` by the components themselves, not by the caller.
+- **Accessibility states and properties it sets:** `accessibilityHint`, `accessibilityLabel`, `accessibilityLabelledBy`, `disabled`, `expanded`, `hidden` — read from `date-picker.native.tsx`, `date-picker.web.tsx`, `date-picker-shared.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 

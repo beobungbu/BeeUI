@@ -78,14 +78,14 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 
 ## Accessibility
 
-- **Roles this family assigns:** none set in `screen.tsx`; each element keeps the role of the primitive it renders.
+- **Roles this family assigns:** none set in `screen.tsx`.
 - **Accessibility states and properties it sets:** none set in `screen.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
 ## Styling and theming
 
-- **Style axes:** none of its own — its appearance comes from tokens and your own classes; it also carries `ViewProps`.
+- **Style axes:** `padding` (4 values, not enumerated on this page).
 - **Class-name surfaces:** `className`.
 
 Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.

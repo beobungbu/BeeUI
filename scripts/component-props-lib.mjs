@@ -713,6 +713,58 @@ function collectStateNames(node, states) {
   }
 }
 
+// Props that select between class strings, read from the code that does the selecting.
+//
+// The axis heuristic recognised only props whose description was generated from a `cva()` call,
+// so Spinner's `tone` (seven entries of `spinnerToneClasses`), Timeline's `status`,
+// KeyboardAwareScreen's `contentWidth` and Toast's `variant` were all invisible, and their pages
+// said the family had no style axis at all. Indexing a table of class strings with a prop is
+// what a style axis *is*; that is the evidence, rather than how the prop's doc comment was
+// produced.
+export function extractClassMapAxes(files) {
+  const axes = new Map();
+
+  for (const { path: filePath, source } of files) {
+    const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, scriptKindFor(filePath));
+
+    // `const spinnerToneClasses = { neutral: 'text-…', … }` — every value a string literal.
+    const classMaps = new Map();
+    walk(sourceFile, (node) => {
+      if (!ts.isVariableDeclaration(node) || !ts.isIdentifier(node.name)) return;
+      let initializer = node.initializer;
+      while (initializer && (ts.isAsExpression(initializer) || ts.isParenthesizedExpression(initializer))) {
+        initializer = initializer.expression;
+      }
+      if (!initializer || !ts.isObjectLiteralExpression(initializer)) return;
+      const entries = initializer.properties;
+      if (!entries.length) return;
+      const allStrings = entries.every(
+        (entry) => ts.isPropertyAssignment(entry) && ts.isStringLiteralLike(entry.initializer),
+      );
+      if (allStrings) classMaps.set(node.name.text, entries.length);
+    });
+    if (!classMaps.size) continue;
+
+    walk(sourceFile, (node) => {
+      if (!ts.isElementAccessExpression(node)) return;
+      if (!ts.isIdentifier(node.expression)) return;
+      const count = classMaps.get(node.expression.text);
+      if (!count) return;
+      // `map[tone]` and `map[toast.variant]` both name the prop; anything else is not a prop.
+      const argument = node.argumentExpression;
+      const name = ts.isIdentifier(argument)
+        ? argument.text
+        : ts.isPropertyAccessExpression(argument) && ts.isIdentifier(argument.name)
+          ? argument.name.text
+          : undefined;
+      if (!name) return;
+      axes.set(name, Math.max(axes.get(name) ?? 0, count));
+    });
+  }
+
+  return axes;
+}
+
 // Everything a family sets that assistive technology reads. Reading only `accessibilityState`
 // and `aria-*` let nine pages publish "sets none" while setting `accessibilityLiveRegion`,
 // `accessibilityElementsHidden` or `accessibilityValue` — AlertBanner contradicted its own
@@ -757,6 +809,14 @@ export function extractAccessibilityFacts(files) {
           return;
         }
         if (isAccessibilityAttribute(attribute)) states.add(attribute);
+        return;
+      }
+
+      // `{ accessibilityLabelledBy }` sets the attribute exactly as `{ accessibilityLabelledBy:
+      // x }` does; reading only the long form let the Spinner page say "none set in
+      // `spinner.tsx`" while naming the very file that sets it on line 48.
+      if (ts.isShorthandPropertyAssignment(node) && ts.isIdentifier(node.name)) {
+        if (isAccessibilityAttribute(node.name.text)) states.add(node.name.text);
         return;
       }
 

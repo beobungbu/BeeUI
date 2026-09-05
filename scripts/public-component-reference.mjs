@@ -18,6 +18,7 @@ import {
   diffPlatformPropsShape,
   extractAccessibilityFacts,
   extractControlledPropWarnings,
+  extractClassMapAxes,
   extractOmitPickOrBareTypeName,
   getBehaviorGuardKnownNames,
   getComponentTypeDocs,
@@ -806,34 +807,46 @@ function renderTypeDocs(typeDocs) {
 // states "remain component-specific" while containing nothing specific to any component — a page
 // contradicting itself. These two lines are derived from the JSX each family renders.
 function renderAccessibilityFacts(component, rootDir) {
-  const files = (component.allSources ?? [component.source]).map((relPath) => ({
-    path: relPath,
-    source: fs.readFileSync(path.join(rootDir, relPath), 'utf8'),
-  }));
-  const { roles, states } = extractAccessibilityFacts(files);
+  const files = (component.allSources ?? [component.source])
+    .filter((relPath) => relPath && !relPath.endsWith('.d.ts'))
+    .map((relPath) => ({
+      path: relPath,
+      source: fs.readFileSync(path.join(rootDir, relPath), 'utf8'),
+    }));
   const code = (values) => values.map((value) => `\`${value}\``).join(', ');
+  const name = (relPath) => `\`${relPath.split('/').pop()}\``;
 
-  // Both lines name the files they were read from.
-  //
-  // Five audit rounds chased the same defect through one AST position after another, and the
-  // last one found it had simply moved: the guard greps `allSources`, the list the derivation
-  // already walks, so it is independent in method and not in scope. Widening it to the import
-  // closure attributes Toast's live region to KeyboardAwareScreen, which imports Toast through a
-  // chain and renders none — trading a false negative for a false positive. A categorical claim
-  // about a family is not derivable from a subset of its files, so the sentence stops making
-  // one and says which files were read instead. A reader can then see the limit; before, the
-  // page asserted past it.
-  const scope = files.map(({ path: relPath }) => `\`${relPath.split('/').pop()}\``).join(', ');
-  // The positive list needs the scope as much as the negative does: a list reads as complete,
-  // and adding an attribute to a shared module a family renders — `overlay-runtime.tsx`, reached
-  // from `dialog.tsx` — leaves this list unchanged and no gate red. Naming the files makes the
-  // list's edge visible instead of leaving the reader to assume there is none.
-  const roleLine = roles.length
-    ? `- **Roles this family assigns:** ${code(roles)} — set in ${scope} by the components themselves, not by the caller.`
-    : `- ${ROLES_NONE_CLAIM} set in ${scope}; each element keeps the role of the primitive it renders.`;
-  const stateLine = states.length
-    ? `- **Accessibility states and properties it sets:** ${code(states)} — read from ${scope}.`
-    : `- ${STATES_NONE_CLAIM} set in ${scope}.`;
+  // Attributed per file, because the two sentences need two different sets. "None set in A, B"
+  // is about every file read; "set in A, B by the components themselves" is about the files that
+  // set something. Listing all of them under the second wording named `tooltip.d.ts` — which
+  // says in its own header that it produces no runtime module — as a file where a role is set,
+  // and presented `tooltip.web.tsx` and `tooltip.native.tsx` as a conjunction when the role
+  // exists only on Web.
+  const roles = new Set();
+  const states = new Set();
+  const roleFiles = [];
+  const stateFiles = [];
+  for (const file of files) {
+    const facts = extractAccessibilityFacts([file]);
+    if (facts.roles.length) roleFiles.push(file.path);
+    if (facts.states.length) stateFiles.push(file.path);
+    for (const role of facts.roles) roles.add(role);
+    for (const state of facts.states) states.add(state);
+  }
+
+  const readScope = files.map((file) => name(file.path)).join(', ');
+  const sorted = (values) => [...values].sort();
+
+  const roleLine = roles.size
+    ? `- **Roles this family assigns:** ${code(sorted(roles))} — set in ${roleFiles
+        .map(name)
+        .join(', ')} by the components themselves, not by the caller.`
+    : `- ${ROLES_NONE_CLAIM} set in ${readScope}.`;
+  const stateLine = states.size
+    ? `- **Accessibility states and properties it sets:** ${code(sorted(states))} — read from ${stateFiles
+        .map(name)
+        .join(', ')}.`
+    : `- ${STATES_NONE_CLAIM} set in ${readScope}.`;
 
   return `${roleLine}\n${stateLine}`;
 }
@@ -861,7 +874,7 @@ function renderPlatformImplementation(component, rootDir = ROOT_DIR) {
         ),
       );
     return branches
-      ? 'This family ships no platform-specific file, but its source branches on `Platform`: some behavior differs by target. The differences are called out on the affected props above rather than summarised here.'
+      ? 'This family ships no platform-specific file, but its source branches on `Platform`, so some behavior differs by target.'
       : 'One implementation renders on every supported target: this family ships no platform-specific file and its source takes no `Platform` branch, so the props and behavior above are the same on iOS, Android and Web.';
   }
 
@@ -920,7 +933,13 @@ function collectStyleSurfaces(shape, rootDir, accumulator, keep = () => true, se
         // `align` and `justify` with "inherited from `StackProps`" — Stack declares them.
         const existing = accumulator.axes.get(field.name);
         if (!existing || (existing.from && !accumulator.from)) {
-          accumulator.axes.set(field.name, { count: literals.length, from: accumulator.from });
+          // "in the props tables above" holds only for a row this page prints. An inherited
+          // axis's row is on the base's page, which the `inherited from` clause already names.
+          accumulator.axes.set(field.name, {
+            count: literals.length,
+            from: accumulator.from,
+            listed: !accumulator.from,
+          });
         }
       }
     }
@@ -1008,6 +1027,28 @@ function renderStylingFacts(component, rootDir = ROOT_DIR) {
   // object alias too, holding `date` and `time`, and it can hide no style axis; treating it the
   // same way traded a true sentence for a vaguer one on a page that had nothing wrong with it.
   const typeDocs = component.typeDocs ?? [];
+
+  // A prop that indexes a table of class strings is a style axis whatever its doc comment says.
+  // Filtered to names the family actually declares: `button.tsx` indexes its map with a local
+  // `resolvedVariant`, which is not a prop and must not be published as one.
+  const declaredPropNames = new Set();
+  const collectNames = (entry) => {
+    for (const field of entry.fields ?? []) declaredPropNames.add(field.name);
+    for (const consumed of entry.consumed ?? []) declaredPropNames.add(consumed.name);
+    for (const variant of entry.variants ?? []) collectNames(variant);
+  };
+  for (const entry of typeDocs) collectNames(entry);
+  const classMapFiles = (component.allSources ?? [component.source])
+    .filter((relPath) => relPath && fs.existsSync(path.join(rootDir, relPath)))
+    .map((relPath) => ({ path: relPath, source: fs.readFileSync(path.join(rootDir, relPath), 'utf8') }));
+  for (const [name, count] of extractClassMapAxes(classMapFiles)) {
+    if (!declaredPropNames.has(name)) continue;
+    // The values of a class-map axis live in the class table, not in the prop's type: the props
+    // table prints `SpinnerTone`, not its seven values. Pointing a reader at a table that does
+    // not hold them is the same false pointer this section already published once.
+    if (!accumulator.axes.has(name)) accumulator.axes.set(name, { count, from: undefined, listed: false });
+  }
+
   const unparsedAlias =
     !typeDocs.some((entry) => entry.docKind === 'props') &&
     typeDocs.some((entry) => entry.kind === 'alias' && (entry.aliasOf ?? '').includes('{'));
@@ -1040,8 +1081,17 @@ function renderStylingFacts(component, rootDir = ROOT_DIR) {
 
   const axisLine = accumulator.axes.size
     ? `- **Style axes:** ${[...accumulator.axes]
-        .map(([name, { count, from }]) => `\`${name}\` (${count} values${from ? `, inherited from \`${from}\`` : ''})`)
-        .join(', ')} — the values are in the props tables above.`
+        .map(
+          ([name, { count, from, listed }]) =>
+            `\`${name}\` (${count} values${from ? `, inherited from \`${from}\`` : ''}${
+              listed || from ? '' : ', not enumerated on this page'
+            })`,
+        )
+        .join(', ')}${
+        [...accumulator.axes.values()].every((axis) => axis.listed)
+          ? ' — the values are in the props tables above.'
+          : '.'
+      }`
     : defersAnything
       ? `- **Style axes:** none of its own — its appearance comes from tokens and your own classes; it also carries ${deferralList}.`
       : unparsedAlias
