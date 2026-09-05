@@ -130,11 +130,11 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 ## Platform behavior
 
+This family is split by platform and renders from `tooltip.web.tsx` (Web), `tooltip.native.tsx` (iOS and Android). Where the two shapes differ, the difference is listed under the affected type above rather than summarised here.
+
 This family has platform-split source files. The bundler selects the native/Web implementation; do not infer native runtime behavior from the Web preview.
 
-- **Web:** live browser/keyboard behavior is verified by Web-specific checks where applicable.
-- **iOS / Android:** package/export/native compile evidence is not described as device-runtime proof. Consult the compatibility and native-preview guides for the exact evidence class.
-- Platform-specific or experimental behavior is called out in the canonical component/compatibility docs rather than hidden behind a generic parity claim.
+Evidence classes are not equal and this page does not blur them: Web behavior is exercised in a real browser, while iOS and Android carry package/export and native-compile evidence, which is not device-runtime proof. The [compatibility contract](/docs/compatibility/) records which class each claim rests on.
 
 ## Accessibility
 
@@ -145,7 +145,10 @@ Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-m
 
 ## Styling and theming
 
-BeeUI components consume semantic tokens and support the current typed variant/density contracts. Use [Theming](/docs/theming/) and [Density](/docs/guides/density/). `className` is an implementation escape hatch for source-owned/application work, not a cross-engine portability guarantee.
+- **Style axes:** `size` (4 values), `variant` (5 values) — the values are in the props tables above.
+- **Class-name surfaces:** `className`, `labelClassName`.
+
+Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.
 
 ## Executable examples
 

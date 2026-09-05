@@ -1438,3 +1438,49 @@ test('every component page states the roles that family assigns', () => {
   const bodies = new Set(pages.map(({ page }) => page.split('## Accessibility')[1].split('## ')[0]));
   assert.ok(bodies.size > 20, `expected differentiated accessibility sections, got ${bodies.size}`);
 });
+
+
+// Platform behavior closed by saying platform-specific behavior is called out "rather than hidden
+// behind a generic parity claim", while being exactly that claim on 56 of 62 pages.
+test('a platform-split family names the files it renders from', () => {
+  const sheet = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'sheet');
+  const page = renderPublicComponentPage(sheet);
+
+  assert.match(page, /split by platform and renders from/u);
+  assert.match(page, /`sheet\.web\.tsx` \(Web\)/u);
+  assert.match(page, /`sheet\.native\.tsx` \(iOS and Android\)/u);
+});
+
+test('a single-implementation family says so instead of claiming parity', () => {
+  const text = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'text');
+  const page = renderPublicComponentPage(text);
+
+  assert.match(page, /ships no platform-specific file/u);
+  assert.equal(/rather than hidden behind a generic parity claim/u.test(page), false);
+});
+
+// Styling and theming was one identical paragraph on all 62 pages.
+test('the styling section names the family own style axes and class surfaces', () => {
+  const avatar = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'avatar');
+  const page = renderPublicComponentPage(avatar);
+
+  assert.match(page, /\*\*Style axes:\*\* `size` \(4 values\)/u);
+  assert.match(page, /`className`, `fallbackClassName`, `imageClassName`/u);
+});
+
+test('a family with no variant prop says it has no style axes', () => {
+  const separator = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'separator');
+
+  assert.match(renderPublicComponentPage(separator), /\*\*Style axes:\*\* none;/u);
+});
+
+// The three sections that used to be one body across every page must stay differentiated.
+test('the shared-template sections are no longer one body for every page', () => {
+  const pages = buildPublicComponentManifest(REPO_ROOT).map((c) => renderPublicComponentPage(c));
+  const bodies = (heading) =>
+    new Set(pages.map((page) => page.split(`## ${heading}`)[1]?.split('\n## ')[0] ?? ''));
+
+  assert.ok(bodies('Styling and theming').size > 10, 'styling section is still one template');
+  assert.ok(bodies('Accessibility').size > 20, 'accessibility section is still one template');
+  assert.ok(bodies('Platform behavior').size > 5, 'platform section is still one template');
+});
