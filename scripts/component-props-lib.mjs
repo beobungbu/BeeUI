@@ -570,7 +570,7 @@ export function extractCvaVariants(files) {
         props.set(propName, { values, default: defaults.get(propName) });
       }
 
-      if (props.size) byIdentifier.set(node.name.text, props);
+      if (props.size) byIdentifier.set(node.name.text, { props, sourcePath: filePath });
     });
   }
 
@@ -940,7 +940,8 @@ function applyCvaVariants(shape, cvaByIdentifier) {
   const remaining = [];
   for (const base of shape.bases) {
     const parsed = variantsIdentifierFromBase(base);
-    const props = parsed ? cvaByIdentifier.get(parsed.identifier) : undefined;
+    const declaration = parsed ? cvaByIdentifier.get(parsed.identifier) : undefined;
+    const props = declaration?.props;
     if (!parsed || !props) {
       remaining.push(base);
       continue;
@@ -958,9 +959,13 @@ function applyCvaVariants(shape, cvaByIdentifier) {
         optional: true,
         type,
         default: spec.default === undefined ? undefined : quote(spec.default),
+        // Was "see Styling and theming for what each value changes". That section is one
+        // boilerplate paragraph repeated across all 62 component pages and says nothing about any
+        // value, so those rows carried a pointer that answered nothing. The classes each value
+        // applies are literals in the `cva()` call, so name the file that holds them.
         description:
-          `Defined by \`${identifier}\` (class-variance-authority); see Styling and theming for ` +
-          'what each value changes.',
+          `Selects one of \`${identifier}\`'s preset style sets, declared in ` +
+          `\`${declaration.sourcePath}\` — the classes each value applies are there.`,
       });
     }
     shape.fields.sort((left, right) => left.name.localeCompare(right.name));

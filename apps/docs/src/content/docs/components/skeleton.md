@@ -55,7 +55,7 @@ Stateless decorative static loading placeholder; it is hidden from the accessibi
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `variant` | `'block' \| 'circle' \| 'text'` | `'block'` | Defined by `skeletonVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `variant` | `'block' \| 'circle' \| 'text'` | `'block'` | Selects one of `skeletonVariants`'s preset style sets, declared in `packages/ui/src/components/skeleton.tsx` — the classes each value applies are there. |
 
 Also carries every prop of `Omit<ViewProps, 'accessible' | 'aria-hidden'>` — that upstream contract is not reproduced here.
 

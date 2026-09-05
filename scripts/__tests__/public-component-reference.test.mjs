@@ -1110,17 +1110,17 @@ test('cva variants are read from the call, with their defaults', () => {
 
   const found = extractCvaVariants([{ path: 'button.tsx', source }]);
 
-  assert.deepEqual(found.get('buttonVariants').get('variant'), {
+  assert.deepEqual(found.get('buttonVariants').props.get('variant'), {
     values: ['primary', 'ghost'],
     default: 'primary',
   });
-  assert.deepEqual(found.get('buttonVariants').get('size'), { values: ['sm', 'md'], default: 'md' });
+  assert.deepEqual(found.get('buttonVariants').props.get('size'), { values: ['sm', 'md'], default: 'md' });
 });
 
 test('a cva call with no defaultVariants still publishes its values', () => {
   const source = "const x = cva('', { variants: { tone: { neutral: 'a' } } });";
 
-  assert.deepEqual(extractCvaVariants([{ path: 'x.tsx', source }]).get('x').get('tone'), {
+  assert.deepEqual(extractCvaVariants([{ path: 'x.tsx', source }]).get('x').props.get('tone'), {
     values: ['neutral'],
     default: undefined,
   });
@@ -1157,7 +1157,7 @@ test('a boolean cva variant keeps its boolean default', () => {
     });
   `;
 
-  assert.deepEqual(extractCvaVariants([{ path: 'stack.tsx', source }]).get('stackVariants').get('wrap'), {
+  assert.deepEqual(extractCvaVariants([{ path: 'stack.tsx', source }]).get('stackVariants').props.get('wrap'), {
     values: ['true', 'false'],
     default: 'false',
   });
@@ -1166,7 +1166,7 @@ test('a boolean cva variant keeps its boolean default', () => {
 test('a numeric cva default is not dropped', () => {
   const source = "const x = cva('', { variants: { level: { 1: 'a', 2: 'b' } }, defaultVariants: { level: 1 } });";
 
-  assert.equal(extractCvaVariants([{ path: 'x.tsx', source }]).get('x').get('level').default, '1');
+  assert.equal(extractCvaVariants([{ path: 'x.tsx', source }]).get('x').props.get('level').default, '1');
 });
 
 // A `VariantProps<...>` reaching the page means the cva behind it was never resolved, so the page
@@ -1347,4 +1347,25 @@ test('an expression-bodied forwardRef yields no body defaults', () => {
   const defaults = extractDefaults([{ path: 'plain.tsx', source }], new Set(['PlainProps']));
 
   assert.equal(defaults.size, 0);
+});
+
+
+// The cva rows used to end "see Styling and theming for what each value changes". That section is
+// one boilerplate paragraph across all 62 pages and says nothing about any value — a pointer that
+// answered nothing, published on 41 rows. The replacement names the file, so assert the file.
+test('a cva-derived description names the file that declares the variants', () => {
+  const button = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'button');
+  const props = button.typeDocs.find((entry) => entry.name === 'ButtonProps');
+  const variant = props.fields.find((field) => field.name === 'variant');
+
+  assert.match(variant.description, /packages\/ui\/src\/components\/button\.tsx/u);
+  assert.equal(/Styling and theming/u.test(variant.description), false);
+});
+
+test('no generated page still points at Styling and theming for variant values', () => {
+  const offenders = buildPublicComponentManifest(REPO_ROOT).filter((component) =>
+    renderPublicComponentPage(component).includes('see Styling and theming for what each value changes'),
+  );
+
+  assert.deepEqual(offenders.map((component) => component.name), []);
 });

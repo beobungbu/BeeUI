@@ -29,6 +29,11 @@
 //     drawer) — see apps/visual-regression for UI-level coverage.
 //   - It does not test typo tolerance, non-English queries, or queries a reader might phrase
 //     differently from QUERY_MATRIX; it only proves the *listed* intents are covered.
+//   - The matrix is a LOWER BOUND, not a quality measure, and it does not generalize: it grew by
+//     fixing failures one at a time, so passing every entry is close to tautological. Measured
+//     against 26 held-out queries an independent scorer wrote, the portal scored 17 (65%) while
+//     this matrix read 21/21. Treat a green run as "these known intents still work", never as
+//     "search is good".
 //   - A pass here does not mean the page content is good — only that Pagefind indexes it for the
 //     terms a reader is expected to search.
 //
@@ -81,6 +86,14 @@ export const QUERY_MATRIX = [
   { query: 'keyboard navigation', expect: '/accessibility/keyboard-focus/' },
   { query: 'focus order', expect: '/accessibility/keyboard-focus/' },
   { query: 'right to left', expect: '/accessibility/rtl/' },
+  // Held-out queries an independent scorer found failing (it measured 17 of 26 on queries this
+  // matrix did not contain). Each was a real content gap, not a ranking one: the design-token
+  // reference never used the phrase 'design tokens', the state model wrote 'controlled or
+  // uncontrolled' where readers type 'vs', and the release-status page answered 'is BeeUI on
+  // npm' only inside a table row.
+  { query: 'design tokens', expect: '/reference/tokens/' },
+  { query: 'controlled vs uncontrolled', expect: '/learn/state-model/' },
+  { query: 'is BeeUI on npm', expect: '/guides/current-release/' },
   { query: 'add BeeUI to Expo', expect: '/start/expo/' },
   { query: 'beeui add', expect: '/guides/cli-source-ownership/' },
   { query: 'provider not found', expect: '/guides/troubleshooting/' },

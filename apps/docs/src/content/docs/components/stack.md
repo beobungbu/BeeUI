@@ -67,12 +67,12 @@ Also carries every prop of `Omit<StackProps, 'direction'>` — documented on the
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `align` | `'start' \| 'center' \| 'end' \| 'stretch'` | `'stretch'` | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `align` | `'start' \| 'center' \| 'end' \| 'stretch'` | `'stretch'` | Selects one of `stackVariants`'s preset style sets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `direction` | `'horizontal' \| 'vertical'` | `'vertical'` | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
-| `gap` | `'none' \| 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
-| `justify` | `'start' \| 'center' \| 'end' \| 'between' \| 'around' \| 'evenly'` | `'start'` | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
-| `wrap` | `boolean` | `false` | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `direction` | `'horizontal' \| 'vertical'` | `'vertical'` | Selects one of `stackVariants`'s preset style sets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
+| `gap` | `'none' \| 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Selects one of `stackVariants`'s preset style sets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
+| `justify` | `'start' \| 'center' \| 'end' \| 'between' \| 'around' \| 'evenly'` | `'start'` | Selects one of `stackVariants`'s preset style sets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
+| `wrap` | `boolean` | `false` | Selects one of `stackVariants`'s preset style sets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
 
 Also carries every prop of `ViewProps` — that upstream contract is not reproduced here.
 

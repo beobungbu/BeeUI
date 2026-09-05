@@ -66,8 +66,8 @@ Confirmation/destructive modal sharing Dialog's controlled (`open`+`onOpenChange
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
-| `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Defined by `buttonVariants` (class-variance-authority); see Styling and theming for what each value changes. |
-| `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'destructive'` | Defined by `buttonVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Selects one of `buttonVariants`'s preset style sets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
+| `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'destructive'` | Selects one of `buttonVariants`'s preset style sets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` — that upstream contract is not reproduced here.
 
@@ -81,8 +81,8 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
-| `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Defined by `buttonVariants` (class-variance-authority); see Styling and theming for what each value changes. |
-| `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'outline'` | Defined by `buttonVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Selects one of `buttonVariants`'s preset style sets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
+| `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'outline'` | Selects one of `buttonVariants`'s preset style sets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` — that upstream contract is not reproduced here.
 
@@ -152,8 +152,8 @@ Also carries every prop of `Omit<TextProps, 'accessibilityRole' | 'role' | 'vari
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
-| `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Defined by `buttonVariants` (class-variance-authority); see Styling and theming for what each value changes. |
-| `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'primary'` | Defined by `buttonVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Selects one of `buttonVariants`'s preset style sets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
+| `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'primary'` | Selects one of `buttonVariants`'s preset style sets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` — that upstream contract is not reproduced here.
 

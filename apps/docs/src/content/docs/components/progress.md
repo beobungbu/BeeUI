@@ -58,7 +58,7 @@ Stateless clamped determinate progress bar; there is no lower-bound prop — `va
 | `indicatorClassName` | `string` | — | Applied to the filled indicator bar, not the track. |
 | `indicatorStyle` | `StyleProp<ViewStyle>` | — | Applied to the filled indicator bar, alongside the computed `width` style; not the track. |
 | `max` | `number` | `100` | Upper bound `value` is measured against to compute the filled percentage. Non-finite or non-positive values fall back to 100. The accessible minimum is always 0 — there is no `min` prop. Defaults to 100. |
-| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Defined by `progressVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Selects one of `progressVariants`'s preset style sets, declared in `packages/ui/src/components/progress.tsx` — the classes each value applies are there. |
 | `value` **(required)** | `number` | — | Current progress, clamped to `[0, max]`; a non-finite value is treated as 0. |
 
 Also carries every prop of `Omit<ViewProps, 'accessibilityRole' | 'role' | 'children'>` — that upstream contract is not reproduced here.
