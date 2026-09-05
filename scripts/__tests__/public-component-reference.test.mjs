@@ -1502,7 +1502,7 @@ test('a family that defers props upstream does not claim to have no style axes',
   const page = renderPublicComponentPage(separator, REPO_ROOT);
 
   assert.equal(/\*\*Style axes:\*\* none;/u.test(page), false);
-  assert.match(page, /declares no variant or size prop of its own/u);
+  assert.match(page, /\*\*Style axes:\*\* none of its own — .*it also carries `Omit<ViewProps/u);
 });
 
 // The three sections that used to be one body across every page must stay differentiated.
@@ -1634,7 +1634,7 @@ test('the portal publishes no accessibility role outside the known vocabulary', 
 test('an absolute negative is refused when the page defers part of its prop surface upstream', () => {
   const component = { name: 'demo', allSources: [], source: '' };
   const page = [
-    "Also carries every prop of `Omit<ButtonProps, 'size'>` — that upstream contract is not reproduced here.",
+    "Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.",
     '- **Style axes:** none; this family has no variant or size prop.',
   ].join('\n\n');
 
@@ -1642,6 +1642,23 @@ test('an absolute negative is refused when the page defers part of its prop surf
 
   assert.equal(violations.length, 1);
   assert.match(violations[0], /never looked at/u);
+});
+
+// The first version of that oracle keyed on "upstream contract is not reproduced here", the
+// phrasing used only for bases that leave the repository — which excluded IconButton, the very
+// page the oracle was written for, because its base resolves to BeeUI's own `ButtonProps` and
+// gets the "documented on the [Button] page" phrasing instead. A guard whose key excludes its
+// motivating case is not a guard.
+test('an absolute negative is refused for a base documented on another BeeUI page too', () => {
+  const component = { name: 'icon-button', allSources: [], source: '' };
+  const page = [
+    "Also carries every prop of `Omit<ButtonProps, 'size'>` — documented on the [Button](/docs/components/button/) page, not reproduced here.",
+    '- **Class-name surfaces:** none; this family accepts no `className` of its own.',
+  ].join('\n\n');
+
+  const violations = collectDerivedClaimViolations(page, component, REPO_ROOT);
+
+  assert.equal(violations.length, 1, 'a BeeUI-owned base defers prop surface exactly as an external one does');
 });
 
 test('the negative-claim oracle reads code, not the comments that describe it', () => {
@@ -1697,4 +1714,71 @@ test('a peer the Web implementation never imports is scoped to native', () => {
 
   assert.match(page, /On Web this family renders from `sheet\.web\.tsx`, which does not import/u);
   assert.match(page, /those peers serve the native implementation/u);
+});
+
+
+// Four more positions the derivation was not reading, each found by re-checking the pages the
+// previous round had just rewritten.
+
+test('a role assigned through a local constant is read', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'chip.tsx',
+      source: [
+        'const C = () => {',
+        "  const role = inGroup ? (single ? 'radio' : 'checkbox') : 'button';",
+        '  return <Pressable accessibilityRole={role} />;',
+        '};',
+      ].join('\n'),
+    },
+  ]);
+
+  assert.deepEqual(facts.roles, ['button', 'checkbox', 'radio']);
+});
+
+test('a state inside a spread of a conditional is read, and a spread variable adds nothing', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'chip.tsx',
+      source:
+        'const C = () => <Pressable accessibilityState={{ ...accessibilityState, disabled, ' +
+        '...(inGroup ? { checked } : { selected }) }} />;',
+    },
+  ]);
+
+  assert.deepEqual(facts.states, ['checked', 'disabled', 'selected']);
+});
+
+test('a bare `role` key in an object literal is read', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'select.tsx',
+      source: "const p = Platform.OS === 'web' ? { 'aria-labelledby': id, role: 'group' } : {};",
+    },
+  ]);
+
+  assert.deepEqual(facts.roles, ['group']);
+  assert.deepEqual(facts.states, ['labelledby']);
+});
+
+test('a prop the family declares itself is not relabelled as inherited', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const stack = manifest.find((component) => component.name === 'stack');
+
+  const page = renderPublicComponentPage(stack, REPO_ROOT);
+
+  // `HStackProps extends StackProps` made the bases pass overwrite Stack's own provenance.
+  assert.match(page, /`gap` \(\d+ values\)/u);
+  assert.equal(/`gap` \(\d+ values, inherited/u.test(page), false);
+});
+
+test('an inline structural base is described, not quoted', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const themeScope = manifest.find((component) => component.name === 'theme-scope');
+
+  const page = renderPublicComponentPage(themeScope, REPO_ROOT);
+  const styling = page.split('## Styling and theming')[1].split('\n## ')[0];
+
+  assert.match(styling, /a type declared inline at its `extends` site/u);
+  assert.equal(styling.includes('RegistryBrand'), false, 'the union must not be dumped into a code span');
 });

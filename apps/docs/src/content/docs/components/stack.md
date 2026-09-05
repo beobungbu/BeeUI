@@ -103,13 +103,13 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 ## Accessibility
 
 - **Roles this family assigns:** none of its own; each element keeps the role of the primitive it renders.
-- **Accessibility states it manages:** none; this family exposes no state to assistive technology beyond its content.
+- **Accessibility states and properties it sets:** none; this family exposes no state to assistive technology beyond its content.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
 ## Styling and theming
 
-- **Style axes:** `align` (4 values, inherited from `StackProps`), `gap` (6 values, inherited from `StackProps`), `justify` (6 values, inherited from `StackProps`), `direction` (2 values) — the values are in the props tables above.
+- **Style axes:** `align` (4 values), `gap` (6 values), `justify` (6 values), `direction` (2 values) — the values are in the props tables above.
 - **Class-name surfaces:** `className`.
 
 Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.

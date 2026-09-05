@@ -86,7 +86,7 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 ## Accessibility
 
 - **Roles this family assigns:** none of its own; each element keeps the role of the primitive it renders.
-- **Accessibility states it manages:** none; this family exposes no state to assistive technology beyond its content.
+- **Accessibility states and properties it sets:** none; this family exposes no state to assistive technology beyond its content.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 

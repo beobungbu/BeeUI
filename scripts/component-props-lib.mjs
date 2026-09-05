@@ -519,6 +519,21 @@ export function cvaVariantType(values) {
 // specific to the component. These are the two facts that can be derived honestly: the roles this
 // family assigns to its own elements, and the accessibility states it manages. Read from the AST
 // rather than by matching text, so a role named in a comment or a string is not published as one.
+// Finds `const <name> = <expression>` anywhere in the file. File scope rather than lexical scope
+// is deliberate: a second declaration of the same name would add its literals too, which
+// over-reports rather than inventing a role that no branch assigns. Recursion is not followed
+// (`sourceFile` is dropped one level down), so an identifier chain resolves once and stops.
+function findLocalConstInitializer(name, sourceFile) {
+  let found;
+  walk(sourceFile, (node) => {
+    if (found) return;
+    if (!ts.isVariableDeclaration(node)) return;
+    if (!ts.isIdentifier(node.name) || node.name.text !== name) return;
+    found = node.initializer;
+  });
+  return found;
+}
+
 // Collects every string an expression can *evaluate to*.
 //
 // A conditional's condition is not one of them: `selectionMode === 'single' ? 'radiogroup' :
@@ -526,10 +541,18 @@ export function cvaVariantType(values) {
 // published `single` on the ChipGroup page as an ARIA role. The test that was supposed to cover
 // this path used `decorative ? undefined : 'separator'` — a condition holding no string literal —
 // so the case that would have disagreed was never in its scope.
-function collectValueLiterals(node, out) {
+function collectValueLiterals(node, out, sourceFile) {
   if (!node) return;
   if (ts.isParenthesizedExpression(node)) {
-    collectValueLiterals(node.expression, out);
+    collectValueLiterals(node.expression, out, sourceFile);
+    return;
+  }
+  // `accessibilityRole={role}` where `role` is computed just above it. Chip assigns `radio`,
+  // `checkbox` or `button` that way, and reading the attribute alone published only the one role
+  // ChipGroup sets directly — a list a reader would take as complete.
+  if (ts.isIdentifier(node) && sourceFile) {
+    const initializer = findLocalConstInitializer(node.text, sourceFile);
+    if (initializer) collectValueLiterals(initializer, out, undefined);
     return;
   }
   if (ts.isStringLiteralLike(node)) {
@@ -537,25 +560,25 @@ function collectValueLiterals(node, out) {
     return;
   }
   if (ts.isConditionalExpression(node)) {
-    collectValueLiterals(node.whenTrue, out);
-    collectValueLiterals(node.whenFalse, out);
+    collectValueLiterals(node.whenTrue, out, sourceFile);
+    collectValueLiterals(node.whenFalse, out, sourceFile);
     return;
   }
   if (ts.isBinaryExpression(node)) {
     const kind = node.operatorToken.kind;
     // `cond && 'role'` yields the right side only; `a ?? 'role'` and `a || 'role'` yield either.
     if (kind === ts.SyntaxKind.AmpersandAmpersandToken) {
-      collectValueLiterals(node.right, out);
+      collectValueLiterals(node.right, out, sourceFile);
       return;
     }
     if (kind === ts.SyntaxKind.BarBarToken || kind === ts.SyntaxKind.QuestionQuestionToken) {
-      collectValueLiterals(node.left, out);
-      collectValueLiterals(node.right, out);
+      collectValueLiterals(node.left, out, sourceFile);
+      collectValueLiterals(node.right, out, sourceFile);
     }
     // Comparisons evaluate to a boolean, never to an operand read as a role.
     return;
   }
-  ts.forEachChild(node, (child) => collectValueLiterals(child, out));
+  ts.forEachChild(node, (child) => collectValueLiterals(child, out, sourceFile));
 }
 
 // `accessibilityState={interactive ? { disabled } : undefined}` puts the object one level below
@@ -586,7 +609,14 @@ function collectStateNames(node, states) {
   }
   if (!ts.isObjectLiteralExpression(node)) return;
   for (const property of node.properties) {
-    // A spread carries no name of its own; shorthand (`{ disabled }`) does.
+    // `{ ...(inGroup ? { checked } : { selected }) }` states both, one branch each. A spread of a
+    // variable (`...accessibilityState`) names nothing and correctly contributes nothing; reading
+    // only named properties dropped Chip's `selected`.
+    if (ts.isSpreadAssignment(property)) {
+      collectStateNames(property.expression, states);
+      continue;
+    }
+    // Shorthand (`{ disabled }`) carries its name like any other property.
     if (property.name && (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))) {
       states.add(property.name.text);
     }
@@ -612,7 +642,7 @@ export function extractAccessibilityFacts(files) {
             roles.add(node.initializer.text);
             return;
           }
-          if (ts.isJsxExpression(node.initializer)) collectValueLiterals(node.initializer.expression, roles);
+          if (ts.isJsxExpression(node.initializer)) collectValueLiterals(node.initializer.expression, roles, sourceFile);
           return;
         }
         if (attribute.startsWith('aria-')) {
@@ -626,14 +656,16 @@ export function extractAccessibilityFacts(files) {
         return;
       }
 
-      // Object-literal form. `role` is deliberately not read here: outside a JSX attribute the
-      // bare word is generic, and no source in `packages/ui` uses it as an object key today.
+      // Object-literal form. An earlier version of this code excluded a bare `role` key on the
+      // stated grounds that no source in `packages/ui` used one — `select.tsx` does, building
+      // `{ 'aria-labelledby': …, role: 'group' }` for Web, and the Select page published a role
+      // list missing it. The exclusion was a guess about the repository presented as a fact.
       if (!ts.isPropertyAssignment(node)) return;
       const key = node.name;
       if (!key || !(ts.isIdentifier(key) || ts.isStringLiteral(key))) return;
       const name = key.text;
-      if (name === 'accessibilityRole') {
-        collectValueLiterals(node.initializer, roles);
+      if (name === 'accessibilityRole' || name === 'role') {
+        collectValueLiterals(node.initializer, roles, sourceFile);
         return;
       }
       if (name.startsWith('aria-')) {

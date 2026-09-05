@@ -314,7 +314,7 @@ const NEGATIVE_CLAIM_ORACLES = [
     message: 'publishes "assigns no roles" while its source sets a role',
   },
   {
-    claim: '**Accessibility states it manages:** none',
+    claim: '**Accessibility states and properties it sets:** none',
     pattern: /accessibilityState\s*[=:]|(?<![\w-])aria-[a-z]+\s*=/u,
     message: 'publishes "manages no states" while its source sets one',
   },
@@ -382,16 +382,21 @@ export function collectDerivedClaimViolations(page, component, rootDir = ROOT_DI
   }
 
   // A second oracle that needs no source at all: the page contradicting itself. An absolute
-  // negative is a claim about the whole prop surface, and a page that also says an upstream
-  // contract "is not reproduced here" has just admitted part of that surface is not on it.
-  // IconButton published "no variant or size prop" directly above a line pointing at ButtonProps,
-  // which has both — and linked to the Button page that says so.
-  if (page.includes('upstream contract is not reproduced here')) {
+  // negative is a claim about the whole prop surface, and a page carrying a bases line has
+  // already told the reader part of that surface is documented elsewhere.
+  //
+  // This keyed on the phrase used for *external* bases first, which excluded exactly the defect
+  // it was written for: IconButton's base resolves to BeeUI's own `ButtonProps`, so its bases
+  // line reads "documented on the [Button] page" and the oracle never looked. Reverting the base
+  // resolution republished "accepts no className of its own" on IconButton and SearchInput with
+  // no violation raised — neither file writes `className`, they spread `...props`, so the source
+  // grep is blind to them too. Keying on the bases line itself covers every phrasing of it.
+  if (page.includes('Also carries every prop of')) {
     for (const claim of ['**Style axes:** none;', '**Class-name surfaces:** none;']) {
       if (!page.includes(claim)) continue;
       violations.push(
-        `${component.name}: publishes "${claim}" while also saying an upstream contract is not ` +
-        'reproduced on the page; the negative covers props the page never looked at.',
+        `${component.name}: publishes "${claim}" while also carrying a bases line that sends ` +
+        'part of its prop surface elsewhere; the negative covers props the page never looked at.',
       );
     }
   }
@@ -770,8 +775,8 @@ function renderAccessibilityFacts(component, rootDir) {
     ? `- **Roles this family assigns:** ${code(roles)} — set by the components themselves, not by the caller.`
     : '- **Roles this family assigns:** none of its own; each element keeps the role of the primitive it renders.';
   const stateLine = states.length
-    ? `- **Accessibility states it manages:** ${code(states)}.`
-    : '- **Accessibility states it manages:** none; this family exposes no state to assistive technology beyond its content.';
+    ? `- **Accessibility states and properties it sets:** ${code(states)}.`
+    : '- **Accessibility states and properties it sets:** none; this family exposes no state to assistive technology beyond its content.';
 
   return `${roleLine}\n${stateLine}`;
 }
@@ -838,7 +843,13 @@ function collectStyleSurfaces(shape, rootDir, accumulator, keep = () => true, se
       if (field.name === 'className' || /ClassName$/u.test(field.name)) accumulator.classSurfaces.add(field.name);
       const literals = (field.type ?? '').match(/'[^']*'/gu);
       if (literals && literals.length > 1 && /presets, declared in/u.test(field.description ?? '')) {
-        accumulator.axes.set(field.name, { count: literals.length, from: accumulator.from });
+        // A prop reachable both directly and through a base must keep the direct provenance.
+        // `HStackProps extends StackProps` made the bases pass overwrite Stack's own `gap`,
+        // `align` and `justify` with "inherited from `StackProps`" — Stack declares them.
+        const existing = accumulator.axes.get(field.name);
+        if (!existing || (existing.from && !accumulator.from)) {
+          accumulator.axes.set(field.name, { count: literals.length, from: accumulator.from });
+        }
       }
     }
     // A shape with no fields of its own publishes a `Prop | Default` table instead; those props
@@ -856,11 +867,20 @@ function collectStyleSurfaces(shape, rootDir, accumulator, keep = () => true, se
   const shapes = getPublicTypeShapeIndex(rootDir);
   for (const base of shape.bases ?? []) {
     const typeName = extractOmitPickOrBareTypeName(base);
-    const inherited = typeName ? shapes.get(typeName) : undefined;
+    // An inline structural base — ThemeScope's discriminated union, written out at the extends
+    // site — has no name to resolve and no fields in the shape either, so it is unread territory
+    // like any other base. It must not be quoted: printing it verbatim put a whole union, JSDoc
+    // and all, into a code span on the ThemeScope page, and replaced a sentence that was true.
+    if (!typeName) {
+      accumulator.inlineBases += 1;
+      continue;
+    }
+    const inherited = shapes.get(typeName);
     if (!inherited) {
       accumulator.unresolved.add(formatTypeText(base));
       continue;
     }
+    accumulator.resolved.add(formatTypeText(base));
     if (seen.has(typeName)) continue;
     const filter = baseFilterFor(base);
     const previousFrom = accumulator.from;
@@ -887,25 +907,43 @@ function collectStyleSurfaces(shape, rootDir, accumulator, keep = () => true, se
 // className of its own" while merging one. An absolute negative is a claim about everything the
 // derivation did not look at, so it is now made only when there is nothing left unlooked-at.
 function renderStylingFacts(component, rootDir = ROOT_DIR) {
-  const accumulator = { axes: new Map(), classSurfaces: new Set(), unresolved: new Set(), from: undefined };
+  const accumulator = {
+    axes: new Map(),
+    classSurfaces: new Set(),
+    unresolved: new Set(),
+    resolved: new Set(),
+    inlineBases: 0,
+    from: undefined,
+  };
   for (const entry of component.typeDocs ?? []) collectStyleSurfaces(entry, rootDir, accumulator);
 
   const code = (values) => values.map((value) => `\`${value}\``).join(', ');
-  const upstream = [...accumulator.unresolved].sort();
-  const upstreamList = code(upstream);
+  const named = [...accumulator.unresolved].sort();
+  // The absolute negative is available only to a family that carries no base at all. A resolved
+  // base was read, but only as far as this parser reads a base; an unresolved or inline one was
+  // not read at all. `collectDerivedClaimViolations` refuses the same sentence from the page
+  // side, keyed on the same "Also carries every prop of" line the reader sees — so the two agree
+  // by construction rather than by both happening to be right today.
+  const defersAnything =
+    named.length > 0 || accumulator.resolved.size > 0 || accumulator.inlineBases > 0;
+  const deferralList = named.length
+    ? code(named)
+    : accumulator.resolved.size
+      ? code([...accumulator.resolved].sort())
+      : 'a type declared inline at its `extends` site';
 
   const axisLine = accumulator.axes.size
     ? `- **Style axes:** ${[...accumulator.axes]
         .map(([name, { count, from }]) => `\`${name}\` (${count} values${from ? `, inherited from \`${from}\`` : ''})`)
         .join(', ')} — the values are in the props tables above.`
-    : upstream.length
-      ? `- **Style axes:** this family declares no variant or size prop of its own; it carries ${upstreamList}, whose styling props are declared there rather than here.`
+    : defersAnything
+      ? `- **Style axes:** none of its own — its appearance comes from tokens and your own classes; it also carries ${deferralList}.`
       : '- **Style axes:** none; this family has no variant or size prop, so its appearance comes from tokens and your own classes.';
 
   const classLine = accumulator.classSurfaces.size
     ? `- **Class-name surfaces:** ${code([...accumulator.classSurfaces].sort())}.`
-    : upstream.length
-      ? `- **Class-name surfaces:** none declared by this family; any it accepts come from ${upstreamList}.`
+    : defersAnything
+      ? `- **Class-name surfaces:** none declared by this family; it also carries ${deferralList}.`
       : '- **Class-name surfaces:** none; this family accepts no `className` of its own.';
 
   return `${axisLine}\n${classLine}`;
@@ -923,7 +961,7 @@ function webPeerScope(component, rootDir) {
   const peers = (component.peerDependencies ?? []).filter((peer) => peer !== 'react' && peer !== 'react-native');
   if (!peers.length) return undefined;
 
-  const source = fs.readFileSync(path.join(rootDir, webFile), 'utf8');
+  const source = stripComments(fs.readFileSync(path.join(rootDir, webFile), 'utf8'));
   const imported = new Set(
     [...source.matchAll(/(?:from|require\()\s*'([^']+)'/gu)].map((match) => match[1]),
   );
