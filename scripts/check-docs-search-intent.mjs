@@ -5,12 +5,11 @@
 // WBS-H075's scoring pass found that 3 of 15 #466 acceptance queries did not surface their
 // owning page in the top 3 Pagefind results (`add BeeUI to Expo`, `beeui add`,
 // `provider not found`). The fix was: (a) phrase the real heading/first sentence of the owning
-// hand-authored page the way a reader would ask for it, and (b) turn off Pagefind's page-length
-// ranking normalization (`pageLength: 0` in apps/docs/pagefind-ranking.mjs), because the 63
-// generated component pages share one near-identical template whose boilerplate outranks a
-// short page that answers the query directly. This script guards both halves. Which half
-// carries which query is measured, not assumed: with normalization restored to 0.75 the three
-// originally-reported queries still pass and `safe area duplicated` is the one that fails.
+// hand-authored page the way a reader would ask for it. Turning off Pagefind's page-length
+// normalization was also tried and has since been reverted: it rescued one query and broke three
+// accessibility intents, because without normalization a long page that merely mentions a term
+// beats a short page that is about it (see apps/docs/pagefind-ranking.mjs for the held-out
+// measurement). The query it existed for is handled in content instead.
 //
 // WHAT THIS CHECK PROVES
 //   - The page a maintainer says should own a query is present in Pagefind's real built index

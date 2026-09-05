@@ -481,11 +481,22 @@ export function extractCvaVariants(files) {
       const variants = readObject('variants');
       if (!variants) return;
 
+      // `defaultVariants: { wrap: false }` is a boolean keyword, not a string literal. Accepting
+      // only string literals dropped it, publishing "no default" for a prop that defaults to false.
+      const literalText = (node) => {
+        if (ts.isStringLiteralLike(node)) return node.text;
+        if (node.kind === ts.SyntaxKind.TrueKeyword) return 'true';
+        if (node.kind === ts.SyntaxKind.FalseKeyword) return 'false';
+        if (ts.isNumericLiteral(node)) return node.text;
+        return undefined;
+      };
+
       const defaults = new Map();
       for (const property of readObject('defaultVariants')?.properties ?? []) {
         if (!ts.isPropertyAssignment(property) || !property.name) continue;
-        if (!ts.isStringLiteralLike(property.initializer)) continue;
-        defaults.set(property.name.getText(sourceFile).replace(/['"]/gu, ''), property.initializer.text);
+        const value = literalText(property.initializer);
+        if (value === undefined) continue;
+        defaults.set(property.name.getText(sourceFile).replace(/['"]/gu, ''), value);
       }
 
       const props = new Map();
@@ -810,6 +821,19 @@ function getComponentsIndex(rootDir) {
   return indexCache.get(rootDir);
 }
 
+// Built once over every component source, because a family can reference another file's
+// variants: the Trigger/Close types on Dialog, AlertDialog, DropdownMenu, Popover, Sheet and
+// Tooltip alias `ButtonProps` and so carry `VariantProps<typeof buttonVariants>`, which lives in
+// button.tsx. Scoping extraction to the family's own files left those unresolved on 11 lines,
+// published as "that upstream contract is not reproduced here" — while `buttonVariants` is a
+// module-private const a reader cannot look up anywhere.
+const cvaCache = new Map();
+
+function getCvaVariants(rootDir) {
+  if (!cvaCache.has(rootDir)) cvaCache.set(rootDir, extractCvaVariants(readComponentSourceFiles(rootDir)));
+  return cvaCache.get(rootDir);
+}
+
 // A `.web.tsx` file among `allSources` that is not itself the family's primary/native source —
 // the platform-split shape this module diffs against.
 function findWebSourcePath(allSources, primaryPath) {
@@ -868,11 +892,17 @@ function applyCvaVariants(shape, cvaByIdentifier) {
     for (const [name, spec] of props) {
       if (omitted.has(name)) continue;
       if (shape.fields.some((field) => field.name === name)) continue;
+      // cva types a variant whose keys are `true`/`false` as `boolean`, not as the string union
+      // `'true' | 'false'`. Publishing the string form put a signature on the Stack page that the
+      // same page contradicts three lines later with `<HStack wrap>`.
+      const isBoolean = spec.values.every((value) => value === 'true' || value === 'false');
+      const quote = (value) => (isBoolean ? value : `'${value}'`);
+
       shape.fields.push({
         name,
         optional: true,
-        type: spec.values.map((value) => `'${value}'`).join(' | '),
-        default: spec.default === undefined ? undefined : `'${spec.default}'`,
+        type: isBoolean ? 'boolean' : spec.values.map(quote).join(' | '),
+        default: spec.default === undefined ? undefined : quote(spec.default),
         description:
           `Defined by \`${identifier}\` (class-variance-authority); see Styling and theming for ` +
           'what each value changes.',
@@ -900,7 +930,7 @@ export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
   return component.types.map((typeName) => {
     const entry = resolveComponentTypeEntry(index, typeName, { ...opts, errorLabel: `${component.name}: ${typeName}` });
     if (entry.docKind === 'props') {
-      applyCvaVariants(entry, extractCvaVariants(files));
+      applyCvaVariants(entry, getCvaVariants(rootDir));
       applyDefaults(entry, extractDefaults(files, entry.names));
       applyGlossary(entry, propGlossary(rootDir));
       // A pure alias of an upstream type documents nothing on its own; fall back to the props
@@ -920,6 +950,9 @@ export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
           resolveOpts: { fromPath: webPath, primaryPath: webPath, familyPaths: component.allSources },
         };
         const webShape = resolveNamedTypeShape(typeName, webCtx);
+        // The Web shape needs the same cva resolution as the native one, or the platform-diff
+        // bullets keep naming `VariantProps<typeof buttonVariants>` as an unreproduced contract.
+        applyCvaVariants(webShape, getCvaVariants(rootDir));
         applyDefaults(webShape, extractDefaults(files, webCtx.names));
         fillConsumedFallback(webShape, files, webCtx.names);
         // A prop the Web implementation destructures into an underscore-prefixed binding is

@@ -956,7 +956,7 @@ test('prop-description coverage counts union variant fields', () => {
     },
   ];
 
-  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 1, total: 2 });
+  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 1, distinct: 1, total: 2 });
 });
 
 test('prop-description coverage reaches variants nested inside a variant', () => {
@@ -984,7 +984,7 @@ test('prop-description coverage reaches variants nested inside a variant', () =>
     },
   ];
 
-  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 0, total: 1 });
+  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 0, distinct: 0, total: 1 });
 });
 
 // The floor is only meaningful if it is the real published total. A floor set below
@@ -1141,4 +1141,79 @@ test('a VariantProps base is recognised bare and inside Omit', () => {
     omitted: new Set(['invalid']),
   });
   assert.equal(variantsIdentifierFromBase("Omit<PressableProps, 'role'>"), undefined);
+});
+
+
+// cva types a variant whose keys are `true`/`false` as `boolean`. Publishing the string union
+// put `'true' | 'false'` on the Stack page, which the same page contradicts with `<HStack wrap>`.
+test('a boolean cva variant keeps its boolean default', () => {
+  const source = `
+    const stackVariants = cva('', {
+      variants: { wrap: { true: 'flex-wrap', false: 'flex-nowrap' } },
+      defaultVariants: { wrap: false },
+    });
+  `;
+
+  assert.deepEqual(extractCvaVariants([{ path: 'stack.tsx', source }]).get('stackVariants').get('wrap'), {
+    values: ['true', 'false'],
+    default: 'false',
+  });
+});
+
+test('a numeric cva default is not dropped', () => {
+  const source = "const x = cva('', { variants: { level: { 1: 'a', 2: 'b' } }, defaultVariants: { level: 1 } });";
+
+  assert.equal(extractCvaVariants([{ path: 'x.tsx', source }]).get('x').get('level').default, '1');
+});
+
+// A `VariantProps<...>` reaching the page means the cva behind it was never resolved, so the page
+// points a reader at a module-private const. It survived on 11 lines across six pages.
+test('an unresolved VariantProps on the page is a violation', () => {
+  const page = 'Also carries every prop of `VariantProps<typeof buttonVariants>` — not reproduced here.';
+
+  const violations = collectRenderedPageViolations(page, 'dialog');
+
+  assert.equal(violations.length, 1);
+  assert.match(violations[0], /unresolved `VariantProps<\.\.\.>`/u);
+});
+
+test('no generated component page names an unresolved VariantProps', () => {
+  const offenders = buildPublicComponentManifest(REPO_ROOT).flatMap((component) =>
+    collectRenderedPageViolations(renderPublicComponentPage(component), component.name),
+  );
+
+  assert.deepEqual(offenders, []);
+});
+
+// "100% described" counts glossary sentences and generated variant text, not only per-prop prose.
+test('prop-description coverage reports how many descriptions are distinct', () => {
+  const manifest = [
+    {
+      typeDocs: [
+        {
+          kind: 'object',
+          fields: [
+            { name: 'a', description: 'Shared.' },
+            { name: 'b', description: 'Shared.' },
+            { name: 'c', description: 'Its own.' },
+          ],
+        },
+      ],
+    },
+  ];
+
+  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 3, distinct: 2, total: 3 });
+});
+
+
+// The boolean decision happens where the field is emitted, not in the extractor, so a test on
+// `extractCvaVariants` alone cannot see it — reverting the fix left that test green. This asserts
+// the published shape instead: Stack's `wrap` is `boolean`, and the page uses `<HStack wrap>`.
+test('a boolean cva variant publishes as boolean, not a string union', () => {
+  const stack = buildPublicComponentManifest(REPO_ROOT).find((component) => component.name === 'stack');
+  const props = stack.typeDocs.find((entry) => entry.name === 'StackProps');
+  const wrap = props.fields.find((field) => field.name === 'wrap');
+
+  assert.equal(wrap.type, 'boolean');
+  assert.equal(wrap.default, 'false');
 });

@@ -157,7 +157,7 @@ function findUnknownBehaviorPropReferences(component, rootDir, field = 'behavior
 // A ratchet rather than a pass/fail threshold: failing on any blank would fail today and teach
 // nothing, and a silent percentage would drift back down the way it drifted here. The floor is
 // the measured value at the time it was written, so coverage can only go up.
-export const PROP_DESCRIPTION_FLOOR = 602;
+export const PROP_DESCRIPTION_FLOOR = 624;
 
 // Walks a resolved type entry the same way `applyGlossary` and the renderer do:
 // a `union` entry carries no `fields` of its own, only `variants`, each of which is
@@ -173,18 +173,26 @@ function walkShapeFields(shape, visit) {
   for (const variant of shape?.variants ?? []) walkShapeFields(variant, visit);
 }
 
+// `described` counts a prop that has any description text. That is deliberately a low bar, and
+// the number alone overstates the docs: text arrives from three places — per-prop JSDoc, the 17
+// shared sentences in docs/prop-glossary.json, and the sentence generated for each cva variant.
+// The last two are shared by construction, so `distinct` is reported alongside the ratio to keep
+// "100% described" from reading as "every prop has prose written for it".
 export function collectPropDescriptionCoverage(manifest) {
   let total = 0;
   let described = 0;
+  const seen = new Set();
   for (const component of manifest) {
     for (const entry of component.typeDocs ?? []) {
       walkShapeFields(entry, (field) => {
         total += 1;
-        if (field.description) described += 1;
+        if (!field.description) return;
+        described += 1;
+        seen.add(field.description);
       });
     }
   }
-  return { described, total };
+  return { described, distinct: seen.size, total };
 }
 
 export function collectPropDescriptionViolations(manifest) {
@@ -221,6 +229,15 @@ export function collectRenderedPageViolations(page, componentName) {
   page.split('\n').forEach((line, index) => {
     if (/^\s*(?:```|~~~)/u.test(line)) inFence = !inFence;
     if (inFence) return;
+    // A `VariantProps<typeof x>` that reaches the page means the cva behind it was not resolved,
+    // so the page tells a reader to consult a module-private const they cannot open. The values
+    // belong in the table; see `applyCvaVariants`.
+    if (line.includes('VariantProps<')) {
+      violations.push(
+        `${componentName}: line ${index + 1} publishes an unresolved \`VariantProps<...>\`; ` +
+        'the variants it names must be read from the `cva()` call and published as props.',
+      );
+    }
     if (line.trimStart().startsWith('|')) return;
     if (!line.includes('\\|')) return;
     violations.push(

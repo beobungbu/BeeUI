@@ -72,7 +72,7 @@ Also carries every prop of `Omit<StackProps, 'direction'>` — documented on the
 | `direction` | `'horizontal' \| 'vertical'` | `'vertical'` | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
 | `gap` | `'none' \| 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
 | `justify` | `'start' \| 'center' \| 'end' \| 'between' \| 'around' \| 'evenly'` | `'start'` | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
-| `wrap` | `'true' \| 'false'` | — | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `wrap` | `boolean` | `false` | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
 
 Also carries every prop of `ViewProps` — that upstream contract is not reproduced here.
 
