@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `BeeThemeScope`
+  - Also routed here, outside the Registry family:
+    - `theme-scope`
+  - Package export subpath: `@beemvp/beeui-ui/theme-scope`
 
 **Exported types:** `BeeThemeScopeProps`
 

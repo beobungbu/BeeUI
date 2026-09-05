@@ -41,6 +41,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
    `SelectLabel`
    `SelectTrigger`
    `SelectValue`
+  - Also routed here, outside the Registry family:
+    - `select`
+  - Package export subpath: `@beemvp/beeui-ui/select`
 
 **Exported types:** `SelectAlign`, `SelectCollisionPadding`, `SelectContentProps`, `SelectDirection`, `SelectGroupProps`, `SelectItemProps`, `SelectLabelProps`, `SelectOptionValue`, `SelectPlacement`, `SelectProps`, `SelectTriggerProps`, `SelectValueProps`
 

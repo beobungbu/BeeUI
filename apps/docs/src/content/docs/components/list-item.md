@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `ListItem`
    `SettingsItem`
+  - Also routed here, outside the Registry family:
+    - `list-item`
+  - Package export subpath: `@beemvp/beeui-ui/list-item`
 
 **Exported types:** `ListItemProps`, `SettingsItemProps`
 

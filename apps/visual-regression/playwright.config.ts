@@ -138,6 +138,19 @@ export default defineConfig({
               viewport: { width: 1280, height: 800 },
             },
           },
+          // The portal audit again on the other two engines. Chromium-only was on H072's
+          // "not covered" list: a rendering or focus difference in WebKit or Gecko would have
+          // been invisible. Scoped to the docs spec — the Showcase suite stays Chromium.
+          ...(['firefox', 'webkit'] as const).map((browserName) => ({
+            name: `a11y-docs-${browserName}`,
+            testMatch: /a11y-docs-portal\.spec\.ts/,
+            use: {
+              browserName,
+              colorScheme: 'light' as const,
+              deviceScaleFactor: 1,
+              viewport: { width: 1280, height: 800 },
+            },
+          })),
           // Pure-logic regression coverage for the allowlist/blocking gate
           // itself — no browser page is used, so it runs under any project's
           // browser context.

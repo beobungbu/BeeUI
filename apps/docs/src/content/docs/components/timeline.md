@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `Timeline`
    `TimelineItem`
+  - Also routed here, outside the Registry family:
+    - `timeline`
+  - Package export subpath: `@beemvp/beeui-ui/timeline`
 
 **Exported types:** `TimelineItemProps`, `TimelineProps`
 

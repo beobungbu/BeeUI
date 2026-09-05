@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `Section`
+  - Also routed here, outside the Registry family:
+    - `section`
+  - Package export subpath: `@beemvp/beeui-ui/section`
 
 **Exported types:** `SectionProps`
 

@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `Input`
    `inputVariants`
+  - Also routed here, outside the Registry family:
+    - `input`
+  - Package export subpath: `@beemvp/beeui-ui/input`
 
 **Exported types:** `InputProps`
 

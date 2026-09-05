@@ -36,6 +36,12 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `Text`
    `textVariants`
+  - Also routed here, outside the Registry family:
+    - `FontFamily`
+    - `NumericVariant`
+    - `semanticTypographyClasses`
+    - `text`
+  - Package export subpath: `@beemvp/beeui-ui/text`
 
 **Exported types:** `TextProps`
 

@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `Checkbox`
    `checkboxIndicatorVariants`
+  - Also routed here, outside the Registry family:
+    - `checkbox`
+  - Package export subpath: `@beemvp/beeui-ui/checkbox`
 
 **Exported types:** `CheckboxProps`, `CheckboxValue`
 

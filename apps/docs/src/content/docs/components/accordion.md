@@ -38,6 +38,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
    `AccordionContent`
    `AccordionItem`
    `AccordionTrigger`
+  - Also routed here, outside the Registry family:
+    - `accordion`
+  - Package export subpath: `@beemvp/beeui-ui/accordion`
 
 **Exported types:** `AccordionContentProps`, `AccordionItemProps`, `AccordionProps`, `AccordionTriggerProps`
 

@@ -9,6 +9,7 @@ import {
   collectUnreachableCodeBlocks,
   DOCS_DIST_DIR,
   makeDocsCodeBlocksFocusable,
+  runDocsA11y,
 } from '../public-docs-a11y.mjs';
 
 // A `<pre>` that scrolls horizontally with nothing focusable inside cannot be scrolled by a
@@ -139,4 +140,45 @@ test('an empty or missing dist is not silently clean', () => {
     assert.deepEqual(collectUnreachableCodeBlocks(rootDir), []);
     assert.deepEqual(makeDocsCodeBlocksFocusable(rootDir), { blocks: 0, rewritten: 0 });
   });
+});
+
+// --- the CLI decision -----------------------------------------------------------------------
+// `main()` had no test, so `const isCli = false` disabled both the rewrite and its guard while
+// `docs:build` exited 0 and the portal shipped 581 unreachable regions.
+
+test('the rewrite path reports what it changed and succeeds', () => {
+  withFixture({ 'index.html': '<pre a></pre><table></table>' }, (rootDir) => {
+    const result = runDocsA11y({ rootDir });
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.rewrote, 2);
+    assert.deepEqual(collectUnreachableCodeBlocks(rootDir), []);
+  });
+});
+
+test('the check path fails, and names the pages, when a build skipped the rewrite', () => {
+  withFixture({ 'index.html': '<pre a></pre>', 'guides/index.html': '<table></table>' }, (rootDir) => {
+    const result = runDocsA11y({ check: true, rootDir });
+    assert.equal(result.exitCode, 1);
+    assert.match(result.messages[0], /no keyboard user can scroll/u);
+    assert.equal(result.messages.length, 3);
+  });
+});
+
+test('the check path succeeds once the rewrite has run', () => {
+  withFixture({ 'index.html': '<pre a></pre>' }, (rootDir) => {
+    runDocsA11y({ rootDir });
+    assert.equal(runDocsA11y({ check: true, rootDir }).exitCode, 0);
+  });
+});
+
+// A missing dist must be an error, not a pass: "nothing to check" is how a guard disappears.
+test('a missing dist fails rather than passing vacuously', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-docs-a11y-nodist-'));
+  try {
+    const result = runDocsA11y({ check: true, rootDir });
+    assert.equal(result.exitCode, 1);
+    assert.match(result.messages[0], /does not exist/u);
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
 });

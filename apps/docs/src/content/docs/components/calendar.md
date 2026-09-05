@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `Calendar`
+  - Also routed here, outside the Registry family:
+    - `calendar`
+  - Package export subpath: `@beemvp/beeui-ui/calendar`
 
 **Exported types:** `CalendarProps`, `CalendarVisibleMonth`
 

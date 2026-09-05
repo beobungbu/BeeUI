@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `BottomActionBar`
+  - Also routed here, outside the Registry family:
+    - `bottom-action-bar`
+  - Package export subpath: `@beemvp/beeui-ui/bottom-action-bar`
 
 **Exported types:** `BottomActionBarProps`
 

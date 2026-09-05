@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `Card`
    `cardVariants`
+  - Also routed here, outside the Registry family:
+    - `card`
+  - Package export subpath: `@beemvp/beeui-ui/card`
 
 **Exported types:** `CardProps`
 

@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `Field`
+  - Also routed here, outside the Registry family:
+    - `field`
+  - Package export subpath: `@beemvp/beeui-ui/field`
 
 **Exported types:** `FieldProps`
 

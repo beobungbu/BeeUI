@@ -40,6 +40,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
    `PopoverDescription`
    `PopoverTitle`
    `PopoverTrigger`
+  - Also routed here, outside the Registry family:
+    - `popover`
+  - Package export subpath: `@beemvp/beeui-ui/popover`
 
 **Exported types:** `PopoverAlign`, `PopoverCloseProps`, `PopoverCollisionPadding`, `PopoverContentProps`, `PopoverDescriptionProps`, `PopoverDirection`, `PopoverPlacement`, `PopoverProps`, `PopoverTitleProps`, `PopoverTriggerProps`
 

@@ -38,6 +38,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
    `ButtonLabel`
    `buttonLabelVariants`
    `buttonVariants`
+  - Also routed here, outside the Registry family:
+    - `button`
+  - Package export subpath: `@beemvp/beeui-ui/button`
 
 **Exported types:** `ButtonLabelProps`, `ButtonProps`
 

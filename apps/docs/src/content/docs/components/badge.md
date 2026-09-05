@@ -37,6 +37,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 - Family exports: `Badge`
    `badgeLabelVariants`
    `badgeVariants`
+  - Also routed here, outside the Registry family:
+    - `badge`
+  - Package export subpath: `@beemvp/beeui-ui/badge`
 
 **Exported types:** `BadgeProps`
 

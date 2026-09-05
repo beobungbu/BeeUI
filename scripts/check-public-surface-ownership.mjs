@@ -175,12 +175,62 @@ export function validateContributorSurfaceDocs(rootDir = ROOT_DIR) {
   return [...new Set(violations)];
 }
 
+export const DOCS_CONTENT_DIR = 'apps/docs/src/content/docs';
+
+// Resolves an owner route to the page that serves it.
+function ownerPagePath(route, rootDir) {
+  const slug = route.replace(/^\/docs\//u, '').replace(/\/$/u, '');
+  for (const candidate of [`${slug}.md`, `${slug}/index.md`, 'index.md']) {
+    const absolute = path.join(rootDir, DOCS_CONTENT_DIR, candidate);
+    if (fs.existsSync(absolute)) return absolute;
+  }
+  return null;
+}
+
+// A package-export row is named `./accordion` — package.json syntax. What a consumer writes is
+// `@beemvp/beeui-ui/accordion`, so the page satisfies the row by showing that form.
+function mentionsSurface(page, row) {
+  if (row.kind === 'package-export') {
+    return page.includes(`${row.package}${row.name.replace(/^\./u, '')}`) || page.includes(row.name);
+  }
+  return page.includes(row.name);
+}
+
+// Ownership was a routing claim: a row passed if its owner route pointed at a page that exists.
+// It never asked whether that page says anything about the row. An independent H075 scoring
+// pass found five public symbols — `ToastRuntimeProvider` among them — appearing zero times in
+// the entire content tree while this gate printed "683 owned by a published docs page", because
+// `getPublicComponents` reads registry.json and those symbols belong to no Registry family.
+export function validateSurfacesAppearOnOwnerPage(rootDir = ROOT_DIR) {
+  const violations = [];
+  const inventory = buildPublicSurfaceInventory(rootDir);
+  const pages = new Map();
+
+  for (const row of inventory.rows) {
+    const pagePath = ownerPagePath(row.primaryDocsOwner, rootDir);
+    if (!pagePath) {
+      violations.push(`${row.id} is owned by ${row.primaryDocsOwner}, which has no page on disk.`);
+      continue;
+    }
+    if (!pages.has(pagePath)) pages.set(pagePath, fs.readFileSync(pagePath, 'utf8'));
+    if (!mentionsSurface(pages.get(pagePath), row)) {
+      violations.push(
+        `${row.id} is routed to ${row.primaryDocsOwner}, but that page never names "${row.name}". ` +
+        'An owner route is not documentation.',
+      );
+    }
+  }
+
+  return violations;
+}
+
 export function validatePublicSurfaceOwnership(rootDir = ROOT_DIR) {
   return [
     ...validatePublicSurfaceInventory(rootDir),
     ...validateInventoryFreshness(rootDir),
     ...validateAcknowledgedSurfaceSources(rootDir),
     ...validateContributorSurfaceDocs(rootDir),
+    ...validateSurfacesAppearOnOwnerPage(rootDir),
   ];
 }
 

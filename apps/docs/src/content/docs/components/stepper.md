@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `Stepper`
    `StepperItem`
+  - Also routed here, outside the Registry family:
+    - `stepper`
+  - Package export subpath: `@beemvp/beeui-ui/stepper`
 
 **Exported types:** `StepperItemProps`, `StepperProps`
 

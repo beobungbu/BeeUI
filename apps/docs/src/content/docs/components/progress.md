@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `Progress`
    `progressVariants`
+  - Also routed here, outside the Registry family:
+    - `progress`
+  - Package export subpath: `@beemvp/beeui-ui/progress`
 
 **Exported types:** `ProgressProps`
 

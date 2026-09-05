@@ -105,29 +105,43 @@ export function makeDocsCodeBlocksFocusable(rootDir = ROOT_DIR) {
   return { blocks, rewritten };
 }
 
-function main() {
-  const distDir = path.join(ROOT_DIR, DOCS_DIST_DIR);
-  if (!fs.existsSync(distDir)) {
-    console.error(`${DOCS_DIST_DIR} does not exist. Run the docs build first.`);
-    process.exitCode = 1;
-    return;
+// The whole CLI decision as data, so a test can drive it. Every path through `main` was
+// untested: `const isCli = false` turned both the rewrite and its guard into no-ops while
+// `docs:build` still exited 0 and the portal shipped 581 unreachable regions.
+export function runDocsA11y({ check = false, rootDir = ROOT_DIR } = {}) {
+  if (!fs.existsSync(path.join(rootDir, DOCS_DIST_DIR))) {
+    return { exitCode: 1, messages: [`${DOCS_DIST_DIR} does not exist. Run the docs build first.`] };
   }
 
-  if (process.argv.includes('--check')) {
-    const violations = collectUnreachableCodeBlocks(ROOT_DIR);
-    if (violations.length) {
-      console.error('Documentation portal has scrollable regions no keyboard user can scroll:');
-      for (const violation of violations.slice(0, 10)) console.error(`- ${violation}`);
-      if (violations.length > 10) console.error(`- …and ${violations.length - 10} more page(s).`);
-      process.exitCode = 1;
-      return;
+  if (check) {
+    const violations = collectUnreachableCodeBlocks(rootDir);
+    if (!violations.length) {
+      return { exitCode: 0, messages: ['Docs keyboard-scroll check passed (every code block and table is reachable).'] };
     }
-    console.log('Docs keyboard-scroll check passed (every code block and table is reachable).');
-    return;
+    const shown = violations.slice(0, 10);
+    const extra = violations.length > 10 ? [`- …and ${violations.length - 10} more page(s).`] : [];
+    return {
+      exitCode: 1,
+      messages: [
+        'Documentation portal has scrollable regions no keyboard user can scroll:',
+        ...shown.map((violation) => `- ${violation}`),
+        ...extra,
+      ],
+    };
   }
 
-  const { blocks, rewritten } = makeDocsCodeBlocksFocusable(ROOT_DIR);
-  console.log(`Made ${blocks} scrollable region(s) keyboard-reachable across ${rewritten} page(s).`);
+  const { blocks, rewritten } = makeDocsCodeBlocksFocusable(rootDir);
+  return {
+    exitCode: 0,
+    messages: [`Made ${blocks} scrollable region(s) keyboard-reachable across ${rewritten} page(s).`],
+    rewrote: blocks,
+  };
+}
+
+function main() {
+  const result = runDocsA11y({ check: process.argv.includes('--check') });
+  for (const message of result.messages) (result.exitCode === 0 ? console.log : console.error)(message);
+  process.exitCode = result.exitCode;
 }
 
 const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);

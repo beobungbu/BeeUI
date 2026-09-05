@@ -38,6 +38,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
    `Stack`
    `stackVariants`
    `VStack`
+  - Also routed here, outside the Registry family:
+    - `stack`
+  - Package export subpath: `@beemvp/beeui-ui/stack`
 
 **Exported types:** `HStackProps`, `StackProps`, `VStackProps`
 

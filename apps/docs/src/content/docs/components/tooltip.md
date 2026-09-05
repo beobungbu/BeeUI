@@ -37,6 +37,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 - Family exports: `Tooltip`
    `TooltipContent`
    `TooltipTrigger`
+  - Also routed here, outside the Registry family:
+    - `tooltip`
+  - Package export subpath: `@beemvp/beeui-ui/tooltip`
 
 **Exported types:** `TooltipAlign`, `TooltipCollisionPadding`, `TooltipContentProps`, `TooltipDirection`, `TooltipPlacement`, `TooltipProps`, `TooltipTriggerProps`
 

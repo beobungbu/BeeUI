@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `DateTimePicker`
+  - Also routed here, outside the Registry family:
+    - `date-time-picker`
+  - Package export subpath: `@beemvp/beeui-ui/date-time-picker`
 
 **Exported types:** `DateTimePickerAlign`, `DateTimePickerCollisionPadding`, `DateTimePickerDirection`, `DateTimePickerPlacement`, `DateTimePickerProps`, `DateTimePickerValue`
 

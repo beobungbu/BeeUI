@@ -43,6 +43,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
    `DropdownMenuRadioItem`
    `DropdownMenuSeparator`
    `DropdownMenuTrigger`
+  - Also routed here, outside the Registry family:
+    - `dropdown-menu`
+  - Package export subpath: `@beemvp/beeui-ui/dropdown-menu`
 
 **Exported types:** `DropdownMenuAlign`, `DropdownMenuCheckboxItemProps`, `DropdownMenuCollisionPadding`, `DropdownMenuContentProps`, `DropdownMenuDirection`, `DropdownMenuItemProps`, `DropdownMenuLabelProps`, `DropdownMenuPlacement`, `DropdownMenuProps`, `DropdownMenuRadioGroupProps`, `DropdownMenuRadioItemProps`, `DropdownMenuSeparatorProps`, `DropdownMenuTriggerProps`
 

@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `SegmentedControl`
    `SegmentedControlItem`
+  - Also routed here, outside the Registry family:
+    - `segmented-control`
+  - Package export subpath: `@beemvp/beeui-ui/segmented-control`
 
 **Exported types:** `SegmentedControlItemProps`, `SegmentedControlProps`
 

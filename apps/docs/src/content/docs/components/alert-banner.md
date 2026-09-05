@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `AlertBanner`
    `alertBannerVariants`
+  - Also routed here, outside the Registry family:
+    - `alert-banner`
+  - Package export subpath: `@beemvp/beeui-ui/alert-banner`
 
 **Exported types:** `AlertBannerProps`
 

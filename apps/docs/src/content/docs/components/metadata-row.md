@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `MetadataRow`
+  - Also routed here, outside the Registry family:
+    - `metadata-row`
+  - Package export subpath: `@beemvp/beeui-ui/metadata-row`
 
 **Exported types:** `MetadataRowProps`
 

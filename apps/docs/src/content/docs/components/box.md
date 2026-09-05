@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `Box`
+  - Also routed here, outside the Registry family:
+    - `box`
+  - Package export subpath: `@beemvp/beeui-ui/box`
 
 **Exported types:** `BoxProps`
 

@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `AppHeader`
+  - Also routed here, outside the Registry family:
+    - `app-header`
+  - Package export subpath: `@beemvp/beeui-ui/app-header`
 
 **Exported types:** `AppHeaderProps`
 

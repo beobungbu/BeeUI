@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `Link`
+  - Also routed here, outside the Registry family:
+    - `link`
+  - Package export subpath: `@beemvp/beeui-ui/link`
 
 **Exported types:** `LinkProps`
 

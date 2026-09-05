@@ -343,6 +343,17 @@ test('collectPublicComponentReferenceViolations flags a component whose curated 
     fs.symlinkSync(path.join(REPO_ROOT, 'registry'), path.join(tmpRoot, 'registry'));
     fs.symlinkSync(path.join(REPO_ROOT, 'packages'), path.join(tmpRoot, 'packages'));
     fs.mkdirSync(path.join(tmpRoot, 'docs'), { recursive: true });
+    // The manifest reads the #473 inventory to learn which surfaces are routed to each page,
+    // so a fixture root needs the owner policy the inventory derives from.
+    for (const file of ['public-surface-owners.json', 'reference.content.json', 'pattern-library.content.json']) {
+      const from = path.join(REPO_ROOT, 'docs', file);
+      if (fs.existsSync(from)) fs.copyFileSync(from, path.join(tmpRoot, 'docs', file));
+    }
+    for (const file of ['llms-components.txt', 'package.json']) {
+      const from = path.join(REPO_ROOT, file);
+      if (fs.existsSync(from)) fs.copyFileSync(from, path.join(tmpRoot, file));
+    }
+    fs.symlinkSync(path.join(REPO_ROOT, 'web'), path.join(tmpRoot, 'web'));
     const content = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'docs/component-reference.content.json'), 'utf8'));
     delete content.components.button.behavior;
     fs.writeFileSync(path.join(tmpRoot, 'docs/component-reference.content.json'), JSON.stringify(content));
@@ -685,6 +696,17 @@ test('collectPublicComponentReferenceViolations flags a behavior string that ref
     fs.symlinkSync(path.join(REPO_ROOT, 'registry'), path.join(tmpRoot, 'registry'));
     fs.symlinkSync(path.join(REPO_ROOT, 'packages'), path.join(tmpRoot, 'packages'));
     fs.mkdirSync(path.join(tmpRoot, 'docs'), { recursive: true });
+    // The manifest reads the #473 inventory to learn which surfaces are routed to each page,
+    // so a fixture root needs the owner policy the inventory derives from.
+    for (const file of ['public-surface-owners.json', 'reference.content.json', 'pattern-library.content.json']) {
+      const from = path.join(REPO_ROOT, 'docs', file);
+      if (fs.existsSync(from)) fs.copyFileSync(from, path.join(tmpRoot, 'docs', file));
+    }
+    for (const file of ['llms-components.txt', 'package.json']) {
+      const from = path.join(REPO_ROOT, file);
+      if (fs.existsSync(from)) fs.copyFileSync(from, path.join(tmpRoot, file));
+    }
+    fs.symlinkSync(path.join(REPO_ROOT, 'web'), path.join(tmpRoot, 'web'));
     const content = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'docs/component-reference.content.json'), 'utf8'));
     content.components.progress.behavior =
       "Stateless clamped determinate progress bar; `value` is clamped to its `min`/`max` range and exposes native progressbar semantics — there is no indeterminate mode.";

@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `EmptyState`
    `ErrorState`
+  - Also routed here, outside the Registry family:
+    - `state-message`
+  - Package export subpath: `@beemvp/beeui-ui/state-message`
 
 **Exported types:** `EmptyStateProps`, `ErrorStateProps`
 

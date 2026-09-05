@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `Breadcrumb`
    `BreadcrumbItem`
+  - Also routed here, outside the Registry family:
+    - `breadcrumb`
+  - Package export subpath: `@beemvp/beeui-ui/breadcrumb`
 
 **Exported types:** `BreadcrumbItemProps`, `BreadcrumbProps`
 

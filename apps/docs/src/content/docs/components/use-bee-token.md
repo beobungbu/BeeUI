@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `getBeeToken`
    `useBeeToken`
+  - Also routed here, outside the Registry family:
+    - `use-bee-token`
+  - Package export subpath: `@beemvp/beeui-ui/use-bee-token`
 
 **Exported types:** No separately exported public types.
 

@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `Skeleton`
    `skeletonVariants`
+  - Also routed here, outside the Registry family:
+    - `skeleton`
+  - Package export subpath: `@beemvp/beeui-ui/skeleton`
 
 **Exported types:** `SkeletonProps`
 

@@ -215,8 +215,20 @@ function isWebPath(file) {
   );
 }
 
+// The docs portal's accessibility audit lives in the visual lane, so the lane must also be
+// selected by the things that audit validates: the post-processing step that makes code blocks
+// and tables keyboard-reachable, and the portal content itself. Without this, `web-a11y` does
+// not run on a pull request that changes either — the audit is absent from exactly the change
+// that could break it, which is the failure shape this whole program keeps closing.
+const VISUAL_A11Y_EXACT = new Set(['scripts/public-docs-a11y.mjs']);
+const VISUAL_A11Y_PREFIXES = ['apps/docs/src/content/docs/', 'apps/docs/astro.config.mjs'];
+
 function isVisualPath(file) {
-  return VISUAL_PREFIXES.some((prefix) => file.startsWith(prefix));
+  return (
+    VISUAL_PREFIXES.some((prefix) => file.startsWith(prefix)) ||
+    VISUAL_A11Y_EXACT.has(file) ||
+    VISUAL_A11Y_PREFIXES.some((prefix) => file.startsWith(prefix))
+  );
 }
 
 function isTokenPath(file) {

@@ -38,6 +38,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
    `TabsContent`
    `TabsList`
    `TabsTrigger`
+  - Also routed here, outside the Registry family:
+    - `tabs`
+  - Package export subpath: `@beemvp/beeui-ui/tabs`
 
 **Exported types:** `TabsContentProps`, `TabsListProps`, `TabsProps`, `TabsTriggerProps`
 

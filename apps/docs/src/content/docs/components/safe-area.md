@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `BeeUIProvider`
    `SafeArea`
+  - Also routed here, outside the Registry family:
+    - `safe-area`
+  - Package export subpath: `@beemvp/beeui-ui/safe-area`
 
 **Exported types:** `BeeUIProviderProps`, `SafeAreaProps`
 

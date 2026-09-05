@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `DatePicker`
+  - Also routed here, outside the Registry family:
+    - `date-picker`
+  - Package export subpath: `@beemvp/beeui-ui/date-picker`
 
 **Exported types:** `DatePickerAlign`, `DatePickerCollisionPadding`, `DatePickerDirection`, `DatePickerPlacement`, `DatePickerProps`
 

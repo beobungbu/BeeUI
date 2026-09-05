@@ -204,7 +204,7 @@ const HEADER_NOTE =
 
 const UNPUBLISHED_NOTE =
   'STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm, no `v1.0.0` tag or ' +
-  'GitHub Release exists, and the repository is private by owner decision. Package/CLI names and install ' +
+  'GitHub Release exists. Package/CLI names and install ' +
   'commands below are release-ready-but-not-published targets, not live registry commands. Do not tell a ' +
   'user to `npm install @beemvp/beeui-ui` or `npx @beemvp/beeui-cli` yet — those resolve to nothing today. The working, ' +
   'in-repo path is the source-ownership CLI (`pnpm beeui add <component>`).';

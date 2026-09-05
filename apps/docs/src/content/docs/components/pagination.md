@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `Pagination`
    `PaginationItem`
+  - Also routed here, outside the Registry family:
+    - `pagination`
+  - Package export subpath: `@beemvp/beeui-ui/pagination`
 
 **Exported types:** `PaginationItemProps`, `PaginationItemType`, `PaginationProps`
 

@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `OTPInput`
+  - Also routed here, outside the Registry family:
+    - `otp-input`
+  - Package export subpath: `@beemvp/beeui-ui/otp-input`
 
 **Exported types:** `OTPInputProps`
 

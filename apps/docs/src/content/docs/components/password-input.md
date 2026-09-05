@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `PasswordInput`
+  - Also routed here, outside the Registry family:
+    - `password-input`
+  - Package export subpath: `@beemvp/beeui-ui/password-input`
 
 **Exported types:** `PasswordInputProps`
 

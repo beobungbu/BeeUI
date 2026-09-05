@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `SearchInput`
+  - Also routed here, outside the Registry family:
+    - `search-input`
+  - Package export subpath: `@beemvp/beeui-ui/search-input`
 
 **Exported types:** `SearchInputProps`
 

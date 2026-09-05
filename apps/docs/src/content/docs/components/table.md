@@ -42,6 +42,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
    `TableHead`
    `TableHeader`
    `TableRow`
+  - Also routed here, outside the Registry family:
+    - `table`
+  - Package export subpath: `@beemvp/beeui-ui/table`
 
 **Exported types:** `TableBodyProps`, `TableCaptionProps`, `TableCellProps`, `TableFooterProps`, `TableHeaderProps`, `TableHeadProps`, `TableLayout`, `TableProps`, `TableRowProps`, `TableSortDirection`
 

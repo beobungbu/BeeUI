@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `FormGroup`
+  - Also routed here, outside the Registry family:
+    - `form-group`
+  - Package export subpath: `@beemvp/beeui-ui/form-group`
 
 **Exported types:** `FormGroupProps`
 

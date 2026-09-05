@@ -38,6 +38,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
    `StatHelpText`
    `StatLabel`
    `StatValue`
+  - Also routed here, outside the Registry family:
+    - `stat`
+  - Package export subpath: `@beemvp/beeui-ui/stat`
 
 **Exported types:** `StatHelpTextProps`, `StatLabelProps`, `StatProps`, `StatValueProps`
 

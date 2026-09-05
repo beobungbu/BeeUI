@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { coverageForComponent } from '../apps/showcase/component-coverage.ts';
 import { showcaseHref } from '../apps/showcase/showcase-target.ts';
+import { buildPublicSurfaceInventory } from './generate-public-surface-inventory.mjs';
 import {
   ROOT_DIR,
   buildShowcaseUsageIndex,
@@ -54,6 +55,9 @@ function githubHref(pathname) {
 export function buildPublicComponentManifest(rootDir = ROOT_DIR) {
   const content = readJson('docs/component-reference.content.json', rootDir);
   const usageIndex = buildShowcaseUsageIndex(rootDir);
+  // The inventory is the ownership authority; the registry is only the family list. Reading
+  // both here is what lets a page name every surface routed to it.
+  const inventoryRows = buildPublicSurfaceInventory(rootDir).rows;
   return getPublicComponents(rootDir).map((component) => {
     const curated = content.components?.[component.name];
     const examples = usageForComponent(component, usageIndex).slice(0, 4);
@@ -68,6 +72,10 @@ export function buildPublicComponentManifest(rootDir = ROOT_DIR) {
       typeDocs: getComponentTypeDocs(component, rootDir),
       examples,
       route: `/docs/components/${component.name}/`,
+      routedSurfaces: routedSurfacesFor({ ...component, docsRoute: `/docs/components/${component.name}/` }, inventoryRows),
+      subpath: inventoryRows.find(
+        (row) => row.kind === 'package-export' && row.primaryDocsOwner === `/docs/components/${component.name}/`,
+      )?.name,
       showcaseHref: showcaseHref({ surface: 'component', id: component.name, example: 'basic' }),
       exampleTargets: coverageForComponent(component.name).map((example) => ({
         example,
@@ -208,8 +216,36 @@ function renderExampleTargets(component) {
 }
 
 function renderAnatomy(component) {
-  if (component.values.length <= 1) return `- Primary export: \`${component.values[0]}\``;
-  return component.values.map((value, index) => `${index === 0 ? '- Family exports:' : '  '} \`${value}\``).join('\n');
+  const lines = component.values.length <= 1
+    ? [`- Primary export: \`${component.values[0]}\``]
+    : component.values.map((value, index) => `${index === 0 ? '- Family exports:' : '  '} \`${value}\``);
+
+  // Surfaces the #473 inventory routes to this page but that are not part of the Registry
+  // family. `getPublicComponents` reads registry.json, so a public symbol with no registry
+  // family — `ToastRuntimeProvider`, `getTextareaWebMinHeight`, `semanticTypographyClasses` —
+  // was assigned this owner page and then never written to it. The ownership gate reported
+  // 683/683 documented because it checked that a row had an owner route, never that the page
+  // named the row.
+  if (component.routedSurfaces?.length) {
+    lines.push('  - Also routed here, outside the Registry family:');
+    for (const surface of component.routedSurfaces) lines.push(`    - \`${surface.name}\``);
+  }
+  if (component.subpath) {
+    lines.push(`  - Package export subpath: \`@beemvp/beeui-ui${surfaceSubpath(component.subpath)}\``);
+  }
+  return lines.join('\n');
+}
+
+// `./accordion` in the inventory is the subpath a consumer writes after the package name.
+function surfaceSubpath(name) {
+  return name.replace(/^\./u, '');
+}
+
+// Rows the inventory routes to a component page, minus what the family already lists.
+export function routedSurfacesFor(component, rows) {
+  const listed = new Set([...component.values, ...component.types]);
+  const owner = component.docsRoute ?? `/docs/components/${component.name}/`;
+  return rows.filter((row) => row.primaryDocsOwner === owner && row.kind !== 'package-export' && !listed.has(row.name));
 }
 
 // --- Derived props tables (WBS-G061 B1) -------------------------------------

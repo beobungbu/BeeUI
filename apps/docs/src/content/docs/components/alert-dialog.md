@@ -42,6 +42,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
    `AlertDialogFooter`
    `AlertDialogTitle`
    `AlertDialogTrigger`
+  - Also routed here, outside the Registry family:
+    - `alert-dialog`
+  - Package export subpath: `@beemvp/beeui-ui/alert-dialog`
 
 **Exported types:** `AlertDialogActionProps`, `AlertDialogCancelProps`, `AlertDialogContentProps`, `AlertDialogDescriptionProps`, `AlertDialogFooterProps`, `AlertDialogProps`, `AlertDialogTitleProps`, `AlertDialogTriggerProps`
 

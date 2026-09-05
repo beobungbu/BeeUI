@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `FormMessage`
    `HelperText`
+  - Also routed here, outside the Registry family:
+    - `form-message`
+  - Package export subpath: `@beemvp/beeui-ui/form-message`
 
 **Exported types:** `FormMessageProps`, `HelperTextProps`
 

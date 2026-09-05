@@ -37,6 +37,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 - Family exports: `Avatar`
    `avatarFallbackVariants`
    `avatarVariants`
+  - Also routed here, outside the Registry family:
+    - `avatar`
+  - Package export subpath: `@beemvp/beeui-ui/avatar`
 
 **Exported types:** `AvatarProps`
 

@@ -14,7 +14,11 @@ import { createServer } from 'node:http';
 import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = resolve(fileURLToPath(new URL('../../docs/dist/', import.meta.url)));
+// DOCS_A11Y_DIST lets a caller serve a snapshot instead of the live build directory, so a
+// concurrent build cannot change the site under a running audit.
+const root = process.env.DOCS_A11Y_DIST
+  ? resolve(process.env.DOCS_A11Y_DIST)
+  : resolve(fileURLToPath(new URL('../../docs/dist/', import.meta.url)));
 const host = '127.0.0.1';
 const port = Number(process.env.DOCS_A11Y_PORT ?? 4175);
 

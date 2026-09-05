@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `IconButton`
+  - Also routed here, outside the Registry family:
+    - `icon-button`
+  - Package export subpath: `@beemvp/beeui-ui/icon-button`
 
 **Exported types:** `IconButtonProps`
 

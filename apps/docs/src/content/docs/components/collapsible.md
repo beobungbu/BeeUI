@@ -37,6 +37,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 - Family exports: `Collapsible`
    `CollapsibleContent`
    `CollapsibleTrigger`
+  - Also routed here, outside the Registry family:
+    - `collapsible`
+  - Package export subpath: `@beemvp/beeui-ui/collapsible`
 
 **Exported types:** `CollapsibleContentProps`, `CollapsibleProps`, `CollapsibleTriggerProps`
 

@@ -42,6 +42,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
    `SheetHandle`
    `SheetTitle`
    `SheetTrigger`
+  - Also routed here, outside the Registry family:
+    - `sheet`
+  - Package export subpath: `@beemvp/beeui-ui/sheet`
 
 **Exported types:** `SheetCloseProps`, `SheetContentProps`, `SheetDescriptionProps`, `SheetFooterProps`, `SheetHandleProps`, `SheetProps`, `SheetSnapPoint`, `SheetTitleProps`, `SheetTriggerProps`
 

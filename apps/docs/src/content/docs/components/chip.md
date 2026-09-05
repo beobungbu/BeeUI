@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `Chip`
    `ChipGroup`
+  - Also routed here, outside the Registry family:
+    - `chip`
+  - Package export subpath: `@beemvp/beeui-ui/chip`
 
 **Exported types:** `ChipGroupProps`, `ChipGroupValue`, `ChipProps`, `ChipSelectionMode`
 

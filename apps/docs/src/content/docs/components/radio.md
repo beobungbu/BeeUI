@@ -37,6 +37,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 - Family exports: `Radio`
    `RadioGroup`
    `radioIndicatorVariants`
+  - Also routed here, outside the Registry family:
+    - `radio`
+  - Package export subpath: `@beemvp/beeui-ui/radio`
 
 **Exported types:** `RadioGroupProps`, `RadioProps`
 

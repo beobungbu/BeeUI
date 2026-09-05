@@ -36,6 +36,10 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `ListGroup`
    `ListGroupHeader`
+  - Also routed here, outside the Registry family:
+    - `ListGroupMembershipContext`
+    - `list-group`
+  - Package export subpath: `@beemvp/beeui-ui/list-group`
 
 **Exported types:** `ListGroupHeaderProps`, `ListGroupProps`
 
