@@ -22,6 +22,7 @@ import {
   resolveDeclaration,
   summarizeDescription,
 } from '../component-props-lib.mjs';
+import { stripSourceComments } from '../component-props-lib.mjs';
 import {
   buildPublicComponentManifest,
   collectPropDescriptionCoverage,
@@ -1488,10 +1489,12 @@ test('the styling section names the family own style axes and class surfaces', (
 });
 
 test('a family with no variant prop and no base says it has no style axes', () => {
-  // Toast declares its whole prop surface itself, so "none" covers everything there is to cover.
-  const toast = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'toast');
+  // KeyboardAwareScreen declares its whole prop surface in a parsed `*Props` type and extends
+  // nothing, so "none" covers everything there is to cover. This test named Toast first, which
+  // turned out to be the counter-example: its props live in an unparsed alias carrying `variant`.
+  const screen = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'keyboard-aware-screen');
 
-  assert.match(renderPublicComponentPage(toast, REPO_ROOT), /\*\*Style axes:\*\* none;/u);
+  assert.match(renderPublicComponentPage(screen, REPO_ROOT), /\*\*Style axes:\*\* none;/u);
 });
 
 // Separator has none of its own either, but defers part of its surface to `ViewProps`. Saying
@@ -1772,13 +1775,121 @@ test('a prop the family declares itself is not relabelled as inherited', () => {
   assert.equal(/`gap` \(\d+ values, inherited/u.test(page), false);
 });
 
-test('an inline structural base is described, not quoted', () => {
+test('an inline structural base is described, not quoted, anywhere on the page', () => {
   const manifest = buildPublicComponentManifest(REPO_ROOT);
   const themeScope = manifest.find((component) => component.name === 'theme-scope');
 
   const page = renderPublicComponentPage(themeScope, REPO_ROOT);
-  const styling = page.split('## Styling and theming')[1].split('\n## ')[0];
 
-  assert.match(styling, /a type declared inline at its `extends` site/u);
-  assert.equal(styling.includes('RegistryBrand'), false, 'the union must not be dumped into a code span');
+  // This asserted on `page.split('## Styling and theming')[1]` and passed while the bases line
+  // above it still quoted the whole union — the slice removed the copy the test existed to find.
+  assert.match(page, /a type declared inline at its `extends` site/u);
+  assert.equal(page.includes('RegistryBrand'), false, 'the union must not be dumped into a code span');
+});
+
+
+test('a base that names an imported type is named, not called inline', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const safeArea = manifest.find((component) => component.name === 'safe-area');
+
+  const page = renderPublicComponentPage(safeArea, REPO_ROOT);
+
+  // `React.ComponentProps<typeof NativeSafeAreaView>` has no name this parser extracts, which is
+  // not the same as having no name.
+  assert.match(page, /it also carries .*NativeSafeAreaView/u);
+  assert.equal(
+    /it also carries a type declared inline/u.test(page),
+    false,
+    'an imported type is not written inline',
+  );
+});
+
+test('every base a family defers to is listed, named and structural alike', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const table = manifest.find((component) => component.name === 'table');
+
+  const page = renderPublicComponentPage(table, REPO_ROOT);
+  const axes = page.split('\n').find((line) => line.startsWith('- **Style axes:**'));
+
+  // Table defers to both `ViewProps` and `React.ComponentProps<typeof Text>`; listing named
+  // bases only when no structural one exists dropped the second.
+  assert.match(axes, /ViewProps/u);
+  assert.match(axes, /typeof Text/u);
+});
+
+test('a family whose props live in an unparsed alias does not claim to have none', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const toast = manifest.find((component) => component.name === 'toast');
+
+  const page = renderPublicComponentPage(toast, REPO_ROOT);
+
+  // `ToastOptions` carries `variant?: ToastVariant`, five values, listed on this same page.
+  assert.match(page, /variant\?: ToastVariant/u);
+  assert.equal(/\*\*Style axes:\*\* none;/u.test(page), false);
+});
+
+test('a page naming a variant prop may not also claim to have no style axes', () => {
+  const page = [
+    '- `ToastOptions` — alias of `{ title: string; variant?: ToastVariant; }`.',
+    '- **Style axes:** none; this family has no variant or size prop.',
+  ].join('\n');
+
+  const violations = collectDerivedClaimViolations(page, { name: 'toast', allSources: [], source: '' }, REPO_ROOT);
+
+  assert.equal(violations.length, 1, 'the page contradicts itself with no base involved');
+  assert.match(violations[0], /naming a `variant` or `size` prop/u);
+});
+
+test('every declaration of a role constant is read, not just the first', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'tabs.tsx',
+      source: [
+        "const Trigger = () => { const role = 'tab'; return <View accessibilityRole={role} />; };",
+        "const Content = () => { const role = 'tabpanel'; return <View accessibilityRole={role} />; };",
+      ].join('\n'),
+    },
+  ]);
+
+  assert.deepEqual(facts.roles, ['tab', 'tabpanel']);
+});
+
+test('a role identifier shadowed by a parameter resolves to nothing', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'thing.tsx',
+      source: [
+        "const role = 'alert';",
+        'const Thing = ({ role }) => <View accessibilityRole={role} />;',
+      ].join('\n'),
+    },
+  ]);
+
+  assert.deepEqual(facts.roles, [], 'the module constant is not what the JSX names');
+});
+
+test('comment stripping survives a string that contains a comment opener', () => {
+  const stripped = stripSourceComments("const glob = '/*.ts';\nimport { X } from 'x'; // gone\n");
+
+  assert.match(stripped, /import \{ X \} from 'x';/u, 'a glob in a string must not swallow the file');
+  assert.equal(stripped.includes('gone'), false);
+});
+
+test('the rendered negative and the oracle that refuses it are the same string', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  // Renaming the rendered line by one word once left the oracle matching nothing, with every
+  // gate green and all 62 pages free to publish the negative falsely.
+  const withNoRoles = manifest
+    .map((component) => renderPublicComponentPage(component, REPO_ROOT))
+    .filter((page) => page.includes('each element keeps the role of the primitive it renders'));
+
+  assert.ok(withNoRoles.length > 0, 'no page exercises the negative role line');
+  for (const page of withNoRoles) {
+    assert.ok(
+      collectDerivedClaimViolations(page, { name: 'x', allSources: ['packages/ui/src/components/switch.tsx'], source: '' }, REPO_ROOT).some(
+        (violation) => violation.includes('assigns no roles'),
+      ),
+      'the oracle must recognise the sentence the renderer actually prints',
+    );
+  }
 });

@@ -56,7 +56,7 @@ Stateless `BeeThemeScope` subtree boundary; it applies a scoped theme override t
 | `registry` | `ThemeRegistry<Def>` | — | The registry used to resolve `brand`/`appearance` (or validate `theme`). Defaults to `beeThemeRegistry` (Bee + Violet, from #67). Pass a registry built with `defineThemeRegistry` to scope by a consumer-defined brand. |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 
-Also carries every prop of `(| { /** Semantic brand, resolved through `registry`. */ brand: RegistryBrand<Def>; /** Semantic appearance, resolved through `registry`. */ appearance: RegistryAppearance<Def>; theme?: undefined; } | { /** An already-resolved Uniwind runtime-theme name, validated against `registry`. */ theme: RegistryRuntimeTheme<Def>; brand?: undefined; appearance?: undefined; })` — that upstream contract is not reproduced here.
+Also carries every prop of a type declared inline at its `extends` site — that upstream contract is not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

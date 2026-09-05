@@ -519,19 +519,80 @@ export function cvaVariantType(values) {
 // specific to the component. These are the two facts that can be derived honestly: the roles this
 // family assigns to its own elements, and the accessibility states it manages. Read from the AST
 // rather than by matching text, so a role named in a comment or a string is not published as one.
-// Finds `const <name> = <expression>` anywhere in the file. File scope rather than lexical scope
-// is deliberate: a second declaration of the same name would add its literals too, which
-// over-reports rather than inventing a role that no branch assigns. Recursion is not followed
-// (`sourceFile` is dropped one level down), so an identifier chain resolves once and stops.
-function findLocalConstInitializer(name, sourceFile) {
-  let found;
+// Every `const <name> = <expression>` in the file, not the first.
+//
+// The comment here used to claim that a second declaration "would add its literals too"; the code
+// returned on the first match and discarded the rest. Two components in one file each computing
+// their own `const role` published only the earlier one's roles, and a reader takes the published
+// list as complete. The page's claim is about the whole family, and the family is these files, so
+// every declaration belongs in it.
+//
+// Resolution is skipped entirely when a parameter or binding of the same name exists: the
+// identifier at the JSX site is then that binding, not the module constant, and resolving to the
+// constant publishes a role the component never assigns. Recursion is not followed (`sourceFile`
+// is dropped one level down), so an identifier chain resolves once and stops.
+function findLocalConstInitializers(name, sourceFile) {
+  const initializers = [];
+  let shadowed = false;
   walk(sourceFile, (node) => {
-    if (found) return;
+    if (
+      (ts.isParameter(node) || ts.isBindingElement(node)) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === name
+    ) {
+      shadowed = true;
+      return;
+    }
     if (!ts.isVariableDeclaration(node)) return;
     if (!ts.isIdentifier(node.name) || node.name.text !== name) return;
-    found = node.initializer;
+    if (node.initializer) initializers.push(node.initializer);
   });
-  return found;
+  return shadowed ? [] : initializers;
+}
+
+// Comment text is prose about the code, not the code. Callers that grep a source file for what it
+// does must not read an explanation of what it deliberately does not do — `sheet.web.tsx` names
+// the gesture engine it does not use, and `spinner.tsx` names the role its primitive sets. A
+// regex over `//` and `/* */` is not enough: a string containing `/*` (a glob, a URL, a JSDoc
+// sample) swallows the rest of the file, so this walks the text tracking string and template
+// state.
+export function stripSourceComments(source) {
+  let out = '';
+  let index = 0;
+  let quote;
+  while (index < source.length) {
+    const character = source[index];
+    if (quote) {
+      if (character === '\\') {
+        out += source.slice(index, index + 2);
+        index += 2;
+        continue;
+      }
+      if (character === quote) quote = undefined;
+      out += character;
+      index += 1;
+      continue;
+    }
+    if (character === "'" || character === '"' || character === '`') {
+      quote = character;
+      out += character;
+      index += 1;
+      continue;
+    }
+    if (character === '/' && source[index + 1] === '/') {
+      while (index < source.length && source[index] !== '\n') index += 1;
+      continue;
+    }
+    if (character === '/' && source[index + 1] === '*') {
+      const end = source.indexOf('*/', index + 2);
+      index = end === -1 ? source.length : end + 2;
+      out += ' ';
+      continue;
+    }
+    out += character;
+    index += 1;
+  }
+  return out;
 }
 
 // Collects every string an expression can *evaluate to*.
@@ -551,8 +612,9 @@ function collectValueLiterals(node, out, sourceFile) {
   // `checkbox` or `button` that way, and reading the attribute alone published only the one role
   // ChipGroup sets directly — a list a reader would take as complete.
   if (ts.isIdentifier(node) && sourceFile) {
-    const initializer = findLocalConstInitializer(node.text, sourceFile);
-    if (initializer) collectValueLiterals(initializer, out, undefined);
+    for (const initializer of findLocalConstInitializers(node.text, sourceFile)) {
+      collectValueLiterals(initializer, out, undefined);
+    }
     return;
   }
   if (ts.isStringLiteralLike(node)) {

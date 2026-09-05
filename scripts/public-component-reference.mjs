@@ -297,6 +297,17 @@ export function collectRenderedPageViolations(page, componentName) {
   return violations;
 }
 
+// The renderer's absolute negatives and the oracle that refuses them, in one place.
+//
+// They were duplicated string literals. Renaming the rendered states line by one word left
+// `--check` reporting zero violations while every page could have published the negative
+// falsely: the oracle's key no longer matched anything, so it silently stopped looking. A guard
+// that stops guarding when a sentence is edited is worse than no guard, because the green stays.
+const ROLES_NONE_CLAIM = '**Roles this family assigns:** none';
+const STATES_NONE_CLAIM = '**Accessibility states and properties it sets:** none';
+const CLASS_NONE_CLAIM = '**Class-name surfaces:** none;';
+const AXES_NONE_CLAIM = '**Style axes:** none;';
+
 // An independent oracle for the four derived sections, deliberately NOT sharing code with the
 // derivation it checks.
 //
@@ -309,12 +320,12 @@ export function collectRenderedPageViolations(page, componentName) {
 // never confirm a positive, which is exactly the direction the damage runs.
 const NEGATIVE_CLAIM_ORACLES = [
   {
-    claim: '**Roles this family assigns:** none',
+    claim: ROLES_NONE_CLAIM,
     pattern: /accessibilityRole\s*[=:]|(?<![\w-])role\s*=\s*["'{]/u,
     message: 'publishes "assigns no roles" while its source sets a role',
   },
   {
-    claim: '**Accessibility states and properties it sets:** none',
+    claim: STATES_NONE_CLAIM,
     pattern: /accessibilityState\s*[=:]|(?<![\w-])aria-[a-z]+\s*=/u,
     message: 'publishes "manages no states" while its source sets one',
   },
@@ -322,12 +333,12 @@ const NEGATIVE_CLAIM_ORACLES = [
     // A component styling its own internals (`<View className="flex-row">`) accepts nothing from
     // the caller, so the JSX-attribute form is deliberately not a refutation. What refutes the
     // claim is the prop existing: declared as a type field, or destructured out of props.
-    claim: '**Class-name surfaces:** none;',
+    claim: CLASS_NONE_CLAIM,
     pattern: /className\s*\??\s*:|[{,]\s*className\s*[,}=]/u,
     message: 'publishes "accepts no className of its own" while its source declares one',
   },
   {
-    claim: '**Style axes:** none;',
+    claim: AXES_NONE_CLAIM,
     pattern: /\bcva\s*\(/u,
     message: 'publishes "no variant or size prop" while its source declares cva variants',
   },
@@ -392,13 +403,25 @@ export function collectDerivedClaimViolations(page, component, rootDir = ROOT_DI
   // no violation raised — neither file writes `className`, they spread `...props`, so the source
   // grep is blind to them too. Keying on the bases line itself covers every phrasing of it.
   if (page.includes('Also carries every prop of')) {
-    for (const claim of ['**Style axes:** none;', '**Class-name surfaces:** none;']) {
+    for (const claim of [AXES_NONE_CLAIM, CLASS_NONE_CLAIM]) {
       if (!page.includes(claim)) continue;
       violations.push(
         `${component.name}: publishes "${claim}" while also carrying a bases line that sends ` +
         'part of its prop surface elsewhere; the negative covers props the page never looked at.',
       );
     }
+  }
+
+  // Toast published "no variant or size prop" two lines below its own `variant?: ToastVariant`
+  // and the five values that prop takes. No base was involved, so every base-shaped guard was
+  // looking somewhere else — including, at first, this one: it was written inside the bases-line
+  // branch above, which is exactly the condition Toast fails. The page naming the prop is the
+  // evidence, wherever the prop came from.
+  if (page.includes(AXES_NONE_CLAIM) && /\b(?:variant|size)\?:/u.test(page)) {
+    violations.push(
+      `${component.name}: publishes "${AXES_NONE_CLAIM}" while naming a \`variant\` or \`size\` ` +
+      'prop elsewhere on the same page.',
+    );
   }
 
   for (const role of publishedRoles(page)) {
@@ -564,6 +587,21 @@ function renderFieldRow(field) {
 // links to the owning family's page when it is BeeUI's own; a base that resolves to nothing
 // (external, or a generic this module does not parse, e.g. `VariantProps<typeof xVariants>`)
 // keeps the original "upstream contract" wording unchanged.
+// A base is one of three things, and the page must say which.
+//
+// `extractOmitPickOrBareTypeName` returns a name for `ViewProps` and `Omit<ButtonProps, 'size'>`
+// and nothing for the rest — but "no name" was read as "written inline", which is only sometimes
+// true. `React.ComponentProps<typeof NativeSafeAreaView>` is an ordinary named import, and calling
+// it inline replaced a true sentence on the SafeArea page. Only a structural type — an object or
+// union literal written at the `extends` site, which is what carries a brace — is genuinely
+// unnameable, and that one must be described rather than quoted: ThemeScope's is 500 characters
+// of union with JSDoc inside, and its backticks fragment the code span that holds it.
+const INLINE_BASE_LABEL = 'a type declared inline at its `extends` site';
+
+function isStructuralBase(base) {
+  return base.includes('{');
+}
+
 let publicTypeOwnerIndexCache;
 
 function getPublicTypeOwnerIndex(rootDir) {
@@ -584,7 +622,7 @@ function renderBasesLine(bases, rootDir = ROOT_DIR) {
     const text = formatTypeText(base);
     const typeName = extractOmitPickOrBareTypeName(base);
     const owner = typeName ? owners.get(typeName) : undefined;
-    return { text, owner };
+    return { text, owner, structural: isStructuralBase(base) };
   });
 
   const external = rendered.filter((base) => !base.owner);
@@ -592,7 +630,9 @@ function renderBasesLine(bases, rootDir = ROOT_DIR) {
 
   const sentences = [];
   if (external.length) {
-    const list = external.map((base) => `\`${base.text}\``).join(' and ');
+    const list = external
+      .map((base) => (base.structural ? INLINE_BASE_LABEL : `\`${base.text}\``))
+      .join(' and ');
     sentences.push(`Also carries every prop of ${list} — that upstream contract is not reproduced here.`);
   }
   for (const { text, owner } of owned) {
@@ -773,10 +813,10 @@ function renderAccessibilityFacts(component, rootDir) {
 
   const roleLine = roles.length
     ? `- **Roles this family assigns:** ${code(roles)} — set by the components themselves, not by the caller.`
-    : '- **Roles this family assigns:** none of its own; each element keeps the role of the primitive it renders.';
+    : `- ${ROLES_NONE_CLAIM} of its own; each element keeps the role of the primitive it renders.`;
   const stateLine = states.length
     ? `- **Accessibility states and properties it sets:** ${code(states)}.`
-    : '- **Accessibility states and properties it sets:** none; this family exposes no state to assistive technology beyond its content.';
+    : `- ${STATES_NONE_CLAIM}; this family exposes no state to assistive technology beyond its content.`;
 
   return `${roleLine}\n${stateLine}`;
 }
@@ -867,12 +907,13 @@ function collectStyleSurfaces(shape, rootDir, accumulator, keep = () => true, se
   const shapes = getPublicTypeShapeIndex(rootDir);
   for (const base of shape.bases ?? []) {
     const typeName = extractOmitPickOrBareTypeName(base);
-    // An inline structural base — ThemeScope's discriminated union, written out at the extends
-    // site — has no name to resolve and no fields in the shape either, so it is unread territory
-    // like any other base. It must not be quoted: printing it verbatim put a whole union, JSDoc
-    // and all, into a code span on the ThemeScope page, and replaced a sentence that was true.
-    if (!typeName) {
+    // Unread territory either way; the difference is only whether the page can name it.
+    if (isStructuralBase(base)) {
       accumulator.inlineBases += 1;
+      continue;
+    }
+    if (!typeName) {
+      accumulator.unresolved.add(formatTypeText(base));
       continue;
     }
     const inherited = shapes.get(typeName);
@@ -924,13 +965,27 @@ function renderStylingFacts(component, rootDir = ROOT_DIR) {
   // not read at all. `collectDerivedClaimViolations` refuses the same sentence from the page
   // side, keyed on the same "Also carries every prop of" line the reader sees — so the two agree
   // by construction rather than by both happening to be right today.
+  // A type alias whose body is an object literal is unread territory of the same kind: its
+  // fields never reach `shape.fields`, so nothing here can see them. Toast declares its entire
+  // prop surface that way — `ToastOptions` carries `variant?: ToastVariant`, five values, listed
+  // on the same page two lines above — and the page claimed to have no variant prop. It has no
+  // base at all, so every base-shaped guard was looking elsewhere.
+  //
+  // Scoped to families that export no `*Props` type at all — the page says so itself — because
+  // only then does an object-literal alias hold the prop surface. `DateTimePickerValue` is an
+  // object alias too, holding `date` and `time`, and it can hide no style axis; treating it the
+  // same way traded a true sentence for a vaguer one on a page that had nothing wrong with it.
+  const typeDocs = component.typeDocs ?? [];
+  const unparsedAlias =
+    !typeDocs.some((entry) => entry.docKind === 'props') &&
+    typeDocs.some((entry) => entry.kind === 'alias' && (entry.aliasOf ?? '').includes('{'));
   const defersAnything =
     named.length > 0 || accumulator.resolved.size > 0 || accumulator.inlineBases > 0;
   const deferralList = named.length
     ? code(named)
     : accumulator.resolved.size
       ? code([...accumulator.resolved].sort())
-      : 'a type declared inline at its `extends` site';
+      : INLINE_BASE_LABEL;
 
   const axisLine = accumulator.axes.size
     ? `- **Style axes:** ${[...accumulator.axes]
@@ -938,13 +993,17 @@ function renderStylingFacts(component, rootDir = ROOT_DIR) {
         .join(', ')} — the values are in the props tables above.`
     : defersAnything
       ? `- **Style axes:** none of its own — its appearance comes from tokens and your own classes; it also carries ${deferralList}.`
-      : '- **Style axes:** none; this family has no variant or size prop, so its appearance comes from tokens and your own classes.';
+      : unparsedAlias
+        ? '- **Style axes:** not enumerated here: this family declares its props in a type alias whose fields this page does not parse — see the exported types above.'
+        : `- ${AXES_NONE_CLAIM} this family has no variant or size prop, so its appearance comes from tokens and your own classes.`;
 
   const classLine = accumulator.classSurfaces.size
     ? `- **Class-name surfaces:** ${code([...accumulator.classSurfaces].sort())}.`
     : defersAnything
       ? `- **Class-name surfaces:** none declared by this family; it also carries ${deferralList}.`
-      : '- **Class-name surfaces:** none; this family accepts no `className` of its own.';
+      : unparsedAlias
+        ? '- **Class-name surfaces:** not enumerated here, for the same reason as the axes above.'
+        : `- ${CLASS_NONE_CLAIM} this family accepts no \`className\` of its own.`;
 
   return `${axisLine}\n${classLine}`;
 }
