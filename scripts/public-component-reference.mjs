@@ -304,10 +304,10 @@ export function collectRenderedPageViolations(page, componentName) {
 // `--check` reporting zero violations while every page could have published the negative
 // falsely: the oracle's key no longer matched anything, so it silently stopped looking. A guard
 // that stops guarding when a sentence is edited is worse than no guard, because the green stays.
-const ROLES_NONE_CLAIM = '**Roles this family assigns:** none';
-const STATES_NONE_CLAIM = '**Accessibility states and properties it sets:** none';
-const CLASS_NONE_CLAIM = '**Class-name surfaces:** none;';
-const AXES_NONE_CLAIM = '**Style axes:** none;';
+export const ROLES_NONE_CLAIM = '**Roles this family assigns:** none';
+export const STATES_NONE_CLAIM = '**Accessibility states and properties it sets:** none';
+export const CLASS_NONE_CLAIM = '**Class-name surfaces:** none;';
+export const AXES_NONE_CLAIM = '**Style axes:** none;';
 
 // An independent oracle for the four derived sections, deliberately NOT sharing code with the
 // derivation it checks.
@@ -372,8 +372,13 @@ const KNOWN_ACCESSIBILITY_ROLES = new Set([
 
 function publishedRoles(page) {
   const line = page.split('\n').find((candidate) => candidate.includes('**Roles this family assigns:**'));
-  if (!line || line.includes('none of its own')) return [];
-  return [...line.matchAll(/`([^`]+)`/gu)].map((match) => match[1]);
+  // Keyed on the shared constant, not on a phrase: the negative line gained backticked file
+  // names when it started naming its scope, and this read them as roles.
+  if (!line || line.includes(ROLES_NONE_CLAIM)) return [];
+  // Everything after the em dash is the sentence about the roles, including the file names the
+  // line was read from. Reading the whole line published `dialog.tsx` as a role.
+  const [published] = line.split(' — ');
+  return [...published.matchAll(/`([^`]+)`/gu)].map((match) => match[1]);
 }
 
 export function collectDerivedClaimViolations(page, component, rootDir = ROOT_DIR) {
@@ -808,12 +813,27 @@ function renderAccessibilityFacts(component, rootDir) {
   const { roles, states } = extractAccessibilityFacts(files);
   const code = (values) => values.map((value) => `\`${value}\``).join(', ');
 
+  // Both lines name the files they were read from.
+  //
+  // Five audit rounds chased the same defect through one AST position after another, and the
+  // last one found it had simply moved: the guard greps `allSources`, the list the derivation
+  // already walks, so it is independent in method and not in scope. Widening it to the import
+  // closure attributes Toast's live region to KeyboardAwareScreen, which imports Toast through a
+  // chain and renders none — trading a false negative for a false positive. A categorical claim
+  // about a family is not derivable from a subset of its files, so the sentence stops making
+  // one and says which files were read instead. A reader can then see the limit; before, the
+  // page asserted past it.
+  const scope = files.map(({ path: relPath }) => `\`${relPath.split('/').pop()}\``).join(', ');
+  // The positive list needs the scope as much as the negative does: a list reads as complete,
+  // and adding an attribute to a shared module a family renders — `overlay-runtime.tsx`, reached
+  // from `dialog.tsx` — leaves this list unchanged and no gate red. Naming the files makes the
+  // list's edge visible instead of leaving the reader to assume there is none.
   const roleLine = roles.length
-    ? `- **Roles this family assigns:** ${code(roles)} — set by the components themselves, not by the caller.`
-    : `- ${ROLES_NONE_CLAIM} of its own; each element keeps the role of the primitive it renders.`;
+    ? `- **Roles this family assigns:** ${code(roles)} — set in ${scope} by the components themselves, not by the caller.`
+    : `- ${ROLES_NONE_CLAIM} set in ${scope}; each element keeps the role of the primitive it renders.`;
   const stateLine = states.length
-    ? `- **Accessibility states and properties it sets:** ${code(states)}.`
-    : `- ${STATES_NONE_CLAIM}; this family exposes no state to assistive technology beyond its content.`;
+    ? `- **Accessibility states and properties it sets:** ${code(states)} — read from ${scope}.`
+    : `- ${STATES_NONE_CLAIM} set in ${scope}.`;
 
   return `${roleLine}\n${stateLine}`;
 }
@@ -822,12 +842,27 @@ function renderAccessibilityFacts(component, rootDir) {
 // rather than hidden behind a generic parity claim", while being exactly a generic parity claim on
 // 56 of the 62 pages. Which implementation renders on which target is a fact about the family's own
 // files, so state it.
-function renderPlatformImplementation(component) {
+function renderPlatformImplementation(component, rootDir = ROOT_DIR) {
   const platformFiles = (component.allSources ?? []).filter((relPath) =>
     /\.(native|web|ios|android)\.tsx?$/u.test(relPath),
   );
   if (!platformFiles.length) {
-    return 'One implementation renders on every supported target: this family ships no platform-specific file, so the props and behavior above are the same on iOS, Android and Web.';
+    // "The props and behavior above are the same on iOS, Android and Web" was decided by a
+    // filename glob — the absence of a `.web.tsx` sibling — and was false on ten of 62 pages.
+    // KeyboardAwareScreen passes `behavior={Platform.OS === 'ios' ? 'padding' : undefined}`;
+    // AlertBanner's own props table two sections above says its announcement is iOS-only, so the
+    // page contradicted itself. A platform branch in the source is the evidence; a filename is
+    // not.
+    const branches = (component.allSources ?? [])
+      .filter((relPath) => fs.existsSync(path.join(rootDir, relPath)))
+      .some((relPath) =>
+        /\bPlatform\s*\.\s*(?:OS|select)\b/u.test(
+          stripSourceComments(fs.readFileSync(path.join(rootDir, relPath), 'utf8')),
+        ),
+      );
+    return branches
+      ? 'This family ships no platform-specific file, but its source branches on `Platform`: some behavior differs by target. The differences are called out on the affected props above rather than summarised here.'
+      : 'One implementation renders on every supported target: this family ships no platform-specific file and its source takes no `Platform` branch, so the props and behavior above are the same on iOS, Android and Web.';
   }
 
   const label = (relPath) => {
@@ -1132,7 +1167,7 @@ export function renderPublicComponentPage(component, rootDir = ROOT_DIR) {
     ? '`BeeUIProvider` is required above this family because it participates in shared overlay/toast runtime infrastructure.'
     : 'No additional provider is required by this family. `BeeUIProvider` remains the recommended application root.';
 
-  return `---\ntitle: ${yamlString(component.title)}\ndescription: ${yamlString(component.purpose)}\n---\n\n<!-- Generated by scripts/public-component-reference.mjs. Do not hand-edit. -->\n\n${component.purpose}\n\n:::note[Distribution status]\nBeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.\n:::\n\n## Identity\n\n- **Category:** ${component.category}\n- **Status:** stable public Registry/export-map component family\n- **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)\n- **Source:** [\`${component.source}\`](${component.sourceHref})\n\n## Import\n\n\`\`\`tsx\nimport { ${component.values.join(', ')} } from '@beemvp/beeui-ui';\n\`\`\`\n\nThere is no documented deep/private source import. For source ownership from a BeeUI checkout:\n\n\`\`\`bash\n${component.cliAdd}\n\`\`\`\n\nRegistry metadata: [\`registry/registry.json\`](${component.registryHref}).\n\n## Composition and public API\n\n${renderAnatomy(component)}\n\n**Exported types:** ${types}\n\nThe generated API inventory is mechanically joined to \`packages/ui/src/index.ts\`, Registry metadata, and the component reference contract. Each type's field table below is parsed directly from that source, not a second hand-maintained copy; for the fuller behavior narrative see the [canonical component behavior catalog](https://github.com/beobungbu/BeeUI/blob/main/docs/components.md).\n\n## State and behavior contract\n\n${component.behavior}\n\n### Props\n\n${renderTypeDocs(component.typeDocs)}\n\nThe executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.\n\n## Provider and dependencies\n\n- ${provider}\n- **Peer/native dependencies visible to this Registry item:** ${peers}\n- **Registry dependency closure:** ${registryDeps}\n${webPeerNote}- Safe-area ownership remains explicit: shell surfaces touching system edges opt into \`SafeArea\`; components do not silently invent app-shell insets.\n- Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).\n\n## Platform behavior\n\n${renderPlatformImplementation(component)}\n\n${platformSplit}\n\nEvidence classes are not equal and this page does not blur them: Web behavior is exercised in a real browser, while iOS and Android carry package/export and native-compile evidence, which is not device-runtime proof. The [compatibility contract](/docs/compatibility/) records which class each claim rests on.\n\n## Accessibility\n\n${renderAccessibilityFacts(component, rootDir)}\n\nKeyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.\n\n## Styling and theming\n\n${renderStylingFacts(component, rootDir)}\n\nColors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A \`className\` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.\n\n## Executable examples\n\n${examples}\n\n### Addressable examples\n\nEach link below opens the Showcase at that exact example, not at the top of the gallery:\n\n${renderExampleTargets(component)}\n\nThe Showcase links demonstrate Web behavior; use the native-preview guide for real simulator/emulator/device paths.\n\n## Limitations\n\n${limitations}\n\n${component.notes ? `**Implementation note:** ${component.notes}\n\n` : ''}## Related\n\n- [All components](/docs/components/)\n- [Production patterns](/docs/patterns/)\n- [Showcase](/showcase/)\n- [CLI & source ownership](/docs/guides/cli-source-ownership/)\n- [Source](${component.sourceHref})\n`;
+  return `---\ntitle: ${yamlString(component.title)}\ndescription: ${yamlString(component.purpose)}\n---\n\n<!-- Generated by scripts/public-component-reference.mjs. Do not hand-edit. -->\n\n${component.purpose}\n\n:::note[Distribution status]\nBeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.\n:::\n\n## Identity\n\n- **Category:** ${component.category}\n- **Status:** stable public Registry/export-map component family\n- **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)\n- **Source:** [\`${component.source}\`](${component.sourceHref})\n\n## Import\n\n\`\`\`tsx\nimport { ${component.values.join(', ')} } from '@beemvp/beeui-ui';\n\`\`\`\n\nThere is no documented deep/private source import. For source ownership from a BeeUI checkout:\n\n\`\`\`bash\n${component.cliAdd}\n\`\`\`\n\nRegistry metadata: [\`registry/registry.json\`](${component.registryHref}).\n\n## Composition and public API\n\n${renderAnatomy(component)}\n\n**Exported types:** ${types}\n\nThe generated API inventory is mechanically joined to \`packages/ui/src/index.ts\`, Registry metadata, and the component reference contract. Each type's field table below is parsed directly from that source, not a second hand-maintained copy; for the fuller behavior narrative see the [canonical component behavior catalog](https://github.com/beobungbu/BeeUI/blob/main/docs/components.md).\n\n## State and behavior contract\n\n${component.behavior}\n\n### Props\n\n${renderTypeDocs(component.typeDocs)}\n\nThe executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.\n\n## Provider and dependencies\n\n- ${provider}\n- **Peer/native dependencies visible to this Registry item:** ${peers}\n- **Registry dependency closure:** ${registryDeps}\n${webPeerNote}- Safe-area ownership remains explicit: shell surfaces touching system edges opt into \`SafeArea\`; components do not silently invent app-shell insets.\n- Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).\n\n## Platform behavior\n\n${renderPlatformImplementation(component, rootDir)}\n\n${platformSplit}\n\nEvidence classes are not equal and this page does not blur them: Web behavior is exercised in a real browser, while iOS and Android carry package/export and native-compile evidence, which is not device-runtime proof. The [compatibility contract](/docs/compatibility/) records which class each claim rests on.\n\n## Accessibility\n\n${renderAccessibilityFacts(component, rootDir)}\n\nKeyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.\n\n## Styling and theming\n\n${renderStylingFacts(component, rootDir)}\n\nColors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A \`className\` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.\n\n## Executable examples\n\n${examples}\n\n### Addressable examples\n\nEach link below opens the Showcase at that exact example, not at the top of the gallery:\n\n${renderExampleTargets(component)}\n\nThe Showcase links demonstrate Web behavior; use the native-preview guide for real simulator/emulator/device paths.\n\n## Limitations\n\n${limitations}\n\n${component.notes ? `**Implementation note:** ${component.notes}\n\n` : ''}## Related\n\n- [All components](/docs/components/)\n- [Production patterns](/docs/patterns/)\n- [Showcase](/showcase/)\n- [CLI & source ownership](/docs/guides/cli-source-ownership/)\n- [Source](${component.sourceHref})\n`;
 }
 
 export function renderPublicComponentIndex(manifest) {

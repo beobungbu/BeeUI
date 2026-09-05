@@ -173,7 +173,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 ## Platform behavior
 
-One implementation renders on every supported target: this family ships no platform-specific file, so the props and behavior above are the same on iOS, Android and Web.
+One implementation renders on every supported target: this family ships no platform-specific file and its source takes no `Platform` branch, so the props and behavior above are the same on iOS, Android and Web.
 
 The same public family is exposed across the supported target matrix; meaningful platform differences remain governed by the compatibility contract.
 
@@ -181,8 +181,8 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 
 ## Accessibility
 
-- **Roles this family assigns:** `dialog`, `header` — set by the components themselves, not by the caller.
-- **Accessibility states and properties it sets:** `accessibilityElementsHidden`, `accessibilityHint`, `accessibilityLabel`, `accessibilityLabelledBy`, `controls`, `expanded`, `hidden`.
+- **Roles this family assigns:** `dialog`, `header` — set in `popover.tsx` by the components themselves, not by the caller.
+- **Accessibility states and properties it sets:** `accessibilityElementsHidden`, `accessibilityHint`, `accessibilityLabel`, `accessibilityLabelledBy`, `controls`, `expanded`, `hidden` — read from `popover.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 

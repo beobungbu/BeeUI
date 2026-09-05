@@ -164,7 +164,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 ## Platform behavior
 
-One implementation renders on every supported target: this family ships no platform-specific file, so the props and behavior above are the same on iOS, Android and Web.
+This family ships no platform-specific file, but its source branches on `Platform`: some behavior differs by target. The differences are called out on the affected props above rather than summarised here.
 
 The same public family is exposed across the supported target matrix; meaningful platform differences remain governed by the compatibility contract.
 
@@ -172,8 +172,8 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 
 ## Accessibility
 
-- **Roles this family assigns:** `combobox`, `group`, `listbox`, `option` — set by the components themselves, not by the caller.
-- **Accessibility states and properties it sets:** `accessibilityElementsHidden`, `accessibilityLabel`, `accessibilityLabelledBy`, `accessible`, `controls`, `disabled`, `expanded`, `haspopup`, `hidden`, `labelledby`, `selected`, `text`.
+- **Roles this family assigns:** `combobox`, `group`, `listbox`, `option` — set in `select.tsx` by the components themselves, not by the caller.
+- **Accessibility states and properties it sets:** `accessibilityElementsHidden`, `accessibilityLabel`, `accessibilityLabelledBy`, `accessible`, `controls`, `disabled`, `expanded`, `haspopup`, `hidden`, `labelledby`, `selected`, `text` — read from `select.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 

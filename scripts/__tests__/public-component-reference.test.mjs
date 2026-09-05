@@ -28,6 +28,8 @@ import {
   collectPropDescriptionCoverage,
   collectRenderedPageViolations,
   collectDerivedClaimViolations,
+  ROLES_NONE_CLAIM,
+  STATES_NONE_CLAIM,
   collectPropDescriptionViolations,
   PROP_DESCRIPTION_FLOOR,
   PROP_DISTINCT_DESCRIPTION_FLOOR,
@@ -1510,12 +1512,92 @@ test('a prop typed by an alias with no resolved values blocks the absolute negat
 
 test('an accessibility property outside accessibilityState is published', () => {
   const manifest = buildPublicComponentManifest(REPO_ROOT);
-  const progress = manifest.find((component) => component.name === 'progress');
-  const banner = manifest.find((component) => component.name === 'alert-banner');
+  const statesLine = (name) =>
+    renderPublicComponentPage(
+      manifest.find((component) => component.name === name),
+      REPO_ROOT,
+    )
+      .split('\n')
+      .find((line) => line.startsWith('- **Accessibility states and properties it sets:**'));
 
-  // The oracle's own pattern had been copied from the derivation's scope, so both missed these.
-  assert.match(renderPublicComponentPage(progress, REPO_ROOT), /`max`, `min`, `now`/u);
-  assert.match(renderPublicComponentPage(banner, REPO_ROOT), /`accessibilityLiveRegion`/u);
+  // Asserted against the whole page first, and passed with the derivation hard-wired off:
+  // `accessibilityLiveRegion` also appears in AlertBanner's props table, forty lines above the
+  // line this test is about. Scoping the assertion to that line is the whole test.
+  assert.match(statesLine('progress'), /`max`, `min`, `now`/u);
+  assert.match(statesLine('alert-banner'), /`accessibilityLiveRegion`/u);
+});
+
+// M3: reverting the states oracle to `accessibilityState|aria-` shipped green, because the
+// derivation had been fixed too and no page was left publishing the negative falsely. Nothing
+// exercised the oracle's own scope, so it could be narrowed back to exactly the scope the audit
+// had flagged with every gate passing.
+test('the states oracle refuses the negative for any accessibility attribute', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-states-oracle-'));
+  const page = '- **Accessibility states and properties it sets:** none set in `x.tsx`.';
+
+  for (const attribute of [
+    'accessibilityLiveRegion="polite"',
+    'accessibilityElementsHidden={true}',
+    'accessibilityValue={{ now: 1 }}',
+    'accessible={false}',
+    'aria-checked={true}',
+    'accessibilityState={{ disabled }}',
+  ]) {
+    fs.writeFileSync(path.join(dir, 'x.tsx'), `export const X = () => <View ${attribute} />;\n`);
+    const violations = collectDerivedClaimViolations(page, { name: 'x', allSources: ['x.tsx'], source: 'x.tsx' }, dir);
+    assert.equal(violations.length, 1, `${attribute} must refute "sets none"`);
+  }
+
+  fs.writeFileSync(path.join(dir, 'x.tsx'), 'export const X = () => <View accessibilityRole="button" />;\n');
+  assert.deepEqual(
+    collectDerivedClaimViolations(page, { name: 'x', allSources: ['x.tsx'], source: 'x.tsx' }, dir),
+    [],
+    'a role is not a state, and must not be read as one',
+  );
+});
+
+test('a family whose source branches on Platform does not claim identical behavior', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const screen = manifest.find((component) => component.name === 'keyboard-aware-screen');
+
+  const page = renderPublicComponentPage(screen, REPO_ROOT);
+
+  // Decided from a filename glob, this was false on ten of 62 pages. AlertBanner's own props
+  // table contradicted it two sections above.
+  assert.equal(/takes no `Platform` branch/u.test(page), false);
+  assert.match(page, /its source branches on `Platform`/u);
+});
+
+test('every accessibility line names the files it was read from, positive or negative', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const lines = manifest
+    .flatMap((component) => renderPublicComponentPage(component, REPO_ROOT).split('\n'))
+    .filter(
+      (line) =>
+        line.startsWith('- **Roles this family assigns:**') ||
+        line.startsWith('- **Accessibility states and properties it sets:**'),
+    );
+
+  assert.equal(lines.length, manifest.length * 2);
+  for (const line of lines) {
+    // A list reads as complete. Adding an attribute to a shared module a family renders leaves
+    // the list unchanged and every gate green, so the list must say what it covers.
+    assert.match(line, /`[\w.-]+\.tsx?`/u, `accessibility line with no scope: ${line}`);
+  }
+});
+
+test('a negative accessibility claim names the files it was read from', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const pages = manifest.map((component) => renderPublicComponentPage(component, REPO_ROOT));
+  const negatives = pages
+    .flatMap((page) => page.split('\n'))
+    .filter((line) => line.includes(ROLES_NONE_CLAIM) || line.includes(STATES_NONE_CLAIM));
+
+  assert.ok(negatives.length > 0, 'no page exercises the negative lines');
+  for (const line of negatives) {
+    // The claim is only as wide as the files behind it; an unqualified "none" asserts past them.
+    assert.match(line, /none set in `[^`]+\.tsx?`/u, `unscoped negative: ${line}`);
+  }
 });
 
 // Separator has none of its own either, but defers part of its surface to `ViewProps`. Saying
