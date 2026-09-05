@@ -15,11 +15,16 @@ export const PAGEFIND_RANKING = {
   // ranked sixth for "keyboard navigation" behind Calendar, despite carrying the term far more
   // densely. The three accessibility intents in QUERY_MATRIX all failed under 0.
   //
-  // Held out from the matrix, to avoid measuring the change against queries chosen for it:
-  // 45 heading-derived queries score 41/45 at pageLength 0 and 43/45 at 0.75, with no regression;
-  // 62 component-name queries and 50 title queries tie. The one query that regressed is fixed in
-  // content instead — the Troubleshooting heading now names the safe-area-duplicated symptom the
-  // way a reader searches for it, and ranks first for it.
+  // Held-out checks were run to avoid measuring the change against queries chosen for it, and
+  // 0.75 won on every sample tried — but the exact fractions are not recorded here because an
+  // independent reviewer could not reproduce them from the description, and a number that cannot
+  // be re-derived is not evidence. Do not restate one without the sampling rule beside it.
+  // Two things do reproduce exactly: `accessibility/keyboard-focus` moves from rank 6 to rank 2
+  // for "keyboard navigation", and the 21-query matrix in check-docs-search-intent.mjs passes at
+  // 0.75 and fails three of its accessibility intents at 0. A held-out sweep also shows some
+  // individual queries regress at 0.75; it is better on balance, not uniformly.
+  // The one matrix query that regressed is fixed in content instead — the Troubleshooting heading
+  // now names the safe-area-duplicated symptom the way a reader searches for it, and ranks first.
   pageLength: 0.75,
   termFrequency: 0.1, // Starlight default
   termSaturation: 2, // Starlight default

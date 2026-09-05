@@ -159,6 +159,12 @@ function findUnknownBehaviorPropReferences(component, rootDir, field = 'behavior
 // the measured value at the time it was written, so coverage can only go up.
 export const PROP_DESCRIPTION_FLOOR = 624;
 
+// A second floor, because the first one is satisfiable by boilerplate: 22 props were added to
+// the total by one repeated sentence, and a ratio alone cannot tell that apart from 22 props
+// that were actually written about. Reporting `distinct` without gating it left the ratchet
+// exactly as weak as before.
+export const PROP_DISTINCT_DESCRIPTION_FLOOR = 280;
+
 // Walks a resolved type entry the same way `applyGlossary` and the renderer do:
 // a `union` entry carries no `fields` of its own, only `variants`, each of which is
 // itself an object (or nested union) shape. Scope: this counts the rows of the four-column
@@ -196,7 +202,7 @@ export function collectPropDescriptionCoverage(manifest) {
 }
 
 export function collectPropDescriptionViolations(manifest) {
-  const { described, total } = collectPropDescriptionCoverage(manifest);
+  const { described, distinct, total } = collectPropDescriptionCoverage(manifest);
   const remedy =
     'Document the prop in `packages/ui/src` with JSDoc, or add it to docs/prop-glossary.json if ' +
     'its meaning is identical on every family that declares it.';
@@ -212,6 +218,14 @@ export function collectPropDescriptionViolations(manifest) {
     );
   } else if (described < total) {
     violations.push(`${total - described} published prop(s) have no description. ${remedy}`);
+  }
+
+  if (distinct < PROP_DISTINCT_DESCRIPTION_FLOOR) {
+    violations.push(
+      `distinct prop descriptions dropped to ${distinct} (floor ${PROP_DISTINCT_DESCRIPTION_FLOOR}). ` +
+      'Coverage can be held at 100% by repeating one sentence, so the number of different things ' +
+      'said is guarded separately.',
+    );
   }
 
   return violations;

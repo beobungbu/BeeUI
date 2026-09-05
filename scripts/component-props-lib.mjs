@@ -360,6 +360,27 @@ function collectDefaultsFromBindingPattern(pattern, sourceFile, defaults) {
 // whose typed parameter is destructured inside the body
 // (`function Dialog(props: DialogProps) { const { defaultOpen = false } =
 // props; }`). Returns an empty map — never a guess — when nothing matches.
+// A wrapper can re-default a prop it forwards: `<DialogClose variant={variant ?? 'destructive'} />`.
+// That is the real default a reader gets, and it is not a destructuring default, so the binding
+// walk above cannot see it. Resolving `buttonVariants` globally published `'primary'` for
+// AlertDialogAction and AlertDialogCancel, whose actual defaults are 'destructive' and 'outline',
+// on a page whose own example passes no variant at all.
+function collectDefaultsFromForwardedFallbacks(node, sourceFile, defaults) {
+  walk(node, (inner) => {
+    if (!ts.isJsxAttribute(inner) || !inner.name || !ts.isIdentifier(inner.name)) return;
+    const initializer = inner.initializer;
+    if (!initializer || !ts.isJsxExpression(initializer) || !initializer.expression) return;
+
+    const expression = initializer.expression;
+    if (!ts.isBinaryExpression(expression)) return;
+    if (expression.operatorToken.kind !== ts.SyntaxKind.QuestionQuestionToken) return;
+    if (!ts.isIdentifier(expression.left) || expression.left.text !== inner.name.text) return;
+    if (!ts.isStringLiteralLike(expression.right)) return;
+
+    defaults.set(inner.name.text, `'${expression.right.text}'`);
+  });
+}
+
 export function extractDefaults(files, candidateNames) {
   const defaults = new Map();
 
@@ -375,6 +396,7 @@ export function extractDefaults(files, candidateNames) {
           if (param && ts.isObjectBindingPattern(param.name)) {
             collectDefaultsFromBindingPattern(param.name, sourceFile, defaults);
           }
+          if (renderFn) collectDefaultsFromForwardedFallbacks(renderFn, sourceFile, defaults);
         }
       }
 
@@ -453,6 +475,21 @@ export function extractInertProps(files, candidateNames) {
 // them from there rather than leaving the contract undocumented.
 //
 // Shape handled: `const x = cva(base, { variants: { prop: { value: ... } }, defaultVariants: {...} })`.
+// An object key is always text in the AST, but cva does not type it that way: `{ true: …, false: … }`
+// becomes `boolean` and `{ 1: …, 2: … }` becomes `1 | 2`. Publishing the keys as string literals
+// put `'true' | 'false'` on the Stack page, which the same page contradicts with `<HStack wrap>`;
+// the numeric case is the same defect waiting for the first numeric variant.
+export function cvaVariantType(values) {
+  const isBoolean = values.every((value) => value === 'true' || value === 'false');
+  const isNumeric = values.length > 0 && values.every((value) => /^-?\d+(?:\.\d+)?$/u.test(value));
+  const quote = (value) => (isBoolean || isNumeric ? value : `'${value}'`);
+
+  return {
+    quote,
+    type: isBoolean ? 'boolean' : values.map(quote).join(' | '),
+  };
+}
+
 export function extractCvaVariants(files) {
   const byIdentifier = new Map();
 
@@ -892,16 +929,12 @@ function applyCvaVariants(shape, cvaByIdentifier) {
     for (const [name, spec] of props) {
       if (omitted.has(name)) continue;
       if (shape.fields.some((field) => field.name === name)) continue;
-      // cva types a variant whose keys are `true`/`false` as `boolean`, not as the string union
-      // `'true' | 'false'`. Publishing the string form put a signature on the Stack page that the
-      // same page contradicts three lines later with `<HStack wrap>`.
-      const isBoolean = spec.values.every((value) => value === 'true' || value === 'false');
-      const quote = (value) => (isBoolean ? value : `'${value}'`);
+      const { type, quote } = cvaVariantType(spec.values);
 
       shape.fields.push({
         name,
         optional: true,
-        type: isBoolean ? 'boolean' : spec.values.map(quote).join(' | '),
+        type,
         default: spec.default === undefined ? undefined : quote(spec.default),
         description:
           `Defined by \`${identifier}\` (class-variance-authority); see Styling and theming for ` +

@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   buildTypeIndex,
+  cvaVariantType,
   extractCvaVariants,
   variantsIdentifierFromBase,
   diffPlatformObjectShape,
@@ -1024,9 +1025,10 @@ test('a prop description collapses the line breaks a JSDoc block wraps at', () =
 // A floor comparison alone passes 583 of 584 whenever the total grows by the same amount as the
 // gap, so one newly undocumented prop reaches the published tables with every gate green.
 test('one undescribed prop is a violation even when the floor is still met', () => {
+  // Distinct text per prop: these fixtures test the coverage floors, not the boilerplate floor.
   const fields = Array.from({ length: PROP_DESCRIPTION_FLOOR }, (unused, index) => ({
     name: `documented${index}`,
-    description: 'Described.',
+    description: `Described ${index}.`,
   }));
   const manifest = [
     { typeDocs: [{ kind: 'object', fields: [...fields, { name: 'brandNew', description: '' }] }] },
@@ -1045,9 +1047,10 @@ test('a manifest below the floor reports the floor, not the per-prop gap', () =>
 });
 
 test('a fully described manifest at the floor is clean', () => {
+  // Distinct text per prop: these fixtures test the coverage floors, not the boilerplate floor.
   const fields = Array.from({ length: PROP_DESCRIPTION_FLOOR }, (unused, index) => ({
     name: `documented${index}`,
-    description: 'Described.',
+    description: `Described ${index}.`,
   }));
 
   assert.deepEqual(collectPropDescriptionViolations([{ typeDocs: [{ kind: 'object', fields }] }]), []);
@@ -1216,4 +1219,55 @@ test('a boolean cva variant publishes as boolean, not a string union', () => {
 
   assert.equal(wrap.type, 'boolean');
   assert.equal(wrap.default, 'false');
+});
+
+
+// cva does not type an object key as text: `{ 1: …, 2: … }` is `1 | 2`, not `'1' | '2'`. Same
+// defect as the boolean case, waiting for the first numeric variant.
+test('cva variant keys publish with the type cva actually gives them', () => {
+  assert.equal(cvaVariantType(['true', 'false']).type, 'boolean');
+  assert.equal(cvaVariantType(['1', '2']).type, '1 | 2');
+  assert.equal(cvaVariantType(['sm', 'md']).type, "'sm' | 'md'");
+});
+
+// A wrapper that forwards a prop can re-default it. Applying the shared cva's own defaults
+// globally published 'primary' for AlertDialogAction, whose real default is 'destructive'.
+test('a prop re-defaulted by a forwarding wrapper takes the wrapper default', () => {
+  const source = `
+    export const AlertDialogAction = React.forwardRef<Ref, AlertDialogActionProps>(
+      ({ variant, ...props }, ref) => <DialogClose ref={ref} {...props} variant={variant ?? 'destructive'} />
+    );
+  `;
+
+  const defaults = extractDefaults(
+    [{ path: 'alert-dialog.tsx', source }],
+    new Set(['AlertDialogActionProps']),
+  );
+
+  assert.equal(defaults.get('variant'), "'destructive'");
+});
+
+test('AlertDialog publishes the defaults its wrappers apply, not buttonVariants own', () => {
+  const alertDialog = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'alert-dialog');
+  const defaultFor = (typeName) =>
+    alertDialog.typeDocs
+      .find((entry) => entry.name === typeName)
+      ?.fields?.find((field) => field.name === 'variant')?.default;
+
+  assert.equal(defaultFor('AlertDialogActionProps'), "'destructive'");
+  assert.equal(defaultFor('AlertDialogCancelProps'), "'outline'");
+  // The trigger does not re-default, so it keeps buttonVariants own default.
+  assert.equal(defaultFor('AlertDialogTriggerProps'), "'primary'");
+});
+
+// Coverage can sit at 100% while saying one thing 700 times.
+test('a manifest whose descriptions are all one sentence is a violation', () => {
+  const fields = Array.from({ length: 700 }, (unused, index) => ({
+    name: `p${index}`,
+    description: 'Same boilerplate.',
+  }));
+
+  const violations = collectPropDescriptionViolations([{ typeDocs: [{ kind: 'object', fields }] }]);
+
+  assert.match(violations[0], /distinct prop descriptions dropped to 1/u);
 });
