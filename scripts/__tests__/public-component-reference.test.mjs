@@ -1307,3 +1307,44 @@ test('a default destructured in a forwardRef body is published', () => {
   assert.equal(defaults.get('readOnly'), 'false');
   assert.equal(defaults.get('weekdayFormat'), "'short'");
 });
+
+
+// The two default collectors used to disagree on precedence, so which default was published
+// depended on which of them ran. A node that both destructures a default and forwards a `??`
+// fallback must publish the destructured one.
+test('a destructured default wins over a forwarded fallback on the same node', () => {
+  const source = `
+    export const Trigger = React.forwardRef<Ref, TriggerProps>(
+      ({ variant = 'destructured', ...rest }, ref) => <Inner ref={ref} {...rest} variant={variant ?? 'fallback'} />
+    );
+  `;
+
+  const defaults = extractDefaults([{ path: 'trigger.tsx', source }], new Set(['TriggerProps']));
+
+  assert.equal(defaults.get('variant'), "'destructured'");
+});
+
+// The body walk must only read a destructure of the props parameter itself.
+test('a destructure of something other than the props parameter is not a default source', () => {
+  const source = `
+    export const Widget = React.forwardRef<Ref, WidgetProps>((props, ref) => {
+      const { size = 'lg' } = somethingElse;
+      return null;
+    });
+  `;
+
+  const defaults = extractDefaults([{ path: 'widget.tsx', source }], new Set(['WidgetProps']));
+
+  assert.equal(defaults.get('size'), undefined);
+});
+
+// An expression-bodied forwardRef has no block to walk; it must not throw or invent defaults.
+test('an expression-bodied forwardRef yields no body defaults', () => {
+  const source = `
+    export const Plain = React.forwardRef<Ref, PlainProps>((props, ref) => <Inner {...props} />);
+  `;
+
+  const defaults = extractDefaults([{ path: 'plain.tsx', source }], new Set(['PlainProps']));
+
+  assert.equal(defaults.size, 0);
+});

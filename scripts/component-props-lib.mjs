@@ -362,10 +362,14 @@ function collectDefaultsFromBindingPattern(pattern, sourceFile, defaults) {
 // props; }`). Returns an empty map — never a guess — when nothing matches.
 // `forwardRef((props, ref) => { const { disabled = false } = props; … })` destructures in the body,
 // not in the parameter. The plain-function branch already read that shape; the forwardRef branch
-// did not, so 30 rows across Calendar, DatePicker and DateTimePicker published no default while a
-// literal one existed in source.
+// did not, so 15 rows across Calendar, DatePicker and DateTimePicker published no default while a
+// literal one existed in source. (A further 14 rows on those pages still show no default: their
+// value comes from a cross-file identifier rather than a literal, which is deliberately not
+// published.)
 function collectDefaultsFromBodyDestructure(fn, paramName, sourceFile, defaults) {
-  if (!fn.body || !ts.isBlock(fn.body)) return;
+  // No `isBlock` narrowing: it had no observable effect (removing it changed no output and no
+  // test), because the checks that matter are below — a `const { … } = <paramName>` statement.
+  if (!fn.body) return;
   walk(fn.body, (inner) => {
     if (!ts.isVariableStatement(inner)) return;
     for (const declaration of inner.declarationList.declarations) {
@@ -398,8 +402,12 @@ function collectDefaultsFromForwardedFallbacks(node, sourceFile, defaults) {
     if (!ts.isIdentifier(expression.left) || expression.left.text !== inner.name.text) return;
     if (!ts.isStringLiteralLike(expression.right)) return;
 
-    // First-wins, matching `collectDefaultsFromBindingPattern`: otherwise file order decides
-    // which of two defaults for the same prop is published.
+    // First-wins, matching `collectDefaultsFromBindingPattern`. This does NOT make the result
+    // order-independent — first-wins is as order-dependent as last-wins across files. It makes the
+    // two collectors agree, so which default is published no longer depends on which of them
+    // happened to run: a node that both destructures a default and forwards a `??` fallback now
+    // publishes the destructured one either way. Ordering across `allSources` remains a known
+    // limit, currently unexercised: no prop in packages/ui carries conflicting defaults.
     if (!defaults.has(inner.name.text)) defaults.set(inner.name.text, `'${expression.right.text}'`);
   });
 }
@@ -418,7 +426,7 @@ export function extractDefaults(files, candidateNames) {
           const param = (ts.isArrowFunction(renderFn) || ts.isFunctionExpression(renderFn)) ? renderFn.parameters[0] : undefined;
           if (param && ts.isObjectBindingPattern(param.name)) {
             collectDefaultsFromBindingPattern(param.name, sourceFile, defaults);
-          } else if (param && ts.isIdentifier(param.name) && renderFn) {
+          } else if (param && ts.isIdentifier(param.name)) {
             collectDefaultsFromBodyDestructure(renderFn, param.name.text, sourceFile, defaults);
           }
           if (renderFn) collectDefaultsFromForwardedFallbacks(renderFn, sourceFile, defaults);
@@ -431,20 +439,8 @@ export function extractDefaults(files, candidateNames) {
         if (!typeName || !candidateNames.has(typeName)) return;
         if (ts.isObjectBindingPattern(param.name)) {
           collectDefaultsFromBindingPattern(param.name, sourceFile, defaults);
-        } else if (ts.isIdentifier(param.name) && node.body && ts.isBlock(node.body)) {
-          walk(node.body, (inner) => {
-            if (!ts.isVariableStatement(inner)) return;
-            for (const declaration of inner.declarationList.declarations) {
-              if (
-                ts.isObjectBindingPattern(declaration.name) &&
-                declaration.initializer &&
-                ts.isIdentifier(declaration.initializer) &&
-                declaration.initializer.text === param.name.text
-              ) {
-                collectDefaultsFromBindingPattern(declaration.name, sourceFile, defaults);
-              }
-            }
-          });
+        } else if (ts.isIdentifier(param.name)) {
+          collectDefaultsFromBodyDestructure(node, param.name.text, sourceFile, defaults);
         }
       }
     });
