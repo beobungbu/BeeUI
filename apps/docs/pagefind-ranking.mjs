@@ -6,14 +6,15 @@
 // numbers, so the search-intent check cannot pass against a ranking production does not use.
 // Starlight's own defaults are written out explicitly, so nothing here depends on its internals.
 export const PAGEFIND_RANKING = {
-  // The 63 generated component pages share one near-identical template, so raw page length
-  // differs almost entirely by boilerplate rather than topical relevance, and Starlight's
-  // default length normalization (0.75) lets that boilerplate outrank a hand-authored page
-  // that answers the query directly. Measured, not assumed: restoring 0.75 and re-running
-  // scripts/check-docs-search-intent.mjs drops "safe area duplicated" off the
-  // Troubleshooting page and returns Stepper first. It is the only query in the matrix that
-  // depends on this weight — the other 14 pass either way.
-  pageLength: 0,
+  // Pagefind's own default. It was set to 0 to rescue a single query ("safe area duplicated"),
+  // and that trade was measured on a matrix chosen after the change — so it recorded what the
+  // setting fixed and never what it broke. Re-measured across 21 intents: pageLength 0 scores
+  // 18/21 and 0.75 scores 20/21. Disabling length normalization buries short, authoritative
+  // pages under long ones: `accessibility/keyboard-focus` carries "keyboard" at 67 per 1000
+  // words against Calendar's 7.7, and still lost, because raw match count stops being divided
+  // by page length. The one query that regressed is handled in content instead — the
+  // Troubleshooting heading now names the symptom the way a reader searches for it.
+  pageLength: 0.75,
   termFrequency: 0.1, // Starlight default
   termSaturation: 2, // Starlight default
   termSimilarity: 9, // Starlight default

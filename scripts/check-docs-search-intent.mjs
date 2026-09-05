@@ -77,6 +77,11 @@ export const QUERY_MATRIX = [
   { query: 'surface-raised', expect: '/reference/tokens/' },
   { query: 'dynamic type', expect: '/accessibility/large-text/' },
   { query: 'home indicator', expect: '/guides/troubleshooting/' },
+  // Core accessibility intents. These were failing under `pageLength: 0` and are the reason it
+  // was reverted; they are listed here so the setting cannot be re-disabled unnoticed.
+  { query: 'keyboard navigation', expect: '/accessibility/keyboard-focus/' },
+  { query: 'focus order', expect: '/accessibility/keyboard-focus/' },
+  { query: 'right to left', expect: '/accessibility/rtl/' },
   { query: 'add BeeUI to Expo', expect: '/start/expo/' },
   { query: 'beeui add', expect: '/guides/cli-source-ownership/' },
   { query: 'provider not found', expect: '/guides/troubleshooting/' },
