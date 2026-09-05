@@ -58,7 +58,7 @@ Stateless clamped determinate progress bar; there is no lower-bound prop — `va
 | `indicatorClassName` | `string` | — | Applied to the filled indicator bar, not the track. |
 | `indicatorStyle` | `StyleProp<ViewStyle>` | — | Applied to the filled indicator bar, alongside the computed `width` style; not the track. |
 | `max` | `number` | `100` | Upper bound `value` is measured against to compute the filled percentage. Non-finite or non-positive values fall back to 100. The accessible minimum is always 0 — there is no `min` prop. Defaults to 100. |
-| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Defined by `progressVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Chooses this element's `size` from `progressVariants`'s presets, declared in `packages/ui/src/components/progress.tsx` — the classes each value applies are there. |
 | `value` **(required)** | `number` | — | Current progress, clamped to `[0, max]`; a non-finite value is treated as 0. |
 
 Also carries every prop of `Omit<ViewProps, 'accessibilityRole' | 'role' | 'children'>` — that upstream contract is not reproduced here.
@@ -75,19 +75,25 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 ## Platform behavior
 
+One implementation renders on every supported target: this family ships no platform-specific file and its source takes no `Platform` branch, so the props and behavior above are the same on iOS, Android and Web.
+
 The same public family is exposed across the supported target matrix; meaningful platform differences remain governed by the compatibility contract.
 
-- **Web:** live browser/keyboard behavior is verified by Web-specific checks where applicable.
-- **iOS / Android:** package/export/native compile evidence is not described as device-runtime proof. Consult the compatibility and native-preview guides for the exact evidence class.
-- Platform-specific or experimental behavior is called out in the canonical component/compatibility docs rather than hidden behind a generic parity claim.
+Evidence classes are not equal and this page does not blur them: Web behavior is exercised in a real browser, while iOS and Android carry package/export and native-compile evidence, which is not device-runtime proof. The [compatibility contract](/docs/compatibility/) records which class each claim rests on.
 
 ## Accessibility
 
-Use the [Accessibility overview](/docs/accessibility/), [RTL/localization](/docs/accessibility/rtl/), and [Large text & zoom](/docs/accessibility/large-text/) alongside this family. Roles/states, keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL, and reduced-motion expectations remain component-specific; BeeUI does not claim universal accessibility certification from automated tests.
+- **Roles this family assigns:** `progressbar` — set in `progress.tsx` by the components themselves, not by the caller.
+- **Accessibility states and properties it sets:** `accessibilityLabel`, `accessibilityLabelledBy`, `max`, `min`, `now` — read from `progress.tsx`.
+
+Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
 ## Styling and theming
 
-BeeUI components consume semantic tokens and support the current typed variant/density contracts. Use [Theming](/docs/theming/) and [Density](/docs/guides/density/). `className` is an implementation escape hatch for source-owned/application work, not a cross-engine portability guarantee.
+- **Style axes:** `size` (3 values) — the values are in the props tables above.
+- **Class-name surfaces:** `className`, `indicatorClassName`.
+
+Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.
 
 ## Executable examples
 

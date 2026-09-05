@@ -60,7 +60,7 @@ Stateless image-with-fallback: an image load failure resets to the fallback, and
 | `fallbackClassName` | `string` | — | Applied to the fallback `Text` when it is shown; has no effect while the image is showing. |
 | `imageClassName` | `string` | — | Applied to the underlying `Image` when it is shown; has no effect while the fallback is showing. |
 | `imageProps` | `AvatarImageProps` | — | Forwarded to the underlying `Image`, minus `source` and `className`/`onError`, which this component owns to detect load failures and fall back to `fallback`. |
-| `size` | `'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Defined by `avatarVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `size` | `'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Chooses this element's `size` from `avatarVariants`'s presets, declared in `packages/ui/src/components/avatar.tsx` — the classes each value applies are there. |
 | `source` | `ImageSourcePropType` | — | The image to display. If it fails to load, or is omitted, `fallback` is shown instead. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
@@ -77,19 +77,25 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 ## Platform behavior
 
+One implementation renders on every supported target: this family ships no platform-specific file and its source takes no `Platform` branch, so the props and behavior above are the same on iOS, Android and Web.
+
 The same public family is exposed across the supported target matrix; meaningful platform differences remain governed by the compatibility contract.
 
-- **Web:** live browser/keyboard behavior is verified by Web-specific checks where applicable.
-- **iOS / Android:** package/export/native compile evidence is not described as device-runtime proof. Consult the compatibility and native-preview guides for the exact evidence class.
-- Platform-specific or experimental behavior is called out in the canonical component/compatibility docs rather than hidden behind a generic parity claim.
+Evidence classes are not equal and this page does not blur them: Web behavior is exercised in a real browser, while iOS and Android carry package/export and native-compile evidence, which is not device-runtime proof. The [compatibility contract](/docs/compatibility/) records which class each claim rests on.
 
 ## Accessibility
 
-Use the [Accessibility overview](/docs/accessibility/), [RTL/localization](/docs/accessibility/rtl/), and [Large text & zoom](/docs/accessibility/large-text/) alongside this family. Roles/states, keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL, and reduced-motion expectations remain component-specific; BeeUI does not claim universal accessibility certification from automated tests.
+- **Roles this family assigns:** none set in `avatar.tsx`.
+- **Accessibility states and properties it sets:** `accessible` — read from `avatar.tsx`.
+
+Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
 ## Styling and theming
 
-BeeUI components consume semantic tokens and support the current typed variant/density contracts. Use [Theming](/docs/theming/) and [Density](/docs/guides/density/). `className` is an implementation escape hatch for source-owned/application work, not a cross-engine portability guarantee.
+- **Style axes:** `size` (4 values) — the values are in the props tables above.
+- **Class-name surfaces:** `className`, `fallbackClassName`, `imageClassName`.
+
+Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.
 
 ## Executable examples
 

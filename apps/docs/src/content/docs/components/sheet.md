@@ -66,8 +66,8 @@ Controlled (`open`+`onOpenChange`) or uncontrolled (`defaultOpen`) gesture-drive
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
-| `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Defined by `buttonVariants` (class-variance-authority); see Styling and theming for what each value changes. |
-| `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'primary'` | Defined by `buttonVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Chooses this element's `size` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
+| `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'primary'` | Chooses this element's `variant` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` — that upstream contract is not reproduced here.
 
@@ -177,8 +177,8 @@ Also carries every prop of `Omit<TextProps, 'accessibilityRole' | 'role' | 'vari
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
-| `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Defined by `buttonVariants` (class-variance-authority); see Styling and theming for what each value changes. |
-| `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'primary'` | Defined by `buttonVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Chooses this element's `size` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
+| `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'primary'` | Chooses this element's `variant` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` — that upstream contract is not reproduced here.
 
@@ -193,24 +193,31 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 - `BeeUIProvider` is required above this family because it participates in shared overlay/toast runtime infrastructure.
 - **Peer/native dependencies visible to this Registry item:** `@gorhom/bottom-sheet`, `react`, `react-native`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets`
 - **Registry dependency closure:** `button`, `core-cn`, `overlay-runtime`, `text`, `theme`
+- On Web this family renders from `sheet.web.tsx`, which does not import `@gorhom/bottom-sheet`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets`: those peers serve the native implementation.
 - Safe-area ownership remains explicit: shell surfaces touching system edges opt into `SafeArea`; components do not silently invent app-shell insets.
 - Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).
 
 ## Platform behavior
 
+This family is split by platform and renders from `sheet.web.tsx` (Web), `sheet.native.tsx` (iOS and Android). Where the two shapes differ, the difference is listed under the affected type above rather than summarised here.
+
 This family has platform-split source files. The bundler selects the native/Web implementation; do not infer native runtime behavior from the Web preview.
 
-- **Web:** live browser/keyboard behavior is verified by Web-specific checks where applicable.
-- **iOS / Android:** package/export/native compile evidence is not described as device-runtime proof. Consult the compatibility and native-preview guides for the exact evidence class.
-- Platform-specific or experimental behavior is called out in the canonical component/compatibility docs rather than hidden behind a generic parity claim.
+Evidence classes are not equal and this page does not blur them: Web behavior is exercised in a real browser, while iOS and Android carry package/export and native-compile evidence, which is not device-runtime proof. The [compatibility contract](/docs/compatibility/) records which class each claim rests on.
 
 ## Accessibility
 
-Use the [Accessibility overview](/docs/accessibility/), [RTL/localization](/docs/accessibility/rtl/), and [Large text & zoom](/docs/accessibility/large-text/) alongside this family. Roles/states, keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL, and reduced-motion expectations remain component-specific; BeeUI does not claim universal accessibility certification from automated tests.
+- **Roles this family assigns:** `dialog`, `header` — set in `sheet.tsx`, `sheet.web.tsx`, `sheet.native.tsx` by the components themselves, not by the caller.
+- **Accessibility states and properties it sets:** `accessibilityElementsHidden`, `accessibilityHint`, `accessibilityLabel`, `accessibilityLabelledBy`, `accessible`, `hidden`, `modal` — read from `sheet.tsx`, `sheet.web.tsx`, `sheet.native.tsx`.
+
+Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
 ## Styling and theming
 
-BeeUI components consume semantic tokens and support the current typed variant/density contracts. Use [Theming](/docs/theming/) and [Density](/docs/guides/density/). `className` is an implementation escape hatch for source-owned/application work, not a cross-engine portability guarantee.
+- **Style axes:** `size` (4 values), `variant` (5 values), `tone` (8 values, inherited from `TextProps`).
+- **Class-name surfaces:** `className`, `containerClassName`, `handleClassName`, `labelClassName`, `overlayClassName`.
+
+Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.
 
 ## Executable examples
 
@@ -292,7 +299,9 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+- Passing `open` without `onOpenChange` leaves the value read-only: the component renders what you passed and can never change it. It warns in development builds rather than failing silently in production.
+- Requires `@gorhom/bottom-sheet`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets` to be installed by the consuming app. They are optional peers of `@beemvp/beeui-ui`, so nothing installs them for you, and a target that never renders this family does not need it.
+- On Web, `avoidKeyboard`, `enableSwipeToDismiss`, `modalProps` are accepted for API parity and read by nothing: setting them changes no behavior there.
 
 **Implementation note:** Native gesture engine uses @gorhom/bottom-sheet + reanimated/gesture-handler; platform-split module.
 

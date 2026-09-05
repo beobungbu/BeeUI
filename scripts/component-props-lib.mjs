@@ -512,6 +512,373 @@ export function cvaVariantType(values) {
   return { quote, type: isBoolean ? 'boolean' : values.map(quote).join(' | ') };
 }
 
+// Per-component accessibility facts, read from the JSX the family actually renders.
+//
+// The Accessibility section was one identical paragraph on all 62 pages that asserted roles and
+// states "remain component-specific" — a page contradicting itself, since nothing on it was
+// specific to the component. These are the two facts that can be derived honestly: the roles this
+// family assigns to its own elements, and the accessibility states it manages. Read from the AST
+// rather than by matching text, so a role named in a comment or a string is not published as one.
+// Every `const <name> = <expression>` in the file, not the first.
+//
+// The comment here used to claim that a second declaration "would add its literals too"; the code
+// returned on the first match and discarded the rest. Two components in one file each computing
+// their own `const role` published only the earlier one's roles, and a reader takes the published
+// list as complete. The page's claim is about the whole family, and the family is these files, so
+// every declaration belongs in it.
+//
+// Resolution is skipped entirely when a parameter or binding of the same name exists: the
+// identifier at the JSX site is then that binding, not the module constant, and resolving to the
+// constant publishes a role the component never assigns. Recursion is not followed (`sourceFile`
+// is dropped one level down), so an identifier chain resolves once and stops.
+function findLocalConstInitializers(name, sourceFile) {
+  const initializers = [];
+  let shadowed = false;
+  walk(sourceFile, (node) => {
+    if (
+      (ts.isParameter(node) || ts.isBindingElement(node)) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === name
+    ) {
+      shadowed = true;
+      return;
+    }
+    if (!ts.isVariableDeclaration(node)) return;
+    if (!ts.isIdentifier(node.name) || node.name.text !== name) return;
+    if (node.initializer) initializers.push(node.initializer);
+  });
+  return shadowed ? [] : initializers;
+}
+
+// Comment text is prose about the code, not the code. Callers that grep a source file for what
+// it does must not read an explanation of what it deliberately does not do — `sheet.web.tsx`
+// names the gesture engine it does not use, and `spinner.tsx` names the role its primitive sets.
+//
+// A regex over `//` and `/* */` is not enough, and neither is a scanner that tracks only strings:
+// a string holding `/*` swallows the rest of the file, and a regex literal holding `//`
+// (`/https:\/\//`) is read as a line comment. A `/` opens a regex only where a value may start,
+// which is after an operator, a comma, an opening bracket or a keyword — never after an
+// identifier, a literal or a closing bracket, where it is division.
+const REGEX_MAY_START_AFTER = /[=(,:[!&|?{};+\-*%^~<>]$|\b(?:return|typeof|instanceof|in|of|new|delete|void|case|do|else|yield|await)$/u;
+
+export function stripSourceComments(source) {
+  let out = '';
+  let index = 0;
+  while (index < source.length) {
+    const character = source[index];
+
+    if (character === "'" || character === '"' || character === '`') {
+      const quote = character;
+      out += character;
+      index += 1;
+      while (index < source.length) {
+        if (source[index] === '\\') {
+          out += source.slice(index, index + 2);
+          index += 2;
+          continue;
+        }
+        out += source[index];
+        index += 1;
+        if (source[index - 1] === quote) break;
+      }
+      continue;
+    }
+
+    if (character === '/' && source[index + 1] === '/') {
+      while (index < source.length && source[index] !== '\n') index += 1;
+      continue;
+    }
+
+    if (character === '/' && source[index + 1] === '*') {
+      const end = source.indexOf('*/', index + 2);
+      index = end === -1 ? source.length : end + 2;
+      out += ' ';
+      continue;
+    }
+
+    if (character === '/' && REGEX_MAY_START_AFTER.test(out.replace(/\s+$/u, ''))) {
+      out += character;
+      index += 1;
+      let inClass = false;
+      while (index < source.length) {
+        const inner = source[index];
+        if (inner === '\\') {
+          out += source.slice(index, index + 2);
+          index += 2;
+          continue;
+        }
+        if (inner === '[') inClass = true;
+        else if (inner === ']') inClass = false;
+        out += inner;
+        index += 1;
+        if (inner === '/' && !inClass) break;
+        if (inner === '\n') break;
+      }
+      continue;
+    }
+
+    out += character;
+    index += 1;
+  }
+  return out;
+}
+
+// Collects every string an expression can *evaluate to*.
+//
+// A conditional's condition is not one of them: `selectionMode === 'single' ? 'radiogroup' :
+// undefined` assigns `radiogroup` and never assigns `single`. Walking the whole expression
+// published `single` on the ChipGroup page as an ARIA role. The test that was supposed to cover
+// this path used `decorative ? undefined : 'separator'` — a condition holding no string literal —
+// so the case that would have disagreed was never in its scope.
+function collectValueLiterals(node, out, sourceFile) {
+  if (!node) return;
+  if (ts.isParenthesizedExpression(node)) {
+    collectValueLiterals(node.expression, out, sourceFile);
+    return;
+  }
+  // `accessibilityRole={role}` where `role` is computed just above it. Chip assigns `radio`,
+  // `checkbox` or `button` that way, and reading the attribute alone published only the one role
+  // ChipGroup sets directly — a list a reader would take as complete.
+  if (ts.isIdentifier(node) && sourceFile) {
+    for (const initializer of findLocalConstInitializers(node.text, sourceFile)) {
+      collectValueLiterals(initializer, out, undefined);
+    }
+    return;
+  }
+  if (ts.isStringLiteralLike(node)) {
+    out.add(node.text);
+    return;
+  }
+  if (ts.isConditionalExpression(node)) {
+    collectValueLiterals(node.whenTrue, out, sourceFile);
+    collectValueLiterals(node.whenFalse, out, sourceFile);
+    return;
+  }
+  if (ts.isBinaryExpression(node)) {
+    const kind = node.operatorToken.kind;
+    // `cond && 'role'` yields the right side only; `a ?? 'role'` and `a || 'role'` yield either.
+    if (kind === ts.SyntaxKind.AmpersandAmpersandToken) {
+      collectValueLiterals(node.right, out, sourceFile);
+      return;
+    }
+    if (kind === ts.SyntaxKind.BarBarToken || kind === ts.SyntaxKind.QuestionQuestionToken) {
+      collectValueLiterals(node.left, out, sourceFile);
+      collectValueLiterals(node.right, out, sourceFile);
+    }
+    // Comparisons evaluate to a boolean, never to an operand read as a role.
+    return;
+  }
+  ts.forEachChild(node, (child) => collectValueLiterals(child, out, sourceFile));
+}
+
+// `accessibilityState={interactive ? { disabled } : undefined}` puts the object one level below
+// the attribute. Requiring an object literal directly meant ListItem published "manages no
+// states" while managing `disabled`; the shape of the wrapper is not the question being asked.
+function collectStateNames(node, states) {
+  if (!node) return;
+  if (ts.isParenthesizedExpression(node)) {
+    collectStateNames(node.expression, states);
+    return;
+  }
+  if (ts.isConditionalExpression(node)) {
+    collectStateNames(node.whenTrue, states);
+    collectStateNames(node.whenFalse, states);
+    return;
+  }
+  if (ts.isBinaryExpression(node)) {
+    const kind = node.operatorToken.kind;
+    if (kind === ts.SyntaxKind.AmpersandAmpersandToken) {
+      collectStateNames(node.right, states);
+      return;
+    }
+    if (kind === ts.SyntaxKind.BarBarToken || kind === ts.SyntaxKind.QuestionQuestionToken) {
+      collectStateNames(node.left, states);
+      collectStateNames(node.right, states);
+    }
+    return;
+  }
+  if (!ts.isObjectLiteralExpression(node)) return;
+  for (const property of node.properties) {
+    // `{ ...(inGroup ? { checked } : { selected }) }` states both, one branch each. A spread of a
+    // variable (`...accessibilityState`) names nothing and correctly contributes nothing; reading
+    // only named properties dropped Chip's `selected`.
+    if (ts.isSpreadAssignment(property)) {
+      collectStateNames(property.expression, states);
+      continue;
+    }
+    // Shorthand (`{ disabled }`) carries its name like any other property.
+    if (property.name && (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))) {
+      states.add(property.name.text);
+    }
+  }
+}
+
+// Props that select between class strings, read from the code that does the selecting.
+//
+// The axis heuristic recognised only props whose description was generated from a `cva()` call,
+// so Spinner's `tone` (seven entries of `spinnerToneClasses`) and Timeline's `status` were
+// invisible and both pages published "no style axes of its own"; KeyboardAwareScreen's
+// `contentWidth` and Toast's `variant` said the axes were not enumerated, which was true but
+// less than the source supports. Indexing a table of string constants with a declared prop is
+// the evidence used here.
+//
+// Limit worth knowing: this proves "a declared prop indexes a table of string literals", not
+// "those strings are classes". Two of the twelve such tables in `packages/ui/src` hold
+// something else — `table.tsx`'s `sortGlyphs` holds arrow characters and `text.tsx`'s
+// `monoFontFamilyNative` holds font names — and neither is published today only because its
+// index is not a declared prop. A name-based filter is not the answer: `numericVariantUtilities`
+// holds real utility classes and contains no "class" in its name.
+export function extractClassMapAxes(files) {
+  const axes = new Map();
+
+  for (const { path: filePath, source } of files) {
+    const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, scriptKindFor(filePath));
+
+    // `const spinnerToneClasses = { neutral: 'text-…', … }` — every value a string literal.
+    const classMaps = new Map();
+    walk(sourceFile, (node) => {
+      if (!ts.isVariableDeclaration(node) || !ts.isIdentifier(node.name)) return;
+      let initializer = node.initializer;
+      while (initializer && (ts.isAsExpression(initializer) || ts.isParenthesizedExpression(initializer))) {
+        initializer = initializer.expression;
+      }
+      if (!initializer || !ts.isObjectLiteralExpression(initializer)) return;
+      const entries = initializer.properties;
+      if (!entries.length) return;
+      const allStrings = entries.every(
+        (entry) => ts.isPropertyAssignment(entry) && ts.isStringLiteralLike(entry.initializer),
+      );
+      if (allStrings) classMaps.set(node.name.text, entries.length);
+    });
+    if (!classMaps.size) continue;
+
+    walk(sourceFile, (node) => {
+      if (!ts.isElementAccessExpression(node)) return;
+      if (!ts.isIdentifier(node.expression)) return;
+      const count = classMaps.get(node.expression.text);
+      if (!count) return;
+      // `map[tone]` and `map[toast.variant]` both name the prop; anything else is not a prop.
+      const argument = node.argumentExpression;
+      const name = ts.isIdentifier(argument)
+        ? argument.text
+        : ts.isPropertyAccessExpression(argument) && ts.isIdentifier(argument.name)
+          ? argument.name.text
+          : undefined;
+      if (!name) return;
+      axes.set(name, Math.max(axes.get(name) ?? 0, count));
+    });
+  }
+
+  return axes;
+}
+
+// Everything a family sets that assistive technology reads. Reading only `accessibilityState`
+// and `aria-*` let nine pages publish "sets none" while setting `accessibilityLiveRegion`,
+// `accessibilityElementsHidden` or `accessibilityValue` — AlertBanner contradicted its own
+// opening paragraph. `accessible` is included because switching a subtree off is as much a
+// decision about assistive technology as any attribute that switches something on.
+function isAccessibilityAttribute(name) {
+  return name === 'accessible' || (name.startsWith('accessibility') && name !== 'accessibilityRole');
+}
+
+export function extractAccessibilityFacts(files) {
+  const roles = new Set();
+  const states = new Set();
+
+  for (const { path: filePath, source } of files) {
+    const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, scriptKindFor(filePath));
+    walk(sourceFile, (node) => {
+      // Props reach a primitive two ways: as JSX attributes, and as an object literal that is
+      // spread into one. Switch sets `accessibilityRole: 'switch'` and an `accessibilityState`
+      // object in a spread branch; reading JSX attributes alone published "assigns no roles,
+      // manages no states" on a component whose whole purpose is the `switch` role.
+      if (ts.isJsxAttribute(node) && node.name && ts.isIdentifier(node.name)) {
+        const attribute = node.name.text;
+        if (attribute === 'role' || attribute === 'accessibilityRole') {
+          if (!node.initializer) return;
+          if (ts.isStringLiteralLike(node.initializer)) {
+            roles.add(node.initializer.text);
+            return;
+          }
+          if (ts.isJsxExpression(node.initializer)) collectValueLiterals(node.initializer.expression, roles, sourceFile);
+          return;
+        }
+        if (attribute.startsWith('aria-')) {
+          states.add(attribute.slice('aria-'.length));
+          return;
+        }
+        // `accessibilityState` and `accessibilityValue` carry their meaning in an object's keys;
+        // every other accessibility attribute carries it in its own name.
+        if (attribute === 'accessibilityState' || attribute === 'accessibilityValue') {
+          const value = node.initializer;
+          if (!value || !ts.isJsxExpression(value)) return;
+          collectStateNames(value.expression, states);
+          return;
+        }
+        if (isAccessibilityAttribute(attribute)) states.add(attribute);
+        return;
+      }
+
+      // `{ accessibilityLabelledBy }` sets the attribute exactly as `{ accessibilityLabelledBy:
+      // x }` does; reading only the long form let the Spinner page say "none set in
+      // `spinner.tsx`" while naming the very file that sets it on line 48.
+      if (ts.isShorthandPropertyAssignment(node) && ts.isIdentifier(node.name)) {
+        if (isAccessibilityAttribute(node.name.text)) states.add(node.name.text);
+        return;
+      }
+
+      // Object-literal form. An earlier version of this code excluded a bare `role` key on the
+      // stated grounds that no source in `packages/ui` used one — `select.tsx` does, building
+      // `{ 'aria-labelledby': …, role: 'group' }` for Web, and the Select page published a role
+      // list missing it. The exclusion was a guess about the repository presented as a fact.
+      if (!ts.isPropertyAssignment(node)) return;
+      const key = node.name;
+      if (!key || !(ts.isIdentifier(key) || ts.isStringLiteral(key))) return;
+      const name = key.text;
+      if (name === 'accessibilityRole' || name === 'role') {
+        collectValueLiterals(node.initializer, roles, sourceFile);
+        return;
+      }
+      if (name.startsWith('aria-')) {
+        states.add(name.slice('aria-'.length));
+        return;
+      }
+      if (name === 'accessibilityState' || name === 'accessibilityValue') {
+        collectStateNames(node.initializer, states);
+        return;
+      }
+      if (isAccessibilityAttribute(name)) states.add(name);
+    });
+  }
+
+  return { roles: [...roles].sort(), states: [...states].sort() };
+}
+
+
+// Controlled-prop requirements, read from the development warnings the components already emit.
+//
+// Dialog's curated limitation is exactly this fact — "Controlled open requires onOpenChange" — so
+// the claim that the remaining limitations all need product judgement was too broad: this class is
+// a fact in the code, stated by the component itself, and nine families emit one.
+export function extractControlledPropWarnings(files) {
+  const pairs = new Map();
+
+  for (const { path: filePath, source } of files) {
+    const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, scriptKindFor(filePath));
+    walk(sourceFile, (node) => {
+      if (!ts.isCallExpression(node)) return;
+      if (node.expression.getText(sourceFile) !== 'console.warn') return;
+      for (const argument of node.arguments) {
+        if (!ts.isStringLiteralLike(argument)) continue;
+        const match = /^BeeUI\s+\w+:\s+`(\w+)`\s+requires\s+`(\w+)`/u.exec(argument.text);
+        if (match) pairs.set(match[1], match[2]);
+      }
+    });
+  }
+
+  return [...pairs].map(([prop, handler]) => ({ prop, handler })).sort((a, b) => a.prop.localeCompare(b.prop));
+}
+
 export function extractCvaVariants(files) {
   const byIdentifier = new Map();
 
@@ -570,7 +937,7 @@ export function extractCvaVariants(files) {
         props.set(propName, { values, default: defaults.get(propName) });
       }
 
-      if (props.size) byIdentifier.set(node.name.text, props);
+      if (props.size) byIdentifier.set(node.name.text, { props, sourcePath: filePath });
     });
   }
 
@@ -940,7 +1307,8 @@ function applyCvaVariants(shape, cvaByIdentifier) {
   const remaining = [];
   for (const base of shape.bases) {
     const parsed = variantsIdentifierFromBase(base);
-    const props = parsed ? cvaByIdentifier.get(parsed.identifier) : undefined;
+    const declaration = parsed ? cvaByIdentifier.get(parsed.identifier) : undefined;
+    const props = declaration?.props;
     if (!parsed || !props) {
       remaining.push(base);
       continue;
@@ -958,9 +1326,17 @@ function applyCvaVariants(shape, cvaByIdentifier) {
         optional: true,
         type,
         default: spec.default === undefined ? undefined : quote(spec.default),
+        // Was "see Styling and theming for what each value changes". That section is one
+        // boilerplate paragraph repeated across all 62 component pages and says nothing about any
+        // value, so those rows carried a pointer that answered nothing. The classes each value
+        // applies are literals in the `cva()` call, so name the file that holds them.
+        // Named after the prop, not just the cva: one sentence per identifier meant `size` and
+        // `variant` shared a description although they select different things. Those 35 rows were
+        // the only place in the reference where one sentence covered two different props — every
+        // other shared sentence is one prop name whose meaning genuinely is identical everywhere.
         description:
-          `Defined by \`${identifier}\` (class-variance-authority); see Styling and theming for ` +
-          'what each value changes.',
+          `Chooses this element's \`${name}\` from \`${identifier}\`'s presets, declared in ` +
+          `\`${declaration.sourcePath}\` — the classes each value applies are there.`,
       });
     }
     shape.fields.sort((left, right) => left.name.localeCompare(right.name));

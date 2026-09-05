@@ -60,8 +60,8 @@ Stateless semantic typography primitive; `variant`/`tone` apply typed styling, a
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `family` | `FontFamily` | — | `'mono'` renders the text in the system-monospace fallback stack (e.g. for reference codes/IDs). Opt-in only — omitting it preserves the inherited sans/system font. |
 | `numeric` | `NumericVariant` | — | `'tabular'` opts numeric content into equal-width figures so columns of amounts/KPIs/timers align. Omit for normal proportional figures. |
-| `tone` | `'default' \| 'muted' \| 'subtle' \| 'primary' \| 'destructive' \| 'success' \| 'warning' \| 'info'` | `'default'` | Defined by `textVariants` (class-variance-authority); see Styling and theming for what each value changes. |
-| `variant` | `'display' \| 'title' \| 'heading' \| 'body' \| 'label' \| 'caption'` | `'body'` | Defined by `textVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `tone` | `'default' \| 'muted' \| 'subtle' \| 'primary' \| 'destructive' \| 'success' \| 'warning' \| 'info'` | `'default'` | Chooses this element's `tone` from `textVariants`'s presets, declared in `packages/ui/src/components/text.tsx` — the classes each value applies are there. |
+| `variant` | `'display' \| 'title' \| 'heading' \| 'body' \| 'label' \| 'caption'` | `'body'` | Chooses this element's `variant` from `textVariants`'s presets, declared in `packages/ui/src/components/text.tsx` — the classes each value applies are there. |
 
 Also carries every prop of `RNTextProps` — that upstream contract is not reproduced here.
 
@@ -77,19 +77,25 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 ## Platform behavior
 
+This family ships no platform-specific file, but its source branches on `Platform`, so some behavior differs by target.
+
 The same public family is exposed across the supported target matrix; meaningful platform differences remain governed by the compatibility contract.
 
-- **Web:** live browser/keyboard behavior is verified by Web-specific checks where applicable.
-- **iOS / Android:** package/export/native compile evidence is not described as device-runtime proof. Consult the compatibility and native-preview guides for the exact evidence class.
-- Platform-specific or experimental behavior is called out in the canonical component/compatibility docs rather than hidden behind a generic parity claim.
+Evidence classes are not equal and this page does not blur them: Web behavior is exercised in a real browser, while iOS and Android carry package/export and native-compile evidence, which is not device-runtime proof. The [compatibility contract](/docs/compatibility/) records which class each claim rests on.
 
 ## Accessibility
 
-Use the [Accessibility overview](/docs/accessibility/), [RTL/localization](/docs/accessibility/rtl/), and [Large text & zoom](/docs/accessibility/large-text/) alongside this family. Roles/states, keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL, and reduced-motion expectations remain component-specific; BeeUI does not claim universal accessibility certification from automated tests.
+- **Roles this family assigns:** none set in `text.tsx`.
+- **Accessibility states and properties it sets:** none set in `text.tsx`.
+
+Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
 ## Styling and theming
 
-BeeUI components consume semantic tokens and support the current typed variant/density contracts. Use [Theming](/docs/theming/) and [Density](/docs/guides/density/). `className` is an implementation escape hatch for source-owned/application work, not a cross-engine portability guarantee.
+- **Style axes:** `tone` (8 values), `variant` (6 values), `numeric` (1 values).
+- **Class-name surfaces:** `className`.
+
+Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.
 
 ## Executable examples
 

@@ -67,12 +67,12 @@ Also carries every prop of `Omit<StackProps, 'direction'>` — documented on the
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `align` | `'start' \| 'center' \| 'end' \| 'stretch'` | `'stretch'` | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `align` | `'start' \| 'center' \| 'end' \| 'stretch'` | `'stretch'` | Chooses this element's `align` from `stackVariants`'s presets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `direction` | `'horizontal' \| 'vertical'` | `'vertical'` | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
-| `gap` | `'none' \| 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
-| `justify` | `'start' \| 'center' \| 'end' \| 'between' \| 'around' \| 'evenly'` | `'start'` | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
-| `wrap` | `boolean` | `false` | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `direction` | `'horizontal' \| 'vertical'` | `'vertical'` | Chooses this element's `direction` from `stackVariants`'s presets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
+| `gap` | `'none' \| 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Chooses this element's `gap` from `stackVariants`'s presets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
+| `justify` | `'start' \| 'center' \| 'end' \| 'between' \| 'around' \| 'evenly'` | `'start'` | Chooses this element's `justify` from `stackVariants`'s presets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
+| `wrap` | `boolean` | `false` | Chooses this element's `wrap` from `stackVariants`'s presets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
 
 Also carries every prop of `ViewProps` — that upstream contract is not reproduced here.
 
@@ -94,19 +94,25 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 ## Platform behavior
 
+One implementation renders on every supported target: this family ships no platform-specific file and its source takes no `Platform` branch, so the props and behavior above are the same on iOS, Android and Web.
+
 The same public family is exposed across the supported target matrix; meaningful platform differences remain governed by the compatibility contract.
 
-- **Web:** live browser/keyboard behavior is verified by Web-specific checks where applicable.
-- **iOS / Android:** package/export/native compile evidence is not described as device-runtime proof. Consult the compatibility and native-preview guides for the exact evidence class.
-- Platform-specific or experimental behavior is called out in the canonical component/compatibility docs rather than hidden behind a generic parity claim.
+Evidence classes are not equal and this page does not blur them: Web behavior is exercised in a real browser, while iOS and Android carry package/export and native-compile evidence, which is not device-runtime proof. The [compatibility contract](/docs/compatibility/) records which class each claim rests on.
 
 ## Accessibility
 
-Use the [Accessibility overview](/docs/accessibility/), [RTL/localization](/docs/accessibility/rtl/), and [Large text & zoom](/docs/accessibility/large-text/) alongside this family. Roles/states, keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL, and reduced-motion expectations remain component-specific; BeeUI does not claim universal accessibility certification from automated tests.
+- **Roles this family assigns:** none set in `stack.tsx`.
+- **Accessibility states and properties it sets:** none set in `stack.tsx`.
+
+Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
 ## Styling and theming
 
-BeeUI components consume semantic tokens and support the current typed variant/density contracts. Use [Theming](/docs/theming/) and [Density](/docs/guides/density/). `className` is an implementation escape hatch for source-owned/application work, not a cross-engine portability guarantee.
+- **Style axes:** `align` (4 values), `gap` (6 values), `justify` (6 values), `direction` (2 values) — the values are in the props tables above.
+- **Class-name surfaces:** `className`.
+
+Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.
 
 ## Executable examples
 
