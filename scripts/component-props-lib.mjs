@@ -62,7 +62,7 @@ function scriptKindFor(filePath) {
 // contract rather than the maintainer rationale the cap was meant to trim — `Sheet.avoidKeyboard`
 // kept its ADR reference and dropped "does not itself read this flag", so the page told a reader
 // the prop worked. A prop whose JSDoc runs long is a prop to rewrite, not one to truncate
-// silently: the longest real description is 410 characters.
+// silently: the longest real description is 413 characters.
 export function summarizeDescription(text) {
   return text.replace(/\s+/gu, ' ').trim();
 }

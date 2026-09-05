@@ -20,6 +20,7 @@ import {
 import {
   buildPublicComponentManifest,
   collectPropDescriptionCoverage,
+  collectPropDescriptionViolations,
   PROP_DESCRIPTION_FLOOR,
   collectPublicComponentReferenceViolations,
   renderPublicComponentIndex,
@@ -1014,3 +1015,36 @@ test('a prop description collapses the line breaks a JSDoc block wraps at', () =
   assert.equal(summarizeDescription('Column span,\n   e.g. 2.\n'), 'Column span, e.g. 2.');
 });
 
+
+
+// A floor comparison alone passes 583 of 584 whenever the total grows by the same amount as the
+// gap, so one newly undocumented prop reaches the published tables with every gate green.
+test('one undescribed prop is a violation even when the floor is still met', () => {
+  const fields = Array.from({ length: PROP_DESCRIPTION_FLOOR }, (unused, index) => ({
+    name: `documented${index}`,
+    description: 'Described.',
+  }));
+  const manifest = [
+    { typeDocs: [{ kind: 'object', fields: [...fields, { name: 'brandNew', description: '' }] }] },
+  ];
+
+  const violations = collectPropDescriptionViolations(manifest);
+
+  assert.equal(violations.length, 1);
+  assert.match(violations[0], /1 published prop\(s\) have no description/u);
+});
+
+test('a manifest below the floor reports the floor, not the per-prop gap', () => {
+  const manifest = [{ typeDocs: [{ kind: 'object', fields: [{ name: 'only', description: '' }] }] }];
+
+  assert.match(collectPropDescriptionViolations(manifest)[0], /floor \d+/u);
+});
+
+test('a fully described manifest at the floor is clean', () => {
+  const fields = Array.from({ length: PROP_DESCRIPTION_FLOOR }, (unused, index) => ({
+    name: `documented${index}`,
+    description: 'Described.',
+  }));
+
+  assert.deepEqual(collectPropDescriptionViolations([{ typeDocs: [{ kind: 'object', fields }] }]), []);
+});

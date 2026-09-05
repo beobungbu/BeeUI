@@ -10,5 +10,7 @@ import {
 } from './public-component-reference.mjs';
 
 const { described, total } = collectPropDescriptionCoverage(buildPublicComponentManifest());
-const percent = Math.round((described / total) * 100);
+// Floor, never round: Math.round reports 583 of 584 as "100%", which hides exactly the
+// single-prop gap this number exists to surface.
+const percent = total === 0 ? 100 : Math.floor((described / total) * 100);
 console.log(`prop descriptions: ${described}/${total} (${percent}%), floor ${PROP_DESCRIPTION_FLOOR}`);

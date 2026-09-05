@@ -19,6 +19,12 @@
 //
 //   node scripts/check-docs-page-budget.mjs           # report
 //   node scripts/check-docs-page-budget.mjs --check   # fail if any ceiling is exceeded
+//
+// ENFORCEMENT: this runs from `apps/docs`'s build script, because it needs apps/docs/dist.
+// On CI that build happens inside `web-a11y`'s Playwright webServer, so this check fails the
+// job when it fails — but only when the visual lane is selected. `scripts/ci-scope.mjs` selects
+// that lane for the whole `apps/docs/` tree and for this script, so a change that could break
+// this check also starts the job that runs it.
 
 import fs from 'node:fs';
 import path from 'node:path';
