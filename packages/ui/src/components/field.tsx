@@ -9,12 +9,18 @@ export type FieldProps = Omit<ViewProps, 'children'> & {
   children: React.ReactNode;
   className?: string;
   description?: string;
+  /** ORed into the field's own `disabled` by any BeeUI form control (Input, Select, DatePicker, etc.) rendered as `children`. Defaults to false. */
   disabled?: boolean;
+  /** Shown instead of `description`, styled destructively, when `invalid` is true. */
   error?: string;
+  /** ORed into the field's own `invalid` by any BeeUI form control rendered as `children`, and switches the helper text below it from `description` to `error`. Defaults to false. */
   invalid?: boolean;
   label: string;
+  /** `nativeID` for the rendered `Label`, used to build `accessibilityLabelledBy` links. Defaults to a generated, stable-per-mount ID. */
   labelNativeID?: string;
+  /** Renders the label with a required indicator and exposes it via `requiredAccessibilityLabel`. Defaults to false. */
   required?: boolean;
+  /** Accessible label appended to the field's name when `required` is true (e.g. announced as "Email, required"). Defaults to `'required'`. */
   requiredAccessibilityLabel?: string;
 };
 

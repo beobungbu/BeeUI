@@ -53,7 +53,7 @@ Stateless wrapper that keeps non-interactive content in the accessibility tree w
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | VisuallyHidden is intended for non-interactive assistive text/content. |
+| `children` | `React.ReactNode` | — | VisuallyHidden is intended for non-interactive assistive text/content. Interactive controls should expose their own accessibility label instead. |
 
 Also carries every prop of `ViewProps` — that upstream contract is not reproduced here.
 

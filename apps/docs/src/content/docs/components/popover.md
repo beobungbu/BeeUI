@@ -63,7 +63,7 @@ Controlled (`open`+`onOpenChange`) or uncontrolled (`defaultOpen`) non-modal anc
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `loading` | `boolean` | — | — |
+| `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
 
@@ -77,12 +77,12 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \
 | `avoidSafeArea` | `boolean` | `true` | Whether the overlay keeps clear of the platform safe-area insets — notches, home indicators and status bars. |
 | `closeOnOutsidePress` | `boolean` | `true` | Whether a press outside the overlay dismisses it. |
 | `collisionPadding` | `PopoverCollisionPadding` | `8` | Minimum distance to keep from the viewport edges when the kernel repositions or flips the overlay. A number applies to every edge; an object sets edges individually. |
-| `direction` | `PopoverDirection` | — | — |
-| `flip` | `boolean` | `true` | — |
-| `outsidePressProps` | `Omit<PressableProps, 'children' \| 'onPress' \| 'style'>` | — | — |
-| `outsidePressTestID` | `string` | — | — |
-| `placement` | `PopoverPlacement` | `'bottom'` | — |
-| `shift` | `boolean` | `true` | — |
+| `direction` | `PopoverDirection` | — | Logical direction used to resolve `align`/`placement` for RTL layouts. Defaults to the app's resolved layout direction. |
+| `flip` | `boolean` | `true` | Flips `placement` to the opposite side of the trigger when there is not enough room. Defaults to true. |
+| `outsidePressProps` | `Omit<PressableProps, 'children' \| 'onPress' \| 'style'>` | — | Forwarded to the outside-press dismiss layer, excluding `children`/`onPress`/`style`, which this component owns. |
+| `outsidePressTestID` | `string` | — | `testID` applied to the outside-press dismiss layer, for targeting it in tests. |
+| `placement` | `PopoverPlacement` | `'bottom'` | Which side of the trigger the popover opens on. Defaults to `'bottom'`. |
+| `shift` | `boolean` | `true` | Shifts the popover along the trigger's edge to stay within the viewport instead of overflowing. Defaults to true. |
 | `sideOffset` | `number` | `8` | Pixels of gap between the anchor and the overlay, along the placement side. |
 
 Also carries every prop of `Omit<ViewProps, 'accessibilityViewIsModal' \| 'role'>` — that upstream contract is not reproduced here.
@@ -110,18 +110,18 @@ one of the following mutually exclusive variants:
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
-| `defaultOpen` | `never` | `false` | — |
-| `onOpenChange` **(required)** | `(open: boolean) => void` | — | — |
-| `open` **(required)** | `boolean` | — | — |
+| `defaultOpen` | `never` | `false` | Not accepted in the controlled variant, where `open` already owns the state. Pass `defaultOpen` on its own, without `open`, to use the uncontrolled variant. |
+| `onOpenChange` **(required)** | `(open: boolean) => void` | — | Applies a requested open state, and is required here because the controlled variant never updates its own visibility. If this does not change `open`, nothing does. |
+| `open` **(required)** | `boolean` | — | Current open state, owned by the caller; supplying a defined value alongside `onOpenChange` is what selects the controlled variant. Passing `open` without an `onOpenChange` function warns in development and falls back to uncontrolled behavior. |
 
 **Variant `PopoverUncontrolledProps`:**
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
-| `defaultOpen` | `boolean` | `false` | — |
-| `onOpenChange` | `(open: boolean) => void` | — | — |
-| `open` | `undefined` | — | — |
+| `defaultOpen` | `boolean` | `false` | Open state to start from, read once when the component mounts, so later changes to it are ignored. Defaults to false; drive visibility with `open` + `onOpenChange` instead when it needs to change. |
+| `onOpenChange` | `(open: boolean) => void` | — | Notified after the open state changes, and optional here because the uncontrolled variant updates its own state either way. |
+| `open` | `undefined` | — | Must be left undefined in the uncontrolled variant, because a defined `open` together with `onOpenChange` selects the controlled variant instead. |
 
 #### `PopoverTitleProps`
 
@@ -146,7 +146,7 @@ Also carries every prop of `Omit<TextProps, 'accessibilityRole' \| 'role' \| 'va
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `loading` | `boolean` | — | — |
+| `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
 

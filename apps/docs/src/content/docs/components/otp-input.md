@@ -53,12 +53,12 @@ Controlled/uncontrolled one-time-code input; entered text is normalized to digit
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `defaultValue` | `string` | `''` | — |
-| `length` | `number` | `6` | — |
-| `mode` | `'numeric' \| 'text'` | `'numeric'` | — |
-| `onComplete` | `(value: string) => void` | — | — |
-| `onValueChange` | `(value: string) => void` | — | — |
-| `value` | `string` | — | — |
+| `defaultValue` | `string` | `''` | Initial code for uncontrolled usage; normalized (digits-only in `'numeric'` mode, truncated to `length`) like any other value. Defaults to `''`. |
+| `length` | `number` | `6` | Number of characters the code must reach before `onComplete` fires. Also sets the underlying input's `maxLength`. Defaults to 6. |
+| `mode` | `'numeric' \| 'text'` | `'numeric'` | `'numeric'` strips non-digit characters as they are typed and shows a numeric keyboard; `'text'` accepts any character. Defaults to `'numeric'`. |
+| `onComplete` | `(value: string) => void` | — | Called once when the code reaches `length` characters; not called again for the same value until it changes and comes back to full length. |
+| `onValueChange` | `(value: string) => void` | — | Called with the normalized value on every change, including partial (incomplete) codes. |
+| `value` | `string` | — | Controlled code value; normalized (digits-only in `'numeric'` mode, truncated to `length`) before being displayed. |
 
 Also carries every prop of `Omit<InputProps, 'defaultValue' \| 'inputMode' \| 'keyboardType' \| 'maxLength' \| 'onChangeText' \| 'value'>` — documented on the [Input](/docs/components/input/) page, not reproduced here.
 

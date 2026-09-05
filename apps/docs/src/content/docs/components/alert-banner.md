@@ -54,11 +54,11 @@ Stateless inline callout with no open/close or controlled prop; it live-announce
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `action` | `React.ReactNode` | — | — |
-| `announcement` | `string` | — | — |
+| `action` | `React.ReactNode` | — | Rendered below the description, indented to align with it (e.g. a retry or dismiss button). |
+| `announcement` | `string` | — | Overrides the text announced to screen readers on iOS when the banner appears; by default the title and description are joined and announced (only if both are plain string/number content). |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
-| `live` | `'none' \| 'polite' \| 'assertive'` | `'polite'` | — |
+| `live` | `'none' \| 'polite' \| 'assertive'` | `'polite'` | Sets `accessibilityLiveRegion` and, on iOS, whether the announcement queues (`polite`) or interrupts (`assertive`); `none` suppresses the announcement entirely. Defaults to `polite`. |
 | `title` **(required)** | `React.ReactNode` | — | The primary heading text for this surface. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` and `VariantProps<typeof alertBannerVariants>` — that upstream contract is not reproduced here.

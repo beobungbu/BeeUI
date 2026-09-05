@@ -4,7 +4,9 @@ import { View, type ViewProps } from 'react-native';
 
 export type SeparatorProps = Omit<ViewProps, 'role'> & {
   className?: string;
+  /** When true (the default), hides the separator from accessibility and omits `role="separator"`, since a purely visual divider should not be announced. Set to false for a separator that conveys real structure. */
   decorative?: boolean;
+  /** `'horizontal'` renders a full-width 1px-tall line; `'vertical'` renders a self-stretching 1px-wide line. Defaults to `'horizontal'`. */
   orientation?: 'horizontal' | 'vertical';
 };
 

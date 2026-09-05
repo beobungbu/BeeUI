@@ -3,7 +3,9 @@ import * as React from 'react';
 import { Text, type TextProps } from './text';
 
 export type LabelProps = Omit<TextProps, 'variant'> & {
+  /** Appends a visual `*` (hidden from accessibility) and, when the label's children are a plain string or number, appends `requiredAccessibilityLabel` to the accessible name instead. Defaults to false. */
   required?: boolean;
+  /** Text appended to the accessible name after the label when `required` is true and the label's children are a plain string or number (e.g. `"Email, required"`). Defaults to `'required'`. */
   requiredAccessibilityLabel?: string;
 };
 

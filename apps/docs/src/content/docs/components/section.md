@@ -53,12 +53,12 @@ Stateless title/description/action/content composition for screen sections; no c
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `action` | `React.ReactNode` | — | — |
+| `action` | `React.ReactNode` | — | Rendered end-aligned opposite the title/description (e.g. a "See all" link). Only shown, along with the header row, when at least one of `title`, `description`, or `action` is set. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
-| `descriptionClassName` | `string` | — | — |
+| `descriptionClassName` | `string` | — | Applied to the description `Text` when `description` is a plain string or number; ignored if `description` is a custom element. |
 | `title` | `React.ReactNode` | — | The primary heading text for this surface. |
-| `titleClassName` | `string` | — | — |
+| `titleClassName` | `string` | — | Applied to the title `Text` when `title` is a plain string or number; ignored if `title` is a custom element. |
 
 Also carries every prop of `ViewProps` — that upstream contract is not reproduced here.
 

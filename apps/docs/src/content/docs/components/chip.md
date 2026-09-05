@@ -56,11 +56,11 @@ Standalone toggle (`selected`/`onSelectedChange`) or, nested in `ChipGroup`, a v
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `defaultValue` | `ChipGroupValue` | — | — |
-| `disabled` | `boolean` | `false` | — |
-| `onValueChange` | `(value: ChipGroupValue) => void` | — | — |
-| `selectionMode` | `ChipSelectionMode` | `'single'` | — |
-| `value` | `ChipGroupValue` | — | — |
+| `defaultValue` | `ChipGroupValue` | — | Initial selection for uncontrolled usage: a string in `'single'` mode, an array in `'multiple'` mode. Defaults to no selection. |
+| `disabled` | `boolean` | `false` | Disables every `Chip` inside the group, overriding each item's own `disabled`. Defaults to false. |
+| `onValueChange` | `(value: ChipGroupValue) => void` | — | Called with the updated selection (a string in `'single'` mode, an array in `'multiple'` mode) whenever a member `Chip` is pressed. |
+| `selectionMode` | `ChipSelectionMode` | `'single'` | `'single'` renders the group with `accessibilityRole="radiogroup"` and each Chip as a radio, allowing at most one selection; `'multiple'` renders each Chip as a checkbox and allows any number selected. Defaults to `'single'`. |
+| `value` | `ChipGroupValue` | — | The selected member Chip's `value` (a string in `'single'` mode, an array of values in `'multiple'` mode). Passing this switches the group to controlled mode. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
@@ -70,11 +70,11 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `defaultSelected` | `boolean` | `false` | — |
+| `defaultSelected` | `boolean` | `false` | Initial selected state when this Chip is standalone (not inside a `ChipGroup`) and uncontrolled. Defaults to false. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `onSelectedChange` | `(selected: boolean) => void` | — | — |
-| `selected` | `boolean` | — | — |
-| `value` | `string` | — | — |
+| `onSelectedChange` | `(selected: boolean) => void` | — | Called with the next selected state when pressed, if this Chip is standalone (not inside a `ChipGroup`). |
+| `selected` | `boolean` | — | Controls whether this standalone Chip is selected. Ignored inside a `ChipGroup`, which derives selection from `value` instead. |
+| `value` | `string` | — | Identifies this Chip within a parent `ChipGroup`. Required there — without it the Chip renders disabled with a dev-mode warning. Has no effect on a standalone Chip. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
 

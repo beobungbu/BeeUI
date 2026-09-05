@@ -65,14 +65,14 @@ Controlled (`value`/`onValueChange`) or uncontrolled (`defaultValue`) persistent
 | `avoidSafeArea` | `boolean` | `true` | Whether the overlay keeps clear of the platform safe-area insets — notches, home indicators and status bars. |
 | `closeOnOutsidePress` | `boolean` | `true` | Whether a press outside the overlay dismisses it. |
 | `collisionPadding` | `SelectCollisionPadding` | `8` | Minimum distance to keep from the viewport edges when the kernel repositions or flips the overlay. A number applies to every edge; an object sets edges individually. |
-| `direction` | `SelectDirection` | — | — |
-| `flip` | `boolean` | `true` | — |
-| `maxHeight` | `number` | — | — |
-| `outsidePressProps` | `Omit<PressableProps, 'children' \| 'onPress' \| 'style'>` | — | — |
-| `outsidePressTestID` | `string` | — | — |
-| `placement` | `SelectPlacement` | `'bottom'` | — |
-| `scrollViewProps` | `Omit<ScrollViewProps, 'children'>` | — | — |
-| `shift` | `boolean` | `true` | — |
+| `direction` | `SelectDirection` | — | Logical direction used to resolve `align`/`placement` for RTL layouts. Defaults to the app's resolved layout direction. |
+| `flip` | `boolean` | `true` | Flips `placement` to the opposite side of the trigger when there is not enough room. Defaults to true. |
+| `maxHeight` | `number` | — | Caps the listbox's height; clamped to at least 96 and to the available viewport space. Defaults to 320. |
+| `outsidePressProps` | `Omit<PressableProps, 'children' \| 'onPress' \| 'style'>` | — | Forwarded to the outside-press dismiss layer, excluding `children`/`onPress`/`style`, which this component owns. |
+| `outsidePressTestID` | `string` | — | `testID` applied to the outside-press dismiss layer, for targeting it in tests. |
+| `placement` | `SelectPlacement` | `'bottom'` | Which side of the trigger the listbox opens on. Defaults to `'bottom'`. |
+| `scrollViewProps` | `Omit<ScrollViewProps, 'children'>` | — | Forwarded to the internal `ScrollView` that wraps the options, excluding `children`, which this component owns. |
+| `shift` | `boolean` | `true` | Shifts the listbox along the trigger's edge to stay within the viewport instead of overflowing. Defaults to true. |
 | `sideOffset` | `number` | `6` | Pixels of gap between the anchor and the overlay, along the placement side. |
 
 Also carries every prop of `Omit<ViewProps, 'nativeID' \| 'role'>` — that upstream contract is not reproduced here.
@@ -94,10 +94,10 @@ Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'role'>` — 
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `onPress` | `PressableProps['onPress']` | — | — |
-| `textClassName` | `string` | — | — |
-| `textValue` | `string` | — | — |
-| `value` **(required)** | `SelectOptionValue` | — | — |
+| `onPress` | `PressableProps['onPress']` | — | Called on press, before this item's own selection logic runs. |
+| `textClassName` | `string` | — | Applied to string/number children, which are wrapped in a `Text`; ignored for custom element children. |
+| `textValue` | `string` | — | The plain-text label used for the trigger's selected-value display, this item's accessible name, and keyboard typeahead. Defaults to the item's children if they are a plain string/number; required (with a dev-mode warning) when `children` is a custom element. |
+| `value` **(required)** | `SelectOptionValue` | — | Identifies this option; matched against the parent `Select`'s `value`/`defaultValue`. A value duplicated by another item in the same `Select` is disabled with a dev-mode warning. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'onPress' \| 'role'>` — that upstream contract is not reproduced here.
 
@@ -116,13 +116,13 @@ Also carries every prop of `Omit<RNTextProps, 'nativeID' \| 'role'>` — that up
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
-| `defaultOpen` | `boolean` | `false` | — |
-| `defaultValue` | `SelectOptionValue` | — | — |
-| `disabled` | `boolean` | `false` | — |
-| `onOpenChange` | `(open: boolean) => void` | — | — |
-| `onValueChange` | `(value: SelectOptionValue) => void` | — | — |
-| `open` | `boolean` | — | — |
-| `value` | `SelectOptionValue` | — | — |
+| `defaultOpen` | `boolean` | `false` | Initial open state for uncontrolled usage. Ignored once `open` is controlled. Defaults to false. |
+| `defaultValue` | `SelectOptionValue` | — | Initial selected value for uncontrolled usage. Ignored once `value` is controlled. |
+| `disabled` | `boolean` | `false` | Prevents the trigger from opening the listbox and disables the root. Defaults to false. |
+| `onOpenChange` | `(open: boolean) => void` | — | Called whenever the open state changes (trigger press, item selection, outside press, Escape). Required alongside `open` to make it controlled; otherwise falls back to internal open state with a dev-mode warning. |
+| `onValueChange` | `(value: SelectOptionValue) => void` | — | Called with the newly selected `SelectItem`'s `value`. Required for enabled controlled `value` usage (logs a dev warning otherwise). |
+| `open` | `boolean` | — | Controls whether the listbox is open. Passing this key (even `undefined`) switches open state to controlled, requiring `onOpenChange`. |
+| `value` | `SelectOptionValue` | — | The selected `SelectItem`'s `value`. Passing this key (even `undefined`) switches selection to controlled, requiring `onValueChange`. |
 
 #### `SelectTriggerProps`
 
@@ -130,8 +130,8 @@ Also carries every prop of `Omit<RNTextProps, 'nativeID' \| 'role'>` — that up
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `indicator` | `React.ReactNode` | — | — |
-| `onKeyDown` | `(event: WebKeyboardEvent) => void` | — | — |
+| `indicator` | `React.ReactNode` | — | Replaces the default chevron (`⌄`/`⌃` for closed/open) shown at the trigger's end. |
+| `onKeyDown` | `(event: WebKeyboardEvent) => void` | — | Web only: called on every keydown on the trigger, before this component's own ArrowUp/ArrowDown-opens-the-listbox handling runs. No-op on native. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
 
@@ -140,7 +140,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'childre
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `placeholder` | `React.ReactNode` | `'Select an option'` | — |
+| `placeholder` | `React.ReactNode` | `'Select an option'` | Shown when no `SelectItem` is selected. Also used, when a plain string, as the trigger's fallback accessible name if no `accessibilityLabel` is set. Defaults to `'Select an option'`. |
 
 Also carries every prop of `Omit<RNTextProps, 'children' \| 'role'>` — that upstream contract is not reproduced here.
 

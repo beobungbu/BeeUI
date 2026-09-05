@@ -56,7 +56,7 @@ Controlled `currentStep` context shared with every `StepperItem`; step values ar
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
-| `step` **(required)** | `number` | — | — |
+| `step` **(required)** | `number` | — | This item's position (1-based); non-finite values are floored and clamped to at least 1. Compared against the parent `Stepper`'s `currentStep` to determine current/complete state. A value duplicated by another item is disabled with a dev-mode warning. |
 | `title` **(required)** | `React.ReactNode` | — | The primary heading text for this surface. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
@@ -67,9 +67,9 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'childre
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `currentStep` **(required)** | `number` | — | — |
-| `disabled` | `boolean` | `false` | — |
-| `onStepChange` | `(step: number) => void` | — | — |
+| `currentStep` **(required)** | `number` | — | The active step number (1-based), clamped to `[1, number of StepperItem children]`. Non-finite values fall back to 1. |
+| `disabled` | `boolean` | `false` | Disables every `StepperItem` inside, overriding each item's own `disabled`. Defaults to false. |
+| `onStepChange` | `(step: number) => void` | — | Called with a step's normalized step number when a non-disabled `StepperItem` is pressed. Also required (alongside a per-item `onPress`) for any item to render as interactive. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 

@@ -131,12 +131,19 @@ function renderItemChildren(children: React.ReactNode, textClassName?: string) {
 
 type SelectBaseProps = {
   children?: React.ReactNode;
+  /** Initial open state for uncontrolled usage. Ignored once `open` is controlled. Defaults to false. */
   defaultOpen?: boolean;
+  /** Initial selected value for uncontrolled usage. Ignored once `value` is controlled. */
   defaultValue?: SelectOptionValue;
+  /** Prevents the trigger from opening the listbox and disables the root. Defaults to false. */
   disabled?: boolean;
+  /** Called whenever the open state changes (trigger press, item selection, outside press, Escape). Required alongside `open` to make it controlled; otherwise falls back to internal open state with a dev-mode warning. */
   onOpenChange?: (open: boolean) => void;
+  /** Called with the newly selected `SelectItem`'s `value`. Required for enabled controlled `value` usage (logs a dev warning otherwise). */
   onValueChange?: (value: SelectOptionValue) => void;
+  /** Controls whether the listbox is open. Passing this key (even `undefined`) switches open state to controlled, requiring `onOpenChange`. */
   open?: boolean;
+  /** The selected `SelectItem`'s `value`. Passing this key (even `undefined`) switches selection to controlled, requiring `onValueChange`. */
   value?: SelectOptionValue;
 };
 
@@ -328,7 +335,9 @@ export type SelectTriggerProps = Omit<
 > & {
   children?: React.ReactNode;
   className?: string;
+  /** Replaces the default chevron (`⌄`/`⌃` for closed/open) shown at the trigger's end. */
   indicator?: React.ReactNode;
+  /** Web only: called on every keydown on the trigger, before this component's own ArrowUp/ArrowDown-opens-the-listbox handling runs. No-op on native. */
   onKeyDown?: (event: WebKeyboardEvent) => void;
 };
 
@@ -438,6 +447,7 @@ SelectTrigger.displayName = 'SelectTrigger';
 
 export type SelectValueProps = Omit<RNTextProps, 'children' | 'role'> & {
   className?: string;
+  /** Shown when no `SelectItem` is selected. Also used, when a plain string, as the trigger's fallback accessible name if no `accessibilityLabel` is set. Defaults to `'Select an option'`. */
   placeholder?: React.ReactNode;
 };
 
@@ -474,13 +484,21 @@ export type SelectContentProps = Omit<ViewProps, 'nativeID' | 'role'> & {
   avoidSafeArea?: boolean;
   closeOnOutsidePress?: boolean;
   collisionPadding?: SelectCollisionPadding;
+  /** Logical direction used to resolve `align`/`placement` for RTL layouts. Defaults to the app's resolved layout direction. */
   direction?: SelectDirection;
+  /** Flips `placement` to the opposite side of the trigger when there is not enough room. Defaults to true. */
   flip?: boolean;
+  /** Caps the listbox's height; clamped to at least 96 and to the available viewport space. Defaults to 320. */
   maxHeight?: number;
+  /** Forwarded to the outside-press dismiss layer, excluding `children`/`onPress`/`style`, which this component owns. */
   outsidePressProps?: Omit<PressableProps, 'children' | 'onPress' | 'style'>;
+  /** `testID` applied to the outside-press dismiss layer, for targeting it in tests. */
   outsidePressTestID?: string;
+  /** Which side of the trigger the listbox opens on. Defaults to `'bottom'`. */
   placement?: SelectPlacement;
+  /** Forwarded to the internal `ScrollView` that wraps the options, excluding `children`, which this component owns. */
   scrollViewProps?: Omit<ScrollViewProps, 'children'>;
+  /** Shifts the listbox along the trigger's edge to stay within the viewport instead of overflowing. Defaults to true. */
   shift?: boolean;
   sideOffset?: number;
 };
@@ -764,9 +782,13 @@ export type SelectItemProps = Omit<
 > & {
   children?: React.ReactNode;
   className?: string;
+  /** Called on press, before this item's own selection logic runs. */
   onPress?: PressableProps['onPress'];
+  /** Applied to string/number children, which are wrapped in a `Text`; ignored for custom element children. */
   textClassName?: string;
+  /** The plain-text label used for the trigger's selected-value display, this item's accessible name, and keyboard typeahead. Defaults to the item's children if they are a plain string/number; required (with a dev-mode warning) when `children` is a custom element. */
   textValue?: string;
+  /** Identifies this option; matched against the parent `Select`'s `value`/`defaultValue`. A value duplicated by another item in the same `Select` is disabled with a dev-mode warning. */
   value: SelectOptionValue;
 };
 

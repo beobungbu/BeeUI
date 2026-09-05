@@ -56,13 +56,13 @@ Structural legend/description/error/disabled grouping; it stays `accessible={fal
 | `children` **(required)** | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `description` | `string` | — | Secondary supporting text rendered beneath the primary label or title. |
-| `disabled` | `boolean` | `false` | — |
-| `error` | `string` | — | — |
-| `invalid` | `boolean` | `false` | — |
-| `legend` **(required)** | `string` | — | — |
-| `legendNativeID` | `string` | — | — |
-| `required` | `boolean` | `false` | — |
-| `requiredAccessibilityLabel` | `string` | `'required'` | — |
+| `disabled` | `boolean` | `false` | ORed into a `RadioGroup` rendered as `children`, disabling every `Radio` inside it. Defaults to false. |
+| `error` | `string` | — | Shown instead of `description`, styled destructively, when `invalid` is true. |
+| `invalid` | `boolean` | `false` | Switches the helper text below `children` from `description` to `error`. Defaults to false. |
+| `legend` **(required)** | `string` | — | Heading text for the group, rendered as a `Label` above `children` (e.g. "Shipping method"). |
+| `legendNativeID` | `string` | — | `nativeID` for the rendered legend `Label`, used to build `accessibilityLabelledBy` links (e.g. from a `RadioGroup` rendered as `children`). Defaults to a generated, stable-per-mount ID. |
+| `required` | `boolean` | `false` | Renders the legend with a required indicator and appends `requiredAccessibilityLabel` to its accessible name. Defaults to false. |
+| `requiredAccessibilityLabel` | `string` | `'required'` | Text appended to the legend's accessible name when `required` is true (e.g. "Shipping method, required"). Defaults to `'required'`. |
 
 Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'accessible' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
 

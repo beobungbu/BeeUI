@@ -74,14 +74,42 @@ type SheetBaseProps = {
 };
 
 type SheetControlledProps = SheetBaseProps & {
+  /**
+   * Not accepted in the controlled variant, where `open` already owns the state.
+   * Pass `defaultOpen` on its own, without `open`, to use the uncontrolled variant.
+   */
   defaultOpen?: never;
+  /**
+   * Applies a requested open state, and is required here because the controlled
+   * variant never updates its own visibility. If this does not change `open`,
+   * nothing does.
+   */
   onOpenChange: (open: boolean) => void;
+  /**
+   * Current open state, owned by the caller; supplying a defined value alongside
+   * `onOpenChange` is what selects the controlled variant. Passing `open` without
+   * an `onOpenChange` function warns in development and falls back to uncontrolled
+   * behavior.
+   */
   open: boolean;
 };
 
 type SheetUncontrolledProps = SheetBaseProps & {
+  /**
+   * Open state to start from, read once when the component mounts, so later changes
+   * to it are ignored. Defaults to false; drive visibility with `open` +
+   * `onOpenChange` instead when it needs to change.
+   */
   defaultOpen?: boolean;
+  /**
+   * Notified after the open state changes, and optional here because the
+   * uncontrolled variant updates its own state either way.
+   */
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Must be left undefined in the uncontrolled variant, because a defined `open`
+   * together with `onOpenChange` selects the controlled variant instead.
+   */
   open?: undefined;
 };
 
@@ -209,10 +237,14 @@ export type SheetContentProps = Omit<
    * interactive snapping from the same `snapPoints`/`initialSnapIndex` pair.
    */
   initialSnapIndex?: number;
+  /** Forwarded to the underlying React Native `Modal`, minus the props this component already controls (`animationType` may still be overridden here; `presentationStyle`/`transparent`/`visible` cannot). */
   modalProps?: SheetModalProps;
+  /** Called whenever a native request-close source (Android hardware back, iOS/other native modal dismissal) fires, before this sheet applies its own `dismissOnRequestClose` policy. Does not by itself close the sheet. */
   onRequestClose?: () => void;
   overlayClassName?: string;
+  /** Forwarded to the backdrop `Pressable`, excluding `children` and `onPress` which this component owns. */
   overlayProps?: Omit<PressableProps, 'children' | 'onPress'>;
+  /** `testID` applied to the backdrop `Pressable`, for targeting it in tests. */
   overlayTestID?: string;
   /** Renders the default drag-handle affordance above `children`. Defaults to `true`. */
   showHandle?: boolean;

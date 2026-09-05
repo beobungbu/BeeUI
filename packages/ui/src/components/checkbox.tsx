@@ -32,11 +32,14 @@ export type CheckboxProps = Omit<
   PressableProps,
   'accessibilityRole' | 'role' | 'children' | 'onPress'
 > & {
+  /** The checkbox's state: `true` (checked), `false` (unchecked), or `'indeterminate'` (a dash, e.g. a "select all" with a partial selection). Always controlled by the caller; defaults to `false`. */
   checked?: CheckboxValue;
   className?: string;
+  /** Applied to the checkbox's own box, not its label. */
   indicatorClassName?: string;
   label?: string;
   labelClassName?: string;
+  /** Called with the next checked state (`true`/`false`, never `'indeterminate'`) when pressed. Toggles from `'indeterminate'` to `true`. */
   onCheckedChange?: (checked: boolean) => void;
 };
 

@@ -104,14 +104,42 @@ type DropdownMenuBaseProps = {
 };
 
 type DropdownMenuControlledProps = DropdownMenuBaseProps & {
+  /**
+   * Not accepted in the controlled variant, where `open` already owns the state.
+   * Pass `defaultOpen` on its own, without `open`, to use the uncontrolled variant.
+   */
   defaultOpen?: never;
+  /**
+   * Applies a requested open state, and is required here because the controlled
+   * variant never updates its own visibility. If this does not change `open`,
+   * nothing does.
+   */
   onOpenChange: (open: boolean) => void;
+  /**
+   * Current open state, owned by the caller; supplying a defined value alongside
+   * `onOpenChange` is what selects the controlled variant. Passing `open` without
+   * an `onOpenChange` function warns in development and falls back to uncontrolled
+   * behavior.
+   */
   open: boolean;
 };
 
 type DropdownMenuUncontrolledProps = DropdownMenuBaseProps & {
+  /**
+   * Open state to start from, read once when the component mounts, so later changes
+   * to it are ignored. Defaults to false; drive visibility with `open` +
+   * `onOpenChange` instead when it needs to change.
+   */
   defaultOpen?: boolean;
+  /**
+   * Notified after the open state changes, and optional here because the
+   * uncontrolled variant updates its own state either way.
+   */
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Must be left undefined in the uncontrolled variant, because a defined `open`
+   * together with `onOpenChange` selects the controlled variant instead.
+   */
   open?: undefined;
 };
 
@@ -222,11 +250,17 @@ export type DropdownMenuContentProps = Omit<ViewProps, 'role'> & {
   avoidSafeArea?: boolean;
   closeOnOutsidePress?: boolean;
   collisionPadding?: DropdownMenuCollisionPadding;
+  /** Logical direction used to resolve `align`/`placement` for RTL layouts. Defaults to the app's resolved layout direction. */
   direction?: DropdownMenuDirection;
+  /** Flips `placement` to the opposite side of the trigger when there is not enough room. Defaults to true. */
   flip?: boolean;
+  /** Forwarded to the outside-press dismiss layer, excluding `children`/`onPress`/`style`, which this component owns. */
   outsidePressProps?: Omit<PressableProps, 'children' | 'onPress' | 'style'>;
+  /** `testID` applied to the outside-press dismiss layer, for targeting it in tests. */
   outsidePressTestID?: string;
+  /** Which side of the trigger the menu opens on. Defaults to `'bottom'`. */
   placement?: DropdownMenuPlacement;
+  /** Shifts the menu along the trigger's edge to stay within the viewport instead of overflowing. Defaults to true. */
   shift?: boolean;
   sideOffset?: number;
 };
@@ -462,9 +496,13 @@ type DropdownMenuItemBaseProps = Omit<
 > & {
   children?: React.ReactNode;
   className?: string;
+  /** Closes the menu after this item is activated (pressed or selected via keyboard). Defaults to true. */
   closeOnSelect?: boolean;
+  /** Called on press, before `onSelect` and `closeOnSelect` run. */
   onPress?: PressableProps['onPress'];
+  /** Called when this item is activated (pressed or selected via keyboard), before `closeOnSelect` runs. */
   onSelect?: () => void;
+  /** Applied to string/number children, which are wrapped in a `Text`; ignored for custom element children. */
   textClassName?: string;
 };
 
@@ -589,8 +627,11 @@ export type DropdownMenuCheckboxItemProps = Omit<
   DropdownMenuItemBaseProps,
   'closeOnSelect' | 'onSelect'
 > & {
+  /** Whether this checkbox item is checked; renders a checkmark. Always controlled by the caller. */
   checked: boolean;
+  /** Closes the menu after this item is toggled. Defaults to false, unlike `DropdownMenuItem`, since checking multiple items in one open menu is a common flow. */
   closeOnSelect?: boolean;
+  /** Called with the next checked state when this item is activated. Required for enabled items in dev mode (logs a warning otherwise). */
   onCheckedChange?: (checked: boolean) => void;
 };
 
@@ -682,7 +723,9 @@ export const DropdownMenuCheckboxItem = React.forwardRef<
 DropdownMenuCheckboxItem.displayName = 'DropdownMenuCheckboxItem';
 
 export type DropdownMenuRadioGroupProps = Omit<ViewProps, 'role'> & {
+  /** Called with the selected `DropdownMenuRadioItem`'s `value` when the selection changes. Required whenever `value` is set (logs a dev warning otherwise). */
   onValueChange?: (value: string) => void;
+  /** The `value` of the currently selected `DropdownMenuRadioItem` among this group's children. */
   value?: string;
 };
 
@@ -741,7 +784,9 @@ export type DropdownMenuRadioItemProps = Omit<
   DropdownMenuItemBaseProps,
   'closeOnSelect' | 'onSelect'
 > & {
+  /** Closes the menu after this item is selected. Defaults to false, matching `DropdownMenuCheckboxItem`'s convention. */
   closeOnSelect?: boolean;
+  /** Identifies this item within its parent `DropdownMenuRadioGroup`. A value duplicated by another item in the same group is disabled with a dev-mode warning. */
   value: string;
 };
 

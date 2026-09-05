@@ -53,8 +53,8 @@ Stateless form/control label; `required` renders accessible required-state wordi
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `required` | `boolean` | `false` | — |
-| `requiredAccessibilityLabel` | `string` | `'required'` | — |
+| `required` | `boolean` | `false` | Appends a visual `*` (hidden from accessibility) and, when the label's children are a plain string or number, appends `requiredAccessibilityLabel` to the accessible name instead. Defaults to false. |
+| `requiredAccessibilityLabel` | `string` | `'required'` | Text appended to the accessible name after the label when `required` is true and the label's children are a plain string or number (e.g. `"Email, required"`). Defaults to `'required'`. |
 
 Also carries every prop of `Omit<TextProps, 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 

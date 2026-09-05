@@ -91,7 +91,7 @@ Also carries every prop of `Omit<React.ComponentProps<typeof Text>, 'children'>`
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `colSpan` | `number` | `1` | Number of columns this cell spans (e.g. a single full-width cell used for an empty/loading/error row — see `Table`'s composition notes). |
-| `label` | `string` | — | Explicit column label override for `layout="stacked"` and native accessible-name column context. |
+| `label` | `string` | — | Explicit column label override for `layout="stacked"` and native accessible-name column context. Falls back to the corresponding `TableHead`'s inferred label when omitted. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
@@ -135,9 +135,9 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `label` | `string` | — | Explicit column label override. |
-| `onSortChange` | `() => void` | — | Caller-driven sort-toggle callback. |
-| `sortDirection` | `TableSortDirection` | — | Controlled current sort state for this column. |
+| `label` | `string` | — | Explicit column label override. Required when this header's content is not plain text/number (e.g. an icon-only header) — inferred from `children` otherwise. |
+| `onSortChange` | `() => void` | — | Caller-driven sort-toggle callback. Table stores no sort state. |
+| `sortDirection` | `TableSortDirection` | — | Controlled current sort state for this column. Presence of this prop (any of the three values) marks the column sortable and renders an interactive sort trigger reachable by normal tab order. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
@@ -152,7 +152,7 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `layout` | `TableLayout` | `'scroll'` | Responsive presentation. |
+| `layout` | `TableLayout` | `'scroll'` | Responsive presentation. Defaults to `'scroll'` (horizontal `ScrollView` around the row grid). Set `'stacked'` to render a card/label-value presentation instead — typically driven by the caller's own breakpoint decision (BeeUI does not own viewport/breakpoint policy). |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
@@ -167,7 +167,7 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `selected` | `boolean` | `false` | Visual highlight for a caller-selected row. |
+| `selected` | `boolean` | `false` | Visual highlight for a caller-selected row. Table owns no selection state (ADR-007) — this only reflects a boolean the caller already tracks (e.g. alongside a `Checkbox` in one of the row's cells). |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 

@@ -65,10 +65,10 @@ Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract 
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `defaultOpen` | `boolean` | `false` | — |
-| `disabled` | `boolean` | `false` | — |
-| `onOpenChange` | `(open: boolean) => void` | — | — |
-| `open` | `boolean` | — | — |
+| `defaultOpen` | `boolean` | `false` | Initial open state for uncontrolled usage. Defaults to false. |
+| `disabled` | `boolean` | `false` | Blocks the trigger from toggling open state, even a per-trigger `disabled={false}` override. Defaults to false. |
+| `onOpenChange` | `(open: boolean) => void` | — | Called with the next open state whenever `CollapsibleTrigger` is pressed while not disabled. |
+| `open` | `boolean` | — | Whether the content is shown. Passing this switches the collapsible to controlled mode. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
@@ -78,7 +78,7 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `disabled` | `boolean` | `false` | — |
+| `disabled` | `boolean` | `false` | Disables this trigger. Combined with (not overridden by) the parent `Collapsible`'s own `disabled`. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'accessibilityState' \| 'children' \| 'disabled' \| 'role'>` — that upstream contract is not reproduced here.

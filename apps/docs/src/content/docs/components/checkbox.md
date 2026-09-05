@@ -54,12 +54,12 @@ Controlled boolean/indeterminate `checked`/`onCheckedChange` checkbox; enabling 
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `checked` | `CheckboxValue` | `false` | — |
+| `checked` | `CheckboxValue` | `false` | The checkbox's state: `true` (checked), `false` (unchecked), or `'indeterminate'` (a dash, e.g. a "select all" with a partial selection). Always controlled by the caller; defaults to `false`. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `indicatorClassName` | `string` | — | — |
+| `indicatorClassName` | `string` | — | Applied to the checkbox's own box, not its label. |
 | `label` | `string` | — | The visible text naming this element, and the accessible name unless one is set explicitly. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `onCheckedChange` | `(checked: boolean) => void` | — | — |
+| `onCheckedChange` | `(checked: boolean) => void` | — | Called with the next checked state (`true`/`false`, never `'indeterminate'`) when pressed. Toggles from `'indeterminate'` to `true`. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children' \| 'onPress'>` — that upstream contract is not reproduced here.
 

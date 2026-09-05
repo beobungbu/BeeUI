@@ -56,9 +56,9 @@ Stateless read-only ordered history composition; terminal connector placement is
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
-| `marker` | `React.ReactNode` | — | — |
-| `meta` | `React.ReactNode` | — | — |
-| `status` | `TimelineStatus` | `'default'` | — |
+| `marker` | `React.ReactNode` | — | Replaces the default status-colored dot in the rail. The rail column is hidden from accessibility regardless. |
+| `meta` | `React.ReactNode` | — | Rendered below `description` in a smaller, subtler style (e.g. a timestamp or actor). |
+| `status` | `TimelineStatus` | `'default'` | Sets the default marker dot's color. Ignored when a custom `marker` is provided. Defaults to `'default'`. |
 | `title` **(required)** | `React.ReactNode` | — | The primary heading text for this surface. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.

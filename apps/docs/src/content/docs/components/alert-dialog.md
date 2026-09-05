@@ -65,7 +65,7 @@ Confirmation/destructive modal sharing Dialog's controlled (`open`+`onOpenChange
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `loading` | `boolean` | — | — |
+| `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
 
@@ -78,7 +78,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `loading` | `boolean` | — | — |
+| `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
 
@@ -86,7 +86,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `cancelOnRequestClose` | `boolean` | `true` | Whether native request-close paths (Android hardware back and accessibility escape) should behave like cancellation. |
+| `cancelOnRequestClose` | `boolean` | `true` | Whether native request-close paths (Android hardware back and accessibility escape) should behave like cancellation. Backdrop presses never dismiss an AlertDialog. |
 
 Also carries every prop of `Omit<DialogContentProps, 'closeOnBackdropPress' \| 'dismissOnEscape' \| 'dismissOnRequestClose'>` — documented on the [Dialog](/docs/components/dialog/) page, not reproduced here.
 
@@ -117,18 +117,18 @@ Also carries every prop of `ViewProps` — that upstream contract is not reprodu
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
-| `defaultOpen` | `never` | — | — |
-| `onOpenChange` **(required)** | `(open: boolean) => void` | — | — |
-| `open` **(required)** | `boolean` | — | — |
+| `defaultOpen` | `never` | — | Not accepted in the controlled variant, where `open` already owns the state. Pass `defaultOpen` on its own, without `open`, to use the uncontrolled variant. |
+| `onOpenChange` **(required)** | `(open: boolean) => void` | — | Applies a requested open state, and is required here because the controlled variant never updates its own visibility. If this does not change `open`, nothing does. |
+| `open` **(required)** | `boolean` | — | Current open state, owned by the caller; supplying a defined value alongside `onOpenChange` is what selects the controlled variant. Passing `open` without an `onOpenChange` function warns in development and falls back to uncontrolled behavior. |
 
 **Variant `DialogUncontrolledProps`:**
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
-| `defaultOpen` | `boolean` | — | — |
-| `onOpenChange` | `(open: boolean) => void` | — | — |
-| `open` | `undefined` | — | — |
+| `defaultOpen` | `boolean` | — | Open state to start from, read once when the component mounts, so later changes to it are ignored. Defaults to false; drive visibility with `open` + `onOpenChange` instead when it needs to change. |
+| `onOpenChange` | `(open: boolean) => void` | — | Notified after the open state changes, and optional here because the uncontrolled variant updates its own state either way. |
+| `open` | `undefined` | — | Must be left undefined in the uncontrolled variant, because a defined `open` together with `onOpenChange` selects the controlled variant instead. |
 
 #### `AlertDialogTitleProps`
 
@@ -147,7 +147,7 @@ Also carries every prop of `Omit<TextProps, 'accessibilityRole' \| 'role' \| 'va
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `loading` | `boolean` | — | — |
+| `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
 

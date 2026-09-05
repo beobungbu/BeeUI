@@ -66,7 +66,7 @@ Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract 
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `value` **(required)** | `string` | — | — |
+| `value` **(required)** | `string` | — | Identifies this item; matched against the parent `Accordion`'s `value` to determine whether it is open. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
@@ -76,11 +76,11 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `collapsible` | `boolean` | `true` | — |
-| `defaultValue` | `string \| null` | `null` | — |
-| `disabled` | `boolean` | `false` | — |
-| `onValueChange` | `(value: string \| null) => void` | — | — |
-| `value` | `string \| null` | — | — |
+| `collapsible` | `boolean` | `true` | When true, pressing the open item's trigger again closes it, leaving no item open. Defaults to true. |
+| `defaultValue` | `string \| null` | `null` | Sets the initially open item's value for uncontrolled usage. Defaults to null (all items closed). |
+| `disabled` | `boolean` | `false` | Prevents any item from opening or closing, including via `AccordionTrigger` presses. Defaults to false. |
+| `onValueChange` | `(value: string \| null) => void` | — | Called with the newly open item's value (or null when it closes) whenever the open item changes. |
+| `value` | `string \| null` | — | The value of the currently open `AccordionItem`. Passing this switches the accordion to controlled mode. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
@@ -90,7 +90,7 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `disabled` | `boolean` | `false` | — |
+| `disabled` | `boolean` | `false` | Disables presses on this trigger only, without affecting other items in the accordion. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'accessibilityState' \| 'children' \| 'disabled' \| 'role'>` — that upstream contract is not reproduced here.

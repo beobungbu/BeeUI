@@ -57,9 +57,9 @@ Standalone `Radio` supports both selection and deselection through `onCheckedCha
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `disabled` | `boolean` | `false` | — |
-| `onValueChange` | `(value: string) => void` | — | — |
-| `value` | `string` | — | — |
+| `disabled` | `boolean` | `false` | Disables every `Radio` inside the group. Combined with (not overridden by) the enclosing `FormGroup`'s own `disabled`. Defaults to false. |
+| `onValueChange` | `(value: string) => void` | — | Called with the selected `Radio`'s `value` when the selection changes. Required for enabled usage (logs a dev warning otherwise). |
+| `value` | `string` | — | The `value` of the currently selected `Radio` among this group's children. |
 
 Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'role' \| 'children'>` — that upstream contract is not reproduced here.
 
@@ -67,13 +67,13 @@ Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'role' \| 'ch
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `checked` | `boolean` | `false` | — |
+| `checked` | `boolean` | `false` | Whether this Radio is checked when it is standalone (not inside a `RadioGroup`). Ignored inside a `RadioGroup`, which derives checked state by comparing `value` to the group's selection. Defaults to false. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `indicatorClassName` | `string` | — | — |
+| `indicatorClassName` | `string` | — | Applied to the radio's own circle, not its label. |
 | `label` | `string` | — | The visible text naming this element, and the accessible name unless one is set explicitly. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `onCheckedChange` | `(checked: boolean) => void` | — | — |
-| `value` | `string` | — | — |
+| `onCheckedChange` | `(checked: boolean) => void` | — | Called with the next checked state when pressed, if this Radio is standalone (not inside a `RadioGroup`). Required for enabled standalone usage (logs a dev warning otherwise). |
+| `value` | `string` | — | Identifies this Radio within a parent `RadioGroup`; required there for the item to participate in selection. Has no effect on a standalone Radio. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children' \| 'onPress'>` — that upstream contract is not reproduced here.
 

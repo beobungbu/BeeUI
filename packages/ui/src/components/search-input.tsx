@@ -3,6 +3,7 @@ import { TextInput } from 'react-native';
 import { Input, type InputProps } from './input';
 
 export type SearchInputProps = Omit<InputProps, 'inputMode' | 'returnKeyType'> & {
+  /** Called with the submitted text when the return key is pressed, and with `''` when the text is cleared back to empty after having had content. Not called for every keystroke — use `onChangeText` for that. */
   onSearch?: (value: string) => void;
 };
 

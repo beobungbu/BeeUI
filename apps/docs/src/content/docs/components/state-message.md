@@ -54,10 +54,10 @@ Stateless empty-state (`EmptyState`) and error-state (`ErrorState`, with an opti
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `action` | `React.ReactNode` | — | — |
+| `action` | `React.ReactNode` | — | Rendered below the description with top padding (e.g. a retry or create button). |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
-| `icon` | `React.ReactNode` | — | — |
+| `icon` | `React.ReactNode` | — | Rendered above the title, hidden from accessibility (purely decorative). |
 | `title` **(required)** | `React.ReactNode` | — | The primary heading text for this surface. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.

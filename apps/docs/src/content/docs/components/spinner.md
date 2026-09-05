@@ -54,7 +54,7 @@ Stateless native activity indicator with semantic tone mapping; no controlled pr
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `tone` | `SpinnerTone` | `'primary'` | — |
+| `tone` | `SpinnerTone` | `'primary'` | Semantic color the spinner renders in (e.g. `'destructive'` for an inline error-state spinner). Defaults to `'primary'`. |
 
 Also carries every prop of `Omit<ActivityIndicatorProps, 'color'>` — that upstream contract is not reproduced here.
 

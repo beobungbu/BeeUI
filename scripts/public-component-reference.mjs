@@ -157,17 +157,27 @@ function findUnknownBehaviorPropReferences(component, rootDir, field = 'behavior
 // A ratchet rather than a pass/fail threshold: failing on any blank would fail today and teach
 // nothing, and a silent percentage would drift back down the way it drifted here. The floor is
 // the measured value at the time it was written, so coverage can only go up.
-export const PROP_DESCRIPTION_FLOOR = 294;
+export const PROP_DESCRIPTION_FLOOR = 583;
+
+// Walks a resolved type entry the same way `applyGlossary` and the renderer do:
+// a `union` entry carries no `fields` of its own, only `variants`, each of which is
+// itself an object (or nested union) shape. Counting `entry.fields` alone reported
+// 521/521 while 26 variant props rendered an em dash, because the props that would
+// have disagreed were never in the counter's scope.
+function walkShapeFields(shape, visit) {
+  for (const field of shape?.fields ?? []) visit(field);
+  for (const variant of shape?.variants ?? []) walkShapeFields(variant, visit);
+}
 
 export function collectPropDescriptionCoverage(manifest) {
   let total = 0;
   let described = 0;
   for (const component of manifest) {
     for (const entry of component.typeDocs ?? []) {
-      for (const field of entry.fields ?? []) {
+      walkShapeFields(entry, (field) => {
         total += 1;
         if (field.description) described += 1;
-      }
+      });
     }
   }
   return { described, total };

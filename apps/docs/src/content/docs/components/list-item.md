@@ -56,10 +56,10 @@ Press behavior is opt-in (`onPress` makes the row interactive); an interactive r
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
-| `descriptionClassName` | `string` | — | — |
-| `leading` | `React.ReactNode` | — | — |
+| `descriptionClassName` | `string` | — | Applied to the description `Text` when `description` is a plain string or number; ignored if `description` is a custom element. |
+| `leading` | `React.ReactNode` | — | Rendered before the title/description column, shrink-to-content (e.g. an icon or avatar). |
 | `title` **(required)** | `React.ReactNode` | — | The primary heading text for this surface. |
-| `titleClassName` | `string` | — | — |
+| `titleClassName` | `string` | — | Applied to the title `Text` when `title` is a plain string or number; ignored if `title` is a custom element. |
 | `trailing` | `React.ReactNode` | — | Content rendered at the end of the row, after the primary content — actions, badges or status. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'accessibilityState' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
@@ -69,7 +69,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'accessi
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `trailing` | `React.ReactNode` | — | Content rendered at the end of the row, after the primary content — actions, badges or status. |
-| `value` | `React.ReactNode` | — | — |
+| `value` | `React.ReactNode` | — | Rendered muted, end-aligned before `trailing` (e.g. the current setting's selected option). Plain string/number renders as `Text`; anything else renders as-is. |
 
 Also carries every prop of `Omit<ListItemProps, 'trailing'>` — documented on the [List Item](/docs/components/list-item/) page, not reproduced here.
 

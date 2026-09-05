@@ -56,7 +56,7 @@ Stateless router-neutral trail; separators between `BreadcrumbItem`s are decorat
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `current` | `boolean` | `false` | — |
+| `current` | `boolean` | `false` | Marks this item as the current page: it renders as non-interactive text (even with `onPress` set) and is exposed as `accessibilityState.selected`. Defaults to false. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
@@ -67,7 +67,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'childre
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `separator` | `React.ReactNode` | — | — |
+| `separator` | `React.ReactNode` | — | Rendered between each item, hidden from accessibility. Defaults to `›` in LTR / `‹` in RTL; pass `null` to render no separator. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 

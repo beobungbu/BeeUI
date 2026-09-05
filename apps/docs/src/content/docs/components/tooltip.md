@@ -60,12 +60,12 @@ Controlled (`open`+`onOpenChange`) or uncontrolled (`defaultOpen`) non-interacti
 | `avoidKeyboard` | `boolean` | `false` | Whether the overlay repositions to stay clear of the on-screen keyboard. |
 | `avoidSafeArea` | `boolean` | `true` | Whether the overlay keeps clear of the platform safe-area insets — notches, home indicators and status bars. |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
-| `style` | `StyleProp<ViewStyle>` | — | — |
+| `style` | `StyleProp<ViewStyle>` | — | Plain style value only — unlike `Pressable`'s `style`, this does not accept a per-press-state style function, since tooltip content has no press states. |
 | `collisionPadding` | `TooltipCollisionPadding` | `8` | Minimum distance to keep from the viewport edges when the kernel repositions or flips the overlay. A number applies to every edge; an object sets edges individually. |
-| `direction` | `TooltipDirection` | — | — |
-| `flip` | `boolean` | `true` | — |
-| `placement` | `TooltipPlacement` | `'top'` | — |
-| `shift` | `boolean` | `true` | — |
+| `direction` | `TooltipDirection` | — | Logical direction used to resolve `align`/`placement` for RTL layouts. Defaults to the app's resolved layout direction. |
+| `flip` | `boolean` | `true` | Flips `placement` to the opposite side of the trigger when there is not enough room. Defaults to true. |
+| `placement` | `TooltipPlacement` | `'top'` | Which side of the trigger the tooltip opens on. Defaults to `'top'`. |
+| `shift` | `boolean` | `true` | Shifts the tooltip along the trigger's edge to stay within the viewport instead of overflowing. Defaults to true. |
 | `sideOffset` | `number` | `8` | Pixels of gap between the anchor and the overlay, along the placement side. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityViewIsModal' \| 'role' \| 'children' \| 'style'>` — that upstream contract is not reproduced here.
@@ -79,22 +79,22 @@ one of the following mutually exclusive variants:
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
-| `openDelay` | `number` | `500` | Hover-only open delay in milliseconds (default **500**, ADR-005). |
-| `closeDelay` | `number` | `300` | Hover-out-only close delay in milliseconds (default **300**, ADR-005) — lets a pointer travel from the trigger onto `TooltipContent` without closing mid-transit (WCAG 1.4.13 "hoverable"). |
-| `defaultOpen` | `never` | `false` | — |
-| `onOpenChange` **(required)** | `(open: boolean) => void` | — | — |
-| `open` **(required)** | `boolean` | — | — |
+| `openDelay` | `number` | `500` | Hover-only open delay in milliseconds (default **500**, ADR-005). Never applies to the focus channel, which always opens immediately. |
+| `closeDelay` | `number` | `300` | Hover-out-only close delay in milliseconds (default **300**, ADR-005) — lets a pointer travel from the trigger onto `TooltipContent` without closing mid-transit (WCAG 1.4.13 "hoverable"). Never applies to blur, which always closes immediately. |
+| `defaultOpen` | `never` | `false` | Not accepted in the controlled variant, where `open` already owns the state. Pass `defaultOpen` on its own, without `open`, to use the uncontrolled variant. |
+| `onOpenChange` **(required)** | `(open: boolean) => void` | — | Applies a requested open state, and is required here because the controlled variant never updates its own visibility. If this does not change `open`, nothing does. |
+| `open` **(required)** | `boolean` | — | Current open state, owned by the caller; supplying a defined value alongside `onOpenChange` is what selects the controlled variant. Passing `open` without an `onOpenChange` function warns in development and falls back to uncontrolled behavior. |
 
 **Variant `TooltipUncontrolledProps`:**
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
-| `openDelay` | `number` | `500` | Hover-only open delay in milliseconds (default **500**, ADR-005). |
-| `closeDelay` | `number` | `300` | Hover-out-only close delay in milliseconds (default **300**, ADR-005) — lets a pointer travel from the trigger onto `TooltipContent` without closing mid-transit (WCAG 1.4.13 "hoverable"). |
-| `defaultOpen` | `boolean` | `false` | — |
-| `onOpenChange` | `(open: boolean) => void` | — | — |
-| `open` | `undefined` | — | — |
+| `openDelay` | `number` | `500` | Hover-only open delay in milliseconds (default **500**, ADR-005). Never applies to the focus channel, which always opens immediately. |
+| `closeDelay` | `number` | `300` | Hover-out-only close delay in milliseconds (default **300**, ADR-005) — lets a pointer travel from the trigger onto `TooltipContent` without closing mid-transit (WCAG 1.4.13 "hoverable"). Never applies to blur, which always closes immediately. |
+| `defaultOpen` | `boolean` | `false` | Open state to start from, read once when the component mounts, so later changes to it are ignored. Defaults to false; drive visibility with `open` + `onOpenChange` instead when it needs to change. |
+| `onOpenChange` | `(open: boolean) => void` | — | Notified after the open state changes, and optional here because the uncontrolled variant updates its own state either way. |
+| `open` | `undefined` | — | Must be left undefined in the uncontrolled variant, because a defined `open` together with `onOpenChange` selects the controlled variant instead. |
 
 #### `TooltipTriggerProps`
 
@@ -105,7 +105,7 @@ one of the following mutually exclusive variants:
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `loading` | `boolean` | — | — |
+| `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
 

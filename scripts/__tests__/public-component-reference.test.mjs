@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   buildTypeIndex,
+  DESCRIPTION_SUMMARY_BUDGET,
   diffPlatformObjectShape,
   diffPlatformPropsShape,
   extractConsumedProps,
@@ -15,9 +16,12 @@ import {
   getComponentTypeDocs,
   resolveComponentTypeEntry,
   resolveDeclaration,
+  summarizeDescription,
 } from '../component-props-lib.mjs';
 import {
   buildPublicComponentManifest,
+  collectPropDescriptionCoverage,
+  PROP_DESCRIPTION_FLOOR,
   collectPublicComponentReferenceViolations,
   renderPublicComponentIndex,
   renderPublicComponentPage,
@@ -919,4 +923,108 @@ test('an inert Web prop suppresses only its type-difference note', () => {
   // A default or optionality difference is real on the native side and must survive the skip.
   assert.match(page, /`avoidKeyboard` default differs/u);
   assert.match(page, /`avoidKeyboard` is optional on native but required on Web/u);
+});
+
+
+// A `union` entry keeps its props in `variants[].fields`, never in `fields`. Counting
+// only `entry.fields` reported a perfect score while every controlled/uncontrolled
+// overlay prop rendered an em dash, because the props that would have disagreed were
+// never in the counter's scope.
+test('prop-description coverage counts union variant fields', () => {
+  const manifest = [
+    {
+      typeDocs: [
+        {
+          name: 'DialogProps',
+          kind: 'union',
+          variants: [
+            {
+              name: 'DialogControlledProps',
+              kind: 'object',
+              fields: [
+                { name: 'open', type: 'boolean', description: 'Current open state.' },
+                { name: 'defaultOpen', type: 'never', description: '' },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ];
+
+  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 1, total: 2 });
+});
+
+test('prop-description coverage reaches variants nested inside a variant', () => {
+  const manifest = [
+    {
+      typeDocs: [
+        {
+          name: 'OuterProps',
+          kind: 'union',
+          variants: [
+            {
+              name: 'Inner',
+              kind: 'union',
+              variants: [
+                {
+                  name: 'Leaf',
+                  kind: 'object',
+                  fields: [{ name: 'page', type: 'number', description: '' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ];
+
+  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 0, total: 1 });
+});
+
+// The floor is only meaningful if it is the real published total. A floor set below
+// the true denominator silently tolerates undescribed props.
+test('every published prop carries a description', () => {
+  const { described, total } = collectPropDescriptionCoverage(
+    buildPublicComponentManifest(REPO_ROOT),
+  );
+
+  assert.equal(described, total, `${total - described} published prop(s) have no description`);
+  assert.equal(PROP_DESCRIPTION_FLOOR, total, 'the floor must track the real published total');
+});
+
+
+// Publishing only the first sentence turned `table.tsx`'s `layout` JSDoc into
+// "Responsive presentation." and discarded the sentence that names `'stacked'`.
+test('a prop summary keeps the sentences that carry the contract', () => {
+  const summary = summarizeDescription(
+    "Responsive presentation. Defaults to 'scroll'. Set 'stacked' to render a card presentation instead.",
+  );
+
+  assert.match(summary, /Set 'stacked'/u);
+});
+
+test('a prop summary stops before exceeding the budget', () => {
+  const long = `${'a'.repeat(150)}. ${'b'.repeat(150)}.`;
+  const summary = summarizeDescription(long);
+
+  assert.equal(summary, `${'a'.repeat(150)}.`);
+  assert.ok(summary.length <= DESCRIPTION_SUMMARY_BUDGET);
+});
+
+// A single sentence longer than the budget is still the whole contract; truncating
+// it mid-clause would be worse than a wide cell.
+test('a prop summary never drops its first sentence', () => {
+  const single = `${'a'.repeat(300)}.`;
+
+  assert.equal(summarizeDescription(single), single);
+});
+
+test('a prop summary does not split on an abbreviation', () => {
+  assert.equal(summarizeDescription('Column span, e.g. 2.'), 'Column span, e.g. 2.');
+});
+
+test('a prop summary tolerates text with no sentence terminator', () => {
+  assert.equal(summarizeDescription('No terminator at all'), 'No terminator at all');
 });

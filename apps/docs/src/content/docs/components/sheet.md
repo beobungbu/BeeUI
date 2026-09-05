@@ -65,7 +65,7 @@ Controlled (`open`+`onOpenChange`) or uncontrolled (`defaultOpen`) gesture-drive
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `loading` | `boolean` | — | — |
+| `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
 
@@ -73,20 +73,20 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `avoidKeyboard` | `boolean` | `true` | Keyboard-interaction contract (#157, per ADR-006). |
-| `closeOnBackdropPress` | `boolean` | `true` | Backdrop dismissal policy. |
+| `avoidKeyboard` | `boolean` | `true` | Keyboard-interaction contract (#157, per ADR-006). Defaults to `true`. |
+| `closeOnBackdropPress` | `boolean` | `true` | Backdrop dismissal policy. Defaults to `true`, matching `DialogContent`. |
 | `containerClassName` | `string` | — | Extra utility classes for the overlay's container element, merged after the component's own. |
 | `dismissOnRequestClose` | `boolean` | `true` | Whether a native request-close (Android Back, iOS swipe) actually closes the Sheet. |
-| `enableSwipeToDismiss` | `boolean` | `true` | Swipe/gesture dismissal contract (#157, per ADR-006). |
+| `enableSwipeToDismiss` | `boolean` | `true` | Swipe/gesture dismissal contract (#157, per ADR-006). This cross-platform skeleton has no drag gesture and never reads this value; #158's optional `@gorhom/bottom-sheet` native adapter is the actual driver of real swipe-to-dismiss from this same flag. |
 | `handleClassName` | `string` | — | Applied to the default `SheetHandle` when `showHandle` is true. |
-| `initialSnapIndex` | `number` | `0` | Index into `snapPoints` the sheet renders at. |
-| `modalProps` | `SheetModalProps` | — | — |
-| `onRequestClose` | `() => void` | — | — |
+| `initialSnapIndex` | `number` | `0` | Index into `snapPoints` the sheet renders at. Contract-only static sizing signal for this skeleton (see {@link SheetSnapPoint}); #158 drives real interactive snapping from the same `snapPoints`/`initialSnapIndex` pair. |
+| `modalProps` | `SheetModalProps` | — | Forwarded to the underlying React Native `Modal`, minus the props this component already controls (`animationType` may still be overridden here; `presentationStyle`/`transparent`/`visible` cannot). |
+| `onRequestClose` | `() => void` | — | Called whenever a native request-close source (Android hardware back, iOS/other native modal dismissal) fires, before this sheet applies its own `dismissOnRequestClose` policy. Does not by itself close the sheet. |
 | `overlayClassName` | `string` | — | Extra utility classes for the backdrop element behind the surface, merged after the component's own. |
-| `overlayProps` | `Omit<PressableProps, 'children' \| 'onPress'>` | — | — |
-| `overlayTestID` | `string` | — | — |
-| `showHandle` | `boolean` | `true` | Renders the default drag-handle affordance above `children`. |
-| `snapPoints` | `readonly SheetSnapPoint[]` | — | Snap points / presentation sizes. |
+| `overlayProps` | `Omit<PressableProps, 'children' \| 'onPress'>` | — | Forwarded to the backdrop `Pressable`, excluding `children` and `onPress` which this component owns. |
+| `overlayTestID` | `string` | — | `testID` applied to the backdrop `Pressable`, for targeting it in tests. |
+| `showHandle` | `boolean` | `true` | Renders the default drag-handle affordance above `children`. Defaults to `true`. |
+| `snapPoints` | `readonly SheetSnapPoint[]` | — | Snap points / presentation sizes. See {@link SheetSnapPoint}. |
 
 Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'accessibilityViewIsModal' \| 'role'>` — that upstream contract is not reproduced here.
 
@@ -138,18 +138,18 @@ one of the following mutually exclusive variants:
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
-| `defaultOpen` | `never` | `false` | — |
-| `onOpenChange` **(required)** | `(open: boolean) => void` | — | — |
-| `open` **(required)** | `boolean` | — | — |
+| `defaultOpen` | `never` | `false` | Not accepted in the controlled variant, where `open` already owns the state. Pass `defaultOpen` on its own, without `open`, to use the uncontrolled variant. |
+| `onOpenChange` **(required)** | `(open: boolean) => void` | — | Applies a requested open state, and is required here because the controlled variant never updates its own visibility. If this does not change `open`, nothing does. |
+| `open` **(required)** | `boolean` | — | Current open state, owned by the caller; supplying a defined value alongside `onOpenChange` is what selects the controlled variant. Passing `open` without an `onOpenChange` function warns in development and falls back to uncontrolled behavior. |
 
 **Variant `SheetUncontrolledProps`:**
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
-| `defaultOpen` | `boolean` | `false` | — |
-| `onOpenChange` | `(open: boolean) => void` | — | — |
-| `open` | `undefined` | — | — |
+| `defaultOpen` | `boolean` | `false` | Open state to start from, read once when the component mounts, so later changes to it are ignored. Defaults to false; drive visibility with `open` + `onOpenChange` instead when it needs to change. |
+| `onOpenChange` | `(open: boolean) => void` | — | Notified after the open state changes, and optional here because the uncontrolled variant updates its own state either way. |
+| `open` | `undefined` | — | Must be left undefined in the uncontrolled variant, because a defined `open` together with `onOpenChange` selects the controlled variant instead. |
 
 #### `SheetTitleProps`
 
@@ -174,7 +174,7 @@ Also carries every prop of `Omit<TextProps, 'accessibilityRole' \| 'role' \| 'va
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `loading` | `boolean` | — | — |
+| `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
 

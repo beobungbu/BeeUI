@@ -57,8 +57,8 @@ Controlled (`value`/`onValueChange`) mutually exclusive selection with `radiogro
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `onPress` | `PressableProps['onPress']` | — | — |
-| `value` **(required)** | `string` | — | — |
+| `onPress` | `PressableProps['onPress']` | — | Called before the item's own selection logic runs, regardless of whether this item is already selected. |
+| `value` **(required)** | `string` | — | Identifies this item; compared against the parent `SegmentedControl`'s `value` to determine whether it is selected. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'onPress' \| 'role'>` — that upstream contract is not reproduced here.
 
@@ -68,9 +68,9 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'childre
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `disabled` | `boolean` | `false` | — |
-| `onValueChange` | `(value: string) => void` | — | — |
-| `value` **(required)** | `string` | — | — |
+| `disabled` | `boolean` | `false` | Disables every `SegmentedControlItem` inside, overriding each item's own `disabled`. Defaults to false. |
+| `onValueChange` | `(value: string) => void` | — | Called with the newly selected item's `value` when a non-selected item is pressed. Required for enabled usage (logs a dev warning otherwise). |
+| `value` **(required)** | `string` | — | The `value` of the currently selected `SegmentedControlItem`. Always controlled by the caller — there is no uncontrolled mode. |
 
 Also carries every prop of `Omit<ViewProps, 'children' \| 'role'>` — that upstream contract is not reproduced here.
 

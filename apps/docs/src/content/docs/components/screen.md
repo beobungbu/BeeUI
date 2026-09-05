@@ -54,7 +54,7 @@ Stateless base application surface with a semantic background and optional spaci
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `padding` | `keyof typeof paddingClasses` | `'none'` | — |
+| `padding` | `keyof typeof paddingClasses` | `'none'` | Preset horizontal/vertical padding: `'none'` (0), `'sm'`, `'md'`, or `'lg'`. Defaults to `'none'`. |
 
 Also carries every prop of `ViewProps` — that upstream contract is not reproduced here.
 

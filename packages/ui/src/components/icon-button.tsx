@@ -5,6 +5,7 @@ export type IconButtonProps = Omit<
   ButtonProps,
   'accessibilityLabel' | 'children' | 'labelClassName' | 'size'
 > & {
+  /** Required (unlike `Button`'s optional label): an icon-only button has no text content to infer an accessible name from. */
   accessibilityLabel: string;
   children: React.ReactNode;
 };

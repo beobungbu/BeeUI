@@ -58,11 +58,32 @@ function scriptKindFor(filePath) {
 // descriptions such as table.tsx's `colSpan` JSDoc mid-clause.
 const ABBREVIATION_DOT_PLACEHOLDER = '\u0000';
 
-function firstSentence(text) {
+// Props tables used to publish only the first sentence, which kept cells short but
+// dropped the operative clause for 263 of the 382 documented props: `table.tsx`'s
+// `layout` read "Responsive presentation." with the sentence naming `'stacked'`
+// discarded. Sentences are taken while the summary stays within
+// `DESCRIPTION_SUMMARY_BUDGET`, so a cell stays scannable without cutting the
+// meaning off mid-contract. The first sentence is always kept, however long. At 280
+// characters 375 of the 382 documented props publish in full; the budget still stops
+// the handful of props whose JSDoc continues into maintainer rationale (issue and ADR
+// references) that a reference table should not carry.
+export const DESCRIPTION_SUMMARY_BUDGET = 280;
+
+export function summarizeDescription(text, budget = DESCRIPTION_SUMMARY_BUDGET) {
   const clean = text.replace(/\s+/g, ' ').trim();
   const guarded = clean.replace(/\b(e\.g|i\.e|etc)\./gi, (match) => match.replace(/\.$/, ABBREVIATION_DOT_PLACEHOLDER));
-  const match = guarded.match(/^.*?[.!?](?=\s|$)/);
-  return (match ? match[0] : guarded).trim().replaceAll(ABBREVIATION_DOT_PLACEHOLDER, '.');
+  const restore = (value) => value.trim().replaceAll(ABBREVIATION_DOT_PLACEHOLDER, '.');
+
+  const sentences = guarded.match(/.*?[.!?](?=\s|$)|.+$/gu);
+  if (!sentences?.length) return restore(guarded);
+
+  let summary = sentences[0].trim();
+  for (const sentence of sentences.slice(1)) {
+    const next = `${summary} ${sentence.trim()}`;
+    if (next.length > budget) break;
+    summary = next;
+  }
+  return restore(summary);
 }
 
 // JSDoc immediately preceding a node: first-sentence description, plus whether
@@ -74,7 +95,7 @@ function getJsDocDescription(node) {
   for (const doc of ts.getJSDocCommentsAndTags(node)) {
     if (ts.isJSDoc(doc)) {
       if (doc.comment && !description) {
-        description = firstSentence(ts.getTextOfJSDocComment(doc.comment) ?? '');
+        description = summarizeDescription(ts.getTextOfJSDocComment(doc.comment) ?? '');
       }
       for (const tag of doc.tags ?? []) {
         if (tag.tagName.text === 'internal') internal = true;
@@ -507,7 +528,7 @@ function normalizeTypeText(text) {
 }
 
 function normalizeBaseList(bases) {
-  return [...(bases ?? [])].map(normalizeTypeText).sort().join(' ');
+  return [...(bases ?? [])].map(normalizeTypeText).sort().join('\u0000');
 }
 
 function diffFieldLists(nativeFields, webFields) {

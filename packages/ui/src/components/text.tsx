@@ -89,7 +89,9 @@ const textVariants = cva('text-foreground', {
 export type TextProps = RNTextProps &
   VariantProps<typeof textVariants> & {
     className?: string;
+    /** `'tabular'` opts numeric content into equal-width figures so columns of amounts/KPIs/timers align. Omit for normal proportional figures. */
     numeric?: NumericVariant;
+    /** `'mono'` renders the text in the system-monospace fallback stack (e.g. for reference codes/IDs). Opt-in only — omitting it preserves the inherited sans/system font. */
     family?: FontFamily;
   };
 
