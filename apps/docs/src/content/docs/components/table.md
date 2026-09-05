@@ -144,7 +144,7 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 **Platform differences (native vs. [Web](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/table.web.tsx)):**
 
 - `testID` is declared explicitly on Web — on native it may come from `Omit<ViewProps, 'children'>`, which this table does not reproduce.
-- Base type differs: native carries `Omit<ViewProps, 'children'>`; Web carries `Omit<React.ThHTMLAttributes<HTMLElement>, 'children' \| 'scope'>`.
+- Base type differs: native carries `Omit<ViewProps, 'children'>`; Web carries `Omit<React.ThHTMLAttributes<HTMLElement>, 'children' | 'scope'>`.
 
 #### `TableProps`
 

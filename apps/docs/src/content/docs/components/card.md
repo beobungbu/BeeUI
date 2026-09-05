@@ -55,8 +55,10 @@ Stateless elevated/outlined surface driven by a `variant` and spacing prop; no c
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `padding` | `'none' \| 'sm' \| 'md' \| 'lg'` | `'md'` | Defined by `cardVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `variant` | `'surface' \| 'outlined' \| 'raised' \| 'muted'` | `'outlined'` | Defined by `cardVariants` (class-variance-authority); see Styling and theming for what each value changes. |
 
-Also carries every prop of `ViewProps` and `VariantProps<typeof cardVariants>` — that upstream contract is not reproduced here.
+Also carries every prop of `ViewProps` — that upstream contract is not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

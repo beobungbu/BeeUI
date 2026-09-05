@@ -58,10 +58,12 @@ Stateless semantic typography primitive; `variant`/`tone` apply typed styling, a
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `numeric` | `NumericVariant` | — | `'tabular'` opts numeric content into equal-width figures so columns of amounts/KPIs/timers align. Omit for normal proportional figures. |
 | `family` | `FontFamily` | — | `'mono'` renders the text in the system-monospace fallback stack (e.g. for reference codes/IDs). Opt-in only — omitting it preserves the inherited sans/system font. |
+| `numeric` | `NumericVariant` | — | `'tabular'` opts numeric content into equal-width figures so columns of amounts/KPIs/timers align. Omit for normal proportional figures. |
+| `tone` | `'default' \| 'muted' \| 'subtle' \| 'primary' \| 'destructive' \| 'success' \| 'warning' \| 'info'` | `'default'` | Defined by `textVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `variant` | `'display' \| 'title' \| 'heading' \| 'body' \| 'label' \| 'caption'` | `'body'` | Defined by `textVariants` (class-variance-authority); see Styling and theming for what each value changes. |
 
-Also carries every prop of `RNTextProps` and `VariantProps<typeof textVariants>` — that upstream contract is not reproduced here.
+Also carries every prop of `RNTextProps` — that upstream contract is not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

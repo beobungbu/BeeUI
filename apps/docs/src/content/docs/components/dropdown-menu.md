@@ -65,7 +65,7 @@ Controlled/uncontrolled (`open`/`onOpenChange`/`defaultOpen`) non-modal menu; `D
 | `closeOnSelect` | `boolean` | `false` | Closes the menu after this item is toggled. Defaults to false, unlike `DropdownMenuItem`, since checking multiple items in one open menu is a common flow. |
 | `onCheckedChange` | `(checked: boolean) => void` | — | Called with the next checked state when this item is activated. Required for enabled items in dev mode (logs a warning otherwise). |
 
-Also carries every prop of `Omit<DropdownMenuItemBaseProps, 'closeOnSelect' \| 'onSelect'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<DropdownMenuItemBaseProps, 'closeOnSelect' | 'onSelect'>` — that upstream contract is not reproduced here.
 
 #### `DropdownMenuContentProps`
 
@@ -100,7 +100,7 @@ Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract 
 | `onSelect` | `() => void` | — | Called when this item is activated (pressed or selected via keyboard), before `closeOnSelect` runs. |
 | `textClassName` | `string` | — | Applied to string/number children, which are wrapped in a `Text`; ignored for custom element children. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'onPress' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'children' | 'onPress' | 'role'>` — that upstream contract is not reproduced here.
 
 #### `DropdownMenuLabelProps`
 
@@ -111,7 +111,7 @@ This type adds no fields of its own. These are the props the implementation read
 | `className` | — |
 
 
-Also carries every prop of `Omit<TextProps, 'role' \| 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
+Also carries every prop of `Omit<TextProps, 'role' | 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 
 #### `DropdownMenuProps`
 
@@ -151,7 +151,7 @@ Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract 
 | `closeOnSelect` | `boolean` | `false` | Closes the menu after this item is selected. Defaults to false, matching `DropdownMenuCheckboxItem`'s convention. |
 | `value` **(required)** | `string` | — | Identifies this item within its parent `DropdownMenuRadioGroup`. A value duplicated by another item in the same group is disabled with a dev-mode warning. |
 
-Also carries every prop of `Omit<DropdownMenuItemBaseProps, 'closeOnSelect' \| 'onSelect'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<DropdownMenuItemBaseProps, 'closeOnSelect' | 'onSelect'>` — that upstream contract is not reproduced here.
 
 #### `DropdownMenuSeparatorProps`
 
@@ -175,7 +175,7 @@ Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract 
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
 
 **Related exported types:**
 

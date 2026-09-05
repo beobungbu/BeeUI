@@ -60,7 +60,7 @@ Controlled/uncontrolled one-time-code input; entered text is normalized to digit
 | `onValueChange` | `(value: string) => void` | — | Called with the normalized value on every change, including partial (incomplete) codes. |
 | `value` | `string` | — | Controlled code value; normalized (digits-only in `'numeric'` mode, truncated to `length`) before being displayed. |
 
-Also carries every prop of `Omit<InputProps, 'defaultValue' \| 'inputMode' \| 'keyboardType' \| 'maxLength' \| 'onChangeText' \| 'value'>` — documented on the [Input](/docs/components/input/) page, not reproduced here.
+Also carries every prop of `Omit<InputProps, 'defaultValue' | 'inputMode' | 'keyboardType' | 'maxLength' | 'onChangeText' | 'value'>` — documented on the [Input](/docs/components/input/) page, not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

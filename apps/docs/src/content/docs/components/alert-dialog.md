@@ -67,7 +67,7 @@ Confirmation/destructive modal sharing Dialog's controlled (`open`+`onOpenChange
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
 
 #### `AlertDialogCancelProps`
 
@@ -80,7 +80,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
 
 #### `AlertDialogContentProps`
 
@@ -88,7 +88,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \
 | --- | --- | --- | --- |
 | `cancelOnRequestClose` | `boolean` | `true` | Whether native request-close paths (Android hardware back and accessibility escape) should behave like cancellation. Backdrop presses never dismiss an AlertDialog. |
 
-Also carries every prop of `Omit<DialogContentProps, 'closeOnBackdropPress' \| 'dismissOnEscape' \| 'dismissOnRequestClose'>` — documented on the [Dialog](/docs/components/dialog/) page, not reproduced here.
+Also carries every prop of `Omit<DialogContentProps, 'closeOnBackdropPress' | 'dismissOnEscape' | 'dismissOnRequestClose'>` — documented on the [Dialog](/docs/components/dialog/) page, not reproduced here.
 
 #### `AlertDialogDescriptionProps`
 
@@ -96,7 +96,7 @@ Also carries every prop of `Omit<DialogContentProps, 'closeOnBackdropPress' \| '
 
 _No own fields; this type is exactly the base(s) below._
 
-Also carries every prop of `Omit<TextProps, 'tone' \| 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
+Also carries every prop of `Omit<TextProps, 'tone' | 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 
 #### `AlertDialogFooterProps`
 
@@ -136,7 +136,7 @@ Also carries every prop of `ViewProps` — that upstream contract is not reprodu
 
 _No own fields; this type is exactly the base(s) below._
 
-Also carries every prop of `Omit<TextProps, 'accessibilityRole' \| 'role' \| 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
+Also carries every prop of `Omit<TextProps, 'accessibilityRole' | 'role' | 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 
 #### `AlertDialogTriggerProps`
 
@@ -149,7 +149,7 @@ Also carries every prop of `Omit<TextProps, 'accessibilityRole' \| 'role' \| 'va
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

@@ -71,7 +71,12 @@ export const QUERY_MATRIX = [
   { query: 'sign in', expect: '/patterns/auth/sign-in-screen/' },
   { query: 'source ownership', expect: '/guides/cli-source-ownership/' },
   { query: 'responsive', expect: '/learn/responsive-model/' },
-  { query: 'color.bg.default', expect: '/reference/tokens/' },
+  // Was `color.bg.default`, a token that does not exist — `tokens.json` has no `bg`, so that
+  // query proved nothing about token search. These are real token names.
+  { query: 'color surface-muted', expect: '/reference/tokens/' },
+  { query: 'surface-raised', expect: '/reference/tokens/' },
+  { query: 'dynamic type', expect: '/accessibility/large-text/' },
+  { query: 'home indicator', expect: '/guides/troubleshooting/' },
   { query: 'add BeeUI to Expo', expect: '/start/expo/' },
   { query: 'beeui add', expect: '/guides/cli-source-ownership/' },
   { query: 'provider not found', expect: '/guides/troubleshooting/' },

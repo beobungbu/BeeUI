@@ -72,7 +72,7 @@ Controlled month-grid date selection on `value`/`onValueChange` (`CalendarDate |
 | `weekdayFormat` | `CalendarWeekdayFormat` | — | Controls how weekday header labels are formatted (e.g. short vs. narrow). Defaults to `'short'`. |
 | `weekStartsOn` | `CalendarWeekStartsOn` | — | Which day starts each week row. Defaults to the convention for `locale` when omitted. |
 
-Also carries every prop of `Omit<ViewProps, 'children' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ViewProps, 'children' | 'role'>` — that upstream contract is not reproduced here.
 
 **Related exported types:**
 

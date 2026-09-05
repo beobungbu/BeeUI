@@ -60,7 +60,7 @@ Fully controlled (`value`/`onValueChange`, required — there is no uncontrolled
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `value` **(required)** | `string` | — | Identifies this panel; it renders only while the parent `Tabs`'s `value` matches. |
 
-Also carries every prop of `Omit<ViewProps, 'children' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ViewProps, 'children' | 'role'>` — that upstream contract is not reproduced here.
 
 #### `TabsListProps`
 
@@ -68,7 +68,7 @@ Also carries every prop of `Omit<ViewProps, 'children' \| 'role'>` — that upst
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 
-Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ViewProps, 'accessibilityRole' | 'role'>` — that upstream contract is not reproduced here.
 
 #### `TabsProps`
 
@@ -91,7 +91,7 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `value` **(required)** | `string` | — | Identifies this tab; compared against the parent `Tabs`'s `value` to determine whether it is selected. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children' \| 'onPress'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children' | 'onPress'>` — that upstream contract is not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

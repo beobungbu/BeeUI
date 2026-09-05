@@ -57,8 +57,9 @@ Uncontrolled-by-default text field (standard React Native `value`/`onChangeText`
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `disabled` | `boolean` | — | Sets `editable={false}` (unless `editable` is already explicitly `false`) and applies disabled styling. ORed with the enclosing `Field`'s own `disabled`. Defaults to false. |
 | `invalid` | `boolean` | — | Applies destructive border styling and, when true, uses the enclosing `Field`'s `error` (instead of its `description`) as this input's accessibility hint. ORed with the enclosing `Field`'s own `invalid`. Defaults to false. |
+| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Defined by `inputVariants` (class-variance-authority); see Styling and theming for what each value changes. |
 
-Also carries every prop of `TextInputProps` and `Omit<VariantProps<typeof inputVariants>, 'invalid'>` — that upstream contract is not reproduced here.
+Also carries every prop of `TextInputProps` — that upstream contract is not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

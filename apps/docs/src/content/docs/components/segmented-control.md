@@ -60,7 +60,7 @@ Controlled (`value`/`onValueChange`) mutually exclusive selection with `radiogro
 | `onPress` | `PressableProps['onPress']` | — | Called before the item's own selection logic runs, regardless of whether this item is already selected. |
 | `value` **(required)** | `string` | — | Identifies this item; compared against the parent `SegmentedControl`'s `value` to determine whether it is selected. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'onPress' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'children' | 'onPress' | 'role'>` — that upstream contract is not reproduced here.
 
 #### `SegmentedControlProps`
 
@@ -72,7 +72,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'childre
 | `onValueChange` | `(value: string) => void` | — | Called with the newly selected item's `value` when a non-selected item is pressed. Required for enabled usage (logs a dev warning otherwise). |
 | `value` **(required)** | `string` | — | The `value` of the currently selected `SegmentedControlItem`. Always controlled by the caller — there is no uncontrolled mode. |
 
-Also carries every prop of `Omit<ViewProps, 'children' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ViewProps, 'children' | 'role'>` — that upstream contract is not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

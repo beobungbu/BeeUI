@@ -75,7 +75,7 @@ Controlled (`value`/`onValueChange`) or uncontrolled (`defaultValue`) persistent
 | `shift` | `boolean` | `true` | Shifts the listbox along the trigger's edge to stay within the viewport instead of overflowing. Defaults to true. |
 | `sideOffset` | `number` | `6` | Pixels of gap between the anchor and the overlay, along the placement side. |
 
-Also carries every prop of `Omit<ViewProps, 'nativeID' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ViewProps, 'nativeID' | 'role'>` — that upstream contract is not reproduced here.
 
 #### `SelectGroupProps`
 
@@ -86,7 +86,7 @@ This type adds no fields of its own. These are the props the implementation read
 | `children` | — |
 
 
-Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ViewProps, 'accessibilityRole' | 'role'>` — that upstream contract is not reproduced here.
 
 #### `SelectItemProps`
 
@@ -99,7 +99,7 @@ Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'role'>` — 
 | `textValue` | `string` | — | The plain-text label used for the trigger's selected-value display, this item's accessible name, and keyboard typeahead. Defaults to the item's children if they are a plain string/number; required (with a dev-mode warning) when `children` is a custom element. |
 | `value` **(required)** | `SelectOptionValue` | — | Identifies this option; matched against the parent `Select`'s `value`/`defaultValue`. A value duplicated by another item in the same `Select` is disabled with a dev-mode warning. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'onPress' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'children' | 'onPress' | 'role'>` — that upstream contract is not reproduced here.
 
 #### `SelectLabelProps`
 
@@ -107,7 +107,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'childre
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 
-Also carries every prop of `Omit<RNTextProps, 'nativeID' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<RNTextProps, 'nativeID' | 'role'>` — that upstream contract is not reproduced here.
 
 #### `SelectProps`
 
@@ -133,7 +133,7 @@ Also carries every prop of `Omit<RNTextProps, 'nativeID' \| 'role'>` — that up
 | `indicator` | `React.ReactNode` | — | Replaces the default chevron (`⌄`/`⌃` for closed/open) shown at the trigger's end. |
 | `onKeyDown` | `(event: WebKeyboardEvent) => void` | — | Web only: called on every keydown on the trigger, before this component's own ArrowUp/ArrowDown-opens-the-listbox handling runs. No-op on native. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'children' | 'role'>` — that upstream contract is not reproduced here.
 
 #### `SelectValueProps`
 
@@ -142,7 +142,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'childre
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `placeholder` | `React.ReactNode` | `'Select an option'` | Shown when no `SelectItem` is selected. Also used, when a plain string, as the trigger's fallback accessible name if no `accessibilityLabel` is set. Defaults to `'Select an option'`. |
 
-Also carries every prop of `Omit<RNTextProps, 'children' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<RNTextProps, 'children' | 'role'>` — that upstream contract is not reproduced here.
 
 **Related exported types:**
 

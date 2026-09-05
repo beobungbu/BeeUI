@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 
 import {
   buildTypeIndex,
+  extractCvaVariants,
+  variantsIdentifierFromBase,
   diffPlatformObjectShape,
   diffPlatformPropsShape,
   extractConsumedProps,
@@ -20,6 +22,7 @@ import {
 import {
   buildPublicComponentManifest,
   collectPropDescriptionCoverage,
+  collectRenderedPageViolations,
   collectPropDescriptionViolations,
   PROP_DESCRIPTION_FLOOR,
   collectPublicComponentReferenceViolations,
@@ -760,7 +763,8 @@ test('renderPublicComponentPage links a base that resolves to another public fam
     registryHref: 'https://example.com',
   };
   const page = renderPublicComponentPage(component);
-  assert.match(page, /Also carries every prop of `Omit<InputProps, 'multiline' \\\| 'size'>` — documented on the \[Input\]\(\/docs\/components\/input\/\) page, not reproduced here\./);
+  // A `|` here is prose, not a table cell: the published signature must read `'multiline' | 'size'`.
+  assert.match(page, /Also carries every prop of `Omit<InputProps, 'multiline' \| 'size'>` — documented on the \[Input\]\(\/docs\/components\/input\/\) page, not reproduced here\./);
   assert.doesNotMatch(page, /upstream contract/);
 });
 
@@ -791,7 +795,7 @@ test('renderPublicComponentPage keeps the "upstream" wording for a genuinely ext
     registryHref: 'https://example.com',
   };
   const page = renderPublicComponentPage(component);
-  assert.match(page, /Also carries every prop of `Omit<ViewProps, 'children' \\\| 'style'>` — that upstream contract is not reproduced here\./);
+  assert.match(page, /Also carries every prop of `Omit<ViewProps, 'children' \| 'style'>` — that upstream contract is not reproduced here\./);
   assert.doesNotMatch(page, /Omit<\s+ViewProps/, 'expected the bracket-adjacent space to be collapsed');
   assert.doesNotMatch(page, /'style'\s+>/, 'expected the bracket-adjacent space to be collapsed');
 });
@@ -1047,4 +1051,94 @@ test('a fully described manifest at the floor is clean', () => {
   }));
 
   assert.deepEqual(collectPropDescriptionViolations([{ typeDocs: [{ kind: 'object', fields }] }]), []);
+});
+
+
+// `escapeCell`'s pipe escape is correct in a table row and wrong in a paragraph. Applying it to
+// the bases line published `Omit<PressableProps, 'role' \| 'children'>` on 34 of 62 pages, with
+// every existing check green — they all read the manifest or the cells, never the prose.
+test('an escaped pipe in prose is a violation', () => {
+  const page = ["## Composition", '', "Also carries every prop of `Omit<P, 'a' \\| 'b'>` — see Text.", ''].join('\n');
+
+  const violations = collectRenderedPageViolations(page, 'accordion');
+
+  assert.equal(violations.length, 1);
+  assert.match(violations[0], /literal \\\| outside a table row/u);
+});
+
+test('an escaped pipe inside a table row is allowed', () => {
+  const page = [
+    '| Prop | Type | Default | Description |',
+    '| --- | --- | --- | --- |',
+    "| `variant` | `'a' \\| 'b'` | `'a'` | Visual variant. |",
+  ].join('\n');
+
+  assert.deepEqual(collectRenderedPageViolations(page, 'button'), []);
+});
+
+// A fenced example may legitimately contain an escaped pipe as sample text.
+test('an escaped pipe inside a code fence is not a violation', () => {
+  const page = ['```md', "| `x` | `'a' \\| 'b'` |", '```'].join('\n');
+
+  assert.deepEqual(collectRenderedPageViolations(page, 'table'), []);
+});
+
+test('every generated component page is free of escaped pipes in prose', () => {
+  const offenders = buildPublicComponentManifest(REPO_ROOT).flatMap((component) =>
+    collectRenderedPageViolations(renderPublicComponentPage(component), component.name),
+  );
+
+  assert.deepEqual(offenders, []);
+});
+
+
+// `variant`/`size` arrive through `VariantProps<typeof x>`, which this parser cannot resolve, so
+// the allowed values were published nowhere. They are literals in the `cva()` call.
+test('cva variants are read from the call, with their defaults', () => {
+  const source = `
+    const buttonVariants = cva('base', {
+      variants: {
+        variant: { primary: 'a', ghost: 'b' },
+        size: { sm: 'c', md: 'd' },
+      },
+      defaultVariants: { variant: 'primary', size: 'md' },
+    });
+  `;
+
+  const found = extractCvaVariants([{ path: 'button.tsx', source }]);
+
+  assert.deepEqual(found.get('buttonVariants').get('variant'), {
+    values: ['primary', 'ghost'],
+    default: 'primary',
+  });
+  assert.deepEqual(found.get('buttonVariants').get('size'), { values: ['sm', 'md'], default: 'md' });
+});
+
+test('a cva call with no defaultVariants still publishes its values', () => {
+  const source = "const x = cva('', { variants: { tone: { neutral: 'a' } } });";
+
+  assert.deepEqual(extractCvaVariants([{ path: 'x.tsx', source }]).get('x').get('tone'), {
+    values: ['neutral'],
+    default: undefined,
+  });
+});
+
+test('a non-cva call is not mistaken for variants', () => {
+  const source = "const x = notCva('', { variants: { tone: { neutral: 'a' } } });";
+
+  assert.equal(extractCvaVariants([{ path: 'x.tsx', source }]).size, 0);
+});
+
+// Input declares `Omit<VariantProps<typeof inputVariants>, 'invalid'>` because it re-declares
+// `invalid`; matching only the bare form left its variants unpublished.
+test('a VariantProps base is recognised bare and inside Omit', () => {
+  assert.deepEqual(variantsIdentifierFromBase('VariantProps<typeof buttonVariants>'), {
+    identifier: 'buttonVariants',
+    omitted: new Set(),
+  });
+  assert.deepEqual(variantsIdentifierFromBase("Omit<VariantProps<typeof inputVariants>, 'invalid'>"), {
+    identifier: 'inputVariants',
+    omitted: new Set(['invalid']),
+  });
+  assert.equal(variantsIdentifierFromBase("Omit<PressableProps, 'role'>"), undefined);
 });

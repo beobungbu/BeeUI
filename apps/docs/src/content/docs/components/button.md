@@ -57,8 +57,10 @@ Stateless pressable driven entirely by props (`variant`/`size`/`loading`/`disabl
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Defined by `buttonLabelVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'primary'` | Defined by `buttonLabelVariants` (class-variance-authority); see Styling and theming for what each value changes. |
 
-Also carries every prop of `RNTextProps` and `VariantProps<typeof buttonLabelVariants>` — that upstream contract is not reproduced here.
+Also carries every prop of `RNTextProps` — that upstream contract is not reproduced here.
 
 #### `ButtonProps`
 
@@ -68,8 +70,10 @@ Also carries every prop of `RNTextProps` and `VariantProps<typeof buttonLabelVar
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `loading` | `boolean` | `false` | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
+| `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Defined by `buttonVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'primary'` | Defined by `buttonVariants` (class-variance-authority); see Styling and theming for what each value changes. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` — that upstream contract is not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

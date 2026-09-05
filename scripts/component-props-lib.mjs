@@ -446,6 +446,85 @@ export function extractInertProps(files, candidateNames) {
   return inert;
 }
 
+// `variant`/`size` reach a component's props through `VariantProps<typeof xVariants>`, a
+// class-variance-authority generic this parser cannot resolve — so those props were absent from
+// every table, and the allowed values of the single most-asked API question ("which variants
+// exist?") were published nowhere. The values are literals in the `cva()` call itself, so read
+// them from there rather than leaving the contract undocumented.
+//
+// Shape handled: `const x = cva(base, { variants: { prop: { value: ... } }, defaultVariants: {...} })`.
+export function extractCvaVariants(files) {
+  const byIdentifier = new Map();
+
+  for (const { path: filePath, source } of files) {
+    const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, scriptKindFor(filePath));
+    walk(sourceFile, (node) => {
+      if (!ts.isVariableDeclaration(node) || !node.name || !ts.isIdentifier(node.name)) return;
+      const call = node.initializer;
+      if (!call || !ts.isCallExpression(call)) return;
+      if (!ts.isIdentifier(call.expression) || call.expression.text !== 'cva') return;
+
+      const config = call.arguments[1];
+      if (!config || !ts.isObjectLiteralExpression(config)) return;
+
+      const readObject = (name) => {
+        const property = config.properties.find(
+          (candidate) =>
+            ts.isPropertyAssignment(candidate) &&
+            candidate.name &&
+            (ts.isIdentifier(candidate.name) || ts.isStringLiteral(candidate.name)) &&
+            candidate.name.text === name,
+        );
+        return property && ts.isObjectLiteralExpression(property.initializer) ? property.initializer : undefined;
+      };
+
+      const variants = readObject('variants');
+      if (!variants) return;
+
+      const defaults = new Map();
+      for (const property of readObject('defaultVariants')?.properties ?? []) {
+        if (!ts.isPropertyAssignment(property) || !property.name) continue;
+        if (!ts.isStringLiteralLike(property.initializer)) continue;
+        defaults.set(property.name.getText(sourceFile).replace(/['"]/gu, ''), property.initializer.text);
+      }
+
+      const props = new Map();
+      for (const property of variants.properties) {
+        if (!ts.isPropertyAssignment(property) || !property.name) continue;
+        if (!ts.isObjectLiteralExpression(property.initializer)) continue;
+        const propName = property.name.getText(sourceFile).replace(/['"]/gu, '');
+        const values = property.initializer.properties
+          .filter((value) => ts.isPropertyAssignment(value) && value.name)
+          .map((value) => value.name.getText(sourceFile).replace(/['"]/gu, ''));
+        if (!values.length) continue;
+        props.set(propName, { values, default: defaults.get(propName) });
+      }
+
+      if (props.size) byIdentifier.set(node.name.text, props);
+    });
+  }
+
+  return byIdentifier;
+}
+
+// `VariantProps<typeof buttonVariants>` -> the identifier, plus any keys an `Omit<>` wrapper
+// removes. Input declares `Omit<VariantProps<typeof inputVariants>, 'invalid'>` because it
+// re-declares `invalid` itself, so matching only the bare form left its variants unpublished.
+export function variantsIdentifierFromBase(base) {
+  const text = String(base ?? '').trim();
+
+  const bare = /^VariantProps<\s*typeof\s+([A-Za-z0-9_$]+)\s*>$/u.exec(text);
+  if (bare) return { identifier: bare[1], omitted: new Set() };
+
+  const omit = /^Omit<\s*VariantProps<\s*typeof\s+([A-Za-z0-9_$]+)\s*>\s*,(.+)>$/u.exec(text);
+  if (!omit) return undefined;
+
+  const omitted = new Set(
+    [...omit[2].matchAll(/'([^']+)'|"([^"]+)"/gu)].map((match) => match[1] ?? match[2]),
+  );
+  return { identifier: omit[1], omitted };
+}
+
 export function extractConsumedProps(files, candidateNames) {
   const consumed = new Map();
 
@@ -767,6 +846,44 @@ function applyGlossary(shape, glossary) {
   for (const variant of shape?.variants ?? []) applyGlossary(variant, glossary);
 }
 
+// Publishes the cva-derived variant props on the shape that declares
+// `VariantProps<typeof x>`, and drops that base from the "also carries" line — the props are no
+// longer elsewhere, they are in the table right above it.
+function applyCvaVariants(shape, cvaByIdentifier) {
+  if (!shape) return;
+  for (const variant of shape.variants ?? []) applyCvaVariants(variant, cvaByIdentifier);
+  if (!Array.isArray(shape.bases)) return;
+
+  const remaining = [];
+  for (const base of shape.bases) {
+    const parsed = variantsIdentifierFromBase(base);
+    const props = parsed ? cvaByIdentifier.get(parsed.identifier) : undefined;
+    if (!parsed || !props) {
+      remaining.push(base);
+      continue;
+    }
+    const { identifier, omitted } = parsed;
+
+    shape.fields = shape.fields ?? [];
+    for (const [name, spec] of props) {
+      if (omitted.has(name)) continue;
+      if (shape.fields.some((field) => field.name === name)) continue;
+      shape.fields.push({
+        name,
+        optional: true,
+        type: spec.values.map((value) => `'${value}'`).join(' | '),
+        default: spec.default === undefined ? undefined : `'${spec.default}'`,
+        description:
+          `Defined by \`${identifier}\` (class-variance-authority); see Styling and theming for ` +
+          'what each value changes.',
+      });
+    }
+    shape.fields.sort((left, right) => left.name.localeCompare(right.name));
+  }
+
+  shape.bases = remaining;
+}
+
 export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
   const index = getComponentsIndex(rootDir);
   const opts = {
@@ -783,6 +900,7 @@ export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
   return component.types.map((typeName) => {
     const entry = resolveComponentTypeEntry(index, typeName, { ...opts, errorLabel: `${component.name}: ${typeName}` });
     if (entry.docKind === 'props') {
+      applyCvaVariants(entry, extractCvaVariants(files));
       applyDefaults(entry, extractDefaults(files, entry.names));
       applyGlossary(entry, propGlossary(rootDir));
       // A pure alias of an upstream type documents nothing on its own; fall back to the props

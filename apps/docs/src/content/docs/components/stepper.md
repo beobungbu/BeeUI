@@ -59,7 +59,7 @@ Controlled `currentStep` context shared with every `StepperItem`; step values ar
 | `step` **(required)** | `number` | — | This item's position (1-based); non-finite values are floored and clamped to at least 1. Compared against the parent `Stepper`'s `currentStep` to determine current/complete state. A value duplicated by another item is disabled with a dev-mode warning. |
 | `title` **(required)** | `React.ReactNode` | — | The primary heading text for this surface. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'children' | 'role'>` — that upstream contract is not reproduced here.
 
 #### `StepperProps`
 

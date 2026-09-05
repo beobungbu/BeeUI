@@ -65,7 +65,7 @@ Controlled (`open`+`onOpenChange`) or uncontrolled (`defaultOpen`) non-modal anc
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
 
 #### `PopoverContentProps`
 
@@ -85,7 +85,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \
 | `shift` | `boolean` | `true` | Shifts the popover along the trigger's edge to stay within the viewport instead of overflowing. Defaults to true. |
 | `sideOffset` | `number` | `8` | Pixels of gap between the anchor and the overlay, along the placement side. |
 
-Also carries every prop of `Omit<ViewProps, 'accessibilityViewIsModal' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ViewProps, 'accessibilityViewIsModal' | 'role'>` — that upstream contract is not reproduced here.
 
 #### `PopoverDescriptionProps`
 
@@ -99,7 +99,7 @@ This type adds no fields of its own. These are the props the implementation read
 | `nativeID` | — |
 
 
-Also carries every prop of `Omit<TextProps, 'tone' \| 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
+Also carries every prop of `Omit<TextProps, 'tone' | 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 
 #### `PopoverProps`
 
@@ -135,7 +135,7 @@ This type adds no fields of its own. These are the props the implementation read
 | `nativeID` | — |
 
 
-Also carries every prop of `Omit<TextProps, 'accessibilityRole' \| 'role' \| 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
+Also carries every prop of `Omit<TextProps, 'accessibilityRole' | 'role' | 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 
 #### `PopoverTriggerProps`
 
@@ -148,7 +148,7 @@ Also carries every prop of `Omit<TextProps, 'accessibilityRole' \| 'role' \| 'va
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
 
 **Related exported types:**
 

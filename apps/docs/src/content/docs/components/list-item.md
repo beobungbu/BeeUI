@@ -62,7 +62,7 @@ Press behavior is opt-in (`onPress` makes the row interactive); an interactive r
 | `titleClassName` | `string` | — | Applied to the title `Text` when `title` is a plain string or number; ignored if `title` is a custom element. |
 | `trailing` | `React.ReactNode` | — | Content rendered at the end of the row, after the primary content — actions, badges or status. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'accessibilityState' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'accessibilityState' | 'children' | 'role'>` — that upstream contract is not reproduced here.
 
 #### `SettingsItemProps`
 

@@ -64,7 +64,7 @@ Structural legend/description/error/disabled grouping; it stays `accessible={fal
 | `required` | `boolean` | `false` | Renders the legend with a required indicator and appends `requiredAccessibilityLabel` to its accessible name. Defaults to false. |
 | `requiredAccessibilityLabel` | `string` | `'required'` | Text appended to the legend's accessible name when `required` is true (e.g. "Shipping method, required"). Defaults to `'required'`. |
 
-Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'accessible' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ViewProps, 'accessibilityRole' | 'accessible' | 'children' | 'role'>` — that upstream contract is not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

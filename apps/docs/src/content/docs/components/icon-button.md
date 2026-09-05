@@ -56,7 +56,7 @@ Stateless 44px icon-only pressable sharing Button's `disabled`/`loading` semanti
 | `accessibilityLabel` **(required)** | `string` | — | Required (unlike `Button`'s optional label): an icon-only button has no text content to infer an accessible name from. |
 | `children` **(required)** | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 
-Also carries every prop of `Omit<ButtonProps, 'accessibilityLabel' \| 'children' \| 'labelClassName' \| 'size'>` — documented on the [Button](/docs/components/button/) page, not reproduced here.
+Also carries every prop of `Omit<ButtonProps, 'accessibilityLabel' | 'children' | 'labelClassName' | 'size'>` — documented on the [Button](/docs/components/button/) page, not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

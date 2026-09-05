@@ -61,7 +61,7 @@ This type adds no fields of its own. These are the props the implementation read
 | `value` | `false` |
 
 
-Also carries every prop of `Omit<RNSwitchProps, 'accessibilityRole' \| 'role' \| 'ios_backgroundColor' \| 'thumbColor' \| 'trackColor'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<RNSwitchProps, 'accessibilityRole' | 'role' | 'ios_backgroundColor' | 'thumbColor' | 'trackColor'>` — that upstream contract is not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 
