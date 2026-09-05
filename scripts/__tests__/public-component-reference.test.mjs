@@ -1484,3 +1484,37 @@ test('the shared-template sections are no longer one body for every page', () =>
   assert.ok(bodies('Accessibility').size > 20, 'accessibility section is still one template');
   assert.ok(bodies('Platform behavior').size > 5, 'platform section is still one template');
 });
+
+
+// "No component-specific limitation is curated here" was published on DatePicker, which requires
+// an optional native peer nothing installs for you, and on Sheet, which accepts three Web props
+// that do nothing there. The page said there was nothing to say while the repo had something.
+test('a family needing an optional native peer says so in Limitations', () => {
+  const datePicker = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'date-picker');
+  const page = renderPublicComponentPage(datePicker);
+
+  assert.match(page, /Requires `@react-native-community\/datetimepicker` to be installed/u);
+  assert.match(page, /It is an optional peer/u);
+  assert.equal(/No component-specific limitation is curated here/u.test(page), false);
+});
+
+test('a family with props that do nothing on Web says which ones', () => {
+  const sheet = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'sheet');
+  const page = renderPublicComponentPage(sheet);
+
+  assert.match(page, /`avoidKeyboard`, `enableSwipeToDismiss`, `modalProps` are accepted for API parity/u);
+});
+
+// A derived limitation must never replace a curated one.
+test('curated limitations survive alongside derived ones', () => {
+  const tooltip = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'tooltip');
+
+  assert.match(renderPublicComponentPage(tooltip), /Never a press target and never interactive content/u);
+});
+
+// A family with no derivable constraint must still admit the gap rather than invent one.
+test('a family with nothing derivable still says none is curated', () => {
+  const text = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'text');
+
+  assert.match(renderPublicComponentPage(text), /No component-specific limitation is curated here/u);
+});

@@ -53,6 +53,15 @@ function githubHref(pathname) {
   return `https://github.com/beobungbu/BeeUI/blob/main/${pathname}`;
 }
 
+// The optional peers a consuming app must install itself. Read from the manifest rather than
+// listed here, so the two cannot drift.
+const OPTIONAL_PEER_DEPENDENCIES = new Set(
+  Object.keys(
+    JSON.parse(fs.readFileSync(new URL('../packages/ui/package.json', import.meta.url), 'utf8'))
+      .peerDependenciesMeta ?? {},
+  ),
+);
+
 export function buildPublicComponentManifest(rootDir = ROOT_DIR) {
   const content = readJson('docs/component-reference.content.json', rootDir);
   const usageIndex = buildShowcaseUsageIndex(rootDir);
@@ -709,6 +718,41 @@ function renderStylingFacts(component) {
   return `${axisLine}\n${classLine}`;
 }
 
+// "No component-specific limitation is curated here" was published on 48 pages, including
+// DatePicker — which requires an optional native peer that the compatibility matrix records as
+// having no native runtime evidence, and Sheet, which accepts three props on Web that do nothing
+// there. The page said there was nothing to say while the repository had something to say. Only
+// what is derivable is added; a family with no derivable constraint still says none is curated,
+// because inventing one would be worse than admitting the gap.
+function renderDerivedLimitations(component) {
+  const lines = [];
+
+  const optionalPeers = (component.peerDependencies ?? []).filter((peer) =>
+    OPTIONAL_PEER_DEPENDENCIES.has(peer),
+  );
+  if (optionalPeers.length) {
+    lines.push(
+      `- Requires ${optionalPeers.map((peer) => `\`${peer}\``).join(', ')} to be installed by the ` +
+      `consuming app. ${optionalPeers.length === 1 ? 'It is an optional peer' : 'They are optional peers'} ` +
+      'of `@beemvp/beeui-ui`, so nothing installs ' +
+      `${optionalPeers.length === 1 ? 'it' : 'them'} for you, and a target that never renders this ` +
+      'family does not need it.',
+    );
+  }
+
+  const inert = new Set();
+  for (const entry of component.typeDocs ?? []) for (const name of entry.webShape?.inert ?? []) inert.add(name);
+  if (inert.size) {
+    lines.push(
+      `- On Web, ${[...inert].sort().map((name) => `\`${name}\``).join(', ')} ` +
+      `${inert.size === 1 ? 'is' : 'are'} accepted for API parity and read by nothing: setting ` +
+      `${inert.size === 1 ? 'it' : 'them'} changes no behavior there.`,
+    );
+  }
+
+  return lines.join('\n');
+}
+
 export function renderPublicComponentPage(component, rootDir = ROOT_DIR) {
   const examples = component.examples
     .map((file, index) => `- ${index === 0 ? '**Primary executable fixture:**' : '**Additional fixture:**'} [\`${file}\`](${githubHref(file)})`)
@@ -719,7 +763,13 @@ export function renderPublicComponentPage(component, rootDir = ROOT_DIR) {
   const platformSplit = component.allSources.length > 1
     ? 'This family has platform-split source files. The bundler selects the native/Web implementation; do not infer native runtime behavior from the Web preview.'
     : 'The same public family is exposed across the supported target matrix; meaningful platform differences remain governed by the compatibility contract.';
-  const limitations = component.limitations || 'No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.';
+  const derivedLimitations = renderDerivedLimitations(component);
+  const curatedLimitations =
+    component.limitations ||
+    (derivedLimitations
+      ? ''
+      : 'No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.');
+  const limitations = [curatedLimitations, derivedLimitations].filter(Boolean).join('\n\n');
   const provider = component.providerRequired
     ? '`BeeUIProvider` is required above this family because it participates in shared overlay/toast runtime infrastructure.'
     : 'No additional provider is required by this family. `BeeUIProvider` remains the recommended application root.';
