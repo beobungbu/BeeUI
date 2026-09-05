@@ -5,12 +5,11 @@
 // WBS-H075's scoring pass found that 3 of 15 #466 acceptance queries did not surface their
 // owning page in the top 3 Pagefind results (`add BeeUI to Expo`, `beeui add`,
 // `provider not found`). The fix was: (a) phrase the real heading/first sentence of the owning
-// hand-authored page the way a reader would ask for it, and (b) turn off Pagefind's page-length
-// ranking normalization (`pageLength: 0` in apps/docs/pagefind-ranking.mjs), because the 63
-// generated component pages share one near-identical template whose boilerplate outranks a
-// short page that answers the query directly. This script guards both halves. Which half
-// carries which query is measured, not assumed: with normalization restored to 0.75 the three
-// originally-reported queries still pass and `safe area duplicated` is the one that fails.
+// hand-authored page the way a reader would ask for it. Turning off Pagefind's page-length
+// normalization was also tried and has since been reverted: it rescued one query and broke three
+// accessibility intents, because without normalization a long page that merely mentions a term
+// beats a short page that is about it (see apps/docs/pagefind-ranking.mjs for the held-out
+// measurement). The query it existed for is handled in content instead.
 //
 // WHAT THIS CHECK PROVES
 //   - The page a maintainer says should own a query is present in Pagefind's real built index
@@ -71,7 +70,17 @@ export const QUERY_MATRIX = [
   { query: 'sign in', expect: '/patterns/auth/sign-in-screen/' },
   { query: 'source ownership', expect: '/guides/cli-source-ownership/' },
   { query: 'responsive', expect: '/learn/responsive-model/' },
-  { query: 'color.bg.default', expect: '/reference/tokens/' },
+  // Was `color.bg.default`, a token that does not exist — `tokens.json` has no `bg`, so that
+  // query proved nothing about token search. These are real token names.
+  { query: 'color surface-muted', expect: '/reference/tokens/' },
+  { query: 'surface-raised', expect: '/reference/tokens/' },
+  { query: 'dynamic type', expect: '/accessibility/large-text/' },
+  { query: 'home indicator', expect: '/guides/troubleshooting/' },
+  // Core accessibility intents. These were failing under `pageLength: 0` and are the reason it
+  // was reverted; they are listed here so the setting cannot be re-disabled unnoticed.
+  { query: 'keyboard navigation', expect: '/accessibility/keyboard-focus/' },
+  { query: 'focus order', expect: '/accessibility/keyboard-focus/' },
+  { query: 'right to left', expect: '/accessibility/rtl/' },
   { query: 'add BeeUI to Expo', expect: '/start/expo/' },
   { query: 'beeui add', expect: '/guides/cli-source-ownership/' },
   { query: 'provider not found', expect: '/guides/troubleshooting/' },

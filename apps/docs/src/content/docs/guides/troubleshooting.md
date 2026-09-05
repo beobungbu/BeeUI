@@ -94,7 +94,7 @@ Also: `BeeUI toast show() requires a non-empty string title.`
 - **Still broken:** if the title is user-supplied, guard the empty case before calling
   `show()` — BeeUI deliberately fails loudly rather than announcing a blank toast.
 
-### Content is double-inset, or sits under the notch / home indicator
+### Safe area duplicated: content is double-inset, or sits under the notch / home indicator
 
 This is BeeUI's safe-area-duplicated symptom and its mirror image: the same physical edge
 gets padded twice, or no component pads it at all.

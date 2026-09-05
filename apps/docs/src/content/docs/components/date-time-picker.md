@@ -54,11 +54,11 @@ Controlled `value`/`onValueChange` (`{ date, time } | null`) field combining dat
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `accessibilityLabel` | `string` | — | Accessible name for the trigger. Falls back to the enclosing `Field`'s label. |
-| `align` | `DateTimePickerAlign` | — | Web-only: `Popover` content alignment relative to the trigger. Ignored on native. |
+| `align` | `DateTimePickerAlign` | `'start'` | Web-only: `Popover` content alignment relative to the trigger. Ignored on native. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `clearAccessibilityLabel` | `string` | — | Accessible label for the clear button shown when `clearable` and a value is selected. Defaults to `'Clear date and time'`. |
-| `clearable` | `boolean` | — | Shows a clear affordance when a value is selected. Defaults to `true`. |
-| `closeOnOutsidePress` | `boolean` | — | Web-only: dismiss the `Popover` on an outside press. Ignored on native. |
+| `clearable` | `boolean` | `true` | Shows a clear affordance when a value is selected. Defaults to `true`. |
+| `closeOnOutsidePress` | `boolean` | `true` | Web-only: dismiss the `Popover` on an outside press. Ignored on native. |
 | `collisionPadding` | `DateTimePickerCollisionPadding` | — | Web-only: `Popover` collision padding. Ignored on native. |
 | `defaultOpen` | `boolean` | — | Uncontrolled initial `open` state. Ignored once `open` is controlled. |
 | `direction` | `DateTimePickerDirection` | — | Web-only: logical direction for the `Popover`/`Calendar`/time content. Ignored on native. |
@@ -79,9 +79,9 @@ Controlled `value`/`onValueChange` (`{ date, time } | null`) field combining dat
 | `open` | `boolean` | — | Controls whether the picker (Web `Popover`, native system picker) is open. Requires `onOpenChange`; otherwise falls back to internal open state with a dev-mode warning. |
 | `periodAccessibilityLabel` | `string` | — | Accessible name for the Web AM/PM control. Defaults to `'AM or PM'`. |
 | `placeholder` | `string` | — | Text shown on the trigger when no value is selected. Defaults to `'Select a date and time'`. |
-| `placement` | `DateTimePickerPlacement` | — | Web-only: `Popover` placement relative to the trigger. Ignored on native. |
+| `placement` | `DateTimePickerPlacement` | `'bottom'` | Web-only: `Popover` placement relative to the trigger. Ignored on native. |
 | `previousMonthAccessibilityLabel` | `string` | — | Accessible label for the `Calendar`'s "previous month" button. Defaults to `'Previous month'`. |
-| `readOnly` | `boolean` | — | Keeps the trigger focusable/announced but blocks opening and clearing. |
+| `readOnly` | `boolean` | `false` | Keeps the trigger focusable/announced but blocks opening and clearing. |
 | `shift` | `boolean` | — | Web-only: `Popover` collision-shift. Ignored on native. |
 | `sideOffset` | `number` | — | Web-only: `Popover` offset from the trigger. Ignored on native. |
 | `style` | `StyleProp<ViewStyle>` | — | Forwarded to the trigger's root `View`. |

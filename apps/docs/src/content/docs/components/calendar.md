@@ -57,22 +57,22 @@ Controlled month-grid date selection on `value`/`onValueChange` (`CalendarDate |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `defaultVisibleMonth` | `CalendarVisibleMonth` | — | Initial visible month when `visibleMonth` is uncontrolled. Defaults to `value`'s month, else today's. |
 | `direction` | `AnchoredOverlayDirection` | — | Forces the grid's text direction (`'ltr'` or `'rtl'`) instead of inferring it from `I18nManager`; also flips which arrow key/icon moves to the previous vs. next day. |
-| `disabled` | `boolean` | — | Disables month navigation and every day cell, and stops keyboard navigation. Distinct from `readOnly`, which keeps the grid navigable but blocks only selection. Defaults to false. |
+| `disabled` | `boolean` | `false` | Disables month navigation and every day cell, and stops keyboard navigation. Distinct from `readOnly`, which keeps the grid navigable but blocks only selection. Defaults to false. |
 | `isDateDisabled` | `(date: CalendarDate) => boolean` | — | Marks individual dates as disabled (in addition to any `min`/`max` bounds) without disabling the whole grid. |
 | `locale` | `string` | — | Explicit-only (ADR-008) — no ambient device/browser locale auto-detection. Defaults to `'en-US'`. |
 | `max` | `CalendarDate` | — | Latest selectable date (inclusive); later dates render disabled. |
 | `min` | `CalendarDate` | — | Earliest selectable date (inclusive); earlier dates render disabled. |
-| `nextMonthAccessibilityLabel` | `string` | — | Accessible label for the "next month" navigation button. Defaults to `'Next month'`. |
+| `nextMonthAccessibilityLabel` | `string` | `'Next month'` | Accessible label for the "next month" navigation button. Defaults to `'Next month'`. |
 | `onValueChange` | `(date: CalendarDate) => void` | — | Called with the pressed or keyboard-committed date when it is not disabled and `readOnly` is false. |
 | `onVisibleMonthChange` | `(visibleMonth: CalendarVisibleMonth) => void` | — | Called whenever the visible month changes (navigation, or `value` moving into a different month). Required alongside `visibleMonth` to make it controlled; otherwise the calendar falls back to internal navigation state. |
-| `previousMonthAccessibilityLabel` | `string` | — | Accessible label for the "previous month" navigation button. Defaults to `'Previous month'`. |
-| `readOnly` | `boolean` | — | Keeps the grid focusable/navigable but blocks selection, distinct from `disabled`. |
+| `previousMonthAccessibilityLabel` | `string` | `'Previous month'` | Accessible label for the "previous month" navigation button. Defaults to `'Previous month'`. |
+| `readOnly` | `boolean` | `false` | Keeps the grid focusable/navigable but blocks selection, distinct from `disabled`. |
 | `value` **(required)** | `CalendarDate \| null` | — | Controlled selected date. Single-date selection only for 1.0 (ADR-008). |
 | `visibleMonth` | `CalendarVisibleMonth` | — | Controls which month/year the grid displays. Pass alongside `onVisibleMonthChange` to control navigation; otherwise defaults to `value`'s month, else today's, and updates internally. |
-| `weekdayFormat` | `CalendarWeekdayFormat` | — | Controls how weekday header labels are formatted (e.g. short vs. narrow). Defaults to `'short'`. |
+| `weekdayFormat` | `CalendarWeekdayFormat` | `'short'` | Controls how weekday header labels are formatted (e.g. short vs. narrow). Defaults to `'short'`. |
 | `weekStartsOn` | `CalendarWeekStartsOn` | — | Which day starts each week row. Defaults to the convention for `locale` when omitted. |
 
-Also carries every prop of `Omit<ViewProps, 'children' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ViewProps, 'children' | 'role'>` — that upstream contract is not reproduced here.
 
 **Related exported types:**
 

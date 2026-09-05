@@ -66,8 +66,10 @@ Controlled (`open`+`onOpenChange`) or uncontrolled (`defaultOpen`) gesture-drive
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
+| `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Defined by `buttonVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'primary'` | Defined by `buttonVariants` (class-variance-authority); see Styling and theming for what each value changes. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` — that upstream contract is not reproduced here.
 
 #### `SheetContentProps`
 
@@ -88,7 +90,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \
 | `showHandle` | `boolean` | `true` | Renders the default drag-handle affordance above `children`. Defaults to `true`. |
 | `snapPoints` | `readonly SheetSnapPoint[]` | — | Snap points / presentation sizes. See {@link SheetSnapPoint}. |
 
-Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'accessibilityViewIsModal' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ViewProps, 'accessibilityRole' | 'accessibilityViewIsModal' | 'role'>` — that upstream contract is not reproduced here.
 
 **Platform differences (native vs. [Web](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/sheet.web.tsx)):**
 
@@ -108,7 +110,7 @@ This type adds no fields of its own. These are the props the implementation read
 | `nativeID` | — |
 
 
-Also carries every prop of `Omit<TextProps, 'tone' \| 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
+Also carries every prop of `Omit<TextProps, 'tone' | 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 
 #### `SheetFooterProps`
 
@@ -127,7 +129,7 @@ This type adds no fields of its own. These are the props the implementation read
 | `className` | — |
 
 
-Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ViewProps, 'accessibilityRole' | 'role'>` — that upstream contract is not reproduced here.
 
 #### `SheetProps`
 
@@ -163,7 +165,7 @@ This type adds no fields of its own. These are the props the implementation read
 | `nativeID` | — |
 
 
-Also carries every prop of `Omit<TextProps, 'accessibilityRole' \| 'role' \| 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
+Also carries every prop of `Omit<TextProps, 'accessibilityRole' | 'role' | 'variant'>` — documented on the [Text](/docs/components/text/) page, not reproduced here.
 
 #### `SheetTriggerProps`
 
@@ -175,12 +177,14 @@ Also carries every prop of `Omit<TextProps, 'accessibilityRole' \| 'role' \| 'va
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
+| `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Defined by `buttonVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'primary'` | Defined by `buttonVariants` (class-variance-authority); see Styling and theming for what each value changes. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` — that upstream contract is not reproduced here.
 
 **Related exported types:**
 
-- `SheetSnapPoint` — alias of ``${number}%` \| number`.
+- `SheetSnapPoint` — alias of ``${number}%` | number`.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

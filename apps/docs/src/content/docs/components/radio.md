@@ -61,7 +61,7 @@ Standalone `Radio` supports both selection and deselection through `onCheckedCha
 | `onValueChange` | `(value: string) => void` | — | Called with the selected `Radio`'s `value` when the selection changes. Required for enabled usage (logs a dev warning otherwise). |
 | `value` | `string` | — | The `value` of the currently selected `Radio` among this group's children. |
 
-Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'role' \| 'children'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ViewProps, 'accessibilityRole' | 'role' | 'children'>` — that upstream contract is not reproduced here.
 
 #### `RadioProps`
 
@@ -75,7 +75,7 @@ Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'role' \| 'ch
 | `onCheckedChange` | `(checked: boolean) => void` | — | Called with the next checked state when pressed, if this Radio is standalone (not inside a `RadioGroup`). Required for enabled standalone usage (logs a dev warning otherwise). |
 | `value` | `string` | — | Identifies this Radio within a parent `RadioGroup`; required there for the item to participate in selection. Has no effect on a standalone Radio. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children' \| 'onPress'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children' | 'onPress'>` — that upstream contract is not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

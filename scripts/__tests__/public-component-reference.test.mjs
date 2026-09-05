@@ -7,6 +7,9 @@ import { fileURLToPath } from 'node:url';
 
 import {
   buildTypeIndex,
+  cvaVariantType,
+  extractCvaVariants,
+  variantsIdentifierFromBase,
   diffPlatformObjectShape,
   diffPlatformPropsShape,
   extractConsumedProps,
@@ -20,6 +23,7 @@ import {
 import {
   buildPublicComponentManifest,
   collectPropDescriptionCoverage,
+  collectRenderedPageViolations,
   collectPropDescriptionViolations,
   PROP_DESCRIPTION_FLOOR,
   collectPublicComponentReferenceViolations,
@@ -760,7 +764,8 @@ test('renderPublicComponentPage links a base that resolves to another public fam
     registryHref: 'https://example.com',
   };
   const page = renderPublicComponentPage(component);
-  assert.match(page, /Also carries every prop of `Omit<InputProps, 'multiline' \\\| 'size'>` — documented on the \[Input\]\(\/docs\/components\/input\/\) page, not reproduced here\./);
+  // A `|` here is prose, not a table cell: the published signature must read `'multiline' | 'size'`.
+  assert.match(page, /Also carries every prop of `Omit<InputProps, 'multiline' \| 'size'>` — documented on the \[Input\]\(\/docs\/components\/input\/\) page, not reproduced here\./);
   assert.doesNotMatch(page, /upstream contract/);
 });
 
@@ -791,7 +796,7 @@ test('renderPublicComponentPage keeps the "upstream" wording for a genuinely ext
     registryHref: 'https://example.com',
   };
   const page = renderPublicComponentPage(component);
-  assert.match(page, /Also carries every prop of `Omit<ViewProps, 'children' \\\| 'style'>` — that upstream contract is not reproduced here\./);
+  assert.match(page, /Also carries every prop of `Omit<ViewProps, 'children' \| 'style'>` — that upstream contract is not reproduced here\./);
   assert.doesNotMatch(page, /Omit<\s+ViewProps/, 'expected the bracket-adjacent space to be collapsed');
   assert.doesNotMatch(page, /'style'\s+>/, 'expected the bracket-adjacent space to be collapsed');
 });
@@ -952,7 +957,7 @@ test('prop-description coverage counts union variant fields', () => {
     },
   ];
 
-  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 1, total: 2 });
+  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 1, distinct: 1, total: 2 });
 });
 
 test('prop-description coverage reaches variants nested inside a variant', () => {
@@ -980,7 +985,7 @@ test('prop-description coverage reaches variants nested inside a variant', () =>
     },
   ];
 
-  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 0, total: 1 });
+  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 0, distinct: 0, total: 1 });
 });
 
 // The floor is only meaningful if it is the real published total. A floor set below
@@ -1020,9 +1025,10 @@ test('a prop description collapses the line breaks a JSDoc block wraps at', () =
 // A floor comparison alone passes 583 of 584 whenever the total grows by the same amount as the
 // gap, so one newly undocumented prop reaches the published tables with every gate green.
 test('one undescribed prop is a violation even when the floor is still met', () => {
+  // Distinct text per prop: these fixtures test the coverage floors, not the boilerplate floor.
   const fields = Array.from({ length: PROP_DESCRIPTION_FLOOR }, (unused, index) => ({
     name: `documented${index}`,
-    description: 'Described.',
+    description: `Described ${index}.`,
   }));
   const manifest = [
     { typeDocs: [{ kind: 'object', fields: [...fields, { name: 'brandNew', description: '' }] }] },
@@ -1041,10 +1047,304 @@ test('a manifest below the floor reports the floor, not the per-prop gap', () =>
 });
 
 test('a fully described manifest at the floor is clean', () => {
+  // Distinct text per prop: these fixtures test the coverage floors, not the boilerplate floor.
   const fields = Array.from({ length: PROP_DESCRIPTION_FLOOR }, (unused, index) => ({
     name: `documented${index}`,
-    description: 'Described.',
+    description: `Described ${index}.`,
   }));
 
   assert.deepEqual(collectPropDescriptionViolations([{ typeDocs: [{ kind: 'object', fields }] }]), []);
+});
+
+
+// `escapeCell`'s pipe escape is correct in a table row and wrong in a paragraph. Applying it to
+// the bases line published `Omit<PressableProps, 'role' \| 'children'>` on 34 of 62 pages, with
+// every existing check green — they all read the manifest or the cells, never the prose.
+test('an escaped pipe in prose is a violation', () => {
+  const page = ["## Composition", '', "Also carries every prop of `Omit<P, 'a' \\| 'b'>` — see Text.", ''].join('\n');
+
+  const violations = collectRenderedPageViolations(page, 'accordion');
+
+  assert.equal(violations.length, 1);
+  assert.match(violations[0], /literal \\\| outside a table row/u);
+});
+
+test('an escaped pipe inside a table row is allowed', () => {
+  const page = [
+    '| Prop | Type | Default | Description |',
+    '| --- | --- | --- | --- |',
+    "| `variant` | `'a' \\| 'b'` | `'a'` | Visual variant. |",
+  ].join('\n');
+
+  assert.deepEqual(collectRenderedPageViolations(page, 'button'), []);
+});
+
+// A fenced example may legitimately contain an escaped pipe as sample text.
+test('an escaped pipe inside a code fence is not a violation', () => {
+  const page = ['```md', "| `x` | `'a' \\| 'b'` |", '```'].join('\n');
+
+  assert.deepEqual(collectRenderedPageViolations(page, 'table'), []);
+});
+
+test('every generated component page is free of escaped pipes in prose', () => {
+  const offenders = buildPublicComponentManifest(REPO_ROOT).flatMap((component) =>
+    collectRenderedPageViolations(renderPublicComponentPage(component), component.name),
+  );
+
+  assert.deepEqual(offenders, []);
+});
+
+
+// `variant`/`size` arrive through `VariantProps<typeof x>`, which this parser cannot resolve, so
+// the allowed values were published nowhere. They are literals in the `cva()` call.
+test('cva variants are read from the call, with their defaults', () => {
+  const source = `
+    const buttonVariants = cva('base', {
+      variants: {
+        variant: { primary: 'a', ghost: 'b' },
+        size: { sm: 'c', md: 'd' },
+      },
+      defaultVariants: { variant: 'primary', size: 'md' },
+    });
+  `;
+
+  const found = extractCvaVariants([{ path: 'button.tsx', source }]);
+
+  assert.deepEqual(found.get('buttonVariants').get('variant'), {
+    values: ['primary', 'ghost'],
+    default: 'primary',
+  });
+  assert.deepEqual(found.get('buttonVariants').get('size'), { values: ['sm', 'md'], default: 'md' });
+});
+
+test('a cva call with no defaultVariants still publishes its values', () => {
+  const source = "const x = cva('', { variants: { tone: { neutral: 'a' } } });";
+
+  assert.deepEqual(extractCvaVariants([{ path: 'x.tsx', source }]).get('x').get('tone'), {
+    values: ['neutral'],
+    default: undefined,
+  });
+});
+
+test('a non-cva call is not mistaken for variants', () => {
+  const source = "const x = notCva('', { variants: { tone: { neutral: 'a' } } });";
+
+  assert.equal(extractCvaVariants([{ path: 'x.tsx', source }]).size, 0);
+});
+
+// Input declares `Omit<VariantProps<typeof inputVariants>, 'invalid'>` because it re-declares
+// `invalid`; matching only the bare form left its variants unpublished.
+test('a VariantProps base is recognised bare and inside Omit', () => {
+  assert.deepEqual(variantsIdentifierFromBase('VariantProps<typeof buttonVariants>'), {
+    identifier: 'buttonVariants',
+    omitted: new Set(),
+  });
+  assert.deepEqual(variantsIdentifierFromBase("Omit<VariantProps<typeof inputVariants>, 'invalid'>"), {
+    identifier: 'inputVariants',
+    omitted: new Set(['invalid']),
+  });
+  assert.equal(variantsIdentifierFromBase("Omit<PressableProps, 'role'>"), undefined);
+});
+
+
+// cva types a variant whose keys are `true`/`false` as `boolean`. Publishing the string union
+// put `'true' | 'false'` on the Stack page, which the same page contradicts with `<HStack wrap>`.
+test('a boolean cva variant keeps its boolean default', () => {
+  const source = `
+    const stackVariants = cva('', {
+      variants: { wrap: { true: 'flex-wrap', false: 'flex-nowrap' } },
+      defaultVariants: { wrap: false },
+    });
+  `;
+
+  assert.deepEqual(extractCvaVariants([{ path: 'stack.tsx', source }]).get('stackVariants').get('wrap'), {
+    values: ['true', 'false'],
+    default: 'false',
+  });
+});
+
+test('a numeric cva default is not dropped', () => {
+  const source = "const x = cva('', { variants: { level: { 1: 'a', 2: 'b' } }, defaultVariants: { level: 1 } });";
+
+  assert.equal(extractCvaVariants([{ path: 'x.tsx', source }]).get('x').get('level').default, '1');
+});
+
+// A `VariantProps<...>` reaching the page means the cva behind it was never resolved, so the page
+// points a reader at a module-private const. It survived on 11 lines across six pages.
+test('an unresolved VariantProps on the page is a violation', () => {
+  const page = 'Also carries every prop of `VariantProps<typeof buttonVariants>` — not reproduced here.';
+
+  const violations = collectRenderedPageViolations(page, 'dialog');
+
+  assert.equal(violations.length, 1);
+  assert.match(violations[0], /unresolved `VariantProps<\.\.\.>`/u);
+});
+
+test('no generated component page names an unresolved VariantProps', () => {
+  const offenders = buildPublicComponentManifest(REPO_ROOT).flatMap((component) =>
+    collectRenderedPageViolations(renderPublicComponentPage(component), component.name),
+  );
+
+  assert.deepEqual(offenders, []);
+});
+
+// "100% described" counts glossary sentences and generated variant text, not only per-prop prose.
+test('prop-description coverage reports how many descriptions are distinct', () => {
+  const manifest = [
+    {
+      typeDocs: [
+        {
+          kind: 'object',
+          fields: [
+            { name: 'a', description: 'Shared.' },
+            { name: 'b', description: 'Shared.' },
+            { name: 'c', description: 'Its own.' },
+          ],
+        },
+      ],
+    },
+  ];
+
+  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 3, distinct: 2, total: 3 });
+});
+
+
+// The boolean decision happens where the field is emitted, not in the extractor, so a test on
+// `extractCvaVariants` alone cannot see it — reverting the fix left that test green. This asserts
+// the published shape instead: Stack's `wrap` is `boolean`, and the page uses `<HStack wrap>`.
+test('a boolean cva variant publishes as boolean, not a string union', () => {
+  const stack = buildPublicComponentManifest(REPO_ROOT).find((component) => component.name === 'stack');
+  const props = stack.typeDocs.find((entry) => entry.name === 'StackProps');
+  const wrap = props.fields.find((field) => field.name === 'wrap');
+
+  assert.equal(wrap.type, 'boolean');
+  assert.equal(wrap.default, 'false');
+});
+
+
+test('cva boolean keys publish as boolean, other keys as string literals', () => {
+  assert.equal(cvaVariantType(['true', 'false']).type, 'boolean');
+  assert.equal(cvaVariantType(['sm', 'md']).type, "'sm' | 'md'");
+  // Numeric keys are NOT special-cased: `extractCvaVariants` strips quotes, so `{ 1: … }` and
+  // `{ '1': … }` are indistinguishable here and guessing was wrong for the quoted form.
+  assert.equal(cvaVariantType(['1', '2']).type, "'1' | '2'");
+});
+
+// A wrapper that forwards a prop can re-default it. Applying the shared cva's own defaults
+// globally published 'primary' for AlertDialogAction, whose real default is 'destructive'.
+test('a prop re-defaulted by a forwarding wrapper takes the wrapper default', () => {
+  const source = `
+    export const AlertDialogAction = React.forwardRef<Ref, AlertDialogActionProps>(
+      ({ variant, ...props }, ref) => <DialogClose ref={ref} {...props} variant={variant ?? 'destructive'} />
+    );
+  `;
+
+  const defaults = extractDefaults(
+    [{ path: 'alert-dialog.tsx', source }],
+    new Set(['AlertDialogActionProps']),
+  );
+
+  assert.equal(defaults.get('variant'), "'destructive'");
+});
+
+test('AlertDialog publishes the defaults its wrappers apply, not buttonVariants own', () => {
+  const alertDialog = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'alert-dialog');
+  const defaultFor = (typeName) =>
+    alertDialog.typeDocs
+      .find((entry) => entry.name === typeName)
+      ?.fields?.find((field) => field.name === 'variant')?.default;
+
+  assert.equal(defaultFor('AlertDialogActionProps'), "'destructive'");
+  assert.equal(defaultFor('AlertDialogCancelProps'), "'outline'");
+  // The trigger does not re-default, so it keeps buttonVariants own default.
+  assert.equal(defaultFor('AlertDialogTriggerProps'), "'primary'");
+});
+
+// Coverage can sit at 100% while saying one thing 700 times.
+test('a manifest whose descriptions are all one sentence is a violation', () => {
+  const fields = Array.from({ length: 700 }, (unused, index) => ({
+    name: `p${index}`,
+    description: 'Same boilerplate.',
+  }));
+
+  const violations = collectPropDescriptionViolations([{ typeDocs: [{ kind: 'object', fields }] }]);
+
+  assert.match(violations[0], /distinct prop descriptions dropped to 1/u);
+});
+
+
+// The absolute distinct floor passes when props grow while reusing existing sentences — exactly
+// how 22 props entered the total on one repeated line. The ratio is what catches that.
+test('adding props that reuse an existing description is a violation', () => {
+  const base = Array.from({ length: 624 }, (unused, index) => ({
+    name: `p${index}`,
+    description: `Sentence ${index % 280}.`,
+  }));
+  const grown = [
+    ...base,
+    ...Array.from({ length: 200 }, (unused, index) => ({
+      name: `added${index}`,
+      description: 'Sentence 0.',
+    })),
+  ];
+
+  const violations = collectPropDescriptionViolations([{ typeDocs: [{ kind: 'object', fields: grown }] }]);
+
+  assert.match(violations[0], /only 280 of 824 prop descriptions are different/u);
+});
+
+// forwardRef((props, ref) => { const { x = 'lit' } = props }) — the shape that left 30 rows blank.
+test('a default destructured in a forwardRef body is published', () => {
+  const source = `
+    export const Calendar = React.forwardRef<Ref, CalendarProps>((props, forwardedRef) => {
+      const { readOnly = false, weekdayFormat = 'short' } = props;
+      return null;
+    });
+  `;
+
+  const defaults = extractDefaults([{ path: 'calendar.tsx', source }], new Set(['CalendarProps']));
+
+  assert.equal(defaults.get('readOnly'), 'false');
+  assert.equal(defaults.get('weekdayFormat'), "'short'");
+});
+
+
+// The two default collectors used to disagree on precedence, so which default was published
+// depended on which of them ran. A node that both destructures a default and forwards a `??`
+// fallback must publish the destructured one.
+test('a destructured default wins over a forwarded fallback on the same node', () => {
+  const source = `
+    export const Trigger = React.forwardRef<Ref, TriggerProps>(
+      ({ variant = 'destructured', ...rest }, ref) => <Inner ref={ref} {...rest} variant={variant ?? 'fallback'} />
+    );
+  `;
+
+  const defaults = extractDefaults([{ path: 'trigger.tsx', source }], new Set(['TriggerProps']));
+
+  assert.equal(defaults.get('variant'), "'destructured'");
+});
+
+// The body walk must only read a destructure of the props parameter itself.
+test('a destructure of something other than the props parameter is not a default source', () => {
+  const source = `
+    export const Widget = React.forwardRef<Ref, WidgetProps>((props, ref) => {
+      const { size = 'lg' } = somethingElse;
+      return null;
+    });
+  `;
+
+  const defaults = extractDefaults([{ path: 'widget.tsx', source }], new Set(['WidgetProps']));
+
+  assert.equal(defaults.get('size'), undefined);
+});
+
+// An expression-bodied forwardRef has no block to walk; it must not throw or invent defaults.
+test('an expression-bodied forwardRef yields no body defaults', () => {
+  const source = `
+    export const Plain = React.forwardRef<Ref, PlainProps>((props, ref) => <Inner {...props} />);
+  `;
+
+  const defaults = extractDefaults([{ path: 'plain.tsx', source }], new Set(['PlainProps']));
+
+  assert.equal(defaults.size, 0);
 });

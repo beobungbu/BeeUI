@@ -60,8 +60,9 @@ Stateless inline callout with no open/close or controlled prop; it live-announce
 | `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
 | `live` | `'none' \| 'polite' \| 'assertive'` | `'polite'` | Sets `accessibilityLiveRegion` and, on iOS, whether the announcement queues (`polite`) or interrupts (`assertive`); `none` suppresses the announcement entirely. Defaults to `polite`. |
 | `title` **(required)** | `React.ReactNode` | — | The primary heading text for this surface. |
+| `variant` | `'neutral' \| 'info' \| 'success' \| 'warning' \| 'destructive'` | `'neutral'` | Defined by `alertBannerVariants` (class-variance-authority); see Styling and theming for what each value changes. |
 
-Also carries every prop of `Omit<ViewProps, 'children'>` and `VariantProps<typeof alertBannerVariants>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

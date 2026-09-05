@@ -59,7 +59,7 @@ Stateless router-neutral trail; separators between `BreadcrumbItem`s are decorat
 | `current` | `boolean` | `false` | Marks this item as the current page: it renders as non-interactive text (even with `onPress` set) and is exposed as `accessibilityState.selected`. Defaults to false. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'children' | 'role'>` — that upstream contract is not reproduced here.
 
 #### `BreadcrumbProps`
 

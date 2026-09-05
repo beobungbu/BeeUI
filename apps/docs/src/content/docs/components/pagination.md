@@ -64,7 +64,7 @@ one of the following mutually exclusive variants:
 | `page` **(required)** | `number` | — | Page number this item targets, starting at 1 and truncated toward zero; a non-finite value renders the item as a disabled em dash. An item whose target falls outside `[1, pageCount]` is also disabled. |
 | `type` | `'page'` | `'page'` | Marks this item as a page numeral rather than a navigation arrow, and renders selected when its `page` is the current page. Defaults to `'page'`. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'children' | 'role'>` — that upstream contract is not reproduced here.
 
 **Variant `PaginationNavigationItemProps`:**
 
@@ -76,7 +76,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'childre
 | `page` | `never` | — | Not accepted on a navigation item, whose target is derived from the current page: one before it for `'previous'`, one after it for `'next'`. |
 | `type` **(required)** | `'previous' \| 'next'` | `'page'` | Which navigation affordance to render, as a logical rather than physical direction, so `'previous'` points toward the visual right in an RTL layout. The item is disabled when its derived target falls outside `[1, pageCount]`. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'children' | 'role'>` — that upstream contract is not reproduced here.
 
 #### `PaginationProps`
 
@@ -89,7 +89,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'childre
 | `page` **(required)** | `number` | — | The current page, clamped to `[1, pageCount]`. Non-finite values fall back to 1. |
 | `pageCount` **(required)** | `number` | — | Total number of pages. Non-finite or sub-1 values are floored and clamped to at least 1. |
 
-Also carries every prop of `Omit<ViewProps, 'children' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ViewProps, 'children' | 'role'>` — that upstream contract is not reproduced here.
 
 **Related exported types:**
 

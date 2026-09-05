@@ -55,8 +55,9 @@ Stateless decorative static loading placeholder; it is hidden from the accessibi
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `variant` | `'block' \| 'circle' \| 'text'` | `'block'` | Defined by `skeletonVariants` (class-variance-authority); see Styling and theming for what each value changes. |
 
-Also carries every prop of `Omit<ViewProps, 'accessible' \| 'aria-hidden'>` and `VariantProps<typeof skeletonVariants>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ViewProps, 'accessible' | 'aria-hidden'>` — that upstream contract is not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

@@ -60,9 +60,10 @@ Stateless image-with-fallback: an image load failure resets to the fallback, and
 | `fallbackClassName` | `string` | — | Applied to the fallback `Text` when it is shown; has no effect while the image is showing. |
 | `imageClassName` | `string` | — | Applied to the underlying `Image` when it is shown; has no effect while the fallback is showing. |
 | `imageProps` | `AvatarImageProps` | — | Forwarded to the underlying `Image`, minus `source` and `className`/`onError`, which this component owns to detect load failures and fall back to `fallback`. |
+| `size` | `'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Defined by `avatarVariants` (class-variance-authority); see Styling and theming for what each value changes. |
 | `source` | `ImageSourcePropType` | — | The image to display. If it fails to load, or is omitted, `fallback` is shown instead. |
 
-Also carries every prop of `Omit<ViewProps, 'children'>` and `VariantProps<typeof avatarVariants>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

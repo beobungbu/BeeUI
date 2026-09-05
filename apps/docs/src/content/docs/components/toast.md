@@ -59,7 +59,7 @@ _This family exports no `*Props` type._
 
 - `ToastAction` — alias of `{ label: string; onPress: () => void; /** Dismisses after the callback by default. Set false for an explicit persistent action. */ dismissOnPress?: boolean; }`.
 - `ToastApi` — alias of `{ show: (options: ToastOptions) => ToastId; dismiss: (id: ToastId) => void; dismissAll: () => void; }`.
-- `ToastDuration` — alias of `number \| 'persistent'`.
+- `ToastDuration` — alias of `number | 'persistent'`.
 - `ToastId` — alias of `string`.
 - `ToastOptions` — alias of `{ title: string; description?: string; variant?: ToastVariant; duration?: ToastDuration; action?: ToastAction; }`.
 - `ToastVariant` — one of `'neutral'`, `'success'`, `'warning'`, `'destructive'`, `'info'`.

@@ -61,11 +61,11 @@ Controlled boolean/indeterminate `checked`/`onCheckedChange` checkbox; enabling 
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `onCheckedChange` | `(checked: boolean) => void` | — | Called with the next checked state (`true`/`false`, never `'indeterminate'`) when pressed. Toggles from `'indeterminate'` to `true`. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children' \| 'onPress'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children' | 'onPress'>` — that upstream contract is not reproduced here.
 
 **Related exported types:**
 
-- `CheckboxValue` — alias of `boolean \| 'indeterminate'`.
+- `CheckboxValue` — alias of `boolean | 'indeterminate'`.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

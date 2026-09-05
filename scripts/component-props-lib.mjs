@@ -360,6 +360,58 @@ function collectDefaultsFromBindingPattern(pattern, sourceFile, defaults) {
 // whose typed parameter is destructured inside the body
 // (`function Dialog(props: DialogProps) { const { defaultOpen = false } =
 // props; }`). Returns an empty map — never a guess — when nothing matches.
+// `forwardRef((props, ref) => { const { disabled = false } = props; … })` destructures in the body,
+// not in the parameter. The plain-function branch already read that shape; the forwardRef branch
+// did not, so 15 rows across Calendar, DatePicker and DateTimePicker published no default while a
+// literal one existed in source. (A further 14 rows on those pages still show no default: their
+// value comes from a cross-file identifier rather than a literal, which is deliberately not
+// published.)
+function collectDefaultsFromBodyDestructure(fn, paramName, sourceFile, defaults) {
+  // No `isBlock` narrowing: it had no observable effect (removing it changed no output and no
+  // test), because the checks that matter are below — a `const { … } = <paramName>` statement.
+  if (!fn.body) return;
+  walk(fn.body, (inner) => {
+    if (!ts.isVariableStatement(inner)) return;
+    for (const declaration of inner.declarationList.declarations) {
+      if (
+        ts.isObjectBindingPattern(declaration.name) &&
+        declaration.initializer &&
+        ts.isIdentifier(declaration.initializer) &&
+        declaration.initializer.text === paramName
+      ) {
+        collectDefaultsFromBindingPattern(declaration.name, sourceFile, defaults);
+      }
+    }
+  });
+}
+
+// A wrapper can re-default a prop it forwards: `<DialogClose variant={variant ?? 'destructive'} />`.
+// That is the real default a reader gets, and it is not a destructuring default, so the binding
+// walk above cannot see it. Resolving `buttonVariants` globally published `'primary'` for
+// AlertDialogAction and AlertDialogCancel, whose actual defaults are 'destructive' and 'outline',
+// on a page whose own example passes no variant at all.
+function collectDefaultsFromForwardedFallbacks(node, sourceFile, defaults) {
+  walk(node, (inner) => {
+    if (!ts.isJsxAttribute(inner) || !inner.name || !ts.isIdentifier(inner.name)) return;
+    const initializer = inner.initializer;
+    if (!initializer || !ts.isJsxExpression(initializer) || !initializer.expression) return;
+
+    const expression = initializer.expression;
+    if (!ts.isBinaryExpression(expression)) return;
+    if (expression.operatorToken.kind !== ts.SyntaxKind.QuestionQuestionToken) return;
+    if (!ts.isIdentifier(expression.left) || expression.left.text !== inner.name.text) return;
+    if (!ts.isStringLiteralLike(expression.right)) return;
+
+    // First-wins, matching `collectDefaultsFromBindingPattern`. This does NOT make the result
+    // order-independent — first-wins is as order-dependent as last-wins across files. It makes the
+    // two collectors agree, so which default is published no longer depends on which of them
+    // happened to run: a node that both destructures a default and forwards a `??` fallback now
+    // publishes the destructured one either way. Ordering across `allSources` remains a known
+    // limit, currently unexercised: no prop in packages/ui carries conflicting defaults.
+    if (!defaults.has(inner.name.text)) defaults.set(inner.name.text, `'${expression.right.text}'`);
+  });
+}
+
 export function extractDefaults(files, candidateNames) {
   const defaults = new Map();
 
@@ -374,7 +426,10 @@ export function extractDefaults(files, candidateNames) {
           const param = (ts.isArrowFunction(renderFn) || ts.isFunctionExpression(renderFn)) ? renderFn.parameters[0] : undefined;
           if (param && ts.isObjectBindingPattern(param.name)) {
             collectDefaultsFromBindingPattern(param.name, sourceFile, defaults);
+          } else if (param && ts.isIdentifier(param.name)) {
+            collectDefaultsFromBodyDestructure(renderFn, param.name.text, sourceFile, defaults);
           }
+          if (renderFn) collectDefaultsFromForwardedFallbacks(renderFn, sourceFile, defaults);
         }
       }
 
@@ -384,20 +439,8 @@ export function extractDefaults(files, candidateNames) {
         if (!typeName || !candidateNames.has(typeName)) return;
         if (ts.isObjectBindingPattern(param.name)) {
           collectDefaultsFromBindingPattern(param.name, sourceFile, defaults);
-        } else if (ts.isIdentifier(param.name) && node.body && ts.isBlock(node.body)) {
-          walk(node.body, (inner) => {
-            if (!ts.isVariableStatement(inner)) return;
-            for (const declaration of inner.declarationList.declarations) {
-              if (
-                ts.isObjectBindingPattern(declaration.name) &&
-                declaration.initializer &&
-                ts.isIdentifier(declaration.initializer) &&
-                declaration.initializer.text === param.name.text
-              ) {
-                collectDefaultsFromBindingPattern(declaration.name, sourceFile, defaults);
-              }
-            }
-          });
+        } else if (ts.isIdentifier(param.name)) {
+          collectDefaultsFromBodyDestructure(node, param.name.text, sourceFile, defaults);
         }
       }
     });
@@ -444,6 +487,112 @@ export function extractInertProps(files, candidateNames) {
     });
   }
   return inert;
+}
+
+// `variant`/`size` reach a component's props through `VariantProps<typeof xVariants>`, a
+// class-variance-authority generic this parser cannot resolve — so those props were absent from
+// every table, and the allowed values of the single most-asked API question ("which variants
+// exist?") were published nowhere. The values are literals in the `cva()` call itself, so read
+// them from there rather than leaving the contract undocumented.
+//
+// Shape handled: `const x = cva(base, { variants: { prop: { value: ... } }, defaultVariants: {...} })`.
+// cva does not type an object key as text: `{ true: …, false: … }` becomes `boolean`. Publishing
+// the keys as string literals put `'true' | 'false'` on the Stack page, which the same page
+// contradicts with `<HStack wrap>`.
+//
+// Numeric keys are deliberately NOT special-cased. cva types `{ 1: … }` as `1` and `{ '1': … }` as
+// `'1'`, but `extractCvaVariants` strips the quotes, so by this point the two are indistinguishable
+// and any guess is wrong half the time — a numeric branch here turned the quoted case, which was
+// correct, into an incorrect one. No cva in packages/ui has a numeric or mixed key set; if one is
+// added, carry the quoting through from the AST rather than inferring it from the text.
+export function cvaVariantType(values) {
+  const isBoolean = values.every((value) => value === 'true' || value === 'false');
+  const quote = (value) => (isBoolean ? value : `'${value}'`);
+
+  return { quote, type: isBoolean ? 'boolean' : values.map(quote).join(' | ') };
+}
+
+export function extractCvaVariants(files) {
+  const byIdentifier = new Map();
+
+  for (const { path: filePath, source } of files) {
+    const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, scriptKindFor(filePath));
+    walk(sourceFile, (node) => {
+      if (!ts.isVariableDeclaration(node) || !node.name || !ts.isIdentifier(node.name)) return;
+      const call = node.initializer;
+      if (!call || !ts.isCallExpression(call)) return;
+      if (!ts.isIdentifier(call.expression) || call.expression.text !== 'cva') return;
+
+      const config = call.arguments[1];
+      if (!config || !ts.isObjectLiteralExpression(config)) return;
+
+      const readObject = (name) => {
+        const property = config.properties.find(
+          (candidate) =>
+            ts.isPropertyAssignment(candidate) &&
+            candidate.name &&
+            (ts.isIdentifier(candidate.name) || ts.isStringLiteral(candidate.name)) &&
+            candidate.name.text === name,
+        );
+        return property && ts.isObjectLiteralExpression(property.initializer) ? property.initializer : undefined;
+      };
+
+      const variants = readObject('variants');
+      if (!variants) return;
+
+      // `defaultVariants: { wrap: false }` is a boolean keyword, not a string literal. Accepting
+      // only string literals dropped it, publishing "no default" for a prop that defaults to false.
+      const literalText = (node) => {
+        if (ts.isStringLiteralLike(node)) return node.text;
+        if (node.kind === ts.SyntaxKind.TrueKeyword) return 'true';
+        if (node.kind === ts.SyntaxKind.FalseKeyword) return 'false';
+        if (ts.isNumericLiteral(node)) return node.text;
+        return undefined;
+      };
+
+      const defaults = new Map();
+      for (const property of readObject('defaultVariants')?.properties ?? []) {
+        if (!ts.isPropertyAssignment(property) || !property.name) continue;
+        const value = literalText(property.initializer);
+        if (value === undefined) continue;
+        defaults.set(property.name.getText(sourceFile).replace(/['"]/gu, ''), value);
+      }
+
+      const props = new Map();
+      for (const property of variants.properties) {
+        if (!ts.isPropertyAssignment(property) || !property.name) continue;
+        if (!ts.isObjectLiteralExpression(property.initializer)) continue;
+        const propName = property.name.getText(sourceFile).replace(/['"]/gu, '');
+        const values = property.initializer.properties
+          .filter((value) => ts.isPropertyAssignment(value) && value.name)
+          .map((value) => value.name.getText(sourceFile).replace(/['"]/gu, ''));
+        if (!values.length) continue;
+        props.set(propName, { values, default: defaults.get(propName) });
+      }
+
+      if (props.size) byIdentifier.set(node.name.text, props);
+    });
+  }
+
+  return byIdentifier;
+}
+
+// `VariantProps<typeof buttonVariants>` -> the identifier, plus any keys an `Omit<>` wrapper
+// removes. Input declares `Omit<VariantProps<typeof inputVariants>, 'invalid'>` because it
+// re-declares `invalid` itself, so matching only the bare form left its variants unpublished.
+export function variantsIdentifierFromBase(base) {
+  const text = String(base ?? '').trim();
+
+  const bare = /^VariantProps<\s*typeof\s+([A-Za-z0-9_$]+)\s*>$/u.exec(text);
+  if (bare) return { identifier: bare[1], omitted: new Set() };
+
+  const omit = /^Omit<\s*VariantProps<\s*typeof\s+([A-Za-z0-9_$]+)\s*>\s*,(.+)>$/u.exec(text);
+  if (!omit) return undefined;
+
+  const omitted = new Set(
+    [...omit[2].matchAll(/'([^']+)'|"([^"]+)"/gu)].map((match) => match[1] ?? match[2]),
+  );
+  return { identifier: omit[1], omitted };
 }
 
 export function extractConsumedProps(files, candidateNames) {
@@ -731,6 +880,19 @@ function getComponentsIndex(rootDir) {
   return indexCache.get(rootDir);
 }
 
+// Built once over every component source, because a family can reference another file's
+// variants: the Trigger/Close types on Dialog, AlertDialog, DropdownMenu, Popover, Sheet and
+// Tooltip alias `ButtonProps` and so carry `VariantProps<typeof buttonVariants>`, which lives in
+// button.tsx. Scoping extraction to the family's own files left those unresolved on 11 lines,
+// published as "that upstream contract is not reproduced here" — while `buttonVariants` is a
+// module-private const a reader cannot look up anywhere.
+const cvaCache = new Map();
+
+function getCvaVariants(rootDir) {
+  if (!cvaCache.has(rootDir)) cvaCache.set(rootDir, extractCvaVariants(readComponentSourceFiles(rootDir)));
+  return cvaCache.get(rootDir);
+}
+
 // A `.web.tsx` file among `allSources` that is not itself the family's primary/native source —
 // the platform-split shape this module diffs against.
 function findWebSourcePath(allSources, primaryPath) {
@@ -767,6 +929,46 @@ function applyGlossary(shape, glossary) {
   for (const variant of shape?.variants ?? []) applyGlossary(variant, glossary);
 }
 
+// Publishes the cva-derived variant props on the shape that declares
+// `VariantProps<typeof x>`, and drops that base from the "also carries" line — the props are no
+// longer elsewhere, they are in the table right above it.
+function applyCvaVariants(shape, cvaByIdentifier) {
+  if (!shape) return;
+  for (const variant of shape.variants ?? []) applyCvaVariants(variant, cvaByIdentifier);
+  if (!Array.isArray(shape.bases)) return;
+
+  const remaining = [];
+  for (const base of shape.bases) {
+    const parsed = variantsIdentifierFromBase(base);
+    const props = parsed ? cvaByIdentifier.get(parsed.identifier) : undefined;
+    if (!parsed || !props) {
+      remaining.push(base);
+      continue;
+    }
+    const { identifier, omitted } = parsed;
+
+    shape.fields = shape.fields ?? [];
+    for (const [name, spec] of props) {
+      if (omitted.has(name)) continue;
+      if (shape.fields.some((field) => field.name === name)) continue;
+      const { type, quote } = cvaVariantType(spec.values);
+
+      shape.fields.push({
+        name,
+        optional: true,
+        type,
+        default: spec.default === undefined ? undefined : quote(spec.default),
+        description:
+          `Defined by \`${identifier}\` (class-variance-authority); see Styling and theming for ` +
+          'what each value changes.',
+      });
+    }
+    shape.fields.sort((left, right) => left.name.localeCompare(right.name));
+  }
+
+  shape.bases = remaining;
+}
+
 export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
   const index = getComponentsIndex(rootDir);
   const opts = {
@@ -783,6 +985,7 @@ export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
   return component.types.map((typeName) => {
     const entry = resolveComponentTypeEntry(index, typeName, { ...opts, errorLabel: `${component.name}: ${typeName}` });
     if (entry.docKind === 'props') {
+      applyCvaVariants(entry, getCvaVariants(rootDir));
       applyDefaults(entry, extractDefaults(files, entry.names));
       applyGlossary(entry, propGlossary(rootDir));
       // A pure alias of an upstream type documents nothing on its own; fall back to the props
@@ -802,6 +1005,9 @@ export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
           resolveOpts: { fromPath: webPath, primaryPath: webPath, familyPaths: component.allSources },
         };
         const webShape = resolveNamedTypeShape(typeName, webCtx);
+        // The Web shape needs the same cva resolution as the native one, or the platform-diff
+        // bullets keep naming `VariantProps<typeof buttonVariants>` as an unreproduced contract.
+        applyCvaVariants(webShape, getCvaVariants(rootDir));
         applyDefaults(webShape, extractDefaults(files, webCtx.names));
         fillConsumedFallback(webShape, files, webCtx.names);
         // A prop the Web implementation destructures into an underscore-prefixed binding is

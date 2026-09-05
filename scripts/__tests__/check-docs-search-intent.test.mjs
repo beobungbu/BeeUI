@@ -26,13 +26,16 @@ test('QUERY_MATRIX entries are well-formed', () => {
   }
 });
 
-test('RANKING mirrors the shape apps/docs/astro.config.mjs configures', () => {
+test('RANKING is the same object the site is built with', async () => {
   for (const key of ['pageLength', 'termFrequency', 'termSaturation', 'termSimilarity', 'diacriticSimilarity']) {
     assert.equal(typeof RANKING[key], 'number', `RANKING.${key} must be a number`);
   }
-  // The whole point of the fix: length normalization must stay off, or a short hand-authored
-  // page silently loses to the 63 near-identical generated component pages again.
-  assert.equal(RANKING.pageLength, 0);
+
+  // Identity, not a copied literal. This test previously asserted `pageLength === 0` and carried
+  // a comment saying normalization had to stay off or short pages would lose — the opposite of
+  // what measurement showed, and a second place the value could drift from the built site.
+  const { PAGEFIND_RANKING } = await import('../../apps/docs/pagefind-ranking.mjs');
+  assert.equal(RANKING, PAGEFIND_RANKING);
 });
 
 test('toSitePath strips the fixture-server origin back to a site-relative path', () => {

@@ -67,9 +67,14 @@ Also carries every prop of `Omit<StackProps, 'direction'>` — documented on the
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
+| `align` | `'start' \| 'center' \| 'end' \| 'stretch'` | `'stretch'` | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `direction` | `'horizontal' \| 'vertical'` | `'vertical'` | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `gap` | `'none' \| 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `justify` | `'start' \| 'center' \| 'end' \| 'between' \| 'around' \| 'evenly'` | `'start'` | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
+| `wrap` | `boolean` | `false` | Defined by `stackVariants` (class-variance-authority); see Styling and theming for what each value changes. |
 
-Also carries every prop of `ViewProps` and `VariantProps<typeof stackVariants>` — that upstream contract is not reproduced here.
+Also carries every prop of `ViewProps` — that upstream contract is not reproduced here.
 
 #### `VStackProps`
 

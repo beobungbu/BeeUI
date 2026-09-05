@@ -76,11 +76,11 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | `selected` | `boolean` | — | Controls whether this standalone Chip is selected. Ignored inside a `ChipGroup`, which derives selection from `value` instead. |
 | `value` | `string` | — | Identifies this Chip within a parent `ChipGroup`. Required there — without it the Chip renders disabled with a dev-mode warning. Has no effect on a standalone Chip. |
 
-Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
+Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'children' | 'role'>` — that upstream contract is not reproduced here.
 
 **Related exported types:**
 
-- `ChipGroupValue` — alias of `string \| string[]`.
+- `ChipGroupValue` — alias of `string | string[]`.
 - `ChipSelectionMode` — one of `'single'`, `'multiple'`.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.

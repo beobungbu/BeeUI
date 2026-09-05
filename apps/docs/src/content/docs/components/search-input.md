@@ -55,7 +55,7 @@ Uncontrolled-by-default search-keyboard field layered on `Input`; clearing a pre
 | --- | --- | --- | --- |
 | `onSearch` | `(value: string) => void` | — | Called with the submitted text when the return key is pressed, and with `''` when the text is cleared back to empty after having had content. Not called for every keystroke — use `onChangeText` for that. |
 
-Also carries every prop of `Omit<InputProps, 'inputMode' \| 'returnKeyType'>` — documented on the [Input](/docs/components/input/) page, not reproduced here.
+Also carries every prop of `Omit<InputProps, 'inputMode' | 'returnKeyType'>` — documented on the [Input](/docs/components/input/) page, not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

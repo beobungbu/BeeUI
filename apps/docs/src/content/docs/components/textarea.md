@@ -62,7 +62,7 @@ This type adds no fields of its own. These are the props the implementation read
 | `textAlignVertical` | `'top'` |
 
 
-Also carries every prop of `Omit<InputProps, 'multiline' \| 'size'>` — documented on the [Input](/docs/components/input/) page, not reproduced here.
+Also carries every prop of `Omit<InputProps, 'multiline' | 'size'>` — documented on the [Input](/docs/components/input/) page, not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 

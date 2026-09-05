@@ -157,7 +157,17 @@ function findUnknownBehaviorPropReferences(component, rootDir, field = 'behavior
 // A ratchet rather than a pass/fail threshold: failing on any blank would fail today and teach
 // nothing, and a silent percentage would drift back down the way it drifted here. The floor is
 // the measured value at the time it was written, so coverage can only go up.
-export const PROP_DESCRIPTION_FLOOR = 583;
+export const PROP_DESCRIPTION_FLOOR = 624;
+
+// Two guards, because coverage alone is satisfiable by boilerplate: 22 props were added to the
+// total by one repeated sentence and the ratio never moved.
+//
+// The absolute floor catches descriptions being collapsed or deleted. It does NOT catch the
+// growth mode — 200 new props each reusing an existing sentence verbatim keeps `distinct` at 280
+// and passes. The ratio catches that, because every added duplicate lowers it. Neither alone is
+// enough; that is why both are here.
+export const PROP_DISTINCT_DESCRIPTION_FLOOR = 280;
+export const PROP_DISTINCT_DESCRIPTION_RATIO_FLOOR = 0.44; // measured 280/624 = 0.4487
 
 // Walks a resolved type entry the same way `applyGlossary` and the renderer do:
 // a `union` entry carries no `fields` of its own, only `variants`, each of which is
@@ -173,22 +183,30 @@ function walkShapeFields(shape, visit) {
   for (const variant of shape?.variants ?? []) walkShapeFields(variant, visit);
 }
 
+// `described` counts a prop that has any description text. That is deliberately a low bar, and
+// the number alone overstates the docs: text arrives from three places — per-prop JSDoc, the 17
+// shared sentences in docs/prop-glossary.json, and the sentence generated for each cva variant.
+// The last two are shared by construction, so `distinct` is reported alongside the ratio to keep
+// "100% described" from reading as "every prop has prose written for it".
 export function collectPropDescriptionCoverage(manifest) {
   let total = 0;
   let described = 0;
+  const seen = new Set();
   for (const component of manifest) {
     for (const entry of component.typeDocs ?? []) {
       walkShapeFields(entry, (field) => {
         total += 1;
-        if (field.description) described += 1;
+        if (!field.description) return;
+        described += 1;
+        seen.add(field.description);
       });
     }
   }
-  return { described, total };
+  return { described, distinct: seen.size, total };
 }
 
 export function collectPropDescriptionViolations(manifest) {
-  const { described, total } = collectPropDescriptionCoverage(manifest);
+  const { described, distinct, total } = collectPropDescriptionCoverage(manifest);
   const remedy =
     'Document the prop in `packages/ui/src` with JSDoc, or add it to docs/prop-glossary.json if ' +
     'its meaning is identical on every family that declares it.';
@@ -205,6 +223,55 @@ export function collectPropDescriptionViolations(manifest) {
   } else if (described < total) {
     violations.push(`${total - described} published prop(s) have no description. ${remedy}`);
   }
+
+  if (distinct < PROP_DISTINCT_DESCRIPTION_FLOOR) {
+    violations.push(
+      `distinct prop descriptions dropped to ${distinct} (floor ${PROP_DISTINCT_DESCRIPTION_FLOOR}). ` +
+      'Coverage can be held at 100% by repeating one sentence, so the number of different things ' +
+      'said is guarded separately.',
+    );
+  }
+
+  const ratio = total === 0 ? 1 : distinct / total;
+  if (ratio < PROP_DISTINCT_DESCRIPTION_RATIO_FLOOR) {
+    violations.push(
+      `only ${distinct} of ${total} prop descriptions are different (${ratio.toFixed(3)}, floor ` +
+      `${PROP_DISTINCT_DESCRIPTION_RATIO_FLOOR}). Props were added faster than things said about ` +
+      'them; write a description for the new props rather than reusing an existing sentence.',
+    );
+  }
+
+  return violations;
+}
+
+// Every check in this file reads the manifest or the table cells. Nothing read the prose the
+// generator emits between them, which is how `escapeCell`'s table-only pipe escape reached the
+// bases line and published `Omit<PressableProps, 'role' \\| 'children'>` on 34 of 62 pages. This
+// reads the rendered page instead: a backslash-escaped pipe is correct inside a table row and
+// wrong everywhere else.
+export function collectRenderedPageViolations(page, componentName) {
+  const violations = [];
+  let inFence = false;
+
+  page.split('\n').forEach((line, index) => {
+    if (/^\s*(?:```|~~~)/u.test(line)) inFence = !inFence;
+    if (inFence) return;
+    // A `VariantProps<typeof x>` that reaches the page means the cva behind it was not resolved,
+    // so the page tells a reader to consult a module-private const they cannot open. The values
+    // belong in the table; see `applyCvaVariants`.
+    if (line.includes('VariantProps<')) {
+      violations.push(
+        `${componentName}: line ${index + 1} publishes an unresolved \`VariantProps<...>\`; ` +
+        'the variants it names must be read from the `cva()` call and published as props.',
+      );
+    }
+    if (line.trimStart().startsWith('|')) return;
+    if (!line.includes('\\|')) return;
+    violations.push(
+      `${componentName}: line ${index + 1} publishes a literal \\| outside a table row ` +
+      '(`escapeCell` is for table cells; use `formatTypeText` for prose).',
+    );
+  });
 
   return violations;
 }
@@ -262,7 +329,10 @@ export function collectPublicComponentReferenceViolations(rootDir = ROOT_DIR) {
   }
 
 
-  violations.push(...collectPropDescriptionViolations(buildPublicComponentManifest(rootDir)));
+  violations.push(...collectPropDescriptionViolations(manifest));
+  for (const component of manifest) {
+    violations.push(...collectRenderedPageViolations(renderPublicComponentPage(component), component.name));
+  }
   return violations;
 }
 
@@ -322,13 +392,22 @@ export function routedSurfacesFor(component, rows) {
 // right after `<`/`(` or right before `>`/`)`. Both the whitespace collapse and that
 // bracket-adjacent trim happen here so every caller — table cells and the prose "Also carries…"
 // line alike — gets the same normalization instead of only the line that was fixed first.
-function escapeCell(text) {
+// Normalizes a type's text for publication: collapses the line breaks a source type is wrapped
+// at and tightens the spacing inside brackets. Deliberately does NOT escape `|`.
+function formatTypeText(text) {
   return String(text ?? '')
     .replace(/\s+/gu, ' ')
     .trim()
     .replace(/([<(])\s+/gu, '$1')
-    .replace(/\s+([>)])/gu, '$1')
-    .replace(/\|/g, '\\|');
+    .replace(/\s+([>)])/gu, '$1');
+}
+
+// A `|` inside a Markdown table row would end the cell, so it must be escaped there — and only
+// there. The same escape in a paragraph publishes a literal backslash: applying this to the
+// bases line put `Omit<PressableProps, 'role' \| 'children'>` on 34 of the 62 component pages.
+// Use this for table cells; use `formatTypeText` for prose.
+function escapeCell(text) {
+  return formatTypeText(text).replace(/\|/gu, '\\|');
 }
 
 function renderFieldRow(field) {
@@ -364,7 +443,7 @@ function renderBasesLine(bases, rootDir = ROOT_DIR) {
   if (!bases.length) return '';
   const owners = getPublicTypeOwnerIndex(rootDir);
   const rendered = bases.map((base) => {
-    const text = escapeCell(base);
+    const text = formatTypeText(base);
     const typeName = extractOmitPickOrBareTypeName(base);
     const owner = typeName ? owners.get(typeName) : undefined;
     return { text, owner };
@@ -431,15 +510,15 @@ function renderPlatformDiffBullets(diff) {
   };
   const inheritedNote = (otherPlatform, otherBase) =>
     otherBase
-      ? ` — on ${otherPlatform} it may come from \`${escapeCell(otherBase)}\`, which this table does not reproduce`
+      ? ` — on ${otherPlatform} it may come from \`${formatTypeText(otherBase)}\`, which this table does not reproduce`
       : ` — whether ${otherPlatform} carries it through its base type is not determined here`;
 
   for (const field of diff.nativeOnly) {
-    const withDefault = field.default !== undefined ? ` (native default \`${escapeCell(field.default)}\`)` : '';
+    const withDefault = field.default !== undefined ? ` (native default \`${formatTypeText(field.default)}\`)` : '';
     lines.push(`- \`${field.name}\` is declared explicitly on native${withDefault}${inheritedNote('Web', bases.web)}.`);
   }
   for (const field of diff.webOnly) {
-    const withDefault = field.default !== undefined ? ` (Web default \`${escapeCell(field.default)}\`)` : '';
+    const withDefault = field.default !== undefined ? ` (Web default \`${formatTypeText(field.default)}\`)` : '';
     lines.push(`- \`${field.name}\` is declared explicitly on Web${withDefault}${inheritedNote('native', bases.native)}.`);
   }
   const inert = new Set(diff.inert ?? []);
@@ -453,12 +532,12 @@ function renderPlatformDiffBullets(diff) {
     // so only the type note is suppressed, not the whole prop.
     if (change.typeChanged && !inert.has(change.name)) {
       lines.push(
-        `- \`${change.name}\` type differs: native \`${escapeCell(change.native.type)}\`, Web \`${escapeCell(change.web.type)}\`.`,
+        `- \`${change.name}\` type differs: native \`${formatTypeText(change.native.type)}\`, Web \`${formatTypeText(change.web.type)}\`.`,
       );
     }
     if (change.defaultChanged) {
-      const nativeDefault = change.native.default !== undefined ? `\`${escapeCell(change.native.default)}\`` : 'no default';
-      const webDefault = change.web.default !== undefined ? `\`${escapeCell(change.web.default)}\`` : 'no default';
+      const nativeDefault = change.native.default !== undefined ? `\`${formatTypeText(change.native.default)}\`` : 'no default';
+      const webDefault = change.web.default !== undefined ? `\`${formatTypeText(change.web.default)}\`` : 'no default';
       lines.push(`- \`${change.name}\` default differs: native ${nativeDefault}, Web ${webDefault}.`);
     }
     if (change.optionalChanged) {
@@ -468,8 +547,8 @@ function renderPlatformDiffBullets(diff) {
     }
   }
   if (diff.basesChanged) {
-    const nativeBases = diff.nativeBases.length ? diff.nativeBases.map((base) => `\`${escapeCell(base)}\``).join(' and ') : '_none_';
-    const webBases = diff.webBases.length ? diff.webBases.map((base) => `\`${escapeCell(base)}\``).join(' and ') : '_none_';
+    const nativeBases = diff.nativeBases.length ? diff.nativeBases.map((base) => `\`${formatTypeText(base)}\``).join(' and ') : '_none_';
+    const webBases = diff.webBases.length ? diff.webBases.map((base) => `\`${formatTypeText(base)}\``).join(' and ') : '_none_';
     lines.push(`- Base type differs: native carries ${nativeBases}; Web carries ${webBases}.`);
   }
   return lines;
@@ -528,7 +607,7 @@ function renderRelatedTypeEntry(entry) {
   if (entry.kind === 'literal-union') {
     return `- \`${entry.name}\` — one of ${entry.members.map((member) => `\`'${member}'\``).join(', ')}.`;
   }
-  return `- \`${entry.name}\` — alias of \`${escapeCell(entry.aliasOf)}\`.`;
+  return `- \`${entry.name}\` — alias of \`${formatTypeText(entry.aliasOf)}\`.`;
 }
 
 function renderTypeDocs(typeDocs) {
