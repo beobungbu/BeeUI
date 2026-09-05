@@ -963,8 +963,12 @@ function applyCvaVariants(shape, cvaByIdentifier) {
         // boilerplate paragraph repeated across all 62 component pages and says nothing about any
         // value, so those rows carried a pointer that answered nothing. The classes each value
         // applies are literals in the `cva()` call, so name the file that holds them.
+        // Named after the prop, not just the cva: one sentence per identifier meant `size` and
+        // `variant` shared a description although they select different things. Those 35 rows were
+        // the only place in the reference where one sentence covered two different props — every
+        // other shared sentence is one prop name whose meaning genuinely is identical everywhere.
         description:
-          `Selects one of \`${identifier}\`'s preset style sets, declared in ` +
+          `Chooses this element's \`${name}\` from \`${identifier}\`'s presets, declared in ` +
           `\`${declaration.sourcePath}\` — the classes each value applies are there.`,
       });
     }

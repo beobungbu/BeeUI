@@ -55,8 +55,8 @@ Stateless elevated/outlined surface driven by a `variant` and spacing prop; no c
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `padding` | `'none' \| 'sm' \| 'md' \| 'lg'` | `'md'` | Selects one of `cardVariants`'s preset style sets, declared in `packages/ui/src/components/card.tsx` — the classes each value applies are there. |
-| `variant` | `'surface' \| 'outlined' \| 'raised' \| 'muted'` | `'outlined'` | Selects one of `cardVariants`'s preset style sets, declared in `packages/ui/src/components/card.tsx` — the classes each value applies are there. |
+| `padding` | `'none' \| 'sm' \| 'md' \| 'lg'` | `'md'` | Chooses this element's `padding` from `cardVariants`'s presets, declared in `packages/ui/src/components/card.tsx` — the classes each value applies are there. |
+| `variant` | `'surface' \| 'outlined' \| 'raised' \| 'muted'` | `'outlined'` | Chooses this element's `variant` from `cardVariants`'s presets, declared in `packages/ui/src/components/card.tsx` — the classes each value applies are there. |
 
 Also carries every prop of `ViewProps` — that upstream contract is not reproduced here.
 

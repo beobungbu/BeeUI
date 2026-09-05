@@ -67,12 +67,12 @@ Also carries every prop of `Omit<StackProps, 'direction'>` — documented on the
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `align` | `'start' \| 'center' \| 'end' \| 'stretch'` | `'stretch'` | Selects one of `stackVariants`'s preset style sets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
+| `align` | `'start' \| 'center' \| 'end' \| 'stretch'` | `'stretch'` | Chooses this element's `align` from `stackVariants`'s presets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `direction` | `'horizontal' \| 'vertical'` | `'vertical'` | Selects one of `stackVariants`'s preset style sets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
-| `gap` | `'none' \| 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Selects one of `stackVariants`'s preset style sets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
-| `justify` | `'start' \| 'center' \| 'end' \| 'between' \| 'around' \| 'evenly'` | `'start'` | Selects one of `stackVariants`'s preset style sets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
-| `wrap` | `boolean` | `false` | Selects one of `stackVariants`'s preset style sets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
+| `direction` | `'horizontal' \| 'vertical'` | `'vertical'` | Chooses this element's `direction` from `stackVariants`'s presets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
+| `gap` | `'none' \| 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Chooses this element's `gap` from `stackVariants`'s presets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
+| `justify` | `'start' \| 'center' \| 'end' \| 'between' \| 'around' \| 'evenly'` | `'start'` | Chooses this element's `justify` from `stackVariants`'s presets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
+| `wrap` | `boolean` | `false` | Chooses this element's `wrap` from `stackVariants`'s presets, declared in `packages/ui/src/components/stack.tsx` — the classes each value applies are there. |
 
 Also carries every prop of `ViewProps` — that upstream contract is not reproduced here.
 

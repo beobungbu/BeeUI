@@ -166,8 +166,7 @@ export const PROP_DESCRIPTION_FLOOR = 624;
 // growth mode — 200 new props each reusing an existing sentence verbatim keeps `distinct` at 280
 // and passes. The ratio catches that, because every added duplicate lowers it. Neither alone is
 // enough; that is why both are here.
-export const PROP_DISTINCT_DESCRIPTION_FLOOR = 280;
-export const PROP_DISTINCT_DESCRIPTION_RATIO_FLOOR = 0.44; // measured 280/624 = 0.4487
+export const PROP_DISTINCT_DESCRIPTION_FLOOR = 288;
 
 // Walks a resolved type entry the same way `applyGlossary` and the renderer do:
 // a `union` entry carries no `fields` of its own, only `variants`, each of which is
@@ -192,6 +191,7 @@ export function collectPropDescriptionCoverage(manifest) {
   let total = 0;
   let described = 0;
   const seen = new Set();
+  const namesByDescription = new Map();
   for (const component of manifest) {
     for (const entry of component.typeDocs ?? []) {
       walkShapeFields(entry, (field) => {
@@ -199,14 +199,22 @@ export function collectPropDescriptionCoverage(manifest) {
         if (!field.description) return;
         described += 1;
         seen.add(field.description);
+        const names = namesByDescription.get(field.description) ?? new Set();
+        names.add(field.name);
+        namesByDescription.set(field.description, names);
       });
     }
   }
-  return { described, distinct: seen.size, total };
+  // A sentence shared by rows of the SAME prop name is correct — `className` means the same thing
+  // on all 90 families that accept it. A sentence covering two DIFFERENT props is not: it says one
+  // thing about two things. That distinction is the real defect, and it needs no threshold.
+  const sharedAcrossProps = [...namesByDescription.values()].filter((names) => names.size > 1).length;
+
+  return { described, distinct: seen.size, sharedAcrossProps, total };
 }
 
 export function collectPropDescriptionViolations(manifest) {
-  const { described, distinct, total } = collectPropDescriptionCoverage(manifest);
+  const { described, distinct, sharedAcrossProps, total } = collectPropDescriptionCoverage(manifest);
   const remedy =
     'Document the prop in `packages/ui/src` with JSDoc, or add it to docs/prop-glossary.json if ' +
     'its meaning is identical on every family that declares it.';
@@ -232,12 +240,11 @@ export function collectPropDescriptionViolations(manifest) {
     );
   }
 
-  const ratio = total === 0 ? 1 : distinct / total;
-  if (ratio < PROP_DISTINCT_DESCRIPTION_RATIO_FLOOR) {
+  if (sharedAcrossProps > 0) {
     violations.push(
-      `only ${distinct} of ${total} prop descriptions are different (${ratio.toFixed(3)}, floor ` +
-      `${PROP_DISTINCT_DESCRIPTION_RATIO_FLOOR}). Props were added faster than things said about ` +
-      'them; write a description for the new props rather than reusing an existing sentence.',
+      `${sharedAcrossProps} description(s) are shared by props with different names. A sentence ` +
+      'may be reused across families for the same prop, which is what the glossary is for, but a ' +
+      'sentence covering two different props says one thing about two things — write one per prop.',
     );
   }
 

@@ -58,7 +58,7 @@ Stateless semantic status label; `variant` selects the paired foreground/backgro
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `variant` | `'primary' \| 'secondary' \| 'success' \| 'warning' \| 'destructive' \| 'info' \| 'outline'` | `'primary'` | Selects one of `badgeVariants`'s preset style sets, declared in `packages/ui/src/components/badge.tsx` — the classes each value applies are there. |
+| `variant` | `'primary' \| 'secondary' \| 'success' \| 'warning' \| 'destructive' \| 'info' \| 'outline'` | `'primary'` | Chooses this element's `variant` from `badgeVariants`'s presets, declared in `packages/ui/src/components/badge.tsx` — the classes each value applies are there. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 

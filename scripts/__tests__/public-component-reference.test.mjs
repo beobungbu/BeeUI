@@ -26,6 +26,7 @@ import {
   collectRenderedPageViolations,
   collectPropDescriptionViolations,
   PROP_DESCRIPTION_FLOOR,
+  PROP_DISTINCT_DESCRIPTION_FLOOR,
   collectPublicComponentReferenceViolations,
   renderPublicComponentIndex,
   renderPublicComponentPage,
@@ -957,7 +958,7 @@ test('prop-description coverage counts union variant fields', () => {
     },
   ];
 
-  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 1, distinct: 1, total: 2 });
+  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 1, distinct: 1, sharedAcrossProps: 0, total: 2 });
 });
 
 test('prop-description coverage reaches variants nested inside a variant', () => {
@@ -985,7 +986,7 @@ test('prop-description coverage reaches variants nested inside a variant', () =>
     },
   ];
 
-  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 0, distinct: 0, total: 1 });
+  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 0, distinct: 0, sharedAcrossProps: 0, total: 1 });
 });
 
 // The floor is only meaningful if it is the real published total. A floor set below
@@ -1205,7 +1206,7 @@ test('prop-description coverage reports how many descriptions are distinct', () 
     },
   ];
 
-  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 3, distinct: 2, total: 3 });
+  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 3, distinct: 2, sharedAcrossProps: 1, total: 3 });
 });
 
 
@@ -1273,24 +1274,44 @@ test('a manifest whose descriptions are all one sentence is a violation', () => 
 });
 
 
-// The absolute distinct floor passes when props grow while reusing existing sentences — exactly
-// how 22 props entered the total on one repeated line. The ratio is what catches that.
-test('adding props that reuse an existing description is a violation', () => {
-  const base = Array.from({ length: 624 }, (unused, index) => ({
-    name: `p${index}`,
-    description: `Sentence ${index % 280}.`,
-  }));
-  const grown = [
-    ...base,
-    ...Array.from({ length: 200 }, (unused, index) => ({
-      name: `added${index}`,
-      description: 'Sentence 0.',
+// A sentence reused for the SAME prop across families is correct — that is what the glossary is
+// for. A sentence covering two DIFFERENT props is not, and it needs no threshold to detect.
+test('reusing a sentence for the same prop across families is not a violation', () => {
+  const fields = [
+    ...Array.from({ length: 400 }, () => ({ name: 'className', description: 'Extra utility classes.' })),
+    ...Array.from({ length: PROP_DISTINCT_DESCRIPTION_FLOOR }, (unused, index) => ({
+      name: `p${index}`,
+      description: `Sentence ${index}.`,
     })),
   ];
 
-  const violations = collectPropDescriptionViolations([{ typeDocs: [{ kind: 'object', fields: grown }] }]);
+  const violations = collectPropDescriptionViolations([{ typeDocs: [{ kind: 'object', fields }] }]);
 
-  assert.match(violations[0], /only 280 of 824 prop descriptions are different/u);
+  assert.deepEqual(violations.filter((entry) => /different names/u.test(entry)), []);
+});
+
+test('one sentence covering two different props is a violation', () => {
+  const fields = [
+    { name: 'size', description: 'Selects a preset.' },
+    { name: 'variant', description: 'Selects a preset.' },
+    ...Array.from({ length: PROP_DISTINCT_DESCRIPTION_FLOOR }, (unused, index) => ({
+      name: `p${index}`,
+      description: `Sentence ${index}.`,
+    })),
+  ];
+
+  const violations = collectPropDescriptionViolations([{ typeDocs: [{ kind: 'object', fields }] }]);
+
+  assert.match(
+    violations.find((entry) => /different names/u.test(entry)),
+    /1 description\(s\) are shared by props with different names/u,
+  );
+});
+
+test('no published description covers two different props', () => {
+  const { sharedAcrossProps } = collectPropDescriptionCoverage(buildPublicComponentManifest(REPO_ROOT));
+
+  assert.equal(sharedAcrossProps, 0);
 });
 
 // forwardRef((props, ref) => { const { x = 'lit' } = props }) — the shape that left 30 rows blank.

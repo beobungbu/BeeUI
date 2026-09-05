@@ -60,8 +60,8 @@ Stateless semantic typography primitive; `variant`/`tone` apply typed styling, a
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `family` | `FontFamily` | — | `'mono'` renders the text in the system-monospace fallback stack (e.g. for reference codes/IDs). Opt-in only — omitting it preserves the inherited sans/system font. |
 | `numeric` | `NumericVariant` | — | `'tabular'` opts numeric content into equal-width figures so columns of amounts/KPIs/timers align. Omit for normal proportional figures. |
-| `tone` | `'default' \| 'muted' \| 'subtle' \| 'primary' \| 'destructive' \| 'success' \| 'warning' \| 'info'` | `'default'` | Selects one of `textVariants`'s preset style sets, declared in `packages/ui/src/components/text.tsx` — the classes each value applies are there. |
-| `variant` | `'display' \| 'title' \| 'heading' \| 'body' \| 'label' \| 'caption'` | `'body'` | Selects one of `textVariants`'s preset style sets, declared in `packages/ui/src/components/text.tsx` — the classes each value applies are there. |
+| `tone` | `'default' \| 'muted' \| 'subtle' \| 'primary' \| 'destructive' \| 'success' \| 'warning' \| 'info'` | `'default'` | Chooses this element's `tone` from `textVariants`'s presets, declared in `packages/ui/src/components/text.tsx` — the classes each value applies are there. |
+| `variant` | `'display' \| 'title' \| 'heading' \| 'body' \| 'label' \| 'caption'` | `'body'` | Chooses this element's `variant` from `textVariants`'s presets, declared in `packages/ui/src/components/text.tsx` — the classes each value applies are there. |
 
 Also carries every prop of `RNTextProps` — that upstream contract is not reproduced here.
 
