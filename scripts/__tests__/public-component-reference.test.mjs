@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import {
   buildTypeIndex,
   cvaVariantType,
+  extractAccessibilityFacts,
   extractCvaVariants,
   variantsIdentifierFromBase,
   diffPlatformObjectShape,
@@ -1389,4 +1390,51 @@ test('no generated page still points at Styling and theming for variant values',
   );
 
   assert.deepEqual(offenders.map((component) => component.name), []);
+});
+
+
+// The Accessibility section was one identical paragraph on all 62 pages asserting that roles and
+// states "remain component-specific" — a page contradicting itself.
+test('accessibility facts are read from JSX, not from comments or selector strings', () => {
+  const source = `
+    // react-native-web always renders \`role="progressbar"\` here, which is not ours to claim.
+    const q = '[role="cell"][tabindex="0"]';
+    export const Thing = () => (
+      <View role="listitem" accessibilityState={{ checked: true, disabled: false }}>
+        <Inner aria-expanded={open} />
+      </View>
+    );
+  `;
+
+  const { roles, states } = extractAccessibilityFacts([{ path: 'thing.tsx', source }]);
+
+  assert.deepEqual(roles, ['listitem']);
+  assert.deepEqual(states, ['checked', 'disabled', 'expanded']);
+});
+
+// `role={decorative ? undefined : 'separator'}` assigns a real role on one branch.
+test('a role assigned through a conditional expression is read', () => {
+  const source = "export const S = () => <View role={decorative ? undefined : 'separator'} />;";
+
+  assert.deepEqual(extractAccessibilityFacts([{ path: 's.tsx', source }]).roles, ['separator']);
+});
+
+test('a role coming from a variable claims nothing', () => {
+  const source = 'export const S = () => <View role={someRole} />;';
+
+  assert.deepEqual(extractAccessibilityFacts([{ path: 's.tsx', source }]).roles, []);
+});
+
+test('every component page states the roles that family assigns', () => {
+  const pages = buildPublicComponentManifest(REPO_ROOT).map((component) => ({
+    name: component.name,
+    page: renderPublicComponentPage(component),
+  }));
+
+  for (const { name, page } of pages) {
+    assert.match(page, /\*\*Roles this family assigns:\*\*/u, `${name} lost its roles line`);
+  }
+  // The section used to be one body across all 62 pages while claiming to be component-specific.
+  const bodies = new Set(pages.map(({ page }) => page.split('## Accessibility')[1].split('## ')[0]));
+  assert.ok(bodies.size > 20, `expected differentiated accessibility sections, got ${bodies.size}`);
 });

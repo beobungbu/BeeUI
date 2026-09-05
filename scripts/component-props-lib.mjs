@@ -512,6 +512,59 @@ export function cvaVariantType(values) {
   return { quote, type: isBoolean ? 'boolean' : values.map(quote).join(' | ') };
 }
 
+// Per-component accessibility facts, read from the JSX the family actually renders.
+//
+// The Accessibility section was one identical paragraph on all 62 pages that asserted roles and
+// states "remain component-specific" — a page contradicting itself, since nothing on it was
+// specific to the component. These are the two facts that can be derived honestly: the roles this
+// family assigns to its own elements, and the accessibility states it manages. Read from the AST
+// rather than by matching text, so a role named in a comment or a string is not published as one.
+export function extractAccessibilityFacts(files) {
+  const roles = new Set();
+  const states = new Set();
+
+  for (const { path: filePath, source } of files) {
+    const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, scriptKindFor(filePath));
+    walk(sourceFile, (node) => {
+      if (!ts.isJsxAttribute(node) || !node.name || !ts.isIdentifier(node.name)) return;
+      const attribute = node.name.text;
+
+      if (attribute === 'role' || attribute === 'accessibilityRole') {
+        if (!node.initializer) return;
+        if (ts.isStringLiteralLike(node.initializer)) {
+          roles.add(node.initializer.text);
+          return;
+        }
+        // `role={decorative ? undefined : 'separator'}` assigns a real role on one branch. Collect
+        // every literal the expression can produce; `role={someVariable}` correctly yields none.
+        if (ts.isJsxExpression(node.initializer) && node.initializer.expression) {
+          walk(node.initializer.expression, (inner) => {
+            if (ts.isStringLiteralLike(inner)) roles.add(inner.text);
+          });
+        }
+        return;
+      }
+
+      // `aria-checked={…}` on Web, `accessibilityState={{ checked: … }}` on native.
+      if (attribute.startsWith('aria-')) {
+        states.add(attribute.slice('aria-'.length));
+        return;
+      }
+      if (attribute !== 'accessibilityState') return;
+      const value = node.initializer;
+      if (!value || !ts.isJsxExpression(value) || !value.expression) return;
+      if (!ts.isObjectLiteralExpression(value.expression)) return;
+      for (const property of value.expression.properties) {
+        if (property.name && (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))) {
+          states.add(property.name.text);
+        }
+      }
+    });
+  }
+
+  return { roles: [...roles].sort(), states: [...states].sort() };
+}
+
 export function extractCvaVariants(files) {
   const byIdentifier = new Map();
 

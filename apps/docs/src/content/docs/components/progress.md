@@ -83,7 +83,10 @@ The same public family is exposed across the supported target matrix; meaningful
 
 ## Accessibility
 
-Use the [Accessibility overview](/docs/accessibility/), [RTL/localization](/docs/accessibility/rtl/), and [Large text & zoom](/docs/accessibility/large-text/) alongside this family. Roles/states, keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL, and reduced-motion expectations remain component-specific; BeeUI does not claim universal accessibility certification from automated tests.
+- **Roles this family assigns:** `progressbar` — set by the components themselves, not by the caller.
+- **Accessibility states it manages:** none; this family exposes no state to assistive technology beyond its content.
+
+Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
 ## Styling and theming
 

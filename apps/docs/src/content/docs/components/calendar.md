@@ -98,7 +98,10 @@ This family has platform-split source files. The bundler selects the native/Web 
 
 ## Accessibility
 
-Use the [Accessibility overview](/docs/accessibility/), [RTL/localization](/docs/accessibility/rtl/), and [Large text & zoom](/docs/accessibility/large-text/) alongside this family. Roles/states, keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL, and reduced-motion expectations remain component-specific; BeeUI does not claim universal accessibility certification from automated tests.
+- **Roles this family assigns:** `cell`, `grid`, `row` — set by the components themselves, not by the caller.
+- **Accessibility states it manages:** `disabled`, `hidden`, `selected`.
+
+Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
 ## Styling and theming
 
