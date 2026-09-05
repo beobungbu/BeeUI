@@ -55,10 +55,10 @@ Controlled boolean/indeterminate `checked`/`onCheckedChange` checkbox; enabling 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `checked` | `CheckboxValue` | `false` | — |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `indicatorClassName` | `string` | — | — |
-| `label` | `string` | — | — |
-| `labelClassName` | `string` | — | — |
+| `label` | `string` | — | The visible text naming this element, and the accessible name unless one is set explicitly. |
+| `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `onCheckedChange` | `(checked: boolean) => void` | — | — |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children' \| 'onPress'>` — that upstream contract is not reproduced here.

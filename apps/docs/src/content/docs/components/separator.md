@@ -53,7 +53,7 @@ Stateless decorative-by-default divider; `decorative={false}` makes it semantic,
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `decorative` | `boolean` | `true` | — |
 | `orientation` | `'horizontal' \| 'vertical'` | `'horizontal'` | — |
 

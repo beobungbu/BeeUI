@@ -71,19 +71,19 @@ Also carries every prop of `Omit<DropdownMenuItemBaseProps, 'closeOnSelect' \| '
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `align` | `DropdownMenuAlign` | `'start'` | — |
-| `alignOffset` | `number` | `0` | — |
-| `avoidKeyboard` | `boolean` | `false` | — |
-| `avoidSafeArea` | `boolean` | `true` | — |
-| `closeOnOutsidePress` | `boolean` | `true` | — |
-| `collisionPadding` | `DropdownMenuCollisionPadding` | `8` | — |
+| `align` | `DropdownMenuAlign` | `'start'` | Where the overlay sits along the anchor's cross axis — `'start'`, `'center'` or `'end'`. The anchored-overlay kernel may flip it when the preferred placement would collide with the viewport. |
+| `alignOffset` | `number` | `0` | Pixels to shift the overlay along the alignment axis, after `align` is resolved. |
+| `avoidKeyboard` | `boolean` | `false` | Whether the overlay repositions to stay clear of the on-screen keyboard. |
+| `avoidSafeArea` | `boolean` | `true` | Whether the overlay keeps clear of the platform safe-area insets — notches, home indicators and status bars. |
+| `closeOnOutsidePress` | `boolean` | `true` | Whether a press outside the overlay dismisses it. |
+| `collisionPadding` | `DropdownMenuCollisionPadding` | `8` | Minimum distance to keep from the viewport edges when the kernel repositions or flips the overlay. A number applies to every edge; an object sets edges individually. |
 | `direction` | `DropdownMenuDirection` | — | — |
 | `flip` | `boolean` | `true` | — |
 | `outsidePressProps` | `Omit<PressableProps, 'children' \| 'onPress' \| 'style'>` | — | — |
 | `outsidePressTestID` | `string` | — | — |
 | `placement` | `DropdownMenuPlacement` | `'bottom'` | — |
 | `shift` | `boolean` | `true` | — |
-| `sideOffset` | `number` | `8` | — |
+| `sideOffset` | `number` | `8` | Pixels of gap between the anchor and the overlay, along the placement side. |
 
 Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract is not reproduced here.
 
@@ -93,8 +93,8 @@ Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract 
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `closeOnSelect` | `boolean` | `true` | — |
 | `onPress` | `PressableProps['onPress']` | — | — |
 | `onSelect` | `() => void` | — | — |
@@ -121,7 +121,7 @@ one of the following mutually exclusive variants:
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `defaultOpen` | `never` | `false` | — |
 | `onOpenChange` **(required)** | `(open: boolean) => void` | — | — |
 | `open` **(required)** | `boolean` | — | — |
@@ -130,7 +130,7 @@ one of the following mutually exclusive variants:
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `defaultOpen` | `boolean` | `false` | — |
 | `onOpenChange` | `(open: boolean) => void` | — | — |
 | `open` | `undefined` | — | — |
@@ -170,9 +170,9 @@ Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract 
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
-| `labelClassName` | `string` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `loading` | `boolean` | — | — |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.

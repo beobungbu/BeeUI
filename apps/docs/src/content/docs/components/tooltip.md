@@ -55,18 +55,18 @@ Controlled (`open`+`onOpenChange`) or uncontrolled (`defaultOpen`) non-interacti
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `align` | `TooltipAlign` | `'center'` | — |
-| `alignOffset` | `number` | `0` | — |
-| `avoidKeyboard` | `boolean` | `false` | — |
-| `avoidSafeArea` | `boolean` | `true` | — |
-| `children` | `React.ReactNode` | — | — |
+| `align` | `TooltipAlign` | `'center'` | Where the overlay sits along the anchor's cross axis — `'start'`, `'center'` or `'end'`. The anchored-overlay kernel may flip it when the preferred placement would collide with the viewport. |
+| `alignOffset` | `number` | `0` | Pixels to shift the overlay along the alignment axis, after `align` is resolved. |
+| `avoidKeyboard` | `boolean` | `false` | Whether the overlay repositions to stay clear of the on-screen keyboard. |
+| `avoidSafeArea` | `boolean` | `true` | Whether the overlay keeps clear of the platform safe-area insets — notches, home indicators and status bars. |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `style` | `StyleProp<ViewStyle>` | — | — |
-| `collisionPadding` | `TooltipCollisionPadding` | `8` | — |
+| `collisionPadding` | `TooltipCollisionPadding` | `8` | Minimum distance to keep from the viewport edges when the kernel repositions or flips the overlay. A number applies to every edge; an object sets edges individually. |
 | `direction` | `TooltipDirection` | — | — |
 | `flip` | `boolean` | `true` | — |
 | `placement` | `TooltipPlacement` | `'top'` | — |
 | `shift` | `boolean` | `true` | — |
-| `sideOffset` | `number` | `8` | — |
+| `sideOffset` | `number` | `8` | Pixels of gap between the anchor and the overlay, along the placement side. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityViewIsModal' \| 'role' \| 'children' \| 'style'>` — that upstream contract is not reproduced here.
 
@@ -78,7 +78,7 @@ one of the following mutually exclusive variants:
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `openDelay` | `number` | `500` | Hover-only open delay in milliseconds (default **500**, ADR-005). |
 | `closeDelay` | `number` | `300` | Hover-out-only close delay in milliseconds (default **300**, ADR-005) — lets a pointer travel from the trigger onto `TooltipContent` without closing mid-transit (WCAG 1.4.13 "hoverable"). |
 | `defaultOpen` | `never` | `false` | — |
@@ -89,7 +89,7 @@ one of the following mutually exclusive variants:
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `openDelay` | `number` | `500` | Hover-only open delay in milliseconds (default **500**, ADR-005). |
 | `closeDelay` | `number` | `300` | Hover-out-only close delay in milliseconds (default **300**, ADR-005) — lets a pointer travel from the trigger onto `TooltipContent` without closing mid-transit (WCAG 1.4.13 "hoverable"). |
 | `defaultOpen` | `boolean` | `false` | — |
@@ -102,9 +102,9 @@ one of the following mutually exclusive variants:
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
-| `labelClassName` | `string` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `loading` | `boolean` | — | — |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.

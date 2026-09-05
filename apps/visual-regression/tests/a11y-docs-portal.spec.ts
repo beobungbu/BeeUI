@@ -131,42 +131,41 @@ test.describe('Documentation portal: reflow, zoom, keyboard (WBS-H072)', () => {
       expect(state.overflow, `${path} scrolls horizontally at 200% zoom`).toBeLessThanOrEqual(1);
     });
 
-    // WCAG 2.4.1 Bypass Blocks. The sidebar carries ~130 links, so brute-force tabbing to
-    // `<main>` is not the test — that is what a skip link exists for. An earlier version of
-    // this test pressed Tab 40 times, failed, and was wrong about the site: the skip link is
-    // the first focusable element on every page and every stop has a visible indicator.
+    // WCAG 2.4.1 Bypass Blocks. Asserted on DOM order, not by pressing Tab: WebKit does not
+    // move focus to links or buttons at all unless macOS "Full Keyboard Access" is on — probed
+    // and confirmed, the first Tab there lands on a `<select>`. A Tab-based test therefore
+    // measures the browser's default, not the page. What WCAG requires is structural: a
+    // mechanism to skip the navigation, ahead of it, pointing into the main content.
     test(`a skip link bypasses the navigation: ${path}`, async ({ page }) => {
       await page.setViewportSize({ height: 800, width: 1280 });
       await page.goto(`${docsBaseUrl}${path}`, { waitUntil: 'load' });
 
-      await page.keyboard.press('Tab');
-      const first = await page.evaluate(() => {
-        const el = document.activeElement;
-        if (!(el instanceof HTMLAnchorElement)) return null;
-        const style = getComputedStyle(el);
+      const skip = await page.evaluate(() => {
+        const focusable = Array.from(
+          document.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])'),
+        ).filter((el) => el.offsetParent !== null || el.getClientRects().length > 0);
+        const first = focusable[0];
+        if (!(first instanceof HTMLAnchorElement)) return { tag: first?.tagName.toLowerCase() ?? 'none' };
+        const href = first.getAttribute('href') ?? '';
+        const target = href.startsWith('#') ? document.querySelector(href) : null;
         return {
-          focusVisible: style.outlineStyle !== 'none' || style.boxShadow !== 'none',
-          href: el.getAttribute('href') ?? '',
-          text: (el.textContent ?? '').trim(),
+          href,
+          intoMain: Boolean(target && (target.tagName.toLowerCase() === 'main' || target.closest('main'))),
+          tag: 'a',
+          text: (first.textContent ?? '').trim(),
         };
       });
 
-      expect(first, `${path}: the first focusable element is not a link`).not.toBeNull();
-      expect(first?.href.startsWith('#'), `${path}: first stop "${first?.text}" is not an in-page skip link`).toBe(true);
-      expect(first?.focusVisible, `${path}: the skip link has no visible focus indicator`).toBe(true);
-
-      // The target must exist and be the main content, or the link bypasses nothing.
-      const target = await page.evaluate((href) => {
-        const el = document.querySelector(href);
-        if (!el) return null;
-        return { inMain: el.tagName.toLowerCase() === 'main' || Boolean(el.closest('main')) };
-      }, first?.href ?? '#');
-      expect(target, `${path}: skip link points at ${first?.href}, which does not exist`).not.toBeNull();
-      expect(target?.inMain, `${path}: skip link target is outside <main>`).toBe(true);
+      expect(skip.tag, `${path}: the first focusable element is <${skip.tag}>, not a skip link`).toBe('a');
+      expect(skip.href?.startsWith('#'), `${path}: first focusable "${skip.text}" is not an in-page link`).toBe(true);
+      expect(skip.intoMain, `${path}: skip link ${skip.href} does not resolve into <main>`).toBe(true);
     });
 
-    // Every stop a keyboard user lands on must be visible to a sighted keyboard user.
-    test(`focus is visible on every stop: ${path}`, async ({ page }) => {
+    // Every stop a keyboard user lands on must be visible to a sighted keyboard user. Skipped on
+    // WebKit, where Tab reaches only form controls by default, so the traversal would measure
+    // macOS keyboard settings rather than this page.
+    test(`focus is visible on every stop: ${path}`, async ({ browserName, page }) => {
+      test.skip(browserName === 'webkit', 'WebKit tabs only between form controls unless Full Keyboard Access is on');
       await page.setViewportSize({ height: 800, width: 1280 });
       await page.goto(`${docsBaseUrl}${path}`, { waitUntil: 'load' });
 

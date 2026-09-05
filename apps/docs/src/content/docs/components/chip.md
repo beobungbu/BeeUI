@@ -54,8 +54,8 @@ Standalone toggle (`selected`/`onSelectedChange`) or, nested in `ChipGroup`, a v
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `defaultValue` | `ChipGroupValue` | — | — |
 | `disabled` | `boolean` | `false` | — |
 | `onValueChange` | `(value: ChipGroupValue) => void` | — | — |
@@ -68,10 +68,10 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `defaultSelected` | `boolean` | `false` | — |
-| `labelClassName` | `string` | — | — |
+| `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `onSelectedChange` | `(selected: boolean) => void` | — | — |
 | `selected` | `boolean` | — | — |
 | `value` | `string` | — | — |

@@ -55,7 +55,7 @@ Controlled `value`/`onValueChange` (`{ date, time } | null`) field combining dat
 | --- | --- | --- | --- |
 | `accessibilityLabel` | `string` | — | Accessible name for the trigger. |
 | `align` | `DateTimePickerAlign` | — | Web-only: `Popover` content alignment relative to the trigger. |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `clearAccessibilityLabel` | `string` | — | — |
 | `clearable` | `boolean` | — | Shows a clear affordance when a value is selected. |
 | `closeOnOutsidePress` | `boolean` | — | Web-only: dismiss the `Popover` on an outside press. |
@@ -85,7 +85,7 @@ Controlled `value`/`onValueChange` (`{ date, time } | null`) field combining dat
 | `shift` | `boolean` | — | Web-only: `Popover` collision-shift. |
 | `sideOffset` | `number` | — | Web-only: `Popover` offset from the trigger. |
 | `style` | `StyleProp<ViewStyle>` | — | — |
-| `testID` | `string` | — | — |
+| `testID` | `string` | — | Test identifier. Forwarded to the native `testID` and, on Web, emitted as `data-testid`. |
 | `value` **(required)** | `DateTimePickerValue \| null` | — | Controlled selected date+time (ADR-008) — single-date selection only for 1.0. |
 | `weekStartsOn` | `CalendarWeekStartsOn` | — | — |
 

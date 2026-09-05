@@ -54,10 +54,10 @@ Stateless title/description/action/content composition for screen sections; no c
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `action` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
-| `description` | `React.ReactNode` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
 | `descriptionClassName` | `string` | — | — |
-| `title` | `React.ReactNode` | — | — |
+| `title` | `React.ReactNode` | — | The primary heading text for this surface. |
 | `titleClassName` | `string` | — | — |
 
 Also carries every prop of `ViewProps` — that upstream contract is not reproduced here.

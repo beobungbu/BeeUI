@@ -54,13 +54,13 @@ Stateless title/description/leading/trailing composition with no controlled prop
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `bordered` | `boolean` | `true` | — |
-| `className` | `string` | — | — |
-| `description` | `React.ReactNode` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
 | `descriptionClassName` | `string` | — | — |
 | `leading` | `React.ReactNode` | — | — |
-| `title` **(required)** | `React.ReactNode` | — | — |
+| `title` **(required)** | `React.ReactNode` | — | The primary heading text for this surface. |
 | `titleClassName` | `string` | — | — |
-| `trailing` | `React.ReactNode` | — | — |
+| `trailing` | `React.ReactNode` | — | Content rendered at the end of the row, after the primary content — actions, badges or status. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 

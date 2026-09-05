@@ -59,12 +59,12 @@ Controlled (`value`/`onValueChange`) or uncontrolled (`defaultValue`) persistent
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `align` | `SelectAlign` | `'start'` | — |
-| `alignOffset` | `number` | `0` | — |
-| `avoidKeyboard` | `boolean` | `true` | — |
-| `avoidSafeArea` | `boolean` | `true` | — |
-| `closeOnOutsidePress` | `boolean` | `true` | — |
-| `collisionPadding` | `SelectCollisionPadding` | `8` | — |
+| `align` | `SelectAlign` | `'start'` | Where the overlay sits along the anchor's cross axis — `'start'`, `'center'` or `'end'`. The anchored-overlay kernel may flip it when the preferred placement would collide with the viewport. |
+| `alignOffset` | `number` | `0` | Pixels to shift the overlay along the alignment axis, after `align` is resolved. |
+| `avoidKeyboard` | `boolean` | `true` | Whether the overlay repositions to stay clear of the on-screen keyboard. |
+| `avoidSafeArea` | `boolean` | `true` | Whether the overlay keeps clear of the platform safe-area insets — notches, home indicators and status bars. |
+| `closeOnOutsidePress` | `boolean` | `true` | Whether a press outside the overlay dismisses it. |
+| `collisionPadding` | `SelectCollisionPadding` | `8` | Minimum distance to keep from the viewport edges when the kernel repositions or flips the overlay. A number applies to every edge; an object sets edges individually. |
 | `direction` | `SelectDirection` | — | — |
 | `flip` | `boolean` | `true` | — |
 | `maxHeight` | `number` | — | — |
@@ -73,7 +73,7 @@ Controlled (`value`/`onValueChange`) or uncontrolled (`defaultValue`) persistent
 | `placement` | `SelectPlacement` | `'bottom'` | — |
 | `scrollViewProps` | `Omit<ScrollViewProps, 'children'>` | — | — |
 | `shift` | `boolean` | `true` | — |
-| `sideOffset` | `number` | `6` | — |
+| `sideOffset` | `number` | `6` | Pixels of gap between the anchor and the overlay, along the placement side. |
 
 Also carries every prop of `Omit<ViewProps, 'nativeID' \| 'role'>` — that upstream contract is not reproduced here.
 
@@ -92,8 +92,8 @@ Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'role'>` — 
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `onPress` | `PressableProps['onPress']` | — | — |
 | `textClassName` | `string` | — | — |
 | `textValue` | `string` | — | — |
@@ -105,7 +105,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'childre
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 
 Also carries every prop of `Omit<RNTextProps, 'nativeID' \| 'role'>` — that upstream contract is not reproduced here.
 
@@ -115,7 +115,7 @@ Also carries every prop of `Omit<RNTextProps, 'nativeID' \| 'role'>` — that up
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `defaultOpen` | `boolean` | `false` | — |
 | `defaultValue` | `SelectOptionValue` | — | — |
 | `disabled` | `boolean` | `false` | — |
@@ -128,8 +128,8 @@ Also carries every prop of `Omit<RNTextProps, 'nativeID' \| 'role'>` — that up
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `indicator` | `React.ReactNode` | — | — |
 | `onKeyDown` | `(event: WebKeyboardEvent) => void` | — | — |
 
@@ -139,7 +139,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'childre
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `placeholder` | `React.ReactNode` | `'Select an option'` | — |
 
 Also carries every prop of `Omit<RNTextProps, 'children' \| 'role'>` — that upstream contract is not reproduced here.

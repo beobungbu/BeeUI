@@ -53,7 +53,7 @@ Uncontrolled-by-default text field (same contract as `Input`) with a visibility-
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `containerClassName` | `string` | — | — |
+| `containerClassName` | `string` | — | Extra utility classes for the overlay's container element, merged after the component's own. |
 | `defaultVisible` | `boolean` | `false` | — |
 | `hideLabel` | `string` | `'Hide password'` | — |
 | `onVisibleChange` | `(visible: boolean) => void` | — | — |

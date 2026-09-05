@@ -54,7 +54,7 @@ Uncontrolled-by-default text field (standard React Native `value`/`onChangeText`
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `disabled` | `boolean` | — | — |
 | `invalid` | `boolean` | — | — |
 

@@ -54,7 +54,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `syncUniwindInsets` | `boolean` | `true` | Keeps Uniwind OSS safe-area utilities (`pt-safe`, `bottom-safe`, etc.) in sync with react-native-safe-area-context. |
 
 Also carries every prop of `Omit<React.ComponentProps<typeof NativeSafeAreaProvider>, 'children'>` — that upstream contract is not reproduced here.
@@ -63,7 +63,7 @@ Also carries every prop of `Omit<React.ComponentProps<typeof NativeSafeAreaProvi
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 
 Also carries every prop of `React.ComponentProps<typeof NativeSafeAreaView>` — that upstream contract is not reproduced here.
 

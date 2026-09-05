@@ -54,13 +54,13 @@ Stateless scrollable form-screen shell; it owns explicit safe-area edges and pla
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` **(required)** | `React.ReactNode` | — | Screen content. |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `contentWidth` | `KeyboardAwareScreenContentWidth` | `'full'` | Bounded max-width applied to the scrollable content so long-line forms stay readable on wide/tablet/web viewports. |
 | `keyboardScrollMargin` | `number` | `24` | Gap kept between the focused input and the keyboard once scrolled into view on Android. |
 | `keyboardDismissMode` | `KeyboardAwareScreenKeyboardDismissMode` | — | Maps to the underlying `ScrollView`'s `keyboardDismissMode`. |
 | `keyboardShouldPersistTaps` | `ScrollViewProps['keyboardShouldPersistTaps']` | `'handled'` | Maps to the underlying `ScrollView`'s `keyboardShouldPersistTaps`. |
 | `safeAreaEdges` | `KeyboardAwareScreenSafeAreaEdges` | — | Safe-area edges this screen owns. |
-| `testID` | `string` | — | — |
+| `testID` | `string` | — | Test identifier. Forwarded to the native `testID` and, on Web, emitted as `data-testid`. |
 
 **Related exported types:**
 

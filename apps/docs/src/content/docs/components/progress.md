@@ -54,7 +54,7 @@ Stateless clamped determinate progress bar; there is no lower-bound prop — `va
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `indicatorClassName` | `string` | — | — |
 | `indicatorStyle` | `StyleProp<ViewStyle>` | — | — |
 | `max` | `number` | `100` | — |

@@ -53,9 +53,9 @@ Structural legend/description/error/disabled grouping; it stays `accessible={fal
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` **(required)** | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
-| `description` | `string` | — | — |
+| `children` **(required)** | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `description` | `string` | — | Secondary supporting text rendered beneath the primary label or title. |
 | `disabled` | `boolean` | `false` | — |
 | `error` | `string` | — | — |
 | `invalid` | `boolean` | `false` | — |

@@ -150,6 +150,39 @@ function findUnknownBehaviorPropReferences(component, rootDir, field = 'behavior
   return unknown;
 }
 
+// Prop descriptions were 13% covered — 452 of 521 rows blank, and 46 of 58 pages with an empty
+// Description on every prop. A shared glossary closed the structural and anchored-overlay
+// vocabulary; the rest are family-specific and need real JSDoc in `packages/ui/src`.
+//
+// A ratchet rather than a pass/fail threshold: failing on any blank would fail today and teach
+// nothing, and a silent percentage would drift back down the way it drifted here. The floor is
+// the measured value at the time it was written, so coverage can only go up.
+export const PROP_DESCRIPTION_FLOOR = 294;
+
+export function collectPropDescriptionCoverage(manifest) {
+  let total = 0;
+  let described = 0;
+  for (const component of manifest) {
+    for (const entry of component.typeDocs ?? []) {
+      for (const field of entry.fields ?? []) {
+        total += 1;
+        if (field.description) described += 1;
+      }
+    }
+  }
+  return { described, total };
+}
+
+export function collectPropDescriptionViolations(manifest) {
+  const { described, total } = collectPropDescriptionCoverage(manifest);
+  if (described >= PROP_DESCRIPTION_FLOOR) return [];
+  return [
+    `prop descriptions dropped to ${described} of ${total} (floor ${PROP_DESCRIPTION_FLOOR}). ` +
+    'Document the prop in `packages/ui/src` with JSDoc, or add it to docs/prop-glossary.json if ' +
+    'its meaning is identical on every family that declares it.',
+  ];
+}
+
 export function collectPublicComponentReferenceViolations(rootDir = ROOT_DIR) {
   const violations = [];
   const manifest = buildPublicComponentManifest(rootDir);
@@ -202,6 +235,8 @@ export function collectPublicComponentReferenceViolations(rootDir = ROOT_DIR) {
     if (!names.has(name)) violations.push(`curated component ${name} is no longer a public Registry/export-map component.`);
   }
 
+
+  violations.push(...collectPropDescriptionViolations(buildPublicComponentManifest(rootDir)));
   return violations;
 }
 

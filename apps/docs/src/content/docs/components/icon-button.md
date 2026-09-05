@@ -54,7 +54,7 @@ Stateless 44px icon-only pressable sharing Button's `disabled`/`loading` semanti
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `accessibilityLabel` **(required)** | `string` | — | — |
-| `children` **(required)** | `React.ReactNode` | — | — |
+| `children` **(required)** | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 
 Also carries every prop of `Omit<ButtonProps, 'accessibilityLabel' \| 'children' \| 'labelClassName' \| 'size'>` — documented on the [Button](/docs/components/button/) page, not reproduced here.
 

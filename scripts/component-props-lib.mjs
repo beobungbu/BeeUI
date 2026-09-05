@@ -746,6 +746,25 @@ function fillConsumedFallback(shape, files, names) {
 // Full derived-types model for one public component family, in the same
 // (already-sorted) order as `component.types` from `getPublicComponents()`.
 // This is the only function `public-component-reference.mjs` needs.
+export const PROP_GLOSSARY_FILE = 'docs/prop-glossary.json';
+
+// Structural props repeat across families and are documented nowhere: `className` appears
+// undescribed on 51 families, `children` on 26. Of 452 undescribed prop rows, 372 belong to
+// props that repeat three or more times, so the gap is a shared vocabulary rather than 452
+// separate facts. Source JSDoc always wins — the glossary only fills a blank.
+function propGlossary(rootDir) {
+  const file = path.join(rootDir, PROP_GLOSSARY_FILE);
+  if (!fs.existsSync(file)) return {};
+  return JSON.parse(fs.readFileSync(file, 'utf8')).props ?? {};
+}
+
+function applyGlossary(shape, glossary) {
+  for (const field of shape?.fields ?? []) {
+    if (!field.description && glossary[field.name]) field.description = glossary[field.name];
+  }
+  for (const variant of shape?.variants ?? []) applyGlossary(variant, glossary);
+}
+
 export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
   const index = getComponentsIndex(rootDir);
   const opts = {
@@ -763,6 +782,7 @@ export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
     const entry = resolveComponentTypeEntry(index, typeName, { ...opts, errorLabel: `${component.name}: ${typeName}` });
     if (entry.docKind === 'props') {
       applyDefaults(entry, extractDefaults(files, entry.names));
+      applyGlossary(entry, propGlossary(rootDir));
       // A pure alias of an upstream type documents nothing on its own; fall back to the props
       // the implementation actually reads out of it.
       fillConsumedFallback(entry, files, entry.names);
@@ -786,6 +806,7 @@ export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
         // accepted for API parity and deliberately unread. Reporting only that its type differs
         // is true and misleading: on Web `modalProps`, `avoidKeyboard` and `enableSwipeToDismiss`
         // do nothing at all.
+        applyGlossary(webShape, propGlossary(rootDir));
         webShape.inert = [...extractInertProps(
           [{ path: webPath, source: fs.readFileSync(path.join(rootDir, webPath), 'utf8') }],
           webCtx.names,

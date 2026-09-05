@@ -54,7 +54,7 @@ Controlled month-grid date selection on `value`/`onValueChange` (`CalendarDate |
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `accessibilityLabel` | `string` | — | Names the day grid for assistive tech. |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `defaultVisibleMonth` | `CalendarVisibleMonth` | — | Initial visible month when `visibleMonth` is uncontrolled. |
 | `direction` | `AnchoredOverlayDirection` | — | — |
 | `disabled` | `boolean` | — | — |

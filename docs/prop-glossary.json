@@ -1,0 +1,23 @@
+{
+  "$schema-note": "Descriptions for structural props whose meaning is identical on every family that declares them. Applied by scripts/component-props-lib.mjs only when the source has no JSDoc for that prop — JSDoc always wins, so a family can say something more specific. The anchored-overlay positioning props are included because select, dropdown-menu, popover, tooltip and the date pickers all re-declare one contract that resolves in the same `packages/core/src/utils/anchored-overlay.ts` kernel. Props whose meaning varies by component (`value`, `disabled`, `loading`, `invalid`, `onValueChange`, `defaultValue`, `direction`) are deliberately absent: a shared sentence there would be a plausible generalisation rather than a fact, which is the error class the behavior-prose guard already caught five times.",
+  "schemaVersion": 1,
+  "props": {
+    "children": "Content rendered inside this element. The family's composition section states which children it expects.",
+    "className": "Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee.",
+    "description": "Secondary supporting text rendered beneath the primary label or title.",
+    "label": "The visible text naming this element, and the accessible name unless one is set explicitly.",
+    "labelClassName": "Extra utility classes for the label text specifically, merged after the component's own.",
+    "testID": "Test identifier. Forwarded to the native `testID` and, on Web, emitted as `data-testid`.",
+    "title": "The primary heading text for this surface.",
+    "trailing": "Content rendered at the end of the row, after the primary content — actions, badges or status.",
+    "align": "Where the overlay sits along the anchor's cross axis — `'start'`, `'center'` or `'end'`. The anchored-overlay kernel may flip it when the preferred placement would collide with the viewport.",
+    "alignOffset": "Pixels to shift the overlay along the alignment axis, after `align` is resolved.",
+    "sideOffset": "Pixels of gap between the anchor and the overlay, along the placement side.",
+    "collisionPadding": "Minimum distance to keep from the viewport edges when the kernel repositions or flips the overlay. A number applies to every edge; an object sets edges individually.",
+    "avoidKeyboard": "Whether the overlay repositions to stay clear of the on-screen keyboard.",
+    "avoidSafeArea": "Whether the overlay keeps clear of the platform safe-area insets — notches, home indicators and status bars.",
+    "closeOnOutsidePress": "Whether a press outside the overlay dismisses it.",
+    "containerClassName": "Extra utility classes for the overlay's container element, merged after the component's own.",
+    "overlayClassName": "Extra utility classes for the backdrop element behind the surface, merged after the component's own."
+  }
+}

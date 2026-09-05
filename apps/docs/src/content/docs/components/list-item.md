@@ -54,13 +54,13 @@ Press behavior is opt-in (`onPress` makes the row interactive); an interactive r
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
-| `description` | `React.ReactNode` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
 | `descriptionClassName` | `string` | — | — |
 | `leading` | `React.ReactNode` | — | — |
-| `title` **(required)** | `React.ReactNode` | — | — |
+| `title` **(required)** | `React.ReactNode` | — | The primary heading text for this surface. |
 | `titleClassName` | `string` | — | — |
-| `trailing` | `React.ReactNode` | — | — |
+| `trailing` | `React.ReactNode` | — | Content rendered at the end of the row, after the primary content — actions, badges or status. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'accessibilityState' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
 
@@ -68,7 +68,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'accessi
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `trailing` | `React.ReactNode` | — | — |
+| `trailing` | `React.ReactNode` | — | Content rendered at the end of the row, after the primary content — actions, badges or status. |
 | `value` | `React.ReactNode` | — | — |
 
 Also carries every prop of `Omit<ListItemProps, 'trailing'>` — documented on the [List Item](/docs/components/list-item/) page, not reproduced here.

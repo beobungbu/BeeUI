@@ -55,8 +55,8 @@ Standalone `Radio` supports both selection and deselection through `onCheckedCha
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `disabled` | `boolean` | `false` | — |
 | `onValueChange` | `(value: string) => void` | — | — |
 | `value` | `string` | — | — |
@@ -68,10 +68,10 @@ Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'role' \| 'ch
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `checked` | `boolean` | `false` | — |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `indicatorClassName` | `string` | — | — |
-| `label` | `string` | — | — |
-| `labelClassName` | `string` | — | — |
+| `label` | `string` | — | The visible text naming this element, and the accessible name unless one is set explicitly. |
+| `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `onCheckedChange` | `(checked: boolean) => void` | — | — |
 | `value` | `string` | — | — |
 

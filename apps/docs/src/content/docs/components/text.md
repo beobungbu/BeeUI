@@ -57,7 +57,7 @@ Stateless semantic typography primitive; `variant`/`tone` apply typed styling, a
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `numeric` | `NumericVariant` | — | — |
 | `family` | `FontFamily` | — | — |
 

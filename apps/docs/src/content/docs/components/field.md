@@ -53,13 +53,13 @@ Stateless label/description/error composition; it wires accessible label/require
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` **(required)** | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
-| `description` | `string` | — | — |
+| `children` **(required)** | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `description` | `string` | — | Secondary supporting text rendered beneath the primary label or title. |
 | `disabled` | `boolean` | `false` | — |
 | `error` | `string` | — | — |
 | `invalid` | `boolean` | `false` | — |
-| `label` **(required)** | `string` | — | — |
+| `label` **(required)** | `string` | — | The visible text naming this element, and the accessible name unless one is set explicitly. |
 | `labelNativeID` | `string` | — | — |
 | `required` | `boolean` | `false` | — |
 | `requiredAccessibilityLabel` | `string` | `'required'` | — |
