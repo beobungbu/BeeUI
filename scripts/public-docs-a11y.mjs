@@ -2,10 +2,14 @@
 
 // Makes every scrollable code block in the built documentation portal reachable by keyboard.
 //
-// A `<pre>` that scrolls horizontally and contains nothing focusable cannot be scrolled by a
-// keyboard-only reader — axe rule `scrollable-region-focusable`, impact "serious". The portal
-// shipped 367 of them across 125 of its 151 pages, and the WBS-H072 audit failed on three of
-// the eight pages it samples.
+// A `<pre>` or `<table>` that scrolls horizontally and contains nothing focusable cannot be
+// scrolled by a keyboard-only reader — axe rule `scrollable-region-focusable`, impact "serious".
+// The portal shipped 367 unreachable code blocks across 125 of its 151 pages.
+//
+// Tables were found second, and only because the audit also ran at 390px: the generated props
+// and reference tables fit on a desktop viewport and overflow on a phone, so a desktop-only
+// audit reported them clean. axe names the `<table>` itself as the scrolling element, so the
+// tab stop belongs on it rather than on a wrapper this step would have to invent.
 //
 // This runs on the built output rather than in the Astro pipeline because Starlight renders
 // code blocks through Expressive Code, which owns its own `<pre>` and does not receive plugins
@@ -27,11 +31,23 @@ export const DOCS_DIST_DIR = 'apps/docs/dist';
 
 // `tabindex="0"` is what satisfies the rule. The role and label are what make the resulting tab
 // stop mean something when a screen reader announces it, rather than an unnamed region.
-const FOCUSABLE_PRE = ' tabindex="0" role="region" aria-label="Code block"';
+const SCROLLABLE_TAGS = [
+  { tag: 'pre', label: 'Code block' },
+  { tag: 'table', label: 'Table' },
+];
 
-export function addKeyboardScrollToPreElements(html) {
-  return html.replace(/<pre(?=[\s>])(?![^>]*\btabindex=)([^>]*)>/gu, (_match, attributes) => `<pre${attributes}${FOCUSABLE_PRE}>`);
+export function addKeyboardScrollToScrollableRegions(html) {
+  return SCROLLABLE_TAGS.reduce((current, { tag, label }) => {
+    const pattern = new RegExp(`<${tag}(?=[\\s>])(?![^>]*\\btabindex=)([^>]*)>`, 'gu');
+    return current.replace(
+      pattern,
+      (_match, attributes) => `<${tag}${attributes} tabindex="0" role="region" aria-label="${label}">`,
+    );
+  }, html);
 }
+
+// Kept as the previous name so nothing that imported it breaks; the behavior is now both tags.
+export const addKeyboardScrollToPreElements = addKeyboardScrollToScrollableRegions;
 
 function htmlFiles(absDir) {
   if (!fs.existsSync(absDir)) return [];
@@ -46,10 +62,11 @@ export function collectUnreachableCodeBlocks(rootDir = ROOT_DIR) {
   const violations = [];
   for (const file of htmlFiles(path.join(rootDir, DOCS_DIST_DIR))) {
     const html = fs.readFileSync(file, 'utf8');
-    const unreachable = [...html.matchAll(/<pre(?=[\s>])(?![^>]*\btabindex=)[^>]*>/gu)];
+    const unreachable = SCROLLABLE_TAGS.flatMap(({ tag }) =>
+      [...html.matchAll(new RegExp(`<${tag}(?=[\\s>])(?![^>]*\\btabindex=)[^>]*>`, 'gu'))]);
     if (unreachable.length) {
       violations.push(
-        `${path.relative(rootDir, file)} has ${unreachable.length} code block(s) a keyboard user cannot scroll.`,
+        `${path.relative(rootDir, file)} has ${unreachable.length} scrollable region(s) a keyboard user cannot scroll.`,
       );
     }
   }
@@ -61,9 +78,12 @@ export function makeDocsCodeBlocksFocusable(rootDir = ROOT_DIR) {
   let blocks = 0;
   for (const file of htmlFiles(path.join(rootDir, DOCS_DIST_DIR))) {
     const html = fs.readFileSync(file, 'utf8');
-    const next = addKeyboardScrollToPreElements(html);
+    const next = addKeyboardScrollToScrollableRegions(html);
     if (next === html) continue;
-    blocks += [...html.matchAll(/<pre(?=[\s>])(?![^>]*\btabindex=)[^>]*>/gu)].length;
+    blocks += SCROLLABLE_TAGS.reduce(
+      (total, { tag }) => total + [...html.matchAll(new RegExp(`<${tag}(?=[\\s>])(?![^>]*\\btabindex=)[^>]*>`, 'gu'))].length,
+      0,
+    );
     fs.writeFileSync(file, next);
     rewritten += 1;
   }
@@ -81,18 +101,18 @@ function main() {
   if (process.argv.includes('--check')) {
     const violations = collectUnreachableCodeBlocks(ROOT_DIR);
     if (violations.length) {
-      console.error('Documentation portal has code blocks no keyboard user can scroll:');
+      console.error('Documentation portal has scrollable regions no keyboard user can scroll:');
       for (const violation of violations.slice(0, 10)) console.error(`- ${violation}`);
       if (violations.length > 10) console.error(`- …and ${violations.length - 10} more page(s).`);
       process.exitCode = 1;
       return;
     }
-    console.log('Docs keyboard-scroll check passed (every code block is reachable).');
+    console.log('Docs keyboard-scroll check passed (every code block and table is reachable).');
     return;
   }
 
   const { blocks, rewritten } = makeDocsCodeBlocksFocusable(ROOT_DIR);
-  console.log(`Made ${blocks} code block(s) keyboard-reachable across ${rewritten} page(s).`);
+  console.log(`Made ${blocks} scrollable region(s) keyboard-reachable across ${rewritten} page(s).`);
 }
 
 const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);

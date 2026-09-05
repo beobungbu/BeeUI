@@ -26,7 +26,10 @@ const canonicalProjects = viewportNames.flatMap((viewportName) =>
       visualTheme: theme,
       visualViewport: viewportName,
     } satisfies VisualProjectMetadata,
-    testIgnore: /(showcase|overlay-context|a11y|a11y-gate|a11y-readiness)\.spec\.ts/,
+    // `a11y[-\w]*` rather than an explicit list: adding a11y-docs-portal.spec.ts under the old
+    // exact alternation let it run in every canonical visual project, where the mobile viewport
+    // turned an accessibility finding into a visual-regression failure.
+    testIgnore: /(showcase|overlay-context|a11y[-\w]*)\.spec\.ts/,
     use: {
       colorScheme: colorSchemeForVisualTheme(theme),
       deviceScaleFactor: 1,

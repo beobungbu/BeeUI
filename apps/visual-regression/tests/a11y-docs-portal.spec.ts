@@ -25,23 +25,32 @@ const docsBaseUrl = 'http://127.0.0.1:4175';
 // WCAG 2.0/2.1 Level A + AA — the same bar the Showcase audit holds.
 const axeTags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
+const viewports = [
+  { name: 'desktop', width: 1280, height: 800 },
+  // The props and reference tables fit at 1280 and overflow at 390. A desktop-only audit
+  // reported the portal clean while every generated table was unreachable on a phone.
+  { name: 'mobile', width: 390, height: 844 },
+];
+
 const pages = [
-  { name: 'docs-portal:landing', path: '/docs/' },
-  { name: 'docs-portal:start-expo', path: '/docs/start/expo/' },
-  { name: 'docs-portal:guide-troubleshooting', path: '/docs/guides/troubleshooting/' },
-  { name: 'docs-portal:learn-state-model', path: '/docs/learn/state-model/' },
+  { name: 'docs-portal-landing', path: '/docs/' },
+  { name: 'docs-portal-start-expo', path: '/docs/start/expo/' },
+  { name: 'docs-portal-guide-troubleshooting', path: '/docs/guides/troubleshooting/' },
+  { name: 'docs-portal-learn-state-model', path: '/docs/learn/state-model/' },
   // The densest tabular surfaces on the site, and the newest.
-  { name: 'docs-portal:component-table', path: '/docs/components/table/' },
-  { name: 'docs-portal:reference-tokens', path: '/docs/reference/tokens/' },
-  { name: 'docs-portal:pattern-sign-in', path: '/docs/patterns/auth/sign-in-screen/' },
-  { name: 'docs-portal:accessibility-index', path: '/docs/accessibility/' },
+  { name: 'docs-portal-component-table', path: '/docs/components/table/' },
+  { name: 'docs-portal-reference-tokens', path: '/docs/reference/tokens/' },
+  { name: 'docs-portal-pattern-sign-in', path: '/docs/patterns/auth/sign-in-screen/' },
+  { name: 'docs-portal-accessibility-index', path: '/docs/accessibility/' },
 ];
 
 test.describe('Documentation portal accessibility audit (WBS-H072)', () => {
   for (const target of pages) {
-    test(`axe scan: ${target.name}`, async ({ page }) => {
+    for (const viewport of viewports) {
+      test(`axe scan: ${target.name}-${viewport.name}`, async ({ page }) => {
       test.setTimeout(60_000);
 
+      await page.setViewportSize({ height: viewport.height, width: viewport.width });
       const response = await page.goto(`${docsBaseUrl}${target.path}`, { waitUntil: 'load' });
       // A missing page must fail loudly. The static server resolves a directory to its own
       // index and 404s otherwise, so a route rename cannot quietly audit the landing page here.
@@ -49,7 +58,7 @@ test.describe('Documentation portal accessibility audit (WBS-H072)', () => {
 
       const results = await new AxeBuilder({ page }).withTags(axeTags).analyze();
       const evaluation = evaluateViolations(
-        target.name,
+        `${target.name}-${viewport.name}`,
         normalizeAxeViolations(results.violations),
         loadA11yAllowlist(),
       );
@@ -59,8 +68,9 @@ test.describe('Documentation portal accessibility audit (WBS-H072)', () => {
         const detail = evaluation.blockingNodes
           .map((node) => `  [${node.impact}] ${node.ruleId} — ${node.target}`)
           .join('\n');
-        throw new Error(`${target.name} has blocking accessibility violations:\n${detail}`);
+        throw new Error(`${target.name} at ${viewport.name} has blocking accessibility violations:\n${detail}`);
       }
-    });
+      });
+    }
   }
 });
