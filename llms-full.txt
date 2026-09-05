@@ -2,7 +2,7 @@
 
 > Expanded stable-API, setup, compatibility, and architecture-contract detail for coding agents. Companion to llms.txt (compact index), llms-components.txt (component inventory), and llms-patterns.txt (patterns).
 
-STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm, no `v1.0.0` tag or GitHub Release exists, and the repository is private by owner decision. Package/CLI names and install commands below are release-ready-but-not-published targets, not live registry commands. Do not tell a user to `npm install @beemvp/beeui-ui` or `npx @beemvp/beeui-cli` yet — those resolve to nothing today. The working, in-repo path is the source-ownership CLI (`pnpm beeui add <component>`).
+STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm, no `v1.0.0` tag or GitHub Release exists. Package/CLI names and install commands below are release-ready-but-not-published targets, not live registry commands. Do not tell a user to `npm install @beemvp/beeui-ui` or `npx @beemvp/beeui-cli` yet — those resolve to nothing today. The working, in-repo path is the source-ownership CLI (`pnpm beeui add <component>`).
 
 ## What BeeUI is
 BeeUI is a reusable, mobile-first React Native UI foundation for long-lived client apps. The public component API stops at `@beemvp/beeui-ui`; applications should not need to know the styling engine. Web support is additive and native ergonomics remain first-class. See [docs/architecture.md](docs/architecture.md).

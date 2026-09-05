@@ -37,8 +37,11 @@ const RadioGroupContext = React.createContext<RadioGroupContextValue | null>(nul
 export type RadioGroupProps = Omit<ViewProps, 'accessibilityRole' | 'role' | 'children'> & {
   children?: React.ReactNode;
   className?: string;
+  /** Disables every `Radio` inside the group. Combined with (not overridden by) the enclosing `FormGroup`'s own `disabled`. Defaults to false. */
   disabled?: boolean;
+  /** Called with the selected `Radio`'s `value` when the selection changes. Required for enabled usage (logs a dev warning otherwise). */
   onValueChange?: (value: string) => void;
+  /** The `value` of the currently selected `Radio` among this group's children. */
   value?: string;
 };
 
@@ -98,12 +101,16 @@ export type RadioProps = Omit<
   PressableProps,
   'accessibilityRole' | 'role' | 'children' | 'onPress'
 > & {
+  /** Whether this Radio is checked when it is standalone (not inside a `RadioGroup`). Ignored inside a `RadioGroup`, which derives checked state by comparing `value` to the group's selection. Defaults to false. */
   checked?: boolean;
   className?: string;
+  /** Applied to the radio's own circle, not its label. */
   indicatorClassName?: string;
   label?: string;
   labelClassName?: string;
+  /** Called with the next checked state when pressed, if this Radio is standalone (not inside a `RadioGroup`). Required for enabled standalone usage (logs a dev warning otherwise). */
   onCheckedChange?: (checked: boolean) => void;
+  /** Identifies this Radio within a parent `RadioGroup`; required there for the item to participate in selection. Has no effect on a standalone Radio. */
   value?: string;
 };
 

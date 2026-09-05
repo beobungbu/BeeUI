@@ -4,9 +4,11 @@ import { View, type ViewProps } from 'react-native';
 import { Text } from './text';
 
 export type EmptyStateProps = Omit<ViewProps, 'children'> & {
+  /** Rendered below the description with top padding (e.g. a retry or create button). */
   action?: React.ReactNode;
   className?: string;
   description?: React.ReactNode;
+  /** Rendered above the title, hidden from accessibility (purely decorative). */
   icon?: React.ReactNode;
   title: React.ReactNode;
 };

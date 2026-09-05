@@ -32,6 +32,9 @@ tarball produced by that checkout. See [Start](/docs/start/).
 
 ### `BeeUI anchored overlays require BeeUIProvider at the application root.`
 
+This is BeeUI's provider-not-found error: no `BeeUIProvider` was found above the component in
+the tree.
+
 - **Applies to:** Expo · bare React Native · Web. Thrown by `Popover`, `Select`,
   `DropdownMenu`, `Tooltip`, `DatePicker`, `DateTimePicker`, and anything else that mounts
   an anchored overlay.
@@ -93,10 +96,14 @@ Also: `BeeUI toast show() requires a non-empty string title.`
 
 ### Content is double-inset, or sits under the notch / home indicator
 
+This is BeeUI's safe-area-duplicated symptom and its mirror image: the same physical edge
+gets padded twice, or no component pads it at all.
+
 - **Applies to:** iOS and Android. Web starters intentionally use no `SafeArea`.
-- **Likely cause:** either two nested components each claim the same edge (double inset),
-  or no component claims an edge that actually touches system UI (content underlaps).
-  `Screen`, headers, and bottom bars do not silently own all four insets.
+- **Likely cause:** either two nested components each claim the same edge (double inset,
+  i.e. the safe-area padding is duplicated), or no component claims an edge that actually
+  touches system UI (content underlaps). `Screen`, headers, and bottom bars do not silently
+  own all four insets.
 - **Fix:** assign each physical edge to exactly one `SafeArea`. The verified starter shape
   is `edges={['top', 'left', 'right']}` on the outer shell, leaving the bottom edge to
   whichever bottom bar actually renders there.

@@ -36,9 +36,12 @@ export type ListItemProps = Omit<
 > & {
   className?: string;
   description?: React.ReactNode;
+  /** Applied to the description `Text` when `description` is a plain string or number; ignored if `description` is a custom element. */
   descriptionClassName?: string;
+  /** Rendered before the title/description column, shrink-to-content (e.g. an icon or avatar). */
   leading?: React.ReactNode;
   title: React.ReactNode;
+  /** Applied to the title `Text` when `title` is a plain string or number; ignored if `title` is a custom element. */
   titleClassName?: string;
   trailing?: React.ReactNode;
 };
@@ -142,6 +145,7 @@ ListItem.displayName = 'ListItem';
 
 export type SettingsItemProps = Omit<ListItemProps, 'trailing'> & {
   trailing?: React.ReactNode;
+  /** Rendered muted, end-aligned before `trailing` (e.g. the current setting's selected option). Plain string/number renders as `Text`; anything else renders as-is. */
   value?: React.ReactNode;
 };
 

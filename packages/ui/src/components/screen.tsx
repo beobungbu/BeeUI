@@ -11,6 +11,7 @@ const paddingClasses = {
 
 export type ScreenProps = ViewProps & {
   className?: string;
+  /** Preset horizontal/vertical padding: `'none'` (0), `'sm'`, `'md'`, or `'lg'`. Defaults to `'none'`. */
   padding?: keyof typeof paddingClasses;
 };
 

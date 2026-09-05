@@ -38,6 +38,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
    `TabsContent`
    `TabsList`
    `TabsTrigger`
+  - Also routed here, outside the Registry family:
+    - `tabs`
+  - Package export subpath: `@beemvp/beeui-ui/tabs`
 
 **Exported types:** `TabsContentProps`, `TabsListProps`, `TabsProps`, `TabsTriggerProps`
 
@@ -53,9 +56,9 @@ Fully controlled (`value`/`onValueChange`, required — there is no uncontrolled
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
-| `value` **(required)** | `string` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `value` **(required)** | `string` | — | Identifies this panel; it renders only while the parent `Tabs`'s `value` matches. |
 
 Also carries every prop of `Omit<ViewProps, 'children' \| 'role'>` — that upstream contract is not reproduced here.
 
@@ -63,7 +66,7 @@ Also carries every prop of `Omit<ViewProps, 'children' \| 'role'>` — that upst
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 
 Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'role'>` — that upstream contract is not reproduced here.
 
@@ -71,11 +74,11 @@ Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'role'>` — 
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` **(required)** | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
-| `disabled` | `boolean` | `false` | — |
-| `onValueChange` | `(value: string) => void` | — | — |
-| `value` **(required)** | `string` | — | — |
+| `children` **(required)** | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `disabled` | `boolean` | `false` | Disables every `TabsTrigger` inside, overriding each trigger's own `disabled`. Defaults to false. |
+| `onValueChange` | `(value: string) => void` | — | Called with the pressed tab's `value` when a non-selected `TabsTrigger` is pressed. Required for enabled usage (logs a dev warning otherwise). |
+| `value` **(required)** | `string` | — | The `value` of the currently active tab, matched against each `TabsTrigger`/`TabsContent`'s own `value`. Always controlled by the caller — there is no uncontrolled mode. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
@@ -83,10 +86,10 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
-| `labelClassName` | `string` | — | — |
-| `value` **(required)** | `string` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
+| `value` **(required)** | `string` | — | Identifies this tab; compared against the parent `Tabs`'s `value` to determine whether it is selected. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children' \| 'onPress'>` — that upstream contract is not reproduced here.
 

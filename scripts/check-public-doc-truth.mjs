@@ -42,6 +42,36 @@ function availableCommandOnLine(line, pattern) {
   return match[0];
 }
 
+// The repository's own visibility is a checkable fact, and all four llms artifacts asserted the
+// opposite of it — telling every AI agent that consumes them that the source is private when
+// `gh api repos/beobungbu/BeeUI` reports `"private": false`. `llms:check` regenerates and diffs,
+// so it reproduced the sentence rather than catching it. Publication state is owner-gated and
+// genuinely unpublished; repository visibility is not the same claim and must not ride along.
+const FALSE_REPOSITORY_CLAIMS = [
+  /\brepository is private\b/iu,
+  /\bsource (?:code )?is not public\b/iu,
+  /\bprivate repository\b/iu,
+];
+
+export function collectRepositoryVisibilityViolations(rootDir = ROOT_DIR) {
+  const violations = [];
+  for (const relative of ['llms.txt', 'llms-full.txt', 'llms-components.txt', 'llms-patterns.txt', 'README.md']) {
+    const absolute = path.join(rootDir, relative);
+    if (!fs.existsSync(absolute)) continue;
+    const text = fs.readFileSync(absolute, 'utf8');
+    for (const pattern of FALSE_REPOSITORY_CLAIMS) {
+      const match = pattern.exec(text);
+      if (match) {
+        violations.push(
+          `${relative} states ${JSON.stringify(match[0])}. The repository is public; publication of the ` +
+          'npm packages is the owner-gated claim, and the two must not be conflated.',
+        );
+      }
+    }
+  }
+  return violations;
+}
+
 export function collectPublicTruthViolations(rootDir = ROOT_DIR) {
   const violations = [];
   const files = PUBLIC_ROOTS.flatMap((relative) => walkTextFiles(path.join(rootDir, relative)));
@@ -74,6 +104,8 @@ export function collectPublicTruthViolations(rootDir = ROOT_DIR) {
       violations.push(`apps/demo/README.md: missing verified workspace command ${JSON.stringify(required)}.`);
     }
   }
+
+  violations.push(...collectRepositoryVisibilityViolations(rootDir));
 
   return violations;
 }

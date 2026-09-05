@@ -38,6 +38,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
    `Stack`
    `stackVariants`
    `VStack`
+  - Also routed here, outside the Registry family:
+    - `stack`
+  - Package export subpath: `@beemvp/beeui-ui/stack`
 
 **Exported types:** `HStackProps`, `StackProps`, `VStackProps`
 
@@ -64,7 +67,7 @@ Also carries every prop of `Omit<StackProps, 'direction'>` — documented on the
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 
 Also carries every prop of `ViewProps` and `VariantProps<typeof stackVariants>` — that upstream contract is not reproduced here.
 

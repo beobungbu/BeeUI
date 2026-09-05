@@ -52,8 +52,11 @@ const markerClasses: Record<TimelineStatus, string> = {
 export type TimelineItemProps = Omit<ViewProps, 'children'> & {
   className?: string;
   description?: React.ReactNode;
+  /** Replaces the default status-colored dot in the rail. The rail column is hidden from accessibility regardless. */
   marker?: React.ReactNode;
+  /** Rendered below `description` in a smaller, subtler style (e.g. a timestamp or actor). */
   meta?: React.ReactNode;
+  /** Sets the default marker dot's color. Ignored when a custom `marker` is provided. Defaults to `'default'`. */
   status?: TimelineStatus;
   title: React.ReactNode;
 };

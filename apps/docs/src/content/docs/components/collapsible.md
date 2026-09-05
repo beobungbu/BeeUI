@@ -37,6 +37,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 - Family exports: `Collapsible`
    `CollapsibleContent`
    `CollapsibleTrigger`
+  - Also routed here, outside the Registry family:
+    - `collapsible`
+  - Package export subpath: `@beemvp/beeui-ui/collapsible`
 
 **Exported types:** `CollapsibleContentProps`, `CollapsibleProps`, `CollapsibleTriggerProps`
 
@@ -52,7 +55,7 @@ Controlled (`open`/`onOpenChange`) or uncontrolled (`defaultOpen`) single-region
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 
 Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract is not reproduced here.
 
@@ -60,12 +63,12 @@ Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract 
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
-| `defaultOpen` | `boolean` | `false` | — |
-| `disabled` | `boolean` | `false` | — |
-| `onOpenChange` | `(open: boolean) => void` | — | — |
-| `open` | `boolean` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `defaultOpen` | `boolean` | `false` | Initial open state for uncontrolled usage. Defaults to false. |
+| `disabled` | `boolean` | `false` | Blocks the trigger from toggling open state, even a per-trigger `disabled={false}` override. Defaults to false. |
+| `onOpenChange` | `(open: boolean) => void` | — | Called with the next open state whenever `CollapsibleTrigger` is pressed while not disabled. |
+| `open` | `boolean` | — | Whether the content is shown. Passing this switches the collapsible to controlled mode. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
@@ -73,10 +76,10 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
-| `disabled` | `boolean` | `false` | — |
-| `labelClassName` | `string` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `disabled` | `boolean` | `false` | Disables this trigger. Combined with (not overridden by) the parent `Collapsible`'s own `disabled`. |
+| `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'accessibilityState' \| 'children' \| 'disabled' \| 'role'>` — that upstream contract is not reproduced here.
 

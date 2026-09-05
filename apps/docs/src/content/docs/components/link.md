@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `Link`
+  - Also routed here, outside the Registry family:
+    - `link`
+  - Package export subpath: `@beemvp/beeui-ui/link`
 
 **Exported types:** `LinkProps`
 
@@ -50,9 +53,9 @@ Stateless link semantics layered on `Pressable`; `disabled` blocks press handlin
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
-| `labelClassName` | `string` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
 

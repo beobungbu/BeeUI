@@ -15,9 +15,13 @@ import {
   getComponentTypeDocs,
   resolveComponentTypeEntry,
   resolveDeclaration,
+  summarizeDescription,
 } from '../component-props-lib.mjs';
 import {
   buildPublicComponentManifest,
+  collectPropDescriptionCoverage,
+  collectPropDescriptionViolations,
+  PROP_DESCRIPTION_FLOOR,
   collectPublicComponentReferenceViolations,
   renderPublicComponentIndex,
   renderPublicComponentPage,
@@ -343,6 +347,17 @@ test('collectPublicComponentReferenceViolations flags a component whose curated 
     fs.symlinkSync(path.join(REPO_ROOT, 'registry'), path.join(tmpRoot, 'registry'));
     fs.symlinkSync(path.join(REPO_ROOT, 'packages'), path.join(tmpRoot, 'packages'));
     fs.mkdirSync(path.join(tmpRoot, 'docs'), { recursive: true });
+    // The manifest reads the #473 inventory to learn which surfaces are routed to each page,
+    // so a fixture root needs the owner policy the inventory derives from.
+    for (const file of ['public-surface-owners.json', 'reference.content.json', 'pattern-library.content.json']) {
+      const from = path.join(REPO_ROOT, 'docs', file);
+      if (fs.existsSync(from)) fs.copyFileSync(from, path.join(tmpRoot, 'docs', file));
+    }
+    for (const file of ['llms-components.txt', 'package.json']) {
+      const from = path.join(REPO_ROOT, file);
+      if (fs.existsSync(from)) fs.copyFileSync(from, path.join(tmpRoot, file));
+    }
+    fs.symlinkSync(path.join(REPO_ROOT, 'web'), path.join(tmpRoot, 'web'));
     const content = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'docs/component-reference.content.json'), 'utf8'));
     delete content.components.button.behavior;
     fs.writeFileSync(path.join(tmpRoot, 'docs/component-reference.content.json'), JSON.stringify(content));
@@ -685,6 +700,17 @@ test('collectPublicComponentReferenceViolations flags a behavior string that ref
     fs.symlinkSync(path.join(REPO_ROOT, 'registry'), path.join(tmpRoot, 'registry'));
     fs.symlinkSync(path.join(REPO_ROOT, 'packages'), path.join(tmpRoot, 'packages'));
     fs.mkdirSync(path.join(tmpRoot, 'docs'), { recursive: true });
+    // The manifest reads the #473 inventory to learn which surfaces are routed to each page,
+    // so a fixture root needs the owner policy the inventory derives from.
+    for (const file of ['public-surface-owners.json', 'reference.content.json', 'pattern-library.content.json']) {
+      const from = path.join(REPO_ROOT, 'docs', file);
+      if (fs.existsSync(from)) fs.copyFileSync(from, path.join(tmpRoot, 'docs', file));
+    }
+    for (const file of ['llms-components.txt', 'package.json']) {
+      const from = path.join(REPO_ROOT, file);
+      if (fs.existsSync(from)) fs.copyFileSync(from, path.join(tmpRoot, file));
+    }
+    fs.symlinkSync(path.join(REPO_ROOT, 'web'), path.join(tmpRoot, 'web'));
     const content = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'docs/component-reference.content.json'), 'utf8'));
     content.components.progress.behavior =
       "Stateless clamped determinate progress bar; `value` is clamped to its `min`/`max` range and exposes native progressbar semantics — there is no indeterminate mode.";
@@ -897,4 +923,128 @@ test('an inert Web prop suppresses only its type-difference note', () => {
   // A default or optionality difference is real on the native side and must survive the skip.
   assert.match(page, /`avoidKeyboard` default differs/u);
   assert.match(page, /`avoidKeyboard` is optional on native but required on Web/u);
+});
+
+
+// A `union` entry keeps its props in `variants[].fields`, never in `fields`. Counting
+// only `entry.fields` reported a perfect score while every controlled/uncontrolled
+// overlay prop rendered an em dash, because the props that would have disagreed were
+// never in the counter's scope.
+test('prop-description coverage counts union variant fields', () => {
+  const manifest = [
+    {
+      typeDocs: [
+        {
+          name: 'DialogProps',
+          kind: 'union',
+          variants: [
+            {
+              name: 'DialogControlledProps',
+              kind: 'object',
+              fields: [
+                { name: 'open', type: 'boolean', description: 'Current open state.' },
+                { name: 'defaultOpen', type: 'never', description: '' },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ];
+
+  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 1, total: 2 });
+});
+
+test('prop-description coverage reaches variants nested inside a variant', () => {
+  const manifest = [
+    {
+      typeDocs: [
+        {
+          name: 'OuterProps',
+          kind: 'union',
+          variants: [
+            {
+              name: 'Inner',
+              kind: 'union',
+              variants: [
+                {
+                  name: 'Leaf',
+                  kind: 'object',
+                  fields: [{ name: 'page', type: 'number', description: '' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ];
+
+  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 0, total: 1 });
+});
+
+// The floor is only meaningful if it is the real published total. A floor set below
+// the true denominator silently tolerates undescribed props.
+test('every published prop carries a description', () => {
+  const { described, total } = collectPropDescriptionCoverage(
+    buildPublicComponentManifest(REPO_ROOT),
+  );
+
+  assert.equal(described, total, `${total - described} published prop(s) have no description`);
+  assert.equal(PROP_DESCRIPTION_FLOOR, total, 'the floor must track the real published total');
+});
+
+
+// Publishing only the first sentence turned `table.tsx`'s `layout` JSDoc into
+// "Responsive presentation." and discarded the sentence that names `'stacked'`; a later
+// character cap truncated seven props, six of which lost contract rather than rationale.
+test('a prop description is published whole', () => {
+  const full =
+    "Responsive presentation. Defaults to 'scroll'. Set 'stacked' to render a card presentation instead.";
+
+  assert.equal(summarizeDescription(full), full);
+});
+
+test('a prop description is published whole however long it runs', () => {
+  const long = `${'a'.repeat(300)}. ${'b'.repeat(300)}.`;
+
+  assert.equal(summarizeDescription(long), long);
+});
+
+test('a prop description collapses the line breaks a JSDoc block wraps at', () => {
+  assert.equal(summarizeDescription('Column span,\n   e.g. 2.\n'), 'Column span, e.g. 2.');
+});
+
+
+
+// A floor comparison alone passes 583 of 584 whenever the total grows by the same amount as the
+// gap, so one newly undocumented prop reaches the published tables with every gate green.
+test('one undescribed prop is a violation even when the floor is still met', () => {
+  const fields = Array.from({ length: PROP_DESCRIPTION_FLOOR }, (unused, index) => ({
+    name: `documented${index}`,
+    description: 'Described.',
+  }));
+  const manifest = [
+    { typeDocs: [{ kind: 'object', fields: [...fields, { name: 'brandNew', description: '' }] }] },
+  ];
+
+  const violations = collectPropDescriptionViolations(manifest);
+
+  assert.equal(violations.length, 1);
+  assert.match(violations[0], /1 published prop\(s\) have no description/u);
+});
+
+test('a manifest below the floor reports the floor, not the per-prop gap', () => {
+  const manifest = [{ typeDocs: [{ kind: 'object', fields: [{ name: 'only', description: '' }] }] }];
+
+  assert.match(collectPropDescriptionViolations(manifest)[0], /floor \d+/u);
+});
+
+test('a fully described manifest at the floor is clean', () => {
+  const fields = Array.from({ length: PROP_DESCRIPTION_FLOOR }, (unused, index) => ({
+    name: `documented${index}`,
+    description: 'Described.',
+  }));
+
+  assert.deepEqual(collectPropDescriptionViolations([{ typeDocs: [{ kind: 'object', fields }] }]), []);
 });

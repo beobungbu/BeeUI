@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `SearchInput`
+  - Also routed here, outside the Registry family:
+    - `search-input`
+  - Package export subpath: `@beemvp/beeui-ui/search-input`
 
 **Exported types:** `SearchInputProps`
 
@@ -50,7 +53,7 @@ Uncontrolled-by-default search-keyboard field layered on `Input`; clearing a pre
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `onSearch` | `(value: string) => void` | — | — |
+| `onSearch` | `(value: string) => void` | — | Called with the submitted text when the return key is pressed, and with `''` when the text is cleared back to empty after having had content. Not called for every keystroke — use `onChangeText` for that. |
 
 Also carries every prop of `Omit<InputProps, 'inputMode' \| 'returnKeyType'>` — documented on the [Input](/docs/components/input/) page, not reproduced here.
 

@@ -147,7 +147,7 @@ function isDependencyGraphPath(file) {
 // Generated public artifacts and the code that produces or asserts them.
 const DOC_ARTIFACT_RE = /^llms(?:-[a-z]+)?\.txt$/;
 const DOC_EXTRA_EXACT = new Set(['AGENTS.md']);
-const DOC_LIB_RE = /^scripts\/(?:component-docs-lib|component-props-lib|public-component-reference|public-pattern-reference|public-reference|public-guide-data|public-portal-shell|generate-production-pattern-usage|check-portal-pages-fresh)\.mjs$/;
+const DOC_LIB_RE = /^scripts\/(?:component-docs-lib|component-props-lib|public-component-reference|public-pattern-reference|public-reference|public-guide-data|public-portal-shell|generate-production-pattern-usage|check-portal-pages-fresh|public-docs-a11y|report-prop-coverage|check-docs-page-budget)\.mjs$/;
 
 const WEB_PREFIXES_EXTRA = ['scripts/public-web-checks/', 'examples/', '.github/deployment/'];
 const WEB_LIB_RE = /^scripts\/(?:public-site-contract-lib|public-component-previews)\.mjs$/;
@@ -215,8 +215,31 @@ function isWebPath(file) {
   );
 }
 
+// The docs portal's accessibility audit lives in the visual lane, so the lane must also be
+// selected by the things that audit validates: the post-processing step that makes code blocks
+// and tables keyboard-reachable, and the portal content itself. Without this, `web-a11y` does
+// not run on a pull request that changes either — the audit is absent from exactly the change
+// that could break it, which is the failure shape this whole program keeps closing.
+// `web-a11y` is the only job that builds the docs portal (its Playwright webServer runs
+// `pnpm --filter @beemvp/beeui-docs build`), and that build is where the keyboard-reachability,
+// page-weight and search-intent checks actually run. So the lane must be selected by anything
+// that can change what those checks see, which is the whole docs app — its content, its config,
+// its build chain, and the public assets that land in `dist` and count against the budget — plus
+// the check scripts themselves. Listing only the content directory left the search check and its
+// ranking module able to change without the job that runs them ever starting.
+const VISUAL_A11Y_EXACT = new Set([
+  'scripts/check-docs-page-budget.mjs',
+  'scripts/check-docs-search-intent.mjs',
+  'scripts/public-docs-a11y.mjs',
+]);
+const VISUAL_A11Y_PREFIXES = ['apps/docs/'];
+
 function isVisualPath(file) {
-  return VISUAL_PREFIXES.some((prefix) => file.startsWith(prefix));
+  return (
+    VISUAL_PREFIXES.some((prefix) => file.startsWith(prefix)) ||
+    VISUAL_A11Y_EXACT.has(file) ||
+    VISUAL_A11Y_PREFIXES.some((prefix) => file.startsWith(prefix))
+  );
 }
 
 function isTokenPath(file) {

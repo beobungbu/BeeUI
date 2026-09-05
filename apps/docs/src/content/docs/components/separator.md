@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `Separator`
+  - Also routed here, outside the Registry family:
+    - `separator`
+  - Package export subpath: `@beemvp/beeui-ui/separator`
 
 **Exported types:** `SeparatorProps`
 
@@ -50,9 +53,9 @@ Stateless decorative-by-default divider; `decorative={false}` makes it semantic,
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
-| `decorative` | `boolean` | `true` | — |
-| `orientation` | `'horizontal' \| 'vertical'` | `'horizontal'` | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `decorative` | `boolean` | `true` | When true (the default), hides the separator from accessibility and omits `role="separator"`, since a purely visual divider should not be announced. Set to false for a separator that conveys real structure. |
+| `orientation` | `'horizontal' \| 'vertical'` | `'horizontal'` | `'horizontal'` renders a full-width 1px-tall line; `'vertical'` renders a self-stretching 1px-wide line. Defaults to `'horizontal'`. |
 
 Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract is not reproduced here.
 

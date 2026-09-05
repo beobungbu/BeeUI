@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `BeeThemeScope`
+  - Also routed here, outside the Registry family:
+    - `theme-scope`
+  - Package export subpath: `@beemvp/beeui-ui/theme-scope`
 
 **Exported types:** `BeeThemeScopeProps`
 
@@ -50,8 +53,8 @@ Stateless `BeeThemeScope` subtree boundary; it applies a scoped theme override t
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `registry` | `ThemeRegistry<Def>` | — | The registry used to resolve `brand`/`appearance` (or validate `theme`). |
-| `children` | `React.ReactNode` | — | — |
+| `registry` | `ThemeRegistry<Def>` | — | The registry used to resolve `brand`/`appearance` (or validate `theme`). Defaults to `beeThemeRegistry` (Bee + Violet, from #67). Pass a registry built with `defineThemeRegistry` to scope by a consumer-defined brand. |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 
 Also carries every prop of `(\| { /** Semantic brand, resolved through `registry`. */ brand: RegistryBrand<Def>; /** Semantic appearance, resolved through `registry`. */ appearance: RegistryAppearance<Def>; theme?: undefined; } \| { /** An already-resolved Uniwind runtime-theme name, validated against `registry`. */ theme: RegistryRuntimeTheme<Def>; brand?: undefined; appearance?: undefined; })` — that upstream contract is not reproduced here.
 

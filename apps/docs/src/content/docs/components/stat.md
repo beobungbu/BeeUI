@@ -38,6 +38,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
    `StatHelpText`
    `StatLabel`
    `StatValue`
+  - Also routed here, outside the Registry family:
+    - `stat`
+  - Package export subpath: `@beemvp/beeui-ui/stat`
 
 **Exported types:** `StatHelpTextProps`, `StatLabelProps`, `StatProps`, `StatValueProps`
 
@@ -75,7 +78,7 @@ Also carries every prop of `Omit<TextProps, 'variant'>` — documented on the [T
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 
 Also carries every prop of `ViewProps` — that upstream contract is not reproduced here.
 

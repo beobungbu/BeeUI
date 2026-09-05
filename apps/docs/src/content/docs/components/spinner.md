@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `Spinner`
+  - Also routed here, outside the Registry family:
+    - `spinner`
+  - Package export subpath: `@beemvp/beeui-ui/spinner`
 
 **Exported types:** `SpinnerProps`
 
@@ -50,8 +53,8 @@ Stateless native activity indicator with semantic tone mapping; no controlled pr
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
-| `tone` | `SpinnerTone` | `'primary'` | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `tone` | `SpinnerTone` | `'primary'` | Semantic color the spinner renders in (e.g. `'destructive'` for an inline error-state spinner). Defaults to `'primary'`. |
 
 Also carries every prop of `Omit<ActivityIndicatorProps, 'color'>` — that upstream contract is not reproduced here.
 

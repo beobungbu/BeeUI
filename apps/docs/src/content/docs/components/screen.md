@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `Screen`
+  - Also routed here, outside the Registry family:
+    - `screen`
+  - Package export subpath: `@beemvp/beeui-ui/screen`
 
 **Exported types:** `ScreenProps`
 
@@ -50,8 +53,8 @@ Stateless base application surface with a semantic background and optional spaci
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
-| `padding` | `keyof typeof paddingClasses` | `'none'` | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `padding` | `keyof typeof paddingClasses` | `'none'` | Preset horizontal/vertical padding: `'none'` (0), `'sm'`, `'md'`, or `'lg'`. Defaults to `'none'`. |
 
 Also carries every prop of `ViewProps` — that upstream contract is not reproduced here.
 

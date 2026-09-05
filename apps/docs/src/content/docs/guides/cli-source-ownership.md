@@ -11,11 +11,12 @@ copier for that model. It runs today from a BeeUI checkout.
 Do not use `npx @beemvp/beeui-cli …`, `npx beeui …`, or public npm install commands as if they resolve today — the packages are not published and stable publication remains owner-gated.
 :::
 
-## Do it
+## Run `beeui add` and the rest of the CLI
 
-The CLI has no project-targeting flag: it resolves the project from the current working
-directory. `pnpm beeui` runs with the cwd at the BeeUI repository root, so these commands act on
-**this checkout**, which is what you want while evaluating the registry from a BeeUI clone:
+`beeui add` is the command that copies a component's source into your project; the CLI has no
+project-targeting flag, so it resolves the project from the current working directory. `pnpm beeui`
+runs with the cwd at the BeeUI repository root, so these commands act on **this checkout**, which
+is what you want while evaluating the registry from a BeeUI clone:
 
 ```bash
 pnpm beeui init

@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `Skeleton`
    `skeletonVariants`
+  - Also routed here, outside the Registry family:
+    - `skeleton`
+  - Package export subpath: `@beemvp/beeui-ui/skeleton`
 
 **Exported types:** `SkeletonProps`
 
@@ -51,7 +54,7 @@ Stateless decorative static loading placeholder; it is hidden from the accessibi
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 
 Also carries every prop of `Omit<ViewProps, 'accessible' \| 'aria-hidden'>` and `VariantProps<typeof skeletonVariants>` — that upstream contract is not reproduced here.
 

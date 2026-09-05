@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `KeyboardAwareScreen`
+  - Also routed here, outside the Registry family:
+    - `keyboard-aware-screen`
+  - Package export subpath: `@beemvp/beeui-ui/keyboard-aware-screen`
 
 **Exported types:** `KeyboardAwareScreenContentWidth`, `KeyboardAwareScreenKeyboardDismissMode`, `KeyboardAwareScreenProps`, `KeyboardAwareScreenSafeAreaEdges`
 
@@ -50,14 +53,14 @@ Stateless scrollable form-screen shell; it owns explicit safe-area edges and pla
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` **(required)** | `React.ReactNode` | — | Screen content. |
-| `className` | `string` | — | — |
-| `contentWidth` | `KeyboardAwareScreenContentWidth` | `'full'` | Bounded max-width applied to the scrollable content so long-line forms stay readable on wide/tablet/web viewports. |
-| `keyboardScrollMargin` | `number` | `24` | Gap kept between the focused input and the keyboard once scrolled into view on Android. |
-| `keyboardDismissMode` | `KeyboardAwareScreenKeyboardDismissMode` | — | Maps to the underlying `ScrollView`'s `keyboardDismissMode`. |
-| `keyboardShouldPersistTaps` | `ScrollViewProps['keyboardShouldPersistTaps']` | `'handled'` | Maps to the underlying `ScrollView`'s `keyboardShouldPersistTaps`. |
-| `safeAreaEdges` | `KeyboardAwareScreenSafeAreaEdges` | — | Safe-area edges this screen owns. |
-| `testID` | `string` | — | — |
+| `children` **(required)** | `React.ReactNode` | — | Screen content. Composed inside the bounded, scrollable, keyboard-avoiding body. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `contentWidth` | `KeyboardAwareScreenContentWidth` | `'full'` | Bounded max-width applied to the scrollable content so long-line forms stay readable on wide/tablet/web viewports. Defaults to `'full'` (no bound) — opt into a narrower measure for form-style screens. |
+| `keyboardScrollMargin` | `number` | `24` | Gap kept between the focused input and the keyboard once scrolled into view on Android. Defaults to 24. |
+| `keyboardDismissMode` | `KeyboardAwareScreenKeyboardDismissMode` | — | Maps to the underlying `ScrollView`'s `keyboardDismissMode`. Defaults to `'interactive'` on iOS and `'on-drag'` elsewhere so drag-to-dismiss stays effective on Android, where React Native treats `interactive` like `none`. |
+| `keyboardShouldPersistTaps` | `ScrollViewProps['keyboardShouldPersistTaps']` | `'handled'` | Maps to the underlying `ScrollView`'s `keyboardShouldPersistTaps`. Defaults to `'handled'` so taps on interactive children (buttons, links) inside the scroll body do not require a second tap after the keyboard has focus. |
+| `safeAreaEdges` | `KeyboardAwareScreenSafeAreaEdges` | — | Safe-area edges this screen owns. Left unset by default: a screen composed under a header/tab-bar shell that already owns safe-area insets should not also apply them here (double-inset). Pass the edges this screen actually touches (e.g. `['top', 'bottom']`) when it owns the full window. |
+| `testID` | `string` | — | Test identifier. Forwarded to the native `testID` and, on Web, emitted as `data-testid`. |
 
 **Related exported types:**
 

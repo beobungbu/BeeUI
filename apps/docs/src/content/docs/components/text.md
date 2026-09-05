@@ -36,6 +36,12 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `Text`
    `textVariants`
+  - Also routed here, outside the Registry family:
+    - `FontFamily`
+    - `NumericVariant`
+    - `semanticTypographyClasses`
+    - `text`
+  - Package export subpath: `@beemvp/beeui-ui/text`
 
 **Exported types:** `TextProps`
 
@@ -51,9 +57,9 @@ Stateless semantic typography primitive; `variant`/`tone` apply typed styling, a
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
-| `numeric` | `NumericVariant` | — | — |
-| `family` | `FontFamily` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `numeric` | `NumericVariant` | — | `'tabular'` opts numeric content into equal-width figures so columns of amounts/KPIs/timers align. Omit for normal proportional figures. |
+| `family` | `FontFamily` | — | `'mono'` renders the text in the system-monospace fallback stack (e.g. for reference codes/IDs). Opt-in only — omitting it preserves the inherited sans/system font. |
 
 Also carries every prop of `RNTextProps` and `VariantProps<typeof textVariants>` — that upstream contract is not reproduced here.
 

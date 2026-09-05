@@ -8,6 +8,7 @@ export type MetadataRowProps = Omit<ViewProps, 'children'> & {
   className?: string;
   description?: React.ReactNode;
   label: React.ReactNode;
+  /** Rendered end-aligned opposite the label, in a column capped at 60% of the row's width. */
   value: React.ReactNode;
 };
 

@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `DescriptionItem`
    `DescriptionList`
+  - Also routed here, outside the Registry family:
+    - `description-list`
+  - Package export subpath: `@beemvp/beeui-ui/description-list`
 
 **Exported types:** `DescriptionItemProps`, `DescriptionListProps`
 
@@ -53,10 +56,10 @@ Stateless read-only grouped label/value composition; it owns no data-state, load
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
-| `description` | `React.ReactNode` | — | — |
-| `label` **(required)** | `React.ReactNode` | — | — |
-| `value` **(required)** | `React.ReactNode` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
+| `label` **(required)** | `React.ReactNode` | — | The visible text naming this element, and the accessible name unless one is set explicitly. |
+| `value` **(required)** | `React.ReactNode` | — | Rendered end-aligned opposite the label, in a column capped at 60% of the row's width. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
@@ -64,7 +67,7 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 
 Also carries every prop of `ViewProps` — that upstream contract is not reproduced here.
 

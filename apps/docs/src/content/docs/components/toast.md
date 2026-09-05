@@ -37,6 +37,11 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 - Family exports: `TOAST_DEFAULT_DURATION`
    `TOAST_MAX_VISIBLE`
    `useToast`
+  - Also routed here, outside the Registry family:
+    - `ToastRuntimeProviderProps`
+    - `ToastRuntimeProvider`
+    - `toast`
+  - Package export subpath: `@beemvp/beeui-ui/toast`
 
 **Exported types:** `ToastAction`, `ToastApi`, `ToastDuration`, `ToastId`, `ToastOptions`, `ToastVariant`
 

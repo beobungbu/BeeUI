@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `Progress`
    `progressVariants`
+  - Also routed here, outside the Registry family:
+    - `progress`
+  - Package export subpath: `@beemvp/beeui-ui/progress`
 
 **Exported types:** `ProgressProps`
 
@@ -51,11 +54,11 @@ Stateless clamped determinate progress bar; there is no lower-bound prop — `va
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
-| `indicatorClassName` | `string` | — | — |
-| `indicatorStyle` | `StyleProp<ViewStyle>` | — | — |
-| `max` | `number` | `100` | — |
-| `value` **(required)** | `number` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `indicatorClassName` | `string` | — | Applied to the filled indicator bar, not the track. |
+| `indicatorStyle` | `StyleProp<ViewStyle>` | — | Applied to the filled indicator bar, alongside the computed `width` style; not the track. |
+| `max` | `number` | `100` | Upper bound `value` is measured against to compute the filled percentage. Non-finite or non-positive values fall back to 100. The accessible minimum is always 0 — there is no `min` prop. Defaults to 100. |
+| `value` **(required)** | `number` | — | Current progress, clamped to `[0, max]`; a non-finite value is treated as 0. |
 
 Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof progressVariants>` — that upstream contract is not reproduced here.
 

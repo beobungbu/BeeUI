@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `BottomActionBar`
+  - Also routed here, outside the Registry family:
+    - `bottom-action-bar`
+  - Package export subpath: `@beemvp/beeui-ui/bottom-action-bar`
 
 **Exported types:** `BottomActionBarProps`
 
@@ -50,8 +53,8 @@ Stateless bottom-anchored action surface with no controlled props; it adds no sy
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bordered` | `boolean` | `true` | — |
-| `className` | `string` | — | — |
+| `bordered` | `boolean` | `true` | Renders a top border separating the bar from the content above. Defaults to true. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 
 Also carries every prop of `ViewProps` — that upstream contract is not reproduced here.
 

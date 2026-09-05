@@ -12,12 +12,19 @@ export type FormGroupProps = Omit<
   children: React.ReactNode;
   className?: string;
   description?: string;
+  /** ORed into a `RadioGroup` rendered as `children`, disabling every `Radio` inside it. Defaults to false. */
   disabled?: boolean;
+  /** Shown instead of `description`, styled destructively, when `invalid` is true. */
   error?: string;
+  /** Switches the helper text below `children` from `description` to `error`. Defaults to false. */
   invalid?: boolean;
+  /** Heading text for the group, rendered as a `Label` above `children` (e.g. "Shipping method"). */
   legend: string;
+  /** `nativeID` for the rendered legend `Label`, used to build `accessibilityLabelledBy` links (e.g. from a `RadioGroup` rendered as `children`). Defaults to a generated, stable-per-mount ID. */
   legendNativeID?: string;
+  /** Renders the legend with a required indicator and appends `requiredAccessibilityLabel` to its accessible name. Defaults to false. */
   required?: boolean;
+  /** Text appended to the legend's accessible name when `required` is true (e.g. "Shipping method, required"). Defaults to `'required'`. */
   requiredAccessibilityLabel?: string;
 };
 

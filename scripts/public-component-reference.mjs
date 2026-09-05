@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { coverageForComponent } from '../apps/showcase/component-coverage.ts';
 import { showcaseHref } from '../apps/showcase/showcase-target.ts';
+import { buildPublicSurfaceInventory } from './generate-public-surface-inventory.mjs';
 import {
   ROOT_DIR,
   buildShowcaseUsageIndex,
@@ -54,6 +55,9 @@ function githubHref(pathname) {
 export function buildPublicComponentManifest(rootDir = ROOT_DIR) {
   const content = readJson('docs/component-reference.content.json', rootDir);
   const usageIndex = buildShowcaseUsageIndex(rootDir);
+  // The inventory is the ownership authority; the registry is only the family list. Reading
+  // both here is what lets a page name every surface routed to it.
+  const inventoryRows = buildPublicSurfaceInventory(rootDir).rows;
   return getPublicComponents(rootDir).map((component) => {
     const curated = content.components?.[component.name];
     const examples = usageForComponent(component, usageIndex).slice(0, 4);
@@ -68,6 +72,10 @@ export function buildPublicComponentManifest(rootDir = ROOT_DIR) {
       typeDocs: getComponentTypeDocs(component, rootDir),
       examples,
       route: `/docs/components/${component.name}/`,
+      routedSurfaces: routedSurfacesFor({ ...component, docsRoute: `/docs/components/${component.name}/` }, inventoryRows),
+      subpath: inventoryRows.find(
+        (row) => row.kind === 'package-export' && row.primaryDocsOwner === `/docs/components/${component.name}/`,
+      )?.name,
       showcaseHref: showcaseHref({ surface: 'component', id: component.name, example: 'basic' }),
       exampleTargets: coverageForComponent(component.name).map((example) => ({
         example,
@@ -142,6 +150,65 @@ function findUnknownBehaviorPropReferences(component, rootDir, field = 'behavior
   return unknown;
 }
 
+// Prop descriptions were 13% covered — 452 of 521 rows blank, and 46 of 58 pages with an empty
+// Description on every prop. A shared glossary closed the structural and anchored-overlay
+// vocabulary; the rest are family-specific and need real JSDoc in `packages/ui/src`.
+//
+// A ratchet rather than a pass/fail threshold: failing on any blank would fail today and teach
+// nothing, and a silent percentage would drift back down the way it drifted here. The floor is
+// the measured value at the time it was written, so coverage can only go up.
+export const PROP_DESCRIPTION_FLOOR = 583;
+
+// Walks a resolved type entry the same way `applyGlossary` and the renderer do:
+// a `union` entry carries no `fields` of its own, only `variants`, each of which is
+// itself an object (or nested union) shape. Scope: this counts the rows of the four-column
+// props tables only. A shape with no fields of its own instead publishes a two-column
+// `Prop | Default` table from `shape.consumed` (39 such rows today); those cells have no
+// description slot at all — the prop is described on the base type's own page — so they are
+// deliberately outside this denominator. Counting `entry.fields` alone reported
+// 521/521 while 26 variant props rendered an em dash, because the props that would
+// have disagreed were never in the counter's scope.
+function walkShapeFields(shape, visit) {
+  for (const field of shape?.fields ?? []) visit(field);
+  for (const variant of shape?.variants ?? []) walkShapeFields(variant, visit);
+}
+
+export function collectPropDescriptionCoverage(manifest) {
+  let total = 0;
+  let described = 0;
+  for (const component of manifest) {
+    for (const entry of component.typeDocs ?? []) {
+      walkShapeFields(entry, (field) => {
+        total += 1;
+        if (field.description) described += 1;
+      });
+    }
+  }
+  return { described, total };
+}
+
+export function collectPropDescriptionViolations(manifest) {
+  const { described, total } = collectPropDescriptionCoverage(manifest);
+  const remedy =
+    'Document the prop in `packages/ui/src` with JSDoc, or add it to docs/prop-glossary.json if ' +
+    'its meaning is identical on every family that declares it.';
+  const violations = [];
+
+  // Two separate failures. The floor catches a bulk regression even if the total moves with it;
+  // `described === total` catches a single new undescribed prop, which a floor comparison alone
+  // lets through whenever the total grows by the same amount (583 of 584 still clears a floor
+  // of 583).
+  if (described < PROP_DESCRIPTION_FLOOR) {
+    violations.push(
+      `prop descriptions dropped to ${described} of ${total} (floor ${PROP_DESCRIPTION_FLOOR}). ${remedy}`,
+    );
+  } else if (described < total) {
+    violations.push(`${total - described} published prop(s) have no description. ${remedy}`);
+  }
+
+  return violations;
+}
+
 export function collectPublicComponentReferenceViolations(rootDir = ROOT_DIR) {
   const violations = [];
   const manifest = buildPublicComponentManifest(rootDir);
@@ -194,6 +261,8 @@ export function collectPublicComponentReferenceViolations(rootDir = ROOT_DIR) {
     if (!names.has(name)) violations.push(`curated component ${name} is no longer a public Registry/export-map component.`);
   }
 
+
+  violations.push(...collectPropDescriptionViolations(buildPublicComponentManifest(rootDir)));
   return violations;
 }
 
@@ -208,8 +277,36 @@ function renderExampleTargets(component) {
 }
 
 function renderAnatomy(component) {
-  if (component.values.length <= 1) return `- Primary export: \`${component.values[0]}\``;
-  return component.values.map((value, index) => `${index === 0 ? '- Family exports:' : '  '} \`${value}\``).join('\n');
+  const lines = component.values.length <= 1
+    ? [`- Primary export: \`${component.values[0]}\``]
+    : component.values.map((value, index) => `${index === 0 ? '- Family exports:' : '  '} \`${value}\``);
+
+  // Surfaces the #473 inventory routes to this page but that are not part of the Registry
+  // family. `getPublicComponents` reads registry.json, so a public symbol with no registry
+  // family — `ToastRuntimeProvider`, `getTextareaWebMinHeight`, `semanticTypographyClasses` —
+  // was assigned this owner page and then never written to it. The ownership gate reported
+  // 683/683 documented because it checked that a row had an owner route, never that the page
+  // named the row.
+  if (component.routedSurfaces?.length) {
+    lines.push('  - Also routed here, outside the Registry family:');
+    for (const surface of component.routedSurfaces) lines.push(`    - \`${surface.name}\``);
+  }
+  if (component.subpath) {
+    lines.push(`  - Package export subpath: \`@beemvp/beeui-ui${surfaceSubpath(component.subpath)}\``);
+  }
+  return lines.join('\n');
+}
+
+// `./accordion` in the inventory is the subpath a consumer writes after the package name.
+function surfaceSubpath(name) {
+  return name.replace(/^\./u, '');
+}
+
+// Rows the inventory routes to a component page, minus what the family already lists.
+export function routedSurfacesFor(component, rows) {
+  const listed = new Set([...component.values, ...component.types]);
+  const owner = component.docsRoute ?? `/docs/components/${component.name}/`;
+  return rows.filter((row) => row.primaryDocsOwner === owner && row.kind !== 'package-export' && !listed.has(row.name));
 }
 
 // --- Derived props tables (WBS-G061 B1) -------------------------------------

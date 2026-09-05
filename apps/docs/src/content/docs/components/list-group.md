@@ -36,6 +36,10 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `ListGroup`
    `ListGroupHeader`
+  - Also routed here, outside the Registry family:
+    - `ListGroupMembershipContext`
+    - `list-group`
+  - Package export subpath: `@beemvp/beeui-ui/list-group`
 
 **Exported types:** `ListGroupHeaderProps`, `ListGroupProps`
 
@@ -51,10 +55,10 @@ Stateless bordered grouped-row surface with list container semantics; it does no
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
-| `description` | `React.ReactNode` | — | — |
-| `title` **(required)** | `React.ReactNode` | — | — |
-| `trailing` | `React.ReactNode` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
+| `title` **(required)** | `React.ReactNode` | — | The primary heading text for this surface. |
+| `trailing` | `React.ReactNode` | — | Content rendered at the end of the row, after the primary content — actions, badges or status. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
@@ -62,7 +66,7 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 
 Also carries every prop of `Omit<ViewProps, 'accessibilityRole' \| 'role'>` — that upstream contract is not reproduced here.
 

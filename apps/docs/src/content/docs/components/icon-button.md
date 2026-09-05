@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `IconButton`
+  - Also routed here, outside the Registry family:
+    - `icon-button`
+  - Package export subpath: `@beemvp/beeui-ui/icon-button`
 
 **Exported types:** `IconButtonProps`
 
@@ -50,8 +53,8 @@ Stateless 44px icon-only pressable sharing Button's `disabled`/`loading` semanti
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `accessibilityLabel` **(required)** | `string` | — | — |
-| `children` **(required)** | `React.ReactNode` | — | — |
+| `accessibilityLabel` **(required)** | `string` | — | Required (unlike `Button`'s optional label): an icon-only button has no text content to infer an accessible name from. |
+| `children` **(required)** | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 
 Also carries every prop of `Omit<ButtonProps, 'accessibilityLabel' \| 'children' \| 'labelClassName' \| 'size'>` — documented on the [Button](/docs/components/button/) page, not reproduced here.
 

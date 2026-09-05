@@ -26,7 +26,10 @@ const canonicalProjects = viewportNames.flatMap((viewportName) =>
       visualTheme: theme,
       visualViewport: viewportName,
     } satisfies VisualProjectMetadata,
-    testIgnore: /(showcase|overlay-context|a11y|a11y-gate|a11y-readiness)\.spec\.ts/,
+    // `a11y[-\w]*` rather than an explicit list: adding a11y-docs-portal.spec.ts under the old
+    // exact alternation let it run in every canonical visual project, where the mobile viewport
+    // turned an accessibility finding into a visual-regression failure.
+    testIgnore: /(showcase|overlay-context|a11y[-\w]*)\.spec\.ts/,
     use: {
       colorScheme: colorSchemeForVisualTheme(theme),
       deviceScaleFactor: 1,
@@ -85,6 +88,15 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,
     },
+    // The documentation portal, for the WBS-H072 audit. Every a11y scenario before this one
+    // navigated to the Showcase, so `web-a11y` passing said nothing about the 151-page site a
+    // reader actually uses.
+    {
+      command: 'pnpm --filter @beemvp/beeui-docs build && node ./scripts/serve-docs.mjs',
+      url: 'http://127.0.0.1:4175/docs/',
+      reuseExistingServer: !process.env.CI,
+      timeout: 300_000,
+    },
   ],
   projects: [
     ...canonicalProjects,
@@ -119,13 +131,26 @@ export default defineConfig({
             // Includes the overlay readiness regression (a11y-readiness.spec.ts),
             // which pins the settled-modal-owner contract the dialog-overlay
             // scenario synchronizes on before axe runs.
-            testMatch: /a11y(-readiness)?\.spec\.ts/,
+            testMatch: /a11y(-readiness|-docs-portal)?\.spec\.ts/,
             use: {
               colorScheme: 'light' as const,
               deviceScaleFactor: 1,
               viewport: { width: 1280, height: 800 },
             },
           },
+          // The portal audit again on the other two engines. Chromium-only was on H072's
+          // "not covered" list: a rendering or focus difference in WebKit or Gecko would have
+          // been invisible. Scoped to the docs spec — the Showcase suite stays Chromium.
+          ...(['firefox', 'webkit'] as const).map((browserName) => ({
+            name: `a11y-docs-${browserName}`,
+            testMatch: /a11y-docs-portal\.spec\.ts/,
+            use: {
+              browserName,
+              colorScheme: 'light' as const,
+              deviceScaleFactor: 1,
+              viewport: { width: 1280, height: 800 },
+            },
+          })),
           // Pure-logic regression coverage for the allowlist/blocking gate
           // itself — no browser page is used, so it runs under any project's
           // browser context.

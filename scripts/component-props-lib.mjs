@@ -53,16 +53,18 @@ function scriptKindFor(filePath) {
   return filePath.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
 }
 
-// Common mid-sentence abbreviations ("e.g.", "i.e.", "etc.") would otherwise
-// look like a sentence boundary to the naive regex below, truncating
-// descriptions such as table.tsx's `colSpan` JSDoc mid-clause.
-const ABBREVIATION_DOT_PLACEHOLDER = '\u0000';
-
-function firstSentence(text) {
-  const clean = text.replace(/\s+/g, ' ').trim();
-  const guarded = clean.replace(/\b(e\.g|i\.e|etc)\./gi, (match) => match.replace(/\.$/, ABBREVIATION_DOT_PLACEHOLDER));
-  const match = guarded.match(/^.*?[.!?](?=\s|$)/);
-  return (match ? match[0] : guarded).trim().replaceAll(ABBREVIATION_DOT_PLACEHOLDER, '.');
+// Props tables publish a prop's whole JSDoc description.
+//
+// Two narrower rules were tried and both lost real contract. Publishing only the first
+// sentence dropped the operative clause for 263 of the 382 documented props (Table's `layout`
+// read "Responsive presentation." with the sentence naming `'stacked'` discarded). Capping the
+// summary at 280 characters still truncated seven props, and six of those lost user-facing
+// contract rather than the maintainer rationale the cap was meant to trim — `Sheet.avoidKeyboard`
+// kept its ADR reference and dropped "does not itself read this flag", so the page told a reader
+// the prop worked. A prop whose JSDoc runs long is a prop to rewrite, not one to truncate
+// silently: the longest real description is 413 characters.
+export function summarizeDescription(text) {
+  return text.replace(/\s+/gu, ' ').trim();
 }
 
 // JSDoc immediately preceding a node: first-sentence description, plus whether
@@ -74,7 +76,7 @@ function getJsDocDescription(node) {
   for (const doc of ts.getJSDocCommentsAndTags(node)) {
     if (ts.isJSDoc(doc)) {
       if (doc.comment && !description) {
-        description = firstSentence(ts.getTextOfJSDocComment(doc.comment) ?? '');
+        description = summarizeDescription(ts.getTextOfJSDocComment(doc.comment) ?? '');
       }
       for (const tag of doc.tags ?? []) {
         if (tag.tagName.text === 'internal') internal = true;
@@ -507,7 +509,7 @@ function normalizeTypeText(text) {
 }
 
 function normalizeBaseList(bases) {
-  return [...(bases ?? [])].map(normalizeTypeText).sort().join(' ');
+  return [...(bases ?? [])].map(normalizeTypeText).sort().join('\u0000');
 }
 
 function diffFieldLists(nativeFields, webFields) {
@@ -746,6 +748,25 @@ function fillConsumedFallback(shape, files, names) {
 // Full derived-types model for one public component family, in the same
 // (already-sorted) order as `component.types` from `getPublicComponents()`.
 // This is the only function `public-component-reference.mjs` needs.
+export const PROP_GLOSSARY_FILE = 'docs/prop-glossary.json';
+
+// Structural props repeat across families and are documented nowhere: `className` appears
+// undescribed on 51 families, `children` on 26. Of 452 undescribed prop rows, 372 belong to
+// props that repeat three or more times, so the gap is a shared vocabulary rather than 452
+// separate facts. Source JSDoc always wins — the glossary only fills a blank.
+function propGlossary(rootDir) {
+  const file = path.join(rootDir, PROP_GLOSSARY_FILE);
+  if (!fs.existsSync(file)) return {};
+  return JSON.parse(fs.readFileSync(file, 'utf8')).props ?? {};
+}
+
+function applyGlossary(shape, glossary) {
+  for (const field of shape?.fields ?? []) {
+    if (!field.description && glossary[field.name]) field.description = glossary[field.name];
+  }
+  for (const variant of shape?.variants ?? []) applyGlossary(variant, glossary);
+}
+
 export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
   const index = getComponentsIndex(rootDir);
   const opts = {
@@ -763,6 +784,7 @@ export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
     const entry = resolveComponentTypeEntry(index, typeName, { ...opts, errorLabel: `${component.name}: ${typeName}` });
     if (entry.docKind === 'props') {
       applyDefaults(entry, extractDefaults(files, entry.names));
+      applyGlossary(entry, propGlossary(rootDir));
       // A pure alias of an upstream type documents nothing on its own; fall back to the props
       // the implementation actually reads out of it.
       fillConsumedFallback(entry, files, entry.names);
@@ -786,6 +808,7 @@ export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
         // accepted for API parity and deliberately unread. Reporting only that its type differs
         // is true and misleading: on Web `modalProps`, `avoidKeyboard` and `enableSwipeToDismiss`
         // do nothing at all.
+        applyGlossary(webShape, propGlossary(rootDir));
         webShape.inert = [...extractInertProps(
           [{ path: webPath, source: fs.readFileSync(path.join(rootDir, webPath), 'utf8') }],
           webCtx.names,

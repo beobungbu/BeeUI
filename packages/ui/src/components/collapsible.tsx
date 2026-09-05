@@ -20,9 +20,13 @@ function useCollapsibleContext() {
 export type CollapsibleProps = Omit<ViewProps, 'children'> & {
   children?: React.ReactNode;
   className?: string;
+  /** Initial open state for uncontrolled usage. Defaults to false. */
   defaultOpen?: boolean;
+  /** Blocks the trigger from toggling open state, even a per-trigger `disabled={false}` override. Defaults to false. */
   disabled?: boolean;
+  /** Called with the next open state whenever `CollapsibleTrigger` is pressed while not disabled. */
   onOpenChange?: (open: boolean) => void;
+  /** Whether the content is shown. Passing this switches the collapsible to controlled mode. */
   open?: boolean;
 };
 
@@ -64,6 +68,7 @@ export type CollapsibleTriggerProps = Omit<
 > & {
   children?: React.ReactNode;
   className?: string;
+  /** Disables this trigger. Combined with (not overridden by) the parent `Collapsible`'s own `disabled`. */
   disabled?: boolean;
   labelClassName?: string;
 };

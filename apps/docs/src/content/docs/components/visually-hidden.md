@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `VisuallyHidden`
+  - Also routed here, outside the Registry family:
+    - `visually-hidden`
+  - Package export subpath: `@beemvp/beeui-ui/visually-hidden`
 
 **Exported types:** `VisuallyHiddenProps`
 
@@ -50,7 +53,7 @@ Stateless wrapper that keeps non-interactive content in the accessibility tree w
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | VisuallyHidden is intended for non-interactive assistive text/content. |
+| `children` | `React.ReactNode` | — | VisuallyHidden is intended for non-interactive assistive text/content. Interactive controls should expose their own accessibility label instead. |
 
 Also carries every prop of `ViewProps` — that upstream contract is not reproduced here.
 

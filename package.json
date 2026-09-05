@@ -78,7 +78,7 @@
     "bench:budget": "pnpm bench:footprint && node ./scripts/benchmark/budget-check.mjs",
     "build": "pnpm --filter './packages/*' run build",
     "typecheck": "pnpm hygiene:check && pnpm docs:public-truth:check && pnpm site:contract:check && pnpm docs:foundation:check && pnpm docs:surface:check && pnpm docs:reference:check && pnpm docs:portal-pages:check && pnpm web:check && pnpm release-control-plane:check && pnpm lint && pnpm tokens:check && pnpm tokens:consumption-check && pnpm compat:check && pnpm ui-exports:check && pnpm release-ruleset:check && pnpm dist-policy:check && pnpm llms:check && pnpm ai-contract:check && pnpm docs:contract:check && pnpm docs:examples:check && pnpm docs:patterns:check && pnpm build && pnpm -r --if-present typecheck",
-    "test": "pnpm docs:public-truth:test && pnpm site:contract:test && pnpm docs:foundation:test && pnpm docs:surface:test && pnpm docs:reference:test && pnpm docs:portal-pages:test && pnpm ci-contract:test && pnpm portal-shell:test && pnpm web:test && pnpm release-control-plane:test && pnpm tokens:test && pnpm compat:test && pnpm ui-exports:test && pnpm release-ruleset:test && pnpm dist-policy:test && pnpm llms:test && pnpm ai-contract:test && pnpm docs:contract:test && pnpm docs:examples:test && pnpm docs:patterns:test && pnpm bench:test && pnpm --filter @beemvp/beeui-showcase test && pnpm registry:verify && pnpm registry:test",
+    "test": "pnpm docs:public-truth:test && pnpm site:contract:test && pnpm docs:foundation:test && pnpm docs:surface:test && pnpm docs:reference:test && pnpm docs:portal-pages:test && pnpm docs:a11y:test && pnpm docs:search:test && pnpm docs:budget:test && pnpm ci-contract:test && pnpm portal-shell:test && pnpm web:test && pnpm release-control-plane:test && pnpm tokens:test && pnpm compat:test && pnpm ui-exports:test && pnpm release-ruleset:test && pnpm dist-policy:test && pnpm llms:test && pnpm ai-contract:test && pnpm docs:contract:test && pnpm docs:examples:test && pnpm docs:patterns:test && pnpm bench:test && pnpm --filter @beemvp/beeui-showcase test && pnpm registry:verify && pnpm registry:test",
     "check": "pnpm typecheck && pnpm test",
     "release:verify": "node ./scripts/verify-release.mjs",
     "pack:artifacts": "node ./scripts/pack-artifacts.mjs",
@@ -90,7 +90,15 @@
     "tokens:migration-report": "node ./scripts/generate-token-migration-report.mjs",
     "lint": "eslint packages/ui/src apps/demo/src --max-warnings=0",
     "release-control-plane:check": "node ./scripts/check-release-control-plane.mjs",
-    "release-control-plane:test": "node --test ./scripts/__tests__/release-control-plane.test.mjs"
+    "release-control-plane:test": "node --test ./scripts/__tests__/release-control-plane.test.mjs",
+    "docs:a11y:check": "node ./scripts/public-docs-a11y.mjs --check",
+    "docs:a11y:test": "node --test ./scripts/__tests__/public-docs-a11y.test.mjs",
+    "docs:search:check": "node ./scripts/check-docs-search-intent.mjs --check",
+    "docs:search:test": "node --test ./scripts/__tests__/check-docs-search-intent.test.mjs",
+    "docs:props:coverage": "node ./scripts/report-prop-coverage.mjs",
+    "docs:budget:check": "node ./scripts/check-docs-page-budget.mjs --check",
+    "docs:budget": "node ./scripts/check-docs-page-budget.mjs",
+    "docs:budget:test": "node --test ./scripts/__tests__/check-docs-page-budget.test.mjs"
   },
   "devDependencies": {
     "@hyperjump/json-schema": "1.17.8",

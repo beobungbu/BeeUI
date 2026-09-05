@@ -5,12 +5,16 @@ import { Box } from './box';
 import { Text } from './text';
 
 export type AppHeaderProps = Omit<ViewProps, 'children'> & {
+  /** Renders a bottom border separating the header from the content below. Defaults to true. */
   bordered?: boolean;
   className?: string;
   description?: React.ReactNode;
+  /** Applied to the description `Text` when `description` is a plain string or number; ignored if `description` is a custom element. */
   descriptionClassName?: string;
+  /** Rendered before the title/description column, shrink-to-content (e.g. a back button or logo). */
   leading?: React.ReactNode;
   title: React.ReactNode;
+  /** Applied to the title `Text` when `title` is a plain string or number; ignored if `title` is a custom element. */
   titleClassName?: string;
   trailing?: React.ReactNode;
 };

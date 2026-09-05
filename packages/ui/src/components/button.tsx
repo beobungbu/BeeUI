@@ -98,6 +98,7 @@ export type ButtonProps = Omit<PressableProps, 'accessibilityRole' | 'role' | 'c
     children?: React.ReactNode;
     className?: string;
     labelClassName?: string;
+    /** Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. */
     loading?: boolean;
   };
 

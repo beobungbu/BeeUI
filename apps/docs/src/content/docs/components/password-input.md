@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `PasswordInput`
+  - Also routed here, outside the Registry family:
+    - `password-input`
+  - Package export subpath: `@beemvp/beeui-ui/password-input`
 
 **Exported types:** `PasswordInputProps`
 
@@ -50,13 +53,13 @@ Uncontrolled-by-default text field (same contract as `Input`) with a visibility-
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `containerClassName` | `string` | — | — |
-| `defaultVisible` | `boolean` | `false` | — |
-| `hideLabel` | `string` | `'Hide password'` | — |
-| `onVisibleChange` | `(visible: boolean) => void` | — | — |
-| `showLabel` | `string` | `'Show password'` | — |
-| `toggleClassName` | `string` | — | — |
-| `visible` | `boolean` | — | — |
+| `containerClassName` | `string` | — | Extra utility classes for the overlay's container element, merged after the component's own. |
+| `defaultVisible` | `boolean` | `false` | Initial visibility for uncontrolled usage. Defaults to false (masked). |
+| `hideLabel` | `string` | `'Hide password'` | Accessible label for the toggle button when the password is currently visible (pressing it hides it). Defaults to `'Hide password'`. |
+| `onVisibleChange` | `(visible: boolean) => void` | — | Called with the next visibility whenever the show/hide toggle is pressed. |
+| `showLabel` | `string` | `'Show password'` | Accessible label for the toggle button when the password is currently masked (pressing it shows it). Defaults to `'Show password'`. |
+| `toggleClassName` | `string` | — | Applied to the show/hide toggle `Button`, not the input. |
+| `visible` | `boolean` | — | Controls whether the password is shown in plain text (`true`) or masked via `secureTextEntry` (`false`). Passing this switches visibility to controlled mode. |
 
 Also carries every prop of `Omit<InputProps, 'secureTextEntry'>` — documented on the [Input](/docs/components/input/) page, not reproduced here.
 

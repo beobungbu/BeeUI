@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `Calendar`
+  - Also routed here, outside the Registry family:
+    - `calendar`
+  - Package export subpath: `@beemvp/beeui-ui/calendar`
 
 **Exported types:** `CalendarProps`, `CalendarVisibleMonth`
 
@@ -50,24 +53,24 @@ Controlled month-grid date selection on `value`/`onValueChange` (`CalendarDate |
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `accessibilityLabel` | `string` | — | Names the day grid for assistive tech. |
-| `className` | `string` | — | — |
-| `defaultVisibleMonth` | `CalendarVisibleMonth` | — | Initial visible month when `visibleMonth` is uncontrolled. |
-| `direction` | `AnchoredOverlayDirection` | — | — |
-| `disabled` | `boolean` | — | — |
-| `isDateDisabled` | `(date: CalendarDate) => boolean` | — | — |
-| `locale` | `string` | — | Explicit-only (ADR-008) — no ambient device/browser locale auto-detection. |
-| `max` | `CalendarDate` | — | — |
-| `min` | `CalendarDate` | — | — |
-| `nextMonthAccessibilityLabel` | `string` | — | — |
-| `onValueChange` | `(date: CalendarDate) => void` | — | — |
-| `onVisibleMonthChange` | `(visibleMonth: CalendarVisibleMonth) => void` | — | — |
-| `previousMonthAccessibilityLabel` | `string` | — | — |
+| `accessibilityLabel` | `string` | — | Names the day grid for assistive tech. Defaults to the visible "Month Year" label. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `defaultVisibleMonth` | `CalendarVisibleMonth` | — | Initial visible month when `visibleMonth` is uncontrolled. Defaults to `value`'s month, else today's. |
+| `direction` | `AnchoredOverlayDirection` | — | Forces the grid's text direction (`'ltr'` or `'rtl'`) instead of inferring it from `I18nManager`; also flips which arrow key/icon moves to the previous vs. next day. |
+| `disabled` | `boolean` | — | Disables month navigation and every day cell, and stops keyboard navigation. Distinct from `readOnly`, which keeps the grid navigable but blocks only selection. Defaults to false. |
+| `isDateDisabled` | `(date: CalendarDate) => boolean` | — | Marks individual dates as disabled (in addition to any `min`/`max` bounds) without disabling the whole grid. |
+| `locale` | `string` | — | Explicit-only (ADR-008) — no ambient device/browser locale auto-detection. Defaults to `'en-US'`. |
+| `max` | `CalendarDate` | — | Latest selectable date (inclusive); later dates render disabled. |
+| `min` | `CalendarDate` | — | Earliest selectable date (inclusive); earlier dates render disabled. |
+| `nextMonthAccessibilityLabel` | `string` | — | Accessible label for the "next month" navigation button. Defaults to `'Next month'`. |
+| `onValueChange` | `(date: CalendarDate) => void` | — | Called with the pressed or keyboard-committed date when it is not disabled and `readOnly` is false. |
+| `onVisibleMonthChange` | `(visibleMonth: CalendarVisibleMonth) => void` | — | Called whenever the visible month changes (navigation, or `value` moving into a different month). Required alongside `visibleMonth` to make it controlled; otherwise the calendar falls back to internal navigation state. |
+| `previousMonthAccessibilityLabel` | `string` | — | Accessible label for the "previous month" navigation button. Defaults to `'Previous month'`. |
 | `readOnly` | `boolean` | — | Keeps the grid focusable/navigable but blocks selection, distinct from `disabled`. |
-| `value` **(required)** | `CalendarDate \| null` | — | Controlled selected date. |
-| `visibleMonth` | `CalendarVisibleMonth` | — | — |
-| `weekdayFormat` | `CalendarWeekdayFormat` | — | — |
-| `weekStartsOn` | `CalendarWeekStartsOn` | — | — |
+| `value` **(required)** | `CalendarDate \| null` | — | Controlled selected date. Single-date selection only for 1.0 (ADR-008). |
+| `visibleMonth` | `CalendarVisibleMonth` | — | Controls which month/year the grid displays. Pass alongside `onVisibleMonthChange` to control navigation; otherwise defaults to `value`'s month, else today's, and updates internally. |
+| `weekdayFormat` | `CalendarWeekdayFormat` | — | Controls how weekday header labels are formatted (e.g. short vs. narrow). Defaults to `'short'`. |
+| `weekStartsOn` | `CalendarWeekStartsOn` | — | Which day starts each week row. Defaults to the convention for `locale` when omitted. |
 
 Also carries every prop of `Omit<ViewProps, 'children' \| 'role'>` — that upstream contract is not reproduced here.
 

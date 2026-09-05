@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `EmptyState`
    `ErrorState`
+  - Also routed here, outside the Registry family:
+    - `state-message`
+  - Package export subpath: `@beemvp/beeui-ui/state-message`
 
 **Exported types:** `EmptyStateProps`, `ErrorStateProps`
 
@@ -51,11 +54,11 @@ Stateless empty-state (`EmptyState`) and error-state (`ErrorState`, with an opti
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `action` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
-| `description` | `React.ReactNode` | — | — |
-| `icon` | `React.ReactNode` | — | — |
-| `title` **(required)** | `React.ReactNode` | — | — |
+| `action` | `React.ReactNode` | — | Rendered below the description with top padding (e.g. a retry or create button). |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
+| `icon` | `React.ReactNode` | — | Rendered above the title, hidden from accessibility (purely decorative). |
+| `title` **(required)** | `React.ReactNode` | — | The primary heading text for this surface. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
@@ -63,7 +66,7 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `title` | `React.ReactNode` | `'Something went wrong'` | — |
+| `title` | `React.ReactNode` | `'Something went wrong'` | The primary heading text for this surface. |
 
 Also carries every prop of `Omit<EmptyStateProps, 'title'>` — documented on the [State Message](/docs/components/state-message/) page, not reproduced here.
 

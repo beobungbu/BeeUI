@@ -35,6 +35,10 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `Textarea`
+  - Also routed here, outside the Registry family:
+    - `getTextareaWebMinHeight`
+    - `textarea`
+  - Package export subpath: `@beemvp/beeui-ui/textarea`
 
 **Exported types:** `TextareaProps`
 

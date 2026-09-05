@@ -38,6 +38,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
    `ButtonLabel`
    `buttonLabelVariants`
    `buttonVariants`
+  - Also routed here, outside the Registry family:
+    - `button`
+  - Package export subpath: `@beemvp/beeui-ui/button`
 
 **Exported types:** `ButtonLabelProps`, `ButtonProps`
 
@@ -53,7 +56,7 @@ Stateless pressable driven entirely by props (`variant`/`size`/`loading`/`disabl
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `className` | `string` | — | — |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 
 Also carries every prop of `RNTextProps` and `VariantProps<typeof buttonLabelVariants>` — that upstream contract is not reproduced here.
 
@@ -61,10 +64,10 @@ Also carries every prop of `RNTextProps` and `VariantProps<typeof buttonLabelVar
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
-| `labelClassName` | `string` | — | — |
-| `loading` | `boolean` | `false` | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
+| `loading` | `boolean` | `false` | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
 

@@ -94,14 +94,42 @@ type SheetBaseProps = {
 };
 
 type SheetControlledProps = SheetBaseProps & {
+  /**
+   * Not accepted in the controlled variant, where `open` already owns the state.
+   * Pass `defaultOpen` on its own, without `open`, to use the uncontrolled variant.
+   */
   defaultOpen?: never;
+  /**
+   * Applies a requested open state, and is required here because the controlled
+   * variant never updates its own visibility. If this does not change `open`,
+   * nothing does.
+   */
   onOpenChange: (open: boolean) => void;
+  /**
+   * Current open state, owned by the caller; supplying a defined value alongside
+   * `onOpenChange` is what selects the controlled variant. Passing `open` without
+   * an `onOpenChange` function warns in development and falls back to uncontrolled
+   * behavior.
+   */
   open: boolean;
 };
 
 type SheetUncontrolledProps = SheetBaseProps & {
+  /**
+   * Open state to start from, read once when the component mounts, so later changes
+   * to it are ignored. Defaults to false; drive visibility with `open` +
+   * `onOpenChange` instead when it needs to change.
+   */
   defaultOpen?: boolean;
+  /**
+   * Notified after the open state changes, and optional here because the
+   * uncontrolled variant updates its own state either way.
+   */
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Must be left undefined in the uncontrolled variant, because a defined `open`
+   * together with `onOpenChange` selects the controlled variant instead.
+   */
   open?: undefined;
 };
 

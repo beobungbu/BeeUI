@@ -37,6 +37,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 - Family exports: `Badge`
    `badgeLabelVariants`
    `badgeVariants`
+  - Also routed here, outside the Registry family:
+    - `badge`
+  - Package export subpath: `@beemvp/beeui-ui/badge`
 
 **Exported types:** `BadgeProps`
 
@@ -52,9 +55,9 @@ Stateless semantic status label; `variant` selects the paired foreground/backgro
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
-| `labelClassName` | `string` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` and `VariantProps<typeof badgeVariants>` — that upstream contract is not reproduced here.
 

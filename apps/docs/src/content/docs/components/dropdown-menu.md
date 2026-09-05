@@ -43,6 +43,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
    `DropdownMenuRadioItem`
    `DropdownMenuSeparator`
    `DropdownMenuTrigger`
+  - Also routed here, outside the Registry family:
+    - `dropdown-menu`
+  - Package export subpath: `@beemvp/beeui-ui/dropdown-menu`
 
 **Exported types:** `DropdownMenuAlign`, `DropdownMenuCheckboxItemProps`, `DropdownMenuCollisionPadding`, `DropdownMenuContentProps`, `DropdownMenuDirection`, `DropdownMenuItemProps`, `DropdownMenuLabelProps`, `DropdownMenuPlacement`, `DropdownMenuProps`, `DropdownMenuRadioGroupProps`, `DropdownMenuRadioItemProps`, `DropdownMenuSeparatorProps`, `DropdownMenuTriggerProps`
 
@@ -58,9 +61,9 @@ Controlled/uncontrolled (`open`/`onOpenChange`/`defaultOpen`) non-modal menu; `D
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `checked` **(required)** | `boolean` | — | — |
-| `closeOnSelect` | `boolean` | `false` | — |
-| `onCheckedChange` | `(checked: boolean) => void` | — | — |
+| `checked` **(required)** | `boolean` | — | Whether this checkbox item is checked; renders a checkmark. Always controlled by the caller. |
+| `closeOnSelect` | `boolean` | `false` | Closes the menu after this item is toggled. Defaults to false, unlike `DropdownMenuItem`, since checking multiple items in one open menu is a common flow. |
+| `onCheckedChange` | `(checked: boolean) => void` | — | Called with the next checked state when this item is activated. Required for enabled items in dev mode (logs a warning otherwise). |
 
 Also carries every prop of `Omit<DropdownMenuItemBaseProps, 'closeOnSelect' \| 'onSelect'>` — that upstream contract is not reproduced here.
 
@@ -68,19 +71,19 @@ Also carries every prop of `Omit<DropdownMenuItemBaseProps, 'closeOnSelect' \| '
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `align` | `DropdownMenuAlign` | `'start'` | — |
-| `alignOffset` | `number` | `0` | — |
-| `avoidKeyboard` | `boolean` | `false` | — |
-| `avoidSafeArea` | `boolean` | `true` | — |
-| `closeOnOutsidePress` | `boolean` | `true` | — |
-| `collisionPadding` | `DropdownMenuCollisionPadding` | `8` | — |
-| `direction` | `DropdownMenuDirection` | — | — |
-| `flip` | `boolean` | `true` | — |
-| `outsidePressProps` | `Omit<PressableProps, 'children' \| 'onPress' \| 'style'>` | — | — |
-| `outsidePressTestID` | `string` | — | — |
-| `placement` | `DropdownMenuPlacement` | `'bottom'` | — |
-| `shift` | `boolean` | `true` | — |
-| `sideOffset` | `number` | `8` | — |
+| `align` | `DropdownMenuAlign` | `'start'` | Where the overlay sits along the anchor's cross axis — `'start'`, `'center'` or `'end'`. The anchored-overlay kernel may flip it when the preferred placement would collide with the viewport. |
+| `alignOffset` | `number` | `0` | Pixels to shift the overlay along the alignment axis, after `align` is resolved. |
+| `avoidKeyboard` | `boolean` | `false` | Whether the overlay repositions to stay clear of the on-screen keyboard. |
+| `avoidSafeArea` | `boolean` | `true` | Whether the overlay keeps clear of the platform safe-area insets — notches, home indicators and status bars. |
+| `closeOnOutsidePress` | `boolean` | `true` | Whether a press outside the overlay dismisses it. |
+| `collisionPadding` | `DropdownMenuCollisionPadding` | `8` | Minimum distance to keep from the viewport edges when the kernel repositions or flips the overlay. A number applies to every edge; an object sets edges individually. |
+| `direction` | `DropdownMenuDirection` | — | Logical direction used to resolve `align`/`placement` for RTL layouts. Defaults to the app's resolved layout direction. |
+| `flip` | `boolean` | `true` | Flips `placement` to the opposite side of the trigger when there is not enough room. Defaults to true. |
+| `outsidePressProps` | `Omit<PressableProps, 'children' \| 'onPress' \| 'style'>` | — | Forwarded to the outside-press dismiss layer, excluding `children`/`onPress`/`style`, which this component owns. |
+| `outsidePressTestID` | `string` | — | `testID` applied to the outside-press dismiss layer, for targeting it in tests. |
+| `placement` | `DropdownMenuPlacement` | `'bottom'` | Which side of the trigger the menu opens on. Defaults to `'bottom'`. |
+| `shift` | `boolean` | `true` | Shifts the menu along the trigger's edge to stay within the viewport instead of overflowing. Defaults to true. |
+| `sideOffset` | `number` | `8` | Pixels of gap between the anchor and the overlay, along the placement side. |
 
 Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract is not reproduced here.
 
@@ -90,12 +93,12 @@ Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract 
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
-| `closeOnSelect` | `boolean` | `true` | — |
-| `onPress` | `PressableProps['onPress']` | — | — |
-| `onSelect` | `() => void` | — | — |
-| `textClassName` | `string` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `closeOnSelect` | `boolean` | `true` | Closes the menu after this item is activated (pressed or selected via keyboard). Defaults to true. |
+| `onPress` | `PressableProps['onPress']` | — | Called on press, before `onSelect` and `closeOnSelect` run. |
+| `onSelect` | `() => void` | — | Called when this item is activated (pressed or selected via keyboard), before `closeOnSelect` runs. |
+| `textClassName` | `string` | — | Applied to string/number children, which are wrapped in a `Text`; ignored for custom element children. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'onPress' \| 'role'>` — that upstream contract is not reproduced here.
 
@@ -118,26 +121,26 @@ one of the following mutually exclusive variants:
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `defaultOpen` | `never` | `false` | — |
-| `onOpenChange` **(required)** | `(open: boolean) => void` | — | — |
-| `open` **(required)** | `boolean` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `defaultOpen` | `never` | `false` | Not accepted in the controlled variant, where `open` already owns the state. Pass `defaultOpen` on its own, without `open`, to use the uncontrolled variant. |
+| `onOpenChange` **(required)** | `(open: boolean) => void` | — | Applies a requested open state, and is required here because the controlled variant never updates its own visibility. If this does not change `open`, nothing does. |
+| `open` **(required)** | `boolean` | — | Current open state, owned by the caller; supplying a defined value alongside `onOpenChange` is what selects the controlled variant. Passing `open` without an `onOpenChange` function warns in development and falls back to uncontrolled behavior. |
 
 **Variant `DropdownMenuUncontrolledProps`:**
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `defaultOpen` | `boolean` | `false` | — |
-| `onOpenChange` | `(open: boolean) => void` | — | — |
-| `open` | `undefined` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `defaultOpen` | `boolean` | `false` | Open state to start from, read once when the component mounts, so later changes to it are ignored. Defaults to false; drive visibility with `open` + `onOpenChange` instead when it needs to change. |
+| `onOpenChange` | `(open: boolean) => void` | — | Notified after the open state changes, and optional here because the uncontrolled variant updates its own state either way. |
+| `open` | `undefined` | — | Must be left undefined in the uncontrolled variant, because a defined `open` together with `onOpenChange` selects the controlled variant instead. |
 
 #### `DropdownMenuRadioGroupProps`
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `onValueChange` | `(value: string) => void` | — | — |
-| `value` | `string` | — | — |
+| `onValueChange` | `(value: string) => void` | — | Called with the selected `DropdownMenuRadioItem`'s `value` when the selection changes. Required whenever `value` is set (logs a dev warning otherwise). |
+| `value` | `string` | — | The `value` of the currently selected `DropdownMenuRadioItem` among this group's children. |
 
 Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract is not reproduced here.
 
@@ -145,8 +148,8 @@ Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract 
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `closeOnSelect` | `boolean` | `false` | — |
-| `value` **(required)** | `string` | — | — |
+| `closeOnSelect` | `boolean` | `false` | Closes the menu after this item is selected. Defaults to false, matching `DropdownMenuCheckboxItem`'s convention. |
+| `value` **(required)** | `string` | — | Identifies this item within its parent `DropdownMenuRadioGroup`. A value duplicated by another item in the same group is disabled with a dev-mode warning. |
 
 Also carries every prop of `Omit<DropdownMenuItemBaseProps, 'closeOnSelect' \| 'onSelect'>` — that upstream contract is not reproduced here.
 
@@ -167,10 +170,10 @@ Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract 
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
-| `labelClassName` | `string` | — | — |
-| `loading` | `boolean` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
+| `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \| 'children'>` and `VariantProps<typeof buttonVariants>` — that upstream contract is not reproduced here.
 

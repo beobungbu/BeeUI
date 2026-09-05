@@ -83,10 +83,15 @@ function getAvatarSourceKey(source?: ImageSourcePropType) {
 export type AvatarProps = Omit<ViewProps, 'children'> &
   VariantProps<typeof avatarVariants> & {
     className?: string;
+    /** Text shown when `source` is omitted or the image fails to load (e.g. initials). Renders nothing if also omitted. */
     fallback?: string;
+    /** Applied to the fallback `Text` when it is shown; has no effect while the image is showing. */
     fallbackClassName?: string;
+    /** Applied to the underlying `Image` when it is shown; has no effect while the fallback is showing. */
     imageClassName?: string;
+    /** Forwarded to the underlying `Image`, minus `source` and `className`/`onError`, which this component owns to detect load failures and fall back to `fallback`. */
     imageProps?: AvatarImageProps;
+    /** The image to display. If it fails to load, or is omitted, `fallback` is shown instead. */
     source?: ImageSourcePropType;
   };
 

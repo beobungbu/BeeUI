@@ -41,6 +41,7 @@ export type DateTimePickerProps = {
   /** Web-only: `Popover` content alignment relative to the trigger. Ignored on native. */
   align?: DateTimePickerAlign;
   className?: string;
+  /** Accessible label for the clear button shown when `clearable` and a value is selected. Defaults to `'Clear date and time'`. */
   clearAccessibilityLabel?: string;
   /** Shows a clear affordance when a value is selected. Defaults to `true`. */
   clearable?: boolean;
@@ -52,6 +53,7 @@ export type DateTimePickerProps = {
   defaultOpen?: boolean;
   /** Web-only: logical direction for the `Popover`/`Calendar`/time content. Ignored on native. */
   direction?: DateTimePickerDirection;
+  /** Disables the trigger, so it cannot open the picker. Combined with the enclosing `Field`'s own `disabled`. */
   disabled?: boolean;
   /** Web-only: flips `Popover` placement to stay in the viewport. Ignored on native. */
   flip?: boolean;
@@ -64,25 +66,33 @@ export type DateTimePickerProps = {
    * `Intl.DateTimeFormat(locale, { hour: 'numeric' }).resolvedOptions().hour12` (ADR-008).
    */
   hour12?: boolean;
+  /** Marks the trigger as invalid for styling and accessibility. Combined with the enclosing `Field`'s own `invalid`. */
   invalid?: boolean;
+  /** Marks individual dates as disabled in the `Calendar` grid, without disabling the trigger itself. */
   isDateDisabled?: (date: CalendarDate) => boolean;
   /** Explicit-only (ADR-008) — no ambient device/browser locale auto-detection. Defaults to `'en-US'`. */
   locale?: string;
+  /** Latest selectable date (inclusive), forwarded to the `Calendar`; later dates render disabled. */
   max?: CalendarDate;
+  /** Earliest selectable date (inclusive), forwarded to the `Calendar`; earlier dates render disabled. */
   min?: CalendarDate;
   /** Accessible name for the Web minute digit field. Defaults to `'Minute'`. */
   minuteAccessibilityLabel?: string;
+  /** Accessible label for the `Calendar`'s "next month" button. Defaults to `'Next month'`. */
   nextMonthAccessibilityLabel?: string;
   /** Controlled/uncontrolled open state — BeeUI owns Web presentation (`Popover`). */
   onOpenChange?: (open: boolean) => void;
   /** `null` signals an explicit clear (see `clearable`). */
   onValueChange?: (value: DateTimePickerValue | null) => void;
+  /** Controls whether the picker (Web `Popover`, native system picker) is open. Requires `onOpenChange`; otherwise falls back to internal open state with a dev-mode warning. */
   open?: boolean;
   /** Accessible name for the Web AM/PM control. Defaults to `'AM or PM'`. */
   periodAccessibilityLabel?: string;
+  /** Text shown on the trigger when no value is selected. Defaults to `'Select a date and time'`. */
   placeholder?: string;
   /** Web-only: `Popover` placement relative to the trigger. Ignored on native. */
   placement?: DateTimePickerPlacement;
+  /** Accessible label for the `Calendar`'s "previous month" button. Defaults to `'Previous month'`. */
   previousMonthAccessibilityLabel?: string;
   /** Keeps the trigger focusable/announced but blocks opening and clearing. */
   readOnly?: boolean;
@@ -90,10 +100,12 @@ export type DateTimePickerProps = {
   shift?: boolean;
   /** Web-only: `Popover` offset from the trigger. Ignored on native. */
   sideOffset?: number;
+  /** Forwarded to the trigger's root `View`. */
   style?: StyleProp<ViewStyle>;
   testID?: string;
   /** Controlled selected date+time (ADR-008) — single-date selection only for 1.0. */
   value: DateTimePickerValue | null;
+  /** Which day starts each week row in the `Calendar`. Defaults to the convention for `locale` when omitted. */
   weekStartsOn?: CalendarWeekStartsOn;
 };
 

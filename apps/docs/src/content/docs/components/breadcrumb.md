@@ -36,6 +36,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 
 - Family exports: `Breadcrumb`
    `BreadcrumbItem`
+  - Also routed here, outside the Registry family:
+    - `breadcrumb`
+  - Package export subpath: `@beemvp/beeui-ui/breadcrumb`
 
 **Exported types:** `BreadcrumbItemProps`, `BreadcrumbProps`
 
@@ -51,10 +54,10 @@ Stateless router-neutral trail; separators between `BreadcrumbItem`s are decorat
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
-| `current` | `boolean` | `false` | — |
-| `labelClassName` | `string` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `current` | `boolean` | `false` | Marks this item as the current page: it renders as non-interactive text (even with `onPress` set) and is exposed as `accessibilityState.selected`. Defaults to false. |
+| `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'children' \| 'role'>` — that upstream contract is not reproduced here.
 
@@ -62,9 +65,9 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'childre
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
-| `separator` | `React.ReactNode` | — | — |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `separator` | `React.ReactNode` | — | Rendered between each item, hidden from accessibility. Defaults to `›` in LTR / `‹` in RTL; pass `null` to render no separator. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 

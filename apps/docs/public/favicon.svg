@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="BeeUI">
+  <title>BeeUI</title>
+  <rect width="32" height="32" rx="8" fill="#f4b942"/>
+  <text x="16" y="23" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif"
+        font-size="21" font-weight="800" fill="#0a0b0d">B</text>
+</svg>

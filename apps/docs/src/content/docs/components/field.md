@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `Field`
+  - Also routed here, outside the Registry family:
+    - `field`
+  - Package export subpath: `@beemvp/beeui-ui/field`
 
 **Exported types:** `FieldProps`
 
@@ -50,16 +53,16 @@ Stateless label/description/error composition; it wires accessible label/require
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` **(required)** | `React.ReactNode` | — | — |
-| `className` | `string` | — | — |
-| `description` | `string` | — | — |
-| `disabled` | `boolean` | `false` | — |
-| `error` | `string` | — | — |
-| `invalid` | `boolean` | `false` | — |
-| `label` **(required)** | `string` | — | — |
-| `labelNativeID` | `string` | — | — |
-| `required` | `boolean` | `false` | — |
-| `requiredAccessibilityLabel` | `string` | `'required'` | — |
+| `children` **(required)** | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `description` | `string` | — | Secondary supporting text rendered beneath the primary label or title. |
+| `disabled` | `boolean` | `false` | ORed into the field's own `disabled` by any BeeUI form control (Input, Select, DatePicker, etc.) rendered as `children`. Defaults to false. |
+| `error` | `string` | — | Shown instead of `description`, styled destructively, when `invalid` is true. |
+| `invalid` | `boolean` | `false` | ORed into the field's own `invalid` by any BeeUI form control rendered as `children`, and switches the helper text below it from `description` to `error`. Defaults to false. |
+| `label` **(required)** | `string` | — | The visible text naming this element, and the accessible name unless one is set explicitly. |
+| `labelNativeID` | `string` | — | `nativeID` for the rendered `Label`, used to build `accessibilityLabelledBy` links. Defaults to a generated, stable-per-mount ID. |
+| `required` | `boolean` | `false` | Renders the label with a required indicator and exposes it via `requiredAccessibilityLabel`. Defaults to false. |
+| `requiredAccessibilityLabel` | `string` | `'required'` | Accessible label appended to the field's name when `required` is true (e.g. announced as "Email, required"). Defaults to `'required'`. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 

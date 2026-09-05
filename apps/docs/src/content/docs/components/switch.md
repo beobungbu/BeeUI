@@ -35,6 +35,9 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
 ## Composition and public API
 
 - Primary export: `Switch`
+  - Also routed here, outside the Registry family:
+    - `switch`
+  - Package export subpath: `@beemvp/beeui-ui/switch`
 
 **Exported types:** `SwitchProps`
 
