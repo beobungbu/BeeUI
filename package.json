@@ -93,7 +93,7 @@
     "release-control-plane:test": "node --test ./scripts/__tests__/release-control-plane.test.mjs",
     "docs:a11y:check": "node ./scripts/public-docs-a11y.mjs --check",
     "docs:a11y:test": "node --test ./scripts/__tests__/public-docs-a11y.test.mjs",
-    "docs:props:coverage": "node -e \"import('./scripts/public-component-reference.mjs').then(m=>{const c=m.collectPropDescriptionCoverage(m.buildPublicComponentManifest());console.log(`prop descriptions: ${c.described}/${c.total} (floor ${m.PROP_DESCRIPTION_FLOOR})`)})\""
+    "docs:props:coverage": "node ./scripts/report-prop-coverage.mjs"
   },
   "devDependencies": {
     "@hyperjump/json-schema": "1.17.8",
