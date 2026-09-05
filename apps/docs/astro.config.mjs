@@ -2,6 +2,7 @@ import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 
 import { buildPublicSiteContract } from '../../scripts/public-site-contract-lib.mjs';
+import { PAGEFIND_RANKING } from './pagefind-ranking.mjs';
 
 const publicSite = buildPublicSiteContract();
 
@@ -20,6 +21,15 @@ export default defineConfig({
       defaultLocale: 'en',
       lastUpdated: false,
       pagination: true,
+      components: {
+        // Adds a `data-pagefind-filter="section"` meta tag per page, driven only by the route
+        // slug, so search results can be grouped by section (#466) without hand-editing any
+        // generated page.
+        Head: './src/components/SearchFilterHead.astro',
+      },
+      pagefind: {
+        ranking: PAGEFIND_RANKING,
+      },
       sidebar: [
         {
           label: 'Start',
