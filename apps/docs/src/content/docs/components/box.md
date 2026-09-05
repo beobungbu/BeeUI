@@ -84,7 +84,7 @@ Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-m
 
 ## Styling and theming
 
-- **Style axes:** none; this family has no variant or size prop, so its appearance comes from tokens and your own classes.
+- **Style axes:** this family declares no variant or size prop of its own; it carries `ViewProps`, whose styling props are declared there rather than here.
 - **Class-name surfaces:** `className`.
 
 Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.

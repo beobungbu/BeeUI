@@ -170,13 +170,16 @@ function findUnknownBehaviorPropReferences(component, rootDir, field = 'behavior
 // the measured value at the time it was written, so coverage can only go up.
 export const PROP_DESCRIPTION_FLOOR = 624;
 
-// Two guards, because coverage alone is satisfiable by boilerplate: 22 props were added to the
-// total by one repeated sentence and the ratio never moved.
+// Two floors, because coverage alone is satisfiable by boilerplate: 22 props were added to the
+// total by one repeated sentence and 100% never moved.
 //
 // The absolute floor catches descriptions being collapsed or deleted. It does NOT catch the
-// growth mode — 200 new props each reusing an existing sentence verbatim keeps `distinct` at 280
-// and passes. The ratio catches that, because every added duplicate lowers it. Neither alone is
-// enough; that is why both are here.
+// growth mode — 200 new props each reusing an existing sentence verbatim keeps `described` at
+// 100% and passes. The distinct floor catches that, because a reused sentence adds nothing to it.
+// A ratio between the two used to stand here as a third guard; it was a number nobody could
+// justify (0.44), and measuring what it was actually rejecting showed the real defect is one
+// sentence reused across props with *different names*, which `sharedAcrossProps` states directly
+// and a ratio only approximates.
 export const PROP_DISTINCT_DESCRIPTION_FLOOR = 288;
 
 // Walks a resolved type entry the same way `applyGlossary` and the renderer do:
@@ -196,8 +199,8 @@ function walkShapeFields(shape, visit) {
 // `described` counts a prop that has any description text. That is deliberately a low bar, and
 // the number alone overstates the docs: text arrives from three places — per-prop JSDoc, the 17
 // shared sentences in docs/prop-glossary.json, and the sentence generated for each cva variant.
-// The last two are shared by construction, so `distinct` is reported alongside the ratio to keep
-// "100% described" from reading as "every prop has prose written for it".
+// The last two are shared by construction, so `distinct` and `sharedAcrossProps` are reported
+// alongside it to keep "100% described" from reading as "every prop has prose written for it".
 export function collectPropDescriptionCoverage(manifest) {
   let total = 0;
   let described = 0;
@@ -294,6 +297,116 @@ export function collectRenderedPageViolations(page, componentName) {
   return violations;
 }
 
+// An independent oracle for the four derived sections, deliberately NOT sharing code with the
+// derivation it checks.
+//
+// Every derived section shipped with a test, every test passed, and five classes of false fact
+// reached the portal anyway — because each test picked the one component for which its claim
+// happened to be true, and the sections' worst failure mode is an absolute negative ("assigns no
+// roles", "accepts no className"), which is a claim about everything the derivation did not look
+// at. A grep over the family's whole source text cannot be fooled by a narrow AST scope: it sees
+// the object literal, the platform file and the base class alike. It can only refute a negative,
+// never confirm a positive, which is exactly the direction the damage runs.
+const NEGATIVE_CLAIM_ORACLES = [
+  {
+    claim: '**Roles this family assigns:** none',
+    pattern: /accessibilityRole\s*[=:]|(?<![\w-])role\s*=\s*["'{]/u,
+    message: 'publishes "assigns no roles" while its source sets a role',
+  },
+  {
+    claim: '**Accessibility states it manages:** none',
+    pattern: /accessibilityState\s*[=:]|(?<![\w-])aria-[a-z]+\s*=/u,
+    message: 'publishes "manages no states" while its source sets one',
+  },
+  {
+    // A component styling its own internals (`<View className="flex-row">`) accepts nothing from
+    // the caller, so the JSX-attribute form is deliberately not a refutation. What refutes the
+    // claim is the prop existing: declared as a type field, or destructured out of props.
+    claim: '**Class-name surfaces:** none;',
+    pattern: /className\s*\??\s*:|[{,]\s*className\s*[,}=]/u,
+    message: 'publishes "accepts no className of its own" while its source declares one',
+  },
+  {
+    claim: '**Style axes:** none;',
+    pattern: /\bcva\s*\(/u,
+    message: 'publishes "no variant or size prop" while its source declares cva variants',
+  },
+];
+
+// Comments are prose about the code, not the code. Spinner's source explains in a comment that
+// `react-native-web`'s ActivityIndicator renders `role="progressbar"` itself — which is precisely
+// why the page correctly says Spinner assigns no role of its own. Grepping the comment turned
+// that correct sentence into a failure.
+function stripComments(source) {
+  return source.replace(/\/\*[\s\S]*?\*\//gu, ' ').replace(/(^|[^:])\/\/[^\n]*/gu, '$1');
+}
+
+// The oracle above can only refute a negative. The role line fails the other way too: reading
+// `selectionMode === 'single' ? 'radiogroup' : undefined` as assigning both published `single`,
+// a word that is not a role at all. Roles are a closed vocabulary — React Native's
+// `AccessibilityRole` union plus the WAI-ARIA roles the portal uses — so anything outside it is
+// a derivation leak, whatever produced it. A legitimate new role belongs in this set; that edit
+// is the point at which someone confirms it is one.
+const KNOWN_ACCESSIBILITY_ROLES = new Set([
+  // React Native AccessibilityRole
+  'adjustable', 'alert', 'button', 'checkbox', 'combobox', 'grid', 'header', 'image',
+  'imagebutton', 'keyboardkey', 'link', 'list', 'menu', 'menubar', 'menuitem', 'none',
+  'progressbar', 'radio', 'radiogroup', 'scrollbar', 'search', 'spinbutton', 'summary', 'switch',
+  'tab', 'tablist', 'text', 'timer', 'togglebutton', 'toolbar',
+  // WAI-ARIA roles used on Web
+  'application', 'article', 'banner', 'cell', 'columnheader', 'complementary', 'contentinfo',
+  'definition', 'dialog', 'document', 'feed', 'figure', 'form', 'group', 'heading', 'listbox',
+  'listitem', 'log', 'main', 'marquee', 'math', 'menuitemcheckbox', 'menuitemradio', 'meter',
+  'navigation', 'note', 'option', 'presentation', 'region', 'row', 'rowgroup', 'rowheader',
+  'separator', 'slider', 'status', 'table', 'tabpanel', 'term', 'tooltip', 'tree', 'treegrid',
+  'treeitem',
+]);
+
+function publishedRoles(page) {
+  const line = page.split('\n').find((candidate) => candidate.includes('**Roles this family assigns:**'));
+  if (!line || line.includes('none of its own')) return [];
+  return [...line.matchAll(/`([^`]+)`/gu)].map((match) => match[1]);
+}
+
+export function collectDerivedClaimViolations(page, component, rootDir = ROOT_DIR) {
+  const violations = [];
+  const sources = (component.allSources ?? [component.source])
+    .filter((relPath) => relPath && fs.existsSync(path.join(rootDir, relPath)))
+    .map((relPath) => stripComments(fs.readFileSync(path.join(rootDir, relPath), 'utf8')))
+    .join('\n');
+
+  for (const { claim, pattern, message } of NEGATIVE_CLAIM_ORACLES) {
+    if (!page.includes(claim)) continue;
+    if (!pattern.test(sources)) continue;
+    violations.push(`${component.name}: ${message} (${pattern.source}).`);
+  }
+
+  // A second oracle that needs no source at all: the page contradicting itself. An absolute
+  // negative is a claim about the whole prop surface, and a page that also says an upstream
+  // contract "is not reproduced here" has just admitted part of that surface is not on it.
+  // IconButton published "no variant or size prop" directly above a line pointing at ButtonProps,
+  // which has both — and linked to the Button page that says so.
+  if (page.includes('upstream contract is not reproduced here')) {
+    for (const claim of ['**Style axes:** none;', '**Class-name surfaces:** none;']) {
+      if (!page.includes(claim)) continue;
+      violations.push(
+        `${component.name}: publishes "${claim}" while also saying an upstream contract is not ` +
+        'reproduced on the page; the negative covers props the page never looked at.',
+      );
+    }
+  }
+
+  for (const role of publishedRoles(page)) {
+    if (KNOWN_ACCESSIBILITY_ROLES.has(role)) continue;
+    violations.push(
+      `${component.name}: publishes \`${role}\` as an accessibility role, which is not one. ` +
+      'Either the derivation read a value that is not a role, or the role is new and belongs in ' +
+      '`KNOWN_ACCESSIBILITY_ROLES`.',
+    );
+  }
+  return violations;
+}
+
 export function collectPublicComponentReferenceViolations(rootDir = ROOT_DIR) {
   const violations = [];
   const manifest = buildPublicComponentManifest(rootDir);
@@ -349,7 +462,9 @@ export function collectPublicComponentReferenceViolations(rootDir = ROOT_DIR) {
 
   violations.push(...collectPropDescriptionViolations(manifest));
   for (const component of manifest) {
-    violations.push(...collectRenderedPageViolations(renderPublicComponentPage(component), component.name));
+    const page = renderPublicComponentPage(component, rootDir);
+    violations.push(...collectRenderedPageViolations(page, component.name));
+    violations.push(...collectDerivedClaimViolations(page, component, rootDir));
   }
   return violations;
 }
@@ -688,35 +803,136 @@ function renderPlatformImplementation(component) {
   );
 }
 
+// Resolves a base type name to the shape entry that declares it, so a family that inherits its
+// styling props is not described as having none.
+let publicTypeShapeIndexCache;
+
+function getPublicTypeShapeIndex(rootDir) {
+  if (!publicTypeShapeIndexCache || publicTypeShapeIndexCache.rootDir !== rootDir) {
+    const shapes = new Map();
+    for (const component of getPublicComponents(rootDir)) {
+      for (const entry of getComponentTypeDocs(component, rootDir)) shapes.set(entry.name, entry);
+    }
+    publicTypeShapeIndexCache = { rootDir, shapes };
+  }
+  return publicTypeShapeIndexCache.shapes;
+}
+
+// `Omit<ButtonProps, 'size'>` keeps every ButtonProps prop except `size`; `Pick<X, 'a'>` keeps
+// only the named ones. The names live in the base text as quoted literals.
+function baseFilterFor(base) {
+  const names = new Set((base.match(/'[^']*'/gu) ?? []).map((literal) => literal.slice(1, -1)));
+  if (/^\s*Omit\s*</u.test(base)) return (name) => !names.has(name);
+  if (/^\s*Pick\s*</u.test(base)) return (name) => names.has(name);
+  return () => true;
+}
+
+// One walk over a shape and every public base it inherits from, applying each base's
+// Omit/Pick filter on the way down. `seen` stops a cycle; `unresolved` records the bases that
+// leave the repository, because a family with one of those cannot honestly be said to have none.
+function collectStyleSurfaces(shape, rootDir, accumulator, keep = () => true, seen = new Set()) {
+  if (!shape) return;
+  const visitFields = (node) => {
+    for (const field of node?.fields ?? []) {
+      if (!keep(field.name)) continue;
+      if (field.name === 'className' || /ClassName$/u.test(field.name)) accumulator.classSurfaces.add(field.name);
+      const literals = (field.type ?? '').match(/'[^']*'/gu);
+      if (literals && literals.length > 1 && /presets, declared in/u.test(field.description ?? '')) {
+        accumulator.axes.set(field.name, { count: literals.length, from: accumulator.from });
+      }
+    }
+    // A shape with no fields of its own publishes a `Prop | Default` table instead; those props
+    // are real props of the family, and `className` on Textarea arrives only this way.
+    for (const consumed of node?.consumed ?? []) {
+      if (!keep(consumed.name)) continue;
+      if (consumed.name === 'className' || /ClassName$/u.test(consumed.name)) {
+        accumulator.classSurfaces.add(consumed.name);
+      }
+    }
+    for (const variant of node?.variants ?? []) visitFields(variant);
+  };
+  visitFields(shape);
+
+  const shapes = getPublicTypeShapeIndex(rootDir);
+  for (const base of shape.bases ?? []) {
+    const typeName = extractOmitPickOrBareTypeName(base);
+    const inherited = typeName ? shapes.get(typeName) : undefined;
+    if (!inherited) {
+      accumulator.unresolved.add(formatTypeText(base));
+      continue;
+    }
+    if (seen.has(typeName)) continue;
+    const filter = baseFilterFor(base);
+    const previousFrom = accumulator.from;
+    accumulator.from = accumulator.from ?? typeName;
+    collectStyleSurfaces(
+      inherited,
+      rootDir,
+      accumulator,
+      (name) => keep(name) && filter(name),
+      new Set([...seen, typeName]),
+    );
+    accumulator.from = previousFrom;
+  }
+}
+
 // Styling and theming was one identical paragraph on all 62 pages, and it was where the cva rows
 // used to send readers for "what each value changes" — a pointer to a page that named no value.
 // Two facts are derivable per family: the style axes it exposes and the class-name surfaces it
 // accepts, both of which differ by component.
-function renderStylingFacts(component) {
-  const axes = new Map();
-  const classSurfaces = new Set();
-
-  const visit = (shape) => {
-    for (const field of shape?.fields ?? []) {
-      if (field.name === 'className' || /ClassName$/u.test(field.name)) classSurfaces.add(field.name);
-      const literals = (field.type ?? '').match(/'[^']*'/gu);
-      if (literals && literals.length > 1 && /presets, declared in/u.test(field.description ?? '')) {
-        axes.set(field.name, literals.length);
-      }
-    }
-    for (const variant of shape?.variants ?? []) visit(variant);
-  };
-  for (const entry of component.typeDocs ?? []) visit(entry);
+//
+// Both lines used to read only the family's own declared fields and then assert a negative.
+// IconButton was published as having "no variant or size prop" while inheriting `variant` from
+// `ButtonProps` — contradicting the Button page it links to — and Textarea as accepting "no
+// className of its own" while merging one. An absolute negative is a claim about everything the
+// derivation did not look at, so it is now made only when there is nothing left unlooked-at.
+function renderStylingFacts(component, rootDir = ROOT_DIR) {
+  const accumulator = { axes: new Map(), classSurfaces: new Set(), unresolved: new Set(), from: undefined };
+  for (const entry of component.typeDocs ?? []) collectStyleSurfaces(entry, rootDir, accumulator);
 
   const code = (values) => values.map((value) => `\`${value}\``).join(', ');
-  const axisLine = axes.size
-    ? `- **Style axes:** ${[...axes].map(([name, count]) => `\`${name}\` (${count} values)`).join(', ')} — the values are in the props tables above.`
-    : '- **Style axes:** none; this family has no variant or size prop, so its appearance comes from tokens and your own classes.';
-  const classLine = classSurfaces.size
-    ? `- **Class-name surfaces:** ${code([...classSurfaces].sort())}.`
-    : '- **Class-name surfaces:** none; this family accepts no `className` of its own.';
+  const upstream = [...accumulator.unresolved].sort();
+  const upstreamList = code(upstream);
+
+  const axisLine = accumulator.axes.size
+    ? `- **Style axes:** ${[...accumulator.axes]
+        .map(([name, { count, from }]) => `\`${name}\` (${count} values${from ? `, inherited from \`${from}\`` : ''})`)
+        .join(', ')} — the values are in the props tables above.`
+    : upstream.length
+      ? `- **Style axes:** this family declares no variant or size prop of its own; it carries ${upstreamList}, whose styling props are declared there rather than here.`
+      : '- **Style axes:** none; this family has no variant or size prop, so its appearance comes from tokens and your own classes.';
+
+  const classLine = accumulator.classSurfaces.size
+    ? `- **Class-name surfaces:** ${code([...accumulator.classSurfaces].sort())}.`
+    : upstream.length
+      ? `- **Class-name surfaces:** none declared by this family; any it accepts come from ${upstreamList}.`
+      : '- **Class-name surfaces:** none; this family accepts no `className` of its own.';
 
   return `${axisLine}\n${classLine}`;
+}
+
+// The Registry item's peer list is a fact about the item, but the page presented it as what a
+// consumer must install, on families whose Web implementation imports none of it: the Sheet page
+// told Web readers to install `@gorhom/bottom-sheet` and Reanimated while `sheet.web.tsx` states
+// in its own header that ADR-006 gives Web a different engine. Which peers the Web file actually
+// imports is derivable; which ones a native target needs transitively is not, so only the former
+// is claimed.
+function webPeerScope(component, rootDir) {
+  const webFile = (component.allSources ?? []).find((relPath) => /\.web\.tsx?$/u.test(relPath));
+  if (!webFile) return undefined;
+  const peers = (component.peerDependencies ?? []).filter((peer) => peer !== 'react' && peer !== 'react-native');
+  if (!peers.length) return undefined;
+
+  const source = fs.readFileSync(path.join(rootDir, webFile), 'utf8');
+  const imported = new Set(
+    [...source.matchAll(/(?:from|require\()\s*'([^']+)'/gu)].map((match) => match[1]),
+  );
+  // A subpath import (`react-native-reanimated/plugin`) still counts as importing the peer.
+  const absent = peers.filter(
+    (peer) => ![...imported].some((specifier) => specifier === peer || specifier.startsWith(`${peer}/`)),
+  );
+  if (absent.length !== peers.length) return undefined;
+  return { webFile: webFile.split('/').pop(), peers: absent };
 }
 
 // "No component-specific limitation is curated here" was published on 48 pages, including
@@ -775,6 +991,14 @@ export function renderPublicComponentPage(component, rootDir = ROOT_DIR) {
     .map((file, index) => `- ${index === 0 ? '**Primary executable fixture:**' : '**Additional fixture:**'} [\`${file}\`](${githubHref(file)})`)
     .join('\n');
   const types = component.types.length ? component.types.map((name) => `\`${name}\``).join(', ') : 'No separately exported public types.';
+  const webScope = webPeerScope(component, rootDir);
+  const webPeerNote = webScope
+    ? `- On Web this family renders from \`${webScope.webFile}\`, which does not import ${webScope.peers
+        .map((name) => `\`${name}\``)
+        .join(', ')}: ${
+        webScope.peers.length === 1 ? 'that peer serves' : 'those peers serve'
+      } the native implementation.\n`
+    : '';
   const peers = component.peerDependencies.length ? component.peerDependencies.map((name) => `\`${name}\``).join(', ') : 'Only the package baseline peers.';
   const registryDeps = component.registryDependencies.length ? component.registryDependencies.map((name) => `\`${name}\``).join(', ') : 'None.';
   const platformSplit = component.allSources.length > 1
@@ -791,7 +1015,7 @@ export function renderPublicComponentPage(component, rootDir = ROOT_DIR) {
     ? '`BeeUIProvider` is required above this family because it participates in shared overlay/toast runtime infrastructure.'
     : 'No additional provider is required by this family. `BeeUIProvider` remains the recommended application root.';
 
-  return `---\ntitle: ${yamlString(component.title)}\ndescription: ${yamlString(component.purpose)}\n---\n\n<!-- Generated by scripts/public-component-reference.mjs. Do not hand-edit. -->\n\n${component.purpose}\n\n:::note[Distribution status]\nBeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.\n:::\n\n## Identity\n\n- **Category:** ${component.category}\n- **Status:** stable public Registry/export-map component family\n- **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)\n- **Source:** [\`${component.source}\`](${component.sourceHref})\n\n## Import\n\n\`\`\`tsx\nimport { ${component.values.join(', ')} } from '@beemvp/beeui-ui';\n\`\`\`\n\nThere is no documented deep/private source import. For source ownership from a BeeUI checkout:\n\n\`\`\`bash\n${component.cliAdd}\n\`\`\`\n\nRegistry metadata: [\`registry/registry.json\`](${component.registryHref}).\n\n## Composition and public API\n\n${renderAnatomy(component)}\n\n**Exported types:** ${types}\n\nThe generated API inventory is mechanically joined to \`packages/ui/src/index.ts\`, Registry metadata, and the component reference contract. Each type's field table below is parsed directly from that source, not a second hand-maintained copy; for the fuller behavior narrative see the [canonical component behavior catalog](https://github.com/beobungbu/BeeUI/blob/main/docs/components.md).\n\n## State and behavior contract\n\n${component.behavior}\n\n### Props\n\n${renderTypeDocs(component.typeDocs)}\n\nThe executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.\n\n## Provider and dependencies\n\n- ${provider}\n- **Peer/native dependencies visible to this Registry item:** ${peers}\n- **Registry dependency closure:** ${registryDeps}\n- Safe-area ownership remains explicit: shell surfaces touching system edges opt into \`SafeArea\`; components do not silently invent app-shell insets.\n- Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).\n\n## Platform behavior\n\n${renderPlatformImplementation(component)}\n\n${platformSplit}\n\nEvidence classes are not equal and this page does not blur them: Web behavior is exercised in a real browser, while iOS and Android carry package/export and native-compile evidence, which is not device-runtime proof. The [compatibility contract](/docs/compatibility/) records which class each claim rests on.\n\n## Accessibility\n\n${renderAccessibilityFacts(component, rootDir)}\n\nKeyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.\n\n## Styling and theming\n\n${renderStylingFacts(component)}\n\nColors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A \`className\` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.\n\n## Executable examples\n\n${examples}\n\n### Addressable examples\n\nEach link below opens the Showcase at that exact example, not at the top of the gallery:\n\n${renderExampleTargets(component)}\n\nThe Showcase links demonstrate Web behavior; use the native-preview guide for real simulator/emulator/device paths.\n\n## Limitations\n\n${limitations}\n\n${component.notes ? `**Implementation note:** ${component.notes}\n\n` : ''}## Related\n\n- [All components](/docs/components/)\n- [Production patterns](/docs/patterns/)\n- [Showcase](/showcase/)\n- [CLI & source ownership](/docs/guides/cli-source-ownership/)\n- [Source](${component.sourceHref})\n`;
+  return `---\ntitle: ${yamlString(component.title)}\ndescription: ${yamlString(component.purpose)}\n---\n\n<!-- Generated by scripts/public-component-reference.mjs. Do not hand-edit. -->\n\n${component.purpose}\n\n:::note[Distribution status]\nBeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.\n:::\n\n## Identity\n\n- **Category:** ${component.category}\n- **Status:** stable public Registry/export-map component family\n- **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)\n- **Source:** [\`${component.source}\`](${component.sourceHref})\n\n## Import\n\n\`\`\`tsx\nimport { ${component.values.join(', ')} } from '@beemvp/beeui-ui';\n\`\`\`\n\nThere is no documented deep/private source import. For source ownership from a BeeUI checkout:\n\n\`\`\`bash\n${component.cliAdd}\n\`\`\`\n\nRegistry metadata: [\`registry/registry.json\`](${component.registryHref}).\n\n## Composition and public API\n\n${renderAnatomy(component)}\n\n**Exported types:** ${types}\n\nThe generated API inventory is mechanically joined to \`packages/ui/src/index.ts\`, Registry metadata, and the component reference contract. Each type's field table below is parsed directly from that source, not a second hand-maintained copy; for the fuller behavior narrative see the [canonical component behavior catalog](https://github.com/beobungbu/BeeUI/blob/main/docs/components.md).\n\n## State and behavior contract\n\n${component.behavior}\n\n### Props\n\n${renderTypeDocs(component.typeDocs)}\n\nThe executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.\n\n## Provider and dependencies\n\n- ${provider}\n- **Peer/native dependencies visible to this Registry item:** ${peers}\n- **Registry dependency closure:** ${registryDeps}\n${webPeerNote}- Safe-area ownership remains explicit: shell surfaces touching system edges opt into \`SafeArea\`; components do not silently invent app-shell insets.\n- Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).\n\n## Platform behavior\n\n${renderPlatformImplementation(component)}\n\n${platformSplit}\n\nEvidence classes are not equal and this page does not blur them: Web behavior is exercised in a real browser, while iOS and Android carry package/export and native-compile evidence, which is not device-runtime proof. The [compatibility contract](/docs/compatibility/) records which class each claim rests on.\n\n## Accessibility\n\n${renderAccessibilityFacts(component, rootDir)}\n\nKeyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.\n\n## Styling and theming\n\n${renderStylingFacts(component, rootDir)}\n\nColors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A \`className\` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.\n\n## Executable examples\n\n${examples}\n\n### Addressable examples\n\nEach link below opens the Showcase at that exact example, not at the top of the gallery:\n\n${renderExampleTargets(component)}\n\nThe Showcase links demonstrate Web behavior; use the native-preview guide for real simulator/emulator/device paths.\n\n## Limitations\n\n${limitations}\n\n${component.notes ? `**Implementation note:** ${component.notes}\n\n` : ''}## Related\n\n- [All components](/docs/components/)\n- [Production patterns](/docs/patterns/)\n- [Showcase](/showcase/)\n- [CLI & source ownership](/docs/guides/cli-source-ownership/)\n- [Source](${component.sourceHref})\n`;
 }
 
 export function renderPublicComponentIndex(manifest) {
@@ -831,7 +1055,7 @@ export function generatePublicComponentPages({ rootDir = ROOT_DIR, outDir = path
   }
   fs.writeFileSync(path.join(outDir, 'index.md'), renderPublicComponentIndex(manifest));
   for (const component of manifest) {
-    fs.writeFileSync(path.join(outDir, `${component.name}.md`), renderPublicComponentPage(component));
+    fs.writeFileSync(path.join(outDir, `${component.name}.md`), renderPublicComponentPage(component, rootDir));
   }
   return manifest;
 }

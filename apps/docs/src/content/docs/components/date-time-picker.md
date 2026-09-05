@@ -104,6 +104,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 - `BeeUIProvider` is required above this family because it participates in shared overlay/toast runtime infrastructure.
 - **Peer/native dependencies visible to this Registry item:** `@react-native-community/datetimepicker`, `react`, `react-native`
 - **Registry dependency closure:** `button`, `calendar`, `core-overlay`, `dialog`, `field-context`, `icon-button`, `input`, `popover`, `segmented-control`, `text`, `theme`
+- On Web this family renders from `date-time-picker.web.tsx`, which does not import `@react-native-community/datetimepicker`: that peer serves the native implementation.
 - Safe-area ownership remains explicit: shell surfaces touching system edges opt into `SafeArea`; components do not silently invent app-shell insets.
 - Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).
 

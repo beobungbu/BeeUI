@@ -109,7 +109,7 @@ Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-m
 
 ## Styling and theming
 
-- **Style axes:** `align` (4 values), `direction` (2 values), `gap` (6 values), `justify` (6 values) — the values are in the props tables above.
+- **Style axes:** `align` (4 values, inherited from `StackProps`), `gap` (6 values, inherited from `StackProps`), `justify` (6 values, inherited from `StackProps`), `direction` (2 values) — the values are in the props tables above.
 - **Class-name surfaces:** `className`.
 
 Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.

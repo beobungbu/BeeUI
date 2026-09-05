@@ -193,6 +193,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 - `BeeUIProvider` is required above this family because it participates in shared overlay/toast runtime infrastructure.
 - **Peer/native dependencies visible to this Registry item:** `@gorhom/bottom-sheet`, `react`, `react-native`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets`
 - **Registry dependency closure:** `button`, `core-cn`, `overlay-runtime`, `text`, `theme`
+- On Web this family renders from `sheet.web.tsx`, which does not import `@gorhom/bottom-sheet`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets`: those peers serve the native implementation.
 - Safe-area ownership remains explicit: shell surfaces touching system edges opt into `SafeArea`; components do not silently invent app-shell insets.
 - Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).
 
@@ -213,7 +214,7 @@ Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-m
 
 ## Styling and theming
 
-- **Style axes:** `size` (4 values), `variant` (5 values) — the values are in the props tables above.
+- **Style axes:** `size` (4 values), `variant` (5 values), `tone` (8 values, inherited from `TextProps`) — the values are in the props tables above.
 - **Class-name surfaces:** `className`, `containerClassName`, `handleClassName`, `labelClassName`, `overlayClassName`.
 
 Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.

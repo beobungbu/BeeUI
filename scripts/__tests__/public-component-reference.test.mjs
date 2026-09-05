@@ -26,6 +26,7 @@ import {
   buildPublicComponentManifest,
   collectPropDescriptionCoverage,
   collectRenderedPageViolations,
+  collectDerivedClaimViolations,
   collectPropDescriptionViolations,
   PROP_DESCRIPTION_FLOOR,
   PROP_DISTINCT_DESCRIPTION_FLOOR,
@@ -769,7 +770,10 @@ test('renderPublicComponentPage links a base that resolves to another public fam
   const page = renderPublicComponentPage(component);
   // A `|` here is prose, not a table cell: the published signature must read `'multiline' | 'size'`.
   assert.match(page, /Also carries every prop of `Omit<InputProps, 'multiline' \| 'size'>` — documented on the \[Input\]\(\/docs\/components\/input\/\) page, not reproduced here\./);
-  assert.doesNotMatch(page, /upstream contract/);
+  // Scoped to the bases line: a page-wide search for the phrase makes this test fail whenever
+  // any other sentence happens to use the same words.
+  const basesLine = page.split('\n').find((line) => line.startsWith('Also carries every prop of'));
+  assert.doesNotMatch(basesLine, /upstream contract/);
 });
 
 test('renderPublicComponentPage keeps the "upstream" wording for a genuinely external base, and collapses bracket-adjacent whitespace', () => {
@@ -1000,6 +1004,20 @@ test('every published prop carries a description', () => {
 
   assert.equal(described, total, `${total - described} published prop(s) have no description`);
   assert.equal(PROP_DESCRIPTION_FLOOR, total, 'the floor must track the real published total');
+});
+
+
+// Without this, lowering the distinct floor to 100 left the whole suite green: every other test
+// builds its fixture *from* the constant, so it moves with whatever the constant says. A floor
+// that no test pins to a measurement is a number, not a ratchet.
+test('the distinct-description floor tracks the real measurement', () => {
+  const { distinct } = collectPropDescriptionCoverage(buildPublicComponentManifest(REPO_ROOT));
+
+  assert.equal(
+    PROP_DISTINCT_DESCRIPTION_FLOOR,
+    distinct,
+    'the distinct floor must equal the measured distinct count, so it can only ratchet up',
+  );
 });
 
 
@@ -1469,10 +1487,22 @@ test('the styling section names the family own style axes and class surfaces', (
   assert.match(page, /`className`, `fallbackClassName`, `imageClassName`/u);
 });
 
-test('a family with no variant prop says it has no style axes', () => {
+test('a family with no variant prop and no base says it has no style axes', () => {
+  // Toast declares its whole prop surface itself, so "none" covers everything there is to cover.
+  const toast = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'toast');
+
+  assert.match(renderPublicComponentPage(toast, REPO_ROOT), /\*\*Style axes:\*\* none;/u);
+});
+
+// Separator has none of its own either, but defers part of its surface to `ViewProps`. Saying
+// "none" there is a claim about props the page never read.
+test('a family that defers props upstream does not claim to have no style axes', () => {
   const separator = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'separator');
 
-  assert.match(renderPublicComponentPage(separator), /\*\*Style axes:\*\* none;/u);
+  const page = renderPublicComponentPage(separator, REPO_ROOT);
+
+  assert.equal(/\*\*Style axes:\*\* none;/u.test(page), false);
+  assert.match(page, /declares no variant or size prop of its own/u);
 });
 
 // The three sections that used to be one body across every page must stay differentiated.
@@ -1550,4 +1580,121 @@ test('a derived requirement is skipped when a curated limitation already says it
 
   assert.match(page, /Controlled open requires onOpenChange/u);
   assert.equal(/Passing `open` without `onOpenChange` leaves the value read-only/u.test(page), false);
+});
+
+
+// Each of the four derived sections shipped with a test, every test passed, and the sections
+// published five classes of false fact anyway: each test had picked the one component whose
+// source made its claim true. These pin the claims to components that would disagree.
+
+test('a role is read from the branches of a conditional, never from its condition', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'chip.tsx',
+      source: "const C = () => <View accessibilityRole={mode === 'single' ? 'radiogroup' : undefined} />;",
+    },
+  ]);
+
+  assert.deepEqual(facts.roles, ['radiogroup'], '`single` is the value compared against, not a role');
+});
+
+test('roles and states are read from an object literal spread into a primitive', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'switch.tsx',
+      source: [
+        'const props = {',
+        "  ...(isWeb ? null : { accessibilityRole: 'switch', accessibilityState: { checked, disabled } }),",
+        '};',
+      ].join('\n'),
+    },
+  ]);
+
+  assert.deepEqual(facts.roles, ['switch']);
+  assert.deepEqual(facts.states, ['checked', 'disabled']);
+});
+
+test('an accessibilityState wrapped in a conditional is still read', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'list-item.tsx',
+      source: 'const C = () => <View accessibilityState={interactive ? { disabled } : undefined} />;',
+    },
+  ]);
+
+  assert.deepEqual(facts.states, ['disabled']);
+});
+
+test('the portal publishes no accessibility role outside the known vocabulary', () => {
+  const violations = collectPublicComponentReferenceViolations(REPO_ROOT);
+
+  assert.deepEqual(violations.filter((entry) => entry.includes('as an accessibility role')), []);
+});
+
+test('an absolute negative is refused when the page defers part of its prop surface upstream', () => {
+  const component = { name: 'demo', allSources: [], source: '' };
+  const page = [
+    "Also carries every prop of `Omit<ButtonProps, 'size'>` — that upstream contract is not reproduced here.",
+    '- **Style axes:** none; this family has no variant or size prop.',
+  ].join('\n\n');
+
+  const violations = collectDerivedClaimViolations(page, component, REPO_ROOT);
+
+  assert.equal(violations.length, 1);
+  assert.match(violations[0], /never looked at/u);
+});
+
+test('the negative-claim oracle reads code, not the comments that describe it', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-oracle-'));
+  const rel = 'spinner.tsx';
+  fs.writeFileSync(
+    path.join(dir, rel),
+    '// react-native-web\'s ActivityIndicator always renders role="progressbar" itself.\nexport const S = () => null;\n',
+  );
+
+  const violations = collectDerivedClaimViolations(
+    '- **Roles this family assigns:** none of its own; each element keeps the role of the primitive it renders.',
+    { name: 'spinner', allSources: [rel], source: rel },
+    dir,
+  );
+
+  assert.deepEqual(violations, [], 'a comment explaining what the primitive does is not the component doing it');
+});
+
+test('a class-name surface inherited through a base type is published', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const textarea = manifest.find((component) => component.name === 'textarea');
+
+  const page = renderPublicComponentPage(textarea, REPO_ROOT);
+
+  assert.match(page, /\*\*Class-name surfaces:\*\* `className`/u);
+  assert.equal(/accepts no `className` of its own/u.test(page), false);
+});
+
+test('a style axis inherited from a public base type is published, and named', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const iconButton = manifest.find((component) => component.name === 'icon-button');
+
+  const page = renderPublicComponentPage(iconButton, REPO_ROOT);
+
+  assert.match(page, /\*\*Style axes:\*\* `variant` \(5 values, inherited from `ButtonProps`\)/u);
+  // `size` is in the Omit list, so inheriting `variant` must not drag it along.
+  assert.equal(/`size` \(\d+ values, inherited/u.test(page), false);
+});
+
+test('a peer the Web implementation never imports is scoped to native', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const sheet = manifest.find((component) => component.name === 'sheet');
+  // Read the file directly rather than through the renderer, so this fails if Web starts
+  // importing the engine ADR-006 says it does not use.
+  const webSource = fs.readFileSync(path.join(REPO_ROOT, 'packages/ui/src/components/sheet.web.tsx'), 'utf8');
+  const imported = [...webSource.matchAll(/from\s*'([^']+)'/gu)].map((match) => match[1]);
+  // The ADR-006 header names the package in prose to say Web does not use it, so an `includes`
+  // check would read the explanation as the thing it denies.
+  assert.equal(imported.includes('@gorhom/bottom-sheet'), false);
+
+  const page = renderPublicComponentPage(sheet, REPO_ROOT);
+
+  assert.match(page, /On Web this family renders from `sheet\.web\.tsx`, which does not import/u);
+  assert.match(page, /those peers serve the native implementation/u);
 });

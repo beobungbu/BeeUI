@@ -519,6 +519,80 @@ export function cvaVariantType(values) {
 // specific to the component. These are the two facts that can be derived honestly: the roles this
 // family assigns to its own elements, and the accessibility states it manages. Read from the AST
 // rather than by matching text, so a role named in a comment or a string is not published as one.
+// Collects every string an expression can *evaluate to*.
+//
+// A conditional's condition is not one of them: `selectionMode === 'single' ? 'radiogroup' :
+// undefined` assigns `radiogroup` and never assigns `single`. Walking the whole expression
+// published `single` on the ChipGroup page as an ARIA role. The test that was supposed to cover
+// this path used `decorative ? undefined : 'separator'` — a condition holding no string literal —
+// so the case that would have disagreed was never in its scope.
+function collectValueLiterals(node, out) {
+  if (!node) return;
+  if (ts.isParenthesizedExpression(node)) {
+    collectValueLiterals(node.expression, out);
+    return;
+  }
+  if (ts.isStringLiteralLike(node)) {
+    out.add(node.text);
+    return;
+  }
+  if (ts.isConditionalExpression(node)) {
+    collectValueLiterals(node.whenTrue, out);
+    collectValueLiterals(node.whenFalse, out);
+    return;
+  }
+  if (ts.isBinaryExpression(node)) {
+    const kind = node.operatorToken.kind;
+    // `cond && 'role'` yields the right side only; `a ?? 'role'` and `a || 'role'` yield either.
+    if (kind === ts.SyntaxKind.AmpersandAmpersandToken) {
+      collectValueLiterals(node.right, out);
+      return;
+    }
+    if (kind === ts.SyntaxKind.BarBarToken || kind === ts.SyntaxKind.QuestionQuestionToken) {
+      collectValueLiterals(node.left, out);
+      collectValueLiterals(node.right, out);
+    }
+    // Comparisons evaluate to a boolean, never to an operand read as a role.
+    return;
+  }
+  ts.forEachChild(node, (child) => collectValueLiterals(child, out));
+}
+
+// `accessibilityState={interactive ? { disabled } : undefined}` puts the object one level below
+// the attribute. Requiring an object literal directly meant ListItem published "manages no
+// states" while managing `disabled`; the shape of the wrapper is not the question being asked.
+function collectStateNames(node, states) {
+  if (!node) return;
+  if (ts.isParenthesizedExpression(node)) {
+    collectStateNames(node.expression, states);
+    return;
+  }
+  if (ts.isConditionalExpression(node)) {
+    collectStateNames(node.whenTrue, states);
+    collectStateNames(node.whenFalse, states);
+    return;
+  }
+  if (ts.isBinaryExpression(node)) {
+    const kind = node.operatorToken.kind;
+    if (kind === ts.SyntaxKind.AmpersandAmpersandToken) {
+      collectStateNames(node.right, states);
+      return;
+    }
+    if (kind === ts.SyntaxKind.BarBarToken || kind === ts.SyntaxKind.QuestionQuestionToken) {
+      collectStateNames(node.left, states);
+      collectStateNames(node.right, states);
+    }
+    return;
+  }
+  if (!ts.isObjectLiteralExpression(node)) return;
+  for (const property of node.properties) {
+    // A spread carries no name of its own; shorthand (`{ disabled }`) does.
+    if (property.name && (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))) {
+      states.add(property.name.text);
+    }
+  }
+}
+
 export function extractAccessibilityFacts(files) {
   const roles = new Set();
   const states = new Set();
@@ -526,44 +600,54 @@ export function extractAccessibilityFacts(files) {
   for (const { path: filePath, source } of files) {
     const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, scriptKindFor(filePath));
     walk(sourceFile, (node) => {
-      if (!ts.isJsxAttribute(node) || !node.name || !ts.isIdentifier(node.name)) return;
-      const attribute = node.name.text;
-
-      if (attribute === 'role' || attribute === 'accessibilityRole') {
-        if (!node.initializer) return;
-        if (ts.isStringLiteralLike(node.initializer)) {
-          roles.add(node.initializer.text);
+      // Props reach a primitive two ways: as JSX attributes, and as an object literal that is
+      // spread into one. Switch sets `accessibilityRole: 'switch'` and an `accessibilityState`
+      // object in a spread branch; reading JSX attributes alone published "assigns no roles,
+      // manages no states" on a component whose whole purpose is the `switch` role.
+      if (ts.isJsxAttribute(node) && node.name && ts.isIdentifier(node.name)) {
+        const attribute = node.name.text;
+        if (attribute === 'role' || attribute === 'accessibilityRole') {
+          if (!node.initializer) return;
+          if (ts.isStringLiteralLike(node.initializer)) {
+            roles.add(node.initializer.text);
+            return;
+          }
+          if (ts.isJsxExpression(node.initializer)) collectValueLiterals(node.initializer.expression, roles);
           return;
         }
-        // `role={decorative ? undefined : 'separator'}` assigns a real role on one branch. Collect
-        // every literal the expression can produce; `role={someVariable}` correctly yields none.
-        if (ts.isJsxExpression(node.initializer) && node.initializer.expression) {
-          walk(node.initializer.expression, (inner) => {
-            if (ts.isStringLiteralLike(inner)) roles.add(inner.text);
-          });
+        if (attribute.startsWith('aria-')) {
+          states.add(attribute.slice('aria-'.length));
+          return;
         }
+        if (attribute !== 'accessibilityState') return;
+        const value = node.initializer;
+        if (!value || !ts.isJsxExpression(value)) return;
+        collectStateNames(value.expression, states);
         return;
       }
 
-      // `aria-checked={…}` on Web, `accessibilityState={{ checked: … }}` on native.
-      if (attribute.startsWith('aria-')) {
-        states.add(attribute.slice('aria-'.length));
+      // Object-literal form. `role` is deliberately not read here: outside a JSX attribute the
+      // bare word is generic, and no source in `packages/ui` uses it as an object key today.
+      if (!ts.isPropertyAssignment(node)) return;
+      const key = node.name;
+      if (!key || !(ts.isIdentifier(key) || ts.isStringLiteral(key))) return;
+      const name = key.text;
+      if (name === 'accessibilityRole') {
+        collectValueLiterals(node.initializer, roles);
         return;
       }
-      if (attribute !== 'accessibilityState') return;
-      const value = node.initializer;
-      if (!value || !ts.isJsxExpression(value) || !value.expression) return;
-      if (!ts.isObjectLiteralExpression(value.expression)) return;
-      for (const property of value.expression.properties) {
-        if (property.name && (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))) {
-          states.add(property.name.text);
-        }
+      if (name.startsWith('aria-')) {
+        states.add(name.slice('aria-'.length));
+        return;
       }
+      if (name !== 'accessibilityState') return;
+      collectStateNames(node.initializer, states);
     });
   }
 
   return { roles: [...roles].sort(), states: [...states].sort() };
 }
+
 
 // Controlled-prop requirements, read from the development warnings the components already emit.
 //
