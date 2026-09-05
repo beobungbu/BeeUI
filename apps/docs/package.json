@@ -7,7 +7,7 @@
     "predev": "node ../../scripts/public-component-reference.mjs && node ../../scripts/public-component-previews.mjs && node ../../scripts/public-pattern-reference.mjs && node ../../scripts/public-reference.mjs && node ../../scripts/public-guide-data.mjs && node ../../scripts/generate-docs-foundation.mjs",
     "dev": "astro dev",
     "prebuild": "node ../../scripts/public-component-reference.mjs && node ../../scripts/public-component-previews.mjs && node ../../scripts/public-pattern-reference.mjs && node ../../scripts/public-reference.mjs && node ../../scripts/public-guide-data.mjs && node ../../scripts/generate-docs-foundation.mjs",
-    "build": "astro build && node ../../scripts/public-docs-a11y.mjs",
+    "build": "astro build && node ../../scripts/public-docs-a11y.mjs && node ../../scripts/public-docs-a11y.mjs --check",
     "preview": "astro preview",
     "pretypecheck": "node ../../scripts/public-component-reference.mjs && node ../../scripts/public-component-previews.mjs && node ../../scripts/public-pattern-reference.mjs && node ../../scripts/public-reference.mjs && node ../../scripts/public-guide-data.mjs && node ../../scripts/generate-docs-foundation.mjs",
     "typecheck": "astro check"

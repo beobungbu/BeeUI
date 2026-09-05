@@ -33,7 +33,15 @@ const contentTypes = {
 };
 
 function resolvePath(url) {
-  const raw = decodeURIComponent(new URL(url, `http://${host}:${port}`).pathname);
+  // `decodeURIComponent` throws URIError on a malformed escape like `%zz`. Uncaught inside the
+  // request handler that killed the process, so one bad request took the audit server down and
+  // every later request returned nothing.
+  let raw;
+  try {
+    raw = decodeURIComponent(new URL(url, `http://${host}:${port}`).pathname);
+  } catch {
+    return null;
+  }
   // Astro builds the portal without its public base; the Cloudflare Worker mounts it at /docs.
   // Stripping the prefix here lets specs address pages by their production URL instead of a
   // build-layout one, so a route change is visible in the audit rather than hidden by it.

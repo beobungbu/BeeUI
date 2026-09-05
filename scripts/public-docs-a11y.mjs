@@ -19,7 +19,14 @@
 // matters for a portal whose Showcase and Demo shells exist precisely for that case.
 //
 //   node scripts/public-docs-a11y.mjs           # rewrite dist in place
-//   node scripts/public-docs-a11y.mjs --check   # fail if any <pre> is unreachable
+//   node scripts/public-docs-a11y.mjs --check   # fail if any region is unreachable
+//
+// What `--check` proves, and what it does not. It uses the same pattern as the rewrite, so on
+// output the rewrite produced it cannot disagree with it — that is a tautology, not evidence.
+// Its real job is to catch a build that skipped the rewrite: `astro build` run directly, or a
+// future change that drops the step from the pipeline. Whether the result is actually
+// accessible is decided by an independent engine — the axe audit in
+// `apps/visual-regression/tests/a11y-docs-portal.spec.ts`, which runs in `web-a11y`.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -31,23 +38,31 @@ export const DOCS_DIST_DIR = 'apps/docs/dist';
 
 // `tabindex="0"` is what satisfies the rule. The role and label are what make the resulting tab
 // stop mean something when a screen reader announces it, rather than an unnamed region.
+// `tabindex="0"` is the whole fix. An ARIA role is not required by the rule and is actively
+// harmful on a table: a role overrides the native one, so `role="region"` on `<table>` erases
+// `table`/`row`/`cell`/`columnheader` from the accessibility tree. Measured on
+// /docs/components/table/ with CDP `Accessibility.getFullAXTree`:
+//
+//   with role="region":  table 0   rowgroup 0   row 0   cell 0   columnheader 0
+//   with tabindex only:  table 8   rowgroup 8   row 31  cell 92  columnheader 32
+//
+// That is strictly worse than shipping nothing, for exactly the readers this step is for — and
+// axe's WCAG rules do not report it, so the audit that motivated this could not see it.
+//
+// `<pre>` takes `role="group"` with a label so the new tab stop is announced as something. It is
+// not a landmark: 581 `region` landmarks across 138 pages produced 366 `landmark-unique`
+// violations, which axe reports as best-practice rather than WCAG — invisible to this audit too.
 const SCROLLABLE_TAGS = [
-  { tag: 'pre', label: 'Code block' },
-  { tag: 'table', label: 'Table' },
+  { attributes: ' tabindex="0" role="group" aria-label="Code block"', tag: 'pre' },
+  { attributes: ' tabindex="0"', tag: 'table' },
 ];
 
 export function addKeyboardScrollToScrollableRegions(html) {
-  return SCROLLABLE_TAGS.reduce((current, { tag, label }) => {
+  return SCROLLABLE_TAGS.reduce((current, { attributes, tag }) => {
     const pattern = new RegExp(`<${tag}(?=[\\s>])(?![^>]*\\btabindex=)([^>]*)>`, 'gu');
-    return current.replace(
-      pattern,
-      (_match, attributes) => `<${tag}${attributes} tabindex="0" role="region" aria-label="${label}">`,
-    );
+    return current.replace(pattern, (_match, existing) => `<${tag}${existing}${attributes}>`);
   }, html);
 }
-
-// Kept as the previous name so nothing that imported it breaks; the behavior is now both tags.
-export const addKeyboardScrollToPreElements = addKeyboardScrollToScrollableRegions;
 
 function htmlFiles(absDir) {
   if (!fs.existsSync(absDir)) return [];

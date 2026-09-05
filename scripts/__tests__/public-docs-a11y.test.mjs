@@ -1,14 +1,24 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 
-import { addKeyboardScrollToScrollableRegions } from '../public-docs-a11y.mjs';
+import {
+  addKeyboardScrollToScrollableRegions,
+  collectUnreachableCodeBlocks,
+  DOCS_DIST_DIR,
+  makeDocsCodeBlocksFocusable,
+} from '../public-docs-a11y.mjs';
 
 // A `<pre>` that scrolls horizontally with nothing focusable inside cannot be scrolled by a
 // keyboard-only reader. The portal shipped 367 of them across 125 of its 151 pages.
 
 test('a code block gains a keyboard stop with a name', () => {
   const out = addKeyboardScrollToScrollableRegions('<pre data-language="tsx"><code>x</code></pre>');
-  assert.match(out, /<pre data-language="tsx" tabindex="0" role="region" aria-label="Code block">/u);
+  // `group`, not `region`: a region is a landmark, and 581 identically named landmarks produced
+  // 366 `landmark-unique` violations across 88 pages.
+  assert.match(out, /<pre data-language="tsx" tabindex="0" role="group" aria-label="Code block">/u);
 });
 
 test('existing attributes are preserved', () => {
@@ -36,14 +46,97 @@ test('other elements are untouched', () => {
 
 // Found only because the audit also runs at 390px: the generated props and reference tables fit
 // on a desktop viewport and overflow on a phone, so a desktop-only audit called them clean.
-test('a table is made reachable and labelled as a table', () => {
+// An ARIA role overrides the native one, so any role here erases table/row/cell/columnheader
+// from the accessibility tree. Measured with CDP on /docs/components/table/: 8/8/31/92/32 with
+// tabindex alone, 0/0/0/0/0 with role="region".
+test('a table is made reachable without losing its table semantics', () => {
   const out = addKeyboardScrollToScrollableRegions('<table><thead></thead></table>');
-  assert.match(out, /<table tabindex="0" role="region" aria-label="Table">/u);
+  assert.match(out, /<table tabindex="0">/u);
+  assert.equal(/role=/u.test(out), false, 'a table must never be given an ARIA role');
+  assert.equal(/aria-label=/u.test(out), false, 'a table names itself through its caption/headers');
 });
 
 test('code blocks and tables on one page are both covered', () => {
   const out = addKeyboardScrollToScrollableRegions('<pre a></pre><table></table><pre b></pre>');
   assert.equal((out.match(/tabindex="0"/gu) ?? []).length, 3);
-  assert.equal((out.match(/aria-label="Table"/gu) ?? []).length, 1);
   assert.equal((out.match(/aria-label="Code block"/gu) ?? []).length, 2);
+  assert.equal((out.match(/aria-label="Table"/gu) ?? []).length, 0);
+});
+
+// --- the parts that touch the filesystem -------------------------------------------------
+// Only the pure regex helper had coverage, so `collectUnreachableCodeBlocks` could `return []`
+// and `makeDocsCodeBlocksFocusable` could do nothing, both with a green suite — a guard that
+// always passes, which is the defect this whole program keeps finding.
+
+function distFixture(pages) {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-docs-a11y-'));
+  for (const [relative, html] of Object.entries(pages)) {
+    const file = path.join(rootDir, DOCS_DIST_DIR, relative);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, html);
+  }
+  return rootDir;
+}
+
+function withFixture(pages, assertions) {
+  const rootDir = distFixture(pages);
+  try {
+    assertions(rootDir);
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+}
+
+test('unreachable regions are reported per page, at any directory depth', () => {
+  withFixture({
+    'index.html': '<pre a></pre>',
+    'components/table/index.html': '<table></table><pre b></pre>',
+    'guides/index.html': '<p>nothing scrollable</p>',
+  }, (rootDir) => {
+    const violations = collectUnreachableCodeBlocks(rootDir);
+    assert.equal(violations.length, 2, violations.join(' | '));
+    assert.ok(violations.some((v) => /index\.html has 1 scrollable region/u.test(v)));
+    assert.ok(violations.some((v) => /components\/table\/index\.html has 2 scrollable region/u.test(v)));
+  });
+});
+
+test('a page whose regions are already reachable reports nothing', () => {
+  withFixture({ 'index.html': '<pre tabindex="0"></pre><table tabindex="0"></table>' }, (rootDir) => {
+    assert.deepEqual(collectUnreachableCodeBlocks(rootDir), []);
+  });
+});
+
+test('rewriting makes a real dist tree pass its own check', () => {
+  withFixture({
+    'index.html': '<pre a></pre>',
+    'components/table/index.html': '<table></table>',
+  }, (rootDir) => {
+    assert.equal(collectUnreachableCodeBlocks(rootDir).length, 2);
+    const { blocks, rewritten } = makeDocsCodeBlocksFocusable(rootDir);
+    assert.equal(blocks, 2);
+    assert.equal(rewritten, 2);
+    assert.deepEqual(collectUnreachableCodeBlocks(rootDir), []);
+    // The table must keep its native semantics: a role would erase table/row/cell from the
+    // accessibility tree, which is worse than shipping nothing.
+    const table = fs.readFileSync(path.join(rootDir, DOCS_DIST_DIR, 'components/table/index.html'), 'utf8');
+    assert.match(table, /<table tabindex="0">/u);
+    assert.equal(/role=/u.test(table), false, 'a table must not be given an ARIA role');
+  });
+});
+
+test('rewriting twice changes nothing the second time', () => {
+  withFixture({ 'index.html': '<pre a></pre><table></table>' }, (rootDir) => {
+    makeDocsCodeBlocksFocusable(rootDir);
+    const after = fs.readFileSync(path.join(rootDir, DOCS_DIST_DIR, 'index.html'), 'utf8');
+    assert.deepEqual(makeDocsCodeBlocksFocusable(rootDir), { blocks: 0, rewritten: 0 });
+    assert.equal(fs.readFileSync(path.join(rootDir, DOCS_DIST_DIR, 'index.html'), 'utf8'), after);
+  });
+});
+
+// A dist with no HTML, or none at all, must not read as "everything is reachable".
+test('an empty or missing dist is not silently clean', () => {
+  withFixture({}, (rootDir) => {
+    assert.deepEqual(collectUnreachableCodeBlocks(rootDir), []);
+    assert.deepEqual(makeDocsCodeBlocksFocusable(rootDir), { blocks: 0, rewritten: 0 });
+  });
 });

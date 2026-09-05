@@ -22,8 +22,13 @@ import { writeScenarioReport } from '../src/a11y-report';
 
 const docsBaseUrl = 'http://127.0.0.1:4175';
 
-// WCAG 2.0/2.1 Level A + AA — the same bar the Showcase audit holds.
-const axeTags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+// WCAG 2.0/2.1 Level A + AA — the same bar the Showcase audit holds — plus axe's best-practice
+// rules. The first version of this fix added `role="region"` to 581 elements and produced 366
+// `landmark-unique` violations; `landmark-unique` is a best-practice rule, so requesting only
+// the WCAG tags meant this audit could not see a defect its own remediation had introduced.
+// The gate still blocks on serious/critical only, so best-practice findings surface in the
+// report without changing what fails.
+const axeTags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'];
 
 const viewports = [
   { name: 'desktop', width: 1280, height: 800 },
