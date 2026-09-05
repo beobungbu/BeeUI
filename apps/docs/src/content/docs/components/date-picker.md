@@ -114,13 +114,13 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 ## Accessibility
 
 - **Roles this family assigns:** `button` — set by the components themselves, not by the caller.
-- **Accessibility states and properties it sets:** `disabled`, `expanded`, `hidden`.
+- **Accessibility states and properties it sets:** `accessibilityHint`, `accessibilityLabel`, `accessibilityLabelledBy`, `disabled`, `expanded`, `hidden`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
 ## Styling and theming
 
-- **Style axes:** none; this family has no variant or size prop, so its appearance comes from tokens and your own classes.
+- **Style axes:** not enumerated here: `align`, `collisionPadding`, `direction`, `placement` are typed by an alias this page does not resolve to values.
 - **Class-name surfaces:** `className`.
 
 Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.

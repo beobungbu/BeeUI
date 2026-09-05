@@ -21,6 +21,7 @@ import {
   extractOmitPickOrBareTypeName,
   getBehaviorGuardKnownNames,
   getComponentTypeDocs,
+  stripSourceComments,
 } from './component-props-lib.mjs';
 
 // The ratified owner route for a component family is /docs/components/<slug>/ — that is what
@@ -326,8 +327,12 @@ const NEGATIVE_CLAIM_ORACLES = [
   },
   {
     claim: STATES_NONE_CLAIM,
-    pattern: /accessibilityState\s*[=:]|(?<![\w-])aria-[a-z]+\s*=/u,
-    message: 'publishes "manages no states" while its source sets one',
+    // Narrowed to `accessibilityState` and `aria-*`, this missed nine pages that set
+    // `accessibilityLiveRegion`, `accessibilityElementsHidden` or `accessibilityValue` — the
+    // oracle's scope had been copied from the derivation's scope, which is the one thing an
+    // independent oracle must not do.
+    pattern: /accessibility(?!Role\b)[A-Z]\w*\s*[=:]|(?<![\w-])(?:aria-[a-z]+|accessible)\s*=/u,
+    message: 'publishes "sets no states or properties" while its source sets one',
   },
   {
     // A component styling its own internals (`<View className="flex-row">`) accepts nothing from
@@ -343,14 +348,6 @@ const NEGATIVE_CLAIM_ORACLES = [
     message: 'publishes "no variant or size prop" while its source declares cva variants',
   },
 ];
-
-// Comments are prose about the code, not the code. Spinner's source explains in a comment that
-// `react-native-web`'s ActivityIndicator renders `role="progressbar"` itself — which is precisely
-// why the page correctly says Spinner assigns no role of its own. Grepping the comment turned
-// that correct sentence into a failure.
-function stripComments(source) {
-  return source.replace(/\/\*[\s\S]*?\*\//gu, ' ').replace(/(^|[^:])\/\/[^\n]*/gu, '$1');
-}
 
 // The oracle above can only refute a negative. The role line fails the other way too: reading
 // `selectionMode === 'single' ? 'radiogroup' : undefined` as assigning both published `single`,
@@ -383,7 +380,7 @@ export function collectDerivedClaimViolations(page, component, rootDir = ROOT_DI
   const violations = [];
   const sources = (component.allSources ?? [component.source])
     .filter((relPath) => relPath && fs.existsSync(path.join(rootDir, relPath)))
-    .map((relPath) => stripComments(fs.readFileSync(path.join(rootDir, relPath), 'utf8')))
+    .map((relPath) => stripSourceComments(fs.readFileSync(path.join(rootDir, relPath), 'utf8')))
     .join('\n');
 
   for (const { claim, pattern, message } of NEGATIVE_CLAIM_ORACLES) {
@@ -979,6 +976,25 @@ function renderStylingFacts(component, rootDir = ROOT_DIR) {
   const unparsedAlias =
     !typeDocs.some((entry) => entry.docKind === 'props') &&
     typeDocs.some((entry) => entry.kind === 'alias' && (entry.aliasOf ?? '').includes('{'));
+
+  // A prop typed by an alias this page cannot resolve to values is a prop whose values nobody
+  // here has seen. `KeyboardAwareScreenContentWidth` is `keyof typeof CONTENT_WIDTH_CLASSES`,
+  // four max-width classes, and the page said the family had no variant or size prop at all —
+  // forty lines below the prop itself. DatePicker's `placement` and `align` are the same shape.
+  const opaqueAliases = new Set();
+  const collectOpaque = (entry) => {
+    if (entry.kind === 'alias' && !(entry.aliasOf ?? '').includes('{')) opaqueAliases.add(entry.name);
+    for (const variant of entry.variants ?? []) collectOpaque(variant);
+  };
+  for (const entry of typeDocs) collectOpaque(entry);
+  const opaquePropTypes = [];
+  const collectOpaqueProps = (entry) => {
+    for (const field of entry.fields ?? []) {
+      if (opaqueAliases.has((field.type ?? '').trim())) opaquePropTypes.push(field.name);
+    }
+    for (const variant of entry.variants ?? []) collectOpaqueProps(variant);
+  };
+  for (const entry of typeDocs) collectOpaqueProps(entry);
   const defersAnything =
     named.length > 0 || accumulator.resolved.size > 0 || accumulator.inlineBases > 0;
   const deferralList = named.length
@@ -995,6 +1011,10 @@ function renderStylingFacts(component, rootDir = ROOT_DIR) {
       ? `- **Style axes:** none of its own — its appearance comes from tokens and your own classes; it also carries ${deferralList}.`
       : unparsedAlias
         ? '- **Style axes:** not enumerated here: this family declares its props in a type alias whose fields this page does not parse — see the exported types above.'
+        : opaquePropTypes.length
+          ? `- **Style axes:** not enumerated here: ${opaquePropTypes
+              .map((name) => `\`${name}\``)
+              .join(', ')} ${opaquePropTypes.length === 1 ? 'is typed' : 'are typed'} by an alias this page does not resolve to values.`
         : `- ${AXES_NONE_CLAIM} this family has no variant or size prop, so its appearance comes from tokens and your own classes.`;
 
   const classLine = accumulator.classSurfaces.size
@@ -1020,7 +1040,7 @@ function webPeerScope(component, rootDir) {
   const peers = (component.peerDependencies ?? []).filter((peer) => peer !== 'react' && peer !== 'react-native');
   if (!peers.length) return undefined;
 
-  const source = stripComments(fs.readFileSync(path.join(rootDir, webFile), 'utf8'));
+  const source = stripSourceComments(fs.readFileSync(path.join(rootDir, webFile), 'utf8'));
   const imported = new Set(
     [...source.matchAll(/(?:from|require\()\s*'([^']+)'/gu)].map((match) => match[1]),
   );

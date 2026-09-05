@@ -550,45 +550,73 @@ function findLocalConstInitializers(name, sourceFile) {
   return shadowed ? [] : initializers;
 }
 
-// Comment text is prose about the code, not the code. Callers that grep a source file for what it
-// does must not read an explanation of what it deliberately does not do — `sheet.web.tsx` names
-// the gesture engine it does not use, and `spinner.tsx` names the role its primitive sets. A
-// regex over `//` and `/* */` is not enough: a string containing `/*` (a glob, a URL, a JSDoc
-// sample) swallows the rest of the file, so this walks the text tracking string and template
-// state.
+// Comment text is prose about the code, not the code. Callers that grep a source file for what
+// it does must not read an explanation of what it deliberately does not do — `sheet.web.tsx`
+// names the gesture engine it does not use, and `spinner.tsx` names the role its primitive sets.
+//
+// A regex over `//` and `/* */` is not enough, and neither is a scanner that tracks only strings:
+// a string holding `/*` swallows the rest of the file, and a regex literal holding `//`
+// (`/https:\/\//`) is read as a line comment. A `/` opens a regex only where a value may start,
+// which is after an operator, a comma, an opening bracket or a keyword — never after an
+// identifier, a literal or a closing bracket, where it is division.
+const REGEX_MAY_START_AFTER = /[=(,:[!&|?{};+\-*%^~<>]$|\b(?:return|typeof|instanceof|in|of|new|delete|void|case|do|else|yield|await)$/u;
+
 export function stripSourceComments(source) {
   let out = '';
   let index = 0;
-  let quote;
   while (index < source.length) {
     const character = source[index];
-    if (quote) {
-      if (character === '\\') {
-        out += source.slice(index, index + 2);
-        index += 2;
-        continue;
-      }
-      if (character === quote) quote = undefined;
-      out += character;
-      index += 1;
-      continue;
-    }
+
     if (character === "'" || character === '"' || character === '`') {
-      quote = character;
+      const quote = character;
       out += character;
       index += 1;
+      while (index < source.length) {
+        if (source[index] === '\\') {
+          out += source.slice(index, index + 2);
+          index += 2;
+          continue;
+        }
+        out += source[index];
+        index += 1;
+        if (source[index - 1] === quote) break;
+      }
       continue;
     }
+
     if (character === '/' && source[index + 1] === '/') {
       while (index < source.length && source[index] !== '\n') index += 1;
       continue;
     }
+
     if (character === '/' && source[index + 1] === '*') {
       const end = source.indexOf('*/', index + 2);
       index = end === -1 ? source.length : end + 2;
       out += ' ';
       continue;
     }
+
+    if (character === '/' && REGEX_MAY_START_AFTER.test(out.replace(/\s+$/u, ''))) {
+      out += character;
+      index += 1;
+      let inClass = false;
+      while (index < source.length) {
+        const inner = source[index];
+        if (inner === '\\') {
+          out += source.slice(index, index + 2);
+          index += 2;
+          continue;
+        }
+        if (inner === '[') inClass = true;
+        else if (inner === ']') inClass = false;
+        out += inner;
+        index += 1;
+        if (inner === '/' && !inClass) break;
+        if (inner === '\n') break;
+      }
+      continue;
+    }
+
     out += character;
     index += 1;
   }
@@ -685,6 +713,15 @@ function collectStateNames(node, states) {
   }
 }
 
+// Everything a family sets that assistive technology reads. Reading only `accessibilityState`
+// and `aria-*` let nine pages publish "sets none" while setting `accessibilityLiveRegion`,
+// `accessibilityElementsHidden` or `accessibilityValue` — AlertBanner contradicted its own
+// opening paragraph. `accessible` is included because switching a subtree off is as much a
+// decision about assistive technology as any attribute that switches something on.
+function isAccessibilityAttribute(name) {
+  return name === 'accessible' || (name.startsWith('accessibility') && name !== 'accessibilityRole');
+}
+
 export function extractAccessibilityFacts(files) {
   const roles = new Set();
   const states = new Set();
@@ -711,10 +748,15 @@ export function extractAccessibilityFacts(files) {
           states.add(attribute.slice('aria-'.length));
           return;
         }
-        if (attribute !== 'accessibilityState') return;
-        const value = node.initializer;
-        if (!value || !ts.isJsxExpression(value)) return;
-        collectStateNames(value.expression, states);
+        // `accessibilityState` and `accessibilityValue` carry their meaning in an object's keys;
+        // every other accessibility attribute carries it in its own name.
+        if (attribute === 'accessibilityState' || attribute === 'accessibilityValue') {
+          const value = node.initializer;
+          if (!value || !ts.isJsxExpression(value)) return;
+          collectStateNames(value.expression, states);
+          return;
+        }
+        if (isAccessibilityAttribute(attribute)) states.add(attribute);
         return;
       }
 
@@ -734,8 +776,11 @@ export function extractAccessibilityFacts(files) {
         states.add(name.slice('aria-'.length));
         return;
       }
-      if (name !== 'accessibilityState') return;
-      collectStateNames(node.initializer, states);
+      if (name === 'accessibilityState' || name === 'accessibilityValue') {
+        collectStateNames(node.initializer, states);
+        return;
+      }
+      if (isAccessibilityAttribute(name)) states.add(name);
     });
   }
 

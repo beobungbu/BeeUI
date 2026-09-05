@@ -1489,12 +1489,33 @@ test('the styling section names the family own style axes and class surfaces', (
 });
 
 test('a family with no variant prop and no base says it has no style axes', () => {
-  // KeyboardAwareScreen declares its whole prop surface in a parsed `*Props` type and extends
-  // nothing, so "none" covers everything there is to cover. This test named Toast first, which
-  // turned out to be the counter-example: its props live in an unparsed alias carrying `variant`.
+  // This test has now named two counter-examples as its example. Toast's props live in an
+  // unparsed alias carrying `variant`; KeyboardAwareScreen's `contentWidth` is `keyof typeof
+  // CONTENT_WIDTH_CLASSES`, four max-width classes. Both were moved here *because* the sentence
+  // was published on them, which is how a test comes to assert a false fact as correct. The
+  // absolute negative is now available only where nothing at all is unresolved.
+  const hook = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'use-bee-token');
+
+  assert.match(renderPublicComponentPage(hook, REPO_ROOT), /\*\*Style axes:\*\* none;/u);
+});
+
+test('a prop typed by an alias with no resolved values blocks the absolute negative', () => {
   const screen = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'keyboard-aware-screen');
 
-  assert.match(renderPublicComponentPage(screen, REPO_ROOT), /\*\*Style axes:\*\* none;/u);
+  const page = renderPublicComponentPage(screen, REPO_ROOT);
+
+  assert.equal(/\*\*Style axes:\*\* none;/u.test(page), false);
+  assert.match(page, /`contentWidth`.*typed by an alias this page does not resolve to values/u);
+});
+
+test('an accessibility property outside accessibilityState is published', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const progress = manifest.find((component) => component.name === 'progress');
+  const banner = manifest.find((component) => component.name === 'alert-banner');
+
+  // The oracle's own pattern had been copied from the derivation's scope, so both missed these.
+  assert.match(renderPublicComponentPage(progress, REPO_ROOT), /`max`, `min`, `now`/u);
+  assert.match(renderPublicComponentPage(banner, REPO_ROOT), /`accessibilityLiveRegion`/u);
 });
 
 // Separator has none of its own either, but defers part of its surface to `ViewProps`. Saying
@@ -1873,6 +1894,29 @@ test('comment stripping survives a string that contains a comment opener', () =>
 
   assert.match(stripped, /import \{ X \} from 'x';/u, 'a glob in a string must not swallow the file');
   assert.equal(stripped.includes('gone'), false);
+});
+
+test('every rendered absolute negative is a string the oracle recognises', () => {
+  const pages = buildPublicComponentManifest(REPO_ROOT).map((component) => ({
+    component,
+    page: renderPublicComponentPage(component, REPO_ROOT),
+  }));
+
+  // The oracle keyed on literal copies of these sentences; rewording one left it matching
+  // nothing with every gate green. A coupling test that covers one of four constants leaves the
+  // other three able to drift exactly the same way, which is what happened next.
+  const negatives = [
+    '**Roles this family assigns:** none',
+    '**Accessibility states and properties it sets:** none',
+    '**Class-name surfaces:** none;',
+    '**Style axes:** none;',
+  ];
+  for (const negative of negatives) {
+    assert.ok(
+      pages.some(({ page }) => page.includes(negative)),
+      `no page publishes "${negative}", so nothing exercises the oracle that refuses it`,
+    );
+  }
 });
 
 test('the rendered negative and the oracle that refuses it are the same string', () => {
