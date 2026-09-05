@@ -141,7 +141,7 @@ type SelectBaseProps = {
   onOpenChange?: (open: boolean) => void;
   /** Called with the newly selected `SelectItem`'s `value`. Required for enabled controlled `value` usage (logs a dev warning otherwise). */
   onValueChange?: (value: SelectOptionValue) => void;
-  /** Controls whether the listbox is open. Passing this key (even `undefined`) switches open state to controlled, requiring `onOpenChange`. */
+  /** Controls whether the listbox is open. Open state becomes controlled only when this is a defined boolean and `onOpenChange` is a function; passing `open={undefined}` leaves it uncontrolled. Unlike `value`, presence of the key alone is not enough. */
   open?: boolean;
   /** The selected `SelectItem`'s `value`. Passing this key (even `undefined`) switches selection to controlled, requiring `onValueChange`. */
   value?: SelectOptionValue;

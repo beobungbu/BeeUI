@@ -90,7 +90,7 @@ Also carries every prop of `Omit<React.ComponentProps<typeof Text>, 'children'>`
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `colSpan` | `number` | `1` | Number of columns this cell spans (e.g. a single full-width cell used for an empty/loading/error row — see `Table`'s composition notes). |
+| `colSpan` | `number` | `1` | Number of columns this cell spans (e.g. a single full-width cell used for an empty/loading/error row — see `Table`'s composition notes). Native has no table-layout engine, so a spanning cell approximates width by growing its flex share proportionally (`flex: colSpan`) rather than measuring sibling column widths. |
 | `label` | `string` | — | Explicit column label override for `layout="stacked"` and native accessible-name column context. Falls back to the corresponding `TableHead`'s inferred label when omitted. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
@@ -135,7 +135,7 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `label` | `string` | — | Explicit column label override. Required when this header's content is not plain text/number (e.g. an icon-only header) — inferred from `children` otherwise. |
+| `label` | `string` | — | Explicit column label override. Required when this header's content is not plain text/number (e.g. an icon-only header) — inferred from `children` otherwise. Drives both `layout="stacked"`'s visible label-value pairing and the column context folded into each native `TableCell`'s accessible name (RN has no dedicated table/column-header accessibility role to rely on instead — ADR-007). |
 | `onSortChange` | `() => void` | — | Caller-driven sort-toggle callback. Table stores no sort state. |
 | `sortDirection` | `TableSortDirection` | — | Controlled current sort state for this column. Presence of this prop (any of the three values) marks the column sortable and renders an interactive sort trigger reachable by normal tab order. |
 

@@ -121,7 +121,7 @@ Also carries every prop of `Omit<RNTextProps, 'nativeID' \| 'role'>` — that up
 | `disabled` | `boolean` | `false` | Prevents the trigger from opening the listbox and disables the root. Defaults to false. |
 | `onOpenChange` | `(open: boolean) => void` | — | Called whenever the open state changes (trigger press, item selection, outside press, Escape). Required alongside `open` to make it controlled; otherwise falls back to internal open state with a dev-mode warning. |
 | `onValueChange` | `(value: SelectOptionValue) => void` | — | Called with the newly selected `SelectItem`'s `value`. Required for enabled controlled `value` usage (logs a dev warning otherwise). |
-| `open` | `boolean` | — | Controls whether the listbox is open. Passing this key (even `undefined`) switches open state to controlled, requiring `onOpenChange`. |
+| `open` | `boolean` | — | Controls whether the listbox is open. Open state becomes controlled only when this is a defined boolean and `onOpenChange` is a function; passing `open={undefined}` leaves it uncontrolled. Unlike `value`, presence of the key alone is not enough. |
 | `value` | `SelectOptionValue` | — | The selected `SelectItem`'s `value`. Passing this key (even `undefined`) switches selection to controlled, requiring `onValueChange`. |
 
 #### `SelectTriggerProps`

@@ -209,12 +209,11 @@ export type SheetContentProps = Omit<
   'accessibilityRole' | 'accessibilityViewIsModal' | 'role'
 > & {
   /**
-   * Keyboard-interaction contract (#157, per ADR-006). Defaults to `true`.
-   * This cross-platform skeleton relies on the platform's own default Modal
-   * keyboard behavior and does not itself read this flag; #158 (native) and
-   * #159 (Web) drive real, platform-appropriate keyboard avoidance from it —
-   * native and Web keyboard interaction are not the same problem per ADR-006
-   * and are not expected to share one implementation.
+   * Declares the keyboard-interaction contract, but this cross-platform skeleton does not
+   * itself read the flag: it relies on the platform's own default Modal keyboard behavior.
+   * Defaults to `true`. #158 (native) and #159 (Web) drive real, platform-appropriate
+   * keyboard avoidance from it — per ADR-006 native and Web keyboard interaction are not
+   * the same problem and are not expected to share one implementation (#157).
    */
   avoidKeyboard?: boolean;
   /** Backdrop dismissal policy. Defaults to `true`, matching `DialogContent`. */

@@ -22,9 +22,11 @@ export default defineConfig({
       lastUpdated: false,
       pagination: true,
       components: {
-        // Adds a `data-pagefind-filter="section"` meta tag per page, driven only by the route
-        // slug, so search results can be grouped by section (#466) without hand-editing any
-        // generated page.
+        // Adds a `data-pagefind-filter` meta tag per page, driven only by the route slug, so
+        // the built index carries a `section` facet (#466) without hand-editing any generated
+        // page. Index-side only: Starlight ships its own search modal with no filter control,
+        // so readers cannot narrow by section yet — see #500 and the note in
+        // src/components/SearchFilterHead.astro.
         Head: './src/components/SearchFilterHead.astro',
       },
       pagefind: {

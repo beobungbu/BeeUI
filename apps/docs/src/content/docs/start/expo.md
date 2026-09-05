@@ -3,7 +3,7 @@ title: Expo
 description: Add BeeUI to an Expo SDK 57 application through the packed-package boundary, and verify it with a real Metro export.
 ---
 
-<p data-pagefind-weight="8">This is the path to add BeeUI to an Expo application on SDK 57 — a new app you are about to create, or an existing one you want BeeUI inside. It is the fastest way to get BeeUI rendering on Android, iOS and Web from one codebase.</p>
+This is the path to add BeeUI to an Expo application on SDK 57 — a new app you are about to create, or an existing one you want BeeUI inside. It is the fastest way to get BeeUI rendering on Android, iOS and Web from one codebase.
 
 Choose a different guide if you run React Native without the Expo runtime ([Bare React Native](/docs/start/bare-react-native/)), if you ship a browser-only product ([Web](/docs/start/web/)), or if you want the component source committed into your own repository ([CLI & source ownership](/docs/guides/cli-source-ownership/)).
 

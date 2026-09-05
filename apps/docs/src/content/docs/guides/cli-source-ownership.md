@@ -13,10 +13,10 @@ Do not use `npx @beemvp/beeui-cli …`, `npx beeui …`, or public npm install c
 
 ## Run `beeui add` and the rest of the CLI
 
-<p data-pagefind-weight="8">`beeui add` is the command that copies a component's source into your project; the CLI has no
+`beeui add` is the command that copies a component's source into your project; the CLI has no
 project-targeting flag, so it resolves the project from the current working directory. `pnpm beeui`
 runs with the cwd at the BeeUI repository root, so these commands act on **this checkout**, which
-is what you want while evaluating the registry from a BeeUI clone:</p>
+is what you want while evaluating the registry from a BeeUI clone:
 
 ```bash
 pnpm beeui init

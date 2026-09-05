@@ -53,37 +53,18 @@ function scriptKindFor(filePath) {
   return filePath.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
 }
 
-// Common mid-sentence abbreviations ("e.g.", "i.e.", "etc.") would otherwise
-// look like a sentence boundary to the naive regex below, truncating
-// descriptions such as table.tsx's `colSpan` JSDoc mid-clause.
-const ABBREVIATION_DOT_PLACEHOLDER = '\u0000';
-
-// Props tables used to publish only the first sentence, which kept cells short but
-// dropped the operative clause for 263 of the 382 documented props: `table.tsx`'s
-// `layout` read "Responsive presentation." with the sentence naming `'stacked'`
-// discarded. Sentences are taken while the summary stays within
-// `DESCRIPTION_SUMMARY_BUDGET`, so a cell stays scannable without cutting the
-// meaning off mid-contract. The first sentence is always kept, however long. At 280
-// characters 375 of the 382 documented props publish in full; the budget still stops
-// the handful of props whose JSDoc continues into maintainer rationale (issue and ADR
-// references) that a reference table should not carry.
-export const DESCRIPTION_SUMMARY_BUDGET = 280;
-
-export function summarizeDescription(text, budget = DESCRIPTION_SUMMARY_BUDGET) {
-  const clean = text.replace(/\s+/g, ' ').trim();
-  const guarded = clean.replace(/\b(e\.g|i\.e|etc)\./gi, (match) => match.replace(/\.$/, ABBREVIATION_DOT_PLACEHOLDER));
-  const restore = (value) => value.trim().replaceAll(ABBREVIATION_DOT_PLACEHOLDER, '.');
-
-  const sentences = guarded.match(/.*?[.!?](?=\s|$)|.+$/gu);
-  if (!sentences?.length) return restore(guarded);
-
-  let summary = sentences[0].trim();
-  for (const sentence of sentences.slice(1)) {
-    const next = `${summary} ${sentence.trim()}`;
-    if (next.length > budget) break;
-    summary = next;
-  }
-  return restore(summary);
+// Props tables publish a prop's whole JSDoc description.
+//
+// Two narrower rules were tried and both lost real contract. Publishing only the first
+// sentence dropped the operative clause for 263 of the 382 documented props (Table's `layout`
+// read "Responsive presentation." with the sentence naming `'stacked'` discarded). Capping the
+// summary at 280 characters still truncated seven props, and six of those lost user-facing
+// contract rather than the maintainer rationale the cap was meant to trim — `Sheet.avoidKeyboard`
+// kept its ADR reference and dropped "does not itself read this flag", so the page told a reader
+// the prop worked. A prop whose JSDoc runs long is a prop to rewrite, not one to truncate
+// silently: the longest real description is 410 characters.
+export function summarizeDescription(text) {
+  return text.replace(/\s+/gu, ' ').trim();
 }
 
 // JSDoc immediately preceding a node: first-sentence description, plus whether

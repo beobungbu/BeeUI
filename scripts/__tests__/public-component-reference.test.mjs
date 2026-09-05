@@ -7,7 +7,6 @@ import { fileURLToPath } from 'node:url';
 
 import {
   buildTypeIndex,
-  DESCRIPTION_SUMMARY_BUDGET,
   diffPlatformObjectShape,
   diffPlatformPropsShape,
   extractConsumedProps,
@@ -996,35 +995,22 @@ test('every published prop carries a description', () => {
 
 
 // Publishing only the first sentence turned `table.tsx`'s `layout` JSDoc into
-// "Responsive presentation." and discarded the sentence that names `'stacked'`.
-test('a prop summary keeps the sentences that carry the contract', () => {
-  const summary = summarizeDescription(
-    "Responsive presentation. Defaults to 'scroll'. Set 'stacked' to render a card presentation instead.",
-  );
+// "Responsive presentation." and discarded the sentence that names `'stacked'`; a later
+// character cap truncated seven props, six of which lost contract rather than rationale.
+test('a prop description is published whole', () => {
+  const full =
+    "Responsive presentation. Defaults to 'scroll'. Set 'stacked' to render a card presentation instead.";
 
-  assert.match(summary, /Set 'stacked'/u);
+  assert.equal(summarizeDescription(full), full);
 });
 
-test('a prop summary stops before exceeding the budget', () => {
-  const long = `${'a'.repeat(150)}. ${'b'.repeat(150)}.`;
-  const summary = summarizeDescription(long);
+test('a prop description is published whole however long it runs', () => {
+  const long = `${'a'.repeat(300)}. ${'b'.repeat(300)}.`;
 
-  assert.equal(summary, `${'a'.repeat(150)}.`);
-  assert.ok(summary.length <= DESCRIPTION_SUMMARY_BUDGET);
+  assert.equal(summarizeDescription(long), long);
 });
 
-// A single sentence longer than the budget is still the whole contract; truncating
-// it mid-clause would be worse than a wide cell.
-test('a prop summary never drops its first sentence', () => {
-  const single = `${'a'.repeat(300)}.`;
-
-  assert.equal(summarizeDescription(single), single);
+test('a prop description collapses the line breaks a JSDoc block wraps at', () => {
+  assert.equal(summarizeDescription('Column span,\n   e.g. 2.\n'), 'Column span, e.g. 2.');
 });
 
-test('a prop summary does not split on an abbreviation', () => {
-  assert.equal(summarizeDescription('Column span, e.g. 2.'), 'Column span, e.g. 2.');
-});
-
-test('a prop summary tolerates text with no sentence terminator', () => {
-  assert.equal(summarizeDescription('No terminator at all'), 'No terminator at all');
-});

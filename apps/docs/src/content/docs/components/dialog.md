@@ -74,7 +74,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \
 | --- | --- | --- | --- |
 | `closeOnBackdropPress` | `boolean` | `true` | Whether pressing the dimmed backdrop behind the panel closes the dialog. Defaults to true. |
 | `containerClassName` | `string` | — | Extra utility classes for the overlay's container element, merged after the component's own. |
-| `dismissOnEscape` | `boolean` | `true` | Web only: whether a physical `Escape` keypress closes this dialog. Defaults to `true`. |
+| `dismissOnEscape` | `boolean` | `true` | Web only: whether a physical `Escape` keypress closes this dialog. Defaults to `true`. Independent from `dismissOnRequestClose`, which governs native request-close sources (Android hardware back, iOS/other native modal dismissal) that do not exist on Web — `AlertDialogContent` sets this `false` to keep its documented "Escape never dismisses" contract regardless of `cancelOnRequestClose`. |
 | `dismissOnRequestClose` | `boolean` | `true` | Whether native request-close sources (Android hardware back, iOS/other native modal dismissal, and — on Web — the RN `Modal` internal Escape shim) close the dialog. Defaults to true. `AlertDialogContent` maps this to its `cancelOnRequestClose` prop. |
 | `modalProps` | `DialogModalProps` | — | Forwarded to the underlying React Native `Modal`, minus the props this component already controls (`animationType` and `presentationStyle` may still be overridden here). |
 | `onRequestClose` | `() => void` | — | Called whenever a request-close source fires, before this dialog applies its own `dismissOnRequestClose`/`dismissOnEscape` policy. Does not by itself close the dialog. |

@@ -59,7 +59,7 @@ Stateless scrollable form-screen shell; it owns explicit safe-area edges and pla
 | `keyboardScrollMargin` | `number` | `24` | Gap kept between the focused input and the keyboard once scrolled into view on Android. Defaults to 24. |
 | `keyboardDismissMode` | `KeyboardAwareScreenKeyboardDismissMode` | — | Maps to the underlying `ScrollView`'s `keyboardDismissMode`. Defaults to `'interactive'` on iOS and `'on-drag'` elsewhere so drag-to-dismiss stays effective on Android, where React Native treats `interactive` like `none`. |
 | `keyboardShouldPersistTaps` | `ScrollViewProps['keyboardShouldPersistTaps']` | `'handled'` | Maps to the underlying `ScrollView`'s `keyboardShouldPersistTaps`. Defaults to `'handled'` so taps on interactive children (buttons, links) inside the scroll body do not require a second tap after the keyboard has focus. |
-| `safeAreaEdges` | `KeyboardAwareScreenSafeAreaEdges` | — | Safe-area edges this screen owns. Left unset by default: a screen composed under a header/tab-bar shell that already owns safe-area insets should not also apply them here (double-inset). |
+| `safeAreaEdges` | `KeyboardAwareScreenSafeAreaEdges` | — | Safe-area edges this screen owns. Left unset by default: a screen composed under a header/tab-bar shell that already owns safe-area insets should not also apply them here (double-inset). Pass the edges this screen actually touches (e.g. `['top', 'bottom']`) when it owns the full window. |
 | `testID` | `string` | — | Test identifier. Forwarded to the native `testID` and, on Web, emitted as `data-testid`. |
 
 **Related exported types:**

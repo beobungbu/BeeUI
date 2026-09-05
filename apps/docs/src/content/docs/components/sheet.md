@@ -73,7 +73,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' \| 'role' \
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `avoidKeyboard` | `boolean` | `true` | Keyboard-interaction contract (#157, per ADR-006). Defaults to `true`. |
+| `avoidKeyboard` | `boolean` | `true` | Declares the keyboard-interaction contract, but this cross-platform skeleton does not itself read the flag: it relies on the platform's own default Modal keyboard behavior. Defaults to `true`. #158 (native) and #159 (Web) drive real, platform-appropriate keyboard avoidance from it — per ADR-006 native and Web keyboard interaction are not the same problem and are not expected to share one implementation (#157). |
 | `closeOnBackdropPress` | `boolean` | `true` | Backdrop dismissal policy. Defaults to `true`, matching `DialogContent`. |
 | `containerClassName` | `string` | — | Extra utility classes for the overlay's container element, merged after the component's own. |
 | `dismissOnRequestClose` | `boolean` | `true` | Whether a native request-close (Android Back, iOS swipe) actually closes the Sheet. |

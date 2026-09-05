@@ -161,7 +161,11 @@ export const PROP_DESCRIPTION_FLOOR = 583;
 
 // Walks a resolved type entry the same way `applyGlossary` and the renderer do:
 // a `union` entry carries no `fields` of its own, only `variants`, each of which is
-// itself an object (or nested union) shape. Counting `entry.fields` alone reported
+// itself an object (or nested union) shape. Scope: this counts the rows of the four-column
+// props tables only. A shape with no fields of its own instead publishes a two-column
+// `Prop | Default` table from `shape.consumed` (39 such rows today); those cells have no
+// description slot at all — the prop is described on the base type's own page — so they are
+// deliberately outside this denominator. Counting `entry.fields` alone reported
 // 521/521 while 26 variant props rendered an em dash, because the props that would
 // have disagreed were never in the counter's scope.
 function walkShapeFields(shape, visit) {
@@ -185,12 +189,24 @@ export function collectPropDescriptionCoverage(manifest) {
 
 export function collectPropDescriptionViolations(manifest) {
   const { described, total } = collectPropDescriptionCoverage(manifest);
-  if (described >= PROP_DESCRIPTION_FLOOR) return [];
-  return [
-    `prop descriptions dropped to ${described} of ${total} (floor ${PROP_DESCRIPTION_FLOOR}). ` +
+  const remedy =
     'Document the prop in `packages/ui/src` with JSDoc, or add it to docs/prop-glossary.json if ' +
-    'its meaning is identical on every family that declares it.',
-  ];
+    'its meaning is identical on every family that declares it.';
+  const violations = [];
+
+  // Two separate failures. The floor catches a bulk regression even if the total moves with it;
+  // `described === total` catches a single new undescribed prop, which a floor comparison alone
+  // lets through whenever the total grows by the same amount (583 of 584 still clears a floor
+  // of 583).
+  if (described < PROP_DESCRIPTION_FLOOR) {
+    violations.push(
+      `prop descriptions dropped to ${described} of ${total} (floor ${PROP_DESCRIPTION_FLOOR}). ${remedy}`,
+    );
+  } else if (described < total) {
+    violations.push(`${total - described} published prop(s) have no description. ${remedy}`);
+  }
+
+  return violations;
 }
 
 export function collectPublicComponentReferenceViolations(rootDir = ROOT_DIR) {

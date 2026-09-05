@@ -96,7 +96,8 @@ Also: `BeeUI toast show() requires a non-empty string title.`
 
 ### Content is double-inset, or sits under the notch / home indicator
 
-This is BeeUI's safe-area-duplicated symptom: the same physical edge gets padded twice.
+This is BeeUI's safe-area-duplicated symptom and its mirror image: the same physical edge
+gets padded twice, or no component pads it at all.
 
 - **Applies to:** iOS and Android. Web starters intentionally use no `SafeArea`.
 - **Likely cause:** either two nested components each claim the same edge (double inset,
