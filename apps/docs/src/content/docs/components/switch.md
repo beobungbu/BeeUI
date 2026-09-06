@@ -83,8 +83,8 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 
 ## Accessibility
 
-- **Roles this family assigns:** `switch` — set in `switch.tsx` by the components themselves, not by the caller.
-- **Accessibility states and properties it sets:** `checked`, `disabled` — read from `switch.tsx`.
+- **Roles this family assigns:** `switch` (iOS and Android) — set in `switch.tsx` by the components themselves, not by the caller.
+- **Accessibility states and properties it sets:** `checked` (iOS and Android), `disabled` (iOS and Android) — read from `switch.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 

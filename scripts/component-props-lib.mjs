@@ -149,6 +149,41 @@ export function resolveDeclaration(index, name, opts = {}) {
 // Extracts PropertySignature members of a TypeLiteralNode/InterfaceDeclaration
 // body. `@internal` members are dropped entirely — they are explicitly not
 // public API and must never surface in a generated table.
+// `keyof typeof CONTENT_WIDTH_CLASSES` names the keys of a constant declared a few lines up. Left
+// as text, the props row printed the expression and the Related-types list printed "alias of
+// keyof typeof …", so a reader could not learn from the page what `contentWidth` accepts (#508).
+// Resolved only when the constant is an object literal in the same file with plain keys; any
+// other shape stays as written rather than being guessed at.
+function resolveKeyofTypeofKeys(typeNode, sourceFile) {
+  if (!ts.isTypeOperatorNode(typeNode) || typeNode.operator !== ts.SyntaxKind.KeyOfKeyword) return undefined;
+  const query = typeNode.type;
+  if (!ts.isTypeQueryNode(query) || !ts.isIdentifier(query.exprName)) return undefined;
+  const target = query.exprName.text;
+  let keys;
+  walk(sourceFile, (node) => {
+    if (keys || !ts.isVariableDeclaration(node) || !ts.isIdentifier(node.name) || node.name.text !== target) return;
+    let initializer = node.initializer;
+    while (initializer && (ts.isAsExpression(initializer) || ts.isParenthesizedExpression(initializer))) {
+      initializer = initializer.expression;
+    }
+    if (!initializer || !ts.isObjectLiteralExpression(initializer)) return;
+    const names = [];
+    for (const property of initializer.properties) {
+      if (!property.name || !(ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))) return;
+      names.push(property.name.text);
+    }
+    keys = names;
+  });
+  return keys;
+}
+
+function fieldTypeText(member, sourceFile) {
+  if (!member.type) return 'unknown';
+  const keys = resolveKeyofTypeofKeys(member.type, sourceFile);
+  if (keys) return keys.map((key) => `'${key}'`).join(' | ');
+  return member.type.getText(sourceFile);
+}
+
 function extractFields(container, sourceFile) {
   const fields = [];
   for (const member of container.members) {
@@ -158,7 +193,7 @@ function extractFields(container, sourceFile) {
     fields.push({
       name: member.name.getText(sourceFile),
       optional: Boolean(member.questionToken),
-      type: member.type ? member.type.getText(sourceFile) : 'unknown',
+      type: fieldTypeText(member, sourceFile),
       description,
     });
   }
@@ -214,9 +249,27 @@ function resolveTypeNodeToShape(typeNode, sourceFile, ctx) {
   if (ts.isIntersectionTypeNode(typeNode)) {
     const bases = [];
     const fields = [];
-    for (const member of typeNode.types) {
+    let discriminated;
+    for (const rawMember of typeNode.types) {
+      let member = rawMember;
+      while (ts.isParenthesizedTypeNode(member)) member = member.type;
       if (ts.isTypeLiteralNode(member)) {
         fields.push(...extractFields(member, sourceFile));
+        continue;
+      }
+      // `{ common } & ({ brand; appearance } | { theme })` — ThemeScope's whole public API sat
+      // in the second member, which was pushed as raw base text and rendered verbatim, JSDoc
+      // and all, while `brand`, `appearance` and `theme` reached no table (#506). Each arm
+      // becomes a variant carrying the common fields; the renderer already knows this shape.
+      if (ts.isUnionTypeNode(member) && member.types.every((arm) => ts.isTypeLiteralNode(arm))) {
+        if (discriminated) {
+          throw new Error(`${ctx.errorLabel}: two object unions in one intersection — refusing to guess how they combine`);
+        }
+        // `theme?: undefined` in the brand/appearance arm exists to forbid `theme` there; it is
+        // an exclusion the type checker reads, not a prop a caller sets, so it gets no row.
+        discriminated = member.types.map((arm) =>
+          extractFields(arm, sourceFile).filter((field) => field.type !== 'undefined'),
+        );
         continue;
       }
       const embedded = ts.isTypeReferenceNode(member) ? tryEmbed(member, sourceFile, ctx) : null;
@@ -227,7 +280,18 @@ function resolveTypeNodeToShape(typeNode, sourceFile, ctx) {
         bases.push(member.getText(sourceFile));
       }
     }
-    return { kind: 'object', bases, fields };
+    if (!discriminated) return { kind: 'object', bases, fields };
+    const variants = discriminated.map((armFields) => {
+      // Named by what the arm requires, which is what a caller chooses between.
+      const required = armFields.filter((field) => !field.optional);
+      return {
+        name: required.map((field) => field.name).join(' + ') || 'default',
+        kind: 'object',
+        bases: [],
+        fields: [...fields, ...armFields],
+      };
+    });
+    return { kind: 'union', bases, variants };
   }
 
   if (ts.isUnionTypeNode(typeNode)) {
@@ -728,6 +792,15 @@ function collectStateNames(node, states) {
 // `monoFontFamilyNative` holds font names — and neither is published today only because its
 // index is not a declared prop. A name-based filter is not the answer: `numericVariantUtilities`
 // holds real utility classes and contains no "class" in its name.
+function isClassPosition(node, sourceFile) {
+  for (let current = node.parent, hops = 0; current && hops < 6; current = current.parent, hops += 1) {
+    if (ts.isCallExpression(current) && /^(?:cn|cx|clsx|twMerge)$/u.test(current.expression.getText(sourceFile))) return true;
+    if ((ts.isJsxAttribute(current) || ts.isPropertyAssignment(current)) && current.name && /class/iu.test(current.name.getText(sourceFile))) return true;
+    if (ts.isJsxElement(current) || ts.isJsxSelfClosingElement(current) || ts.isBlock(current)) return false;
+  }
+  return false;
+}
+
 export function extractClassMapAxes(files) {
   const axes = new Map();
 
@@ -765,6 +838,11 @@ export function extractClassMapAxes(files) {
           ? argument.name.text
           : undefined;
       if (!name) return;
+      // The lookup must land in a class position — a `cn()` argument or a `className`-like
+      // attribute or property. `sortGlyphs[sortDirection]` is a table of arrow characters
+      // rendered as text; the shape "declared prop indexes a string table" alone would publish
+      // it as a style axis.
+      if (!isClassPosition(node, sourceFile)) return;
       axes.set(name, Math.max(axes.get(name) ?? 0, count));
     });
   }
@@ -781,13 +859,106 @@ function isAccessibilityAttribute(name) {
   return name === 'accessible' || (name.startsWith('accessibility') && name !== 'accessibilityRole');
 }
 
+export const ALL_PLATFORMS = Object.freeze(['ios', 'android', 'web']);
+
+// `Platform.OS === 'web'`, `!== 'web'`, `!isWeb` where `const isWeb = Platform.OS === 'web'`.
+// Returns `{ platforms, equals }` or undefined when the condition is not about the platform.
+function resolvePlatformCondition(expression, sourceFile, depth = 0) {
+  if (!expression || depth > 3) return undefined;
+  if (ts.isParenthesizedExpression(expression)) return resolvePlatformCondition(expression.expression, sourceFile, depth);
+  if (ts.isPrefixUnaryExpression(expression) && expression.operator === ts.SyntaxKind.ExclamationToken) {
+    const inner = resolvePlatformCondition(expression.operand, sourceFile, depth);
+    return inner && { platforms: inner.platforms, equals: !inner.equals };
+  }
+  if (ts.isIdentifier(expression)) {
+    const initializers = findLocalConstInitializers(expression.text, sourceFile);
+    return initializers.length === 1 ? resolvePlatformCondition(initializers[0], sourceFile, depth + 1) : undefined;
+  }
+  if (!ts.isBinaryExpression(expression)) return undefined;
+  const kind = expression.operatorToken.kind;
+  const equals =
+    kind === ts.SyntaxKind.EqualsEqualsEqualsToken || kind === ts.SyntaxKind.EqualsEqualsToken;
+  const differs =
+    kind === ts.SyntaxKind.ExclamationEqualsEqualsToken || kind === ts.SyntaxKind.ExclamationEqualsToken;
+  if (!equals && !differs) return undefined;
+  const sides = [expression.left, expression.right];
+  const os = sides.find((side) => ts.isPropertyAccessExpression(side) && side.getText(sourceFile) === 'Platform.OS');
+  const literal = sides.find((side) => ts.isStringLiteralLike(side));
+  if (!os || !literal || !ALL_PLATFORMS.includes(literal.text)) return undefined;
+  return { platforms: new Set([literal.text]), equals };
+}
+
+function platformsWhere(condition, holds) {
+  const chosen = condition.equals === holds ? condition.platforms : new Set(ALL_PLATFORMS.filter((p) => !condition.platforms.has(p)));
+  return chosen;
+}
+
+// The platforms on which `node` executes, read from the `Platform.OS` conditions above it, or
+// undefined when no such condition encloses it. Switch sets its role inside
+// `isWeb ? null : { accessibilityRole: 'switch' }` and the page published the role for Web,
+// where the component deliberately omits it (#507). Only conditions this function can read
+// narrow the scope; an unreadable one leaves it unconstrained, which over-publishes rather than
+// inventing a platform.
+function alwaysLeaves(statement) {
+  if (ts.isReturnStatement(statement) || ts.isThrowStatement(statement)) return true;
+  if (ts.isBlock(statement) && statement.statements.length) return alwaysLeaves(statement.statements.at(-1));
+  return false;
+}
+
+function platformScopeOf(node, sourceFile) {
+  let scope;
+  const narrow = (condition, holds) => {
+    const resolved = resolvePlatformCondition(condition, sourceFile);
+    if (!resolved) return;
+    const allowed = platformsWhere(resolved, holds);
+    scope = scope ? new Set([...scope].filter((p) => allowed.has(p))) : allowed;
+  };
+  for (let child = node, parent = node.parent; parent; child = parent, parent = parent.parent) {
+    // `if (Platform.OS === 'web') return <View />;` followed by the native render. The guard is
+    // not an ancestor of what follows it, only an earlier sibling, and four families use this
+    // shape. A then-branch that always leaves the block narrows every later statement to the
+    // condition's negation.
+    if (ts.isBlock(parent) || ts.isSourceFile(parent)) {
+      for (const statement of parent.statements) {
+        if (statement === child) break;
+        if (!ts.isIfStatement(statement) || statement.elseStatement) continue;
+        if (alwaysLeaves(statement.thenStatement)) narrow(statement.expression, false);
+      }
+    }
+    if (ts.isConditionalExpression(parent)) {
+      if (child === parent.whenTrue) narrow(parent.condition, true);
+      else if (child === parent.whenFalse) narrow(parent.condition, false);
+    } else if (ts.isIfStatement(parent)) {
+      if (child === parent.thenStatement) narrow(parent.expression, true);
+      else if (child === parent.elseStatement) narrow(parent.expression, false);
+    } else if (ts.isBinaryExpression(parent) && child === parent.right) {
+      const op = parent.operatorToken.kind;
+      if (op === ts.SyntaxKind.AmpersandAmpersandToken) narrow(parent.left, true);
+      else if (op === ts.SyntaxKind.BarBarToken) narrow(parent.left, false);
+    }
+  }
+  return scope;
+}
+
+function recordScoped(target, scopes, name, scope) {
+  target.add(name);
+  const existing = scopes.get(name);
+  if (!scope) {
+    scopes.set(name, new Set(ALL_PLATFORMS));
+    return;
+  }
+  scopes.set(name, existing ? new Set([...existing, ...scope]) : new Set(scope));
+}
+
 export function extractAccessibilityFacts(files) {
   const roles = new Set();
   const states = new Set();
+  const roleScopes = new Map();
+  const stateScopes = new Map();
 
   for (const { path: filePath, source } of files) {
     const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, scriptKindFor(filePath));
-    walk(sourceFile, (node) => {
+    const visit = (node, roles, states) => {
       // Props reach a primitive two ways: as JSX attributes, and as an object literal that is
       // spread into one. Switch sets `accessibilityRole: 'switch'` and an `accessibilityState`
       // object in a spread branch; reading JSX attributes alone published "assigns no roles,
@@ -848,10 +1019,23 @@ export function extractAccessibilityFacts(files) {
         return;
       }
       if (isAccessibilityAttribute(name)) states.add(name);
+    };
+    walk(sourceFile, (node) => {
+      const local = { roles: new Set(), states: new Set() };
+      visit(node, local.roles, local.states);
+      if (!local.roles.size && !local.states.size) return;
+      const scope = platformScopeOf(node, sourceFile);
+      for (const role of local.roles) recordScoped(roles, roleScopes, role, scope);
+      for (const state of local.states) recordScoped(states, stateScopes, state, scope);
     });
   }
 
-  return { roles: [...roles].sort(), states: [...states].sort() };
+  return {
+    roles: [...roles].sort(),
+    states: [...states].sort(),
+    // Per fact, the platforms it is set on — the full set when no readable condition narrows it.
+    scopes: { roles: roleScopes, states: stateScopes },
+  };
 }
 
 
@@ -1202,6 +1386,41 @@ export function getBehaviorGuardKnownNames(component, typeDocs, rootDir = ROOT_D
 // shape cannot be parsed), `kind: 'literal-union'` for `type X = 'a' | 'b'`,
 // or `kind: 'alias'` for anything else this module deliberately does not
 // expand further.
+// Names of the functions in `sourceFile` whose declared return type is exactly `typeName`:
+// declarations, arrows and function expressions bound to a `const`, a `const` annotated with a
+// function type, and method signatures.
+function functionsReturning(typeName, sourceFile) {
+  const names = [];
+  const isRef = (type) => Boolean(type) && ts.isTypeReferenceNode(type) && type.typeName.getText(sourceFile) === typeName;
+  walk(sourceFile, (node) => {
+    if (ts.isFunctionDeclaration(node) && node.name && isRef(node.type)) names.push(node.name.text);
+    else if ((ts.isArrowFunction(node) || ts.isFunctionExpression(node)) && isRef(node.type) && ts.isVariableDeclaration(node.parent) && ts.isIdentifier(node.parent.name)) {
+      names.push(node.parent.name.text);
+    } else if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.type && ts.isFunctionTypeNode(node.type) && isRef(node.type.type)) {
+      names.push(node.name.text);
+    } else if ((ts.isMethodSignature(node) || ts.isMethodDeclaration(node)) && node.name && isRef(node.type)) {
+      names.push(node.name.getText(sourceFile));
+    }
+  });
+  return [...new Set(names)];
+}
+
+// Whether anything in `sourceFile` takes `typeName` as a parameter or property type — the
+// signal that a caller passes it in. A type can be both returned and passed; only one that is
+// returned and never passed is a value a caller receives rather than props they supply.
+function isTakenAsInput(typeName, sourceFile) {
+  let taken = false;
+  walk(sourceFile, (node) => {
+    if (taken) return;
+    if ((ts.isParameter(node) || ts.isPropertySignature(node) || ts.isPropertyDeclaration(node)) && node.type) {
+      let type = node.type;
+      while (ts.isParenthesizedTypeNode(type)) type = type.type;
+      if (ts.isTypeReferenceNode(type) && type.typeName.getText(sourceFile) === typeName) taken = true;
+    }
+  });
+  return taken;
+}
+
 export function resolveComponentTypeEntry(index, name, opts = {}) {
   const resolved = resolveDeclaration(index, name, opts);
   if (!resolved) throw new Error(`${opts.errorLabel ?? name}: type "${name}" was not found under packages/ui/src`);
@@ -1225,6 +1444,26 @@ export function resolveComponentTypeEntry(index, name, opts = {}) {
   const isLiteralUnion = ts.isUnionTypeNode(typeNode) && typeNode.types.every((member) => ts.isLiteralTypeNode(member) && ts.isStringLiteral(member.literal));
   if (isLiteralUnion) {
     return { name, docKind: 'literal-union', kind: 'literal-union', members: typeNode.types.map((member) => member.literal.text), description };
+  }
+  const keys = resolveKeyofTypeofKeys(typeNode, sourceFile);
+  if (keys) {
+    return { name, docKind: 'literal-union', kind: 'literal-union', members: keys, description };
+  }
+  // A family that exports no `*Props` type declares its prop surface in a type alias whose body
+  // is an object literal — Toast's `ToastOptions` — and that alias rendered as one line of raw
+  // type text, so `variant` and its five values reached no table (#506). Promoted to a props
+  // entry only in that case: with a `*Props` type present, an object alias is a value type.
+  if (opts.promoteObjectAliases && ts.isTypeLiteralNode(typeNode)) {
+    const ctx = { index, errorLabel: opts.errorLabel ?? name, names: new Set([name]), resolveOpts: opts };
+    const shape = resolveTypeNodeToShape(typeNode, sourceFile, ctx);
+    // `useToast(): ToastApi` — a type a function returns is what a caller receives, not what a
+    // caller passes, and a table headed "Props" for it contradicts the page. Kept as an object
+    // entry with its fields, rendered under related types with the function that returns it.
+    const returnedBy = functionsReturning(name, sourceFile);
+    if (returnedBy.length && !isTakenAsInput(name, sourceFile)) {
+      return { name, docKind: 'returned', ...shape, returnedBy, description };
+    }
+    return { name, docKind: 'props', ...shape, names: ctx.names, description };
   }
   return { name, docKind: 'alias', kind: 'alias', aliasOf: typeNode.getText(sourceFile), description };
 }
@@ -1351,6 +1590,7 @@ export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
     fromPath: component.source,
     familyPaths: component.allSources,
     primaryPath: component.source,
+    promoteObjectAliases: !component.types.some((typeName) => /Props$/u.test(typeName)),
   };
   const webPath = findWebSourcePath(component.allSources, component.source);
   const files = component.allSources.map((relPath) => ({

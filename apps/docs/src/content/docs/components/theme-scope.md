@@ -51,12 +51,24 @@ Stateless `BeeThemeScope` subtree boundary; it applies a scoped theme override t
 
 #### `BeeThemeScopeProps`
 
+one of the following mutually exclusive variants:
+
+**Variant `brand + appearance`:**
+
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `registry` | `ThemeRegistry<Def>` | — | The registry used to resolve `brand`/`appearance` (or validate `theme`). Defaults to `beeThemeRegistry` (Bee + Violet, from #67). Pass a registry built with `defineThemeRegistry` to scope by a consumer-defined brand. |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `brand` **(required)** | `RegistryBrand<Def>` | — | Semantic brand, resolved through `registry`. |
+| `appearance` **(required)** | `RegistryAppearance<Def>` | — | Semantic appearance, resolved through `registry`. |
 
-Also carries every prop of a type declared inline at its `extends` site — that upstream contract is not reproduced here.
+**Variant `theme`:**
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `registry` | `ThemeRegistry<Def>` | — | The registry used to resolve `brand`/`appearance` (or validate `theme`). Defaults to `beeThemeRegistry` (Bee + Violet, from #67). Pass a registry built with `defineThemeRegistry` to scope by a consumer-defined brand. |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `theme` **(required)** | `RegistryRuntimeTheme<Def>` | — | An already-resolved Uniwind runtime-theme name, validated against `registry`. |
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 
@@ -85,8 +97,8 @@ Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-m
 
 ## Styling and theming
 
-- **Style axes:** none of its own — its appearance comes from tokens and your own classes; it also carries a type declared inline at its `extends` site.
-- **Class-name surfaces:** none declared by this family; it also carries a type declared inline at its `extends` site.
+- **Style axes:** none; this family has no variant or size prop, so its appearance comes from tokens and your own classes.
+- **Class-name surfaces:** none; this family accepts no `className` of its own.
 
 Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.
 
