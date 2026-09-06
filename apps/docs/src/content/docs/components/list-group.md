@@ -167,7 +167,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+The group owns its list role and accepts no role override. Item semantics are handed down through a package-internal context that only `ListItem` and `SettingsItem` read, so any other row component rendered inside the group carries no item role.
 
 ## Related
 

@@ -186,7 +186,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+`SafeArea` is a pass-through to `react-native-safe-area-context`'s own view: BeeUI adds no `edges` default and no inset arithmetic of its own, so which edges a surface pads is the caller's to state. Uniwind's safe-area utilities are fed only by the provider's `syncUniwindInsets` bridge; turning it off leaves the application to push insets into Uniwind itself.
 
 **Implementation note:** BeeUIProvider supplies safe-area measurement, the Toast runtime/viewport, and the shared anchored-overlay runtime.
 

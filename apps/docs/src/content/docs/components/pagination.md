@@ -191,7 +191,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+The container renders no items of its own and has no page-window or ellipsis logic — the caller composes every `PaginationItem`, and an item throws when rendered outside a `Pagination`. An item's default accessible names are English literals; only a per-item `accessibilityLabel` overrides them.
 
 ## Related
 

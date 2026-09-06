@@ -166,7 +166,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+There is no width, height or repeat-count prop, so a placeholder's size and how many are drawn come from the caller's own layout; everything else is plain view props, minus the two accessibility flags the component fixes to keep the placeholder out of the accessibility tree.
 
 ## Related
 

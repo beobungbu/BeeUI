@@ -59,7 +59,7 @@ Stateless image-with-fallback: an image load failure resets to the fallback, and
 | `fallback` | `string` | — | Text shown when `source` is omitted or the image fails to load (e.g. initials). Renders nothing if also omitted. |
 | `fallbackClassName` | `string` | — | Applied to the fallback `Text` when it is shown; has no effect while the image is showing. |
 | `imageClassName` | `string` | — | Applied to the underlying `Image` when it is shown; has no effect while the fallback is showing. |
-| `imageProps` | `AvatarImageProps` | — | Forwarded to the underlying `Image`, minus `source` and `className`/`onError`, which this component owns to detect load failures and fall back to `fallback`. |
+| `imageProps` | `AvatarImageProps` | — | Forwarded to the underlying `Image`, minus `source`, which this component owns so a failed load can fall back to `fallback`. A `className` here is merged after `imageClassName`, and an `onError` here runs after the internal fallback switch. |
 | `size` | `'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Chooses this element's `size` from `avatarVariants`'s presets, declared in `packages/ui/src/components/avatar.tsx` — the classes each value applies are there. |
 | `source` | `ImageSourcePropType` | — | The image to display. If it fails to load, or is omitted, `fallback` is shown instead. |
 
@@ -163,7 +163,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+`fallback` takes a string only, so an icon or element fallback has no slot, and with neither `source` nor `fallback` the family renders an empty circle. The image is hidden from assistive technology and no accessible name is derived, so a meaningful avatar needs an explicit `accessibilityLabel`. `imageProps` cannot set the image's `source` — that one is owned here so a failed load can fall back — while the class name and error handler it carries are honoured, merged after `imageClassName` and chained after the internal reset.
 
 ## Related
 

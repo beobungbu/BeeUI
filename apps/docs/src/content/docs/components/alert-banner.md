@@ -55,7 +55,7 @@ Stateless inline callout with no open/close or controlled prop; it live-announce
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `action` | `React.ReactNode` | — | Rendered below the description, indented to align with it (e.g. a retry or dismiss button). |
-| `announcement` | `string` | — | Overrides the text announced to screen readers on iOS when the banner appears; by default the title and description are joined and announced (only if both are plain string/number content). |
+| `announcement` | `string` | — | Overrides the text announced to screen readers on iOS when the banner appears; by default the title and description are joined and announced, but only while neither holds element content — an element in either slot drops the announcement rather than announcing the other. `live="none"` suppresses it entirely. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
 | `live` | `'none' \| 'polite' \| 'assertive'` | `'polite'` | Sets `accessibilityLiveRegion` and, on iOS, whether the announcement queues (`polite`) or interrupts (`assertive`); `none` suppresses the announcement entirely. Defaults to `polite`. |
@@ -154,7 +154,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+The spoken announcement is iOS-only — on Android and Web the banner sets a live region and nothing more — and even on iOS it is skipped when `live` is set to `"none"`, or when a supplied `title` or `description` is element content rather than a plain string or number and no `announcement` overrides it. There is no dismiss affordance: the banner stays until the caller unmounts it, and any close control has to be passed through `action`.
 
 ## Related
 

@@ -143,7 +143,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+`onSearch` is neither per-keystroke nor debounced: it fires on return-key submit, and exactly once when a non-empty query is cleared to empty. The search keyboard and return key are owned here and not accepted from outside, and the family carries no suggestion list.
 
 ## Related
 

@@ -150,7 +150,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+The field is always multiline at Input's medium size; neither can be changed. On Web `numberOfLines` becomes a minimum height of at least 96 pixels rather than a hard row count, so the box can render taller than the requested number of rows.
 
 ## Related
 

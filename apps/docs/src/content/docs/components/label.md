@@ -201,7 +201,7 @@ export function PublicDocFixtures() {
 Use the code block's copy affordance to copy the exact fixture. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+`required` reaches the accessible name only when the label's children are all plain strings or numbers. With an element child the appended asterisk is hidden from assistive technology, so the required state is conveyed visually only.
 
 ## Related
 

@@ -20,6 +20,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/component-contracts.test.tsx`](../apps/showcase/__tests__/component-contracts.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `AccordionTrigger` and `AccordionContent` throw when rendered outside `Accordion`/`AccordionItem` rather than degrading, so the parts cannot be lifted out of the family's own tree; and because a closed item's content is unmounted rather than hidden, any state its children hold is discarded on every collapse.
 
 ## `alert-banner`
 
@@ -33,6 +34,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/screens/change-password-screen.tsx`](../apps/showcase/patterns/account-settings/screens/change-password-screen.tsx), [`patterns/account-settings/screens/edit-profile-screen.tsx`](../apps/showcase/patterns/account-settings/screens/edit-profile-screen.tsx), [`patterns/auth/components/auth-shared.tsx`](../apps/showcase/patterns/auth/components/auth-shared.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** The spoken announcement is iOS-only — on Android and Web the banner sets a live region and nothing more — and even on iOS it is skipped when `live` is set to `"none"`, or when a supplied `title` or `description` is element content rather than a plain string or number and no `announcement` overrides it. There is no dismiss affordance: the banner stays until the caller unmounts it, and any close control has to be passed through `action`.
 
 ## `alert-dialog`
 
@@ -60,6 +62,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/dashboard-finance/components/screen-shell.tsx`](../apps/showcase/patterns/dashboard-finance/components/screen-shell.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`pattern-gallery/pattern-gallery.tsx`](../apps/showcase/pattern-gallery/pattern-gallery.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `title` is required, and `titleClassName`/`descriptionClassName` reach the rendered text only when the corresponding prop is a plain string or number; pass an element and the class name is dropped along with the automatic header semantics.
 
 ## `avatar`
 
@@ -73,6 +76,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/components/profile-header.tsx`](../apps/showcase/patterns/account-settings/components/profile-header.tsx), [`patterns/account-settings/screens/edit-profile-screen.tsx`](../apps/showcase/patterns/account-settings/screens/edit-profile-screen.tsx), [`patterns/auth/screens/profile-setup-screen.tsx`](../apps/showcase/patterns/auth/screens/profile-setup-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `fallback` takes a string only, so an icon or element fallback has no slot, and with neither `source` nor `fallback` the family renders an empty circle. The image is hidden from assistive technology and no accessible name is derived, so a meaningful avatar needs an explicit `accessibilityLabel`. `imageProps` cannot set the image's `source` — that one is owned here so a failed load can fall back — while the class name and error handler it carries are honoured, merged after `imageClassName` and chained after the internal reset.
 
 ## `badge`
 
@@ -86,6 +90,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/components/account-summary.tsx`](../apps/showcase/patterns/account-settings/components/account-summary.tsx), [`patterns/account-settings/components/profile-header.tsx`](../apps/showcase/patterns/account-settings/components/profile-header.tsx), [`patterns/account-settings/screens/privacy-security-screen.tsx`](../apps/showcase/patterns/account-settings/screens/privacy-security-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** Only plain string or number children receive the badge's own label typography and `labelClassName`; an element child is rendered untouched, so an icon or custom node inside a badge carries none of the variant's paired foreground color.
 
 ## `bottom-action-bar`
 
@@ -126,6 +131,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`runtime-smoke/l10n-stress-acceptance.tsx`](../apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx), [`__tests__/logical-direction.test.tsx`](../apps/showcase/__tests__/logical-direction.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** A `BreadcrumbItem` is interactive only when `onPress` is a function and `current` is false — marking an item current silently drops its press handler. The trail itself is not exposed as a navigation landmark or a list: the container is marked as not an accessibility element of its own, which leaves its items exposed but gives the trail no semantics, and only the items carry any.
 
 ## `button`
 
@@ -139,6 +145,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/components/danger-zone.tsx`](../apps/showcase/patterns/account-settings/components/danger-zone.tsx), [`patterns/account-settings/components/profile-header.tsx`](../apps/showcase/patterns/account-settings/components/profile-header.tsx), [`patterns/account-settings/screens/change-password-screen.tsx`](../apps/showcase/patterns/account-settings/screens/change-password-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** The accessible name is inferred only when every child is a plain string or number, so a button containing an icon element has no name until `accessibilityLabel` is set — which is why `IconButton` requires one. The button role is fixed and cannot be overridden.
 
 ## `calendar`
 
@@ -165,6 +172,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/auth/components/auth-shared.tsx`](../apps/showcase/patterns/auth/components/auth-shared.tsx), [`patterns/auth/screens/forgot-password-screen.tsx`](../apps/showcase/patterns/auth/screens/forgot-password-screen.tsx), [`patterns/auth/screens/interests-onboarding-screen.tsx`](../apps/showcase/patterns/auth/screens/interests-onboarding-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `Card` is one styled view with a `variant` and a `padding` step: there are no header/footer parts and no press handling, because its props extend React Native's view props rather than its pressable props. A tappable card has to be composed by wrapping it.
 
 ## `checkbox`
 
@@ -178,6 +186,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/auth/screens/sign-up-screen.tsx`](../apps/showcase/patterns/auth/screens/sign-up-screen.tsx), [`patterns/commerce-social/screens/checkout-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/checkout-screen.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** Pressing an indeterminate checkbox reports `true`: `onCheckedChange` is never called with the indeterminate value, so the component can never return to that state on its own — the caller has to set `checked` back. `label` accepts a string only, and press handling is owned here.
 
 ## `chip`
 
@@ -191,6 +200,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/auth/screens/interests-onboarding-screen.tsx`](../apps/showcase/patterns/auth/screens/interests-onboarding-screen.tsx), [`patterns/commerce-social/screens/product-detail-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/product-detail-screen.tsx), [`patterns/commerce-social/screens/product-feed-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/product-feed-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** Inside a `ChipGroup`, a chip's own `selected`, `defaultSelected` and `onSelectedChange` are ignored: selection is read from the group's value and a press is routed to the group instead of the item's callback.
 
 ## `collapsible`
 
@@ -204,6 +214,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/component-contracts.test.tsx`](../apps/showcase/__tests__/component-contracts.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `CollapsibleTrigger` and `CollapsibleContent` throw outside a `Collapsible`. A trigger's own `disabled` is combined with the parent's, so one trigger cannot opt back in when the whole collapsible is disabled. Opening and closing is a mount/unmount switch with no height animation.
 
 ## `date-picker`
 
@@ -245,6 +256,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/dashboard-finance/screens/invoice-detail-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/invoice-detail-screen.tsx), [`patterns/dashboard-finance/screens/transaction-detail-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/transaction-detail-screen.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** The list is a plain container with no description-list or list semantics — the label-to-value association is visual only. Each `DescriptionItem` is a metadata row, so its value column is capped at 60% of the row width and a long value wraps inside that cap rather than widening it.
 
 ## `dialog`
 
@@ -299,6 +311,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/issue-15-alert-dialog-form-group.test.tsx`](../apps/showcase/__tests__/issue-15-alert-dialog-form-group.test.tsx), [`__tests__/perf-render-commit.test.tsx`](../apps/showcase/__tests__/perf-render-commit.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `RadioGroup` is the only component in the package that reads this group's context, so its `disabled`, `invalid` and legend link reach a radio group and nothing else: a checkbox, switch or input nested in a form group is unaffected and has to be wired by hand. The group is deliberately not one accessible element and accepts no role override.
 
 ## `form-message`
 
@@ -312,6 +325,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`__tests__/application-primitives.test.tsx`](../apps/showcase/__tests__/application-primitives.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** Tone and typography variant are not accepted: `FormMessage` is always destructive caption text and `HelperText` always muted caption text. Neither associates itself with a control — that link has to be made by the caller.
 
 ## `icon-button`
 
@@ -325,6 +339,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`component-gallery/table-showcase.tsx`](../apps/showcase/component-gallery/table-showcase.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** A size prop is not accepted: an icon button always renders at Button's icon size, so there is no compact or large variant, and any string child is styled by Button's own label rules with no override hook.
 
 ## `input`
 
@@ -338,6 +353,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/screens/edit-profile-screen.tsx`](../apps/showcase/patterns/account-settings/screens/edit-profile-screen.tsx), [`patterns/auth/screens/forgot-password-screen.tsx`](../apps/showcase/patterns/auth/screens/forgot-password-screen.tsx), [`patterns/auth/screens/profile-setup-screen.tsx`](../apps/showcase/patterns/auth/screens/profile-setup-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** An explicit `accessibilityLabel`, or an explicit accessibility hint, replaces the label, description and error a wrapping `Field` supplies — but not the label association, which is forwarded unconditionally, so on Web an input that names itself is still pointed at the field's label as well. `disabled` cannot be undone by the editable flag: that flag can only turn editing off, never back on.
 
 ## `keyboard-aware-screen`
 
@@ -365,6 +381,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`__tests__/accessibility-readonly.test.tsx`](../apps/showcase/__tests__/accessibility-readonly.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `required` reaches the accessible name only when the label's children are all plain strings or numbers. With an element child the appended asterisk is hidden from assistive technology, so the required state is conveyed visually only.
 
 ## `link`
 
@@ -378,6 +395,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/auth/screens/forgot-password-screen.tsx`](../apps/showcase/patterns/auth/screens/forgot-password-screen.tsx), [`patterns/auth/screens/interests-onboarding-screen.tsx`](../apps/showcase/patterns/auth/screens/interests-onboarding-screen.tsx), [`patterns/auth/screens/profile-setup-screen.tsx`](../apps/showcase/patterns/auth/screens/profile-setup-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** Plain string and number children receive the link's own primary/underline styling, and an element child renders bare. The inferred accessible name is all-or-nothing, not per child: a single element child leaves the link with no inferred name at all, so it needs its own `accessibilityLabel`.
 
 ## `list-group`
 
@@ -391,6 +409,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/components/account-summary.tsx`](../apps/showcase/patterns/account-settings/components/account-summary.tsx), [`patterns/account-settings/screens/account-screen.tsx`](../apps/showcase/patterns/account-settings/screens/account-screen.tsx), [`patterns/account-settings/screens/notification-settings-screen.tsx`](../apps/showcase/patterns/account-settings/screens/notification-settings-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** The group owns its list role and accepts no role override. Item semantics are handed down through a package-internal context that only `ListItem` and `SettingsItem` read, so any other row component rendered inside the group carries no item role.
 
 ## `list-item`
 
@@ -404,6 +423,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/components/account-summary.tsx`](../apps/showcase/patterns/account-settings/components/account-summary.tsx), [`patterns/account-settings/components/preference-row.tsx`](../apps/showcase/patterns/account-settings/components/preference-row.tsx), [`patterns/account-settings/screens/account-screen.tsx`](../apps/showcase/patterns/account-settings/screens/account-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** A row with no `onPress` is rendered non-interactive and disabled — `disabled` alone can never make it pressable. The synthesized accessible name is all-or-nothing: if `title`, `description` or `trailing` is anything but a plain string or number, no name is synthesized at all.
 
 ## `metadata-row`
 
@@ -417,6 +437,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`__tests__/component-contracts.test.tsx`](../apps/showcase/__tests__/component-contracts.test.tsx), [`__tests__/logical-direction.test.tsx`](../apps/showcase/__tests__/logical-direction.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** The value column is capped at 60% of the row width, so a long value wraps inside that cap instead of pushing the label out. `label` and `value` are both required, and neither has a class-name hook — restyling means passing an element in place of the string.
 
 ## `otp-input`
 
@@ -430,6 +451,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/auth/screens/verify-code-screen.tsx`](../apps/showcase/patterns/auth/screens/verify-code-screen.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/component-contracts.test.tsx`](../apps/showcase/__tests__/component-contracts.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** One text field, not one box per digit: there is no per-character slot, caret or focus movement, so a segmented OTP appearance has to be built by the caller. The length limit, keyboard type and change handler are owned here and not accepted from outside.
 
 ## `pagination`
 
@@ -443,6 +465,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`runtime-smoke/dynamic-type-acceptance.tsx`](../apps/showcase/runtime-smoke/dynamic-type-acceptance.tsx), [`__tests__/component-contracts.test.tsx`](../apps/showcase/__tests__/component-contracts.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** The container renders no items of its own and has no page-window or ellipsis logic — the caller composes every `PaginationItem`, and an item throws when rendered outside a `Pagination`. An item's default accessible names are English literals; only a per-item `accessibilityLabel` overrides them.
 
 ## `password-input`
 
@@ -456,6 +479,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/screens/change-password-screen.tsx`](../apps/showcase/patterns/account-settings/screens/change-password-screen.tsx), [`patterns/auth/screens/reset-password-screen.tsx`](../apps/showcase/patterns/auth/screens/reset-password-screen.tsx), [`patterns/auth/screens/sign-in-screen.tsx`](../apps/showcase/patterns/auth/screens/sign-in-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** The toggle's visible text is a hardcoded English Show/Hide inside a fixed-width button: `showLabel` and `hideLabel` change only its accessible name, not what is rendered. Masking follows `visible` alone; the underlying secure-entry flag is not accepted.
 
 ## `popover`
 
@@ -482,6 +506,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/auth/components/auth-shared.tsx`](../apps/showcase/patterns/auth/components/auth-shared.tsx), [`patterns/dashboard-finance/screens/analytics-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/analytics-screen.tsx), [`patterns/dashboard-finance/screens/subscription-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/subscription-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** With neither `accessibilityLabel` nor a labelled-by relationship, the bar falls back to the English literal Progress as its accessible name, so a localized app must supply one. The track has three fixed heights and no buffered or segmented rendering.
 
 ## `radio`
 
@@ -495,6 +520,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/commerce-social/screens/checkout-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/checkout-screen.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/component-contracts.test.tsx`](../apps/showcase/__tests__/component-contracts.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** Inside a `RadioGroup`, a radio that supplies a `value` ignores its own `checked` and `onCheckedChange` — checked state is derived by comparing that `value` with the group's selection, and only the group's callback fires; a radio with no `value` keeps its own controlled pair even inside the group. A radio does not accept a press handler of its own.
 
 ## `safe-area`
 
@@ -508,6 +534,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`App.tsx`](../apps/showcase/App.tsx), [`pattern-gallery/pattern-gallery.tsx`](../apps/showcase/pattern-gallery/pattern-gallery.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `SafeArea` is a pass-through to `react-native-safe-area-context`'s own view: BeeUI adds no `edges` default and no inset arithmetic of its own, so which edges a surface pads is the caller's to state. Uniwind's safe-area utilities are fed only by the provider's `syncUniwindInsets` bridge; turning it off leaves the application to push insets into Uniwind itself.
 - **Notes:** BeeUIProvider supplies safe-area measurement, the Toast runtime/viewport, and the shared anchored-overlay runtime.
 
 ## `screen`
@@ -522,6 +549,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/components/settings-screen-shell.tsx`](../apps/showcase/patterns/account-settings/components/settings-screen-shell.tsx), [`patterns/commerce-social/components/screen-shell.tsx`](../apps/showcase/patterns/commerce-social/components/screen-shell.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `padding` is a four-value preset applied to both axes at once: there is no per-axis, per-edge or token-level spacing control, so anything else comes from `className`.
 
 ## `search-input`
 
@@ -535,6 +563,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/commerce-social/screens/messages-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/messages-screen.tsx), [`patterns/commerce-social/screens/product-feed-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/product-feed-screen.tsx), [`patterns/commerce-social/screens/product-search-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/product-search-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `onSearch` is neither per-keystroke nor debounced: it fires on return-key submit, and exactly once when a non-empty query is cleared to empty. The search keyboard and return key are owned here and not accepted from outside, and the family carries no suggestion list.
 
 ## `section`
 
@@ -548,6 +577,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`component-gallery/date-picker-showcase.tsx`](../apps/showcase/component-gallery/date-picker-showcase.tsx), [`component-gallery/date-time-picker-showcase.tsx`](../apps/showcase/component-gallery/date-time-picker-showcase.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `titleClassName` and `descriptionClassName` are dropped when the corresponding prop is an element rather than a plain string or number. The header row, including `action`, renders only when at least one of `title`, `description` or `action` is set.
 
 ## `segmented-control`
 
@@ -561,6 +591,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/screens/appearance-screen.tsx`](../apps/showcase/patterns/account-settings/screens/appearance-screen.tsx), [`patterns/commerce-social/screens/orders-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/orders-screen.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** A press on the already-selected item changes nothing: `onValueChange` fires only for an item that is not selected. An item's own `onPress` runs first but cannot cancel the selection that follows it.
 
 ## `select`
 
@@ -587,6 +618,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/screens/account-screen.tsx`](../apps/showcase/patterns/account-settings/screens/account-screen.tsx), [`patterns/account-settings/screens/notification-settings-screen.tsx`](../apps/showcase/patterns/account-settings/screens/notification-settings-screen.tsx), [`patterns/account-settings/screens/privacy-security-screen.tsx`](../apps/showcase/patterns/account-settings/screens/privacy-security-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** The role is owned here and omitted from the prop type: the component sets the separator role only when `decorative` is false, and while `decorative` is at its default the view is also marked as not an accessibility element of its own. Thickness is fixed at one pixel with no thickness, length or inset prop; anything else comes from `className`.
 
 ## `sheet`
 
@@ -614,6 +646,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/commerce-social/screens/product-feed-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/product-feed-screen.tsx), [`patterns/commerce-social/screens/product-search-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/product-search-screen.tsx), [`patterns/commerce-social/screens/social-feed-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/social-feed-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** There is no width, height or repeat-count prop, so a placeholder's size and how many are drawn come from the caller's own layout; everything else is plain view props, minus the two accessibility flags the component fixes to keep the placeholder out of the accessibility tree.
 
 ## `spinner`
 
@@ -627,6 +660,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/issue-276-structural-status-a11y.test.tsx`](../apps/showcase/__tests__/issue-276-structural-status-a11y.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** An arbitrary color is not accepted: the only color control is the seven-value `tone`. With no label and no labelled-by relationship the indicator falls back to the English literal Loading as its accessible name.
 
 ## `stack`
 
@@ -640,6 +674,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/components/danger-zone.tsx`](../apps/showcase/patterns/account-settings/components/danger-zone.tsx), [`patterns/account-settings/components/profile-header.tsx`](../apps/showcase/patterns/account-settings/components/profile-header.tsx), [`patterns/account-settings/components/settings-screen-shell.tsx`](../apps/showcase/patterns/account-settings/components/settings-screen-shell.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `HStack` and `VStack` do not accept `direction` — their axis is fixed. `gap` is a six-step token scale, so an arbitrary spacing value has to come through `className`.
 
 ## `stat`
 
@@ -653,6 +688,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/dashboard-finance/components/metric-card.tsx`](../apps/showcase/patterns/dashboard-finance/components/metric-card.tsx), [`patterns/dashboard-finance/screens/analytics-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/analytics-screen.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `StatLabel`, `StatValue` and `StatHelpText` do not accept a typography variant: their roles are fixed. `Stat` adds no accessibility grouping, so the three parts are exposed as separate pieces of text rather than one labelled metric.
 
 ## `state-message`
 
@@ -666,6 +702,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/commerce-social/screens/cart-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/cart-screen.tsx), [`patterns/commerce-social/screens/messages-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/messages-screen.tsx), [`patterns/commerce-social/screens/notifications-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/notifications-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `ErrorState`'s default title and description are English literals, so a localized app must pass both. `EmptyState`'s `icon` is wrapped in a view marked as not an accessibility element of its own and given no name, so an icon that carries meaning of its own needs that meaning repeated in `title` or `description`.
 
 ## `stepper`
 
@@ -679,6 +716,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/application-primitives.test.tsx`](../apps/showcase/__tests__/application-primitives.test.tsx), [`__tests__/issue-7-state-edge-cases.test.tsx`](../apps/showcase/__tests__/issue-7-state-edge-cases.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** The step total each item announces is the number of the stepper's own direct children, so wrapping items in another element miscounts it, and the announced string is an English literal. A `StepperItem` throws when rendered outside a `Stepper`.
 
 ## `switch`
 
@@ -692,6 +730,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/components/preference-row.tsx`](../apps/showcase/patterns/account-settings/components/preference-row.tsx), [`patterns/account-settings/screens/settings-screen.tsx`](../apps/showcase/patterns/account-settings/screens/settings-screen.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** Track and thumb colors come from tokens and cannot be set per instance — the three React Native color props are not accepted. On Web the component deliberately applies no role and no checked or disabled accessibility state of its own; it sets both on native only.
 
 ## `table`
 
@@ -705,6 +744,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/table-showcase.tsx`](../apps/showcase/component-gallery/table-showcase.tsx), [`runtime-smoke/l10n-stress-acceptance.tsx`](../apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx), [`__tests__/dynamic-type-contract.test.tsx`](../apps/showcase/__tests__/dynamic-type-contract.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `colSpan` is an approximation on native: with no table-layout engine a spanning cell grows its flex share instead of measuring the columns it covers. A `TableHead` whose content is not plain text needs an explicit `label`, because both the stacked layout's visible pairing and each native cell's accessible name are built from it.
 - **Notes:** Platform-split; see docs/data-typography.md for data-cell typography.
 
 ## `tabs`
@@ -719,6 +759,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/dashboard-finance/screens/analytics-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/analytics-screen.tsx), [`patterns/dashboard-finance/screens/transactions-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/transactions-screen.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** Press handling is owned by the family: a trigger reaches `onValueChange` only when its tab is not already selected, so pressing the active tab does nothing and a trigger cannot carry its own press handler.
 
 ## `text`
 
@@ -732,6 +773,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/components/danger-zone.tsx`](../apps/showcase/patterns/account-settings/components/danger-zone.tsx), [`patterns/account-settings/components/profile-header.tsx`](../apps/showcase/patterns/account-settings/components/profile-header.tsx), [`patterns/account-settings/components/settings-screen-shell.tsx`](../apps/showcase/patterns/account-settings/components/settings-screen-shell.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `family` accepts only the monospace value — there is no sans value that would reset an inherited font family — and `numeric` only the tabular one. Both resolve through utility classes on Web and through React Native style props on native, so no inline font style is emitted on Web.
 
 ## `textarea`
 
@@ -745,6 +787,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/screens/edit-profile-screen.tsx`](../apps/showcase/patterns/account-settings/screens/edit-profile-screen.tsx), [`patterns/auth/screens/profile-setup-screen.tsx`](../apps/showcase/patterns/auth/screens/profile-setup-screen.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** The field is always multiline at Input's medium size; neither can be changed. On Web `numberOfLines` becomes a minimum height of at least 96 pixels rather than a hard row count, so the box can render taller than the requested number of rows.
 
 ## `theme-scope`
 
@@ -758,6 +801,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/issue-68-theme-scope.test.tsx`](../apps/showcase/__tests__/issue-68-theme-scope.test.tsx), [`__tests__/issue-72-token-reader.test.tsx`](../apps/showcase/__tests__/issue-72-token-reader.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** On the legacy overlay-transport path — JS-only test environments, and any native runtime without the New Architecture or a registered teleport host — portaled overlay content is re-rendered under the host mounted at the provider, outside this scope, so the scoped theme does not reach it. An unrecognized `theme` name throws during render instead of falling back.
 - **Notes:** See docs/theme-scope.md for the scoping and precedence rules.
 
 ## `timeline`
@@ -772,6 +816,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/commerce-social/screens/order-detail-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/order-detail-screen.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/navigation-data-patterns.test.tsx`](../apps/showcase/__tests__/navigation-data-patterns.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** The terminal-connector flag comes from a context the timeline places around each of its own direct children, so `TimelineItem`s nested inside a wrapper element all inherit that wrapper's flag instead of their own position, and one rendered outside a `Timeline` reads the not-last default and draws a connector below itself.
 
 ## `toast`
 
@@ -813,6 +858,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`__tests__/issue-72-token-reader.test.tsx`](../apps/showcase/__tests__/issue-72-token-reader.test.tsx), [`__tests__/perf-theme-runtime.test.tsx`](../apps/showcase/__tests__/perf-theme-runtime.test.tsx), [`__tests__/theme-tokens-v3-chart.test.tsx`](../apps/showcase/__tests__/theme-tokens-v3-chart.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `getBeeToken` always reads the global theme: it ignores an enclosing theme scope and returns a one-shot snapshot rather than a subscription, where `useBeeToken` is scope-aware and re-reads on change. Both throw when a token is read before the theme has loaded. Only the color, chart, radius and motion categories are readable at runtime — spacing, typography, elevation and the other theme-invariant categories are not exposed here and are imported as constants instead.
 
 ## `visually-hidden`
 

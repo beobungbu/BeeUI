@@ -67,12 +67,12 @@ Also carries every prop of `Omit<ViewProps, 'accessibilityRole' | 'role' | 'chil
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `checked` | `boolean` | `false` | Whether this Radio is checked when it is standalone (not inside a `RadioGroup`). Ignored inside a `RadioGroup`, which derives checked state by comparing `value` to the group's selection. Defaults to false. |
+| `checked` | `boolean` | `false` | Whether this Radio is checked when it is standalone. Ignored once the Radio is inside a `RadioGroup` *and* supplies a `value`, since the group then derives checked state by comparing that `value` to its selection; a valueless Radio keeps this prop even inside a group. Defaults to false. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `indicatorClassName` | `string` | — | Applied to the radio's own circle, not its label. |
 | `label` | `string` | — | The visible text naming this element, and the accessible name unless one is set explicitly. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `onCheckedChange` | `(checked: boolean) => void` | — | Called with the next checked state when pressed, if this Radio is standalone (not inside a `RadioGroup`). Required for enabled standalone usage (logs a dev warning otherwise). |
+| `onCheckedChange` | `(checked: boolean) => void` | — | Called with the next checked state when pressed, unless the Radio is inside a `RadioGroup` and supplies a `value`, in which case only the group's callback fires. Required for enabled standalone usage (logs a dev warning otherwise). |
 | `value` | `string` | — | Identifies this Radio within a parent `RadioGroup`; required there for the item to participate in selection. Has no effect on a standalone Radio. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children' | 'onPress'>` — that upstream contract is not reproduced here.
@@ -171,7 +171,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+Inside a `RadioGroup`, a radio that supplies a `value` ignores its own `checked` and `onCheckedChange` — checked state is derived by comparing that `value` with the group's selection, and only the group's callback fires; a radio with no `value` keeps its own controlled pair even inside the group. A radio does not accept a press handler of its own.
 
 ## Related
 

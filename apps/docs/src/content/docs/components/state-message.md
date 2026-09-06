@@ -57,7 +57,7 @@ Stateless empty-state (`EmptyState`) and error-state (`ErrorState`, with an opti
 | `action` | `React.ReactNode` | — | Rendered below the description with top padding (e.g. a retry or create button). |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
-| `icon` | `React.ReactNode` | — | Rendered above the title, hidden from accessibility (purely decorative). |
+| `icon` | `React.ReactNode` | — | Rendered above the title, inside a view marked as not an accessibility element of its own (purely decorative). |
 | `title` **(required)** | `React.ReactNode` | — | The primary heading text for this surface. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
@@ -167,7 +167,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+`ErrorState`'s default title and description are English literals, so a localized app must pass both. `EmptyState`'s `icon` is wrapped in a view marked as not an accessibility element of its own and given no name, so an icon that carries meaning of its own needs that meaning repeated in `title` or `description`.
 
 ## Related
 

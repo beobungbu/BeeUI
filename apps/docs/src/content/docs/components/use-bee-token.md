@@ -197,7 +197,7 @@ export function PublicDocFixtures() {
 Use the code block's copy affordance to copy the exact fixture. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+`getBeeToken` always reads the global theme: it ignores an enclosing theme scope and returns a one-shot snapshot rather than a subscription, where `useBeeToken` is scope-aware and re-reads on change. Both throw when a token is read before the theme has loaded. Only the color, chart, radius and motion categories are readable at runtime — spacing, typography, elevation and the other theme-invariant categories are not exposed here and are imported as constants instead.
 
 ## Related
 

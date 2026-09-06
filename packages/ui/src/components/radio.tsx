@@ -101,14 +101,14 @@ export type RadioProps = Omit<
   PressableProps,
   'accessibilityRole' | 'role' | 'children' | 'onPress'
 > & {
-  /** Whether this Radio is checked when it is standalone (not inside a `RadioGroup`). Ignored inside a `RadioGroup`, which derives checked state by comparing `value` to the group's selection. Defaults to false. */
+  /** Whether this Radio is checked when it is standalone. Ignored once the Radio is inside a `RadioGroup` *and* supplies a `value`, since the group then derives checked state by comparing that `value` to its selection; a valueless Radio keeps this prop even inside a group. Defaults to false. */
   checked?: boolean;
   className?: string;
   /** Applied to the radio's own circle, not its label. */
   indicatorClassName?: string;
   label?: string;
   labelClassName?: string;
-  /** Called with the next checked state when pressed, if this Radio is standalone (not inside a `RadioGroup`). Required for enabled standalone usage (logs a dev warning otherwise). */
+  /** Called with the next checked state when pressed, unless the Radio is inside a `RadioGroup` and supplies a `value`, in which case only the group's callback fires. Required for enabled standalone usage (logs a dev warning otherwise). */
   onCheckedChange?: (checked: boolean) => void;
   /** Identifies this Radio within a parent `RadioGroup`; required there for the item to participate in selection. Has no effect on a standalone Radio. */
   value?: string;

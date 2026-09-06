@@ -247,7 +247,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+`HStack` and `VStack` do not accept `direction` — their axis is fixed. `gap` is a six-step token scale, so an arbitrary spacing value has to come through `className`.
 
 ## Related
 

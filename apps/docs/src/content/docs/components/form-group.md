@@ -162,7 +162,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+`RadioGroup` is the only component in the package that reads this group's context, so its `disabled`, `invalid` and legend link reach a radio group and nothing else: a checkbox, switch or input nested in a form group is unaffected and has to be wired by hand. The group is deliberately not one accessible element and accepts no role override.
 
 ## Related
 

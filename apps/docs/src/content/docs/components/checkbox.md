@@ -162,7 +162,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+Pressing an indeterminate checkbox reports `true`: `onCheckedChange` is never called with the indeterminate value, so the component can never return to that state on its own — the caller has to set `checked` back. `label` accepts a string only, and press handling is owned here.
 
 ## Related
 

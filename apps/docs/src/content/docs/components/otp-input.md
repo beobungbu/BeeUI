@@ -150,7 +150,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+One text field, not one box per digit: there is no per-character slot, caret or focus movement, so a segmented OTP appearance has to be built by the caller. The length limit, keyboard type and change handler are owned here and not accepted from outside.
 
 ## Related
 

@@ -193,7 +193,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+A row with no `onPress` is rendered non-interactive and disabled — `disabled` alone can never make it pressable. The synthesized accessible name is all-or-nothing: if `title`, `description` or `trailing` is anything but a plain string or number, no name is synthesized at all.
 
 ## Related
 

@@ -8,7 +8,7 @@ export type EmptyStateProps = Omit<ViewProps, 'children'> & {
   action?: React.ReactNode;
   className?: string;
   description?: React.ReactNode;
-  /** Rendered above the title, hidden from accessibility (purely decorative). */
+  /** Rendered above the title, inside a view marked as not an accessibility element of its own (purely decorative). */
   icon?: React.ReactNode;
   title: React.ReactNode;
 };

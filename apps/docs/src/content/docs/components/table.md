@@ -424,7 +424,7 @@ export function TableShowcase() {
 Use the code block's copy affordance to copy the exact fixture. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+`colSpan` is an approximation on native: with no table-layout engine a spanning cell grows its flex share instead of measuring the columns it covers. A `TableHead` whose content is not plain text needs an explicit `label`, because both the stacked layout's visible pairing and each native cell's accessible name are built from it.
 
 **Implementation note:** Platform-split; see docs/data-typography.md for data-cell typography.
 

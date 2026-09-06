@@ -459,6 +459,58 @@ export function collectDerivedClaimViolations(page, component, rootDir = ROOT_DI
   return violations;
 }
 
+// A curated limitation is the one section a writer can fill without reading anything: restate the
+// purpose, or paste the neighbouring family's sentence. Both failure modes are decidable without
+// a threshold, so neither needs a number nobody can justify.
+//
+// Scope, stated so the next reader does not mistake it for more: this compares whole normalized
+// strings. It cannot judge whether a limitation is *true* — `findUnknownBehaviorPropReferences`
+// and the negative-claim oracles do the part that reads source. What it catches is the two ways
+// the section fills up while saying nothing new.
+function normalizeCuratedProse(value) {
+  return String(value ?? '')
+    .toLowerCase()
+    .replace(/[`*_]/gu, '')
+    .replace(/\s+/gu, ' ')
+    // Trailing `.;:,` and whitespace, stripped together rather than one after the other: with
+    // `.trim()` running last, one trailing space or newline left the final period in place and a
+    // verbatim restatement compared unequal, so the rule passed on a copy plus an editing accident.
+    .replace(/[.;:,\s]+$/u, '')
+    .trim();
+}
+
+export function collectCuratedLimitationViolations(manifest) {
+  const violations = [];
+  const namesByLimitation = new Map();
+
+  for (const component of manifest) {
+    const limitations = normalizeCuratedProse(component.limitations);
+    if (!limitations) continue;
+
+    for (const field of ['purpose', 'behavior']) {
+      if (normalizeCuratedProse(component[field]) !== limitations) continue;
+      violations.push(
+        `${component.name}: limitations restates its own ${field} verbatim; a limitation has to say ` +
+        'something the rest of the page does not.',
+      );
+    }
+
+    const shared = namesByLimitation.get(limitations);
+    if (shared) shared.push(component.name);
+    else namesByLimitation.set(limitations, [component.name]);
+  }
+
+  for (const [, sharedNames] of namesByLimitation) {
+    if (sharedNames.length < 2) continue;
+    violations.push(
+      `${sharedNames.join(', ')}: share one curated limitation verbatim; a limitation derived from ` +
+      'a family\'s own source cannot be identical across families.',
+    );
+  }
+
+  return violations;
+}
+
 export function collectPublicComponentReferenceViolations(rootDir = ROOT_DIR) {
   const violations = [];
   const manifest = buildPublicComponentManifest(rootDir);
@@ -505,6 +557,8 @@ export function collectPublicComponentReferenceViolations(rootDir = ROOT_DIR) {
       violations.push(`${component.name}: route escaped canonical Components section.`);
     }
   }
+
+  violations.push(...collectCuratedLimitationViolations(manifest));
 
   const curatedNames = Object.keys(readJson('docs/component-reference.content.json', rootDir).components ?? {});
   for (const name of curatedNames) {

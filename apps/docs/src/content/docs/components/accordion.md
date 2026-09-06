@@ -198,7 +198,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+`AccordionTrigger` and `AccordionContent` throw when rendered outside `Accordion`/`AccordionItem` rather than degrading, so the parts cannot be lifted out of the family's own tree; and because a closed item's content is unmounted rather than hidden, any state its children hold is discarded on every collapse.
 
 ## Related
 

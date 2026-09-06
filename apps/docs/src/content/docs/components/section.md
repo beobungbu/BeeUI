@@ -198,7 +198,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+`titleClassName` and `descriptionClassName` are dropped when the corresponding prop is an element rather than a plain string or number. The header row, including `action`, renders only when at least one of `title`, `description` or `action` is set.
 
 ## Related
 
