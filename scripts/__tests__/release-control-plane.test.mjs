@@ -4,7 +4,13 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { collectReleaseControlPlaneViolations, EXPECTED_PACKAGE_NAMES, EXPECTED_VERSION, readPinnedVersion } from '../check-release-control-plane.mjs';
+import {
+  collectNpmReleaseWorkflowViolations,
+  collectReleaseControlPlaneViolations,
+  EXPECTED_PACKAGE_NAMES,
+  EXPECTED_VERSION,
+  readPinnedVersion,
+} from '../check-release-control-plane.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -114,4 +120,95 @@ test('the npm release workflow keeps registry mutation manual, main-only, enviro
   assert.match(workflow, /npm publish .*--tag next --provenance/);
   assert.match(workflow, /npm stage publish .*--tag next --provenance/);
   assert.doesNotMatch(workflow, /npm dist-tag/);
+});
+
+
+function npmReleaseWorkflow({ defaultVersion = '0.86.2', guard = '^0\\.86\\.2-rc\\.(0|[1-9][0-9]*)$' } = {}) {
+  return [
+    'on:',
+    '  workflow_dispatch:',
+    '    inputs:',
+    '      operation:',
+    '        default: verify',
+    '      expected_version:',
+    '        required: true',
+    `        default: ${defaultVersion}`,
+    '        type: string',
+    'jobs:',
+    '  preflight:',
+    '    steps:',
+    '      - run: |',
+    `          printf '%s\\n' "$version" | grep -Eq '${guard}'`,
+    '',
+  ].join('\n');
+}
+
+test('the npm release workflow version literals track the pin', () => {
+  assert.deepEqual(collectNpmReleaseWorkflowViolations(npmReleaseWorkflow(), '0.86.2'), []);
+});
+
+// This is the drift #512 describes: the pin and the manifests move to a new release line while the
+// transport keeps offering the superseded label, and nothing else in CI compares the two.
+test('a dispatch default left behind by a version bump is rejected', () => {
+  const v = collectNpmReleaseWorkflowViolations(npmReleaseWorkflow({ defaultVersion: '20260902.0.0' }), '0.86.2');
+  assert.ok(v.some((m) => /"expected_version" default 20260902\.0\.0 must equal the pinned version 0\.86\.2/.test(m)), v.join('\n'));
+});
+
+test('a prerelease guard left behind by a version bump is rejected', () => {
+  const v = collectNpmReleaseWorkflowViolations(
+    npmReleaseWorkflow({ guard: '^20260902\\.0\\.0-rc\\.(0|[1-9][0-9]*)$' }),
+    '0.86.2',
+  );
+  assert.ok(v.some((m) => /rejects 0\.86\.2-rc\.1/.test(m)), v.join('\n'));
+});
+
+test('a prerelease guard that admits the stable version or another line is rejected', () => {
+  const stableToo = collectNpmReleaseWorkflowViolations(npmReleaseWorkflow({ guard: '^0\\.86\\.2(-rc\\.[0-9]+)?$' }), '0.86.2');
+  assert.ok(stableToo.some((m) => /accepts 0\.86\.2,/.test(m)), stableToo.join('\n'));
+
+  const unanchored = collectNpmReleaseWorkflowViolations(npmReleaseWorkflow({ guard: '0\\.86\\.2-rc\\.(0|[1-9][0-9]*)' }), '0.86.2');
+  assert.ok(unanchored.some((m) => /accepts 90\.86\.2-rc\.1/.test(m)), unanchored.join('\n'));
+  assert.ok(unanchored.some((m) => /accepts 0\.86\.2-rc\.1-not-a-candidate/.test(m)), unanchored.join('\n'));
+});
+
+test('the pin at a candidate keeps the guard on the same stable line', () => {
+  assert.deepEqual(collectNpmReleaseWorkflowViolations(npmReleaseWorkflow({ defaultVersion: '0.86.2-rc.1' }), '0.86.2-rc.1'), []);
+});
+
+test('a workflow with no version literals to compare is rejected', () => {
+  const v = collectNpmReleaseWorkflowViolations('on:\n  workflow_dispatch:\njobs:\n  preflight:\n', '0.86.2');
+  assert.ok(v.some((m) => /no "expected_version" dispatch input/.test(m)), v.join('\n'));
+  assert.ok(v.some((m) => /no prerelease version guard/.test(m)), v.join('\n'));
+});
+
+// The real workflow is reachable from the repository check, not only from these fixtures.
+test('the repository npm release workflow agrees with the repository pin', () => {
+  const workflow = fs.readFileSync(path.join(REPO_ROOT, '.github/workflows/npm-release.yml'), 'utf8');
+  assert.deepEqual(collectNpmReleaseWorkflowViolations(workflow, readPinnedVersion(REPO_ROOT)), []);
+});
+
+
+// Wiring, not just the collector: the repository check has to reach the workflow, and the npm
+// handoff doc has to be inside the legacy-scope scan.
+test('the repository check reaches the npm release workflow', () => {
+  const root = createFixture();
+  fs.writeFileSync(path.join(root, '.github/workflows/npm-release.yml'), npmReleaseWorkflow({ defaultVersion: '20260902.0.0' }));
+
+  const violations = collectReleaseControlPlaneViolations(root);
+
+  assert.ok(violations.some((v) => v.includes('"expected_version" default 20260902.0.0')), violations.join('\n'));
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('the npm bootstrap handoff is scanned for the superseded package scope', () => {
+  const root = createFixture();
+  fs.writeFileSync(path.join(root, 'docs/npm-release-bootstrap.md'), `publish ${'@' + 'beeui/cli'}\n`);
+
+  const violations = collectReleaseControlPlaneViolations(root);
+
+  assert.ok(
+    violations.some((v) => v.includes('docs/npm-release-bootstrap.md: contains superseded legacy package scope')),
+    violations.join('\n'),
+  );
+  fs.rmSync(root, { recursive: true, force: true });
 });
