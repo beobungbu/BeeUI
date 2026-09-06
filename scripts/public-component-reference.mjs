@@ -357,6 +357,10 @@ const NEGATIVE_CLAIM_ORACLES = [
 // `AccessibilityRole` union plus the WAI-ARIA roles the portal uses — so anything outside it is
 // a derivation leak, whatever produced it. A legitimate new role belongs in this set; that edit
 // is the point at which someone confirms it is one.
+//
+// Kept module-private and reached through `isKnownAccessibilityRole`: exporting the `Set` itself
+// handed every importer a mutable module singleton, so one caller could widen the vocabulary for
+// all of them — and the whole point of the set is that adding a role is a deliberate edit here.
 const KNOWN_ACCESSIBILITY_ROLES = new Set([
   // React Native AccessibilityRole
   'adjustable', 'alert', 'button', 'checkbox', 'combobox', 'grid', 'header', 'image',
@@ -371,6 +375,10 @@ const KNOWN_ACCESSIBILITY_ROLES = new Set([
   'separator', 'slider', 'status', 'table', 'tabpanel', 'term', 'tooltip', 'tree', 'treegrid',
   'treeitem',
 ]);
+
+export function isKnownAccessibilityRole(role) {
+  return KNOWN_ACCESSIBILITY_ROLES.has(role);
+}
 
 function publishedRoles(page) {
   const line = page.split('\n').find((candidate) => candidate.includes('**Roles this family assigns:**'));
@@ -441,7 +449,7 @@ export function collectDerivedClaimViolations(page, component, rootDir = ROOT_DI
   }
 
   for (const role of publishedRoles(page)) {
-    if (KNOWN_ACCESSIBILITY_ROLES.has(role)) continue;
+    if (isKnownAccessibilityRole(role)) continue;
     violations.push(
       `${component.name}: publishes \`${role}\` as an accessibility role, which is not one. ` +
       'Either the derivation read a value that is not a role, or the role is new and belongs in ' +
@@ -855,7 +863,7 @@ function platformOfFile(relPath, siblings = []) {
 }
 
 // Empty string for every platform; otherwise the covered ones in a fixed order.
-function platformLabel(platforms) {
+export function platformLabel(platforms) {
   if (ALL_PLATFORMS.every((platform) => platforms.has(platform))) return '';
   const names = { ios: 'iOS', android: 'Android', web: 'Web' };
   return ALL_PLATFORMS.filter((platform) => platforms.has(platform)).map((platform) => names[platform]).join(' and ');
