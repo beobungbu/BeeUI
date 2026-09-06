@@ -475,28 +475,43 @@ test('each ink floor sits between an empty region and what the card actually dra
     `the logo-box floor (${logo.minInk}) must exceed the ${EMPTY_LOGO_BOX_INK} an empty box measures, or a card that lost its wordmark passes`,
   );
 
+  // Every floor must also be a meaningful share of what its region draws. Without this, dropping
+  // one to 0.001 keeps the suite green while the region it guards can go blank.
+  const MIN_FLOOR_SHARE = 0.15;
   for (const region of measured.regions) {
     assert.ok(region.ink > region.minInk, `${region.name} draws ${region.ink}, at or under its own floor ${region.minInk}`);
+    assert.ok(
+      region.minInk >= region.ink * MIN_FLOOR_SHARE,
+      `the ${region.name} floor (${region.minInk}) is under ${MIN_FLOOR_SHARE} of the ${region.ink} the card draws there, so the region could go nearly blank and still pass`,
+    );
   }
 });
 
 // `run` takes the root it reads the card from, so a real asset-check breach can be driven
 // without touching the committed card. Without this, `run` could return 0 on a breach — printing
 // every violation and exiting 0 — with the whole suite green.
-test('the generator returns a failing code when the card it checks is missing', async () => {
-  const emptyRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-og-missing-'));
+//
+// The card is present but the wrong size on purpose: against an empty directory `fs.statSync`
+// throws before the verdict is ever read, so a disarmed check would fail on the crash instead of
+// on the thing under test.
+test('the generator returns a failing code when the card it checks is wrong', async () => {
+  const wrongRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-og-wrong-'));
   try {
+    const target = path.join(wrongRoot, SOCIAL_CARD.sourcePath);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, pngOfSize(() => [0, 0, 0], { width: 800, height: 418 }));
+
     const errors = [];
     const code = await generatorRun({
       argv: ['--check'],
-      rootDir: emptyRoot,
+      rootDir: wrongRoot,
       log: () => {},
       logError: (line) => errors.push(line),
     });
-    assert.equal(code, 1, 'a missing card is a breach, not a pass');
-    assert.match(errors.join('\n'), /is missing/u);
+    assert.equal(code, 1, 'a card of the wrong size is a breach, not a pass');
+    assert.match(errors.join('\n'), /800x418|not 1200x630/u);
   } finally {
-    fs.rmSync(emptyRoot, { recursive: true, force: true });
+    fs.rmSync(wrongRoot, { recursive: true, force: true });
   }
 });
 

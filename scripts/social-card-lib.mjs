@@ -56,22 +56,21 @@ export const SOCIAL_CARD = {
   // where these come from — they are the values printed by decoding apps/docs/public/og-beeui.png):
   //
   //   whole card  991 distinct colours    floor 64
-  //   logo box    19.4% ink               floor 5%     (the "B" glyph and the rounded corners
+  //   logo box    19.4% ink               floor 12%    (the "B" glyph and the rounded corners
   //                                                     inside the primary-coloured square)
   //   headline    31.7% ink               floor 8%     ("BeeUI" at 96px)
   //   tagline     40.3% ink               floor 8%     (the product description)
   //
-  // The floors sit far below the measurements on purpose: this is a "the artwork is still there"
-  // guard, not a pixel-diff, so a redesign should not have to move them.
+  // This is a "the artwork is still there" guard, not a pixel-diff. The headline and tagline
+  // floors sit far below their measurements and no plausible redesign approaches them. The logo
+  // box is the exception and is calibrated rather than generous: a box that keeps its square and
+  // loses the glyph measures 7.1%, so a floor under that cannot tell a wordmark from a blank
+  // plate. At 12% it can, but single-change redesigns land between 12.2% and 36% — a thinner or
+  // smaller glyph, or dropping the plate, comes within a third of a point. The failure is loud
+  // and the fix is to re-measure the floor with the new artwork; the failure this prevents is
+  // silent.
   minDistinctColors: 64,
   // Boxes are in card coordinates and follow the geometry in `renderSocialCardSvg`.
-  // Floors sit between what an empty version of the region measures and what the real card
-  // measures, so a region that lost its glyph fails rather than squeaking through. Measured on
-  // the committed card: logo box 19.4%, headline 31.7%, tagline 40.3%. Measured on a card whose
-  // logo box keeps the solid square but loses the letter: 7.1% — which is why that floor is 12%
-  // and not the 5% it started at. A deliberate redesign that drops a region below its floor
-  // fails loudly and the floor is re-measured with it; a silent blank card is the failure this
-  // exists to prevent.
   inkRegions: [
     { name: 'logo box', x: 72, y: 74, width: 92, height: 92, minInk: 0.12 },
     { name: 'headline', x: 72, y: 200, width: 378, height: 90, minInk: 0.08 },
