@@ -38,9 +38,13 @@ test('losing the root barrel while a subpath remains is breaking', () => {
   assert.equal(classifyDiff(diff), 'breaking');
 });
 
-test('any classification change is breaking, and a package change is breaking', () => {
+test('a classification change needs a changeset but not a breaking bump; a package change is breaking', () => {
+  // The nine values are all public-facing and three are list-driven from
+  // docs/public-surface-owners.json; a move between them changes documentation, not reach.
   const demoted = diffInventories(inventory(row('a')), inventory(row('a', { classification: 'advanced-consumer' })));
-  assert.equal(classifyDiff(demoted), 'breaking');
+  assert.equal(classifyDiff(demoted), 'additive');
+  assert.equal(violations(demoted, []).length, 1);
+  assert.deepEqual(violations(demoted, changeset({ '@beemvp/beeui-ui': 'patch' })), []);
   const moved = diffInventories(inventory(row('a')), inventory(row('a', { package: '@beemvp/beeui-core' })));
   assert.equal(classifyDiff(moved), 'breaking');
 });
@@ -102,6 +106,26 @@ test('only changesets added relative to the base count', () => {
 
   // A pending `minor` already on the base branch used to satisfy every later breaking change.
   assert.deepEqual(names, ['.changeset/fresh.md', '.changeset/local.md']);
+
+  // `changeset version` deletes what it consumes; a name in the base diff may no longer exist.
+  fs.unlinkSync(path.join(dir, '.changeset/fresh.md'));
+  assert.deepEqual(readAddedChangesets('base', dir).map((entry) => entry.name), ['.changeset/local.md']);
+});
+
+test('the base is fetched on demand in a shallow checkout, and named when that fails', () => {
+  const upstream = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-upstream-'));
+  const g = (cwd, ...args) => execFileSync('git', args, { cwd, stdio: 'ignore' });
+  g(upstream, 'init', '-q', '-b', 'development'); g(upstream, 'config', 'user.email', 't@t'); g(upstream, 'config', 'user.name', 't');
+  fs.mkdirSync(path.join(upstream, 'docs'));
+  fs.writeFileSync(path.join(upstream, 'docs/public-surface.inventory.json'), JSON.stringify(inventory(row('a'))));
+  g(upstream, 'add', '.'); g(upstream, 'commit', '-q', '-m', 'base');
+  const shallow = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-shallow-'));
+  execFileSync('git', ['clone', '-q', '--depth=1', '--no-tags', '--branch', 'development', upstream, shallow], { stdio: 'ignore' });
+  // A depth-1 clone of a branch still carries origin/<branch>; drop it to model a CI checkout of a sha.
+  g(shallow, 'update-ref', '-d', 'refs/remotes/origin/development');
+
+  assert.deepEqual(readBaseInventory('origin/development', shallow).rows.map((r) => r.id), ['a']);
+  assert.throws(() => readBaseInventory('origin/nope', shallow), /could not be fetched/u);
 });
 
 test('a missing base ref or inventory fails with a sentence, not a stack', () => {
@@ -110,4 +134,27 @@ test('a missing base ref or inventory fails with a sentence, not a stack', () =>
   assert.throws(() => readBaseInventory('does-not-exist', dir), /base ref "does-not-exist" is not available locally/u);
   assert.throws(() => parseArgs(['--base']), /--base needs a ref/u);
   assert.deepEqual(parseArgs([]), { ref: 'origin/development' });
+});
+
+
+test('the root, worker and Expo identities follow the packages after a bump', async () => {
+  const { syncRootVersion } = await import('../sync-root-version.mjs');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-sync-'));
+  for (const [file, body] of [
+    ['packages/ui/package.json', '{\n  "name": "@beemvp/beeui-ui",\n  "version": "0.87.0"\n}\n'],
+    ['package.json', '{\n  "name": "beeui-workspace",\n  "private": true,\n  "version": "0.86.2"\n}\n'],
+    ['web/worker/package.json', '{ "version": "0.86.2" }\n'],
+    ['apps/demo/app.json', '{\n  "expo": {\n    "name": "demo",\n    "version": "0.86.2"\n  }\n}\n'],
+  ]) {
+    fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    fs.writeFileSync(path.join(dir, file), body);
+  }
+
+  const result = syncRootVersion(dir);
+
+  // `changeset version` cannot reach these: the root is private and not a workspace member.
+  assert.equal(result.version, '0.87.0');
+  assert.deepEqual(result.changed.sort(), ['apps/demo/app.json', 'package.json', 'web/worker/package.json']);
+  assert.match(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'), /"private": true,\n  "version": "0.87.0"/u, 'only the version value changes');
+  assert.deepEqual(syncRootVersion(dir).changed, [], 'idempotent');
 });

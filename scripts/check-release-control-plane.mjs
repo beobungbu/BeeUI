@@ -43,12 +43,23 @@ function walkFiles(directory) {
 export function collectReleaseControlPlaneViolations(rootDir = ROOT_DIR) {
   const violations = [];
   const rootManifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8'));
-  if (rootManifest.version !== EXPECTED_VERSION) violations.push(`package.json: expected version ${EXPECTED_VERSION}, found ${rootManifest.version}`);
+  // The root is the lockstep source for the tree under `rootDir` — read here, not at module
+  // load, so a test's temporary root is checked against itself and not against this repository.
+  const expected = rootManifest.version;
+  const seen = new Map();
 
   for (const [relative, expectedName] of EXPECTED_PACKAGE_NAMES) {
     const manifest = JSON.parse(fs.readFileSync(path.join(rootDir, relative), 'utf8'));
     if (manifest.name !== expectedName) violations.push(`${relative}: expected name ${expectedName}, found ${manifest.name}`);
-    if (manifest.version !== EXPECTED_VERSION) violations.push(`${relative}: expected version ${EXPECTED_VERSION}, found ${manifest.version}`);
+    seen.set(relative, manifest.version);
+    if (manifest.version !== expected) violations.push(`${relative}: expected version ${expected}, found ${manifest.version}`);
+  }
+
+  // `changeset version` bumps the workspace members and cannot reach the private root, so
+  // "every package agrees and the root lags" is the shape a bump leaves behind. Name the command.
+  const packageVersions = new Set(seen.values());
+  if (packageVersions.size === 1 && !packageVersions.has(expected)) {
+    violations.push(`packages are at ${[...packageVersions][0]} while package.json is at ${expected}: run \`pnpm version:sync\` to move the root, Worker and Expo identities.`);
   }
 
   const workflowFiles = walkFiles(path.join(rootDir, '.github/workflows')).filter(

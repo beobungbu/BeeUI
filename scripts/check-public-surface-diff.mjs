@@ -35,6 +35,7 @@ export function diffInventories(base, head) {
   const headById = new Map(head.rows.map((row) => [row.id, row]));
   const removed = [];
   const changed = [];
+  const reclassified = [];
   for (const [id, row] of baseById) {
     const now = headById.get(id);
     if (!now) {
@@ -42,7 +43,7 @@ export function diffInventories(base, head) {
       continue;
     }
     if (row.classification !== now.classification) {
-      changed.push({ id, what: 'classification', from: row.classification, to: now.classification });
+      reclassified.push({ id, from: row.classification, to: now.classification });
     }
     if (row.package !== now.package) changed.push({ id, what: 'package', from: row.package, to: now.package });
     const was = reachOf(row);
@@ -50,12 +51,17 @@ export function diffInventories(base, head) {
     if (was === 'root' && is !== 'root') changed.push({ id, what: 'reach', from: was, to: is });
   }
   const added = [...headById.keys()].filter((id) => !baseById.has(id));
-  return { removed, changed, added };
+  return { removed, changed, reclassified, added };
 }
 
+// Nine classification values exist and none is "internal" — internal rows are not listed — and
+// three of them are driven by lists in `docs/public-surface-owners.json`. A move between them
+// changes how a row is documented, not whether a consumer can reach it, so it needs a changeset
+// (the note is what changes) but not a breaking bump. Treating it as breaking made a docs-only
+// edit to that JSON demand a major bump of four packages.
 export function classifyDiff(diff) {
   if (diff.removed.length || diff.changed.length) return 'breaking';
-  if (diff.added.length) return 'additive';
+  if (diff.added.length || diff.reclassified.length) return 'additive';
   return 'none';
 }
 
@@ -90,8 +96,10 @@ export function readAddedChangesets(ref, rootDir = ROOT_DIR) {
   const committed = git(['diff', '--diff-filter=A', '--name-only', `${ref}...HEAD`, '--', '.changeset/'], rootDir);
   const untracked = git(['ls-files', '--others', '--exclude-standard', '--', '.changeset/'], rootDir);
   const names = [...new Set(`${committed}\n${untracked}`.split('\n').map((line) => line.trim()).filter(Boolean))];
+  // `changeset version` deletes the files it consumes, so a name in the base diff may be gone.
   return names
     .filter((name) => name.endsWith('.md') && path.basename(name).toLowerCase() !== 'readme.md')
+    .filter((name) => fs.existsSync(path.join(rootDir, name)))
     .map((name) => ({ name, bumps: parseChangeset(fs.readFileSync(path.join(rootDir, name), 'utf8')) }));
 }
 
@@ -114,7 +122,11 @@ export function collectSurfaceDiffViolations({ diff, changesets, rootVersion }) 
     ];
   }
   if (publicBumps.length) return [];
-  return [`public surface added (${diff.added.join(', ')}) with no changeset added in this change naming a public package. Run \`pnpm changeset\`.`];
+  const what = [
+    ...diff.added.map((id) => `added ${id}`),
+    ...diff.reclassified.map((entry) => `reclassified ${entry.id}: ${entry.from} → ${entry.to}`),
+  ].join('; ');
+  return [`public surface changed (${what}) with no changeset added in this change naming a public package. Run \`pnpm changeset\`.`];
 }
 
 function git(args, rootDir) {
@@ -122,11 +134,31 @@ function git(args, rootDir) {
 }
 
 // A guard that dies with a stack trace is a guard someone disables. Say what is missing.
-export function readBaseInventory(ref, rootDir = ROOT_DIR) {
+function refExists(ref, rootDir) {
   try {
     git(['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], rootDir);
+    return true;
   } catch {
-    throw new Error(`base ref "${ref}" is not available locally. Run \`git fetch origin development\` (or pass --base <ref>).`);
+    return false;
+  }
+}
+
+// A CI checkout is usually one commit deep with no remote-tracking refs, which is where a guard
+// that reads the base goes quiet. `origin/development` is fetched on demand, one commit deep;
+// only when that fails does the check refuse to run.
+export function readBaseInventory(ref, rootDir = ROOT_DIR, { fetch = true } = {}) {
+  if (!refExists(ref, rootDir) && fetch) {
+    const remote = ref.match(/^([^/]+)\/(.+)$/u);
+    if (remote) {
+      try {
+        git(['fetch', '--depth=1', remote[1], `${remote[2]}:refs/remotes/${remote[1]}/${remote[2]}`], rootDir);
+      } catch {
+        // fall through to the sentence below
+      }
+    }
+  }
+  if (!refExists(ref, rootDir)) {
+    throw new Error(`base ref "${ref}" is not available locally and could not be fetched. Run \`git fetch origin development\` (or pass --base <ref>).`);
   }
   try {
     return JSON.parse(git(['show', `${ref}:${OUTPUT_FILE}`], rootDir));
@@ -155,6 +187,7 @@ function main() {
     );
     for (const id of diff.removed) console.log(`  - removed: ${id}`);
     for (const { id, what, from, to } of diff.changed) console.log(`  ~ ${what}: ${id} (${from} → ${to})`);
+    for (const { id, from, to } of diff.reclassified) console.log(`  ~ classification: ${id} (${from} → ${to})`);
     for (const id of diff.added) console.log(`  + added: ${id}`);
     const rootVersion = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8')).version;
     const violations = collectSurfaceDiffViolations({ diff, changesets: readAddedChangesets(ref, ROOT_DIR), rootVersion });
