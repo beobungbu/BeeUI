@@ -428,6 +428,18 @@ export function collectDerivedClaimViolations(page, component, rootDir = ROOT_DI
     );
   }
 
+  // A positive claim, guarded like the negatives: "has platform-split source files" is true only
+  // when a source file carries a platform suffix, and it can never share a page with the sentence
+  // that says the family ships none. Calendar carried both.
+  const claimsSplit = page.includes('has platform-split source files');
+  const hasPlatformFile = (component.allSources ?? []).some((relPath) => PLATFORM_FILE.test(relPath));
+  if (claimsSplit && !hasPlatformFile) {
+    violations.push(`${component.name}: publishes "has platform-split source files" but no source file carries a platform suffix.`);
+  }
+  if (claimsSplit && page.includes('ships no platform-specific file')) {
+    violations.push(`${component.name}: says it ships no platform-specific file and that it has platform-split source files on the same page.`);
+  }
+
   for (const role of publishedRoles(page)) {
     if (KNOWN_ACCESSIBILITY_ROLES.has(role)) continue;
     violations.push(
@@ -934,10 +946,10 @@ function renderAccessibilityFacts(component, rootDir) {
 // rather than hidden behind a generic parity claim", while being exactly a generic parity claim on
 // 56 of the 62 pages. Which implementation renders on which target is a fact about the family's own
 // files, so state it.
+const PLATFORM_FILE = /\.(native|web|ios|android)\.tsx?$/u;
+
 function renderPlatformImplementation(component, rootDir = ROOT_DIR) {
-  const platformFiles = (component.allSources ?? []).filter((relPath) =>
-    /\.(native|web|ios|android)\.tsx?$/u.test(relPath),
-  );
+  const platformFiles = (component.allSources ?? []).filter((relPath) => PLATFORM_FILE.test(relPath));
   if (!platformFiles.length) {
     // Two consequents have been dropped from this sentence. "The props and behavior above are the
     // same on iOS, Android and Web" was first decided by a filename glob — the absence of a
@@ -1273,7 +1285,12 @@ export function renderPublicComponentPage(component, rootDir = ROOT_DIR) {
     : '';
   const peers = component.peerDependencies.length ? component.peerDependencies.map((name) => `\`${name}\``).join(', ') : 'Only the package baseline peers.';
   const registryDeps = component.registryDependencies.length ? component.registryDependencies.map((name) => `\`${name}\``).join(', ') : 'None.';
-  const platformSplit = component.allSources.length > 1
+  // Derived from the same platform-filename predicate `renderPlatformImplementation` uses two
+  // lines above it. It was a file count: Calendar has `calendar.tsx` and `calendar-locale.ts`,
+  // neither platform-specific, and the page said "has platform-split source files" directly under
+  // the sentence saying it ships none — the class of defect the line above had just been fixed
+  // for, and unguarded because the oracles covered only negative claims.
+  const platformSplit = (component.allSources ?? []).some((relPath) => PLATFORM_FILE.test(relPath))
     ? 'This family has platform-split source files. The bundler selects the native/Web implementation; do not infer native runtime behavior from the Web preview.'
     : 'The same public family is exposed across the supported target matrix; meaningful platform differences remain governed by the compatibility contract.';
   const derivedLimitations = renderDerivedLimitations(component, rootDir);

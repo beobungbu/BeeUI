@@ -93,6 +93,10 @@ export function renderRobotsTxt(contract) {
   if (contract.indexPolicy === 'index,follow') rules.push('Allow: /');
   for (const pathname of contract.robotsDisallow ?? []) rules.push(`Disallow: ${pathname}`);
   rules.push(`Sitemap: ${contract.origin}/sitemap.xml`);
+  // Starlight also emits `/docs/sitemap-index.xml` and links it from every docs page head. It is a
+  // subset of the composed sitemap above; advertising only one left a crawler two sitemaps, one
+  // declared. Both are valid, so both are declared.
+  rules.push(`Sitemap: ${contract.origin}/docs/sitemap-index.xml`);
   return `${rules.join('\n')}\n`;
 }
 

@@ -2430,3 +2430,24 @@ test('an object alias that is both returned and taken as input stays props', () 
   assert.equal(api.docKind, 'returned');
   assert.deepEqual(api.returnedBy, ['useApi']);
 });
+
+
+test('"platform-split source files" is derived from platform suffixes, not from a file count', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const calendar = manifest.find((c) => c.name === 'calendar');
+  const tooltip = manifest.find((c) => c.name === 'tooltip');
+
+  // Calendar has two files, neither platform-specific; the page said "has platform-split source
+  // files" directly under "ships no platform-specific file". Tooltip really is split.
+  assert.equal(/has platform-split source files/u.test(renderPublicComponentPage(calendar, REPO_ROOT)), false);
+  assert.match(renderPublicComponentPage(tooltip, REPO_ROOT), /has platform-split source files/u);
+});
+
+test('a positive platform-split claim without a platform file is a violation', () => {
+  const component = { name: 'x', allSources: ['x.tsx', 'x-locale.ts'], source: 'x.tsx' };
+  const page = 'This family ships no platform-specific file.\n\nThis family has platform-split source files.';
+
+  const violations = collectDerivedClaimViolations(page, component, REPO_ROOT);
+
+  assert.equal(violations.length, 2, violations.join('\n'));
+});

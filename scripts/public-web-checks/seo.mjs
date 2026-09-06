@@ -43,6 +43,11 @@ export async function collectViolations(rootDir) {
       violations.push('public changelog no longer reflects canonical CHANGELOG.md content.');
     }
     if (!robots.includes(`Sitemap: ${contract.origin}/sitemap.xml`)) violations.push('robots.txt sitemap origin drifted from public-site contract.');
+    // The second sitemap is emitted by Starlight's bundled @astrojs/sitemap, not by this repo. The
+    // line could be deleted with the suite green, so it is asserted here; that the docs build
+    // actually emits the file is asserted by the composer, which is the step that has the build.
+    if (!robots.includes(`Sitemap: ${contract.origin}/docs/sitemap-index.xml`)) violations.push('robots.txt no longer declares the Starlight docs sitemap (/docs/sitemap-index.xml).');
+
     if (sitemap.includes('/llms.txt') || sitemap.includes('/api/')) violations.push('non-index route class leaked into sitemap.');
     for (const required of ['/', '/docs/', '/docs/components/', '/docs/patterns/', '/examples/', '/changelog/', '/showcase/', '/demo/']) {
       if (!routes.includes(required)) violations.push(`sitemap route inventory missing ${required}`);

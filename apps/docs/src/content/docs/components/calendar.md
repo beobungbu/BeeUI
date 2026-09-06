@@ -92,7 +92,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 This family ships no platform-specific file, but its source branches on `Platform`, so some behavior differs by target.
 
-This family has platform-split source files. The bundler selects the native/Web implementation; do not infer native runtime behavior from the Web preview.
+The same public family is exposed across the supported target matrix; meaningful platform differences remain governed by the compatibility contract.
 
 Evidence classes are not equal and this page does not blur them: Web behavior is exercised in a real browser, while iOS and Android carry package/export and native-compile evidence, which is not device-runtime proof. The [compatibility contract](/docs/compatibility/) records which class each claim rests on.
 
