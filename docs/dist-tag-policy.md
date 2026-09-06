@@ -43,7 +43,7 @@ BeeUI 1.0 uses exactly two npm dist-tags. No other floating tag is published for
 
 ## Prerelease versioning
 
-> **2026-09-06 owner decision (ADR-015, supersedes the version-label half of #407; its release-integrity findings stand):** BeeUI 1.0 remains the product milestone name, while npm artifacts use plain SemVer starting at `0.86.2`. The #407 date label `20260902.0.0` was never published; every retained artifact and check that carried it is historical evidence and is not rewritten. See `docs/decisions/015-package-version-0-86-2.md`.
+> **2026-09-06 owner decision (ADR-015, supersedes the version-label half of #407; its release-integrity findings stand):** BeeUI 1.0 remains the product milestone name, while npm artifacts use plain SemVer starting at `0.86.2`. The #407 date label `20260902.0.0` was never published. Retained artifacts and evidence documents that carried it stay as written; the machine checks, fixtures and status prose that pinned it move with the version — ADR-015 lists which is which. See `docs/decisions/015-package-version-0-86-2.md`.
 
 
 - Prerelease candidates are named **`0.86.2-rc.N`** (`rc.1`, `rc.2`, …), a standard semver

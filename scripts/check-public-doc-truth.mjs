@@ -90,6 +90,18 @@ export function collectPublicTruthViolations(rootDir = ROOT_DIR) {
     });
   }
 
+  // README's distribution-status line states the package version in prose. Setting it to 9.9.9
+  // left every gate green: the control plane compares manifests, web:check compares the Expo and
+  // Worker identities, and nothing read this sentence. It is the first version a visitor sees.
+  const readme = fs.readFileSync(path.join(rootDir, 'README.md'), 'utf8');
+  const stated = readme.match(/repository\/package version is `([^`]+)`/u);
+  const workspaceVersion = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8')).version;
+  if (!stated) {
+    violations.push('README.md: distribution-status line no longer states the package version ("repository/package version is `…`").');
+  } else if (stated[1] !== workspaceVersion) {
+    violations.push(`README.md: states package version ${stated[1]} but the workspace version is ${workspaceVersion}.`);
+  }
+
   const demoPath = path.join(rootDir, 'apps/demo/README.md');
   const demo = fs.readFileSync(demoPath, 'utf8');
   if (/\bnpm\s+run\s+build\b/.test(demo)) {
