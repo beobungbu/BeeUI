@@ -5,7 +5,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-export const EXPECTED_VERSION = '0.86.2';
+// The root manifest is the lockstep source; every other manifest must equal it. Pinning a literal
+// here as well meant `changeset version` — which bumps the workspace members and the root together
+// through the `fixed` group — tripped this gate on its own output, and the literal had to be
+// hand-edited beside the manifests it was supposed to check. `docs/dist-tag-policy.md` still pins
+// the value a human chose, and `dist-policy:check` compares it to the root; that is where a bump
+// is confirmed on purpose.
+export const EXPECTED_VERSION = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8')).version;
 export const EXPECTED_PACKAGE_NAMES = new Map([
   ['packages/core/package.json', '@beemvp/beeui-core'],
   ['packages/tokens/package.json', '@beemvp/beeui-tokens'],
