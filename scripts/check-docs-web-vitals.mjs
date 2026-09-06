@@ -31,8 +31,10 @@
 //   node scripts/check-docs-web-vitals.mjs           # measure and report
 //   node scripts/check-docs-web-vitals.mjs --check   # fail if any ceiling is exceeded
 //
-// Requires a built portal (`pnpm docs:build`) and a Chrome/Chromium binary. Lighthouse finds a
-// system Chrome by itself; set CHROME_PATH to point it at another binary.
+// Requires a built portal (`pnpm docs:build`) and a Chrome/Chromium binary. Lighthouse discovers
+// and launches that browser itself; this script does not choose the binary, so which Chrome
+// measured a run is only knowable from the machine it ran on. A browser Lighthouse cannot drive
+// fails the run loudly — it never degrades into a silent pass.
 //
 // NOT WIRED INTO CI. Unlike the page-weight and search-intent checks, this one is not part of
 // `apps/docs`'s build script: it needs a browser and about a minute per page, which would make
@@ -252,6 +254,23 @@ function formatMetric(key, value) {
 }
 
 /**
+ * Chrome flags for one Lighthouse run.
+ *
+ * `--headless=new` is the current Chrome headless mode. `--no-sandbox` is added only where the
+ * sandbox cannot work anyway — as root (the default user in most containers) Chrome refuses to
+ * start with it, and CI runners do not grant the privileges it needs. On a developer machine the
+ * sandbox is available, and measuring a local static site is no reason to switch it off.
+ *
+ * @param {{uid?: number, ci?: string}} [environment]
+ * @returns {string[]}
+ */
+export function chromeFlagsFor({ uid, ci } = {}) {
+  const flags = ['--headless=new', '--disable-gpu', '--disable-dev-shm-usage'];
+  if (uid === 0 || Boolean(ci)) flags.push('--no-sandbox');
+  return flags;
+}
+
+/**
  * Runs the pinned Lighthouse CLI once against `url` and returns its parsed report.
  *
  * @param {string} url
@@ -260,6 +279,7 @@ function formatMetric(key, value) {
  */
 async function runLighthouse(url, { timeoutMs = PAGE_TIMEOUT_MS, outputDir, name }) {
   const outputPath = path.join(outputDir, `${name}.report.json`);
+  const chromeFlags = chromeFlagsFor({ ci: process.env.CI, uid: process.getuid?.() });
   const args = [
     'dlx',
     LIGHTHOUSE_SPEC,
@@ -268,9 +288,7 @@ async function runLighthouse(url, { timeoutMs = PAGE_TIMEOUT_MS, outputDir, name
     '--only-categories=performance',
     '--output=json',
     `--output-path=${outputPath}`,
-    // `--headless=new` is the current Chrome headless; --no-sandbox keeps this runnable inside a
-    // container, where the sandbox needs privileges a CI runner does not grant.
-    '--chrome-flags=--headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage',
+    `--chrome-flags=${chromeFlags.join(' ')}`,
   ];
 
   const stderr = await new Promise((resolveRun, rejectRun) => {
@@ -365,44 +383,74 @@ function summarize(measurements) {
   return lines.join('\n');
 }
 
-async function main() {
-  const { budget, pages } = await loadBudget();
-  const { lighthouseVersion, pages: measurements } = await measureDocsVitals({ pages });
-  const violations = collectVitalsViolations(measurements, budget);
-
+/**
+ * Writes the measurement report next to the other build artifacts.
+ *
+ * @param {{budget: Record<string, number>, lighthouseVersion: string, pages: object[], violations: string[]}} report
+ * @returns {Promise<string>} the file written
+ */
+async function writeVitalsReport({ budget, lighthouseVersion, pages, violations }) {
   await mkdir(path.dirname(REPORT_FILE), { recursive: true });
   await writeFile(
     REPORT_FILE,
-    `${JSON.stringify({ budget, generatedAt: new Date().toISOString(), lighthouseVersion, pages: measurements, violations }, null, 2)}\n`,
+    `${JSON.stringify({ budget, generatedAt: new Date().toISOString(), lighthouseVersion, pages, violations }, null, 2)}\n`,
   );
+  return REPORT_FILE;
+}
 
-  console.log(summarize(measurements));
-  console.log(
+/**
+ * The whole command: load the budget, measure, report, and decide the exit code.
+ *
+ * Everything that touches a browser, the clock or the filesystem is injected, so the decision this
+ * function makes — which is the part that can silently stop failing — is testable without running
+ * Lighthouse. The measurement itself is still the real thing in the CLI path below.
+ *
+ * @param {{argv?: string[], measure?: typeof measureDocsVitals, readBudget?: typeof loadBudget, writeReport?: typeof writeVitalsReport, log?: (line: string) => void, logError?: (line: string) => void}} [options]
+ * @returns {Promise<number>} the process exit code: 0 when passing or when not asked to check
+ */
+export async function run({
+  argv = [],
+  measure = measureDocsVitals,
+  readBudget = loadBudget,
+  writeReport = writeVitalsReport,
+  log = console.log,
+  logError = console.error,
+} = {}) {
+  const { budget, pages } = await readBudget();
+  const { lighthouseVersion, pages: measurements } = await measure({ pages });
+  const violations = collectVitalsViolations(measurements, budget);
+
+  const reportFile = await writeReport({ budget, lighthouseVersion, pages: measurements, violations });
+
+  log(summarize(measurements));
+  log(
     `\nMeasured with Lighthouse ${lighthouseVersion} (mobile emulation). Report: ` +
-      `${path.relative(ROOT_DIR, REPORT_FILE)}`,
+      `${path.relative(ROOT_DIR, reportFile)}`,
   );
 
-  if (!process.argv.includes('--check')) return;
+  if (!argv.includes('--check')) return 0;
 
   if (violations.length) {
-    console.error('\nDocumentation portal Core Web Vitals budget exceeded:');
-    for (const violation of violations) console.error(`- ${violation}`);
-    console.error(
+    logError('\nDocumentation portal Core Web Vitals budget exceeded:');
+    for (const violation of violations) logError(`- ${violation}`);
+    logError(
       '\nLab numbers vary by roughly 10% run to run; re-run once before treating a near-miss as a regression.',
     );
-    process.exitCode = 1;
-    return;
+    return 1;
   }
-  console.log(
+  log(
     `Web vitals check passed (${measurements.length} pages; ceilings LCP ${budget.largestContentfulPaintMs} ms, ` +
       `TBT ${budget.totalBlockingTimeMs} ms, CLS ${budget.cumulativeLayoutShift}, score ≥ ${budget.minPerformanceScore}).`,
   );
+  return 0;
 }
 
 const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isCli) {
-  main().catch((error) => {
+  // One assignment for both outcomes: a verdict and a crash reach the exit code by the same line,
+  // so a test that proves one path is wired proves the other is too.
+  process.exitCode = await run({ argv: process.argv.slice(2) }).catch((error) => {
     console.error(error.message);
-    process.exitCode = 1;
+    return 1;
   });
 }
