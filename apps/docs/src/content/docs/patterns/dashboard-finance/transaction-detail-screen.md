@@ -37,7 +37,7 @@ Common product states such as loading, success, empty, error, permission-like re
 
 ## Responsive contract
 
-Read from the screen file and the 1 pattern-local file it imports: `transaction-detail-screen.tsx`, `screen-shell.tsx`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 1 pattern-local file in its runtime import closure, direct and transitive: `transaction-detail-screen.tsx`, `screen-shell.tsx`. Every fact below is scoped to those files and to nothing else.
 
 - **BeeUI layout primitives rendered:** `Box` (`screen-shell.tsx`), `HStack` (`transaction-detail-screen.tsx`), `VStack` (`transaction-detail-screen.tsx`).
 - **Scroll ownership:** `ScrollView` (`screen-shell.tsx`).
@@ -52,7 +52,7 @@ BeeUI's [mobile-first responsive contract](/docs/responsive/) is the framework-l
 
 ## Accessibility
 
-Read from the screen file and the 1 pattern-local file it imports: `transaction-detail-screen.tsx`, `screen-shell.tsx`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 1 pattern-local file in its runtime import closure, direct and transitive: `transaction-detail-screen.tsx`, `screen-shell.tsx`. Every fact below is scoped to those files and to nothing else.
 
 - **Roles this screen sets itself:** none set in `transaction-detail-screen.tsx`, `screen-shell.tsx`.
 - **Accessibility states and properties it sets itself:** none set in `transaction-detail-screen.tsx`, `screen-shell.tsx`.

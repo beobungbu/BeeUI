@@ -36,14 +36,14 @@ Common product states such as loading, success, empty, error, permission-like re
 
 ## Responsive contract
 
-Read from the screen file and the 2 pattern-local files it imports: `appearance-screen.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 2 pattern-local files in its runtime import closure, direct and transitive: `appearance-screen.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`. Every fact below is scoped to those files and to nothing else.
 
-- **BeeUI layout primitives rendered:** `Box` (`appearance-screen.tsx`, `settings-screen-shell.tsx`), `HStack` (`appearance-screen.tsx`), `KeyboardAwareScreen` (`settings-screen-shell.tsx`), `Screen` (`settings-screen-shell.tsx`), `VStack` (`appearance-screen.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`).
-- **Scroll ownership:** `ScrollView` (`settings-screen-shell.tsx`).
+- **BeeUI layout primitives rendered:** `Box` (`appearance-screen.tsx`; `settings-screen-shell.tsx`, the branch taken when `keyboardAware` is false), `HStack` (`appearance-screen.tsx`), `Screen` (`settings-screen-shell.tsx`, the branch taken when `keyboardAware` is false), `VStack` (`appearance-screen.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`).
+- **Scroll ownership:** `ScrollView` (`settings-screen-shell.tsx`, the branch taken when `keyboardAware` is false).
 - **Horizontal scrolling:** no `horizontal` scroll container in `appearance-screen.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`.
-- **Width constraint:** `contentWidth="md"` (`settings-screen-shell.tsx`).
+- **Width constraint:** `max-w-[680px]` (`settings-screen-shell.tsx`, the branch taken when `keyboardAware` is false).
 - **Breakpoint-prefixed utility classes:** none in `appearance-screen.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`.
-- **Platform-prefixed utility classes:** `web:py-10` (`settings-screen-shell.tsx`).
+- **Platform-prefixed utility classes:** `web:py-10` (`settings-screen-shell.tsx`, the branch taken when `keyboardAware` is false).
 - **Platform branching:** no `Platform.OS` or `Platform.select` call in `appearance-screen.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`.
 - **Viewport measurement:** no `useWindowDimensions`, `Dimensions.get` or breakpoint hook in `appearance-screen.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`.
 
@@ -51,7 +51,7 @@ BeeUI's [mobile-first responsive contract](/docs/responsive/) is the framework-l
 
 ## Accessibility
 
-Read from the screen file and the 2 pattern-local files it imports: `appearance-screen.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 2 pattern-local files in its runtime import closure, direct and transitive: `appearance-screen.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`. Every fact below is scoped to those files and to nothing else.
 
 - **Roles this screen sets itself:** none set in `appearance-screen.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`.
 - **Accessibility states and properties it sets itself:** `accessibilityLabel` (`appearance-screen.tsx`).

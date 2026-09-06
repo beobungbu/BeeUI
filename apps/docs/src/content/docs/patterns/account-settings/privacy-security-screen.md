@@ -48,14 +48,14 @@ Common product states such as loading, success, empty, error, permission-like re
 
 ## Responsive contract
 
-Read from the screen file and the 3 pattern-local files it imports: `privacy-security-screen.tsx`, `preference-row.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 3 pattern-local files in its runtime import closure, direct and transitive: `privacy-security-screen.tsx`, `preference-row.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`. Every fact below is scoped to those files and to nothing else.
 
-- **BeeUI layout primitives rendered:** `Box` (`settings-screen-shell.tsx`), `KeyboardAwareScreen` (`settings-screen-shell.tsx`), `Screen` (`settings-screen-shell.tsx`), `VStack` (`settings-screen-shell.tsx`, `settings-section.tsx`).
-- **Scroll ownership:** `ScrollView` (`settings-screen-shell.tsx`).
+- **BeeUI layout primitives rendered:** `Box` (`settings-screen-shell.tsx`, the branch taken when `keyboardAware` is false), `Screen` (`settings-screen-shell.tsx`, the branch taken when `keyboardAware` is false), `VStack` (`settings-screen-shell.tsx`, `settings-section.tsx`).
+- **Scroll ownership:** `ScrollView` (`settings-screen-shell.tsx`, the branch taken when `keyboardAware` is false).
 - **Horizontal scrolling:** no `horizontal` scroll container in `privacy-security-screen.tsx`, `preference-row.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`.
-- **Width constraint:** `contentWidth="md"` (`settings-screen-shell.tsx`).
+- **Width constraint:** `max-w-[680px]` (`settings-screen-shell.tsx`, the branch taken when `keyboardAware` is false).
 - **Breakpoint-prefixed utility classes:** none in `privacy-security-screen.tsx`, `preference-row.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`.
-- **Platform-prefixed utility classes:** `web:py-10` (`settings-screen-shell.tsx`).
+- **Platform-prefixed utility classes:** `web:py-10` (`settings-screen-shell.tsx`, the branch taken when `keyboardAware` is false).
 - **Platform branching:** no `Platform.OS` or `Platform.select` call in `privacy-security-screen.tsx`, `preference-row.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`.
 - **Viewport measurement:** no `useWindowDimensions`, `Dimensions.get` or breakpoint hook in `privacy-security-screen.tsx`, `preference-row.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`.
 
@@ -63,7 +63,7 @@ BeeUI's [mobile-first responsive contract](/docs/responsive/) is the framework-l
 
 ## Accessibility
 
-Read from the screen file and the 3 pattern-local files it imports: `privacy-security-screen.tsx`, `preference-row.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 3 pattern-local files in its runtime import closure, direct and transitive: `privacy-security-screen.tsx`, `preference-row.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`. Every fact below is scoped to those files and to nothing else.
 
 - **Roles this screen sets itself:** none set in `privacy-security-screen.tsx`, `preference-row.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`.
 - **Accessibility states and properties it sets itself:** `accessibilityLabel` (`privacy-security-screen.tsx`, `preference-row.tsx`).

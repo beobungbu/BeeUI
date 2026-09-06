@@ -43,7 +43,7 @@ Common product states such as loading, success, empty, error, permission-like re
 
 ## Responsive contract
 
-Read from the screen file and the 3 pattern-local files it imports: `social-feed-screen.tsx`, `post-card.tsx`, `screen-shell.tsx`, `social-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 3 pattern-local files in its runtime import closure, direct and transitive: `social-feed-screen.tsx`, `post-card.tsx`, `screen-shell.tsx`, `social-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
 
 - **BeeUI layout primitives rendered:** `Box` (`screen-shell.tsx`), `HStack` (`post-card.tsx`, `social-feed-screen.tsx`), `Screen` (`screen-shell.tsx`), `VStack` (`post-card.tsx`, `screen-shell.tsx`, `social-feed-screen.tsx`).
 - **Scroll ownership:** `ScrollView` (`screen-shell.tsx`).
@@ -58,7 +58,7 @@ BeeUI's [mobile-first responsive contract](/docs/responsive/) is the framework-l
 
 ## Accessibility
 
-Read from the screen file and the 3 pattern-local files it imports: `social-feed-screen.tsx`, `post-card.tsx`, `screen-shell.tsx`, `social-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 3 pattern-local files in its runtime import closure, direct and transitive: `social-feed-screen.tsx`, `post-card.tsx`, `screen-shell.tsx`, `social-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
 
 - **Roles this screen sets itself:** none set in `social-feed-screen.tsx`, `post-card.tsx`, `screen-shell.tsx`, `social-fixtures.ts`.
 - **Accessibility states and properties it sets itself:** `accessibilityLabel` (`post-card.tsx`), `accessible` (`post-card.tsx`).

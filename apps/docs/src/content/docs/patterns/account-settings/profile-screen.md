@@ -38,14 +38,14 @@ Common product states such as loading, success, empty, error, permission-like re
 
 ## Responsive contract
 
-Read from the screen file and the 4 pattern-local files it imports: `profile-screen.tsx`, `profile-header.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`, `account-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 4 pattern-local files in its runtime import closure, direct and transitive: `profile-screen.tsx`, `profile-header.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`, `account-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
 
-- **BeeUI layout primitives rendered:** `Box` (`profile-header.tsx`, `profile-screen.tsx`, `settings-screen-shell.tsx`), `HStack` (`profile-header.tsx`, `profile-screen.tsx`), `KeyboardAwareScreen` (`settings-screen-shell.tsx`), `Screen` (`settings-screen-shell.tsx`), `VStack` (`profile-header.tsx`, `profile-screen.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`).
-- **Scroll ownership:** `ScrollView` (`settings-screen-shell.tsx`).
+- **BeeUI layout primitives rendered:** `Box` (`profile-header.tsx`, `profile-screen.tsx`; `settings-screen-shell.tsx`, the branch taken when `keyboardAware` is false), `HStack` (`profile-header.tsx`, `profile-screen.tsx`), `Screen` (`settings-screen-shell.tsx`, the branch taken when `keyboardAware` is false), `VStack` (`profile-header.tsx`, `profile-screen.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`).
+- **Scroll ownership:** `ScrollView` (`settings-screen-shell.tsx`, the branch taken when `keyboardAware` is false).
 - **Horizontal scrolling:** no `horizontal` scroll container in `profile-screen.tsx`, `profile-header.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`, `account-fixtures.ts`.
-- **Width constraint:** `contentWidth="md"` (`settings-screen-shell.tsx`).
+- **Width constraint:** `max-w-[680px]` (`settings-screen-shell.tsx`, the branch taken when `keyboardAware` is false).
 - **Breakpoint-prefixed utility classes:** none in `profile-screen.tsx`, `profile-header.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`, `account-fixtures.ts`.
-- **Platform-prefixed utility classes:** `web:p-6` (`profile-header.tsx`), `web:py-10` (`settings-screen-shell.tsx`).
+- **Platform-prefixed utility classes:** `web:p-6` (`profile-header.tsx`), `web:py-10` (`settings-screen-shell.tsx`, the branch taken when `keyboardAware` is false).
 - **Platform branching:** no `Platform.OS` or `Platform.select` call in `profile-screen.tsx`, `profile-header.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`, `account-fixtures.ts`.
 - **Viewport measurement:** no `useWindowDimensions`, `Dimensions.get` or breakpoint hook in `profile-screen.tsx`, `profile-header.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`, `account-fixtures.ts`.
 
@@ -53,7 +53,7 @@ BeeUI's [mobile-first responsive contract](/docs/responsive/) is the framework-l
 
 ## Accessibility
 
-Read from the screen file and the 4 pattern-local files it imports: `profile-screen.tsx`, `profile-header.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`, `account-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 4 pattern-local files in its runtime import closure, direct and transitive: `profile-screen.tsx`, `profile-header.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`, `account-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
 
 - **Roles this screen sets itself:** none set in `profile-screen.tsx`, `profile-header.tsx`, `settings-screen-shell.tsx`, `settings-section.tsx`, `account-fixtures.ts`.
 - **Accessibility states and properties it sets itself:** `accessibilityLabel` (`profile-screen.tsx`, `profile-header.tsx`), `accessible` (`profile-header.tsx`).

@@ -42,14 +42,14 @@ Common product states such as loading, success, empty, error, permission-like re
 
 ## Responsive contract
 
-Read from the screen file and the 1 pattern-local file it imports: `forgot-password-screen.tsx`, `auth-shared.tsx`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 1 pattern-local file in its runtime import closure, direct and transitive: `forgot-password-screen.tsx`, `auth-shared.tsx`. Every fact below is scoped to those files and to nothing else.
 
 - **BeeUI layout primitives rendered:** `Box` (`auth-shared.tsx`), `HStack` (`auth-shared.tsx`), `KeyboardAwareScreen` (`auth-shared.tsx`), `VStack` (`auth-shared.tsx`, `forgot-password-screen.tsx`).
-- **Scroll ownership:** no scroll container is rendered in `forgot-password-screen.tsx`, `auth-shared.tsx`.
+- **Scroll ownership:** no `ScrollView`, `FlatList`, `SectionList` or `VirtualizedList` element in `forgot-password-screen.tsx`, `auth-shared.tsx`; scrolling is owned by the composed `KeyboardAwareScreen`, whose own page derives it.
 - **Horizontal scrolling:** no `horizontal` scroll container in `forgot-password-screen.tsx`, `auth-shared.tsx`.
 - **Width constraint:** `contentWidth="sm"` (`auth-shared.tsx`).
 - **Breakpoint-prefixed utility classes:** none in `forgot-password-screen.tsx`, `auth-shared.tsx`.
-- **Platform-prefixed utility classes:** `web:py-12` (`auth-shared.tsx`).
+- **Platform-prefixed utility classes:** `web:py-12` (`auth-shared.tsx`, the branch taken when `compact` is false).
 - **Platform branching:** no `Platform.OS` or `Platform.select` call in `forgot-password-screen.tsx`, `auth-shared.tsx`.
 - **Viewport measurement:** no `useWindowDimensions`, `Dimensions.get` or breakpoint hook in `forgot-password-screen.tsx`, `auth-shared.tsx`.
 
@@ -57,7 +57,7 @@ BeeUI's [mobile-first responsive contract](/docs/responsive/) is the framework-l
 
 ## Accessibility
 
-Read from the screen file and the 1 pattern-local file it imports: `forgot-password-screen.tsx`, `auth-shared.tsx`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 1 pattern-local file in its runtime import closure, direct and transitive: `forgot-password-screen.tsx`, `auth-shared.tsx`. Every fact below is scoped to those files and to nothing else.
 
 - **Roles this screen sets itself:** none set in `forgot-password-screen.tsx`, `auth-shared.tsx`.
 - **Accessibility states and properties it sets itself:** `accessibilityLabel` (`auth-shared.tsx`).

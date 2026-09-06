@@ -52,12 +52,12 @@ Common product states such as loading, success, empty, error, permission-like re
 
 ## Responsive contract
 
-Read from the screen file and the 1 pattern-local file it imports: `change-password-screen.tsx`, `settings-screen-shell.tsx`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 1 pattern-local file in its runtime import closure, direct and transitive: `change-password-screen.tsx`, `settings-screen-shell.tsx`. Every fact below is scoped to those files and to nothing else.
 
-- **BeeUI layout primitives rendered:** `Box` (`change-password-screen.tsx`, `settings-screen-shell.tsx`), `HStack` (`change-password-screen.tsx`), `KeyboardAwareScreen` (`settings-screen-shell.tsx`), `Screen` (`settings-screen-shell.tsx`), `VStack` (`change-password-screen.tsx`, `settings-screen-shell.tsx`).
-- **Scroll ownership:** `ScrollView` (`settings-screen-shell.tsx`).
+- **BeeUI layout primitives rendered:** `Box` (`settings-screen-shell.tsx`; `change-password-screen.tsx`, only when `success` is false), `HStack` (`change-password-screen.tsx`, only when `success` is false), `KeyboardAwareScreen` (`settings-screen-shell.tsx`, only when `keyboardAware` is true), `Screen` (`settings-screen-shell.tsx`, only when `keyboardAware` is false), `VStack` (`settings-screen-shell.tsx`; `change-password-screen.tsx`, only when `success` is false).
+- **Scroll ownership:** `ScrollView` (`settings-screen-shell.tsx`, only when `keyboardAware` is false).
 - **Horizontal scrolling:** no `horizontal` scroll container in `change-password-screen.tsx`, `settings-screen-shell.tsx`.
-- **Width constraint:** `contentWidth="md"` (`settings-screen-shell.tsx`).
+- **Width constraint:** `contentWidth="md"` (`settings-screen-shell.tsx`, only when `keyboardAware` is true), `max-w-[680px]` (`settings-screen-shell.tsx`, only when `keyboardAware` is false).
 - **Breakpoint-prefixed utility classes:** none in `change-password-screen.tsx`, `settings-screen-shell.tsx`.
 - **Platform-prefixed utility classes:** `web:py-10` (`settings-screen-shell.tsx`).
 - **Platform branching:** no `Platform.OS` or `Platform.select` call in `change-password-screen.tsx`, `settings-screen-shell.tsx`.
@@ -67,7 +67,7 @@ BeeUI's [mobile-first responsive contract](/docs/responsive/) is the framework-l
 
 ## Accessibility
 
-Read from the screen file and the 1 pattern-local file it imports: `change-password-screen.tsx`, `settings-screen-shell.tsx`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 1 pattern-local file in its runtime import closure, direct and transitive: `change-password-screen.tsx`, `settings-screen-shell.tsx`. Every fact below is scoped to those files and to nothing else.
 
 - **Roles this screen sets itself:** none set in `change-password-screen.tsx`, `settings-screen-shell.tsx`.
 - **Accessibility states and properties it sets itself:** none set in `change-password-screen.tsx`, `settings-screen-shell.tsx`.

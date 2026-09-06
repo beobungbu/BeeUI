@@ -45,7 +45,7 @@ Common product states such as loading, success, empty, error, permission-like re
 
 ## Responsive contract
 
-Read from the screen file and the 5 pattern-local files it imports: `wallet-screen.tsx`, `balance-card.tsx`, `screen-shell.tsx`, `section-header.tsx`, `transaction-row.tsx`, `trend-indicator.tsx`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 5 pattern-local files in its runtime import closure, direct and transitive: `wallet-screen.tsx`, `balance-card.tsx`, `screen-shell.tsx`, `section-header.tsx`, `transaction-row.tsx`, `trend-indicator.tsx`. Every fact below is scoped to those files and to nothing else.
 
 - **BeeUI layout primitives rendered:** `Box` (`screen-shell.tsx`, `transaction-row.tsx`), `HStack` (`balance-card.tsx`, `section-header.tsx`, `transaction-row.tsx`, `wallet-screen.tsx`), `VStack` (`balance-card.tsx`, `section-header.tsx`, `transaction-row.tsx`, `wallet-screen.tsx`).
 - **Scroll ownership:** `ScrollView` (`screen-shell.tsx`).
@@ -60,7 +60,7 @@ BeeUI's [mobile-first responsive contract](/docs/responsive/) is the framework-l
 
 ## Accessibility
 
-Read from the screen file and the 5 pattern-local files it imports: `wallet-screen.tsx`, `balance-card.tsx`, `screen-shell.tsx`, `section-header.tsx`, `transaction-row.tsx`, `trend-indicator.tsx`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 5 pattern-local files in its runtime import closure, direct and transitive: `wallet-screen.tsx`, `balance-card.tsx`, `screen-shell.tsx`, `section-header.tsx`, `transaction-row.tsx`, `trend-indicator.tsx`. Every fact below is scoped to those files and to nothing else.
 
 - **Roles this screen sets itself:** `button` (`transaction-row.tsx`).
 - **Accessibility states and properties it sets itself:** `accessibilityLabel` (`wallet-screen.tsx`, `transaction-row.tsx`, `trend-indicator.tsx`).

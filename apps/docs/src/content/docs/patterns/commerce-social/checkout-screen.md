@@ -41,7 +41,7 @@ Common product states such as loading, success, empty, error, permission-like re
 
 ## Responsive contract
 
-Read from the screen file and the 3 pattern-local files it imports: `checkout-screen.tsx`, `checkout-section.tsx`, `screen-shell.tsx`, `commerce-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 3 pattern-local files in its runtime import closure, direct and transitive: `checkout-screen.tsx`, `checkout-section.tsx`, `screen-shell.tsx`, `commerce-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
 
 - **BeeUI layout primitives rendered:** `Box` (`screen-shell.tsx`), `HStack` (`checkout-screen.tsx`), `Screen` (`screen-shell.tsx`), `VStack` (`checkout-screen.tsx`, `checkout-section.tsx`, `screen-shell.tsx`).
 - **Scroll ownership:** `ScrollView` (`screen-shell.tsx`).
@@ -56,7 +56,7 @@ BeeUI's [mobile-first responsive contract](/docs/responsive/) is the framework-l
 
 ## Accessibility
 
-Read from the screen file and the 3 pattern-local files it imports: `checkout-screen.tsx`, `checkout-section.tsx`, `screen-shell.tsx`, `commerce-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 3 pattern-local files in its runtime import closure, direct and transitive: `checkout-screen.tsx`, `checkout-section.tsx`, `screen-shell.tsx`, `commerce-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
 
 - **Roles this screen sets itself:** none set in `checkout-screen.tsx`, `checkout-section.tsx`, `screen-shell.tsx`, `commerce-fixtures.ts`.
 - **Accessibility states and properties it sets itself:** none set in `checkout-screen.tsx`, `checkout-section.tsx`, `screen-shell.tsx`, `commerce-fixtures.ts`.

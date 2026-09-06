@@ -13,7 +13,9 @@ import {
   collectPublicPatternViolations,
   extractPatternLayoutFacts,
   extractPropsTypeSource,
+  patternBranchAnalysis,
   patternLayoutVocabularyViolations,
+  patternOpaqueShapeViolations,
   PATTERN_BREAKPOINT_NONE_CLAIM,
   PATTERN_COMPOSED_NONE_CLAIM,
   PATTERN_HORIZONTAL_NONE_CLAIM,
@@ -25,6 +27,7 @@ import {
   PATTERN_STATES_NONE_CLAIM,
   PATTERN_VIEWPORT_NONE_CLAIM,
   PATTERN_WIDTH_NONE_CLAIM,
+  publishedFactGroups,
   renderPublicPatternIndex,
   renderPublicPatternPage,
   sectionBody,
@@ -286,8 +289,10 @@ test('extractPatternLayoutFacts reads each responsive fact out of the JSX and cl
       assert.deepEqual([...facts.platformApi.keys()], ['Platform.OS']);
       assert.deepEqual([...facts.viewport.keys()], ['useWindowDimensions']);
       // Every fact carries the file it was read from, which is what makes the rendered line
-      // attributable rather than a floating assertion about "the pattern".
-      assert.deepEqual([...facts.primitives.get('Screen')], ['screen.tsx']);
+      // attributable rather than a floating assertion about "the pattern", and the conditions
+      // under which that file declares it — none here, so the empty condition.
+      assert.deepEqual([...facts.primitives.get('Screen').keys()], ['screen.tsx']);
+      assert.deepEqual([...facts.primitives.get('Screen').get('screen.tsx')], ['']);
     },
   );
 });
@@ -330,6 +335,270 @@ test('extractPatternLayoutFacts counts only Platform.OS and Platform.select as p
   );
 });
 
+// --- Prop-conditional branches ----------------------------------------------
+//
+// A pack-local shell returns one of two layouts depending on a prop the screen fixes. Reading it
+// as a flat bag of JSX published `contentWidth="md"` on six account-settings pages whose screens
+// never pass `keyboardAware`, and hid the `max-w-[680px]` that does apply. The invariant these
+// tests hold: no page publishes a fact from a branch its screen does not select, and a fact that
+// survives from a branch always names the condition that selects it.
+
+const BRANCHING_SHELL =
+  'export function Shell({ children, wide = false }) {\n' +
+  '  if (wide) {\n' +
+  '    return <Screen contentWidth="md">{children}</Screen>;\n' +
+  '  }\n' +
+  '  return <Box className="mx-auto max-w-[680px] web:py-10">{children}</Box>;\n' +
+  '}\n';
+
+test('a fact from a branch the screen does not select is not published at all', () => {
+  withFixture(
+    {
+      'screen.tsx': "import { Shell } from './shell';\nexport const S = () => <Shell><VStack /></Shell>;\n",
+      'shell.tsx': BRANCHING_SHELL,
+    },
+    (rel) => {
+      const facts = extractPatternLayoutFacts(fixtureFiles(['screen.tsx', 'shell.tsx'], rel));
+      // `<Shell>` passes no `wide`, so the default branch is the one that renders.
+      assert.deepEqual([...facts.primitives.keys()].sort(), ['Box', 'VStack']);
+      assert.deepEqual([...facts.widths.keys()], ['max-w-[680px]']);
+      assert.deepEqual([...facts.scrollContainers.keys()], []);
+      // The surviving branch fact names the condition that selects it; the screen's own
+      // unconditional `VStack` carries no clause.
+      assert.deepEqual([...facts.widths.get('max-w-[680px]').get('shell.tsx')], ['the branch taken when `wide` is false']);
+      assert.deepEqual([...facts.primitives.get('VStack').get('screen.tsx')], ['']);
+    },
+  );
+});
+
+test('the other branch is published, and named, when the screen selects it', () => {
+  withFixture(
+    {
+      'screen.tsx': "import { Shell } from './shell';\nexport const S = () => <Shell wide><VStack /></Shell>;\n",
+      'shell.tsx': BRANCHING_SHELL,
+    },
+    (rel) => {
+      const facts = extractPatternLayoutFacts(fixtureFiles(['screen.tsx', 'shell.tsx'], rel));
+      assert.deepEqual([...facts.widths.keys()], ['contentWidth="md"']);
+      assert.deepEqual([...facts.widths.get('contentWidth="md"').get('shell.tsx')], ['the branch taken when `wide` is true']);
+      assert.deepEqual([...facts.primitives.keys()].sort(), ['Screen', 'VStack']);
+    },
+  );
+});
+
+test('a screen that renders both branches publishes both, each under its own condition', () => {
+  withFixture(
+    {
+      'screen.tsx':
+        "import { Shell } from './shell';\n" +
+        'export const S = ({ done }) => (done ? <Shell><VStack /></Shell> : <Shell wide><VStack /></Shell>);\n',
+      'shell.tsx': BRANCHING_SHELL,
+    },
+    (rel) => {
+      const facts = extractPatternLayoutFacts(fixtureFiles(['screen.tsx', 'shell.tsx'], rel));
+      assert.deepEqual([...facts.widths.keys()].sort(), ['contentWidth="md"', 'max-w-[680px]']);
+      // Neither reading is "the branch taken": the screen renders the shell twice, once each way.
+      assert.deepEqual([...facts.widths.get('contentWidth="md"').get('shell.tsx')], ['only when `wide` is true']);
+      assert.deepEqual([...facts.widths.get('max-w-[680px]').get('shell.tsx')], ['only when `wide` is false']);
+    },
+  );
+});
+
+test('a value written into both arms of one condition is published without a clause', () => {
+  withFixture(
+    {
+      // Rendered both ways, as `change-password-screen.tsx` renders its shell, so both arms live.
+      'screen.tsx':
+        "import { Shell } from './shell';\n" +
+        'export const S = ({ done }) => (done ? <Shell><VStack /></Shell> : <Shell wide><VStack /></Shell>);\n',
+      'shell.tsx':
+        'export function Shell({ children, wide = false }) {\n' +
+        '  if (wide) {\n' +
+        '    return <Box className="web:py-10">{children}</Box>;\n' +
+        '  }\n' +
+        '  return <Box className="web:py-10">{children}</Box>;\n' +
+        '}\n',
+    },
+    (rel) => {
+      const facts = extractPatternLayoutFacts(fixtureFiles(['screen.tsx', 'shell.tsx'], rel));
+      // Both arms declare it, so the condition decides nothing and naming it would say less than
+      // saying nothing.
+      assert.deepEqual([...facts.platformClasses.get('web:py-10').get('shell.tsx')], ['']);
+    },
+  );
+});
+
+test('a class inside a prop ternary is scoped to the arm the screen selects', () => {
+  const shell =
+    'export function Shell({ children, compact = false }) {\n' +
+    "  return <Box className={compact ? 'px-5 py-6' : 'px-5 web:py-12'}>{children}</Box>;\n" +
+    '}\n';
+  withFixture(
+    {
+      'screen.tsx': "import { Shell } from './shell';\nexport const S = () => <Shell compact><VStack /></Shell>;\n",
+      'shell.tsx': shell,
+    },
+    (rel) => {
+      const facts = extractPatternLayoutFacts(fixtureFiles(['screen.tsx', 'shell.tsx'], rel));
+      assert.equal(facts.platformClasses.size, 0, '`web:py-12` is in the arm a compact screen does not take');
+    },
+  );
+  withFixture(
+    {
+      'screen.tsx': "import { Shell } from './shell';\nexport const S = () => <Shell><VStack /></Shell>;\n",
+      'shell.tsx': shell,
+    },
+    (rel) => {
+      const facts = extractPatternLayoutFacts(fixtureFiles(['screen.tsx', 'shell.tsx'], rel));
+      assert.deepEqual([...facts.platformClasses.get('web:py-12').get('shell.tsx')], ['the branch taken when `compact` is false']);
+    },
+  );
+});
+
+test('a branch nothing in the read set resolves keeps both arms, each named', () => {
+  withFixture(
+    {
+      // `Shell` is never rendered here, so neither arm can be ruled out.
+      'screen.tsx': "import { helper } from './shell';\nexport const S = () => <VStack>{helper}</VStack>;\n",
+      'shell.tsx': `export const helper = 1;\n${BRANCHING_SHELL}`,
+    },
+    (rel) => {
+      const facts = extractPatternLayoutFacts(fixtureFiles(['screen.tsx', 'shell.tsx'], rel));
+      assert.deepEqual([...facts.widths.get('contentWidth="md"').get('shell.tsx')], ['only when `wide` is true']);
+      assert.deepEqual([...facts.widths.get('max-w-[680px]').get('shell.tsx')], ['only when `wide` is false']);
+    },
+  );
+});
+
+test('extractPatternLayoutFacts reads arbitrary and multi-segment max-w classes', () => {
+  withFixture(
+    { 'screen.tsx': 'export const S = () => <Box className="max-w-[680px] max-w-screen-md max-w-3xl maxw-8" />;\n' },
+    (rel) => {
+      const facts = extractPatternLayoutFacts(fixtureFiles(['screen.tsx'], rel));
+      // `max-w-[680px]` is the spelling `settings-screen-shell.tsx` uses; reading only the scale
+      // form published "no width constraint" reasoning on six pages that have one.
+      assert.deepEqual([...facts.widths.keys()].sort(), ['max-w-3xl', 'max-w-[680px]', 'max-w-screen-md']);
+    },
+  );
+});
+
+test('the source oracle refuses a fact lifted out of a branch the screen does not select', () => {
+  withFixture(
+    {
+      'screen.tsx': "import { Shell } from './shell';\nexport const S = () => <Shell><VStack /></Shell>;\n",
+      'shell.tsx': BRANCHING_SHELL,
+    },
+    (rel) => {
+      const pattern = makePattern({ source: rel('screen.tsx'), beeuiComponents: [] });
+      const page = '\n## Responsive contract\n\n- **Width constraint:** `contentWidth="md"` (`shell.tsx`).\n\n## Accessibility\n\n- x\n\n## Related\n';
+      const violations = collectPatternDerivedClaimViolations(page, pattern, ROOT_DIR);
+      assert.equal(violations.length, 1, JSON.stringify(violations));
+      assert.match(violations[0], /publishes `contentWidth="md"` as a derived fact/);
+    },
+  );
+});
+
+test('the source oracle refuses a branch-only fact published with no condition', () => {
+  withFixture(
+    {
+      'screen.tsx': "import { Shell } from './shell';\nexport const S = () => <Shell><VStack /></Shell>;\n",
+      'shell.tsx': BRANCHING_SHELL,
+    },
+    (rel) => {
+      const pattern = makePattern({ source: rel('screen.tsx'), beeuiComponents: [] });
+      const bare = '\n## Responsive contract\n\n- **Width constraint:** `max-w-[680px]` (`shell.tsx`).\n\n## Accessibility\n\n- x\n\n## Related\n';
+      const violations = collectPatternDerivedClaimViolations(bare, pattern, ROOT_DIR);
+      assert.equal(violations.length, 1, JSON.stringify(violations));
+      assert.match(violations[0], /publishes `max-w-\[680px\]` from `shell\.tsx` with no condition/);
+
+      // The same fact with its condition named is exactly what the page should publish.
+      const named = '\n## Responsive contract\n\n- **Width constraint:** `max-w-[680px]` (`shell.tsx`, the branch taken when `wide` is false).\n\n## Accessibility\n\n- x\n\n## Related\n';
+      assert.deepEqual(collectPatternDerivedClaimViolations(named, pattern, ROOT_DIR), []);
+    },
+  );
+});
+
+test('the source oracle does not demand a condition for a fact the file states unconditionally', () => {
+  withFixture(
+    {
+      'screen.tsx': "import { Shell } from './shell';\nexport const S = () => <Shell><VStack /></Shell>;\n",
+      // `max-w-[680px]` appears outside the branch as well as inside it.
+      'shell.tsx':
+        'export function Shell({ children, wide = false }) {\n' +
+        '  if (wide) {\n' +
+        '    return <Screen contentWidth="md">{children}</Screen>;\n' +
+        '  }\n' +
+        '  return <Box className="max-w-[680px]">{children}</Box>;\n' +
+        '}\n' +
+        'export const outer = <Box className="max-w-[680px]" />;\n',
+    },
+    (rel) => {
+      const pattern = makePattern({ source: rel('screen.tsx'), beeuiComponents: [] });
+      const page = '\n## Responsive contract\n\n- **Width constraint:** `max-w-[680px]` (`shell.tsx`).\n\n## Accessibility\n\n- x\n\n## Related\n';
+      assert.deepEqual(collectPatternDerivedClaimViolations(page, pattern, ROOT_DIR), []);
+    },
+  );
+});
+
+test('the oracle blanks the branch the screen does not select, reading the source as text', () => {
+  withFixture(
+    {
+      'screen.tsx': "import { Shell } from './shell';\nexport const S = () => <Shell><VStack /></Shell>;\n",
+      'shell.tsx': BRANCHING_SHELL,
+    },
+    (rel) => {
+      const analysis = patternBranchAnalysis(fixtureFiles(['screen.tsx', 'shell.tsx'], rel));
+      const shell = analysis.find((file) => file.name === 'shell.tsx');
+      // The oracle reaches the same conclusion as the AST extractor by counting braces and
+      // quotes, sharing no code with it, so a disagreement surfaces as a violation.
+      assert.ok(!shell.live.includes('contentWidth'), shell.live);
+      assert.ok(shell.live.includes('max-w-[680px]'), shell.live);
+      assert.ok(shell.stripped.includes('contentWidth'), 'the unblanked source still has both arms');
+    },
+  );
+});
+
+test('publishedFactGroups reads a value, its files and its condition back off the page', () => {
+  const section = '- **Width constraint:** `max-w-[680px]` (`shell.tsx`, the branch taken when `wide` is false), `contentWidth="sm"` (`a.tsx`, `b.tsx`).\n';
+  assert.deepEqual(publishedFactGroups(section), [
+    { value: 'max-w-[680px]', files: ['shell.tsx'], condition: 'the branch taken when `wide` is false' },
+    { value: 'contentWidth="sm"', files: ['a.tsx', 'b.tsx'], condition: '' },
+  ]);
+});
+
+// --- Shapes the derivation cannot see ---------------------------------------
+//
+// None of these occurs in `apps/showcase/patterns/**` today. Each one would make a real fact
+// invisible to both the AST extractor and the textual oracle — an aliased `<Scroller />` would
+// publish "no scroll container" — so the day one appears it has to stop CI, not ship a page.
+
+const OPAQUE_SOURCE = new Map([
+  ['a qualified JSX tag', "import * as RN from 'x';\nexport const S = () => <RN.ScrollView />;\n"],
+  ['a namespace import', "import * as RN from 'react-native';\nexport const S = () => null;\n"],
+  ['an aliased import', "import { ScrollView as Scroller } from 'react-native';\nexport const S = () => <Scroller />;\n"],
+  ['element access', "export const S = () => Platform['OS'];\n"],
+  ['a destructure', 'export const S = () => { const { OS } = Platform; return OS; };\n'],
+  ['a dynamic import', "export const S = () => import('./shell');\n"],
+  ['require', "export const S = () => require('./shell');\n"],
+]);
+
+for (const [shape, source] of OPAQUE_SOURCE) {
+  test(`the generator refuses ${shape}, which neither derivation can read`, () => {
+    const violations = patternOpaqueShapeViolations([{ path: 'patterns/screen.tsx', source }]);
+    assert.ok(violations.length > 0, `nothing refused ${shape}`);
+    assert.match(violations[0], /which the pattern fact derivation cannot see/);
+  });
+}
+
+test('the generator accepts the qualified tags and imports that hide nothing', () => {
+  const files = [
+    { path: 'patterns/screen.tsx', source: "import * as React from 'react';\nexport const S = () => <React.Fragment />;\n" },
+    { path: 'patterns/other.tsx', source: "import { Button as Cta } from '@beemvp/beeui-ui';\nexport const O = () => <Cta />;\n" },
+  ];
+  // `React.Fragment` and an aliased `Button` cannot turn a tracked primitive into silence.
+  assert.deepEqual(patternOpaqueShapeViolations(files), []);
+});
+
 test('renderPublicPatternPage scopes every negative to the files it read and names them', () => {
   withFixture(
     { 'screen.tsx': "import { Button } from '@beemvp/beeui-ui';\nexport const S = () => <Button />;\n" },
@@ -347,6 +616,58 @@ test('renderPublicPatternPage scopes every negative to the files it read and nam
       // second copy that drifts from the page deriving them.
       assert.match(a11y, /\[`Button`\]\(\/docs\/components\/button\/\)/);
       assert.ok(!a11y.includes('roles and states it sets are restated'));
+    },
+  );
+});
+
+test('the read-scope sentence describes the closure it actually walked, not a direct-import list', () => {
+  withFixture(
+    {
+      // `screen.tsx` imports `shell.tsx`; `deep.tsx` arrives through `shell.tsx`, so "the 2 files
+      // it imports" would assert a relation the screen does not have.
+      'screen.tsx': "import { Shell } from './shell';\nexport const S = () => <Shell />;\n",
+      'shell.tsx': "import { deep } from './deep';\nexport const Shell = () => <Box>{deep}</Box>;\n",
+      'deep.tsx': 'export const deep = 1;\n',
+    },
+    (rel) => {
+      const page = renderPublicPatternPage(makePattern({ source: rel('screen.tsx'), propsType: null }), ROOT_DIR);
+      const responsive = sectionBody(page, 'Responsive contract');
+      assert.match(responsive, /the 2 pattern-local files in its runtime import closure, direct and transitive/);
+      assert.ok(!responsive.includes('files it imports'), 'the closure is not a direct-import list');
+    },
+  );
+});
+
+test('the scroll negative is scoped to elements and hands the question to the family that scrolls', () => {
+  withFixture(
+    {
+      'screen.tsx':
+        "import { KeyboardAwareScreen } from '@beemvp/beeui-ui';\n" +
+        'export const S = () => <KeyboardAwareScreen><Box /></KeyboardAwareScreen>;\n',
+    },
+    (rel) => {
+      const responsive = sectionBody(
+        renderPublicPatternPage(makePattern({ source: rel('screen.tsx'), propsType: null }), ROOT_DIR),
+        'Responsive contract',
+      );
+      // `KeyboardAwareScreen` composes a `ScrollView`, so "no scroll container is rendered" was
+      // the wrong answer to the question the label asks. What this file can decide is elements.
+      assert.ok(responsive.includes('no `ScrollView`, `FlatList`, `SectionList` or `VirtualizedList` element'), responsive);
+      assert.match(responsive, /scrolling is owned by the composed `KeyboardAwareScreen`, whose own page derives it/);
+      assert.ok(!responsive.includes('no scroll container is rendered'), 'the categorical wording must be gone');
+    },
+  );
+});
+
+test('the scroll negative stays plain when nothing in the read set composes a scrolling family', () => {
+  withFixture(
+    { 'screen.tsx': "import { Box } from '@beemvp/beeui-ui';\nexport const S = () => <Box />;\n" },
+    (rel) => {
+      const responsive = sectionBody(
+        renderPublicPatternPage(makePattern({ source: rel('screen.tsx'), propsType: null }), ROOT_DIR),
+        'Responsive contract',
+      );
+      assert.ok(!responsive.includes('scrolling is owned by'), responsive);
     },
   );
 });
@@ -480,14 +801,56 @@ test('every pattern page derives its own Responsive contract and Accessibility b
     responsive.add(responsiveBody);
     accessibility.add(accessibilityBody);
   }
-  // Measured on the 37 canonical patterns: 37 distinct bodies for each section. The floor is the
-  // measured value, so a change that makes two pages agree — a fact dropped, a scope widened
-  // back to a shared paragraph — fails here instead of shipping.
+  // 37 distinct whole bodies — but the `Read from …` preamble names the screen file, so it alone
+  // makes every body unique and this assertion cannot fail on any change to the facts. It is kept
+  // because it is cheap, and it is not the guard; the guard is the next test.
   assert.ok(manifest.length >= 37, `expected at least 37 canonical patterns, found ${manifest.length}`);
   assert.equal(responsive.size, manifest.length, 'two patterns share a Responsive contract body');
   assert.equal(accessibility.size, manifest.length, 'two patterns share an Accessibility body');
-  assert.ok(responsive.size >= 37);
-  assert.ok(accessibility.size >= 37);
+});
+
+// The bullet list with the preamble and every file attribution removed: what the page says about
+// the screen, minus what it says about which files it read.
+function factBodyOf(section) {
+  return section
+    .split('\n')
+    .filter((line) => line.startsWith('- '))
+    .join('\n')
+    .replace(/`[^`]+\.(?:tsx?|json|md)`/gu, '')
+    .replace(/[\s,;]+/gu, ' ')
+    .trim();
+}
+
+test('the fact bodies themselves differ from page to page, not just the file lists', () => {
+  const clusters = { 'Responsive contract': new Map(), Accessibility: new Map() };
+  for (const pattern of buildPublicPatternManifest(ROOT_DIR)) {
+    const page = renderPublicPatternPage(pattern, ROOT_DIR);
+    for (const heading of Object.keys(clusters)) {
+      const body = factBodyOf(sectionBody(page, heading));
+      clusters[heading].set(body, (clusters[heading].get(body) ?? 0) + 1);
+    }
+  }
+
+  // Measured on the 37 canonical patterns, preamble and file names stripped. The floors are the
+  // measured values, so replacing the bullet lists with one shared sentence — the pre-PR defect,
+  // which the whole-body assertion above survives because the preamble carries it — drops the
+  // distinct count to 1 and raises the largest cluster to 37, and fails here twice.
+  const measured = {
+    'Responsive contract': { distinct: 21, largestCluster: 4 },
+    Accessibility: { distinct: 36, largestCluster: 2 },
+  };
+  for (const [heading, floor] of Object.entries(measured)) {
+    const counts = clusters[heading];
+    assert.ok(
+      counts.size >= floor.distinct,
+      `${heading}: ${counts.size} distinct fact bodies, below the measured ${floor.distinct}`,
+    );
+    const largest = Math.max(...counts.values());
+    assert.ok(
+      largest <= floor.largestCluster,
+      `${heading}: ${largest} pages share one fact body, above the measured ${floor.largestCluster}`,
+    );
+  }
 });
 
 // --- Real-repo contract, kept as a smoke test alongside the synthetic cases --

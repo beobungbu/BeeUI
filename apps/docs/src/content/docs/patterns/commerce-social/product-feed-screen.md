@@ -41,9 +41,9 @@ Common product states such as loading, success, empty, error, permission-like re
 
 ## Responsive contract
 
-Read from the screen file and the 6 pattern-local files it imports: `product-feed-screen.tsx`, `price-row.tsx`, `product-card.tsx`, `product-image.tsx`, `rating-summary.tsx`, `screen-shell.tsx`, `commerce-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 6 pattern-local files in its runtime import closure, direct and transitive: `product-feed-screen.tsx`, `price-row.tsx`, `product-card.tsx`, `product-image.tsx`, `rating-summary.tsx`, `screen-shell.tsx`, `commerce-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
 
-- **BeeUI layout primitives rendered:** `Box` (`product-feed-screen.tsx`, `product-image.tsx`, `screen-shell.tsx`), `HStack` (`price-row.tsx`, `product-feed-screen.tsx`, `rating-summary.tsx`), `Screen` (`screen-shell.tsx`), `VStack` (`product-card.tsx`, `product-feed-screen.tsx`, `product-image.tsx`, `screen-shell.tsx`).
+- **BeeUI layout primitives rendered:** `Box` (`product-feed-screen.tsx`, `product-image.tsx`, `screen-shell.tsx`), `HStack` (`price-row.tsx`, `rating-summary.tsx`; `product-feed-screen.tsx`, only when `loading` is false), `Screen` (`screen-shell.tsx`), `VStack` (`product-card.tsx`, `product-feed-screen.tsx`, `product-image.tsx`, `screen-shell.tsx`).
 - **Scroll ownership:** `ScrollView` (`screen-shell.tsx`).
 - **Horizontal scrolling:** no `horizontal` scroll container in `product-feed-screen.tsx`, `price-row.tsx`, `product-card.tsx`, `product-image.tsx`, `rating-summary.tsx`, `screen-shell.tsx`, `commerce-fixtures.ts`.
 - **Width constraint:** `max-w-2xl` (`screen-shell.tsx`), `max-w-3xl` (`screen-shell.tsx`).
@@ -56,7 +56,7 @@ BeeUI's [mobile-first responsive contract](/docs/responsive/) is the framework-l
 
 ## Accessibility
 
-Read from the screen file and the 6 pattern-local files it imports: `product-feed-screen.tsx`, `price-row.tsx`, `product-card.tsx`, `product-image.tsx`, `rating-summary.tsx`, `screen-shell.tsx`, `commerce-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 6 pattern-local files in its runtime import closure, direct and transitive: `product-feed-screen.tsx`, `price-row.tsx`, `product-card.tsx`, `product-image.tsx`, `rating-summary.tsx`, `screen-shell.tsx`, `commerce-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
 
 - **Roles this screen sets itself:** `button` (`product-card.tsx`).
 - **Accessibility states and properties it sets itself:** `accessibilityIgnoresInvertColors` (`product-image.tsx`), `accessibilityLabel` (`product-feed-screen.tsx`, `product-card.tsx`, `product-image.tsx`), `accessible` (`product-image.tsx`).

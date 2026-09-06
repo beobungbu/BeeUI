@@ -38,7 +38,7 @@ Common product states such as loading, success, empty, error, permission-like re
 
 ## Responsive contract
 
-Read from the screen file and the 2 pattern-local files it imports: `payment-methods-screen.tsx`, `screen-shell.tsx`, `section-header.tsx`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 2 pattern-local files in its runtime import closure, direct and transitive: `payment-methods-screen.tsx`, `screen-shell.tsx`, `section-header.tsx`. Every fact below is scoped to those files and to nothing else.
 
 - **BeeUI layout primitives rendered:** `Box` (`screen-shell.tsx`), `HStack` (`payment-methods-screen.tsx`, `section-header.tsx`), `VStack` (`payment-methods-screen.tsx`, `section-header.tsx`).
 - **Scroll ownership:** `ScrollView` (`screen-shell.tsx`).
@@ -53,7 +53,7 @@ BeeUI's [mobile-first responsive contract](/docs/responsive/) is the framework-l
 
 ## Accessibility
 
-Read from the screen file and the 2 pattern-local files it imports: `payment-methods-screen.tsx`, `screen-shell.tsx`, `section-header.tsx`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 2 pattern-local files in its runtime import closure, direct and transitive: `payment-methods-screen.tsx`, `screen-shell.tsx`, `section-header.tsx`. Every fact below is scoped to those files and to nothing else.
 
 - **Roles this screen sets itself:** none set in `payment-methods-screen.tsx`, `screen-shell.tsx`, `section-header.tsx`.
 - **Accessibility states and properties it sets itself:** none set in `payment-methods-screen.tsx`, `screen-shell.tsx`, `section-header.tsx`.
