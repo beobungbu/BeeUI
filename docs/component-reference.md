@@ -618,7 +618,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/screens/account-screen.tsx`](../apps/showcase/patterns/account-settings/screens/account-screen.tsx), [`patterns/account-settings/screens/notification-settings-screen.tsx`](../apps/showcase/patterns/account-settings/screens/notification-settings-screen.tsx), [`patterns/account-settings/screens/privacy-security-screen.tsx`](../apps/showcase/patterns/account-settings/screens/privacy-security-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** The role is not in the prop type, and leaving `decorative` at its default also keeps the divider out of the accessibility tree, so `decorative={false}` is the only way to expose separator semantics. Thickness is fixed at one pixel with no thickness, length or inset prop; anything else comes from `className`.
+- **Limitations:** The role is owned here and omitted from the prop type: the component sets the separator role only when `decorative` is false, and while `decorative` is at its default the view is also marked as not an accessibility element of its own. Thickness is fixed at one pixel with no thickness, length or inset prop; anything else comes from `className`.
 
 ## `sheet`
 

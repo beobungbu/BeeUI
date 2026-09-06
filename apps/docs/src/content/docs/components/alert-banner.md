@@ -55,7 +55,7 @@ Stateless inline callout with no open/close or controlled prop; it live-announce
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `action` | `React.ReactNode` | — | Rendered below the description, indented to align with it (e.g. a retry or dismiss button). |
-| `announcement` | `string` | — | Overrides the text announced to screen readers on iOS when the banner appears; by default the title and description are joined and announced (only if both are plain string/number content). |
+| `announcement` | `string` | — | Overrides the text announced to screen readers on iOS when the banner appears; by default whichever of the title and description are plain string/number content are joined and announced, and `live="none"` suppresses the announcement entirely. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
 | `live` | `'none' \| 'polite' \| 'assertive'` | `'polite'` | Sets `accessibilityLiveRegion` and, on iOS, whether the announcement queues (`polite`) or interrupts (`assertive`); `none` suppresses the announcement entirely. Defaults to `polite`. |

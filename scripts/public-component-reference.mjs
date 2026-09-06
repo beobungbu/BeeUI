@@ -472,7 +472,7 @@ function normalizeCuratedProse(value) {
     .toLowerCase()
     .replace(/[`*_]/gu, '')
     .replace(/\s+/gu, ' ')
-    // Trailing whitespace is part of what gets stripped, not something stripped afterwards: with
+    // Trailing `.;:,` and whitespace, stripped together rather than one after the other: with
     // `.trim()` running last, one trailing space or newline left the final period in place and a
     // verbatim restatement compared unequal, so the rule passed on a copy plus an editing accident.
     .replace(/[.;:,\s]+$/u, '')

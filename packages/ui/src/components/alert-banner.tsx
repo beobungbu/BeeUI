@@ -52,7 +52,7 @@ export type AlertBannerProps = Omit<ViewProps, 'children'> &
   VariantProps<typeof alertBannerVariants> & {
     /** Rendered below the description, indented to align with it (e.g. a retry or dismiss button). */
     action?: React.ReactNode;
-    /** Overrides the text announced to screen readers on iOS when the banner appears; by default the title and description are joined and announced (only if both are plain string/number content). */
+    /** Overrides the text announced to screen readers on iOS when the banner appears; by default whichever of the title and description are plain string/number content are joined and announced, and `live="none"` suppresses the announcement entirely. */
     announcement?: string;
     className?: string;
     description?: React.ReactNode;
