@@ -204,7 +204,7 @@ export function PublicDocFixtures() {
 Use the code block's copy affordance to copy the exact fixture. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+The value column is capped at 60% of the row width, so a long value wraps inside that cap instead of pushing the label out. `label` and `value` are both required, and neither has a class-name hook — restyling means passing an element in place of the string.
 
 ## Related
 

@@ -167,7 +167,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+The list is a plain container with no description-list or list semantics — the label-to-value association is visual only. Each `DescriptionItem` is a metadata row, so its value column is capped at 60% of the row width and a long value wraps inside that cap rather than widening it.
 
 ## Related
 

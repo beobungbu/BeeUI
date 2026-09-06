@@ -26,6 +26,7 @@ import { stripSourceComments, extractClassMapAxes } from '../component-props-lib
 import {
   buildPublicComponentManifest,
   collectPropDescriptionCoverage,
+  collectCuratedLimitationViolations,
   collectRenderedPageViolations,
   collectDerivedClaimViolations,
   collectScopedAccessibilityFacts,
@@ -1653,13 +1654,69 @@ test('curated limitations survive alongside derived ones', () => {
   assert.match(renderPublicComponentPage(tooltip), /Never a press target and never interactive content/u);
 });
 
-// A family with no derivable constraint must still admit the gap rather than invent one.
+// A family with no derivable constraint must still admit the gap rather than invent one. Box is
+// a `View` plus a `className` — no variants, no platform branch, no omitted prop, nothing a
+// limitation could be read from — so its page keeps the admission.
 test('a family with nothing derivable still says none is curated', () => {
-  const text = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'text');
+  const box = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'box');
 
-  assert.match(renderPublicComponentPage(text), /No component-specific limitation is curated here/u);
+  assert.match(renderPublicComponentPage(box), /No component-specific limitation is curated here/u);
 });
 
+
+// The two ways the Limitations section fills up while saying nothing new. Both are mutations of
+// the shipped content: the repository passes, and each edit that would empty the section of
+// meaning fails.
+test('a limitation that restates the family own purpose is rejected', () => {
+  const restating = {
+    name: 'card',
+    purpose: 'Elevated/outlined surface with variant and spacing contract.',
+    behavior: 'Stateless elevated/outlined surface.',
+    limitations: 'Elevated/outlined surface with variant and spacing contract.',
+  };
+
+  assert.deepEqual(collectCuratedLimitationViolations([restating]), [
+    'card: limitations restates its own purpose verbatim; a limitation has to say something the rest of the page does not.',
+  ]);
+});
+
+test('a limitation that restates the family own behavior is rejected', () => {
+  const restating = {
+    name: 'card',
+    purpose: 'Elevated/outlined surface.',
+    behavior: 'Stateless surface driven by a `variant`; no controlled state.',
+    // Same sentence, re-marked and re-punctuated: normalization is what makes the rule hold.
+    limitations: 'Stateless surface driven by a **variant**; no controlled state',
+  };
+
+  assert.deepEqual(collectCuratedLimitationViolations([restating]), [
+    'card: limitations restates its own behavior verbatim; a limitation has to say something the rest of the page does not.',
+  ]);
+});
+
+test('one limitation pasted across two families is rejected', () => {
+  const pasted = ['card', 'section', 'stat'].map((name) => ({
+    name,
+    purpose: `${name} purpose.`,
+    behavior: `${name} behavior.`,
+    limitations: 'Only plain string or number children receive the label typography.',
+  }));
+
+  assert.deepEqual(collectCuratedLimitationViolations(pasted), [
+    'card, section, stat: share one curated limitation verbatim; a limitation derived from a family\'s own source cannot be identical across families.',
+  ]);
+});
+
+test('distinct limitations and an absent one are both accepted', () => {
+  const clean = [
+    { name: 'card', purpose: 'a', behavior: 'b', limitations: 'Card has no press handling.' },
+    { name: 'stat', purpose: 'a', behavior: 'b', limitations: 'Stat adds no accessibility grouping.' },
+    { name: 'box', purpose: 'a', behavior: 'b', limitations: '' },
+    { name: 'stack', purpose: 'a', behavior: 'b' },
+  ];
+
+  assert.deepEqual(collectCuratedLimitationViolations(clean), []);
+});
 
 // Dialog's curated limitation is "Controlled open requires onOpenChange" — a fact the component
 // states itself in a development warning, so it is derivable rather than product judgement.

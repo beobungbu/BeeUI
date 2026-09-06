@@ -193,7 +193,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+On the legacy overlay-transport path — JS-only test environments, and any native runtime without the New Architecture or a registered teleport host — portaled overlay content is re-rendered under the host mounted at the provider, outside this scope, so the scoped theme does not reach it. An unrecognized `theme` name throws during render instead of falling back.
 
 **Implementation note:** See docs/theme-scope.md for the scoping and precedence rules.
 

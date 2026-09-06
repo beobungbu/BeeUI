@@ -175,7 +175,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+`CollapsibleTrigger` and `CollapsibleContent` throw outside a `Collapsible`. A trigger's own `disabled` is combined with the parent's, so one trigger cannot opt back in when the whole collapsible is disabled. Opening and closing is a mount/unmount switch with no height animation.
 
 ## Related
 

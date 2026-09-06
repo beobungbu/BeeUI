@@ -251,7 +251,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+`Card` is one styled view with a `variant` and a `padding` step: there are no header/footer parts and no press handling, because its props extend React Native's view props rather than its pressable props. A tappable card has to be composed by wrapping it.
 
 ## Related
 

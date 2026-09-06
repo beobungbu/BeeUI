@@ -281,7 +281,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+The role is not overridable — `decorative` set to false is the only way to expose separator semantics. Thickness is fixed at one pixel with no thickness, length or inset prop; anything else comes from `className`.
 
 ## Related
 

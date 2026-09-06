@@ -212,7 +212,7 @@ export function PublicDocFixtures() {
 Use the code block's copy affordance to copy the exact fixture. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+Tone and typography variant are not accepted: `FormMessage` is always destructive caption text and `HelperText` always muted caption text. Neither associates itself with a control — that link has to be made by the caller.
 
 ## Related
 

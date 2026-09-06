@@ -146,7 +146,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+An arbitrary color is not accepted: the only color control is the seven-value `tone`. With no label and no labelled-by relationship the indicator falls back to the English literal Loading as its accessible name.
 
 ## Related
 

@@ -167,7 +167,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+`title` is required, and `titleClassName`/`descriptionClassName` reach the rendered text only when the corresponding prop is a plain string or number; pass an element and the class name is dropped along with the automatic header semantics.
 
 ## Related
 
