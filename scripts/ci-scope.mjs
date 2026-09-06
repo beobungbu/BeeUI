@@ -231,6 +231,9 @@ function isWebPath(file) {
 const VISUAL_A11Y_EXACT = new Set([
   'scripts/check-docs-page-budget.mjs',
   'scripts/check-docs-search-intent.mjs',
+  // Tests the query rewrite in apps/docs/pagefind-query.mjs and its wiring into the search
+  // modal and the search-intent check; no companion `scripts/pagefind-query.mjs` exists.
+  'scripts/__tests__/pagefind-query.test.mjs',
   'scripts/public-docs-a11y.mjs',
 ]);
 const VISUAL_A11Y_PREFIXES = ['apps/docs/'];
