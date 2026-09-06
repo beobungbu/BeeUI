@@ -1,3 +1,6 @@
+import { copyFile, mkdir } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 
@@ -5,6 +8,25 @@ import { buildPublicSiteContract } from '../../scripts/public-site-contract-lib.
 import { PAGEFIND_RANKING } from './pagefind-ranking.mjs';
 
 const publicSite = buildPublicSiteContract();
+
+// public/pagefind-fallback/pagefind.js is the Pagefind entrypoint the search modal loads, and it
+// imports `./pagefind-query.mjs` at runtime by URL. Ship that module beside it rather than
+// checking a second copy into public/, so the browser, scripts/check-docs-search-intent.mjs and
+// the unit tests all execute the same file. A copy that fails to land is caught by
+// scripts/check-docs-search-intent.mjs --check, which runs in this app's build script.
+const pagefindFallbackRuntime = {
+  name: 'pagefind-fallback-runtime',
+  hooks: {
+    'astro:build:done': async ({ dir }) => {
+      const target = new URL('pagefind-fallback/', dir);
+      await mkdir(fileURLToPath(target), { recursive: true });
+      await copyFile(
+        fileURLToPath(new URL('./pagefind-query.mjs', import.meta.url)),
+        fileURLToPath(new URL('pagefind-query.mjs', target)),
+      );
+    },
+  },
+};
 
 // W2 (#414) owns global public-site route/IA authority. Content workstreams may
 // add pages and sidebar-local entries, but canonical origin/base paths and
@@ -14,6 +36,7 @@ export default defineConfig({
   base: publicSite.docsBase,
   output: 'static',
   integrations: [
+    pagefindFallbackRuntime,
     starlight({
       title: 'BeeUI',
       description:
@@ -28,9 +51,11 @@ export default defineConfig({
         // so readers cannot narrow by section yet — see #500 and the note in
         // src/components/SearchFilterHead.astro.
         Head: './src/components/SearchFilterHead.astro',
-        // Starlight's own Search.astro with one addition: PagefindUI's `processTerm` runs
-        // apps/docs/pagefind-query.mjs on the reader's query. Starlight serialises the
-        // `pagefind` option with JSON.stringify, so a function cannot be passed there.
+        // Starlight's own Search.astro with two changes, both from apps/docs/pagefind-query.mjs:
+        // PagefindUI's `processTerm` rewrites the reader's query, and `bundlePath` points at
+        // public/pagefind-fallback/ so the engine PagefindUI loads relaxes a query that found
+        // almost nothing. Starlight serialises the `pagefind` option with JSON.stringify, so
+        // neither can be passed there as a function.
         Search: './src/components/Search.astro',
       },
       pagefind: {

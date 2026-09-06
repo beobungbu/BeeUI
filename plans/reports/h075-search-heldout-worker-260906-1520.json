@@ -1,0 +1,31 @@
+{
+  "written_at": "2026-09-06T15:20:00+07:00",
+  "author": "search-generalisation worker (fullstack-developer), branch docs/h075-search-fallback off 6157e66",
+  "method": "Authored from the built route list only (find apps/docs/dist -name index.html). Written BEFORE any change to apps/docs/pagefind-query.mjs and before running a single query through the index. Deliberately disjoint from QUERY_MATRIX (27 entries) and from the independent scorer's heldout-260906-1450.json (26 entries): no query string and no primary expected page is shared with either. Acceptable landing pages fixed at authoring time, not after seeing results.",
+  "queries": [
+    {"q": "add a badge showing the unread count", "expect": ["/components/badge/"]},
+    {"q": "collapsible faq section that expands", "expect": ["/components/accordion/", "/components/collapsible/"]},
+    {"q": "breadcrumb trail showing where I am", "expect": ["/components/breadcrumb/"]},
+    {"q": "password field with a show hide toggle", "expect": ["/components/password-input/"]},
+    {"q": "group of checkboxes inside a form", "expect": ["/components/checkbox/", "/components/form-group/", "/learn/forms-model/"]},
+    {"q": "small hint bubble on long press", "expect": ["/components/tooltip/"]},
+    {"q": "empty state when there is nothing to show", "expect": ["/components/state-message/"]},
+    {"q": "paginate through a long list of results", "expect": ["/components/pagination/"]},
+    {"q": "vertical timeline of order status steps", "expect": ["/components/timeline/"]},
+    {"q": "apply a different theme to one part of the tree", "expect": ["/components/theme-scope/"]},
+    {"q": "hide text visually but keep it for screen readers", "expect": ["/components/visually-hidden/"]},
+    {"q": "forgot password flow screens", "expect": ["/patterns/auth/forgot-password-screen/", "/patterns/auth/reset-password-screen/"]},
+    {"q": "saved payment methods screen", "expect": ["/patterns/dashboard-finance/payment-methods-screen/"]},
+    {"q": "notification preferences with toggles", "expect": ["/patterns/account-settings/notification-settings-screen/"]},
+    {"q": "who owns the code after I generate it", "expect": ["/learn/ownership-model/", "/guides/cli-source-ownership/"]},
+    {"q": "how do components compose together", "expect": ["/learn/composition-model/"]},
+    {"q": "which android and ios versions are supported", "expect": ["/compatibility/native/", "/compatibility/current/"]},
+    {"q": "using beeui with an ai coding agent", "expect": ["/ai/"]},
+    {"q": "what is inside the reference app", "expect": ["/reference-app/"]},
+    {"q": "how big is the javascript bundle", "expect": ["/performance/"]},
+    {"q": "customise the brand colours and logo", "expect": ["/guides/branding/"]},
+    {"q": "build a data table with sortable columns", "expect": ["/guides/table/", "/components/table/"]},
+    {"q": "what does the core package export", "expect": ["/reference/core/"]},
+    {"q": "switch between dark and light mode", "expect": ["/theming/", "/patterns/account-settings/appearance-screen/"]}
+  ]
+}
