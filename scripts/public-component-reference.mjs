@@ -860,8 +860,16 @@ function renderPlatformImplementation(component, rootDir = ROOT_DIR) {
     /\.(native|web|ios|android)\.tsx?$/u.test(relPath),
   );
   if (!platformFiles.length) {
-    // "The props and behavior above are the same on iOS, Android and Web" was decided by a
-    // filename glob — the absence of a `.web.tsx` sibling — and was false on ten of 62 pages.
+    // Two consequents have been dropped from this sentence. "The props and behavior above are the
+    // same on iOS, Android and Web" was first decided by a filename glob — the absence of a
+    // `.web.tsx` sibling — and was false on ten of 62 pages. Deriving it from a real `Platform`
+    // branch fixed those ten and left it false on two more: AlertDialog takes no branch itself
+    // and renders Dialog, which branches on Android and Web, and AlertDialog's own props table
+    // names the Android hardware back path 79 lines above the sentence denying it. Popover is the
+    // same through `overlay-runtime`, whose Escape handling is Web-only.
+    //
+    // The premise is derived and true; the consequent never was, because a family's behavior is
+    // not bounded by the files this scan reads. What is left is the premise.
     // KeyboardAwareScreen passes `behavior={Platform.OS === 'ios' ? 'padding' : undefined}`;
     // AlertBanner's own props table two sections above says its announcement is iOS-only, so the
     // page contradicted itself. A platform branch in the source is the evidence; a filename is
@@ -875,7 +883,7 @@ function renderPlatformImplementation(component, rootDir = ROOT_DIR) {
       );
     return branches
       ? 'This family ships no platform-specific file, but its source branches on `Platform`, so some behavior differs by target.'
-      : 'One implementation renders on every supported target: this family ships no platform-specific file and its source takes no `Platform` branch, so the props and behavior above are the same on iOS, Android and Web.';
+      : 'This family ships no platform-specific file, and its own source takes no `Platform` branch.';
   }
 
   const label = (relPath) => {
@@ -1083,7 +1091,7 @@ function renderStylingFacts(component, rootDir = ROOT_DIR) {
     ? `- **Style axes:** ${[...accumulator.axes]
         .map(
           ([name, { count, from }]) =>
-            `\`${name}\` (${count} values${from ? `, inherited from \`${from}\`` : ''})`,
+            `\`${name}\` (${count} value${count === 1 ? '' : 's'}${from ? `, inherited from \`${from}\`` : ''})`,
         )
         .join(', ')}${
         [...accumulator.axes.values()].every((axis) => axis.listed)

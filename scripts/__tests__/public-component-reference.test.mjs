@@ -2183,3 +2183,21 @@ test('the axes line makes no claim about what the rest of the page prints', () =
     assert.equal(/not enumerated on this page/u.test(line), false, `${component.name}: ${line}`);
   }
 });
+
+
+test('the platform sentence states its premise and draws no conclusion from it', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  for (const component of manifest) {
+    const page = renderPublicComponentPage(component, REPO_ROOT);
+
+    // "so the props and behavior above are the same on iOS, Android and Web" survived one fix —
+    // it was moved from a filename glob onto a real `Platform` branch — and stayed false on
+    // AlertDialog and Popover, which take no branch themselves and render families that do.
+    // AlertDialog's own props table names the Android hardware back path 79 lines above it.
+    assert.equal(
+      /the same on iOS, Android and Web/u.test(page),
+      false,
+      `${component.name}: the platform sentence draws a conclusion its scope cannot reach`,
+    );
+  }
+});

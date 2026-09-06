@@ -86,7 +86,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 ## Platform behavior
 
-One implementation renders on every supported target: this family ships no platform-specific file and its source takes no `Platform` branch, so the props and behavior above are the same on iOS, Android and Web.
+This family ships no platform-specific file, and its own source takes no `Platform` branch.
 
 The same public family is exposed across the supported target matrix; meaningful platform differences remain governed by the compatibility contract.
 
