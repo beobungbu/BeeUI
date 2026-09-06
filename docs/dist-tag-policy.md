@@ -129,10 +129,16 @@ Dist-tag moves are metadata-only and reversible; published version **content** i
 ## Machine-readable policy contract
 
 The block below is parsed verbatim by `scripts/check-distribution-policy.mjs` (run via
-`pnpm dist:policy:check`, part of `pnpm typecheck`). It pins the lockstep/prerelease/tag
+`pnpm dist-policy:check`, part of `pnpm typecheck`). It pins the lockstep/prerelease/tag
 invariants to the repository's actual package versions and the live `release` environment so
 this policy cannot silently drift from reality: `published` must stay `false` and
 `currentVersion` must match every package version until the owner publishes.
+
+`currentVersion` is also the pin the rest of the release control plane reads
+(`scripts/check-release-control-plane.mjs`, and through it `pnpm release:verify`), so moving a
+release line starts here. It may name either the stable version or an approved candidate on the
+same line: at `0.86.2-rc.1`, `candidateStableVersion` stays `0.86.2` — the stable base the
+candidate becomes — and `prereleaseVersionPattern` must describe the pinned candidate itself.
 
 ```json dist-tag-policy
 {

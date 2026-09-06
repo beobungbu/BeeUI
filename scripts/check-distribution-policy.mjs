@@ -65,6 +65,14 @@ export function extractReleaseEnvironment(markdown) {
   return block.releaseEnvironment;
 }
 
+// `0.86.2-rc.1` and `0.86.2` are the same release line; the stable base is what a prerelease
+// eventually becomes. Only the exact `-rc.N` suffix the policy sanctions is stripped, so an
+// unrecognised prerelease form stays visible to the comparisons below rather than being
+// silently normalised away.
+function stableBase(version) {
+  return typeof version === 'string' ? version.replace(/-rc\.(0|[1-9][0-9]*)$/, '') : version;
+}
+
 // ---- dist-tag / prerelease policy (#206) ----
 
 export function collectDistTagPolicyViolations({ policy, packageVersions, releaseEnvironment, existsSync }) {
@@ -87,21 +95,28 @@ export function collectDistTagPolicyViolations({ policy, packageVersions, releas
     );
   }
 
-  // The stable candidate is the lockstep version itself. Owner decision #407 (2026-09-02) had
-  // replaced the 0.x -> 1.0.0 scheme with a date label (20260902.0.0); ADR-015 (2026-09-06)
-  // supersedes that with plain SemVer 0.86.2. Under either the workspace legitimately sits *at*
-  // the candidate from the start, so "no package has reached it yet" is unsatisfiable — it could
-  // only be kept by letting this block contradict its own prose.
+  // The stable candidate is the release line the workspace is already on, not a future number.
+  // Owner decision #407 (2026-09-02) had replaced the 0.x -> 1.0.0 scheme with a date label
+  // (20260902.0.0); ADR-015 (2026-09-06) supersedes that with plain SemVer 0.86.2. Under either,
+  // the workspace legitimately sits *at* the candidate from the start, so "no package has reached
+  // it yet" is unsatisfiable — it could only be kept by letting this block contradict its own prose.
   //
-  // What that rule was protecting is still enforced, just not by a version comparison:
+  // A release candidate lives on the same line: with currentVersion at 0.86.2-rc.1 the stable
+  // candidate is still 0.86.2, so the comparison is against the stable base rather than the
+  // literal current version. Requiring equality instead would make an RC pin unsatisfiable,
+  // because prereleaseVersionPattern must simultaneously match every rc.N and reject the
+  // candidate.
+  //
+  // What the original rule was protecting is still enforced, just not by a version comparison:
   // `published` must be false (checked above), the docs foundation refuses an install CTA,
   // an available CLI or a missing #254 owner gate while unpublished, and verify-release
   // asserts the root manifest stays private. Publication remains an owner action, not a
   // consequence of a version number.
-  if (policy.candidateStableVersion !== policy.currentVersion) {
+  const currentStableBase = stableBase(policy.currentVersion);
+  if (policy.candidateStableVersion !== currentStableBase) {
     violations.push(
       `${label}: "candidateStableVersion" ${JSON.stringify(policy.candidateStableVersion)} must equal ` +
-      `"currentVersion" ${JSON.stringify(policy.currentVersion)} under the date-version scheme (#407).`,
+      `the stable base ${JSON.stringify(currentStableBase)} of "currentVersion" ${JSON.stringify(policy.currentVersion)}.`,
     );
   }
 
@@ -125,6 +140,13 @@ export function collectDistTagPolicyViolations({ policy, packageVersions, releas
     if (re.test(policy.candidateStableVersion)) {
       violations.push(
         `${label}: prereleaseVersionPattern must NOT match the stable version ${JSON.stringify(policy.candidateStableVersion)} (a prerelease is not the stable release).`,
+      );
+    }
+    // When the pin itself is a candidate, the pattern has to describe it. Without this, a pin of
+    // 0.86.2-rc.1 could sit beside a pattern for a different line and every check stayed green.
+    if (policy.currentVersion !== currentStableBase && !re.test(policy.currentVersion)) {
+      violations.push(
+        `${label}: prerelease "currentVersion" ${JSON.stringify(policy.currentVersion)} must match prereleaseVersionPattern ${JSON.stringify(policy.prereleaseVersionPattern)}.`,
       );
     }
   }
