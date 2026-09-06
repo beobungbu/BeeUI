@@ -1,0 +1,28 @@
+{
+  "rationale": [
+    "Ceilings for scripts/check-docs-web-vitals.mjs (#474 WBS-H075). Derived from measurement, not from a target: three full passes over the five pages below, Lighthouse 13.4.1 mobile emulation, against the built apps/docs/dist served with gzip, on an Apple silicon laptop.",
+    "largestContentfulPaintMs 1340: the worst of the 15 measurements was 1225 ms (components/table), plus 9% headroom. The other pages measured 904-1222 ms.",
+    "totalBlockingTimeMs 150: measured 0 ms on every page in every pass. A 0 ms ceiling would not be a regression guard but a machine test, because Lighthouse derives TBT from real task durations on the host CPU and a slower machine produces long tasks where this one produced none. 150 ms is the top of Lighthouse's green band for mobile TBT, so anything under it still scores well; anything over it means new blocking script, which is the regression worth catching on a static documentation site.",
+    "cumulativeLayoutShift 0.05: measured 0.000 on every page in every pass. Half of Lighthouse's 0.1 'good' threshold, rather than 0.000, because a late font swap can shift layout on a slow load without anything having regressed.",
+    "minPerformanceScore 0.95: measured 1.00 on every page in every pass. It is a backstop over the three metrics above, not an independent limit."
+  ],
+  "measuredWith": {
+    "lighthouse": "13.4.1",
+    "formFactor": "mobile",
+    "passes": 3,
+    "date": "2026-09-06"
+  },
+  "budget": {
+    "largestContentfulPaintMs": 1340,
+    "totalBlockingTimeMs": 150,
+    "cumulativeLayoutShift": 0.05,
+    "minPerformanceScore": 0.95
+  },
+  "pages": [
+    { "name": "home", "path": "/" },
+    { "name": "component-table", "path": "/components/table/" },
+    { "name": "pattern-sign-in", "path": "/patterns/auth/sign-in-screen/" },
+    { "name": "guide-troubleshooting", "path": "/guides/troubleshooting/" },
+    { "name": "reference-hub", "path": "/reference/" }
+  ]
+}
