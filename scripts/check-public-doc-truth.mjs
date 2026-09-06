@@ -72,6 +72,21 @@ export function collectRepositoryVisibilityViolations(rootDir = ROOT_DIR) {
   return violations;
 }
 
+// Prose that states the package version, sentence by sentence. `dist-policy:check` reads the
+// fenced JSON blocks, so the prose wrapped around them was unguarded: each of these was set to
+// 9.9.9 with every gate green. A generic scan for version-shaped literals cannot do this job —
+// the React Native pin is also 0.86.2 — so the sentence is the unit, and only README is required
+// to exist (fixtures build minimal roots).
+const VERSION_SENTENCES = [
+  { file: 'README.md', label: 'distribution-status line', pattern: /repository\/package version is `([^`]+)`/u, required: true },
+  { file: 'docs/release.md', label: 'milestone sentence', pattern: /ships as package version `([^`]+)`/u },
+  { file: 'docs/release.md', label: 'versioning policy', pattern: /the package version is plain SemVer `([^`]+)`/u },
+  { file: 'docs/dist-tag-policy.md', label: 'stable-release sentence', pattern: /The stable `([^`]+)` is published, verified/u },
+  { file: 'docs/dist-tag-policy.md', label: 'owner-decision blockquote', pattern: /plain SemVer starting at `([^`]+)`/u },
+  { file: 'docs/consumer-compatibility-report.md', label: 'candidate sentence', pattern: /candidate version `([^`]+)` today/u },
+  { file: 'docs/decisions/015-package-version-0-86-2.md', label: 'decision line', pattern: /The lockstep package version is \*\*`([^`]+)`\*\*/u },
+];
+
 export function collectPublicTruthViolations(rootDir = ROOT_DIR) {
   const violations = [];
   const files = PUBLIC_ROOTS.flatMap((relative) => walkTextFiles(path.join(rootDir, relative)));
@@ -93,16 +108,33 @@ export function collectPublicTruthViolations(rootDir = ROOT_DIR) {
   // README's distribution-status line states the package version in prose. Setting it to 9.9.9
   // left every gate green: the control plane compares manifests, web:check compares the Expo and
   // Worker identities, and nothing read this sentence. It is the first version a visitor sees.
-  const readme = fs.readFileSync(path.join(rootDir, 'README.md'), 'utf8');
-  const stated = readme.match(/repository\/package version is `([^`]+)`/u);
   const manifestPath = path.join(rootDir, 'package.json');
-  const workspaceVersion = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')).version : undefined;
-  if (!workspaceVersion) {
-    violations.push('package.json: missing or has no version, so README.md\'s stated version cannot be checked.');
-  } else if (!stated) {
-    violations.push('README.md: distribution-status line no longer states the package version ("repository/package version is `…`").');
-  } else if (stated[1] !== workspaceVersion) {
-    violations.push(`README.md: states package version ${stated[1]} but the workspace version is ${workspaceVersion}.`);
+  let workspaceVersion;
+  try {
+    workspaceVersion = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')).version : undefined;
+  } catch (error) {
+    violations.push(`package.json: not parseable (${error.message}), so stated versions cannot be checked.`);
+  }
+  if (workspaceVersion === undefined && !violations.some((v) => v.startsWith('package.json: not parseable'))) {
+    violations.push('package.json: missing or has no version, so stated versions cannot be checked.');
+  }
+  if (workspaceVersion) {
+    for (const { file, label, pattern, required } of VERSION_SENTENCES) {
+      const absolute = path.join(rootDir, file);
+      if (!fs.existsSync(absolute)) {
+        if (required) violations.push(`${file}: missing, so its ${label} cannot be checked.`);
+        continue;
+      }
+      const text = fs.readFileSync(absolute, 'utf8');
+      const stated = text.match(pattern);
+      if (!stated) {
+        if (required) violations.push(`${file}: no longer carries its ${label}, so the version it states cannot be checked.`);
+        continue;
+      }
+      if (stated[1] !== workspaceVersion) {
+        violations.push(`${file}: ${label} states version ${stated[1]} but the workspace version is ${workspaceVersion}.`);
+      }
+    }
   }
 
   const demoPath = path.join(rootDir, 'apps/demo/README.md');

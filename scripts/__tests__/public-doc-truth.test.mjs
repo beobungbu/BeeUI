@@ -56,3 +56,40 @@ test('rejects stale demo build command and missing workspace commands', () => {
   assert.equal(violations.some((line) => line.includes('npm run build')), true);
   assert.equal(violations.filter((line) => line.includes('missing verified workspace command')).length, 3);
 });
+
+
+test('a README that states the wrong package version is a violation, and a missing sentence too', () => {
+  const root = fixture({
+    'README.md': '> the repository/package version is `9.9.9`.\npnpm install --frozen-lockfile\n',
+    'package.json': '{"version":"1.2.3"}',
+    'apps/demo/README.md': validDemo,
+    'apps/docs/src/content/docs/index.md': 'BeeUI is unpublished.\n',
+  });
+  const wrong = collectPublicTruthViolations(root);
+  assert.ok(wrong.some((v) => v.includes('README.md: distribution-status line states version 9.9.9 but the workspace version is 1.2.3')), wrong.join('\n'));
+
+  const missing = collectPublicTruthViolations(fixture({ 'README.md': 'BeeUI\n', 'package.json': '{"version":"1.2.3"}', 'apps/demo/README.md': validDemo,
+    'apps/docs/src/content/docs/index.md': 'BeeUI is unpublished.\n' }));
+  assert.ok(missing.some((v) => v.includes('README.md: no longer carries its distribution-status line')), missing.join('\n'));
+
+  const broken = collectPublicTruthViolations(fixture({ 'README.md': '> the repository/package version is `1.2.3`.\n', 'package.json': '{not json', 'apps/demo/README.md': validDemo,
+    'apps/docs/src/content/docs/index.md': 'BeeUI is unpublished.\n' }));
+  assert.ok(broken.some((v) => v.startsWith('package.json: not parseable')), broken.join('\n'));
+});
+
+test('a prose sentence elsewhere that states the wrong package version is a violation', () => {
+  // Six sentences outside README stated the version with no gate reading them; each was set to
+  // 9.9.9 with every check green. The sentence is the unit, because the React Native pin shares
+  // the number and a generic literal scan would fire on it.
+  const root = fixture({
+    'README.md': '> the repository/package version is `1.2.3`.\n',
+    'package.json': '{"version":"1.2.3"}',
+    'apps/demo/README.md': validDemo,
+    'apps/docs/src/content/docs/index.md': 'BeeUI is unpublished.\n',
+    'docs/release.md': 'The BeeUI 1.0 product milestone ships as package version `9.9.9` (ADR-015).\n',
+    'docs/dist-tag-policy.md': '- The stable `1.2.3` is published, verified, and only then promoted.\n',
+  });
+  const violations = collectPublicTruthViolations(root);
+  assert.ok(violations.some((v) => v.includes('docs/release.md: milestone sentence states version 9.9.9')), violations.join('\n'));
+  assert.equal(violations.some((v) => v.includes('dist-tag-policy')), false, 'a correct sentence is not a violation');
+});

@@ -67,9 +67,10 @@ export async function collectViolations(rootDir) {
   const publicSite = readPublicSiteConfig(rootDir);
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   if (config.main !== './src/index.mjs') violations.push('Wrangler main must remain ./src/index.mjs.');
-  // The worker manifest is the one version site nothing else fingerprints: `release-control-plane`
-  // checks the five package manifests and `web:check` checks the Expo identities, so a hand-edited
-  // `web/worker/package.json` could drift with every gate green — measured, before this line.
+  // The worker manifest was a version site nothing fingerprinted: `release-control-plane` checks
+  // the five package manifests and `web:check` checks the Expo identities, so a hand-edited
+  // `web/worker/package.json` drifted with every gate green — measured, before this line. (README
+  // and six prose sentences were the same; `check-public-doc-truth` reads those.)
   const workerVersion = JSON.parse(fs.readFileSync(path.join(rootDir, 'web/worker/package.json'), 'utf8')).version;
   const workspaceVersion = readWorkspaceVersion(rootDir);
   if (workerVersion !== workspaceVersion) {
