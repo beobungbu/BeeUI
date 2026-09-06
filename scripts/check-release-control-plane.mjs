@@ -37,6 +37,7 @@ const OPERATIONAL_RELEASE_FILES = [
   'docs/rc-ci-matrix.md',
   'docs/registry-cli.md',
   'docs/package-compatibility-report.md',
+  'docs/npm-release-bootstrap.md',
 ];
 
 function walkFiles(directory) {

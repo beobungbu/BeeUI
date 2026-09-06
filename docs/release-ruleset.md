@@ -59,7 +59,28 @@ Ruleset `release-tag-protection` (id `21888212`) protects `refs/tags/v*`. No tag
 
 ## Release environment (`release`)
 
-Environment id `20896613487` exists with required reviewer `beobungbu` and `prevent_self_review: false`. The eventual #254 publish job must set `environment: release`; green CI alone never authorizes npm publication, a Git tag, GitHub Release, or dist-tag mutation.
+Environment id `20896613487` exists with required reviewer `beobungbu` and `prevent_self_review: false`. Every job that mutates the npm registry must set `environment: release`; green CI alone never authorizes npm publication or staging, a Git tag, GitHub Release, or dist-tag mutation. The owner/admin gate in [docs/beeui-1.0-owner-gates.md](beeui-1.0-owner-gates.md) stays authoritative even when the environment approval technically permits execution.
+
+## npm release workflow
+
+`.github/workflows/npm-release.yml` is the prepared npm transport. It is `workflow_dispatch` only and defaults to the non-mutating `verify` operation, so merely having the workflow in the repository publishes nothing.
+
+Its registry-mutating operations are:
+
+- `bootstrap-rc` — the one-time first-package prerelease bootstrap under `next`, because npm staged publishing cannot create a package that does not exist yet. It runs behind `environment: release`. Registry authentication is the temporary environment secret `NPM_BOOTSTRAP_TOKEN`, and the workflow exposes that secret to the final direct-publish step only: dependency install, release verification, builds, packing and registry probes do not inherit it. The job also grants job-local `id-token: write`, but solely because `npm publish --provenance` needs OIDC to mint the attestation — that grant is not Trusted Publisher authentication.
+- `stage-rc` — steady-state prerelease staging once the packages exist. It runs behind `environment: release` with `contents: read` plus job-local `id-token: write`, authenticates to npm through Trusted Publishing/OIDC, and uses no long-lived publish token.
+
+Both mutation paths require all of: dispatch from `refs/heads/main`; a checkout of the exact `GITHUB_SHA`; a workspace version matching the prerelease form pinned in [docs/dist-tag-policy.md](dist-tag-policy.md); the operator-entered `expected_version` equal to that workspace version; and the confirmation string `BEEUI_RC_RELEASE`. Preflight runs `pnpm release-control-plane:check`, `pnpm dist-policy:check` and `pnpm release:verify` before the environment-gated job can reach the registry. Registry existence probes treat only `E404`/404 as absence; any other probe failure stops the workflow instead of being read as "package missing".
+
+The workflow does **not** implement stable `latest` publication. That remains #254 and requires an exact owner-approved candidate plus the promotion and recovery contract in [docs/dist-tag-policy.md](dist-tag-policy.md).
+
+The npm-side owner handoff — token creation, teardown, and Trusted Publisher binding — is [docs/npm-release-bootstrap.md](npm-release-bootstrap.md).
+
+## Trusted Publishing security boundary
+
+After the first bootstrap, each `@beemvp/beeui-*` package binds an npm Trusted Publisher to GitHub owner `beobungbu`, repository `BeeUI`, workflow filename `npm-release.yml`, environment `release`, and the allowed action `npm stage publish` only. Staged publishing keeps a human 2FA approval between a green workflow and a public package.
+
+Ordinary CI has neither publication credentials nor `id-token: write`. The temporary bootstrap token lives only in the protected `release` environment and is revoked once OIDC Trusted Publishing is configured and proven.
 
 ## CODEOWNERS
 
@@ -72,6 +93,7 @@ BeeUI's active workflows use standard `ubuntu-latest` and `macos-latest` GitHub-
 - Each job is treated as ephemeral.
 - Workflow permissions default to `contents: read`.
 - Pull-request workflows do not receive release/npm secrets.
+- Registry-mutating jobs receive `id-token: write` only at job scope, and only where provenance or Trusted Publishing requires it.
 - Public-repository runner minutes are treated as unmetered; CI is designed around wall-clock latency and finite concurrent-job/macOS limits.
 - Initial PR scheduling is shaped to fill the 20-job budget with required/core work first; optional native work enters as slots become available.
 - Independent native iOS proofs use separate macOS jobs so Showcase and bare-RN compiles can overlap.
@@ -79,4 +101,6 @@ BeeUI's active workflows use standard `ubuntu-latest` and `macos-latest` GitHub-
 
 ## Rollback
 
-The protection pieces remain independently reversible by the owner through GitHub repository settings/API. File-level policy changes are ordinary reviewed commits.
+The protection pieces remain independently reversible by the owner through GitHub repository settings/API. File-level policy changes are ordinary reviewed commits. Repository rulesets, tag protections, environment approvals, npm package settings, Trusted Publisher bindings and environment secrets stay owner/admin-controlled.
+
+A failed or partial registry operation is never retried automatically. Stop, inventory the exact package/version state, artifact hashes and provenance, and get the recovery explicitly authorized before touching the registry again.

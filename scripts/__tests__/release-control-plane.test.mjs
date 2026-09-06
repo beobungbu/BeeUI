@@ -3,7 +3,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { collectReleaseControlPlaneViolations, EXPECTED_PACKAGE_NAMES, EXPECTED_VERSION, readPinnedVersion } from '../check-release-control-plane.mjs';
+
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 function createFixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-release-control-plane-'));
@@ -16,7 +19,7 @@ function createFixture() {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, `${JSON.stringify({ name, version: EXPECTED_VERSION })}\n`);
   }
-  for (const doc of ['release.md', 'dist-tag-policy.md', 'consumer-compatibility-report.md', 'rc-candidate.md', 'rc-ci-matrix.md', 'registry-cli.md', 'package-compatibility-report.md']) {
+  for (const doc of ['release.md', 'dist-tag-policy.md', 'consumer-compatibility-report.md', 'rc-candidate.md', 'rc-ci-matrix.md', 'registry-cli.md', 'package-compatibility-report.md', 'npm-release-bootstrap.md']) {
     fs.writeFileSync(path.join(root, 'docs', doc), 'current @beemvp package release guidance\n');
   }
   // The pin the checks compare against lives in the dist-tag-policy block.
@@ -73,4 +76,42 @@ test('the pin is read from dist-tag-policy, not from the root manifest', () => {
   assert.equal(readPinnedVersion(root), '7.7.7');
   const violations = collectReleaseControlPlaneViolations(root);
   assert.ok(violations.some((v) => v.startsWith('package.json: expected version 7.7.7')), violations.join('\n'));
+});
+
+
+// The npm transport is the one workflow that can mutate a public registry. These are the
+// properties that keep "the workflow exists" from meaning "a publish can happen".
+test('the npm release workflow keeps registry mutation manual, main-only, environment-gated and OIDC-scoped', () => {
+  const workflow = fs.readFileSync(path.join(REPO_ROOT, '.github/workflows/npm-release.yml'), 'utf8');
+  const bootstrapMatch = /\n  bootstrap-rc:\n([\s\S]*?)\n  stage-rc:\n/.exec(workflow);
+  assert.ok(bootstrapMatch, 'bootstrap-rc job must exist');
+  const bootstrap = bootstrapMatch[1];
+
+  assert.match(workflow, /^on:\n  workflow_dispatch:/m);
+  assert.doesNotMatch(workflow, /^  (push|pull_request|schedule):/m);
+  assert.match(workflow, /default: verify/);
+  assert.match(workflow, /test "\$GITHUB_REF" = "refs\/heads\/main"/);
+  assert.match(workflow, /environment: release/);
+  assert.match(workflow, /BEEUI_RC_RELEASE/);
+
+  // Provenance needs OIDC, but the bootstrap's registry credential is the temporary token and it
+  // reaches only the publish step — not install, build, pack or the registry probes.
+  assert.match(bootstrap, /permissions:[\s\S]*?id-token: write/);
+  assert.doesNotMatch(bootstrap, /^    env:\n      NODE_AUTH_TOKEN:/m);
+  assert.match(
+    bootstrap,
+    /- name: Bootstrap the first RC under next\n        env:\n          NODE_AUTH_TOKEN: \$\{\{ secrets\.NPM_BOOTSTRAP_TOKEN \}\}/,
+  );
+
+  // A registry probe that cannot tell "absent" from "unreachable" would republish over a
+  // network blip, so only E404/404 may count as absence.
+  assert.match(bootstrap, /Refuse reused versions and registry probe errors[\s\S]*?E404\|404 Not Found/);
+  assert.match(bootstrap, /registry probe for \$\{spec\} failed unexpectedly/);
+  assert.match(workflow, /stage-rc:[\s\S]*?permissions:\n      contents: read\n      id-token: write/);
+  assert.match(workflow, /Require existing package bootstrap and a fresh RC version[\s\S]*?E404\|404 Not Found/);
+
+  // Prereleases only, and no dist-tag move: promotion to `latest` stays owner work under #254.
+  assert.match(workflow, /npm publish .*--tag next --provenance/);
+  assert.match(workflow, /npm stage publish .*--tag next --provenance/);
+  assert.doesNotMatch(workflow, /npm dist-tag/);
 });
