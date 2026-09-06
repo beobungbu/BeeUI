@@ -52,6 +52,9 @@ export function readPublicationState(rootDir = ROOT_DIR) {
   return {
     published: policy.published,
     currentVersion: policy.currentVersion,
+    // The release control plane compares the npm workflow's shell guard to this pattern, so the
+    // projection has to carry it: dropping it made that comparison pass against `undefined`.
+    prereleaseVersionPattern: policy.prereleaseVersionPattern,
     stableDistTag: policy.stableDistTag,
     prereleaseDistTag: policy.prereleaseDistTag,
     lockstepPackages: policy.lockstepPackages ?? [],

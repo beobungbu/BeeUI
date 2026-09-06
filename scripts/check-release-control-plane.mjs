@@ -15,6 +15,11 @@ const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 export function readPinnedVersion(rootDir = ROOT_DIR) {
   return readPublicationState(rootDir).currentVersion;
 }
+// The same pin carries the pattern a candidate version must match. The npm workflow's shell guard
+// is required to be this exact string, so the two cannot drift apart.
+export function readPinnedPrereleasePattern(rootDir = ROOT_DIR) {
+  return readPublicationState(rootDir).prereleaseVersionPattern;
+}
 export const EXPECTED_VERSION = (() => {
   try {
     return readPinnedVersion(ROOT_DIR);
@@ -37,7 +42,92 @@ const OPERATIONAL_RELEASE_FILES = [
   'docs/rc-ci-matrix.md',
   'docs/registry-cli.md',
   'docs/package-compatibility-report.md',
+  'docs/npm-release-bootstrap.md',
 ];
+
+const NPM_RELEASE_WORKFLOW = '.github/workflows/npm-release.yml';
+
+function stableBase(version) {
+  return version.replace(/-rc\.(0|[1-9][0-9]*)$/, '');
+}
+
+// The npm transport carries the release version twice — the `expected_version` dispatch default
+// and the shell guard that decides whether a version may mutate the registry — and nothing else
+// compares either to the pin. The scan below reads `.github/workflows` only for the legacy
+// package scope, so a bump could move `docs/dist-tag-policy.md` and every manifest while the
+// workflow kept offering a superseded default and guarding a superseded release line, with all
+// release checks green.
+//
+// The guard is required to be the pin's own `prereleaseVersionPattern`, verbatim. Sampling a few
+// versions cannot characterise a regex: an anchored superset such as `^0\.86\.2-rc\.[0-9]+$`
+// passes every probe below while admitting `0.86.2-rc.007`, which the pin's own pattern rejects.
+// The probes are kept because they say *how* a guard is wrong, not because they pin it.
+export function collectNpmReleaseWorkflowViolations(workflow, pinnedVersion, pinnedPrereleasePattern) {
+  const violations = [];
+  const base = stableBase(pinnedVersion);
+
+  const lines = workflow.split('\n');
+  const inputIndex = lines.findIndex((line) => /^ {6}expected_version:\s*$/.test(line));
+  if (inputIndex === -1) {
+    violations.push(`${NPM_RELEASE_WORKFLOW}: no "expected_version" dispatch input to check against the pin.`);
+  } else {
+    const body = [];
+    for (let i = inputIndex + 1; i < lines.length && /^ {7,}\S/.test(lines[i]); i += 1) body.push(lines[i]);
+    const declared = /^ {8}default:\s*(\S+)\s*$/m.exec(body.join('\n'))?.[1];
+    if (declared === undefined) {
+      violations.push(`${NPM_RELEASE_WORKFLOW}: "expected_version" has no default to check against the pin.`);
+    } else if (declared !== pinnedVersion) {
+      violations.push(
+        `${NPM_RELEASE_WORKFLOW}: "expected_version" default ${declared} must equal the pinned version ${pinnedVersion} from docs/dist-tag-policy.md.`,
+      );
+    }
+  }
+
+  const guardSource = /\$version"\s*\|\s*grep -Eq '([^']+)'/.exec(workflow)?.[1];
+  if (guardSource === undefined) {
+    violations.push(`${NPM_RELEASE_WORKFLOW}: no prerelease version guard to check against the pin.`);
+    return violations;
+  }
+
+  if (pinnedPrereleasePattern === undefined) {
+    violations.push(
+      'docs/dist-tag-policy.md: no "prereleaseVersionPattern" in the `json dist-tag-policy` block to hold the workflow guard to.',
+    );
+  } else if (guardSource !== pinnedPrereleasePattern) {
+    violations.push(
+      `${NPM_RELEASE_WORKFLOW}: prerelease version guard /${guardSource}/ must be the pinned prereleaseVersionPattern /${pinnedPrereleasePattern}/ from docs/dist-tag-policy.md.`,
+    );
+  }
+
+  let guard;
+  try {
+    // `grep -E` and JS `RegExp` are different languages; this is an approximation used only to
+    // describe how a guard is wrong. The equality check above is what pins it.
+    guard = new RegExp(guardSource);
+  } catch (error) {
+    violations.push(`${NPM_RELEASE_WORKFLOW}: prerelease version guard is not a valid regex: ${error.message}.`);
+    return violations;
+  }
+
+  const mustMatch = [`${base}-rc.1`];
+  // The stable version is not a candidate; the other two are versions off the pinned line that an
+  // unanchored guard would wave through.
+  const mustNotMatch = [base, `9${base}-rc.1`, `${base}-rc.1-not-a-candidate`];
+  for (const candidate of mustMatch) {
+    if (!guard.test(candidate)) {
+      violations.push(
+        `${NPM_RELEASE_WORKFLOW}: prerelease version guard /${guardSource}/ rejects ${candidate}, a candidate on the pinned ${base} line.`,
+      );
+    }
+  }
+  for (const candidate of mustNotMatch) {
+    if (guard.test(candidate)) {
+      violations.push(`${NPM_RELEASE_WORKFLOW}: prerelease version guard /${guardSource}/ accepts ${candidate}, which is not a candidate on the pinned ${base} line.`);
+    }
+  }
+
+  return violations;
+}
 
 function walkFiles(directory) {
   if (!fs.existsSync(directory)) return [];
@@ -73,6 +163,17 @@ export function collectReleaseControlPlaneViolations(rootDir = ROOT_DIR) {
     violations.push(
       `packages are at ${[...packageVersions][0]} while docs/dist-tag-policy.md pins ${expected}: if that bump is intended, ` +
         'set `currentVersion` (and the prerelease pattern) there, then run `pnpm version:sync` for the root, Worker and Expo identities.',
+    );
+  }
+
+  const npmReleaseWorkflow = path.join(rootDir, NPM_RELEASE_WORKFLOW);
+  if (fs.existsSync(npmReleaseWorkflow)) {
+    violations.push(
+      ...collectNpmReleaseWorkflowViolations(
+        fs.readFileSync(npmReleaseWorkflow, 'utf8'),
+        expected,
+        readPinnedPrereleasePattern(rootDir),
+      ),
     );
   }
 
