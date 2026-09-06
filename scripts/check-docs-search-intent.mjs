@@ -36,10 +36,12 @@
 //     Treat a green run as "these known intents still work", never as "search is good".
 //   - Queries are rewritten by apps/docs/pagefind-query.mjs before they reach Pagefind, exactly
 //     as the portal's search modal rewrites them. On a 25-query held-out set written before the
-//     rewrite existed (plans/reports/h075-search-heldout-blind-260906-1210.json, never used to
-//     tune content or the stopword list), the rewrite moved the strict top-3 rate from 6/25 to
-//     12/25 on the same index. The remaining misses are content the portal does not say, not
-//     phrasing.
+//     rewrite existed (plans/reports/h075-search-heldout-blind-260906-1210.json), the rewrite
+//     moved the strict top-3 rate from 6/25 to 12/25 on the same index. Content was not tuned
+//     to that set; the stopword list was checked against it twice (whether to keep 'to', and
+//     whether to keep phrasal-verb particles) and the figure did not move, so the set is no
+//     longer blind for stopword decisions. The remaining misses are content the portal does not
+//     say, not phrasing.
 //   - A pass here does not mean the page content is good — only that Pagefind indexes it for the
 //     terms a reader is expected to search.
 //

@@ -22,16 +22,32 @@ test('normaliseQuery drops question scaffolding and function words, keeps conten
 });
 
 test('normaliseQuery expands contractions so negation survives as a content term', () => {
-  assert.equal(normaliseQuery("my popover / select isn't showing up at all"), 'popover select not showing');
+  assert.equal(normaliseQuery("my popover / select isn't showing up at all"), 'popover select not showing up');
   assert.equal(normaliseQuery("there's no onValueChange"), 'no onvaluechange');
 });
 
-test('normaliseQuery leaves domain words alone', () => {
-  for (const word of ['component', 'screen', 'provider', 'native', 'web', 'expo', 'not', 'no', 'vs']) {
+test('normaliseQuery leaves domain words and phrasal-verb particles alone', () => {
+  for (const word of ['component', 'screen', 'provider', 'native', 'web', 'expo', 'not', 'no', 'vs', 'up', 'use', 'get', 'make']) {
     assert.equal(QUERY_STOPWORDS.has(word), false, `${word} must reach the index`);
   }
   assert.equal(normaliseQuery('controlled vs uncontrolled'), 'controlled vs uncontrolled');
   assert.equal(normaliseQuery('provider not found'), 'provider not found');
+  assert.equal(normaliseQuery('sign up screen example'), 'sign up screen example');
+  assert.equal(normaliseQuery('set up the provider'), 'set up provider');
+});
+
+test("normaliseQuery keeps 'to' only between two content terms, never alone", () => {
+  assert.equal(normaliseQuery('right to left'), 'right to left');
+  assert.equal(normaliseQuery('add BeeUI to Expo'), 'add beeui to expo');
+  assert.equal(normaliseQuery('how to use it'), 'use');
+  assert.equal(normaliseQuery('how to use beeui'), 'use beeui');
+  assert.equal(normaliseQuery('to'), 'to');
+});
+
+test('normaliseQuery keeps identifiers a reader pastes intact', () => {
+  assert.equal(normaliseQuery('@beemvp/beeui-ui'), '@beemvp/beeui-ui');
+  assert.equal(normaliseQuery('surface-raised'), 'surface-raised');
+  assert.equal(normaliseQuery('popover / select'), 'popover select');
 });
 
 test('normaliseQuery returns the original query when nothing but scaffolding remains', () => {
@@ -43,6 +59,11 @@ test('normaliseQuery returns the original query when nothing but scaffolding rem
 test("normaliseQuery does not touch Pagefind's own query syntax", () => {
   assert.equal(normaliseQuery('"safe area" duplicated'), '"safe area" duplicated');
   assert.equal(normaliseQuery('provider -expo'), 'provider -expo');
+  assert.equal(normaliseQuery('how do I "use" it'), 'how do I "use" it');
+});
+
+test('a single stray quote is not exact-phrase syntax', () => {
+  assert.equal(normaliseQuery('how do I add a " to a label'), 'add label');
 });
 
 test('normaliseQuery passes non-strings through unchanged', () => {

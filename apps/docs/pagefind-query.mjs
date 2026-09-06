@@ -32,32 +32,43 @@ const CONTRACTIONS = [
 
 // Words that carry no search intent on this portal. Kept as a flat sorted list so a reviewer can
 // scan it; do not add domain words (component, screen, provider, native, web, expo) — those are
-// exactly what distinguishes one page from another. 'to' is deliberately absent: dropping it
-// turned "right to left" into "right left", which ranks the safe-area page (edges: left/right)
-// above the RTL page, and keeping it cost nothing on the held-out set.
+// exactly what distinguishes one page from another, and phrasal-verb particles (up, get, use,
+// make) are not listed either: "sign up screen" and "set up the provider" lose their meaning
+// without them. 'to' is handled positionally below rather than listed here.
 export const QUERY_STOPWORDS = new Set([
   'a', 'about', 'actually', 'all', 'also', 'am', 'an', 'and', 'any', 'are', 'as', 'at',
   'be', 'been', 'but', 'by',
   'can', 'could',
   'did', 'do', 'does',
   'for', 'from',
-  'get', 'got',
   'had', 'has', 'have', 'here', 'how',
   'i', 'if', 'in', 'into', 'is', 'it', 'its',
   'just',
   'later', 'like',
-  'make', 'many', 'me', 'much', 'my',
+  'many', 'me', 'much', 'my',
   'need',
   'of', 'on', 'once', 'or', 'our', 'own',
   'please',
   'should', 'so', 'some', 'still',
   'than', 'that', 'the', 'their', 'them', 'then', 'there', 'these', 'they', 'this', 'those',
-  'up', 'us', 'use', 'using',
+  'us',
   'want', 'was', 'we', 'were', 'what', 'when', 'where', 'which', 'while', 'who', 'why', 'will', 'with', 'would',
   'yet', 'you', 'your',
 ]);
 
-const PAGEFIND_SYNTAX = /"|(^|\s)-\S/u;
+// A quoted phrase (two or more quotes) or a leading `-` exclusion is Pagefind syntax the reader
+// chose on purpose; a single stray quote is not.
+const PAGEFIND_SYNTAX = /".*"|(^|\s)-\S/u;
+
+// 'to' inside a phrase is content ("right to left", "add BeeUI to Expo"): dropping it turned
+// "right to left" into "right left", which ranks the safe-area page (edges: left/right) above
+// the RTL page. 'to' next to a dropped word is scaffolding ("how to use it") and would
+// otherwise survive on its own as the whole query.
+function keepsPositionalTo(terms, index) {
+  const previous = terms[index - 1];
+  const next = terms[index + 1];
+  return previous !== undefined && next !== undefined && !QUERY_STOPWORDS.has(previous) && !QUERY_STOPWORDS.has(next);
+}
 
 export function normaliseQuery(query) {
   if (typeof query !== 'string') return query;
@@ -67,10 +78,15 @@ export function normaliseQuery(query) {
   let text = original.toLowerCase();
   for (const [pattern, replacement] of CONTRACTIONS) text = text.replace(pattern, replacement);
 
-  const terms = text
-    .replace(/[?!,;:()[\]{}/\\|]+/gu, ' ')
+  // Punctuation that only separates words is dropped; `/`, `@`, `-` and `.` stay because they
+  // occur inside identifiers readers paste (`@beemvp/beeui-ui`, `surface-raised`).
+  const tokens = text
+    .replace(/[?!,;:()[\]{}|]+/gu, ' ')
     .split(/\s+/u)
-    .filter((term) => term !== '' && !QUERY_STOPWORDS.has(term));
+    .filter((term) => /[\p{L}\p{N}]/u.test(term));
+  const terms = tokens.filter(
+    (term, index) => (term === 'to' ? keepsPositionalTo(tokens, index) : !QUERY_STOPWORDS.has(term)),
+  );
 
   return terms.length === 0 ? original : terms.join(' ');
 }
