@@ -106,6 +106,12 @@ export function composeWorkerAssets({
 
   copyOutput(path.join(rootDir, 'web/dist'), outDir, outDir, claimed, 'landing/discovery/seo');
   copyOutput(path.join(rootDir, 'apps/docs/dist'), path.join(outDir, 'docs'), outDir, claimed, 'docs');
+  // robots.txt advertises /docs/sitemap-index.xml, which Starlight's bundled @astrojs/sitemap
+  // emits, not this repository. Advertising a URL the build stopped producing would pass every
+  // check that runs before the build; this is the step that has the build, so it is checked here.
+  if (!fs.existsSync(path.join(outDir, 'docs/sitemap-index.xml'))) {
+    throw new Error('docs export has no sitemap-index.xml, but robots.txt declares /docs/sitemap-index.xml');
+  }
   copyOutput(path.join(rootDir, 'apps/showcase/dist-public-web'), path.join(outDir, 'showcase'), outDir, claimed, 'showcase');
   copyOutput(path.join(rootDir, 'apps/demo/dist-public-web'), path.join(outDir, 'demo'), outDir, claimed, 'demo');
 
