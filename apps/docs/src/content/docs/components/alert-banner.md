@@ -154,7 +154,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-The spoken announcement is iOS-only — on Android and Web the banner sets a live region and nothing more — and even on iOS it is skipped unless `announcement` is supplied or both `title` and `description` are plain string/number content. There is no dismiss affordance: the banner stays until the caller unmounts it, and any close control has to be passed through `action`.
+The spoken announcement is iOS-only — on Android and Web the banner sets a live region and nothing more — and even on iOS it is skipped when `live` is set to `"none"`, or when a supplied `title` or `description` is element content rather than a plain string or number and no `announcement` overrides it. There is no dismiss affordance: the banner stays until the caller unmounts it, and any close control has to be passed through `action`.
 
 ## Related
 

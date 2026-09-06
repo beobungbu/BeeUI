@@ -9,7 +9,7 @@
     "alert-banner": {
       "purpose": "Inline semantic status callout with live-region announcement for feedback that stays on screen.",
       "behavior": "Stateless inline callout with no open/close or controlled prop; it live-announces (Android live-region, iOS `AccessibilityInfo`) whenever mounted with new content, with an optional explicit announcement override for complex children.",
-      "limitations": "The spoken announcement is iOS-only — on Android and Web the banner sets a live region and nothing more — and even on iOS it is skipped unless `announcement` is supplied or both `title` and `description` are plain string/number content. There is no dismiss affordance: the banner stays until the caller unmounts it, and any close control has to be passed through `action`."
+      "limitations": "The spoken announcement is iOS-only — on Android and Web the banner sets a live region and nothing more — and even on iOS it is skipped when `live` is set to `\"none\"`, or when a supplied `title` or `description` is element content rather than a plain string or number and no `announcement` overrides it. There is no dismiss affordance: the banner stays until the caller unmounts it, and any close control has to be passed through `action`."
     },
     "alert-dialog": {
       "purpose": "Confirmation/destructive modal built on the Dialog kernel; a backdrop press or Escape never closes it.",
@@ -24,7 +24,7 @@
     "avatar": {
       "purpose": "Image-with-fallback identity surface with size variants and source-keyed failure reset.",
       "behavior": "Stateless image-with-fallback: an image load failure resets to the fallback, and the reset is keyed to the semantic image source content (not object identity), so re-supplying an already-failed source shows the fallback again immediately.",
-      "limitations": "`fallback` takes a string only, so an icon or element fallback has no slot, and with neither `source` nor `fallback` the family renders an empty circle. The image is hidden from assistive technology and no accessible name is derived, so a meaningful avatar needs an explicit `accessibilityLabel`. `imageProps` cannot set the image's source, class name or error handler — those three are owned here so a failed load can fall back."
+      "limitations": "`fallback` takes a string only, so an icon or element fallback has no slot, and with neither `source` nor `fallback` the family renders an empty circle. The image is hidden from assistive technology and no accessible name is derived, so a meaningful avatar needs an explicit `accessibilityLabel`. `imageProps` cannot set the image's `source` — that one is owned here so a failed load can fall back — while the class name and error handler it carries are honoured, merged after `imageClassName` and chained after the internal reset."
     },
     "badge": {
       "purpose": "Compact semantic status label with paired foreground/background tokens.",
@@ -43,7 +43,7 @@
     "breadcrumb": {
       "purpose": "Router-neutral breadcrumb trail with decorative separators hidden from accessibility.",
       "behavior": "Stateless router-neutral trail; separators between `BreadcrumbItem`s are decorative and hidden from accessibility, `BreadcrumbItem` renders link semantics for navigable ancestors and non-interactive current-location semantics for the active item, and supplied child keys are preserved when separators are composed in.",
-      "limitations": "A `BreadcrumbItem` is interactive only when `onPress` is a function and `current` is false — marking an item current silently drops its press handler. The trail itself is not exposed as a navigation landmark or a list: the container is hidden from assistive technology and only the items carry semantics."
+      "limitations": "A `BreadcrumbItem` is interactive only when `onPress` is a function and `current` is false — marking an item current silently drops its press handler. The trail itself is not exposed as a navigation landmark or a list: the container is marked as not an accessibility element of its own, which leaves its items exposed but gives the trail no semantics, and only the items carry any."
     },
     "button": {
       "purpose": "Accessible pressable with variant/size/loading/disabled states and an optional label primitive.",
@@ -121,7 +121,7 @@
     "input": {
       "purpose": "Single-line text input with semantic focus/invalid/disabled states and Field-provided accessibility.",
       "behavior": "Uncontrolled-by-default text field (standard React Native `value`/`onChangeText`); `invalid`/`disabled`/focus state drive semantic styling, while label/required/error metadata come from a wrapping `Field`, not from `Input` itself.",
-      "limitations": "An explicit `accessibilityLabel`, or an explicit accessibility hint, wins over the label, description and error a wrapping `Field` supplies, so a field cannot re-label an input that names itself. `disabled` cannot be undone by the editable flag: that flag can only turn editing off, never back on."
+      "limitations": "An explicit `accessibilityLabel`, or an explicit accessibility hint, replaces the label, description and error a wrapping `Field` supplies — but not the label association, which is forwarded unconditionally, so on Web an input that names itself is still pointed at the field's label as well. `disabled` cannot be undone by the editable flag: that flag can only turn editing off, never back on."
     },
     "keyboard-aware-screen": {
       "purpose": "Scrollable form-screen shell with bounded width, explicit safe-area ownership, and platform keyboard handling.",
@@ -136,7 +136,7 @@
     "link": {
       "purpose": "Link semantics over Pressable; owns no navigation library or routing behavior.",
       "behavior": "Stateless link semantics layered on `Pressable`; `disabled` blocks press handling and marks the accessibility disabled state, and it owns no navigation/routing library integration.",
-      "limitations": "Only plain string or number children receive the link's own primary/underline styling and contribute to the inferred accessible name; an element child renders bare and needs its own `accessibilityLabel`."
+      "limitations": "Plain string and number children receive the link's own primary/underline styling, and an element child renders bare. The inferred accessible name is all-or-nothing, not per child: a single element child leaves the link with no inferred name at all, so it needs its own `accessibilityLabel`."
     },
     "list-group": {
       "purpose": "Bordered grouped-row surface with list container semantics and an aligned header.",
@@ -180,12 +180,12 @@
     "radio": {
       "purpose": "Controlled radio item and RadioGroup coordinator with native radiogroup semantics.",
       "behavior": "Standalone `Radio` supports both selection and deselection through `onCheckedChange`; grouped through `RadioGroup` (`value`/`onValueChange`, fully controlled — there is no uncontrolled mode) radios become mutually exclusive and can no longer deselect. Enabled usage without the matching callback warns in development.",
-      "limitations": "Inside a `RadioGroup`, a radio's own `checked` and `onCheckedChange` are ignored — checked state is derived by comparing its `value` with the group's selection, and only the group's callback fires. A radio does not accept a press handler of its own."
+      "limitations": "Inside a `RadioGroup`, a radio that supplies a `value` ignores its own `checked` and `onCheckedChange` — checked state is derived by comparing that `value` with the group's selection, and only the group's callback fires; a radio with no `value` keeps its own controlled pair even inside the group. A radio does not accept a press handler of its own."
     },
     "safe-area": {
       "purpose": "BeeUIProvider application root plus an explicit SafeArea surface with caller-owned edge selection.",
       "behavior": "`BeeUIProvider` (the application root) supplies safe-area measurement, the Toast runtime/viewport, and the shared anchored-overlay runtime to every descendant; `SafeArea` itself is a stateless surface with caller-owned `edges` selection — BeeUI never adds system insets to other components implicitly.",
-      "limitations": "`SafeArea` defaults to all four edges, so a surface that only touches one of them must name `edges` or it pads the other three too. Uniwind's safe-area utilities are fed only by the provider's `syncUniwindInsets` bridge; turning it off leaves the application to push insets into Uniwind itself.",
+      "limitations": "`SafeArea` is a pass-through to `react-native-safe-area-context`'s own view: BeeUI adds no `edges` default and no inset arithmetic of its own, so which edges a surface pads is the caller's to state. Uniwind's safe-area utilities are fed only by the provider's `syncUniwindInsets` bridge; turning it off leaves the application to push insets into Uniwind itself.",
       "notes": "BeeUIProvider supplies safe-area measurement, the Toast runtime/viewport, and the shared anchored-overlay runtime."
     },
     "screen": {
@@ -215,7 +215,7 @@
     "separator": {
       "purpose": "Decorative-by-default divider (semantic when requested); vertical orientation stretches across the cross axis.",
       "behavior": "Stateless decorative-by-default divider; `decorative={false}` makes it semantic, and a vertical orientation stretches across the parent's cross axis instead of relying on a percentage height.",
-      "limitations": "The role is not overridable — `decorative` set to false is the only way to expose separator semantics. Thickness is fixed at one pixel with no thickness, length or inset prop; anything else comes from `className`."
+      "limitations": "The role is not in the prop type, and leaving `decorative` at its default also keeps the divider out of the accessibility tree, so `decorative={false}` is the only way to expose separator semantics. Thickness is fixed at one pixel with no thickness, length or inset prop; anything else comes from `className`."
     },
     "sheet": {
       "purpose": "Gesture-driven bottom sheet with detents on the shared overlay runtime.",
@@ -225,7 +225,7 @@
     "skeleton": {
       "purpose": "Decorative static loading placeholder surface.",
       "behavior": "Stateless decorative static loading placeholder; it is hidden from the accessibility tree and carries no loading-state callbacks.",
-      "limitations": "The props carry only `variant` and `className`: there is no width, height or repeat-count prop, so a placeholder's size and how many are drawn come from the caller's own layout, and the circle variant sizes itself from its aspect ratio so it renders nothing without an explicit width."
+      "limitations": "There is no width, height or repeat-count prop, so a placeholder's size and how many are drawn come from the caller's own layout; everything else is plain view props, minus the two accessibility flags the component fixes to keep the placeholder out of the accessibility tree."
     },
     "spinner": {
       "purpose": "Native activity indicator with semantic tone mapping.",
@@ -245,7 +245,7 @@
     "state-message": {
       "purpose": "Empty-state and error-state (with retry) composition for zero/failure surfaces.",
       "behavior": "Stateless empty-state (`EmptyState`) and error-state (`ErrorState`, with an optional retry action) composition for zero/failure surfaces; the caller owns the retry handler and any loading state around it.",
-      "limitations": "`ErrorState`'s default title and description are English literals, so a localized app must pass both. `EmptyState`'s `icon` is always hidden from assistive technology, so an icon that carries meaning of its own needs that meaning repeated in `title` or `description`."
+      "limitations": "`ErrorState`'s default title and description are English literals, so a localized app must pass both. `EmptyState`'s `icon` is wrapped in a view marked as not an accessibility element of its own and given no name, so an icon that carries meaning of its own needs that meaning repeated in `title` or `description`."
     },
     "stepper": {
       "purpose": "Controlled current-step context with finite normalization and duplicate-step fail-safe; owns no workflow state.",
@@ -255,7 +255,7 @@
     "switch": {
       "purpose": "Controlled native switch with semantic track/thumb colors; enabled usage without onValueChange warns in development.",
       "behavior": "Controlled native `Switch` (`value`/`onValueChange`); enabled usage without `onValueChange` warns in development instead of silently doing nothing.",
-      "limitations": "Track and thumb colors come from tokens and cannot be set per instance — the three React Native color props are not accepted. On Web the component deliberately assigns no role or checked state of its own, leaving both to the control react-native-web renders inside it."
+      "limitations": "Track and thumb colors come from tokens and cannot be set per instance — the three React Native color props are not accepted. On Web the component deliberately applies no role and no checked or disabled accessibility state of its own; it sets both on native only."
     },
     "table": {
       "purpose": "Semantic data-table primitives that render real table/th scope/aria-sort semantics on Web.",
@@ -287,7 +287,7 @@
     "timeline": {
       "purpose": "Read-only ordered history composition with semantic marker states; owns no workflow state.",
       "behavior": "Stateless read-only ordered history composition; terminal connector placement is derived automatically from the rendered `TimelineItem` children, and supplied child keys are preserved — it owns no workflow state.",
-      "limitations": "The terminal-connector flag comes from a context the timeline places around each of its own direct children, so a `TimelineItem` nested inside a wrapper element, or rendered outside a `Timeline`, is treated as not-last and draws a connector below itself."
+      "limitations": "The terminal-connector flag comes from a context the timeline places around each of its own direct children, so `TimelineItem`s nested inside a wrapper element all inherit that wrapper's flag instead of their own position, and one rendered outside a `Timeline` reads the not-last default and draws a connector below itself."
     },
     "toast": {
       "purpose": "Provider-scoped runtime for toast notifications, exposed via useToast (show/dismiss/dismissAll) with FIFO queueing and safe-area-aware stacking.",
@@ -302,7 +302,7 @@
     "use-bee-token": {
       "purpose": "Read resolved design-token values at runtime via useBeeToken (hook) and getBeeToken (imperative).",
       "behavior": "Stateless read-only accessors — `useBeeToken` (hook) and `getBeeToken` (imperative) — for resolved design-token values at runtime; neither writes tokens or holds component state.",
-      "limitations": "`getBeeToken` always reads the global theme: it ignores an enclosing theme scope, returns a one-shot snapshot rather than a subscription, and throws when called before the theme has loaded. Only the color, chart, radius and motion categories are readable at runtime — spacing, typography, elevation and the other theme-invariant categories are not exposed here and are imported as constants instead."
+      "limitations": "`getBeeToken` always reads the global theme: it ignores an enclosing theme scope and returns a one-shot snapshot rather than a subscription, where `useBeeToken` is scope-aware and re-reads on change. Both throw when a token is read before the theme has loaded. Only the color, chart, radius and motion categories are readable at runtime — spacing, typography, elevation and the other theme-invariant categories are not exposed here and are imported as constants instead."
     },
     "visually-hidden": {
       "purpose": "Keeps non-interactive assistive content in the accessibility tree while removing it from visual layout.",

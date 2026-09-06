@@ -1718,6 +1718,58 @@ test('distinct limitations and an absent one are both accepted', () => {
   assert.deepEqual(collectCuratedLimitationViolations(clean), []);
 });
 
+// The rule's stated contract is that case, markdown emphasis, whitespace and trailing punctuation
+// do not buy a pass. Trailing whitespace used to: the punctuation strip ran before the trim, so a
+// copy plus one trailing space or newline kept its final period and compared unequal.
+for (const [label, suffix] of [
+  ['a trailing space', ' '],
+  ['a trailing newline', '\n'],
+  ['trailing whitespace around the period', ' . '],
+  ['a different case', ''],
+]) {
+  test(`a limitation that restates the family own purpose with ${label} is still rejected`, () => {
+    const purpose = 'Elevated/outlined surface with variant and spacing contract.';
+    const restating = {
+      name: 'card',
+      purpose,
+      behavior: 'Stateless elevated/outlined surface.',
+      limitations: suffix ? `${purpose}${suffix}` : purpose.toUpperCase(),
+    };
+
+    assert.deepEqual(collectCuratedLimitationViolations([restating]), [
+      'card: limitations restates its own purpose verbatim; a limitation has to say something the rest of the page does not.',
+    ]);
+  });
+
+  test(`one limitation pasted across two families with ${label} is still rejected`, () => {
+    const pasted = 'Only plain string or number children receive the label typography.';
+    const families = [
+      { name: 'card', purpose: 'a', behavior: 'b', limitations: pasted },
+      {
+        name: 'stat',
+        purpose: 'a',
+        behavior: 'b',
+        limitations: suffix ? `${pasted}${suffix}` : pasted.toUpperCase(),
+      },
+    ];
+
+    assert.deepEqual(collectCuratedLimitationViolations(families), [
+      'card, stat: share one curated limitation verbatim; a limitation derived from a family\'s own source cannot be identical across families.',
+    ]);
+  });
+}
+
+// The strip must not eat words: a limitation that genuinely differs still passes, and normalization
+// only removes the marks the contract names.
+test('two limitations differing by a whole clause are accepted', () => {
+  const distinct = [
+    { name: 'card', purpose: 'a', behavior: 'b', limitations: 'Card has no press handling.' },
+    { name: 'stat', purpose: 'a', behavior: 'b', limitations: 'Card has no press handling of its own.' },
+  ];
+
+  assert.deepEqual(collectCuratedLimitationViolations(distinct), []);
+});
+
 // Dialog's curated limitation is "Controlled open requires onOpenChange" — a fact the component
 // states itself in a development warning, so it is derivable rather than product judgement.
 test('a controlled-prop requirement is read from the component own warning', () => {

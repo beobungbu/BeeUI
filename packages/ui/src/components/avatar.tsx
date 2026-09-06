@@ -89,7 +89,7 @@ export type AvatarProps = Omit<ViewProps, 'children'> &
     fallbackClassName?: string;
     /** Applied to the underlying `Image` when it is shown; has no effect while the fallback is showing. */
     imageClassName?: string;
-    /** Forwarded to the underlying `Image`, minus `source` and `className`/`onError`, which this component owns to detect load failures and fall back to `fallback`. */
+    /** Forwarded to the underlying `Image`, minus `source`, which this component owns so a failed load can fall back to `fallback`. A `className` here is merged after `imageClassName`, and an `onError` here runs after the internal fallback switch. */
     imageProps?: AvatarImageProps;
     /** The image to display. If it fails to load, or is omitted, `fallback` is shown instead. */
     source?: ImageSourcePropType;

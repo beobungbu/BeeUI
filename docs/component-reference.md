@@ -34,7 +34,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/screens/change-password-screen.tsx`](../apps/showcase/patterns/account-settings/screens/change-password-screen.tsx), [`patterns/account-settings/screens/edit-profile-screen.tsx`](../apps/showcase/patterns/account-settings/screens/edit-profile-screen.tsx), [`patterns/auth/components/auth-shared.tsx`](../apps/showcase/patterns/auth/components/auth-shared.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** The spoken announcement is iOS-only — on Android and Web the banner sets a live region and nothing more — and even on iOS it is skipped unless `announcement` is supplied or both `title` and `description` are plain string/number content. There is no dismiss affordance: the banner stays until the caller unmounts it, and any close control has to be passed through `action`.
+- **Limitations:** The spoken announcement is iOS-only — on Android and Web the banner sets a live region and nothing more — and even on iOS it is skipped when `live` is set to `"none"`, or when a supplied `title` or `description` is element content rather than a plain string or number and no `announcement` overrides it. There is no dismiss affordance: the banner stays until the caller unmounts it, and any close control has to be passed through `action`.
 
 ## `alert-dialog`
 
@@ -76,7 +76,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/components/profile-header.tsx`](../apps/showcase/patterns/account-settings/components/profile-header.tsx), [`patterns/account-settings/screens/edit-profile-screen.tsx`](../apps/showcase/patterns/account-settings/screens/edit-profile-screen.tsx), [`patterns/auth/screens/profile-setup-screen.tsx`](../apps/showcase/patterns/auth/screens/profile-setup-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** `fallback` takes a string only, so an icon or element fallback has no slot, and with neither `source` nor `fallback` the family renders an empty circle. The image is hidden from assistive technology and no accessible name is derived, so a meaningful avatar needs an explicit `accessibilityLabel`. `imageProps` cannot set the image's source, class name or error handler — those three are owned here so a failed load can fall back.
+- **Limitations:** `fallback` takes a string only, so an icon or element fallback has no slot, and with neither `source` nor `fallback` the family renders an empty circle. The image is hidden from assistive technology and no accessible name is derived, so a meaningful avatar needs an explicit `accessibilityLabel`. `imageProps` cannot set the image's `source` — that one is owned here so a failed load can fall back — while the class name and error handler it carries are honoured, merged after `imageClassName` and chained after the internal reset.
 
 ## `badge`
 
@@ -131,7 +131,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`runtime-smoke/l10n-stress-acceptance.tsx`](../apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx), [`__tests__/logical-direction.test.tsx`](../apps/showcase/__tests__/logical-direction.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** A `BreadcrumbItem` is interactive only when `onPress` is a function and `current` is false — marking an item current silently drops its press handler. The trail itself is not exposed as a navigation landmark or a list: the container is hidden from assistive technology and only the items carry semantics.
+- **Limitations:** A `BreadcrumbItem` is interactive only when `onPress` is a function and `current` is false — marking an item current silently drops its press handler. The trail itself is not exposed as a navigation landmark or a list: the container is marked as not an accessibility element of its own, which leaves its items exposed but gives the trail no semantics, and only the items carry any.
 
 ## `button`
 
@@ -353,7 +353,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/screens/edit-profile-screen.tsx`](../apps/showcase/patterns/account-settings/screens/edit-profile-screen.tsx), [`patterns/auth/screens/forgot-password-screen.tsx`](../apps/showcase/patterns/auth/screens/forgot-password-screen.tsx), [`patterns/auth/screens/profile-setup-screen.tsx`](../apps/showcase/patterns/auth/screens/profile-setup-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** An explicit `accessibilityLabel`, or an explicit accessibility hint, wins over the label, description and error a wrapping `Field` supplies, so a field cannot re-label an input that names itself. `disabled` cannot be undone by the editable flag: that flag can only turn editing off, never back on.
+- **Limitations:** An explicit `accessibilityLabel`, or an explicit accessibility hint, replaces the label, description and error a wrapping `Field` supplies — but not the label association, which is forwarded unconditionally, so on Web an input that names itself is still pointed at the field's label as well. `disabled` cannot be undone by the editable flag: that flag can only turn editing off, never back on.
 
 ## `keyboard-aware-screen`
 
@@ -395,7 +395,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/auth/screens/forgot-password-screen.tsx`](../apps/showcase/patterns/auth/screens/forgot-password-screen.tsx), [`patterns/auth/screens/interests-onboarding-screen.tsx`](../apps/showcase/patterns/auth/screens/interests-onboarding-screen.tsx), [`patterns/auth/screens/profile-setup-screen.tsx`](../apps/showcase/patterns/auth/screens/profile-setup-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** Only plain string or number children receive the link's own primary/underline styling and contribute to the inferred accessible name; an element child renders bare and needs its own `accessibilityLabel`.
+- **Limitations:** Plain string and number children receive the link's own primary/underline styling, and an element child renders bare. The inferred accessible name is all-or-nothing, not per child: a single element child leaves the link with no inferred name at all, so it needs its own `accessibilityLabel`.
 
 ## `list-group`
 
@@ -520,7 +520,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/commerce-social/screens/checkout-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/checkout-screen.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/component-contracts.test.tsx`](../apps/showcase/__tests__/component-contracts.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** Inside a `RadioGroup`, a radio's own `checked` and `onCheckedChange` are ignored — checked state is derived by comparing its `value` with the group's selection, and only the group's callback fires. A radio does not accept a press handler of its own.
+- **Limitations:** Inside a `RadioGroup`, a radio that supplies a `value` ignores its own `checked` and `onCheckedChange` — checked state is derived by comparing that `value` with the group's selection, and only the group's callback fires; a radio with no `value` keeps its own controlled pair even inside the group. A radio does not accept a press handler of its own.
 
 ## `safe-area`
 
@@ -534,7 +534,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`App.tsx`](../apps/showcase/App.tsx), [`pattern-gallery/pattern-gallery.tsx`](../apps/showcase/pattern-gallery/pattern-gallery.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** `SafeArea` defaults to all four edges, so a surface that only touches one of them must name `edges` or it pads the other three too. Uniwind's safe-area utilities are fed only by the provider's `syncUniwindInsets` bridge; turning it off leaves the application to push insets into Uniwind itself.
+- **Limitations:** `SafeArea` is a pass-through to `react-native-safe-area-context`'s own view: BeeUI adds no `edges` default and no inset arithmetic of its own, so which edges a surface pads is the caller's to state. Uniwind's safe-area utilities are fed only by the provider's `syncUniwindInsets` bridge; turning it off leaves the application to push insets into Uniwind itself.
 - **Notes:** BeeUIProvider supplies safe-area measurement, the Toast runtime/viewport, and the shared anchored-overlay runtime.
 
 ## `screen`
@@ -618,7 +618,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/screens/account-screen.tsx`](../apps/showcase/patterns/account-settings/screens/account-screen.tsx), [`patterns/account-settings/screens/notification-settings-screen.tsx`](../apps/showcase/patterns/account-settings/screens/notification-settings-screen.tsx), [`patterns/account-settings/screens/privacy-security-screen.tsx`](../apps/showcase/patterns/account-settings/screens/privacy-security-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** The role is not overridable — `decorative` set to false is the only way to expose separator semantics. Thickness is fixed at one pixel with no thickness, length or inset prop; anything else comes from `className`.
+- **Limitations:** The role is not in the prop type, and leaving `decorative` at its default also keeps the divider out of the accessibility tree, so `decorative={false}` is the only way to expose separator semantics. Thickness is fixed at one pixel with no thickness, length or inset prop; anything else comes from `className`.
 
 ## `sheet`
 
@@ -646,7 +646,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/commerce-social/screens/product-feed-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/product-feed-screen.tsx), [`patterns/commerce-social/screens/product-search-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/product-search-screen.tsx), [`patterns/commerce-social/screens/social-feed-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/social-feed-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** The props carry only `variant` and `className`: there is no width, height or repeat-count prop, so a placeholder's size and how many are drawn come from the caller's own layout, and the circle variant sizes itself from its aspect ratio so it renders nothing without an explicit width.
+- **Limitations:** There is no width, height or repeat-count prop, so a placeholder's size and how many are drawn come from the caller's own layout; everything else is plain view props, minus the two accessibility flags the component fixes to keep the placeholder out of the accessibility tree.
 
 ## `spinner`
 
@@ -702,7 +702,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/commerce-social/screens/cart-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/cart-screen.tsx), [`patterns/commerce-social/screens/messages-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/messages-screen.tsx), [`patterns/commerce-social/screens/notifications-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/notifications-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** `ErrorState`'s default title and description are English literals, so a localized app must pass both. `EmptyState`'s `icon` is always hidden from assistive technology, so an icon that carries meaning of its own needs that meaning repeated in `title` or `description`.
+- **Limitations:** `ErrorState`'s default title and description are English literals, so a localized app must pass both. `EmptyState`'s `icon` is wrapped in a view marked as not an accessibility element of its own and given no name, so an icon that carries meaning of its own needs that meaning repeated in `title` or `description`.
 
 ## `stepper`
 
@@ -730,7 +730,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/components/preference-row.tsx`](../apps/showcase/patterns/account-settings/components/preference-row.tsx), [`patterns/account-settings/screens/settings-screen.tsx`](../apps/showcase/patterns/account-settings/screens/settings-screen.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** Track and thumb colors come from tokens and cannot be set per instance — the three React Native color props are not accepted. On Web the component deliberately assigns no role or checked state of its own, leaving both to the control react-native-web renders inside it.
+- **Limitations:** Track and thumb colors come from tokens and cannot be set per instance — the three React Native color props are not accepted. On Web the component deliberately applies no role and no checked or disabled accessibility state of its own; it sets both on native only.
 
 ## `table`
 
@@ -816,7 +816,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/commerce-social/screens/order-detail-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/order-detail-screen.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/navigation-data-patterns.test.tsx`](../apps/showcase/__tests__/navigation-data-patterns.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** The terminal-connector flag comes from a context the timeline places around each of its own direct children, so a `TimelineItem` nested inside a wrapper element, or rendered outside a `Timeline`, is treated as not-last and draws a connector below itself.
+- **Limitations:** The terminal-connector flag comes from a context the timeline places around each of its own direct children, so `TimelineItem`s nested inside a wrapper element all inherit that wrapper's flag instead of their own position, and one rendered outside a `Timeline` reads the not-last default and draws a connector below itself.
 
 ## `toast`
 
@@ -858,7 +858,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`__tests__/issue-72-token-reader.test.tsx`](../apps/showcase/__tests__/issue-72-token-reader.test.tsx), [`__tests__/perf-theme-runtime.test.tsx`](../apps/showcase/__tests__/perf-theme-runtime.test.tsx), [`__tests__/theme-tokens-v3-chart.test.tsx`](../apps/showcase/__tests__/theme-tokens-v3-chart.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** `getBeeToken` always reads the global theme: it ignores an enclosing theme scope, returns a one-shot snapshot rather than a subscription, and throws when called before the theme has loaded. Only the color, chart, radius and motion categories are readable at runtime — spacing, typography, elevation and the other theme-invariant categories are not exposed here and are imported as constants instead.
+- **Limitations:** `getBeeToken` always reads the global theme: it ignores an enclosing theme scope and returns a one-shot snapshot rather than a subscription, where `useBeeToken` is scope-aware and re-reads on change. Both throw when a token is read before the theme has loaded. Only the color, chart, radius and motion categories are readable at runtime — spacing, typography, elevation and the other theme-invariant categories are not exposed here and are imported as constants instead.
 
 ## `visually-hidden`
 

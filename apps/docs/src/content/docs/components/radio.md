@@ -171,7 +171,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-Inside a `RadioGroup`, a radio's own `checked` and `onCheckedChange` are ignored — checked state is derived by comparing its `value` with the group's selection, and only the group's callback fires. A radio does not accept a press handler of its own.
+Inside a `RadioGroup`, a radio that supplies a `value` ignores its own `checked` and `onCheckedChange` — checked state is derived by comparing that `value` with the group's selection, and only the group's callback fires; a radio with no `value` keeps its own controlled pair even inside the group. A radio does not accept a press handler of its own.
 
 ## Related
 

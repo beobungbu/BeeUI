@@ -167,7 +167,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-`ErrorState`'s default title and description are English literals, so a localized app must pass both. `EmptyState`'s `icon` is always hidden from assistive technology, so an icon that carries meaning of its own needs that meaning repeated in `title` or `description`.
+`ErrorState`'s default title and description are English literals, so a localized app must pass both. `EmptyState`'s `icon` is wrapped in a view marked as not an accessibility element of its own and given no name, so an icon that carries meaning of its own needs that meaning repeated in `title` or `description`.
 
 ## Related
 

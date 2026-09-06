@@ -162,7 +162,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-Track and thumb colors come from tokens and cannot be set per instance — the three React Native color props are not accepted. On Web the component deliberately assigns no role or checked state of its own, leaving both to the control react-native-web renders inside it.
+Track and thumb colors come from tokens and cannot be set per instance — the three React Native color props are not accepted. On Web the component deliberately applies no role and no checked or disabled accessibility state of its own; it sets both on native only.
 
 ## Related
 

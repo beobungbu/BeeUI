@@ -148,7 +148,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-Only plain string or number children receive the link's own primary/underline styling and contribute to the inferred accessible name; an element child renders bare and needs its own `accessibilityLabel`.
+Plain string and number children receive the link's own primary/underline styling, and an element child renders bare. The inferred accessible name is all-or-nothing, not per child: a single element child leaves the link with no inferred name at all, so it needs its own `accessibilityLabel`.
 
 ## Related
 

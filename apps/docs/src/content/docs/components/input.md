@@ -185,7 +185,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-An explicit `accessibilityLabel`, or an explicit accessibility hint, wins over the label, description and error a wrapping `Field` supplies, so a field cannot re-label an input that names itself. `disabled` cannot be undone by the editable flag: that flag can only turn editing off, never back on.
+An explicit `accessibilityLabel`, or an explicit accessibility hint, replaces the label, description and error a wrapping `Field` supplies — but not the label association, which is forwarded unconditionally, so on Web an input that names itself is still pointed at the field's label as well. `disabled` cannot be undone by the editable flag: that flag can only turn editing off, never back on.
 
 ## Related
 

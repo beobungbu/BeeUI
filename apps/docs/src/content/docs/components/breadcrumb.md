@@ -162,7 +162,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-A `BreadcrumbItem` is interactive only when `onPress` is a function and `current` is false — marking an item current silently drops its press handler. The trail itself is not exposed as a navigation landmark or a list: the container is hidden from assistive technology and only the items carry semantics.
+A `BreadcrumbItem` is interactive only when `onPress` is a function and `current` is false — marking an item current silently drops its press handler. The trail itself is not exposed as a navigation landmark or a list: the container is marked as not an accessibility element of its own, which leaves its items exposed but gives the trail no semantics, and only the items carry any.
 
 ## Related
 

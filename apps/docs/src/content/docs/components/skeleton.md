@@ -166,7 +166,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-The props carry only `variant` and `className`: there is no width, height or repeat-count prop, so a placeholder's size and how many are drawn come from the caller's own layout, and the circle variant sizes itself from its aspect ratio so it renders nothing without an explicit width.
+There is no width, height or repeat-count prop, so a placeholder's size and how many are drawn come from the caller's own layout; everything else is plain view props, minus the two accessibility flags the component fixes to keep the placeholder out of the accessibility tree.
 
 ## Related
 
