@@ -24,7 +24,8 @@ pnpm --filter @beemvp/beeui-demo build:web
 
 test('accepts repository-local evaluation commands and verified demo commands', () => {
   const root = fixture({
-    'README.md': 'pnpm install --frozen-lockfile\n',
+    'README.md': '> the repository/package version is `1.2.3`.\n' + 'pnpm install --frozen-lockfile\n',
+    'package.json': '{"version":"1.2.3"}',
     'apps/demo/README.md': validDemo,
     'apps/docs/src/content/docs/index.md': 'BeeUI is unpublished.\n',
   });
@@ -33,7 +34,8 @@ test('accepts repository-local evaluation commands and verified demo commands', 
 
 test('rejects unavailable public registry commands', () => {
   const root = fixture({
-    'README.md': 'pnpm add @beemvp/beeui-ui\n',
+    'README.md': '> the repository/package version is `1.2.3`.\n' + 'pnpm add @beemvp/beeui-ui\n',
+    'package.json': '{"version":"1.2.3"}',
     'apps/demo/README.md': validDemo,
     'apps/docs/src/content/docs/index.md': 'npx @beemvp/beeui-cli add button\n',
   });
@@ -45,7 +47,8 @@ test('rejects unavailable public registry commands', () => {
 
 test('rejects stale demo build command and missing workspace commands', () => {
   const root = fixture({
-    'README.md': 'BeeUI\n',
+    'README.md': '> the repository/package version is `1.2.3`.\n' + 'BeeUI\n',
+    'package.json': '{"version":"1.2.3"}',
     'apps/demo/README.md': 'npm run build\n',
     'apps/docs/src/content/docs/index.md': 'BeeUI\n',
   });

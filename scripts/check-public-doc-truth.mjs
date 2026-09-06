@@ -95,8 +95,11 @@ export function collectPublicTruthViolations(rootDir = ROOT_DIR) {
   // Worker identities, and nothing read this sentence. It is the first version a visitor sees.
   const readme = fs.readFileSync(path.join(rootDir, 'README.md'), 'utf8');
   const stated = readme.match(/repository\/package version is `([^`]+)`/u);
-  const workspaceVersion = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8')).version;
-  if (!stated) {
+  const manifestPath = path.join(rootDir, 'package.json');
+  const workspaceVersion = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')).version : undefined;
+  if (!workspaceVersion) {
+    violations.push('package.json: missing or has no version, so README.md\'s stated version cannot be checked.');
+  } else if (!stated) {
     violations.push('README.md: distribution-status line no longer states the package version ("repository/package version is `…`").');
   } else if (stated[1] !== workspaceVersion) {
     violations.push(`README.md: states package version ${stated[1]} but the workspace version is ${workspaceVersion}.`);
