@@ -357,7 +357,7 @@ const NEGATIVE_CLAIM_ORACLES = [
 // `AccessibilityRole` union plus the WAI-ARIA roles the portal uses — so anything outside it is
 // a derivation leak, whatever produced it. A legitimate new role belongs in this set; that edit
 // is the point at which someone confirms it is one.
-const KNOWN_ACCESSIBILITY_ROLES = new Set([
+export const KNOWN_ACCESSIBILITY_ROLES = new Set([
   // React Native AccessibilityRole
   'adjustable', 'alert', 'button', 'checkbox', 'combobox', 'grid', 'header', 'image',
   'imagebutton', 'keyboardkey', 'link', 'list', 'menu', 'menubar', 'menuitem', 'none',
@@ -855,7 +855,7 @@ function platformOfFile(relPath, siblings = []) {
 }
 
 // Empty string for every platform; otherwise the covered ones in a fixed order.
-function platformLabel(platforms) {
+export function platformLabel(platforms) {
   if (ALL_PLATFORMS.every((platform) => platforms.has(platform))) return '';
   const names = { ios: 'iOS', android: 'Android', web: 'Web' };
   return ALL_PLATFORMS.filter((platform) => platforms.has(platform)).map((platform) => names[platform]).join(' and ');

@@ -14,7 +14,13 @@ import {
   getPatternScreens,
   readJson,
 } from './component-docs-lib.mjs';
-import { buildPublicComponentManifest } from './public-component-reference.mjs';
+import {
+  buildPublicComponentManifest,
+  collectScopedAccessibilityFacts,
+  KNOWN_ACCESSIBILITY_ROLES,
+  platformLabel,
+} from './public-component-reference.mjs';
+import { stripSourceComments } from './component-props-lib.mjs';
 
 // Patterns sit directly under the ratified section, matching the component families that
 // moved there in #459. A /reference/ segment between the section and its content was an
@@ -33,12 +39,356 @@ function githubHref(file) {
   return `https://github.com/beobungbu/BeeUI/blob/main/${file}`;
 }
 
+// Memoized: the manifest parses every component source, and both the page renderer and the
+// derived-claim checker need this map once per pattern. Rebuilding it 74 times turned a
+// sub-second gate into a minute-long one.
+const symbolRouteCache = new Map();
 function symbolRouteMap(rootDir) {
+  const cached = symbolRouteCache.get(rootDir);
+  if (cached) return cached;
   const map = new Map();
   for (const component of buildPublicComponentManifest(rootDir)) {
     for (const value of component.values) map.set(value, component.route);
   }
+  symbolRouteCache.set(rootDir, map);
   return map;
+}
+
+// --- Derived per-pattern facts ----------------------------------------------
+//
+// `## Responsive contract` and `## Accessibility` were one identical paragraph on all 37
+// pattern pages: true of BeeUI in general, and therefore not a fact about any screen. The
+// component pages went through the same correction, and the defect that survived eight review
+// rounds there was always the same shape — a sentence asserting something outside what the
+// generator had actually read ("assigns no roles", "same on all platforms"). The rules that
+// ended it are reproduced here:
+//
+//   1. Every fact names the files it was read from. A negative is scoped to those files
+//      ("no `horizontal` scroll container in `x.tsx`"), never categorical.
+//   2. No sentence describes what another part of the page contains.
+//   3. An independent oracle — a grep over the comment-stripped source, deliberately not
+//      sharing code with the AST extractor — refuses every negative the source refutes, and
+//      every positive names a token the source does not contain.
+//
+// A pattern screen's layout is mostly in the pack-local shell it imports (`screen-shell.tsx`,
+// `auth-shared.tsx`), not in the screen file, so the read set follows relative imports inside
+// `apps/showcase/patterns/**`. That widening is exactly why rule 1 matters: the scope sentence
+// names every file, so a reader can tell a shell fact from a screen fact.
+export const PATTERN_SOURCE_ROOT = 'apps/showcase/patterns';
+
+function resolveLocalImport(fromRel, specifier, rootDir) {
+  if (!specifier.startsWith('.')) return null;
+  const base = path.join(path.dirname(fromRel), specifier);
+  for (const suffix of ['.tsx', '.ts', '/index.tsx', '/index.ts']) {
+    const candidate = path.normalize(`${base}${suffix}`);
+    if (fs.existsSync(path.join(rootDir, candidate))) return candidate;
+  }
+  return null;
+}
+
+// The module specifiers a file pulls in at runtime. A type-only import emits nothing, and
+// following it widened the read set with files the screen never renders:
+// `account-settings/screens/settings-screen.tsx` imports `AppearanceTheme` from the *Appearance*
+// screen for its type alone, and the Settings page published Appearance's `Box`, `HStack` and
+// `accessibilityLabel` as facts about itself. Read as an AST rather than as `from '...'` text,
+// because that is the only place the type-only marker exists.
+function runtimeModuleSpecifiers(filePath, source) {
+  const kind = filePath.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, kind);
+  const specifiers = [];
+  for (const statement of sourceFile.statements) {
+    const isImport = ts.isImportDeclaration(statement);
+    if (!isImport && !ts.isExportDeclaration(statement)) continue;
+    const moduleSpecifier = statement.moduleSpecifier;
+    if (!moduleSpecifier || !ts.isStringLiteralLike(moduleSpecifier)) continue;
+    if (isImport ? statement.importClause?.isTypeOnly : statement.isTypeOnly) continue;
+    // `import { type A, type B } from './x'` is `import type` written one specifier at a time,
+    // and emits no require either. A side-effect import has no bindings and always counts.
+    const bindings = isImport ? statement.importClause?.namedBindings : statement.exportClause;
+    if (bindings && (ts.isNamedImports(bindings) || ts.isNamedExports(bindings))) {
+      if (bindings.elements.every((element) => element.isTypeOnly)) continue;
+    }
+    specifiers.push(moduleSpecifier.text);
+  }
+  return specifiers;
+}
+
+// The screen file plus every pattern-local file it imports, transitively. Bounded to
+// `apps/showcase/patterns/**` so a stray import can never pull `packages/ui` source in and let a
+// pattern page publish a component's facts as its own. An entry outside that root — only a test
+// fixture reaches this — is bounded to its own directory, so the bound is never absent.
+export function collectPatternSourceFiles(entryRel, rootDir = ROOT_DIR) {
+  if (!entryRel || !fs.existsSync(path.join(rootDir, entryRel))) return [];
+  const bound = entryRel.startsWith(PATTERN_SOURCE_ROOT) ? PATTERN_SOURCE_ROOT : path.dirname(entryRel);
+  const visited = new Set();
+  const queue = [entryRel];
+  const files = [];
+  while (queue.length) {
+    const rel = queue.shift();
+    if (visited.has(rel)) continue;
+    visited.add(rel);
+    const abs = path.join(rootDir, rel);
+    if (!fs.existsSync(abs)) continue;
+    const source = fs.readFileSync(abs, 'utf8');
+    files.push({ path: rel, source });
+    for (const specifier of runtimeModuleSpecifiers(rel, source)) {
+      const next = resolveLocalImport(rel, specifier, rootDir);
+      if (next && next.startsWith(bound)) queue.push(next);
+    }
+  }
+  // Entry first so the scope sentence starts with the screen itself; the rest alphabetical so
+  // reordering imports cannot churn every page.
+  const [entry, ...rest] = files;
+  rest.sort((a, b) => a.path.localeCompare(b.path));
+  return [entry, ...rest];
+}
+
+// The BeeUI exports that own layout: everything under `packages/ui/src/components/` whose job is
+// placing or scrolling its children. A closed vocabulary rather than "any capitalized import",
+// because a pattern imports thirty components and only these carry a responsive contract.
+// `patternLayoutVocabularyViolations` refuses a name here that is not a public export, so the
+// set cannot drift into naming something BeeUI does not ship.
+export const BEEUI_LAYOUT_PRIMITIVES = [
+  'BottomActionBar', 'Box', 'HStack', 'KeyboardAwareScreen', 'SafeArea', 'Screen', 'Section',
+  'Stack', 'VStack',
+];
+
+// React Native's scrolling containers. `horizontal` is a prop on these, so which one a screen
+// renders is what makes the horizontal claim checkable at all.
+const SCROLL_CONTAINERS = ['FlatList', 'ScrollView', 'SectionList', 'VirtualizedList'];
+
+// APIs that read the viewport at runtime. `useBreakpoint`/`useMediaQuery` are not BeeUI exports
+// today; they are listed because their absence is the fact being published, and a future export
+// by that name must show up rather than pass unnoticed.
+const VIEWPORT_APIS = ['useWindowDimensions', 'useBreakpoint', 'useMediaQuery'];
+
+const BREAKPOINT_PREFIXES = ['sm', 'md', 'lg', 'xl', '2xl'];
+const PLATFORM_CLASS_PREFIXES = ['web', 'ios', 'android', 'native'];
+
+function jsxTagName(node) {
+  const tag = ts.isJsxSelfClosingElement(node)
+    ? node.tagName
+    : ts.isJsxOpeningElement(node)
+      ? node.tagName
+      : null;
+  if (!tag) return null;
+  return ts.isIdentifier(tag) ? tag.text : null;
+}
+
+function walkNodes(node, visit) {
+  visit(node);
+  ts.forEachChild(node, (child) => walkNodes(child, visit));
+}
+
+function addFact(map, key, file) {
+  if (!map.has(key)) map.set(key, new Set());
+  map.get(key).add(file);
+}
+
+// Every string a class name could live in: JSX string attributes, string literals and the fixed
+// text of template literals. Reading the raw file text instead would read comments, and a
+// comment naming `md:flex-row` would publish a breakpoint the screen does not use.
+function classTokensOf(sourceFile) {
+  const tokens = [];
+  walkNodes(sourceFile, (node) => {
+    if (ts.isStringLiteralLike(node)) tokens.push(...node.text.split(/\s+/u));
+    else if (ts.isTemplateHead(node) || ts.isTemplateMiddle(node) || ts.isTemplateTail(node)) {
+      tokens.push(...node.text.split(/\s+/u));
+    }
+  });
+  return tokens.filter(Boolean);
+}
+
+// Responsive facts, read from the AST of every file in the read set. Deliberately AST-based:
+// the oracle that checks the rendered sentences greps the same files as text, and two
+// derivations that share code agree with each other even when both are wrong.
+export function extractPatternLayoutFacts(files) {
+  const primitives = new Map();
+  const scrollContainers = new Map();
+  const horizontal = new Map();
+  const widths = new Map();
+  const breakpointClasses = new Map();
+  const platformClasses = new Map();
+  const platformApi = new Map();
+  const viewport = new Map();
+
+  for (const { path: filePath, source } of files) {
+    const kind = filePath.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+    const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, kind);
+    const name = filePath.split('/').pop();
+
+    walkNodes(sourceFile, (node) => {
+      const tag = jsxTagName(node);
+      if (tag) {
+        if (BEEUI_LAYOUT_PRIMITIVES.includes(tag)) addFact(primitives, tag, name);
+        if (SCROLL_CONTAINERS.includes(tag)) addFact(scrollContainers, tag, name);
+      }
+
+      if (ts.isJsxAttribute(node) && node.name && ts.isIdentifier(node.name)) {
+        const attribute = node.name.text;
+        // `horizontal` with no initializer is `horizontal={true}`; `horizontal={false}` is the
+        // vertical default written out and is not a horizontal-scrolling declaration.
+        if (attribute === 'horizontal') {
+          const off =
+            node.initializer &&
+            ts.isJsxExpression(node.initializer) &&
+            node.initializer.expression?.kind === ts.SyntaxKind.FalseKeyword;
+          if (!off) addFact(horizontal, 'horizontal', name);
+        }
+        if (attribute === 'contentWidth' && node.initializer && ts.isStringLiteralLike(node.initializer)) {
+          addFact(widths, `contentWidth="${node.initializer.text}"`, name);
+        }
+      }
+
+      // `Platform.OS` / `Platform.select`, read as a property access rather than as the word
+      // "Platform" anywhere in the file.
+      if (
+        ts.isPropertyAccessExpression(node) &&
+        ts.isIdentifier(node.expression) &&
+        node.expression.text === 'Platform' &&
+        (node.name.text === 'OS' || node.name.text === 'select')
+      ) {
+        addFact(platformApi, `Platform.${node.name.text}`, name);
+      }
+
+      if (ts.isIdentifier(node) && VIEWPORT_APIS.includes(node.text)) addFact(viewport, node.text, name);
+      if (
+        ts.isPropertyAccessExpression(node) &&
+        ts.isIdentifier(node.expression) &&
+        node.expression.text === 'Dimensions' &&
+        node.name.text === 'get'
+      ) {
+        addFact(viewport, 'Dimensions.get', name);
+      }
+    });
+
+    for (const token of classTokensOf(sourceFile)) {
+      if (/^max-w-[a-z0-9]+$/u.test(token)) addFact(widths, token, name);
+      const prefixed = /^([a-z0-9]+):/u.exec(token);
+      if (!prefixed) continue;
+      if (BREAKPOINT_PREFIXES.includes(prefixed[1])) addFact(breakpointClasses, token, name);
+      else if (PLATFORM_CLASS_PREFIXES.includes(prefixed[1])) addFact(platformClasses, token, name);
+    }
+  }
+
+  return { primitives, scrollContainers, horizontal, widths, breakpointClasses, platformClasses, platformApi, viewport };
+}
+
+// The renderer's absolute negatives and the oracles that refuse them, in one place — the same
+// arrangement `public-component-reference.mjs` arrived at after a renamed sentence silently
+// unhooked its guard while `--check` stayed green.
+export const PATTERN_LAYOUT_NONE_CLAIM = '**BeeUI layout primitives rendered:** none';
+export const PATTERN_SCROLL_NONE_CLAIM = '**Scroll ownership:** no scroll container is rendered';
+export const PATTERN_HORIZONTAL_NONE_CLAIM = '**Horizontal scrolling:** no `horizontal` scroll container';
+export const PATTERN_WIDTH_NONE_CLAIM = '**Width constraint:** no `contentWidth` prop and no `max-w-*` class';
+export const PATTERN_BREAKPOINT_NONE_CLAIM = '**Breakpoint-prefixed utility classes:** none';
+export const PATTERN_PLATFORM_CLASS_NONE_CLAIM = '**Platform-prefixed utility classes:** none';
+export const PATTERN_PLATFORM_API_NONE_CLAIM = '**Platform branching:** no `Platform.OS` or `Platform.select` call';
+export const PATTERN_VIEWPORT_NONE_CLAIM = '**Viewport measurement:** no `useWindowDimensions`, `Dimensions.get` or breakpoint hook';
+export const PATTERN_ROLES_NONE_CLAIM = '**Roles this screen sets itself:** none';
+export const PATTERN_STATES_NONE_CLAIM = '**Accessibility states and properties it sets itself:** none';
+export const PATTERN_COMPOSED_NONE_CLAIM = '**Semantics inherited from composed BeeUI families:** none imported';
+
+// Each negative, and the comment-stripped grep that refutes it. A negative is the only claim
+// shape a grep can decide, and it is the shape that does the damage: it is an assertion about
+// everything the AST walk did not visit.
+const PATTERN_NEGATIVE_ORACLES = [
+  {
+    claim: PATTERN_LAYOUT_NONE_CLAIM,
+    pattern: new RegExp(`<\\s*(?:${BEEUI_LAYOUT_PRIMITIVES.join('|')})[\\s/>]`, 'u'),
+    message: 'publishes "no BeeUI layout primitives" while its source renders one',
+  },
+  {
+    claim: PATTERN_SCROLL_NONE_CLAIM,
+    pattern: new RegExp(`<\\s*(?:${SCROLL_CONTAINERS.join('|')})[\\s/>]`, 'u'),
+    message: 'publishes "no scroll container" while its source renders one',
+  },
+  {
+    claim: PATTERN_HORIZONTAL_NONE_CLAIM,
+    pattern: /(?<![\w.'"-])horizontal(?![\w-])/u,
+    message: 'publishes "no horizontal scroll container" while its source mentions `horizontal`',
+  },
+  {
+    claim: PATTERN_WIDTH_NONE_CLAIM,
+    pattern: /contentWidth\s*[=:]|max-w-/u,
+    message: 'publishes "no width constraint" while its source declares one',
+  },
+  {
+    claim: PATTERN_BREAKPOINT_NONE_CLAIM,
+    pattern: new RegExp(`(?<![\\w-])(?:${BREAKPOINT_PREFIXES.join('|')}):[a-z]`, 'u'),
+    message: 'publishes "no breakpoint-prefixed utility classes" while its source contains one',
+  },
+  {
+    claim: PATTERN_PLATFORM_CLASS_NONE_CLAIM,
+    pattern: new RegExp(`(?<![\\w-])(?:${PLATFORM_CLASS_PREFIXES.join('|')}):[a-z]`, 'u'),
+    message: 'publishes "no platform-prefixed utility classes" while its source contains one',
+  },
+  {
+    claim: PATTERN_PLATFORM_API_NONE_CLAIM,
+    pattern: /\bPlatform\s*\.\s*(?:OS|select)\b/u,
+    message: 'publishes "no Platform branching" while its source branches on `Platform`',
+  },
+  {
+    claim: PATTERN_VIEWPORT_NONE_CLAIM,
+    pattern: new RegExp(`\\b(?:${VIEWPORT_APIS.join('|')})\\b|\\bDimensions\\s*\\.\\s*get\\b`, 'u'),
+    message: 'publishes "no viewport measurement" while its source reads the viewport',
+  },
+  {
+    claim: PATTERN_ROLES_NONE_CLAIM,
+    pattern: /accessibilityRole\s*[=:]|(?<![\w-])role\s*=\s*["'{]/u,
+    message: 'publishes "sets no roles itself" while its source sets a role',
+  },
+  {
+    claim: PATTERN_STATES_NONE_CLAIM,
+    pattern: /accessibility(?!Role\b)[A-Z]\w*\s*[=:]|(?<![\w-])(?:aria-[a-z]+|accessible)\s*=/u,
+    message: 'publishes "sets no states or properties itself" while its source sets one',
+  },
+  {
+    // Registered here for two reasons. It is a negative and so needs refuting like the rest, and
+    // being a registered claim is also what keeps `publishedFactTokens` from reading the module
+    // specifier inside it as a derived fact — a token no source that imports nothing contains,
+    // which would have made the claim refute itself.
+    claim: PATTERN_COMPOSED_NONE_CLAIM,
+    pattern: /from\s*['"]@beemvp\/beeui-ui['"]/u,
+    message: 'publishes "no composed BeeUI families" while its source imports from `@beemvp/beeui-ui`',
+  },
+];
+
+// Exported so a test can require a refuting source for every registered claim: an oracle whose
+// probe matches nothing refuses nothing, and would sit in this list looking like a guard.
+export const ALL_PATTERN_NONE_CLAIMS = PATTERN_NEGATIVE_ORACLES.map((oracle) => oracle.claim);
+
+function scopeSentence(files) {
+  const names = files.map((file) => `\`${file.path.split('/').pop()}\``);
+  return names.join(', ');
+}
+
+// A rendered bullet: either the positive form with the files each value was read from, or the
+// shared negative constant scoped to every file that was read.
+function factLine(label, facts, noneClaim, readScope) {
+  if (!facts.size) return `- ${noneClaim} in ${readScope}.`;
+  const values = [...facts.keys()].sort().map((value) => {
+    const where = [...facts.get(value)].sort().map((file) => `\`${file}\``).join(', ');
+    return `\`${value}\` (${where})`;
+  });
+  return `- **${label}:** ${values.join(', ')}.`;
+}
+
+// Every backticked token a positive line publishes, minus the file names it was read from. The
+// oracle requires each to appear literally in the source, so a hand-written or hallucinated
+// value cannot ship.
+export function publishedFactTokens(section) {
+  const tokens = [];
+  for (const line of section.split('\n')) {
+    if (!line.startsWith('- ')) continue;
+    if (ALL_PATTERN_NONE_CLAIMS.some((claim) => line.includes(claim))) continue;
+    for (const match of line.matchAll(/`([^`]+)`/gu)) {
+      const token = match[1];
+      if (/\.(?:tsx?|json|md)$/u.test(token)) continue;
+      tokens.push(token);
+    }
+  }
+  return tokens;
 }
 
 export function buildPublicPatternManifest(rootDir = ROOT_DIR) {
@@ -100,6 +450,11 @@ export function collectPublicPatternViolations(rootDir = ROOT_DIR) {
     violations.push(`public pattern count ${manifest.length} does not match curated canonical count ${contentNames.length}.`);
   }
 
+  violations.push(...patternLayoutVocabularyViolations(rootDir));
+  for (const pattern of manifest) {
+    violations.push(...collectPatternDerivedClaimViolations(renderPublicPatternPage(pattern, rootDir), pattern, rootDir));
+  }
+
   return violations;
 }
 
@@ -153,10 +508,206 @@ function renderPropsBlock(pattern, rootDir) {
   return `\`\`\`tsx\n${propsSource}\n\`\`\``;
 }
 
+// The BeeUI symbols imported anywhere in the read set, and the files importing them. Wider than
+// `pattern.beeuiComponents`, which is the screen file alone: the shell a screen imports composes
+// half its surface, and the reader needs to know where those semantics are documented.
+export function extractPatternBeeuiImports(files) {
+  const imports = new Map();
+  for (const { path: filePath, source } of files) {
+    const kind = filePath.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+    const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, kind);
+    const name = filePath.split('/').pop();
+    walkNodes(sourceFile, (node) => {
+      if (!ts.isImportDeclaration(node)) return;
+      if (!ts.isStringLiteralLike(node.moduleSpecifier)) return;
+      if (node.moduleSpecifier.text !== '@beemvp/beeui-ui') return;
+      const bindings = node.importClause?.namedBindings;
+      if (!bindings || !ts.isNamedImports(bindings)) return;
+      // A type-only import documents nothing a user can interact with.
+      if (node.importClause.isTypeOnly) return;
+      for (const element of bindings.elements) {
+        if (element.isTypeOnly) continue;
+        addFact(imports, element.name.text, name);
+      }
+    });
+  }
+  return imports;
+}
+
+const NO_SOURCE_NOTICE = '_No source file for this screen could be read, so no fact is derived here._';
+
+function readScopePreamble(files) {
+  const rest = files.length - 1;
+  const shared = rest === 0
+    ? 'the screen file alone'
+    : `the screen file and the ${rest} pattern-local file${rest === 1 ? '' : 's'} it imports`;
+  return `Read from ${shared}: ${scopeSentence(files)}. Every fact below is scoped to those files and to nothing else.`;
+}
+
+function renderResponsiveFacts(files) {
+  if (!files.length) return NO_SOURCE_NOTICE;
+  const readScope = scopeSentence(files);
+  const facts = extractPatternLayoutFacts(files);
+  const lines = [
+    factLine('BeeUI layout primitives rendered', facts.primitives, PATTERN_LAYOUT_NONE_CLAIM, readScope),
+    factLine('Scroll ownership', facts.scrollContainers, PATTERN_SCROLL_NONE_CLAIM, readScope),
+    factLine('Horizontal scrolling', facts.horizontal, PATTERN_HORIZONTAL_NONE_CLAIM, readScope),
+    factLine('Width constraint', facts.widths, PATTERN_WIDTH_NONE_CLAIM, readScope),
+    factLine('Breakpoint-prefixed utility classes', facts.breakpointClasses, PATTERN_BREAKPOINT_NONE_CLAIM, readScope),
+    factLine('Platform-prefixed utility classes', facts.platformClasses, PATTERN_PLATFORM_CLASS_NONE_CLAIM, readScope),
+    factLine('Platform branching', facts.platformApi, PATTERN_PLATFORM_API_NONE_CLAIM, readScope),
+    factLine('Viewport measurement', facts.viewport, PATTERN_VIEWPORT_NONE_CLAIM, readScope),
+  ];
+  return `${readScopePreamble(files)}\n\n${lines.join('\n')}`;
+}
+
+function renderPatternAccessibilityFacts(files, routes) {
+  if (!files.length) return NO_SOURCE_NOTICE;
+  const readScope = scopeSentence(files);
+  const { roles, states } = collectScopedAccessibilityFacts(files);
+
+  // Attribution per fact, not per line. A pattern reads five or six files, so "`a`, `b`, `c` —
+  // read from `x.tsx`, `y.tsx`, `z.tsx`" is a set-to-set statement that a reader takes file by
+  // file: on the Product Search page it would have said `product-card.tsx` sets
+  // `accessibilityIgnoresInvertColors`, which only `product-image.tsx` sets. Which file sets
+  // which comes out of the same scan, so each fact carries its own files, as the responsive
+  // lines do. A fact is attributed to a file only where the file's own platform scope overlaps
+  // the scope the fact is published under, so a branch no target reaches names no file.
+  const perFile = files.map((file) => ({
+    name: file.path.split('/').pop(),
+    facts: collectScopedAccessibilityFacts([file]),
+  }));
+  const qualified = (facts, pick) =>
+    [...facts.keys()].sort().map((fact) => {
+      const platforms = facts.get(fact);
+      const where = perFile
+        .filter((entry) => {
+          const scope = pick(entry.facts).get(fact);
+          return scope && [...scope].some((platform) => platforms.has(platform));
+        })
+        .map((entry) => `\`${entry.name}\``)
+        .join(', ');
+      const label = platformLabel(platforms);
+      return label ? `\`${fact}\` (${label}; ${where})` : `\`${fact}\` (${where})`;
+    }).join(', ');
+
+  const roleLine = roles.size
+    ? `- **Roles this screen sets itself:** ${qualified(roles, (facts) => facts.roles)}.`
+    : `- ${PATTERN_ROLES_NONE_CLAIM} set in ${readScope}.`;
+  const stateLine = states.size
+    ? `- **Accessibility states and properties it sets itself:** ${qualified(states, (facts) => facts.states)}.`
+    : `- ${PATTERN_STATES_NONE_CLAIM} set in ${readScope}.`;
+
+  // Where the rest of the semantics live. The families are named, not their facts: restating a
+  // component's roles here would be a second copy that drifts from the page that derives them.
+  const composed = [...extractPatternBeeuiImports(files).keys()].sort();
+  const linked = composed.filter((symbol) => routes.has(symbol));
+  const unlinked = composed.filter((symbol) => !routes.has(symbol));
+  const composedLine = linked.length
+    ? `- **Semantics inherited from composed BeeUI families:** ${linked
+        .map((symbol) => `[\`${symbol}\`](${routes.get(symbol)})`)
+        .join(', ')} — each family's own page derives the roles and states it sets; they are not restated here.`
+    : `- ${PATTERN_COMPOSED_NONE_CLAIM} in ${readScope}.`;
+  const unlinkedLine = unlinked.length
+    ? `\n- **Imported from \`@beemvp/beeui-ui\` with no public component page:** ${unlinked
+        .map((symbol) => `\`${symbol}\``)
+        .join(', ')}.`
+    : '';
+
+  return `${readScopePreamble(files)}\n\n${roleLine}\n${stateLine}\n${composedLine}${unlinkedLine}`;
+}
+
+// The independent oracle for the two derived sections, greping the same files as text after
+// stripping comments. It shares the claim constants with the renderer — that is the point, a
+// guard keyed on a phrase stops guarding the moment the phrase is edited — and shares no
+// derivation code with it.
+export function collectPatternDerivedClaimViolations(page, pattern, rootDir = ROOT_DIR) {
+  const violations = [];
+  const files = collectPatternSourceFiles(pattern.source, rootDir);
+  const key = `${pattern.pack}/${pattern.slug}`;
+  if (!files.length) return violations;
+  const sources = files.map((file) => stripSourceComments(file.source)).join('\n');
+
+  for (const { claim, pattern: probe, message } of PATTERN_NEGATIVE_ORACLES) {
+    if (!page.includes(claim)) continue;
+    if (!probe.test(sources)) continue;
+    violations.push(`${key}: ${message} (${probe.source}).`);
+  }
+
+  // The other direction, which the component pages left unguarded and which published a false
+  // "platform-split source files" sentence on calendar.md: a positive claim naming something the
+  // source does not contain. Every value the two sections publish was read out of these files,
+  // so every one of them must still be findable in them as text.
+  for (const section of [sectionBody(page, 'Responsive contract'), sectionBody(page, 'Accessibility')]) {
+    for (const token of publishedFactTokens(section)) {
+      if (sources.includes(token)) continue;
+      violations.push(`${key}: publishes \`${token}\` as a derived fact, which none of its source files contains.`);
+    }
+  }
+
+  // Page against itself. The Composition section lists the screen file's own BeeUI imports, so a
+  // layout primitive named there and a "no layout primitives" line below it cannot both be true.
+  if (page.includes(PATTERN_LAYOUT_NONE_CLAIM)) {
+    for (const symbol of pattern.beeuiComponents ?? []) {
+      if (!BEEUI_LAYOUT_PRIMITIVES.includes(symbol)) continue;
+      violations.push(
+        `${key}: publishes "${PATTERN_LAYOUT_NONE_CLAIM}" while its own Composition list names the ` +
+        `layout primitive \`${symbol}\`.`,
+      );
+    }
+  }
+
+  for (const role of publishedPatternRoles(page)) {
+    if (KNOWN_ACCESSIBILITY_ROLES.has(role)) continue;
+    violations.push(
+      `${key}: publishes \`${role}\` as an accessibility role, which is not one. Either the ` +
+      'derivation read a value that is not a role, or the role is new and belongs in ' +
+      '`KNOWN_ACCESSIBILITY_ROLES`.',
+    );
+  }
+
+  return violations;
+}
+
+// The text under `## <heading>`, up to the next `## `. Section-scoped so a token quoted in the
+// curated purpose or in the props code block is not read as a derived fact.
+export function sectionBody(page, heading) {
+  const start = page.indexOf(`\n## ${heading}\n`);
+  if (start === -1) return '';
+  const from = start + `\n## ${heading}\n`.length;
+  const next = page.indexOf('\n## ', from);
+  return next === -1 ? page.slice(from) : page.slice(from, next);
+}
+
+function publishedPatternRoles(page) {
+  const line = page.split('\n').find((candidate) => candidate.includes('**Roles this screen sets itself:**'));
+  // Keyed on the shared constant, not on a phrase: the negative line names its scope in
+  // backticks, and reading those as roles would refuse every page that assigns none.
+  if (!line || line.includes(PATTERN_ROLES_NONE_CLAIM)) return [];
+  // Each role is followed by the files it was read from, in the same backticks. A source file is
+  // not a role; the extension is what tells them apart.
+  return [...line.matchAll(/`([^`]+)`/gu)]
+    .map((match) => match[1])
+    .filter((token) => !/\.(?:tsx?|json|md)$/u.test(token));
+}
+
+// Guards the closed vocabulary itself: a name in `BEEUI_LAYOUT_PRIMITIVES` that no BeeUI package
+// exports would make every page's primitive list a claim about something that does not ship.
+export function patternLayoutVocabularyViolations(rootDir = ROOT_DIR) {
+  const exported = new Set();
+  for (const component of buildPublicComponentManifest(rootDir)) {
+    for (const value of component.values) exported.add(value);
+  }
+  return BEEUI_LAYOUT_PRIMITIVES
+    .filter((name) => !exported.has(name))
+    .map((name) => `BEEUI_LAYOUT_PRIMITIVES names \`${name}\`, which is not a public BeeUI export.`);
+}
+
 export function renderPublicPatternPage(pattern, rootDir = ROOT_DIR) {
   const routes = symbolRouteMap(rootDir);
   const composition = linkedComposition(pattern, routes);
-  return `---\ntitle: ${JSON.stringify(pattern.title)}\ndescription: ${JSON.stringify(pattern.purpose)}\n---\n\n<!-- Generated by scripts/public-pattern-reference.mjs. Do not hand-edit. -->\n\n${pattern.purpose}\n\n## Preview\n\n[Open the exact pattern in the real BeeUI Web Showcase](${pattern.showcaseHref}). This is a Web runtime preview, not native-device evidence.\n\n${renderStateTargets(pattern)}\n\nThe same source is available at [\`${pattern.source}\`](${pattern.sourceHref}).\n\n## Composition\n\nPrincipal public BeeUI exports used by this screen: ${composition}.\n\nThe pattern is a composition recipe rather than a new framework layer. Follow the linked component contracts for state, provider, platform and accessibility details.\n\n## State and callback contract\n\n${renderState(pattern)}\n\n${renderPropsBlock(pattern, rootDir)}\n\nCommon product states such as loading, success, empty, error, permission-like recovery, filtering/search/selection or pagination are represented only where the actual screen source exposes them. The pattern docs do not invent backend states that the fixture does not render.\n\n## Responsive contract\n\nThis pattern follows BeeUI's [mobile-first responsive contract](/docs/responsive/): narrow-phone composition is the baseline; larger widths may reflow or promote navigation/layout according to BeeUI breakpoint tokens. Safe-area and scroll ownership stay explicit, and short-height/landscape/large-text constraints must be handled without viewport-level horizontal scrolling.\n\n## Accessibility\n\nThe screen inherits the semantics, touch-target, focus/keyboard, RTL, large-text and reduced-motion contracts of its component composition. Use the [Accessibility guide](/docs/accessibility/) for evidence scope. A Web preview does not substitute for VoiceOver/TalkBack runtime evidence.\n\n## Application ownership boundary\n\n**Intentionally excluded:** ${pattern.excluded}\n\nBeeUI does not take ownership of app routing, authentication/business rules, APIs/data fetching, persistence, form/state frameworks, chart frameworks or backend logic merely because a pattern visually composes those product concepts.\n\n## Source ownership\n\n\`${pattern.componentName}\` is **Showcase source you copy**, not a package export: it is not shipped from any \`@beemvp/beeui-*\` package, and the Registry CLI (\`pnpm beeui list\` / \`pnpm beeui add\`) does not carry pattern screens. Copy [\`${pattern.source}\`](${pattern.sourceHref}) into your app and adapt it directly. Only the individual BeeUI components it composes (linked above) are available for source ownership through the repository-local Registry workflow; before public CLI publication, use [CLI & source ownership](/docs/guides/cli-source-ownership/) from a BeeUI checkout rather than a public \`npx\` command.\n\n## Related\n\n- [All production patterns](/docs/patterns/)\n- [Component reference](/docs/components/)\n- [Showcase](/showcase/)\n- [Production reference app](/demo/)\n- [Source](${pattern.sourceHref})\n`;
+  const sourceFiles = collectPatternSourceFiles(pattern.source, rootDir);
+  return `---\ntitle: ${JSON.stringify(pattern.title)}\ndescription: ${JSON.stringify(pattern.purpose)}\n---\n\n<!-- Generated by scripts/public-pattern-reference.mjs. Do not hand-edit. -->\n\n${pattern.purpose}\n\n## Preview\n\n[Open the exact pattern in the real BeeUI Web Showcase](${pattern.showcaseHref}). This is a Web runtime preview, not native-device evidence.\n\n${renderStateTargets(pattern)}\n\nThe same source is available at [\`${pattern.source}\`](${pattern.sourceHref}).\n\n## Composition\n\nPrincipal public BeeUI exports used by this screen: ${composition}.\n\nThe pattern is a composition recipe rather than a new framework layer. Follow the linked component contracts for state, provider, platform and accessibility details.\n\n## State and callback contract\n\n${renderState(pattern)}\n\n${renderPropsBlock(pattern, rootDir)}\n\nCommon product states such as loading, success, empty, error, permission-like recovery, filtering/search/selection or pagination are represented only where the actual screen source exposes them. The pattern docs do not invent backend states that the fixture does not render.\n\n## Responsive contract\n\n${renderResponsiveFacts(sourceFiles)}\n\nBeeUI's [mobile-first responsive contract](/docs/responsive/) is the framework-level document; the list above states only what this screen's own files declare, and says nothing about how the composed components behave internally.\n\n## Accessibility\n\n${renderPatternAccessibilityFacts(sourceFiles, routes)}\n\nTouch-target size, focus order, announcements, RTL, large-text and reduced-motion behavior are not derived from this source — see the [Accessibility guide](/docs/accessibility/) for what is and is not covered by evidence. A Web preview does not substitute for VoiceOver/TalkBack runtime evidence.\n\n## Application ownership boundary\n\n**Intentionally excluded:** ${pattern.excluded}\n\nBeeUI does not take ownership of app routing, authentication/business rules, APIs/data fetching, persistence, form/state frameworks, chart frameworks or backend logic merely because a pattern visually composes those product concepts.\n\n## Source ownership\n\n\`${pattern.componentName}\` is **Showcase source you copy**, not a package export: it is not shipped from any \`@beemvp/beeui-*\` package, and the Registry CLI (\`pnpm beeui list\` / \`pnpm beeui add\`) does not carry pattern screens. Copy [\`${pattern.source}\`](${pattern.sourceHref}) into your app and adapt it directly. Only the individual BeeUI components it composes (linked above) are available for source ownership through the repository-local Registry workflow; before public CLI publication, use [CLI & source ownership](/docs/guides/cli-source-ownership/) from a BeeUI checkout rather than a public \`npx\` command.\n\n## Related\n\n- [All production patterns](/docs/patterns/)\n- [Component reference](/docs/components/)\n- [Showcase](/showcase/)\n- [Production reference app](/demo/)\n- [Source](${pattern.sourceHref})\n`;
 }
 
 export function renderPublicPatternIndex(manifest) {

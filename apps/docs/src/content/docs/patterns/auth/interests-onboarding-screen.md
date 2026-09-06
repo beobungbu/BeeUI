@@ -43,11 +43,28 @@ Common product states such as loading, success, empty, error, permission-like re
 
 ## Responsive contract
 
-This pattern follows BeeUI's [mobile-first responsive contract](/docs/responsive/): narrow-phone composition is the baseline; larger widths may reflow or promote navigation/layout according to BeeUI breakpoint tokens. Safe-area and scroll ownership stay explicit, and short-height/landscape/large-text constraints must be handled without viewport-level horizontal scrolling.
+Read from the screen file and the 2 pattern-local files it imports: `interests-onboarding-screen.tsx`, `auth-shared.tsx`, `auth-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
+
+- **BeeUI layout primitives rendered:** `Box` (`auth-shared.tsx`), `HStack` (`auth-shared.tsx`, `interests-onboarding-screen.tsx`), `KeyboardAwareScreen` (`auth-shared.tsx`), `VStack` (`auth-shared.tsx`, `interests-onboarding-screen.tsx`).
+- **Scroll ownership:** no scroll container is rendered in `interests-onboarding-screen.tsx`, `auth-shared.tsx`, `auth-fixtures.ts`.
+- **Horizontal scrolling:** no `horizontal` scroll container in `interests-onboarding-screen.tsx`, `auth-shared.tsx`, `auth-fixtures.ts`.
+- **Width constraint:** `contentWidth="sm"` (`auth-shared.tsx`), `max-w-full` (`interests-onboarding-screen.tsx`).
+- **Breakpoint-prefixed utility classes:** none in `interests-onboarding-screen.tsx`, `auth-shared.tsx`, `auth-fixtures.ts`.
+- **Platform-prefixed utility classes:** `web:py-12` (`auth-shared.tsx`).
+- **Platform branching:** no `Platform.OS` or `Platform.select` call in `interests-onboarding-screen.tsx`, `auth-shared.tsx`, `auth-fixtures.ts`.
+- **Viewport measurement:** no `useWindowDimensions`, `Dimensions.get` or breakpoint hook in `interests-onboarding-screen.tsx`, `auth-shared.tsx`, `auth-fixtures.ts`.
+
+BeeUI's [mobile-first responsive contract](/docs/responsive/) is the framework-level document; the list above states only what this screen's own files declare, and says nothing about how the composed components behave internally.
 
 ## Accessibility
 
-The screen inherits the semantics, touch-target, focus/keyboard, RTL, large-text and reduced-motion contracts of its component composition. Use the [Accessibility guide](/docs/accessibility/) for evidence scope. A Web preview does not substitute for VoiceOver/TalkBack runtime evidence.
+Read from the screen file and the 2 pattern-local files it imports: `interests-onboarding-screen.tsx`, `auth-shared.tsx`, `auth-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
+
+- **Roles this screen sets itself:** none set in `interests-onboarding-screen.tsx`, `auth-shared.tsx`, `auth-fixtures.ts`.
+- **Accessibility states and properties it sets itself:** `accessibilityLabel` (`auth-shared.tsx`).
+- **Semantics inherited from composed BeeUI families:** [`AlertBanner`](/docs/components/alert-banner/), [`Box`](/docs/components/box/), [`Button`](/docs/components/button/), [`Card`](/docs/components/card/), [`Chip`](/docs/components/chip/), [`ChipGroup`](/docs/components/chip/), [`HStack`](/docs/components/stack/), [`KeyboardAwareScreen`](/docs/components/keyboard-aware-screen/), [`Link`](/docs/components/link/), [`Progress`](/docs/components/progress/), [`Separator`](/docs/components/separator/), [`Text`](/docs/components/text/), [`VStack`](/docs/components/stack/) — each family's own page derives the roles and states it sets; they are not restated here.
+
+Touch-target size, focus order, announcements, RTL, large-text and reduced-motion behavior are not derived from this source — see the [Accessibility guide](/docs/accessibility/) for what is and is not covered by evidence. A Web preview does not substitute for VoiceOver/TalkBack runtime evidence.
 
 ## Application ownership boundary
 

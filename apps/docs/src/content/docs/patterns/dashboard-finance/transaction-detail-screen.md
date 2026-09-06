@@ -37,11 +37,28 @@ Common product states such as loading, success, empty, error, permission-like re
 
 ## Responsive contract
 
-This pattern follows BeeUI's [mobile-first responsive contract](/docs/responsive/): narrow-phone composition is the baseline; larger widths may reflow or promote navigation/layout according to BeeUI breakpoint tokens. Safe-area and scroll ownership stay explicit, and short-height/landscape/large-text constraints must be handled without viewport-level horizontal scrolling.
+Read from the screen file and the 1 pattern-local file it imports: `transaction-detail-screen.tsx`, `screen-shell.tsx`. Every fact below is scoped to those files and to nothing else.
+
+- **BeeUI layout primitives rendered:** `Box` (`screen-shell.tsx`), `HStack` (`transaction-detail-screen.tsx`), `VStack` (`transaction-detail-screen.tsx`).
+- **Scroll ownership:** `ScrollView` (`screen-shell.tsx`).
+- **Horizontal scrolling:** no `horizontal` scroll container in `transaction-detail-screen.tsx`, `screen-shell.tsx`.
+- **Width constraint:** `max-w-6xl` (`screen-shell.tsx`).
+- **Breakpoint-prefixed utility classes:** none in `transaction-detail-screen.tsx`, `screen-shell.tsx`.
+- **Platform-prefixed utility classes:** none in `transaction-detail-screen.tsx`, `screen-shell.tsx`.
+- **Platform branching:** no `Platform.OS` or `Platform.select` call in `transaction-detail-screen.tsx`, `screen-shell.tsx`.
+- **Viewport measurement:** no `useWindowDimensions`, `Dimensions.get` or breakpoint hook in `transaction-detail-screen.tsx`, `screen-shell.tsx`.
+
+BeeUI's [mobile-first responsive contract](/docs/responsive/) is the framework-level document; the list above states only what this screen's own files declare, and says nothing about how the composed components behave internally.
 
 ## Accessibility
 
-The screen inherits the semantics, touch-target, focus/keyboard, RTL, large-text and reduced-motion contracts of its component composition. Use the [Accessibility guide](/docs/accessibility/) for evidence scope. A Web preview does not substitute for VoiceOver/TalkBack runtime evidence.
+Read from the screen file and the 1 pattern-local file it imports: `transaction-detail-screen.tsx`, `screen-shell.tsx`. Every fact below is scoped to those files and to nothing else.
+
+- **Roles this screen sets itself:** none set in `transaction-detail-screen.tsx`, `screen-shell.tsx`.
+- **Accessibility states and properties it sets itself:** none set in `transaction-detail-screen.tsx`, `screen-shell.tsx`.
+- **Semantics inherited from composed BeeUI families:** [`AppHeader`](/docs/components/app-header/), [`Badge`](/docs/components/badge/), [`Box`](/docs/components/box/), [`Button`](/docs/components/button/), [`Card`](/docs/components/card/), [`DescriptionItem`](/docs/components/description-list/), [`DescriptionList`](/docs/components/description-list/), [`HStack`](/docs/components/stack/), [`Text`](/docs/components/text/), [`VStack`](/docs/components/stack/) — each family's own page derives the roles and states it sets; they are not restated here.
+
+Touch-target size, focus order, announcements, RTL, large-text and reduced-motion behavior are not derived from this source — see the [Accessibility guide](/docs/accessibility/) for what is and is not covered by evidence. A Web preview does not substitute for VoiceOver/TalkBack runtime evidence.
 
 ## Application ownership boundary
 
