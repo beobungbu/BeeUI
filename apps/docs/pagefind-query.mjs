@@ -118,6 +118,24 @@ export const FALLBACK_MIN_RESULTS = 3;
 // beyond it the query is already specific enough that the AND is the problem, not the recall.
 const MAX_RELAXED_TERMS = 8;
 
+// A relaxed window that never settles must not cost the reader the results the AND already
+// found. Before the ladder existed exactly one search could hang the modal; the ladder can issue
+// up to 36 of them in sequence, so each one is raced against a deadline and a slow window is
+// abandoned rather than awaited. Generous on purpose: a window that has not answered in this
+// long is not going to rescue the query.
+const RELAXED_SEARCH_TIMEOUT_MS = 2000;
+
+function searchWithinDeadline(searcher, window, searchOptions, timeoutMs) {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return searcher.search(window, searchOptions);
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`relaxed search for "${window}" exceeded ${timeoutMs}ms`)), timeoutMs);
+    Promise.resolve(searcher.search(window, searchOptions)).then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (error) => { clearTimeout(timer); reject(error); },
+    );
+  });
+}
+
 // Contiguous windows of `width` terms, in reading order: ['a b', 'b c'] for ['a','b','c'] at 2.
 // Contiguous rather than every subset because adjacent words are the ones a reader means
 // together ("voiceover talkback", "font size"), and because subsets are exponential.
@@ -139,8 +157,10 @@ function termWindows(terms, width) {
 // all), so the fallback cannot regress a working query, only lengthen a starved one.
 //
 // Append-only was also measured against the alternative (2026-09-06, built index, both held-out
-// sets): ordering the union by Pagefind's own score instead scored strict top-3 14/26 vs 13/26 on
-// the first set but 13/24 vs 15/24 on the second, and dropped /components/password-input/ out of
+// sets, both committed beside the reports as plans/reports/h075-search-heldout-scorer-260906-1450
+// .json and h075-search-heldout-worker-260906-1520.json so the figures can be re-derived):
+// ordering the union by Pagefind's own score instead scored strict top-3 14/26 vs 13/26 on the
+// first set but 13/24 vs 15/24 on the second, and dropped /components/password-input/ out of
 // the top 3 for "password field with a show hide toggle" — a page the AND alone already ranked
 // first. Score order buys a starved query a better rank by risking a page a working query already
 // found, so it was not taken. The price of keeping append-only is a low-scoring AND hit sitting
@@ -160,7 +180,12 @@ function termWindows(terms, width) {
 //
 // `searcher` is anything with Pagefind's `search(term, options)` shape: the module namespace of
 // pagefind.js in the browser, or a `createInstance()` handle in the search-intent check.
-export async function searchWithFallback(searcher, query, searchOptions, { minResults = FALLBACK_MIN_RESULTS } = {}) {
+export async function searchWithFallback(
+  searcher,
+  query,
+  searchOptions,
+  { minResults = FALLBACK_MIN_RESULTS, timeoutMs = RELAXED_SEARCH_TIMEOUT_MS } = {},
+) {
   const primary = await searcher.search(query, searchOptions);
   if (typeof query !== 'string' || PAGEFIND_SYNTAX.test(query)) return primary;
   if (searchOptions?.sort) return primary;
@@ -186,7 +211,11 @@ export async function searchWithFallback(searcher, query, searchOptions, { minRe
       // that fails is skipped instead, which leaves the reader with what the AND found, never
       // less than before the relaxation existed.
       try {
-        const { results } = await searcher.search(window, searchOptions);
+        const { results } = await searchWithinDeadline(searcher, window, searchOptions, timeoutMs);
+        // Shape-checked like the primary search above, rather than trusted because it resolved:
+        // an envelope whose `results` is not an array would otherwise append junk rows the reader
+        // sees as answers.
+        if (!Array.isArray(results)) continue;
         for (const result of results) {
           if (seen.has(result.id)) continue;
           const entry = rung.get(result.id);

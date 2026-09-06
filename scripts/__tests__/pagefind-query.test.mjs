@@ -241,7 +241,7 @@ test('searchWithFallback survives a window search that rejects, keeping what the
 });
 
 test('searchWithFallback survives a window search that resolves a malformed envelope', async () => {
-  const shapes = [{}, null, { results: null }, { results: [null] }];
+  const shapes = [{}, null, { results: null }, { results: [null] }, { results: 'nope' }, { results: 42 }];
   for (const shape of shapes) {
     const searcher = {
       async search(term) {
@@ -390,4 +390,35 @@ test('the Search override is upstream Starlight Search.astro plus only the searc
     stripped = stripped.replace(ours, theirs);
   }
   assert.equal(stripped, upstream, 'Search.astro override differs from upstream Starlight beyond the listed search wiring; re-copy upstream and re-apply the additions and the bundlePath edit');
+});
+
+// Before the ladder existed, exactly one search could hang the modal; a ten-term query now issues
+// up to 36 in sequence, so a window that never settles must be abandoned rather than awaited.
+test('searchWithFallback abandons a window search that never settles', { timeout: 5000 }, async () => {
+  let settled = false;
+  const searcher = {
+    async search(term) {
+      if (term === 'a b c') return { results: [{ id: 'and-hit', score: 9 }], unfilteredResultCount: 1 };
+      if (term === 'a b') return new Promise(() => {});
+      return { results: [{ id: 'relaxed', score: 1 }], unfilteredResultCount: 1 };
+    },
+  };
+
+  const result = await searchWithFallback(searcher, 'a b c', undefined, { timeoutMs: 20 });
+  settled = true;
+
+  assert.equal(settled, true, 'the search must settle even though one window never does');
+  assert.deepEqual(idsOf(result), ['and-hit', 'relaxed'], 'a hung window costs its own results, never the AND\'s');
+});
+
+test('a non-positive timeout runs the window search without a deadline', async () => {
+  const searcher = {
+    async search(term) {
+      if (term === 'a b c') return { results: [{ id: 'and-hit', score: 9 }], unfilteredResultCount: 1 };
+      return { results: [{ id: 'relaxed', score: 1 }], unfilteredResultCount: 1 };
+    },
+  };
+
+  const result = await searchWithFallback(searcher, 'a b c', undefined, { timeoutMs: 0 });
+  assert.deepEqual(idsOf(result), ['and-hit', 'relaxed']);
 });

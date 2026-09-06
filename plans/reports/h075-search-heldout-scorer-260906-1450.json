@@ -1,0 +1,33 @@
+{
+  "written_at": "2026-09-06T14:50:00+07:00",
+  "author": "independent scorer (code-reviewer), head 6157e66",
+  "method": "Queries authored from the built route list only (find apps/docs/dist -name index.html). scripts/check-docs-search-intent.mjs and plans/reports/h075-search-heldout-blind-260906-1210.json NOT opened before this file was written. Deliberately avoids the 26 queries quoted in the 4f322cd score report.",
+  "queries": [
+    {"q": "how do I show a loading placeholder while data loads", "expect": ["/components/skeleton/", "/components/spinner/"]},
+    {"q": "date picker on android", "expect": ["/components/date-picker/", "/components/date-time-picker/", "/guides/date-time/"]},
+    {"q": "make my app work right to left arabic", "expect": ["/accessibility/rtl/"]},
+    {"q": "why is my modal behind the keyboard", "expect": ["/components/keyboard-aware-screen/", "/learn/overlays-and-runtime/", "/guides/troubleshooting/"]},
+    {"q": "change the primary color of the theme", "expect": ["/theming/", "/guides/branding/", "/reference/tokens/"]},
+    {"q": "compact spacing mode", "expect": ["/guides/density/"]},
+    {"q": "does it work on web", "expect": ["/start/web/", "/compatibility/web/"]},
+    {"q": "user avatar with initials fallback", "expect": ["/components/avatar/"]},
+    {"q": "one time password code entry", "expect": ["/components/otp-input/"]},
+    {"q": "sign up screen example", "expect": ["/patterns/auth/sign-up-screen/"]},
+    {"q": "shopping cart layout", "expect": ["/patterns/commerce-social/cart-screen/"]},
+    {"q": "how does the registry work", "expect": ["/registry/", "/reference/registry/"]},
+    {"q": "respect reduce motion setting", "expect": ["/accessibility/reduced-motion/"]},
+    {"q": "big font size accessibility scaling", "expect": ["/accessibility/large-text/"]},
+    {"q": "screen reader support voiceover talkback", "expect": ["/accessibility/native-assistive-tech/", "/learn/accessibility-model/"]},
+    {"q": "safe area insets notch", "expect": ["/components/safe-area/", "/start/provider-safe-area/"]},
+    {"q": "upgrade to a new version breaking changes", "expect": ["/guides/migration-versioning/"]},
+    {"q": "cli add command", "expect": ["/reference/cli/"]},
+    {"q": "design token names", "expect": ["/reference/tokens/"]},
+    {"q": "dropdown select from a list of options", "expect": ["/components/select/", "/components/dropdown-menu/"]},
+    {"q": "show an error under a text input", "expect": ["/components/form-message/", "/components/field/"]},
+    {"q": "tabs at the top of a screen", "expect": ["/components/tabs/", "/components/segmented-control/"]},
+    {"q": "how fast do the docs pages load", "expect": ["/performance/"]},
+    {"q": "adapt layout to tablet width", "expect": ["/responsive/", "/learn/responsive-model/"]},
+    {"q": "swipe up panel from the bottom", "expect": ["/components/sheet/", "/components/bottom-action-bar/"]},
+    {"q": "is this library secure supply chain", "expect": ["/release-security/"]}
+  ]
+}
