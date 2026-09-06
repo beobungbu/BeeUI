@@ -1,5 +1,7 @@
 # Release integrity — 2026-09-02
 
+> **Superseded for the version label by ADR-015 (2026-09-06):** the package version is now `0.86.2`. The release-integrity findings below stand.
+
 Tracker: #407
 
 ## Package version authority

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { readPublicSiteConfig } from '../public-site-contract-lib.mjs';
+import { readPublicSiteConfig, readWorkspaceVersion } from '../public-site-contract-lib.mjs';
 
 const TARGETS = Object.freeze({
   development: {
@@ -67,6 +67,15 @@ export async function collectViolations(rootDir) {
   const publicSite = readPublicSiteConfig(rootDir);
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   if (config.main !== './src/index.mjs') violations.push('Wrangler main must remain ./src/index.mjs.');
+  // The worker manifest was a version site nothing fingerprinted: `release-control-plane` checks
+  // the five package manifests and `web:check` checks the Expo identities, so a hand-edited
+  // `web/worker/package.json` drifted with every gate green — measured, before this line. (README
+  // and six prose sentences were the same; `check-public-doc-truth` reads those.)
+  const workerVersion = JSON.parse(fs.readFileSync(path.join(rootDir, 'web/worker/package.json'), 'utf8')).version;
+  const workspaceVersion = readWorkspaceVersion(rootDir);
+  if (workerVersion !== workspaceVersion) {
+    violations.push(`web/worker/package.json version ${workerVersion} must equal the workspace version ${workspaceVersion}.`);
+  }
   if (config.assets?.directory !== './dist' || config.assets?.binding !== 'ASSETS') {
     violations.push('Wrangler static assets must use ./dist with the ASSETS binding.');
   }

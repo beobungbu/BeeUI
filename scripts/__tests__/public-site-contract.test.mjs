@@ -65,8 +65,8 @@ function fixture(overrides = {}) {
     ...overrides,
   };
   write('web/public-site.config.json', JSON.stringify(config));
-  write('package.json', JSON.stringify({ version: '20260902.0.0' }));
-  write('docs/dist-tag-policy.md', '```json dist-tag-policy\n{"published":false,"currentVersion":"20260902.0.0","stableDistTag":"latest","prereleaseDistTag":"next"}\n```\n');
+  write('package.json', JSON.stringify({ version: '0.86.2' }));
+  write('docs/dist-tag-policy.md', '```json dist-tag-policy\n{"published":false,"currentVersion":"0.86.2","stableDistTag":"latest","prereleaseDistTag":"next"}\n```\n');
   write('scripts/generate-llms-txt.mjs', '');
 
   const hosts = {
@@ -143,7 +143,7 @@ test('rejects Pages, duplicate prefixes and a published state before owner gate'
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   config.routes[2].prefix = '/docs/';
   fs.writeFileSync(configPath, JSON.stringify(config));
-  fs.writeFileSync(path.join(root, 'docs/dist-tag-policy.md'), '```json dist-tag-policy\n{"published":true,"currentVersion":"20260902.0.0","stableDistTag":"latest","prereleaseDistTag":"next"}\n```\n');
+  fs.writeFileSync(path.join(root, 'docs/dist-tag-policy.md'), '```json dist-tag-policy\n{"published":true,"currentVersion":"0.86.2","stableDistTag":"latest","prereleaseDistTag":"next"}\n```\n');
   const violations = collectPublicSiteContractViolations(root).join('\n');
   assert.match(violations, /cloudflare-workers/u);
   assert.match(violations, /published/u);

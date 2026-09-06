@@ -12,7 +12,7 @@ import {
   renderShowcaseFallback,
 } from '../public-portal-shell.mjs';
 
-const IDENTITY = { version: '20260902.0.0', commit: 'abc1234', environment: 'production' };
+const IDENTITY = { version: '0.86.2', commit: 'abc1234', environment: 'production' };
 
 // The fallback exists so a reader who never runs the app still learns what is in the Showcase.
 // Deriving it from the same manifests the docs use is what stops it describing a component that

@@ -2,7 +2,7 @@
   "expo": {
     "name": "BeeUI Demo",
     "slug": "beeui-demo",
-    "version": "20260902.0.0",
+    "version": "0.86.2",
     "scheme": "beeuidemo",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",

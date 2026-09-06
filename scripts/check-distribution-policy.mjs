@@ -87,10 +87,11 @@ export function collectDistTagPolicyViolations({ policy, packageVersions, releas
     );
   }
 
-  // The stable candidate is the lockstep date version itself. Owner decision #407 replaced
-  // the 0.x -> 1.0.0 scheme with date labels (20260902.0.0), so the workspace legitimately
-  // sits *at* the candidate from the start and "no package has reached it yet" became
-  // unsatisfiable — it could only be kept by letting this block contradict its own prose.
+  // The stable candidate is the lockstep version itself. Owner decision #407 (2026-09-02) had
+  // replaced the 0.x -> 1.0.0 scheme with a date label (20260902.0.0); ADR-015 (2026-09-06)
+  // supersedes that with plain SemVer 0.86.2. Under either the workspace legitimately sits *at*
+  // the candidate from the start, so "no package has reached it yet" is unsatisfiable — it could
+  // only be kept by letting this block contradict its own prose.
   //
   // What that rule was protecting is still enforced, just not by a version comparison:
   // `published` must be false (checked above), the docs foundation refuses an install CTA,
