@@ -19,6 +19,7 @@ import {
   extractAccessibilityFacts,
   extractControlledPropWarnings,
   extractClassMapAxes,
+  ALL_PLATFORMS,
   extractOmitPickOrBareTypeName,
   getBehaviorGuardKnownNames,
   getComponentTypeDocs,
@@ -170,7 +171,7 @@ function findUnknownBehaviorPropReferences(component, rootDir, field = 'behavior
 // A ratchet rather than a pass/fail threshold: failing on any blank would fail today and teach
 // nothing, and a silent percentage would drift back down the way it drifted here. The floor is
 // the measured value at the time it was written, so coverage can only go up.
-export const PROP_DESCRIPTION_FLOOR = 624;
+export const PROP_DESCRIPTION_FLOOR = 640;
 
 // Two floors, because coverage alone is satisfiable by boilerplate: 22 props were added to the
 // total by one repeated sentence and 100% never moved.
@@ -182,7 +183,7 @@ export const PROP_DESCRIPTION_FLOOR = 624;
 // justify (0.44), and measuring what it was actually rejecting showed the real defect is one
 // sentence reused across props with *different names*, which `sharedAcrossProps` states directly
 // and a ratio only approximates.
-export const PROP_DISTINCT_DESCRIPTION_FLOOR = 288;
+export const PROP_DISTINCT_DESCRIPTION_FLOOR = 302;
 
 // Walks a resolved type entry the same way `applyGlossary` and the renderer do:
 // a `union` entry carries no `fields` of its own, only `variants`, each of which is
@@ -806,6 +807,22 @@ function renderTypeDocs(typeDocs) {
 // The Accessibility section was one identical paragraph on all 62 pages, asserting that roles and
 // states "remain component-specific" while containing nothing specific to any component — a page
 // contradicting itself. These two lines are derived from the JSX each family renders.
+// Which targets a source file runs on, from its suffix.
+function platformOfFile(relPath) {
+  if (/\.web\.tsx?$/u.test(relPath)) return new Set(['web']);
+  if (/\.native\.tsx?$/u.test(relPath)) return new Set(['ios', 'android']);
+  if (/\.ios\.tsx?$/u.test(relPath)) return new Set(['ios']);
+  if (/\.android\.tsx?$/u.test(relPath)) return new Set(['android']);
+  return new Set(ALL_PLATFORMS);
+}
+
+// Empty string for every platform; otherwise the covered ones in a fixed order.
+function platformLabel(platforms) {
+  if (ALL_PLATFORMS.every((platform) => platforms.has(platform))) return '';
+  const names = { ios: 'iOS', android: 'Android', web: 'Web' };
+  return ALL_PLATFORMS.filter((platform) => platforms.has(platform)).map((platform) => names[platform]).join(' and ');
+}
+
 function renderAccessibilityFacts(component, rootDir) {
   const files = (component.allSources ?? [component.source])
     .filter((relPath) => relPath && !relPath.endsWith('.d.ts'))
@@ -813,7 +830,6 @@ function renderAccessibilityFacts(component, rootDir) {
       path: relPath,
       source: fs.readFileSync(path.join(rootDir, relPath), 'utf8'),
     }));
-  const code = (values) => values.map((value) => `\`${value}\``).join(', ');
   const name = (relPath) => `\`${relPath.split('/').pop()}\``;
 
   // Attributed per file, because the two sentences need two different sets. "None set in A, B"
@@ -822,28 +838,49 @@ function renderAccessibilityFacts(component, rootDir) {
   // says in its own header that it produces no runtime module — as a file where a role is set,
   // and presented `tooltip.web.tsx` and `tooltip.native.tsx` as a conjunction when the role
   // exists only on Web.
-  const roles = new Set();
-  const states = new Set();
+  // Each fact carries the platforms it is set on: the file's own target (`tooltip.web.tsx` runs
+  // on Web only) intersected with any `Platform.OS` branch around the assignment, then unioned
+  // across every place the fact appears. A fact set everywhere carries no qualifier; Tooltip's
+  // `tooltip` role exists only in the Web file and Switch's `switch` role only off Web, and both
+  // pages published them as unconditional (#507).
+  const roles = new Map();
+  const states = new Map();
   const roleFiles = [];
   const stateFiles = [];
+  const merge = (into, facts, scopes, fileScope) => {
+    for (const fact of facts) {
+      const branch = scopes.get(fact) ?? new Set(ALL_PLATFORMS);
+      const here = new Set([...fileScope].filter((platform) => branch.has(platform)));
+      into.set(fact, new Set([...(into.get(fact) ?? []), ...here]));
+    }
+  };
   for (const file of files) {
     const facts = extractAccessibilityFacts([file]);
     if (facts.roles.length) roleFiles.push(file.path);
     if (facts.states.length) stateFiles.push(file.path);
-    for (const role of facts.roles) roles.add(role);
-    for (const state of facts.states) states.add(state);
+    const fileScope = platformOfFile(file.path);
+    merge(roles, facts.roles, facts.scopes.roles, fileScope);
+    merge(states, facts.states, facts.scopes.states, fileScope);
   }
 
   const readScope = files.map((file) => name(file.path)).join(', ');
-  const sorted = (values) => [...values].sort();
+  const qualified = (facts) =>
+    [...facts.keys()]
+      .sort()
+      .map((fact) => {
+        const platforms = facts.get(fact);
+        const label = platformLabel(platforms);
+        return label ? `\`${fact}\` (${label})` : `\`${fact}\``;
+      })
+      .join(', ');
 
   const roleLine = roles.size
-    ? `- **Roles this family assigns:** ${code(sorted(roles))} — set in ${roleFiles
+    ? `- **Roles this family assigns:** ${qualified(roles)} — set in ${roleFiles
         .map(name)
         .join(', ')} by the components themselves, not by the caller.`
     : `- ${ROLES_NONE_CLAIM} set in ${readScope}.`;
   const stateLine = states.size
-    ? `- **Accessibility states and properties it sets:** ${code(sorted(states))} — read from ${stateFiles
+    ? `- **Accessibility states and properties it sets:** ${qualified(states)} — read from ${stateFiles
         .map(name)
         .join(', ')}.`
     : `- ${STATES_NONE_CLAIM} set in ${readScope}.`;
@@ -1029,11 +1066,6 @@ function renderStylingFacts(component, rootDir = ROOT_DIR) {
   // prop surface that way — `ToastOptions` carries `variant?: ToastVariant`, five values, listed
   // on the same page two lines above — and the page claimed to have no variant prop. It has no
   // base at all, so every base-shaped guard was looking elsewhere.
-  //
-  // Scoped to families that export no `*Props` type at all — the page says so itself — because
-  // only then does an object-literal alias hold the prop surface. `DateTimePickerValue` is an
-  // object alias too, holding `date` and `time`, and it can hide no style axis; treating it the
-  // same way traded a true sentence for a vaguer one on a page that had nothing wrong with it.
   const typeDocs = component.typeDocs ?? [];
 
   // A prop that indexes a table of class strings is a style axis whatever its doc comment says.
@@ -1051,15 +1083,9 @@ function renderStylingFacts(component, rootDir = ROOT_DIR) {
     .map((relPath) => ({ path: relPath, source: fs.readFileSync(path.join(rootDir, relPath), 'utf8') }));
   for (const [name, count] of extractClassMapAxes(classMapFiles)) {
     if (!declaredPropNames.has(name)) continue;
-    // The values of a class-map axis live in the class table, not in the prop's type: the props
-    // table prints `SpinnerTone`, not its seven values. Pointing a reader at a table that does
-    // not hold them is the same false pointer this section already published once.
+    // `listed: false` only suppresses the "values are in the props tables above" pointer.
     if (!accumulator.axes.has(name)) accumulator.axes.set(name, { count, from: undefined, listed: false });
   }
-
-  const unparsedAlias =
-    !typeDocs.some((entry) => entry.docKind === 'props') &&
-    typeDocs.some((entry) => entry.kind === 'alias' && (entry.aliasOf ?? '').includes('{'));
 
   // A prop typed by an alias this page cannot resolve to values is a prop whose values nobody
   // here has seen. `KeyboardAwareScreenContentWidth` is `keyof typeof CONTENT_WIDTH_CLASSES`,
@@ -1100,9 +1126,7 @@ function renderStylingFacts(component, rootDir = ROOT_DIR) {
       }`
     : defersAnything
       ? `- **Style axes:** none of its own — its appearance comes from tokens and your own classes; it also carries ${deferralList}.`
-      : unparsedAlias
-        ? '- **Style axes:** not enumerated here: this family declares its props in a type alias whose fields this page does not parse — see the exported types above.'
-        : opaquePropTypes.length
+      : opaquePropTypes.length
           ? `- **Style axes:** not enumerated here: ${opaquePropTypes
               .map((name) => `\`${name}\``)
               .join(', ')} ${opaquePropTypes.length === 1 ? 'is typed' : 'are typed'} by an alias this page does not resolve to values.`
@@ -1112,9 +1136,7 @@ function renderStylingFacts(component, rootDir = ROOT_DIR) {
     ? `- **Class-name surfaces:** ${code([...accumulator.classSurfaces].sort())}.`
     : defersAnything
       ? `- **Class-name surfaces:** none declared by this family; it also carries ${deferralList}.`
-      : unparsedAlias
-        ? '- **Class-name surfaces:** not enumerated here, for the same reason as the axes above.'
-        : `- ${CLASS_NONE_CLAIM} this family accepts no \`className\` of its own.`;
+      : `- ${CLASS_NONE_CLAIM} this family accepts no \`className\` of its own.`;
 
   return `${axisLine}\n${classLine}`;
 }

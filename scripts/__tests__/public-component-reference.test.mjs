@@ -22,7 +22,7 @@ import {
   resolveDeclaration,
   summarizeDescription,
 } from '../component-props-lib.mjs';
-import { stripSourceComments } from '../component-props-lib.mjs';
+import { stripSourceComments, extractClassMapAxes } from '../component-props-lib.mjs';
 import {
   buildPublicComponentManifest,
   collectPropDescriptionCoverage,
@@ -1880,16 +1880,22 @@ test('a prop the family declares itself is not relabelled as inherited', () => {
   assert.equal(/`gap` \(\d+ values, inherited/u.test(page), false);
 });
 
-test('an inline structural base is described, not quoted, anywhere on the page', () => {
+test('a discriminated union at an intersection site becomes named variants, not quoted text', () => {
   const manifest = buildPublicComponentManifest(REPO_ROOT);
   const themeScope = manifest.find((component) => component.name === 'theme-scope');
 
   const page = renderPublicComponentPage(themeScope, REPO_ROOT);
 
-  // This asserted on `page.split('## Styling and theming')[1]` and passed while the bases line
-  // above it still quoted the whole union — the slice removed the copy the test existed to find.
-  assert.match(page, /a type declared inline at its `extends` site/u);
-  assert.equal(page.includes('RegistryBrand'), false, 'the union must not be dumped into a code span');
+  // `{ registry; children } & ({ brand; appearance } | { theme })` used to be pushed as raw base
+  // text and quoted verbatim — JSDoc, nested backticks and all — while `brand`, `appearance` and
+  // `theme` reached no table at all (#506). Each arm is now a variant carrying the common fields.
+  assert.match(page, /\*\*Variant `brand \+ appearance`:\*\*/u);
+  assert.match(page, /\*\*Variant `theme`:\*\*/u);
+  assert.match(page, /\| `brand` \*\*\(required\)\*\* \| `RegistryBrand<Def>`/u);
+  assert.equal(/declared inline at its `extends` site/u.test(page), false, 'nothing is left to describe as inline');
+  assert.equal(/Also carries every prop of/u.test(page), false, 'the union is no longer a base');
+  // `theme?: undefined` in the brand arm forbids `theme` there; it is not a prop a caller sets.
+  assert.equal(/\| `theme` \| `undefined`/u.test(page), false);
 });
 
 
@@ -1922,15 +1928,21 @@ test('every base a family defers to is listed, named and structural alike', () =
   assert.match(axes, /typeof Text/u);
 });
 
-test('a family whose props live in an unparsed alias does not claim to have none', () => {
+test('a family with no Props type gets a table for the object alias that is its prop surface', () => {
   const manifest = buildPublicComponentManifest(REPO_ROOT);
   const toast = manifest.find((component) => component.name === 'toast');
 
   const page = renderPublicComponentPage(toast, REPO_ROOT);
+  const axes = page.split('\n').find((line) => line.startsWith('- **Style axes:**'));
 
-  // `ToastOptions` carries `variant?: ToastVariant`, five values, listed on this same page.
-  assert.match(page, /variant\?: ToastVariant/u);
-  assert.equal(/\*\*Style axes:\*\* none;/u.test(page), false);
+  // `ToastOptions` rendered as one line of raw type text, so `variant` and its five values
+  // reached no table and the page first claimed no variant prop, then that the axes were "not
+  // enumerated" (#506). Promoted to a props entry, its `variant` is now derivable from
+  // `surfaceClassByVariant[toast.variant]` like any other class-map axis.
+  assert.match(page, /#### `ToastOptions`/u);
+  assert.match(page, /\| `variant` \| `ToastVariant` \|/u);
+  assert.match(axes, /`variant` \(5 values/u);
+  assert.equal(/_This family exports no `\*Props` type\._/u.test(page), false);
 });
 
 test('a page naming a variant prop may not also claim to have no style axes', () => {
@@ -2130,7 +2142,7 @@ test('the axes line points at the props table only when the values are in it', (
     for (const name of names) {
       if (line.includes(`\`${name}\` (`) && line.includes('not enumerated on this page')) continue;
       assert.ok(
-        new RegExp(`\\| \`${name}\` \\| \`[^|]*'`, 'u').test(page) || page.includes(`— one of `),
+        new RegExp(`\\| \`${name}\` \\| \`[^|]*'`, 'u').test(page),
         `${component.name}: points at the props table for \`${name}\`, which does not list its values`,
       );
     }
@@ -2200,4 +2212,100 @@ test('the platform sentence states its premise and draws no conclusion from it',
       `${component.name}: the platform sentence draws a conclusion its scope cannot reach`,
     );
   }
+});
+
+
+// #507 — a fact is published with the platforms it is set on.
+
+test('a role assigned only off Web is qualified, through a local `isWeb` constant', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'switch.tsx',
+      source: [
+        "const isWeb = Platform.OS === 'web';",
+        "const p = { ...props, ...(isWeb ? null : { accessibilityRole: 'switch', accessibilityState: { checked } }) };",
+      ].join('\n'),
+    },
+  ]);
+
+  assert.deepEqual(facts.roles, ['switch']);
+  assert.deepEqual([...facts.scopes.roles.get('switch')].sort(), ['android', 'ios']);
+  assert.deepEqual([...facts.scopes.states.get('checked')].sort(), ['android', 'ios']);
+});
+
+test('a role assigned on the Web arm of a Platform branch is qualified as Web', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'select.tsx',
+      source: "const p = Platform.OS === 'web' ? { role: 'group' } : {};",
+    },
+  ]);
+
+  assert.deepEqual([...facts.scopes.roles.get('group')], ['web']);
+});
+
+test('a fact set both inside and outside a Platform branch is unqualified', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'x.tsx',
+      source: [
+        "const a = Platform.OS === 'web' ? <View accessibilityRole=\"button\" /> : null;",
+        'const b = <View accessibilityRole="button" />;',
+      ].join('\n'),
+    },
+  ]);
+
+  assert.equal(facts.scopes.roles.get('button').size, 3, 'set everywhere, so no qualifier');
+});
+
+test('a condition this reader cannot interpret leaves the scope unconstrained', () => {
+  const facts = extractAccessibilityFacts([
+    { path: 'x.tsx', source: 'const a = isFancy ? <View accessibilityRole="button" /> : null;' },
+  ]);
+
+  // Over-publishing is the safe direction; inventing a platform is not.
+  assert.equal(facts.scopes.roles.get('button').size, 3);
+});
+
+test('the page qualifies Switch and Tooltip by the platforms their facts are set on', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const line = (name) =>
+    renderPublicComponentPage(manifest.find((c) => c.name === name), REPO_ROOT)
+      .split('\n')
+      .find((l) => l.startsWith('- **Roles this family assigns:**'));
+
+  // `switch.tsx:35-46` sets the role only off Web; `tooltip.web.tsx:208` is the only file
+  // assigning `tooltip`. Both pages used to publish them for every target (#507).
+  assert.match(line('switch'), /`switch` \(iOS and Android\)/u);
+  assert.match(line('tooltip'), /`tooltip` \(Web\)/u);
+  assert.match(line('accordion'), /`button`, `region` — set in/u);
+  assert.equal(/`button` \(/u.test(line('accordion')), false, 'a fact set on every target carries no qualifier');
+});
+
+test('a string table read in a text position is not a style axis', () => {
+  // First written with both tables at three entries, this passed with the position filter
+  // disabled: `Math.max` over two equal counts is the same count. The two cases below cannot
+  // both hold unless the text-position lookup is actually ignored.
+  const glyphsOnly = extractClassMapAxes([
+    {
+      path: 'table.tsx',
+      source: [
+        "const sortGlyphs = { asc: '↑', desc: '↓', none: '↕' };",
+        'const C = ({ sortDirection }) => <Text>{sortGlyphs[sortDirection]}</Text>;',
+      ].join('\n'),
+    },
+  ]);
+  assert.equal(glyphsOnly.size, 0, 'the arrow the user sees is not a style axis');
+
+  const both = extractClassMapAxes([
+    {
+      path: 'table.tsx',
+      source: [
+        "const sortGlyphs = { asc: '↑', desc: '↓', none: '↕' };",
+        "const glyphClasses = { asc: 'text-primary', desc: 'text-muted' };",
+        "const C = ({ sortDirection }) => <Text className={cn('x', glyphClasses[sortDirection])}>{sortGlyphs[sortDirection]}</Text>;",
+      ].join('\n'),
+    },
+  ]);
+  assert.deepEqual([...both], [['sortDirection', 2]], 'the count is the class table\'s, not the larger one');
 });

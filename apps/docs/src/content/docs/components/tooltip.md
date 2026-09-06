@@ -138,8 +138,8 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 
 ## Accessibility
 
-- **Roles this family assigns:** `tooltip` — set in `tooltip.web.tsx` by the components themselves, not by the caller.
-- **Accessibility states and properties it sets:** `accessibilityElementsHidden`, `accessibilityHint`, `describedby`, `hidden` — read from `tooltip.web.tsx`, `tooltip.native.tsx`.
+- **Roles this family assigns:** `tooltip` (Web) — set in `tooltip.web.tsx` by the components themselves, not by the caller.
+- **Accessibility states and properties it sets:** `accessibilityElementsHidden`, `accessibilityHint` (iOS and Android), `describedby` (Web), `hidden` — read from `tooltip.web.tsx`, `tooltip.native.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 

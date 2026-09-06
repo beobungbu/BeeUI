@@ -53,15 +53,36 @@ Provider-scoped imperative API (`useToast().show`/`dismiss`/`dismissAll`) rather
 
 ### Props
 
-_This family exports no `*Props` type._
+#### `ToastAction`
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` **(required)** | `string` | — | Text of the action button rendered inside the toast. |
+| `onPress` **(required)** | `() => void` | — | Called when the action button is pressed. |
+| `dismissOnPress` | `boolean` | — | Dismisses after the callback by default. Set false for an explicit persistent action. |
+
+#### `ToastApi`
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `show` **(required)** | `(options: ToastOptions) => ToastId` | — | Enqueues a toast and returns the id `dismiss` accepts for it. |
+| `dismiss` **(required)** | `(id: ToastId) => void` | — | Dismisses the toast with this id; unknown ids are ignored. |
+| `dismissAll` **(required)** | `() => void` | — | Dismisses every toast currently shown. |
+
+#### `ToastOptions`
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `title` **(required)** | `string` | — | Primary line of the toast. |
+| `description` | `string` | — | Secondary line under the title. |
+| `variant` | `ToastVariant` | — | Semantic surface the toast renders in; each value maps to one surface class. |
+| `duration` | `ToastDuration` | — | Auto-dismiss delay in milliseconds, or `'persistent'` to stay until dismissed. A value that is not a positive finite number falls back to `TOAST_DEFAULT_DURATION` (5000). |
+| `action` | `ToastAction` | — | An optional action button; see `ToastAction`. |
 
 **Related exported types:**
 
-- `ToastAction` — alias of `{ label: string; onPress: () => void; /** Dismisses after the callback by default. Set false for an explicit persistent action. */ dismissOnPress?: boolean; }`.
-- `ToastApi` — alias of `{ show: (options: ToastOptions) => ToastId; dismiss: (id: ToastId) => void; dismissAll: () => void; }`.
 - `ToastDuration` — alias of `number | 'persistent'`.
 - `ToastId` — alias of `string`.
-- `ToastOptions` — alias of `{ title: string; description?: string; variant?: ToastVariant; duration?: ToastDuration; action?: ToastAction; }`.
 - `ToastVariant` — one of `'neutral'`, `'success'`, `'warning'`, `'destructive'`, `'info'`.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
@@ -91,8 +112,8 @@ Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-m
 
 ## Styling and theming
 
-- **Style axes:** not enumerated here: this family declares its props in a type alias whose fields this page does not parse — see the exported types above.
-- **Class-name surfaces:** not enumerated here, for the same reason as the axes above.
+- **Style axes:** `variant` (5 values).
+- **Class-name surfaces:** none; this family accepts no `className` of its own.
 
 Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.
 

@@ -64,7 +64,7 @@ Stateless scrollable form-screen shell; it owns explicit safe-area edges and pla
 
 **Related exported types:**
 
-- `KeyboardAwareScreenContentWidth` — alias of `keyof typeof CONTENT_WIDTH_CLASSES`.
+- `KeyboardAwareScreenContentWidth` — one of `'sm'`, `'md'`, `'lg'`, `'full'`.
 - `KeyboardAwareScreenKeyboardDismissMode` — alias of `NonNullable<ScrollViewProps['keyboardDismissMode']>`.
 - `KeyboardAwareScreenSafeAreaEdges` — alias of `NonNullable<React.ComponentProps<typeof SafeArea>['edges']>`.
 
