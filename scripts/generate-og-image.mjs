@@ -62,38 +62,61 @@ export function collectSocialCardAssetViolations(rootDir = ROOT_DIR) {
   return collectCardFileViolations(path.join(rootDir, SOCIAL_CARD.sourcePath), SOCIAL_CARD.sourcePath);
 }
 
-async function main() {
-  const args = process.argv.slice(2);
-  const unsupported = args.find((arg) => arg !== '--check');
-  if (unsupported) {
-    console.error(`Unsupported argument: ${unsupported}`);
-    process.exitCode = 1;
-    return;
-  }
+/**
+ * The whole command: regenerate the card, or verify the committed one.
+ *
+ * Returns the exit code instead of assigning `process.exitCode`, so the verdict is a value a
+ * test can read. `--check` is wired into `pnpm -w typecheck` through `docs:social-card:asset-check`.
+ *
+ * @param {{argv?: string[], rootDir?: string, generate?: typeof generateSocialCard, log?: (line: string) => void, logError?: (line: string) => void}} [options]
+ * @returns {Promise<number>}
+ */
+export async function run({
+  argv = [],
+  rootDir = ROOT_DIR,
+  generate = generateSocialCard,
+  log = console.log,
+  logError = console.error,
+} = {}) {
+  const unsupported = argv.find((argument) => argument !== '--check');
+  if (unsupported) throw new Error(`unknown argument: ${unsupported}. This command accepts --check.`);
 
-  if (args.includes('--check')) {
-    const violations = collectSocialCardAssetViolations();
+  if (argv.includes('--check')) {
+    const violations = collectSocialCardAssetViolations(rootDir);
     if (violations.length) {
-      console.error('Social card asset check failed:');
-      for (const violation of violations) console.error(`- ${violation}`);
-      process.exitCode = 1;
-      return;
+      logError('Social card asset check failed:');
+      for (const violation of violations) logError(`- ${violation}`);
+      return 1;
     }
-    const bytes = fs.statSync(path.join(ROOT_DIR, SOCIAL_CARD.sourcePath)).size;
-    console.log(`Social card is a ${SOCIAL_CARD.width}x${SOCIAL_CARD.height} PNG (${(bytes / 1024).toFixed(1)} KB).`);
-    return;
+    const bytes = fs.statSync(path.join(rootDir, SOCIAL_CARD.sourcePath)).size;
+    log(`Social card is a ${SOCIAL_CARD.width}x${SOCIAL_CARD.height} PNG (${(bytes / 1024).toFixed(1)} KB).`);
+    return 0;
   }
 
-  const { bytes, target } = await generateSocialCard();
-  console.log(`Wrote ${path.relative(ROOT_DIR, target)} (${(bytes / 1024).toFixed(1)} KB).`);
+  const { bytes, target } = await generate(rootDir);
+  log(`Wrote ${path.relative(rootDir, target)} (${(bytes / 1024).toFixed(1)} KB).`);
+  return 0;
+}
+
+/**
+ * Turns both outcomes of a command run — a verdict and a crash — into an exit code.
+ *
+ * Exported because this mapping is the part that can silently stop failing: an entrypoint that
+ * discards what `run` returned still prints every violation and still exits 0. The assignment
+ * below only delivers this value to the process.
+ *
+ * @param {string[]} argv
+ * @param {{execute?: typeof run, logError?: (line: string) => void}} [options]
+ * @returns {Promise<number>}
+ */
+export async function main(argv, { execute = run, logError = console.error } = {}) {
+  return execute({ argv }).catch((error) => {
+    logError(error.message ?? error);
+    return 1;
+  });
 }
 
 const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isCli) {
-  try {
-    await main();
-  } catch (error) {
-    console.error(error.message ?? error);
-    process.exitCode = 1;
-  }
+  process.exitCode = await main(process.argv.slice(2));
 }

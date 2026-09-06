@@ -2,8 +2,13 @@
 
 // Social-card gate for the documentation portal.
 //
-//   node scripts/check-docs-social-card.mjs           # report
-//   node scripts/check-docs-social-card.mjs --check    # fail if any built page breaks the contract
+//   node scripts/check-docs-social-card.mjs                 # report
+//   node scripts/check-docs-social-card.mjs --check         # fail if any built page breaks the contract
+//   node scripts/check-docs-social-card.mjs --dist=<dir>    # check another built copy of the portal
+//
+// `--dist` exists so the test suite can drive a real breach through this entrypoint end to end.
+// A crash-only spawn test cannot tell a crash-1 from a verdict-1, and the verdict is the part
+// that has to reach the process.
 //
 // Every portal page declares `twitter:card=summary_large_image`. This asserts that every one of
 // them also carries an `og:image` that is an absolute URL on the page's own origin, that the
@@ -25,26 +30,42 @@ import { ROOT_DIR, buildPublicSiteContract } from './public-site-contract-lib.mj
 import { SOCIAL_CARD, collectDistSocialCardViolations, htmlFilesIn, metaContent } from './social-card-lib.mjs';
 
 export const DOCS_DIST_DIR = 'apps/docs/dist';
-const DOCS_CONFIG_PATH = 'apps/docs/astro.config.mjs';
+export const DOCS_CONFIG_PATH = 'apps/docs/astro.config.mjs';
 
-export function collectDocsSocialCardViolations(rootDir = ROOT_DIR) {
-  const distDir = path.join(rootDir, DOCS_DIST_DIR);
-  const pages = htmlFilesIn(distDir);
-  if (!pages.length) return [`${DOCS_DIST_DIR} has no built pages. Run the docs build first.`];
+/**
+ * Asserts the social-card contract on the built portal.
+ *
+ * `distDir` and `configPath` are overridable so a caller can point the same rules at another
+ * built copy or another portal config without editing the committed ones. The CLI exposes only
+ * `--dist`; `configPath` exists so the tagline-drift rule below is reachable from a test, which
+ * is the difference between a rule that works and a rule that is known to work.
+ *
+ * @param {string} [rootDir]
+ * @param {{configPath?: string, distDir?: string}} [overrides]
+ * @returns {string[]}
+ */
+export function collectDocsSocialCardViolations(rootDir = ROOT_DIR, { configPath, distDir } = {}) {
+  const builtDir = distDir ?? path.join(rootDir, DOCS_DIST_DIR);
+  // The default output is named the way a reader would run it; anything else is named in full,
+  // because a violation attributed to `apps/docs/dist` that came from somewhere else is a lie.
+  const builtLabel = distDir ? builtDir : DOCS_DIST_DIR;
+  const pages = htmlFilesIn(builtDir);
+  if (!pages.length) return [`${builtLabel} has no built pages. Run the docs build first.`];
 
   const contract = buildPublicSiteContract(rootDir);
   const violations = collectDistSocialCardViolations({
-    distDir,
+    distDir: builtDir,
     routePrefix: contract.docsBase,
     // The origin is read from each page's own canonical link rather than from the contract, so
     // the check does not fail merely because the build and the check ran under different
     // BEEUI_WEB_ENV values. Absoluteness and same-origin are still enforced per page.
-    label: `${DOCS_DIST_DIR}/`,
+    label: `${builtLabel}/`,
   });
 
   // The card's tagline is baked into a committed PNG, so it cannot follow the portal
   // description automatically. This fails when the two drift apart.
-  const config = fs.readFileSync(path.join(rootDir, DOCS_CONFIG_PATH), 'utf8');
+  const resolvedConfigPath = configPath ?? path.join(rootDir, DOCS_CONFIG_PATH);
+  const config = fs.readFileSync(resolvedConfigPath, 'utf8');
   if (!config.toLowerCase().includes(SOCIAL_CARD.tagline.toLowerCase())) {
     violations.push(
       `${DOCS_CONFIG_PATH} no longer describes the portal as "${SOCIAL_CARD.tagline}", which is the text rendered into ${SOCIAL_CARD.sourcePath}. ` +
@@ -54,9 +75,8 @@ export function collectDocsSocialCardViolations(rootDir = ROOT_DIR) {
   return violations;
 }
 
-export function reportDocsSocialCard(rootDir = ROOT_DIR) {
-  const distDir = path.join(rootDir, DOCS_DIST_DIR);
-  const files = htmlFilesIn(distDir);
+export function reportDocsSocialCard(rootDir = ROOT_DIR, { distDir } = {}) {
+  const files = htmlFilesIn(distDir ?? path.join(rootDir, DOCS_DIST_DIR));
   let withCard = 0;
   let large = 0;
   for (const file of files) {
@@ -67,39 +87,89 @@ export function reportDocsSocialCard(rootDir = ROOT_DIR) {
   return { pages: files.length, withCard, large };
 }
 
-function main() {
-  const args = process.argv.slice(2);
-  const unsupported = args.find((arg) => arg !== '--check');
-  if (unsupported) {
-    console.error(`Unsupported argument: ${unsupported}`);
-    process.exitCode = 1;
-    return;
-  }
+/** Every argument this command accepts. A typo must not be read as "report, do not check". */
+export const KNOWN_ARGUMENTS = Object.freeze(['--check', '--dist=<path>']);
 
-  const violations = collectDocsSocialCardViolations();
-  if (args.includes('--check')) {
-    if (violations.length) {
-      console.error('Docs social-card gate failed:');
-      for (const violation of violations) console.error(`- ${violation}`);
-      process.exitCode = 1;
-      return;
+/**
+ * Reads the command line.
+ *
+ * Anything unrecognised throws instead of being ignored: `--chek` or `--check=1` silently
+ * reporting and exiting 0 is the one failure mode a gate must not have.
+ *
+ * @param {string[]} argv
+ * @returns {{check: boolean, distDir: string | undefined}}
+ */
+export function parseArguments(argv) {
+  let check = false;
+  let distDir;
+  for (const argument of argv) {
+    if (argument === '--check') {
+      check = true;
+      continue;
     }
-    const { pages, withCard, large } = reportDocsSocialCard();
-    console.log(`Docs social-card gate passed: ${withCard}/${pages} pages carry og:image, ${large} declare summary_large_image.`);
-    return;
+    if (argument.startsWith('--dist=')) {
+      const value = argument.slice('--dist='.length).trim();
+      if (!value) throw new Error('--dist needs a path: --dist=<path>.');
+      distDir = path.resolve(value);
+      continue;
+    }
+    throw new Error(`unknown argument: ${argument}. This command accepts ${KNOWN_ARGUMENTS.join(', ')}.`);
+  }
+  return { check, distDir };
+}
+
+/**
+ * The whole command: collect violations, report, and decide the exit code.
+ *
+ * Returns the code rather than assigning `process.exitCode`, so the decision that can silently
+ * stop failing is a value a test can read.
+ *
+ * @param {{argv?: string[], rootDir?: string, log?: (line: string) => void, logError?: (line: string) => void}} [options]
+ * @returns {number} 0 when passing or when not asked to check, 1 on a breach
+ */
+export function run({ argv = [], rootDir = ROOT_DIR, log = console.log, logError = console.error } = {}) {
+  const { check, distDir } = parseArguments(argv);
+  const violations = collectDocsSocialCardViolations(rootDir, { distDir });
+  const { pages, withCard, large } = reportDocsSocialCard(rootDir, { distDir });
+  // A run against another build must say so, or its verdict reads as the portal's own.
+  if (distDir) log(`Checked ${distDir} (not the built portal).`);
+
+  if (!check) {
+    log(`${distDir ?? DOCS_DIST_DIR}: ${pages} pages, ${withCard} with og:image, ${large} with twitter:card=summary_large_image.`);
+    for (const violation of violations) log(`- ${violation}`);
+    return 0;
   }
 
-  const { pages, withCard, large } = reportDocsSocialCard();
-  console.log(`${DOCS_DIST_DIR}: ${pages} pages, ${withCard} with og:image, ${large} with twitter:card=summary_large_image.`);
-  for (const violation of violations) console.log(`- ${violation}`);
+  if (violations.length) {
+    logError('Docs social-card gate failed:');
+    for (const violation of violations) logError(`- ${violation}`);
+    return 1;
+  }
+  log(`Docs social-card gate passed: ${withCard}/${pages} pages carry og:image, ${large} declare summary_large_image.`);
+  return 0;
+}
+
+/**
+ * Turns both outcomes of a command run — a verdict and a crash — into an exit code.
+ *
+ * Exported because this mapping is the part that can silently stop failing: an entrypoint that
+ * discards what `run` returned still prints every violation and still exits 0, which is how a
+ * shipped gate switches itself off. The assignment below only delivers this value to the process.
+ *
+ * @param {string[]} argv
+ * @param {{execute?: typeof run, logError?: (line: string) => void}} [options]
+ * @returns {number}
+ */
+export function main(argv, { execute = run, logError = console.error } = {}) {
+  try {
+    return execute({ argv });
+  } catch (error) {
+    logError(error.message ?? error);
+    return 1;
+  }
 }
 
 const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isCli) {
-  try {
-    main();
-  } catch (error) {
-    console.error(error.message ?? error);
-    process.exitCode = 1;
-  }
+  process.exitCode = main(process.argv.slice(2));
 }

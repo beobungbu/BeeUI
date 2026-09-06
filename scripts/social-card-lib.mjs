@@ -14,10 +14,13 @@
 //
 // `collectSocialCardViolations` is the guard. It reads built HTML — not source — so it fails
 // when the metadata stops being emitted, when the URL is relative, when the referenced file is
-// missing from the build output, and when the file is not the size the metadata claims.
+// missing from the build output, and when the file is not the size the metadata claims. It also
+// decodes the card's pixels, because everything above is satisfied by a blank rectangle of the
+// right dimensions: see `SOCIAL_CARD.inkRegions`.
 
 import fs from 'node:fs';
 import path from 'node:path';
+import zlib from 'node:zlib';
 
 import { dtcgColorToHex, parseCanonicalJson, resolveTokenReferences } from './generate-tokens.mjs';
 import { readPublicSiteConfig } from './public-site-contract-lib.mjs';
@@ -39,6 +42,34 @@ export const SOCIAL_CARD = {
   // A flat two-tone card compresses to ~30 KB. The ceiling is headroom for a redesign, not a
   // target; it exists so an accidental photo drop cannot make every share a megabyte.
   maxBytes: 150 * 1024,
+  // A ceiling proves the card is not a photo; it does not prove the card is the card. A valid,
+  // all-black 1200x630 PNG of 2,278 bytes passed the signature, the dimensions and the ceiling,
+  // so every share would have rendered a black rectangle with everything green. These floors
+  // are read from the decoded pixels instead.
+  //
+  // "Ink" is the fraction of a region that is NOT that region's own most common colour. Measured
+  // against the dominant colour rather than a fixed background so it means "something is drawn
+  // here" whatever the palette: an all-black card and a background-only card both measure 0%
+  // everywhere, while a recoloured but complete card is unaffected.
+  //
+  // Measured on the committed card, 2026-09-06 (`node scripts/check-docs-social-card.mjs` is not
+  // where these come from — they are the values printed by decoding apps/docs/public/og-beeui.png):
+  //
+  //   whole card  991 distinct colours    floor 64
+  //   logo box    19.4% ink               floor 5%     (the "B" glyph and the rounded corners
+  //                                                     inside the primary-coloured square)
+  //   headline    31.7% ink               floor 8%     ("BeeUI" at 96px)
+  //   tagline     40.3% ink               floor 8%     (the product description)
+  //
+  // The floors sit far below the measurements on purpose: this is a "the artwork is still there"
+  // guard, not a pixel-diff, so a redesign should not have to move them.
+  minDistinctColors: 64,
+  // Boxes are in card coordinates and follow the geometry in `renderSocialCardSvg`.
+  inkRegions: [
+    { name: 'logo box', x: 72, y: 74, width: 92, height: 92, minInk: 0.05 },
+    { name: 'headline', x: 72, y: 200, width: 378, height: 90, minInk: 0.08 },
+    { name: 'tagline', x: 72, y: 335, width: 728, height: 35, minInk: 0.08 },
+  ],
 };
 
 const TOKENS_PATH = 'packages/tokens/tokens.json';
@@ -108,6 +139,176 @@ export function readPngSize(buffer) {
   return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
 }
 
+const CHANNELS_BY_COLOR_TYPE = { 0: 1, 2: 3, 4: 2, 6: 4 };
+
+/**
+ * Decodes a PNG far enough to read its pixels: inflate the IDAT stream, then undo the per-scanline
+ * filter. Deliberately narrow — 8 bits per channel, non-interlaced, greyscale/RGB/RGBA, no palette.
+ * That is what `generateSocialCard` writes and what any browser or design tool exports; anything
+ * else is reported as un-inspectable rather than waved through.
+ *
+ * @param {Buffer} buffer
+ * @returns {{width: number, height: number, channels: number, pixels: Buffer} | null}
+ *   null when this is not a PNG this function can read.
+ */
+export function decodePngPixels(buffer) {
+  if (buffer.length < 8 || !buffer.subarray(0, 8).equals(PNG_SIGNATURE)) return null;
+
+  let header = null;
+  const dataChunks = [];
+  let offset = 8;
+  while (offset + 12 <= buffer.length) {
+    const length = buffer.readUInt32BE(offset);
+    const type = buffer.toString('ascii', offset + 4, offset + 8);
+    const end = offset + 8 + length;
+    if (end > buffer.length) return null;
+    const data = buffer.subarray(offset + 8, end);
+    if (type === 'IHDR') {
+      if (length < 13) return null;
+      header = { bitDepth: data[8], colorType: data[9], height: data.readUInt32BE(4), interlace: data[12], width: data.readUInt32BE(0) };
+    } else if (type === 'IDAT') dataChunks.push(data);
+    else if (type === 'IEND') break;
+    offset = end + 4;
+  }
+
+  if (!header || header.bitDepth !== 8 || header.interlace !== 0) return null;
+  const channels = CHANNELS_BY_COLOR_TYPE[header.colorType];
+  if (!channels || !dataChunks.length) return null;
+
+  const { height, width } = header;
+  const stride = width * channels;
+  let raw;
+  try {
+    raw = zlib.inflateSync(Buffer.concat(dataChunks));
+  } catch {
+    return null;
+  }
+  if (raw.length < (stride + 1) * height) return null;
+
+  const pixels = Buffer.alloc(stride * height);
+  for (let y = 0; y < height; y += 1) {
+    const filter = raw[y * (stride + 1)];
+    const line = raw.subarray(y * (stride + 1) + 1, (y + 1) * (stride + 1));
+    const row = pixels.subarray(y * stride, (y + 1) * stride);
+    const previous = y ? pixels.subarray((y - 1) * stride, y * stride) : null;
+    for (let index = 0; index < stride; index += 1) {
+      const left = index >= channels ? row[index - channels] : 0;
+      const up = previous ? previous[index] : 0;
+      const upLeft = previous && index >= channels ? previous[index - channels] : 0;
+      let value;
+      switch (filter) {
+        case 0: value = line[index]; break;
+        case 1: value = line[index] + left; break;
+        case 2: value = line[index] + up; break;
+        case 3: value = line[index] + ((left + up) >> 1); break;
+        case 4: value = line[index] + paeth(left, up, upLeft); break;
+        default: return null;
+      }
+      row[index] = value & 0xff;
+    }
+  }
+  return { channels, height, pixels, width };
+}
+
+function paeth(left, up, upLeft) {
+  const estimate = left + up - upLeft;
+  const toLeft = Math.abs(estimate - left);
+  const toUp = Math.abs(estimate - up);
+  const toUpLeft = Math.abs(estimate - upLeft);
+  if (toLeft <= toUp && toLeft <= toUpLeft) return left;
+  return toUp <= toUpLeft ? up : upLeft;
+}
+
+/**
+ * Counts how many pixels in a box are not that box's most common colour.
+ *
+ * @param {{channels: number, pixels: Buffer, width: number}} image
+ * @param {{height: number, width: number, x: number, y: number}} region
+ * @returns {number} 0 for a perfectly flat region, approaching 1 for a busy one
+ */
+export function regionInkFraction(image, region) {
+  const counts = new Map();
+  let total = 0;
+  for (let y = region.y; y < region.y + region.height; y += 1) {
+    for (let x = region.x; x < region.x + region.width; x += 1) {
+      const color = colorAt(image, x, y);
+      counts.set(color, (counts.get(color) ?? 0) + 1);
+      total += 1;
+    }
+  }
+  if (!total) return 0;
+  let dominant = 0;
+  for (const count of counts.values()) if (count > dominant) dominant = count;
+  return (total - dominant) / total;
+}
+
+function colorAt(image, x, y) {
+  const index = (y * image.width + x) * image.channels;
+  return (image.pixels[index] << 16) | (image.pixels[index + 1] << 8) | image.pixels[index + 2];
+}
+
+/**
+ * Reads what the card actually draws: how many colours it uses, and how much of each region that
+ * has to carry the brand mark or text is something other than flat fill.
+ *
+ * @param {Buffer} buffer  A PNG already known to be `SOCIAL_CARD.width` x `SOCIAL_CARD.height`.
+ * @returns {{distinctColors: number, regions: {ink: number, minInk: number, name: string}[]} | null}
+ *   null when the PNG cannot be decoded, which is reported as a violation rather than skipped.
+ */
+export function measureCardContent(buffer) {
+  const image = decodePngPixels(buffer);
+  if (!image) return null;
+
+  const colors = new Set();
+  for (let y = 0; y < image.height; y += 1) {
+    for (let x = 0; x < image.width; x += 1) colors.add(colorAt(image, x, y));
+  }
+  return {
+    distinctColors: colors.size,
+    regions: SOCIAL_CARD.inkRegions.map((region) => ({ ink: regionInkFraction(image, region), minInk: region.minInk, name: region.name })),
+  };
+}
+
+/**
+ * Turns a content measurement into violations.
+ *
+ * @param {ReturnType<typeof measureCardContent>} measurement
+ * @param {string} label
+ * @returns {string[]}
+ */
+export function collectCardContentViolations(measurement, label) {
+  if (!measurement) {
+    return [`${label} could not be decoded as an 8-bit non-interlaced PNG, so nothing here proves it is the card. Run: pnpm docs:og-image`];
+  }
+
+  const violations = [];
+  if (measurement.distinctColors < SOCIAL_CARD.minDistinctColors) {
+    violations.push(
+      `${label} uses ${measurement.distinctColors} distinct colours, under the ${SOCIAL_CARD.minDistinctColors} floor; a blank or flat image is the right shape but shares as an empty card. Run: pnpm docs:og-image`,
+    );
+  }
+  for (const region of measurement.regions) {
+    if (region.ink < region.minInk) {
+      violations.push(
+        `${label} is ${(region.ink * 100).toFixed(1)}% drawn in the ${region.name} region, under the ${(region.minInk * 100).toFixed(0)}% floor; that part of the card is blank. Run: pnpm docs:og-image`,
+      );
+    }
+  }
+  return violations;
+}
+
+// One run checks the same card once per built page: 152 times for the portal, 108 for the landing
+// output. Decoding 1200x630 costs ~25 ms, so the measurement is kept for the life of the process.
+const contentMeasurements = new Map();
+
+function measureCardFile(absolutePath, buffer) {
+  const stats = fs.statSync(absolutePath);
+  // Keyed by file identity, not by path, so a card replaced mid-run is measured again.
+  const key = `${absolutePath} ${stats.size} ${stats.mtimeMs}`;
+  if (!contentMeasurements.has(key)) contentMeasurements.set(key, measureCardContent(buffer));
+  return contentMeasurements.get(key);
+}
+
 export function collectCardFileViolations(absolutePath, label) {
   const violations = [];
   if (!fs.existsSync(absolutePath)) return [`${label} is missing (${SOCIAL_CARD.width}x${SOCIAL_CARD.height} PNG expected). Run: pnpm docs:og-image`];
@@ -116,6 +317,10 @@ export function collectCardFileViolations(absolutePath, label) {
   if (!size) violations.push(`${label} is not a PNG; Open Graph consumers do not render SVG cards.`);
   else if (size.width !== SOCIAL_CARD.width || size.height !== SOCIAL_CARD.height) {
     violations.push(`${label} is ${size.width}x${size.height}, not ${SOCIAL_CARD.width}x${SOCIAL_CARD.height}.`);
+  } else {
+    // Only for a correctly sized card: the ink regions are in card coordinates, so on a
+    // differently sized image they would report blank regions instead of the real defect.
+    violations.push(...collectCardContentViolations(measureCardFile(absolutePath, buffer), label));
   }
   if (buffer.length > SOCIAL_CARD.maxBytes) {
     violations.push(`${label} is ${(buffer.length / 1024).toFixed(1)} KB, over the ${(SOCIAL_CARD.maxBytes / 1024).toFixed(0)} KB social-card ceiling.`);
@@ -207,6 +412,13 @@ export function collectPageSocialCardViolations({ label, html, expectedOrigin, r
   // The alt text is repeated in the Astro head component, which cannot import this module
   // without pulling the token pipeline into the portal's Vite build. Asserting equality here
   // turns that duplication into something a check fails on rather than something that drifts.
+  //
+  // SCOPE: that is true of the portal only. The landing pages are written by
+  // scripts/build-public-seo.mjs, which emits `SOCIAL_CARD.alt` itself, so on `web/dist` this
+  // comparison is self-consistent by construction and proves nothing beyond "alt is present and
+  // non-empty" — which the branch above already asserts. The assertion is kept for both outputs
+  // rather than made portal-only because the emitted-vs-expected check is what makes a
+  // hand-written or third-party page joining `web/dist` a red, not a silent pass.
   if (!alt?.trim()) violations.push(`${label} og:image has no og:image:alt.`);
   else if (decodeEntities(alt) !== SOCIAL_CARD.alt) {
     violations.push(`${label} og:image:alt "${decodeEntities(alt)}" drifted from the card contract in scripts/social-card-lib.mjs.`);
