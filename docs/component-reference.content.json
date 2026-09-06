@@ -245,7 +245,7 @@
       "behavior": "Stateless read-only ordered history composition; terminal connector placement is derived automatically from the rendered `TimelineItem` children, and supplied child keys are preserved — it owns no workflow state."
     },
     "toast": {
-      "purpose": "Provider-scoped toast runtime exposed via useToast (show/dismiss/dismissAll) with FIFO queueing and safe-area-aware stacking.",
+      "purpose": "Provider-scoped runtime for toast notifications, exposed via useToast (show/dismiss/dismissAll) with FIFO queueing and safe-area-aware stacking.",
       "behavior": "Provider-scoped imperative API (`useToast().show`/`dismiss`/`dismissAll`) rather than a controlled component; toasts queue FIFO with at most three visible at once, an explicit persistent mode opts a toast out of auto-dismiss, and action-triggered dismissal is deterministic (never racing the auto-dismiss timer).",
       "limitations": "No Modal/anchored geometry and no arbitrary ReactNode transport; descriptors only."
     },

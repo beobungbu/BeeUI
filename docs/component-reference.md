@@ -775,7 +775,7 @@ The documentation contract, its required sections, and how it is enforced are de
 
 ## `toast`
 
-- **Purpose:** Provider-scoped toast runtime exposed via useToast (show/dismiss/dismissAll) with FIFO queueing and safe-area-aware stacking.
+- **Purpose:** Provider-scoped runtime for toast notifications, exposed via useToast (show/dismiss/dismissAll) with FIFO queueing and safe-area-aware stacking.
 - **Import:** `import { TOAST_DEFAULT_DURATION, TOAST_MAX_VISIBLE, useToast } from '@beemvp/beeui-ui';`
 - **API:** `TOAST_DEFAULT_DURATION`, `TOAST_MAX_VISIBLE`, `useToast` — source [`packages/ui/src/components/toast.tsx`](../packages/ui/src/components/toast.tsx). Typed props: `ToastAction`, `ToastApi`, `ToastDuration`, `ToastId`, `ToastOptions`, `ToastVariant` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add toast` (copies the source file into your app; see [registry CLI](registry-cli.md)).

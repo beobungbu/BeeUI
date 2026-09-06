@@ -32,8 +32,17 @@
 //   - The matrix is a LOWER BOUND, not a quality measure, and it does not generalize: it grew by
 //     fixing failures one at a time, so passing every entry is close to tautological. Measured
 //     against 26 held-out queries an independent scorer wrote, the portal scored 17 (65%) while
-//     this matrix read 21/21. Treat a green run as "these known intents still work", never as
-//     "search is good".
+//     this matrix read 21/21; a second scorer's 24 held-out queries scored 12 (50%) at 24/24.
+//     Treat a green run as "these known intents still work", never as "search is good".
+//   - Queries are rewritten by apps/docs/pagefind-query.mjs before they reach Pagefind, exactly
+//     as the portal's search modal rewrites them. On a 25-query held-out set written before the
+//     rewrite existed (plans/reports/h075-search-heldout-blind-260906-1210.json), the rewrite
+//     moved the strict top-3 rate from 6/25 to 12/25 on the same index. Content was not tuned
+//     to that set; the stopword list was checked against it twice (whether to keep 'to', and
+//     whether to keep phrasal-verb particles); the strict figure did not move (12/25 both
+//     times; counting each query's recorded alternative page, 14/25 became 15/25), so the set
+//     is no longer blind for stopword decisions. The remaining misses are content the portal does not
+//     say, not phrasing.
 //   - A pass here does not mean the page content is good — only that Pagefind indexes it for the
 //     terms a reader is expected to search.
 //
@@ -59,6 +68,7 @@ export const DOCS_DIST_DIR = path.join(ROOT_DIR, 'apps/docs/dist');
 // weights the site does not use.
 export { PAGEFIND_RANKING as RANKING } from '../apps/docs/pagefind-ranking.mjs';
 import { PAGEFIND_RANKING as RANKING } from '../apps/docs/pagefind-ranking.mjs';
+import { normaliseQuery } from '../apps/docs/pagefind-query.mjs';
 
 export const TOP_N = 3;
 
@@ -99,6 +109,14 @@ export const QUERY_MATRIX = [
   { query: 'provider not found', expect: '/guides/troubleshooting/' },
   { query: 'safe area duplicated', expect: '/guides/troubleshooting/' },
   { query: 'reduced motion', expect: '/accessibility/reduced-motion/' },
+  // Natural-language phrasings. Pagefind requires every term to occur on the page, so these
+  // returned nothing or the wrong page until apps/docs/pagefind-query.mjs started stripping
+  // question scaffolding before the search; two also needed the owning page to say the word
+  // a reader types ('toast notifications', 'Tailwind'). They guard the rewrite as much as the
+  // content.
+  { query: 'toast notification', expect: '/components/toast/' },
+  { query: 'how to override styles with tailwind', expect: '/reference/styling/' },
+  { query: 'what versions of react native are supported', expect: '/compatibility/current/' },
 ];
 
 const CONTENT_TYPES = {
@@ -157,7 +175,9 @@ export async function runQueryMatrix(distDir = DOCS_DIST_DIR, { matrix = QUERY_M
 
     const results = [];
     for (const { query, expect } of matrix) {
-      const search = await instance.search(query);
+      // The portal's own Search.astro rewrites the query the same way (processTerm), so this
+      // measures what the built site issues, not the raw string.
+      const search = await instance.search(normaliseQuery(query));
       const top = await Promise.all(search.results.slice(0, topN).map((result) => result.data()));
       const urls = top.map((entry) => toSitePath(entry.url));
       results.push({ query, expect, urls, pass: urls.includes(expect) });

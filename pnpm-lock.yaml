@@ -133,6 +133,9 @@ importers:
       '@astrojs/check':
         specifier: 0.9.10
         version: 0.9.10(prettier@3.9.6)(typescript@5.9.3)
+      '@pagefind/default-ui':
+        specifier: 1.5.2
+        version: 1.5.2
       typescript:
         specifier: ~5.9.2
         version: 5.9.3

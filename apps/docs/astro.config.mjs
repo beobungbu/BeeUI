@@ -28,6 +28,10 @@ export default defineConfig({
         // so readers cannot narrow by section yet — see #500 and the note in
         // src/components/SearchFilterHead.astro.
         Head: './src/components/SearchFilterHead.astro',
+        // Starlight's own Search.astro with one addition: PagefindUI's `processTerm` runs
+        // apps/docs/pagefind-query.mjs on the reader's query. Starlight serialises the
+        // `pagefind` option with JSON.stringify, so a function cannot be passed there.
+        Search: './src/components/Search.astro',
       },
       pagefind: {
         ranking: PAGEFIND_RANKING,
