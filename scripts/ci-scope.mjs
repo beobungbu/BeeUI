@@ -151,7 +151,7 @@ const DOC_EXTRA_EXACT = new Set(['AGENTS.md']);
 const DOC_LIB_RE = /^scripts\/(?:component-docs-lib|component-props-lib|public-component-reference|public-pattern-reference|public-reference|public-guide-data|public-portal-shell|generate-production-pattern-usage|check-portal-pages-fresh|public-docs-a11y|report-prop-coverage|check-docs-page-budget)\.mjs$/;
 
 const WEB_PREFIXES_EXTRA = ['scripts/public-web-checks/', 'examples/', '.github/deployment/'];
-const WEB_LIB_RE = /^scripts\/(?:public-site-contract-lib|public-component-previews)\.mjs$/;
+const WEB_LIB_RE = /^scripts\/(?:public-site-contract-lib|public-component-previews|social-card-lib|generate-og-image|check-docs-social-card)\.mjs$/;
 const WEB_TEST_RE = /^scripts\/__tests__\/public-[a-z0-9-]+\.test\.mjs$/;
 
 const TOKEN_EXTRA_PREFIXES = ['scripts/vendor/dtcg/'];
@@ -231,6 +231,12 @@ function isWebPath(file) {
 const VISUAL_A11Y_EXACT = new Set([
   'scripts/check-docs-page-budget.mjs',
   'scripts/check-docs-search-intent.mjs',
+  // The social-card gate needs apps/docs/dist, so it runs from the docs build in this lane —
+  // together with the library it shares with the landing-side check and the generator that
+  // produces the committed card.
+  'scripts/check-docs-social-card.mjs',
+  'scripts/social-card-lib.mjs',
+  'scripts/generate-og-image.mjs',
   // Tests the query rewrite in apps/docs/pagefind-query.mjs and its wiring into the search
   // modal and the search-intent check; no companion `scripts/pagefind-query.mjs` exists.
   'scripts/__tests__/pagefind-query.test.mjs',
