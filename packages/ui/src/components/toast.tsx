@@ -48,7 +48,7 @@ export type ToastApi = {
   show: (options: ToastOptions) => ToastId;
   /** Dismisses the toast with this id; unknown ids are ignored. */
   dismiss: (id: ToastId) => void;
-  /** Dismisses every toast currently shown. */
+  /** Dismisses every shown toast and drops the ones still queued. */
   dismissAll: () => void;
 };
 

@@ -786,6 +786,11 @@ function renderPropsTypeEntry(entry) {
 }
 
 function renderRelatedTypeEntry(entry) {
+  if (entry.docKind === 'returned') {
+    const by = entry.returnedBy.map((name) => `\`${name}()\``).join(', ');
+    const fields = entry.fields.map((field) => `\`${field.name}\``).join(', ');
+    return `- \`${entry.name}\` — returned by ${by}; an object with ${fields}. Not props: nothing passes it in.`;
+  }
   if (entry.kind === 'literal-union') {
     return `- \`${entry.name}\` — one of ${entry.members.map((member) => `\`'${member}'\``).join(', ')}.`;
   }
@@ -807,12 +812,22 @@ function renderTypeDocs(typeDocs) {
 // The Accessibility section was one identical paragraph on all 62 pages, asserting that roles and
 // states "remain component-specific" while containing nothing specific to any component — a page
 // contradicting itself. These two lines are derived from the JSX each family renders.
-// Which targets a source file runs on, from its suffix.
-function platformOfFile(relPath) {
+// Which targets a source file runs on. The suffix says it for platform files; for a bare
+// `table.tsx` the answer depends on its siblings, because the bundler shadows it: with a
+// `table.web.tsx` beside it the bare file is the native entry (the package export map says so —
+// `react-native` → `table.js`, `browser` → `table.web.js`), and with a `.native.tsx` beside it
+// the bare file is what Web gets. Reading the suffix alone published Table's `button` role and
+// `accessible` as unconditional on a line whose neighbours were correctly marked "(Web)".
+function platformOfFile(relPath, siblings = []) {
   if (/\.web\.tsx?$/u.test(relPath)) return new Set(['web']);
   if (/\.native\.tsx?$/u.test(relPath)) return new Set(['ios', 'android']);
   if (/\.ios\.tsx?$/u.test(relPath)) return new Set(['ios']);
   if (/\.android\.tsx?$/u.test(relPath)) return new Set(['android']);
+  const stem = relPath.replace(/\.tsx?$/u, '');
+  const hasWeb = siblings.some((other) => other === `${stem}.web.tsx` || other === `${stem}.web.ts`);
+  const hasNative = siblings.some((other) => other === `${stem}.native.tsx` || other === `${stem}.native.ts`);
+  if (hasWeb && !hasNative) return new Set(['ios', 'android']);
+  if (hasNative && !hasWeb) return new Set(['web']);
   return new Set(ALL_PLATFORMS);
 }
 
@@ -821,6 +836,38 @@ function platformLabel(platforms) {
   if (ALL_PLATFORMS.every((platform) => platforms.has(platform))) return '';
   const names = { ios: 'iOS', android: 'Android', web: 'Web' };
   return ALL_PLATFORMS.filter((platform) => platforms.has(platform)).map((platform) => names[platform]).join(' and ');
+}
+
+export function collectScopedAccessibilityFacts(files) {
+  const roles = new Map();
+  const states = new Map();
+  const roleFiles = [];
+  const stateFiles = [];
+  const merge = (into, facts, scopes, fileScope) => {
+    for (const fact of facts) {
+      const branch = scopes.get(fact) ?? new Set(ALL_PLATFORMS);
+      const here = new Set([...fileScope].filter((platform) => branch.has(platform)));
+      // An empty intersection is a branch no target reaches — a Web file guarded by
+      // `Platform.OS === 'ios'`. It sets nothing, so it contributes nothing; rendering the empty
+      // set with the same silence as the full set published such a fact as universal.
+      if (!here.size) continue;
+      into.set(fact, new Set([...(into.get(fact) ?? []), ...here]));
+    }
+  };
+  const siblings = files.map((file) => file.path);
+  for (const file of files) {
+    const facts = extractAccessibilityFacts([file]);
+    const fileScope = platformOfFile(file.path, siblings);
+    const before = { roles: roles.size, states: states.size };
+    merge(roles, facts.roles, facts.scopes.roles, fileScope);
+    merge(states, facts.states, facts.scopes.states, fileScope);
+    // A file is named only for facts that survived the scope intersection.
+    const contributed = (map, count) => map.size > count || [...map.values()].some((set) => set.size);
+    if (facts.roles.some((fact) => roles.has(fact)) && contributed(roles, before.roles)) roleFiles.push(file.path);
+    if (facts.states.some((fact) => states.has(fact)) && contributed(states, before.states)) stateFiles.push(file.path);
+  }
+
+  return { roles, states, roleFiles, stateFiles };
 }
 
 function renderAccessibilityFacts(component, rootDir) {
@@ -843,25 +890,7 @@ function renderAccessibilityFacts(component, rootDir) {
   // across every place the fact appears. A fact set everywhere carries no qualifier; Tooltip's
   // `tooltip` role exists only in the Web file and Switch's `switch` role only off Web, and both
   // pages published them as unconditional (#507).
-  const roles = new Map();
-  const states = new Map();
-  const roleFiles = [];
-  const stateFiles = [];
-  const merge = (into, facts, scopes, fileScope) => {
-    for (const fact of facts) {
-      const branch = scopes.get(fact) ?? new Set(ALL_PLATFORMS);
-      const here = new Set([...fileScope].filter((platform) => branch.has(platform)));
-      into.set(fact, new Set([...(into.get(fact) ?? []), ...here]));
-    }
-  };
-  for (const file of files) {
-    const facts = extractAccessibilityFacts([file]);
-    if (facts.roles.length) roleFiles.push(file.path);
-    if (facts.states.length) stateFiles.push(file.path);
-    const fileScope = platformOfFile(file.path);
-    merge(roles, facts.roles, facts.scopes.roles, fileScope);
-    merge(states, facts.states, facts.scopes.states, fileScope);
-  }
+  const { roles, states, roleFiles, stateFiles } = collectScopedAccessibilityFacts(files);
 
   const readScope = files.map((file) => name(file.path)).join(', ');
   const qualified = (facts) =>

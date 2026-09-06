@@ -28,6 +28,7 @@ import {
   collectPropDescriptionCoverage,
   collectRenderedPageViolations,
   collectDerivedClaimViolations,
+  collectScopedAccessibilityFacts,
   ROLES_NONE_CLAIM,
   STATES_NONE_CLAIM,
   collectPropDescriptionViolations,
@@ -2308,4 +2309,78 @@ test('a string table read in a text position is not a style axis', () => {
     },
   ]);
   assert.deepEqual([...both], [['sortDirection', 2]], 'the count is the class table\'s, not the larger one');
+});
+
+
+// Round-9 (PR #509 review) — five fixes, each pinned to the case that exposed it.
+
+test('a bare file shadowed by a .web.tsx sibling is the native entry', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const table = manifest.find((c) => c.name === 'table');
+  const lines = renderPublicComponentPage(table, REPO_ROOT).split('\n');
+  const roles = lines.find((l) => l.startsWith('- **Roles this family assigns:**'));
+  const states = lines.find((l) => l.startsWith('- **Accessibility states and properties it sets:**'));
+
+  // `packages/ui/package.json` maps `react-native` to `table.js` and `browser` to `table.web.js`:
+  // `table.tsx` never runs on Web. Its `button` role and `accessible` were published bare on a
+  // line whose neighbours were correctly marked "(Web)", and under this generator's contract a
+  // bare fact means all three targets.
+  assert.match(roles, /`button` \(iOS and Android\)/u);
+  assert.match(states, /`accessible` \(iOS and Android\)/u);
+  assert.match(states, /`sort` \(Web\)/u);
+});
+
+test('a branch no target reaches contributes nothing rather than everything', () => {
+  const { roles, roleFiles } = collectScopedAccessibilityFacts([
+    { path: 'x.web.tsx', source: "export const X = () => (Platform.OS === 'ios' ? <View accessibilityRole=\"button\" /> : null);\n" },
+    { path: 'x.native.tsx', source: 'export const X = () => <View accessibilityRole="link" />;\n' },
+  ]);
+
+  // A Web file guarded by `Platform.OS === 'ios'` is an empty intersection; rendering the empty
+  // set with the same silence as the full set published such a fact as universal.
+  assert.equal(roles.has('button'), false, 'an unreachable fact is not published');
+  assert.deepEqual([...roles.get('link')].sort(), ['android', 'ios']);
+  assert.deepEqual(roleFiles, ['x.native.tsx'], 'a file whose only fact was unreachable is not named');
+});
+
+test('an early-return platform guard narrows what follows it', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'x.tsx',
+      source: [
+        'function X() {',
+        "  if (Platform.OS === 'web') return <View />;",
+        '  return <View accessibilityRole="switch" />;',
+        '}',
+      ].join('\n'),
+    },
+  ]);
+
+  // The guard is an earlier sibling, not an ancestor. Four families use this shape.
+  assert.deepEqual([...facts.scopes.roles.get('switch')].sort(), ['android', 'ios']);
+});
+
+test('an object alias a function returns is not promoted to props', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const toast = manifest.find((c) => c.name === 'toast');
+  const page = renderPublicComponentPage(toast, REPO_ROOT);
+
+  // `useToast(): ToastApi` — a caller receives it, never passes it. A table headed "Props" for it
+  // contradicted the page's own opening line.
+  assert.equal(/#### `ToastApi`/u.test(page), false);
+  assert.match(page, /`ToastApi` — returned by `useToast\(\)`; an object with `show`, `dismiss`, `dismissAll`/u);
+  assert.match(page, /#### `ToastOptions`/u);
+});
+
+test('keyof typeof over a same-file constant resolves to its keys', () => {
+  // #508 had no behavioural test; reverting the resolver left the suite green.
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const screen = manifest.find((c) => c.name === 'screen');
+  const kas = manifest.find((c) => c.name === 'keyboard-aware-screen');
+
+  const padding = screen.typeDocs.find((e) => e.name === 'ScreenProps').fields.find((f) => f.name === 'padding');
+  assert.equal(padding.type, "'none' | 'sm' | 'md' | 'lg'");
+  const width = kas.typeDocs.find((e) => e.name === 'KeyboardAwareScreenContentWidth');
+  assert.equal(width.kind, 'literal-union');
+  assert.deepEqual(width.members, ['sm', 'md', 'lg', 'full']);
 });

@@ -61,14 +61,6 @@ Provider-scoped imperative API (`useToast().show`/`dismiss`/`dismissAll`) rather
 | `onPress` **(required)** | `() => void` | — | Called when the action button is pressed. |
 | `dismissOnPress` | `boolean` | — | Dismisses after the callback by default. Set false for an explicit persistent action. |
 
-#### `ToastApi`
-
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `show` **(required)** | `(options: ToastOptions) => ToastId` | — | Enqueues a toast and returns the id `dismiss` accepts for it. |
-| `dismiss` **(required)** | `(id: ToastId) => void` | — | Dismisses the toast with this id; unknown ids are ignored. |
-| `dismissAll` **(required)** | `() => void` | — | Dismisses every toast currently shown. |
-
 #### `ToastOptions`
 
 | Prop | Type | Default | Description |
@@ -81,6 +73,7 @@ Provider-scoped imperative API (`useToast().show`/`dismiss`/`dismissAll`) rather
 
 **Related exported types:**
 
+- `ToastApi` — returned by `useToast()`; an object with `show`, `dismiss`, `dismissAll`. Not props: nothing passes it in.
 - `ToastDuration` — alias of `number | 'persistent'`.
 - `ToastId` — alias of `string`.
 - `ToastVariant` — one of `'neutral'`, `'success'`, `'warning'`, `'destructive'`, `'info'`.

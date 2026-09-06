@@ -899,6 +899,12 @@ function platformsWhere(condition, holds) {
 // where the component deliberately omits it (#507). Only conditions this function can read
 // narrow the scope; an unreadable one leaves it unconstrained, which over-publishes rather than
 // inventing a platform.
+function alwaysLeaves(statement) {
+  if (ts.isReturnStatement(statement) || ts.isThrowStatement(statement)) return true;
+  if (ts.isBlock(statement) && statement.statements.length) return alwaysLeaves(statement.statements.at(-1));
+  return false;
+}
+
 function platformScopeOf(node, sourceFile) {
   let scope;
   const narrow = (condition, holds) => {
@@ -908,6 +914,17 @@ function platformScopeOf(node, sourceFile) {
     scope = scope ? new Set([...scope].filter((p) => allowed.has(p))) : allowed;
   };
   for (let child = node, parent = node.parent; parent; child = parent, parent = parent.parent) {
+    // `if (Platform.OS === 'web') return <View />;` followed by the native render. The guard is
+    // not an ancestor of what follows it, only an earlier sibling, and four families use this
+    // shape. A then-branch that always leaves the block narrows every later statement to the
+    // condition's negation.
+    if (ts.isBlock(parent) || ts.isSourceFile(parent)) {
+      for (const statement of parent.statements) {
+        if (statement === child) break;
+        if (!ts.isIfStatement(statement) || statement.elseStatement) continue;
+        if (alwaysLeaves(statement.thenStatement)) narrow(statement.expression, false);
+      }
+    }
     if (ts.isConditionalExpression(parent)) {
       if (child === parent.whenTrue) narrow(parent.condition, true);
       else if (child === parent.whenFalse) narrow(parent.condition, false);
@@ -1369,6 +1386,20 @@ export function getBehaviorGuardKnownNames(component, typeDocs, rootDir = ROOT_D
 // shape cannot be parsed), `kind: 'literal-union'` for `type X = 'a' | 'b'`,
 // or `kind: 'alias'` for anything else this module deliberately does not
 // expand further.
+// Names of the functions in `sourceFile` whose declared return type is exactly `typeName`.
+function functionsReturning(typeName, sourceFile) {
+  const names = [];
+  walk(sourceFile, (node) => {
+    const returns = node.type;
+    if (!returns || !ts.isTypeReferenceNode(returns) || returns.typeName.getText(sourceFile) !== typeName) return;
+    if (ts.isFunctionDeclaration(node) && node.name) names.push(node.name.text);
+    else if ((ts.isArrowFunction(node) || ts.isFunctionExpression(node)) && ts.isVariableDeclaration(node.parent) && ts.isIdentifier(node.parent.name)) {
+      names.push(node.parent.name.text);
+    }
+  });
+  return [...new Set(names)];
+}
+
 export function resolveComponentTypeEntry(index, name, opts = {}) {
   const resolved = resolveDeclaration(index, name, opts);
   if (!resolved) throw new Error(`${opts.errorLabel ?? name}: type "${name}" was not found under packages/ui/src`);
@@ -1404,6 +1435,11 @@ export function resolveComponentTypeEntry(index, name, opts = {}) {
   if (opts.promoteObjectAliases && ts.isTypeLiteralNode(typeNode)) {
     const ctx = { index, errorLabel: opts.errorLabel ?? name, names: new Set([name]), resolveOpts: opts };
     const shape = resolveTypeNodeToShape(typeNode, sourceFile, ctx);
+    // `useToast(): ToastApi` — a type a function returns is what a caller receives, not what a
+    // caller passes, and a table headed "Props" for it contradicts the page. Kept as an object
+    // entry with its fields, rendered under related types with the function that returns it.
+    const returnedBy = functionsReturning(name, sourceFile);
+    if (returnedBy.length) return { name, docKind: 'returned', ...shape, returnedBy, description };
     return { name, docKind: 'props', ...shape, names: ctx.names, description };
   }
   return { name, docKind: 'alias', kind: 'alias', aliasOf: typeNode.getText(sourceFile), description };
