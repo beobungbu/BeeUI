@@ -8,6 +8,7 @@ import {
   DOCS_DIST_DIR,
   QUERY_MATRIX,
   RANKING,
+  collectSearchRuntimeProblems,
   runQueryMatrix,
   toSitePath,
 } from '../check-docs-search-intent.mjs';
@@ -50,6 +51,47 @@ test('runQueryMatrix throws a clear, actionable error when no Pagefind index exi
   } finally {
     fs.rmSync(emptyDir, { recursive: true, force: true });
   }
+});
+
+// The search modal imports its Pagefind entrypoint by URL, so a build that stops emitting
+// dist/pagefind-fallback/ breaks search in the browser while every other check stays green.
+test('collectSearchRuntimeProblems names each missing piece of the shipped search runtime', async () => {
+  const emptyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-search-runtime-'));
+  try {
+    const problems = await collectSearchRuntimeProblems(emptyDir);
+    assert.equal(problems.length, 2);
+    assert.match(problems.join('\n'), /pagefind-fallback\/pagefind\.js is missing/u);
+    assert.match(problems.join('\n'), /pagefind-fallback\/pagefind-query\.mjs is missing/u);
+  } finally {
+    fs.rmSync(emptyDir, { recursive: true, force: true });
+  }
+});
+
+test('collectSearchRuntimeProblems rejects a shipped copy that has drifted from the source', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-search-runtime-'));
+  try {
+    const runtime = path.join(dir, 'pagefind-fallback');
+    fs.mkdirSync(runtime);
+    fs.copyFileSync(
+      path.join(DOCS_DIST_DIR, '..', 'public', 'pagefind-fallback', 'pagefind.js'),
+      path.join(runtime, 'pagefind.js'),
+    );
+    fs.writeFileSync(path.join(runtime, 'pagefind-query.mjs'), 'export const searchWithFallback = () => {};\n');
+
+    const problems = await collectSearchRuntimeProblems(dir);
+    assert.equal(problems.length, 1);
+    assert.match(problems[0], /differs from apps\/docs\/pagefind-query\.mjs/u);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('the shipped search runtime is present and current in the built portal', async (t) => {
+  if (!fs.existsSync(path.join(DOCS_DIST_DIR, 'pagefind', 'pagefind.js'))) {
+    t.skip('apps/docs/dist is not built in this environment; run `pnpm docs:build` first');
+    return;
+  }
+  assert.deepEqual(await collectSearchRuntimeProblems(), []);
 });
 
 // This is the real regression proof, but it needs an actual built Pagefind index (a real WASM

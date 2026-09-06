@@ -5,12 +5,13 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { QUERY_STOPWORDS, normaliseQuery } from '../../apps/docs/pagefind-query.mjs';
+import { FALLBACK_MIN_RESULTS, QUERY_STOPWORDS, normaliseQuery, searchWithFallback } from '../../apps/docs/pagefind-query.mjs';
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SEARCH_OVERRIDE = path.join(ROOT_DIR, 'apps/docs/src/components/Search.astro');
 const ASTRO_CONFIG = path.join(ROOT_DIR, 'apps/docs/astro.config.mjs');
 const INTENT_CHECK = path.join(ROOT_DIR, 'scripts/check-docs-search-intent.mjs');
+const PAGEFIND_SHIM = path.join(ROOT_DIR, 'apps/docs/public/pagefind-fallback/pagefind.js');
 
 // Pagefind requires every term to occur on a page, so a question phrased the way a reader
 // types it ("how do I show a loading spinner on a button") returned nothing while the content
@@ -72,6 +73,138 @@ test('normaliseQuery passes non-strings through unchanged', () => {
   assert.equal(normaliseQuery(null), null);
 });
 
+// --- searchWithFallback -------------------------------------------------------------------
+//
+// A stub with Pagefind's `search(term, options)` shape, driven by an explicit term -> page-ids
+// map. Real Pagefind needs a built WASM index over the real site (see
+// check-docs-search-intent.test.mjs for the end-to-end pass); these assert the relaxation rule
+// itself, where every input is chosen rather than measured.
+function stubSearcher(index) {
+  const calls = [];
+  return {
+    calls,
+    async search(term) {
+      calls.push(term);
+      const ids = index[term] ?? [];
+      // Descending score, so score order and listing order agree and a reordering is visible.
+      return { results: ids.map((id, i) => ({ id, score: 100 - i })), unfilteredResultCount: ids.length };
+    },
+  };
+}
+
+const idsOf = (result) => result.results.map((entry) => entry.id);
+
+test('searchWithFallback leaves a query alone when the AND already fills the result window', async () => {
+  const searcher = stubSearcher({ 'loading spinner button': ['a', 'b', 'c'] });
+  const result = await searchWithFallback(searcher, 'loading spinner button');
+
+  assert.equal(FALLBACK_MIN_RESULTS, 3);
+  assert.deepEqual(idsOf(result), ['a', 'b', 'c']);
+  assert.deepEqual(searcher.calls, ['loading spinner button'], 'a healthy query must cost exactly one search');
+});
+
+test('searchWithFallback appends relaxed pages after the AND, never reordering it', async () => {
+  const searcher = stubSearcher({
+    'avatar initials fallback': ['and-hit'],
+    'avatar initials': ['and-hit', 'both'],
+    'initials fallback': ['both', 'one'],
+  });
+  const result = await searchWithFallback(searcher, 'avatar initials fallback');
+
+  // 'and-hit' matched every term, so it stays first even though 'both' matched more windows.
+  // 'both' matched two of the two-term windows, 'one' matched a single window.
+  assert.deepEqual(idsOf(result), ['and-hit', 'both', 'one']);
+});
+
+test('searchWithFallback relaxes by the smallest amount first, then widens', async () => {
+  const searcher = stubSearcher({
+    'a b c d': [],
+    'a b c': ['near'],
+    'b c d': [],
+    'a b': ['far'],
+    'b c': ['far', 'edge'],
+    'c d': ['other'],
+  });
+  const result = await searchWithFallback(searcher, 'a b c d');
+
+  // Three-term windows are asked before two-term ones, so 'near' outranks anything a pair found;
+  // inside the pair rung 'far' matched two windows and 'edge'/'other' one each.
+  assert.deepEqual(idsOf(result).slice(0, 2), ['near', 'far']);
+  assert.deepEqual(searcher.calls.slice(0, 3), ['a b c d', 'a b c', 'b c d']);
+});
+
+test('searchWithFallback keeps widening until the result window is full', async () => {
+  const searcher = stubSearcher({ 'a b c d': [], 'a b c': ['one'], 'b c d': [], 'a b': ['two'], 'b c': [], 'c d': ['three'] });
+  const result = await searchWithFallback(searcher, 'a b c d');
+
+  assert.deepEqual(idsOf(result), ['one', 'two', 'three']);
+  assert.ok(searcher.calls.includes('a b'), 'one relaxed hit is not enough to stop relaxing');
+});
+
+test('searchWithFallback stops relaxing as soon as the window is full', async () => {
+  const searcher = stubSearcher({ 'a b c d': [], 'a b c': ['one', 'two', 'three'], 'b c d': [] });
+  await searchWithFallback(searcher, 'a b c d');
+
+  assert.deepEqual(searcher.calls, ['a b c d', 'a b c', 'b c d'], 'no pair search once triples answered the query');
+});
+
+test('searchWithFallback ranks a relaxed page by how much of the query it answered', async () => {
+  const searcher = stubSearcher({
+    'a b c': [],
+    // 'dense' is Pagefind's top hit for one window; 'broad' answers two of them at equal score.
+    'a b': ['dense', 'broad'],
+    'b c': ['broad'],
+  });
+  const result = await searchWithFallback(searcher, 'a b c');
+
+  assert.deepEqual(idsOf(result), ['broad', 'dense']);
+});
+
+test('searchWithFallback bounds the ladder so a pasted sentence cannot fan out without limit', async () => {
+  const terms = ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9', 't10'];
+  const searcher = stubSearcher({});
+  await searchWithFallback(searcher, terms.join(' '));
+
+  assert.equal(searcher.calls[0], terms.join(' '), 'the reader\'s whole query is still asked in full');
+  for (const call of searcher.calls.slice(1)) {
+    assert.ok(!call.includes('t9') && !call.includes('t10'), `relaxation ran past the term bound: ${call}`);
+  }
+});
+
+test('searchWithFallback never lists the same page twice', async () => {
+  const searcher = stubSearcher({ 'a b c': ['dupe'], 'a b': ['dupe', 'fresh'], 'b c': ['dupe'] });
+  const result = await searchWithFallback(searcher, 'a b c');
+
+  assert.deepEqual(idsOf(result), ['dupe', 'fresh']);
+});
+
+test('searchWithFallback does not relax a single term, which has nothing narrower to ask', async () => {
+  const searcher = stubSearcher({ SelectValue: ['only'] });
+  const result = await searchWithFallback(searcher, 'SelectValue');
+
+  assert.deepEqual(idsOf(result), ['only']);
+  assert.deepEqual(searcher.calls, ['SelectValue']);
+});
+
+test("searchWithFallback does not relax a reader's own Pagefind syntax", async () => {
+  const quoted = stubSearcher({ '"safe area" duplicated': [] });
+  assert.deepEqual(idsOf(await searchWithFallback(quoted, '"safe area" duplicated')), []);
+  assert.deepEqual(quoted.calls, ['"safe area" duplicated'], 'an exact phrase that matches nothing must stay empty');
+
+  const excluded = stubSearcher({ 'provider -expo': [] });
+  assert.deepEqual(excluded.calls.length, 0);
+  await searchWithFallback(excluded, 'provider -expo');
+  assert.deepEqual(excluded.calls, ['provider -expo'], 'an exclusion the reader typed must not be widened around');
+});
+
+test('searchWithFallback preserves the rest of the Pagefind result envelope', async () => {
+  const searcher = stubSearcher({ 'a b': [], a: ['x'], b: ['y'] });
+  const result = await searchWithFallback(searcher, 'a b');
+
+  assert.equal(result.unfilteredResultCount, 0, 'the AND-side envelope is passed through untouched');
+  assert.deepEqual(idsOf(result), ['x', 'y']);
+});
+
 // The browser UI and the search-intent check must issue the same rewritten query, otherwise the
 // check measures a search the portal never runs. Both wirings are asserted on the source text.
 test('the Search override passes normaliseQuery to PagefindUI as processTerm', () => {
@@ -85,18 +218,49 @@ test('astro.config registers the Search override, so the copy is what ships', ()
   assert.match(source, /Search: '\.\/src\/components\/Search\.astro',/u);
 });
 
-test('the search-intent check rewrites each query with the same normaliser before searching', () => {
+test('the search-intent check issues the portal search: same normaliser, same fallback', () => {
   const source = fs.readFileSync(INTENT_CHECK, 'utf8');
   assert.match(source, /from '\.\.\/apps\/docs\/pagefind-query\.mjs'/u);
-  assert.match(source, /instance\.search\(normaliseQuery\(query\)\)/u);
-  assert.doesNotMatch(source, /instance\.search\(query\)/u);
+  assert.match(source, /searchWithFallback\(instance, normaliseQuery\(query\)\)/u);
+  assert.doesNotMatch(source, /instance\.search\(/u, 'a bare instance.search would measure a search no reader runs');
 });
 
-// The override is Starlight's own Search.astro plus exactly two additions, with the one
-// relative import that cannot resolve from outside Starlight's package rewritten to its public
-// path. When Starlight upgrades, this fails until the copy is refreshed, so the portal never
-// silently runs a stale search modal.
-test('the Search override is upstream Starlight Search.astro plus only the processTerm wiring', () => {
+// PagefindUI has no post-search hook and the module it imports is sealed, so the only way the
+// browser can relax a starved query is to be handed a different Pagefind entrypoint. These three
+// assertions are the whole chain: the modal points at the shim, the shim wraps the real engine
+// with the shared helper, and the build ships the helper next to the shim.
+test('the Search override loads the fallback Pagefind entrypoint rather than the bare one', () => {
+  const source = fs.readFileSync(SEARCH_OVERRIDE, 'utf8');
+  assert.match(source, /bundlePath: import\.meta\.env\.BASE_URL\.replace\(\/\\\/\$\/, ''\) \+ '\/pagefind-fallback\/',/u);
+});
+
+test('the fallback entrypoint re-exports Pagefind with search wrapped in searchWithFallback', () => {
+  const source = fs.readFileSync(PAGEFIND_SHIM, 'utf8');
+  assert.match(source, /import \* as pagefind from '\.\.\/pagefind\/pagefind\.js';/u);
+  assert.match(source, /import \{ searchWithFallback \} from '\.\/pagefind-query\.mjs';/u);
+  assert.match(source, /export const search = \(term, searchOptions\) => searchWithFallback\(pagefind, term, searchOptions\);/u);
+
+  // Anything the shim forgets to forward is an export PagefindUI silently loses. pagefind.js is
+  // only present after a build, so the list is checked against the built engine when there is
+  // one and against the shim's own completeness otherwise.
+  for (const name of ['createInstance', 'debouncedSearch', 'destroy', 'filters', 'init', 'mergeIndex', 'options', 'preload']) {
+    assert.match(source, new RegExp(`\\b${name}\\b`, 'u'), `${name} must be re-exported or the search modal loses it`);
+  }
+});
+
+test('astro.config ships pagefind-query.mjs beside the fallback entrypoint', () => {
+  const source = fs.readFileSync(ASTRO_CONFIG, 'utf8');
+  assert.match(source, /name: 'pagefind-fallback-runtime'/u);
+  assert.match(source, /'astro:build:done'/u);
+  assert.match(source, /new URL\('\.\/pagefind-query\.mjs', import\.meta\.url\)/u);
+});
+
+// The override is Starlight's own Search.astro plus two additions and one edited line, with the
+// one relative import that cannot resolve from outside Starlight's package rewritten to its
+// public path. When Starlight upgrades, this fails until the copy is refreshed, so the portal
+// never silently runs a stale search modal — and an unlisted local change fails it too, so the
+// vendored copy cannot quietly accumulate.
+test('the Search override is upstream Starlight Search.astro plus only the search wiring', () => {
   const require = createRequire(path.join(ROOT_DIR, 'apps/docs/package.json'));
   const upstream = fs.readFileSync(require.resolve('@astrojs/starlight/components/Search.astro'), 'utf8');
   const override = fs.readFileSync(SEARCH_OVERRIDE, 'utf8');
@@ -104,7 +268,16 @@ test('the Search override is upstream Starlight Search.astro plus only the proce
   const additions = [
     /^\timport \{ normaliseQuery \} from '\.\.\/\.\.\/pagefind-query\.mjs';\n/mu,
     /^\t+\/\/ Drops question scaffolding[^\n]*\n\t+\/\/ scripts\/check-docs-search-intent\.mjs[^\n]*\n\t+processTerm: normaliseQuery,\n/mu,
+    /^\t+\/\/ Upstream loads `\/pagefind\/pagefind\.js`[^\n]*\n(?:\t+\/\/[^\n]*\n){3}/mu,
   ];
+  // The only upstream line this copy edits: the Pagefind entrypoint PagefindUI imports.
+  const editedLines = [
+    [
+      "bundlePath: import.meta.env.BASE_URL.replace(/\\/$/, '') + '/pagefind-fallback/',",
+      "bundlePath: import.meta.env.BASE_URL.replace(/\\/$/, '') + '/pagefind/',",
+    ],
+  ];
+
   let stripped = override.replace(
     "import { Icon } from '@astrojs/starlight/components';",
     "import Icon from '../user-components/Icon.astro';",
@@ -113,5 +286,9 @@ test('the Search override is upstream Starlight Search.astro plus only the proce
     assert.match(stripped, addition, 'expected addition missing from the override');
     stripped = stripped.replace(addition, '');
   }
-  assert.equal(stripped, upstream, 'Search.astro override differs from upstream Starlight beyond the processTerm wiring; re-copy upstream and re-apply the two additions');
+  for (const [ours, theirs] of editedLines) {
+    assert.ok(stripped.includes(ours), `expected edited line missing from the override: ${ours}`);
+    stripped = stripped.replace(ours, theirs);
+  }
+  assert.equal(stripped, upstream, 'Search.astro override differs from upstream Starlight beyond the listed search wiring; re-copy upstream and re-apply the additions and the bundlePath edit');
 });

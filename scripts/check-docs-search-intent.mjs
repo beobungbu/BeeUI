@@ -34,15 +34,16 @@
 //     against 26 held-out queries an independent scorer wrote, the portal scored 17 (65%) while
 //     this matrix read 21/21; a second scorer's 24 held-out queries scored 12 (50%) at 24/24.
 //     Treat a green run as "these known intents still work", never as "search is good".
-//   - Queries are rewritten by apps/docs/pagefind-query.mjs before they reach Pagefind, exactly
-//     as the portal's search modal rewrites them. On a 25-query held-out set written before the
-//     rewrite existed (plans/reports/h075-search-heldout-blind-260906-1210.json), the rewrite
-//     moved the strict top-3 rate from 6/25 to 12/25 on the same index. Content was not tuned
-//     to that set; the stopword list was checked against it twice (whether to keep 'to', and
-//     whether to keep phrasal-verb particles); the strict figure did not move (12/25 both
-//     times; counting each query's recorded alternative page, 14/25 became 15/25), so the set
-//     is no longer blind for stopword decisions. The remaining misses are content the portal does not
-//     say, not phrasing.
+//   - Queries take the same path the portal's search modal takes: apps/docs/pagefind-query.mjs
+//     rewrites them, and its searchWithFallback re-asks a starved query in narrower windows.
+//     Measured on two held-out sets neither the rewrite nor the fallback was tuned against
+//     (26 queries from an independent scorer, 24 written from the route list before this change),
+//     the fallback moved strict top-3 from 8/26 to 13/26 and 8/24 to 15/24, and took the queries
+//     that returned literally nothing from 7/26 and 7/24 to zero on both. It cannot move this
+//     It cannot break an entry in this matrix, by construction: relaxed pages are only appended
+//     after whatever the AND already found, never reordered into it. Exactly one entry below
+//     depends on it (and says so). The misses that remain on both held-out sets are content the
+//     portal does not say, not phrasing.
 //   - A pass here does not mean the page content is good — only that Pagefind indexes it for the
 //     terms a reader is expected to search.
 //
@@ -68,7 +69,7 @@ export const DOCS_DIST_DIR = path.join(ROOT_DIR, 'apps/docs/dist');
 // weights the site does not use.
 export { PAGEFIND_RANKING as RANKING } from '../apps/docs/pagefind-ranking.mjs';
 import { PAGEFIND_RANKING as RANKING } from '../apps/docs/pagefind-ranking.mjs';
-import { normaliseQuery } from '../apps/docs/pagefind-query.mjs';
+import { normaliseQuery, searchWithFallback } from '../apps/docs/pagefind-query.mjs';
 
 export const TOP_N = 3;
 
@@ -117,7 +118,44 @@ export const QUERY_MATRIX = [
   { query: 'toast notification', expect: '/components/toast/' },
   { query: 'how to override styles with tailwind', expect: '/reference/styling/' },
   { query: 'what versions of react native are supported', expect: '/compatibility/current/' },
+  // The one entry that guards a mechanism rather than a page. `put loading spinner inside
+  // disabled button` matches no page — Pagefind ANDs all six terms — so this query returns
+  // nothing unless searchWithFallback re-asks it in narrower windows. It is here to make the
+  // relaxation ladder falsifiable end to end against the real index: delete the ladder and this
+  // goes red. It is deliberately not drawn from any held-out set.
+  { query: 'put a loading spinner inside a disabled button', expect: '/components/button/' },
 ];
+
+// The browser cannot import apps/docs/pagefind-query.mjs directly — PagefindUI builds its engine
+// specifier as a string — so the built site loads it as a sibling of the entrypoint shim, copied
+// into dist by the `pagefind-fallback-runtime` integration in apps/docs/astro.config.mjs. If that
+// copy is missing or has drifted, the modal's own `import` 404s and search dies at runtime while
+// every unit test still passes, so the build asserts it here instead.
+export const SEARCH_RUNTIME_DIR = 'pagefind-fallback';
+export async function collectSearchRuntimeProblems(distDir = DOCS_DIST_DIR) {
+  const problems = [];
+  const shim = path.join(distDir, SEARCH_RUNTIME_DIR, 'pagefind.js');
+  const shipped = path.join(distDir, SEARCH_RUNTIME_DIR, 'pagefind-query.mjs');
+  const source = path.join(ROOT_DIR, 'apps/docs/pagefind-query.mjs');
+
+  const shimSource = await readFile(shim, 'utf8').catch(() => null);
+  if (shimSource === null) {
+    problems.push(`${shim} is missing: apps/docs/public/${SEARCH_RUNTIME_DIR}/pagefind.js did not reach the build.`);
+  } else if (!shimSource.includes("from './pagefind-query.mjs'")) {
+    problems.push(`${shim} no longer imports ./pagefind-query.mjs, so the shipped search runs no fallback.`);
+  }
+
+  const [shippedSource, sourceText] = await Promise.all([
+    readFile(shipped, 'utf8').catch(() => null),
+    readFile(source, 'utf8'),
+  ]);
+  if (shippedSource === null) {
+    problems.push(`${shipped} is missing: the pagefind-fallback-runtime integration did not copy apps/docs/pagefind-query.mjs.`);
+  } else if (shippedSource !== sourceText) {
+    problems.push(`${shipped} differs from apps/docs/pagefind-query.mjs, so the browser runs a different rewrite than this check.`);
+  }
+  return problems;
+}
 
 const CONTENT_TYPES = {
   '.css': 'text/css; charset=utf-8',
@@ -175,9 +213,11 @@ export async function runQueryMatrix(distDir = DOCS_DIST_DIR, { matrix = QUERY_M
 
     const results = [];
     for (const { query, expect } of matrix) {
-      // The portal's own Search.astro rewrites the query the same way (processTerm), so this
-      // measures what the built site issues, not the raw string.
-      const search = await instance.search(normaliseQuery(query));
+      // The portal issues exactly this: Search.astro's `processTerm` rewrites the query, and the
+      // Pagefind entrypoint it loads (apps/docs/public/pagefind-fallback/pagefind.js) wraps
+      // `search` in the same searchWithFallback. Measuring anything else would score a search
+      // no reader performs.
+      const search = await searchWithFallback(instance, normaliseQuery(query));
       const top = await Promise.all(search.results.slice(0, topN).map((result) => result.data()));
       const urls = top.map((entry) => toSitePath(entry.url));
       results.push({ query, expect, urls, pass: urls.includes(expect) });
@@ -191,20 +231,31 @@ export async function runQueryMatrix(distDir = DOCS_DIST_DIR, { matrix = QUERY_M
 async function main() {
   const results = await runQueryMatrix();
   const failures = results.filter((r) => !r.pass);
+  const runtimeProblems = await collectSearchRuntimeProblems();
 
   for (const r of results) {
     const status = r.pass ? 'PASS' : 'FAIL';
     console.log(`${status}  "${r.query}" -> expect ${r.expect}  got [${r.urls.join(', ')}]`);
   }
   console.log(`\n${results.length - failures.length}/${results.length} queries surfaced their page in the top ${TOP_N}.`);
+  for (const problem of runtimeProblems) console.error(`SEARCH RUNTIME  ${problem}`);
 
-  if (process.argv.includes('--check') && failures.length) {
-    console.error(
-      `\n${failures.length} quer${failures.length === 1 ? 'y misses' : 'ies miss'} its owning page: ` +
-        `${failures.map((f) => `"${f.query}"`).join(', ')}. Make the owning page say the thing a reader ` +
-        'searched for, rather than adding unrelated keywords elsewhere.',
-    );
-    process.exitCode = 1;
+  if (process.argv.includes('--check')) {
+    if (failures.length) {
+      console.error(
+        `\n${failures.length} quer${failures.length === 1 ? 'y misses' : 'ies miss'} its owning page: ` +
+          `${failures.map((f) => `"${f.query}"`).join(', ')}. Make the owning page say the thing a reader ` +
+          'searched for, rather than adding unrelated keywords elsewhere.',
+      );
+      process.exitCode = 1;
+    }
+    if (runtimeProblems.length) {
+      console.error(
+        `\nThe built portal would not run the search this check just measured (${runtimeProblems.length} problem` +
+          `${runtimeProblems.length === 1 ? '' : 's'} above).`,
+      );
+      process.exitCode = 1;
+    }
   }
 }
 

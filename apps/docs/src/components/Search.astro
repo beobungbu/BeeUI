@@ -143,7 +143,11 @@ if (project.trailingSlash === 'never') dataAttributes['data-strip-trailing-slash
 						...pagefindUserConfig,
 						element: '#starlight__search',
 						baseUrl: import.meta.env.BASE_URL,
-						bundlePath: import.meta.env.BASE_URL.replace(/\/$/, '') + '/pagefind/',
+						// Upstream loads `/pagefind/pagefind.js`. This directory holds a shim that
+						// re-exports it with `search` wrapped in pagefind-query.mjs's relaxation;
+						// PagefindUI has no post-search hook, so the engine it imports is the only
+						// place the browser can widen a query that found almost nothing.
+						bundlePath: import.meta.env.BASE_URL.replace(/\/$/, '') + '/pagefind-fallback/',
 						showImages: false,
 						translations,
 						showSubResults: true,
