@@ -91,9 +91,13 @@ export function parseChangeset(text) {
 export function readAddedChangesets(ref, rootDir = ROOT_DIR) {
   const dir = path.join(rootDir, '.changeset');
   if (!fs.existsSync(dir)) return [];
-  // Two trees compared directly. `base...HEAD` needs a merge base, and a checkout one commit
-  // deep has none — the guard failed every pull request the moment it could run there.
-  const committed = git(['diff', '--diff-filter=A', '--name-only', ref, 'HEAD', '--', '.changeset/'], rootDir);
+  // `base...HEAD` (from the merge base) is right: a changeset that existed when the branch was
+  // cut and has since been consumed on the base is not one this change added. It needs history a
+  // checkout one commit deep does not have, so two trees are compared only when there is no
+  // merge base — that reading can count a consumed changeset, which is why #513 should check
+  // out the pull request's merge ref rather than the head sha.
+  const range = hasMergeBase(ref, rootDir) ? [`${ref}...HEAD`] : [ref, 'HEAD'];
+  const committed = git(['diff', '--diff-filter=A', '--name-only', ...range, '--', '.changeset/'], rootDir);
   const untracked = git(['ls-files', '--others', '--exclude-standard', '--', '.changeset/'], rootDir);
   const names = [...new Set(`${committed}\n${untracked}`.split('\n').map((line) => line.trim()).filter(Boolean))];
   // `changeset version` deletes the files it consumes, so a name in the base diff may be gone.
@@ -140,6 +144,15 @@ function git(args, rootDir) {
   });
 }
 
+function hasMergeBase(ref, rootDir) {
+  try {
+    git(['merge-base', ref, 'HEAD'], rootDir);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function isShallow(rootDir) {
   try {
     return git(['rev-parse', '--is-shallow-repository'], rootDir).trim() === 'true';
@@ -166,7 +179,7 @@ export function readBaseInventory(ref, rootDir = ROOT_DIR, { fetch = true } = {}
     // Only a remote-tracking shape is fetched, and only with a depth when the clone is already
     // shallow: `--depth=1` into a full clone marks it shallow and can graft away the developer's
     // own history, which a check that sounds read-only must not do.
-    const remote = ref.match(/^([A-Za-z0-9._-]+)\/([A-Za-z0-9._/-]+)$/u);
+    const remote = ref.match(/^([A-Za-z0-9._][A-Za-z0-9._-]*)\/([A-Za-z0-9._][A-Za-z0-9._/-]*)$/u);
     if (remote) {
       const depth = isShallow(rootDir) ? ['--depth=1'] : [];
       try {

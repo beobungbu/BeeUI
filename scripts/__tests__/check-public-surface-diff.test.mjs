@@ -47,6 +47,7 @@ test('a classification change needs a changeset but not a breaking bump; a packa
   assert.deepEqual(violations(demoted, changeset({ '@beemvp/beeui-ui': 'patch' })), []);
   const moved = diffInventories(inventory(row('a')), inventory(row('a', { package: '@beemvp/beeui-core' })));
   assert.equal(classifyDiff(moved), 'breaking');
+  assert.match(violations(demoted, [])[0], /reclassified a: consumer → advanced-consumer/u, 'the message names the reclassification');
 });
 
 test('an added row is additive, and metadata changes are nothing', () => {
@@ -110,6 +111,15 @@ test('only changesets added relative to the base count', () => {
   // `changeset version` deletes what it consumes; a name in the base diff may no longer exist.
   fs.unlinkSync(path.join(dir, '.changeset/fresh.md'));
   assert.deepEqual(readAddedChangesets('base', dir).map((entry) => entry.name), ['.changeset/local.md']);
+
+  // A changeset that existed when the branch was cut and was consumed on the base since is not
+  // one this change added; with a merge base available that is what the range says. The
+  // branch's own `fresh.md` is committed as removed first — an unstaged deletion is restored by
+  // the checkout below and would rightly count as added.
+  fs.unlinkSync(path.join(dir, '.changeset/local.md'));
+  git('rm', '-q', '.changeset/fresh.md'); git('commit', '-q', '-m', 'drop fresh');
+  git('checkout', '-q', 'base'); git('rm', '-q', '.changeset/stale.md'); git('commit', '-q', '-m', 'consume'); git('checkout', '-q', 'work');
+  assert.deepEqual(readAddedChangesets('base', dir).map((entry) => entry.name), [], 'a consumed base changeset does not count');
 });
 
 test('the base is fetched on demand in a shallow checkout, and named when that fails', () => {

@@ -15,7 +15,13 @@ const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 export function readPinnedVersion(rootDir = ROOT_DIR) {
   return readPublicationState(rootDir).currentVersion;
 }
-export const EXPECTED_VERSION = readPinnedVersion(ROOT_DIR);
+export const EXPECTED_VERSION = (() => {
+  try {
+    return readPinnedVersion(ROOT_DIR);
+  } catch (error) {
+    throw new Error(`docs/dist-tag-policy.md must carry a \`json dist-tag-policy\` block with currentVersion; the release checks compare every manifest to it (${error.message}).`);
+  }
+})();
 export const EXPECTED_PACKAGE_NAMES = new Map([
   ['packages/core/package.json', '@beemvp/beeui-core'],
   ['packages/tokens/package.json', '@beemvp/beeui-tokens'],

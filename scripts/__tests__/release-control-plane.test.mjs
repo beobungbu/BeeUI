@@ -63,3 +63,14 @@ test('names the bump procedure when every package agrees and only the pin lags',
   assert.ok(violations.some((v) => v.includes('docs/dist-tag-policy.md pins')), violations.join('\n'));
   assert.equal(readPinnedVersion(root), EXPECTED_VERSION);
 });
+
+test('the pin is read from dist-tag-policy, not from the root manifest', () => {
+  // With both at the same value the fixture could not tell which one `readPinnedVersion` reads,
+  // and reverting it to the root manifest left every suite green.
+  const root = createFixture();
+  fs.writeFileSync(path.join(root, 'docs/dist-tag-policy.md'), '```json dist-tag-policy\n{"published":false,"currentVersion":"7.7.7"}\n```\n');
+
+  assert.equal(readPinnedVersion(root), '7.7.7');
+  const violations = collectReleaseControlPlaneViolations(root);
+  assert.ok(violations.some((v) => v.startsWith('package.json: expected version 7.7.7')), violations.join('\n'));
+});
