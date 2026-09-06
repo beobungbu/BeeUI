@@ -34,6 +34,9 @@ const REPORT_DOC = path.join(ROOT_DIR, 'docs', 'consumer-compatibility-report.md
 const MATRIX_DOC = path.join(ROOT_DIR, 'docs', 'compatibility-matrix.md');
 const RELEASE_RULESET_DOC = path.join(ROOT_DIR, 'docs', 'release-ruleset.md');
 
+// The CLI is held to the same version by scripts/check-release-control-plane.mjs, but it is not
+// listed here: `lockstepPackages` feeds the docs foundation's `packageNames` and the landing's
+// public-package-boundary count, where the CLI is modelled separately as `cliPackageName`.
 const LOCKSTEP_PACKAGE_MANIFESTS = ['packages/core', 'packages/tokens', 'packages/ui'];
 
 function readJson(filePath) {
@@ -157,13 +160,21 @@ export function collectDistTagPolicyViolations({ policy, packageVersions, releas
   if (!Array.isArray(tags) || tags.length !== expectedTags.length || !expectedTags.every((t) => tags.includes(t))) {
     violations.push(`${label}: "distTags" must be exactly ${JSON.stringify(expectedTags)}, got ${JSON.stringify(tags)}.`);
   }
-  for (const key of ['stableDistTag', 'prereleaseDistTag', 'atomicPromotionTag']) {
+  for (const key of ['stableDistTag', 'prereleaseDistTag', 'stablePromotionTag']) {
     if (Array.isArray(tags) && !tags.includes(policy[key])) {
       violations.push(`${label}: "${key}" ${JSON.stringify(policy[key])} must be one of distTags ${JSON.stringify(tags)}.`);
     }
   }
   if (policy.stableDistTag !== 'latest') {
     violations.push(`${label}: "stableDistTag" must be "latest".`);
+  }
+  // The tag a finished release is promoted to is the stable consumer channel, not a third
+  // destination. Naming it separately was only ever a restatement; being in distTags did not
+  // stop it naming "next" and pointing default installs at a prerelease.
+  if (policy.stablePromotionTag !== policy.stableDistTag) {
+    violations.push(
+      `${label}: "stablePromotionTag" ${JSON.stringify(policy.stablePromotionTag)} must equal "stableDistTag" ${JSON.stringify(policy.stableDistTag)}.`,
+    );
   }
   if (policy.prereleaseDistTag === policy.stableDistTag) {
     violations.push(`${label}: prereleaseDistTag and stableDistTag must differ (prereleases never publish to latest).`);

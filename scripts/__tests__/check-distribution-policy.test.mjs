@@ -53,7 +53,7 @@ const GOOD_POLICY = {
   distTags: ['latest', 'next'],
   prereleaseDistTag: 'next',
   stableDistTag: 'latest',
-  atomicPromotionTag: 'latest',
+  stablePromotionTag: 'latest',
   lockstepPackages: ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui'],
   releaseEnvironment: 'release',
 };
@@ -140,6 +140,15 @@ test('prerelease must not publish to the stable dist-tag', () => {
   assert.ok(
     policyViolations({ prereleaseDistTag: 'latest' }).some((v) => /prereleaseDistTag and stableDistTag must differ/.test(v)),
   );
+});
+
+test('the stable promotion tag must be the stable dist-tag', () => {
+  assert.ok(policyViolations({ stablePromotionTag: 'next' }).some((v) => /stablePromotionTag/.test(v)));
+});
+
+test('the declared lockstep set must equal the measured package set', () => {
+  const v = policyViolations({ lockstepPackages: ['@beemvp/beeui-core', '@beemvp/beeui-tokens'] });
+  assert.ok(v.some((m) => /lockstepPackages/.test(m)), v.join('\n'));
 });
 
 test('releaseEnvironment must match the ruleset', () => {

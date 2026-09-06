@@ -65,11 +65,14 @@ public prerelease.
 
 ## Lockstep version and CLI alignment
 
-- `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` share **one lockstep version** and are
-  released together as a fixed group (ADR-011 D6; [docs/release.md](release.md) versioning
-  policy). A prerelease bumps all three to the same `0.86.2-rc.N`; the stable release bumps
-  all three to `0.86.2`. Package versions must not drift, and packed manifests must not expose
-  unresolved `workspace:*` ranges — `pnpm release:verify` enforces both.
+- `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui` and `@beemvp/beeui-cli` share
+  **one lockstep version** and are released together as a fixed group (ADR-011 D6;
+  [docs/release.md](release.md) versioning policy). A prerelease bumps all four to the same
+  `0.86.2-rc.N`; the stable release bumps all four to `0.86.2`. Package versions must not drift,
+  and packed manifests must not expose unresolved `workspace:*` ranges — `pnpm release:verify`
+  enforces both, and `scripts/check-release-control-plane.mjs` holds all four manifests to the
+  pinned `currentVersion`. The `lockstepPackages` list in the machine-readable block below names
+  the three libraries only: it also feeds the docs foundation, which carries the CLI separately.
 - The CLI (recommended name `@beemvp/beeui-cli`, binary `beeui` —
   [docs/distribution-names.md](distribution-names.md); packaged under the R8 tranche,
   [#209](https://github.com/beobungbu/BeeUI/issues/209)) uses the **same** `latest`/`next`
@@ -79,11 +82,17 @@ public prerelease.
   must resolve to library versions compatible with that CLI. A `next` CLI scaffolds against
   the `next` libraries; a `latest` CLI scaffolds against the `latest` libraries.
 
-## The atomic tag/version plan (or fail safe)
+## The coordinated tag/version plan (or fail safe)
 
 The release workflow applies **one unambiguous tag/version plan** whose commit point is a
-single atomic dist-tag promotion, so a partial upload can never present a half-published
+single coordinated dist-tag promotion, so a partial upload can never present a half-published
 release to `latest` consumers (#206 DoD).
+
+npm has no cross-package transaction: `npm dist-tag add` moves one package at a time, and
+nothing rolls the earlier moves back if a later one fails. The fail-safe property below comes
+from *ordering* — nothing is promoted until the whole set is verified — not from registry-level
+atomicity, and this document does not claim otherwise. The machine-readable block names the
+destination `stablePromotionTag`, which must be the stable channel itself.
 
 1. **Compute one plan.** Pick the single lockstep version for the candidate (`0.86.2-rc.N` or
    `0.86.2`) from an exact SHA. Validate changelog/migration/version inputs
@@ -97,9 +106,11 @@ release to `latest` consumers (#206 DoD).
    package of the group is published at the candidate version, tarball hashes match the
    retained candidate artifact, and metadata points at the canonical repository/source.
 4. **Promote `latest` last, together.** For a stable release, only after step 3 passes, move
-   `latest` for all three packages (and the CLI, when part of the release) in one
-   `npm dist-tag add` batch. This promotion is the atomic "commit": it is the moment
-   consumers on `latest` see the new release.
+   `latest` for all four packages in one uninterrupted `npm dist-tag add` batch, libraries
+   before the CLI. This promotion is the "commit": it is the moment consumers on `latest` see
+   the new release. If a move in the batch fails, finish the batch or re-point the already-moved
+   packages back to the last-good stable — a half-moved `latest` is the one state this plan
+   cannot prevent, only detect and correct.
 
 **Fail-safe property.** If any upload in step 2 or check in step 3 fails, `latest` is never
 moved, so default consumers keep resolving the previous good stable release. Recovery is to
@@ -150,7 +161,7 @@ candidate becomes — and `prereleaseVersionPattern` must describe the pinned ca
   "distTags": ["latest", "next"],
   "prereleaseDistTag": "next",
   "stableDistTag": "latest",
-  "atomicPromotionTag": "latest",
+  "stablePromotionTag": "latest",
   "lockstepPackages": ["@beemvp/beeui-core", "@beemvp/beeui-tokens", "@beemvp/beeui-ui"],
   "releaseEnvironment": "release"
 }
