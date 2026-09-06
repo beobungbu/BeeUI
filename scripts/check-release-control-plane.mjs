@@ -15,6 +15,11 @@ const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 export function readPinnedVersion(rootDir = ROOT_DIR) {
   return readPublicationState(rootDir).currentVersion;
 }
+// The same pin carries the pattern a candidate version must match. The npm workflow's shell guard
+// is required to be this exact string, so the two cannot drift apart.
+export function readPinnedPrereleasePattern(rootDir = ROOT_DIR) {
+  return readPublicationState(rootDir).prereleaseVersionPattern;
+}
 export const EXPECTED_VERSION = (() => {
   try {
     return readPinnedVersion(ROOT_DIR);
@@ -53,9 +58,11 @@ function stableBase(version) {
 // workflow kept offering a superseded default and guarding a superseded release line, with all
 // release checks green.
 //
-// The guard is checked by behaviour rather than by string equality: what matters is that it
-// admits a candidate on the pinned line and refuses the stable version and any other line.
-export function collectNpmReleaseWorkflowViolations(workflow, pinnedVersion) {
+// The guard is required to be the pin's own `prereleaseVersionPattern`, verbatim. Sampling a few
+// versions cannot characterise a regex: an anchored superset such as `^0\.86\.2-rc\.[0-9]+$`
+// passes every probe below while admitting `0.86.2-rc.007`, which the pin's own pattern rejects.
+// The probes are kept because they say *how* a guard is wrong, not because they pin it.
+export function collectNpmReleaseWorkflowViolations(workflow, pinnedVersion, pinnedPrereleasePattern) {
   const violations = [];
   const base = stableBase(pinnedVersion);
 
@@ -82,8 +89,20 @@ export function collectNpmReleaseWorkflowViolations(workflow, pinnedVersion) {
     return violations;
   }
 
+  if (pinnedPrereleasePattern === undefined) {
+    violations.push(
+      'docs/dist-tag-policy.md: no "prereleaseVersionPattern" in the `json dist-tag-policy` block to hold the workflow guard to.',
+    );
+  } else if (guardSource !== pinnedPrereleasePattern) {
+    violations.push(
+      `${NPM_RELEASE_WORKFLOW}: prerelease version guard /${guardSource}/ must be the pinned prereleaseVersionPattern /${pinnedPrereleasePattern}/ from docs/dist-tag-policy.md.`,
+    );
+  }
+
   let guard;
   try {
+    // `grep -E` and JS `RegExp` are different languages; this is an approximation used only to
+    // describe how a guard is wrong. The equality check above is what pins it.
     guard = new RegExp(guardSource);
   } catch (error) {
     violations.push(`${NPM_RELEASE_WORKFLOW}: prerelease version guard is not a valid regex: ${error.message}.`);
@@ -149,7 +168,13 @@ export function collectReleaseControlPlaneViolations(rootDir = ROOT_DIR) {
 
   const npmReleaseWorkflow = path.join(rootDir, NPM_RELEASE_WORKFLOW);
   if (fs.existsSync(npmReleaseWorkflow)) {
-    violations.push(...collectNpmReleaseWorkflowViolations(fs.readFileSync(npmReleaseWorkflow, 'utf8'), expected));
+    violations.push(
+      ...collectNpmReleaseWorkflowViolations(
+        fs.readFileSync(npmReleaseWorkflow, 'utf8'),
+        expected,
+        readPinnedPrereleasePattern(rootDir),
+      ),
+    );
   }
 
   const workflowFiles = walkFiles(path.join(rootDir, '.github/workflows')).filter(

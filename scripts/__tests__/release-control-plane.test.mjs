@@ -9,10 +9,14 @@ import {
   collectReleaseControlPlaneViolations,
   EXPECTED_PACKAGE_NAMES,
   EXPECTED_VERSION,
+  readPinnedPrereleasePattern,
   readPinnedVersion,
 } from '../check-release-control-plane.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+// The fixture pin and the fixture workflow's shell guard have to be the same string, because that
+// is exactly what the check requires of the repository.
+const FIXTURE_PRERELEASE_PATTERN = '^0\\.86\\.2-rc\\.(0|[1-9][0-9]*)$';
 
 function createFixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-release-control-plane-'));
@@ -31,7 +35,7 @@ function createFixture() {
   // The pin the checks compare against lives in the dist-tag-policy block.
   fs.writeFileSync(
     path.join(root, 'docs/dist-tag-policy.md'),
-    `\`\`\`json dist-tag-policy\n${JSON.stringify({ published: false, currentVersion: EXPECTED_VERSION })}\n\`\`\`\n`,
+    `\`\`\`json dist-tag-policy\n${JSON.stringify({ published: false, currentVersion: EXPECTED_VERSION, prereleaseVersionPattern: FIXTURE_PRERELEASE_PATTERN })}\n\`\`\`\n`,
   );
   return root;
 }
@@ -96,9 +100,23 @@ test('the npm release workflow keeps registry mutation manual, main-only, enviro
   assert.match(workflow, /^on:\n  workflow_dispatch:/m);
   assert.doesNotMatch(workflow, /^  (push|pull_request|schedule):/m);
   assert.match(workflow, /default: verify/);
-  assert.match(workflow, /test "\$GITHUB_REF" = "refs\/heads\/main"/);
   assert.match(workflow, /environment: release/);
-  assert.match(workflow, /BEEUI_RC_RELEASE/);
+
+  // A gate is only a gate where it runs. Matching each gate's text anywhere in the file asserted
+  // presence, not enforcement: `BEEUI_RC_RELEASE` also occurs in the input description, so
+  // deleting the confirmation gate stayed green, and rewriting the branch condition to something
+  // never true left all three gates as dead code with every asserted string still verbatim in the
+  // file. Read the branch itself, and pin its body exactly.
+  const nonVerifyBranch = /\n( +)if \[ "\$OPERATION" != "verify" \]; then\n([\s\S]*?)\n\1fi\n/.exec(workflow);
+  assert.ok(nonVerifyBranch, 'registry mutation gates must sit inside `if [ "$OPERATION" != "verify" ]`');
+  const mutationGates = nonVerifyBranch[2]
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '' && !line.startsWith('#'));
+  assert.equal(mutationGates.length, 3, `expected exactly three mutation gates, found:\n${mutationGates.join('\n')}`);
+  assert.equal(mutationGates[0], 'test "$GITHUB_REF" = "refs/heads/main"');
+  assert.equal(mutationGates[1], 'test "$CONFIRMATION" = "BEEUI_RC_RELEASE"');
+  assert.match(mutationGates[2], /^printf '%s\\n' "\$version" \| grep -Eq '\^.+\$'$/);
 
   // Provenance needs OIDC, but the bootstrap's registry credential is the temporary token and it
   // reaches only the publish step — not install, build, pack or the registry probes.
@@ -123,7 +141,7 @@ test('the npm release workflow keeps registry mutation manual, main-only, enviro
 });
 
 
-function npmReleaseWorkflow({ defaultVersion = '0.86.2', guard = '^0\\.86\\.2-rc\\.(0|[1-9][0-9]*)$' } = {}) {
+function npmReleaseWorkflow({ defaultVersion = '0.86.2', guard = FIXTURE_PRERELEASE_PATTERN } = {}) {
   return [
     'on:',
     '  workflow_dispatch:',
@@ -144,13 +162,13 @@ function npmReleaseWorkflow({ defaultVersion = '0.86.2', guard = '^0\\.86\\.2-rc
 }
 
 test('the npm release workflow version literals track the pin', () => {
-  assert.deepEqual(collectNpmReleaseWorkflowViolations(npmReleaseWorkflow(), '0.86.2'), []);
+  assert.deepEqual(collectNpmReleaseWorkflowViolations(npmReleaseWorkflow(), '0.86.2', FIXTURE_PRERELEASE_PATTERN), []);
 });
 
 // This is the drift #512 describes: the pin and the manifests move to a new release line while the
 // transport keeps offering the superseded label, and nothing else in CI compares the two.
 test('a dispatch default left behind by a version bump is rejected', () => {
-  const v = collectNpmReleaseWorkflowViolations(npmReleaseWorkflow({ defaultVersion: '20260902.0.0' }), '0.86.2');
+  const v = collectNpmReleaseWorkflowViolations(npmReleaseWorkflow({ defaultVersion: '20260902.0.0' }), '0.86.2', FIXTURE_PRERELEASE_PATTERN);
   assert.ok(v.some((m) => /"expected_version" default 20260902\.0\.0 must equal the pinned version 0\.86\.2/.test(m)), v.join('\n'));
 });
 
@@ -158,25 +176,46 @@ test('a prerelease guard left behind by a version bump is rejected', () => {
   const v = collectNpmReleaseWorkflowViolations(
     npmReleaseWorkflow({ guard: '^20260902\\.0\\.0-rc\\.(0|[1-9][0-9]*)$' }),
     '0.86.2',
+    FIXTURE_PRERELEASE_PATTERN,
   );
   assert.ok(v.some((m) => /rejects 0\.86\.2-rc\.1/.test(m)), v.join('\n'));
 });
 
 test('a prerelease guard that admits the stable version or another line is rejected', () => {
-  const stableToo = collectNpmReleaseWorkflowViolations(npmReleaseWorkflow({ guard: '^0\\.86\\.2(-rc\\.[0-9]+)?$' }), '0.86.2');
+  const stableToo = collectNpmReleaseWorkflowViolations(npmReleaseWorkflow({ guard: '^0\\.86\\.2(-rc\\.[0-9]+)?$' }), '0.86.2', FIXTURE_PRERELEASE_PATTERN);
   assert.ok(stableToo.some((m) => /accepts 0\.86\.2,/.test(m)), stableToo.join('\n'));
 
-  const unanchored = collectNpmReleaseWorkflowViolations(npmReleaseWorkflow({ guard: '0\\.86\\.2-rc\\.(0|[1-9][0-9]*)' }), '0.86.2');
+  const unanchored = collectNpmReleaseWorkflowViolations(npmReleaseWorkflow({ guard: '0\\.86\\.2-rc\\.(0|[1-9][0-9]*)' }), '0.86.2', FIXTURE_PRERELEASE_PATTERN);
   assert.ok(unanchored.some((m) => /accepts 90\.86\.2-rc\.1/.test(m)), unanchored.join('\n'));
   assert.ok(unanchored.some((m) => /accepts 0\.86\.2-rc\.1-not-a-candidate/.test(m)), unanchored.join('\n'));
 });
 
+// Sampled versions cannot characterise a regex. Both guards below pass every behavioural probe:
+// the first admits another patch on the 0.86 line, the second admits `-rc.007`, which the pin's
+// own pattern rejects. Only string equality with the pin catches them.
+test('a prerelease guard that is an anchored superset of the pinned pattern is rejected', () => {
+  for (const guard of ['^0\\.86\\.[0-9]+-rc\\.(0|[1-9][0-9]*)$', '^0\\.86\\.2-rc\\.[0-9]+$']) {
+    const v = collectNpmReleaseWorkflowViolations(npmReleaseWorkflow({ guard }), '0.86.2', FIXTURE_PRERELEASE_PATTERN);
+    assert.ok(v.some((m) => /must be the pinned prereleaseVersionPattern/.test(m)), `${guard}\n${v.join('\n')}`);
+  }
+});
+
+// Without the pattern in the pin's projection the comparison above would run against `undefined`
+// and report agreement with anything.
+test('a pin that carries no prerelease pattern cannot vacuously accept the guard', () => {
+  const v = collectNpmReleaseWorkflowViolations(npmReleaseWorkflow(), '0.86.2', undefined);
+  assert.ok(v.some((m) => /no "prereleaseVersionPattern"/.test(m)), v.join('\n'));
+});
+
 test('the pin at a candidate keeps the guard on the same stable line', () => {
-  assert.deepEqual(collectNpmReleaseWorkflowViolations(npmReleaseWorkflow({ defaultVersion: '0.86.2-rc.1' }), '0.86.2-rc.1'), []);
+  assert.deepEqual(
+    collectNpmReleaseWorkflowViolations(npmReleaseWorkflow({ defaultVersion: '0.86.2-rc.1' }), '0.86.2-rc.1', FIXTURE_PRERELEASE_PATTERN),
+    [],
+  );
 });
 
 test('a workflow with no version literals to compare is rejected', () => {
-  const v = collectNpmReleaseWorkflowViolations('on:\n  workflow_dispatch:\njobs:\n  preflight:\n', '0.86.2');
+  const v = collectNpmReleaseWorkflowViolations('on:\n  workflow_dispatch:\njobs:\n  preflight:\n', '0.86.2', FIXTURE_PRERELEASE_PATTERN);
   assert.ok(v.some((m) => /no "expected_version" dispatch input/.test(m)), v.join('\n'));
   assert.ok(v.some((m) => /no prerelease version guard/.test(m)), v.join('\n'));
 });
@@ -184,7 +223,13 @@ test('a workflow with no version literals to compare is rejected', () => {
 // The real workflow is reachable from the repository check, not only from these fixtures.
 test('the repository npm release workflow agrees with the repository pin', () => {
   const workflow = fs.readFileSync(path.join(REPO_ROOT, '.github/workflows/npm-release.yml'), 'utf8');
-  assert.deepEqual(collectNpmReleaseWorkflowViolations(workflow, readPinnedVersion(REPO_ROOT)), []);
+  assert.deepEqual(
+    collectNpmReleaseWorkflowViolations(workflow, readPinnedVersion(REPO_ROOT), readPinnedPrereleasePattern(REPO_ROOT)),
+    [],
+  );
+  // The repository pin must actually carry the pattern; `undefined` would make the line above pass
+  // against anything.
+  assert.equal(typeof readPinnedPrereleasePattern(REPO_ROOT), 'string');
 });
 
 
