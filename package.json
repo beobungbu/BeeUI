@@ -100,7 +100,8 @@
     "docs:props:coverage": "node ./scripts/report-prop-coverage.mjs",
     "docs:budget:check": "node ./scripts/check-docs-page-budget.mjs --check",
     "docs:budget": "node ./scripts/check-docs-page-budget.mjs",
-    "docs:budget:test": "node --test ./scripts/__tests__/check-docs-page-budget.test.mjs"
+    "docs:budget:test": "node --test ./scripts/__tests__/check-docs-page-budget.test.mjs",
+    "version:sync": "node ./scripts/sync-root-version.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.2",
