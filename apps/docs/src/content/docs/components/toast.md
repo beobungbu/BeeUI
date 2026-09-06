@@ -73,7 +73,13 @@ Provider-scoped imperative API (`useToast().show`/`dismiss`/`dismissAll`) rather
 
 **Related exported types:**
 
-- `ToastApi` — returned by `useToast()`; an object with `show`, `dismiss`, `dismissAll`. Not props: nothing passes it in.
+- `ToastApi` — returned by `useToast()`; not accepted by any prop of this family.
+
+  | Member | Type | Description |
+  | --- | --- | --- |
+  | `show` | `(options: ToastOptions) => ToastId` | Enqueues a toast and returns the id `dismiss` accepts for it. |
+  | `dismiss` | `(id: ToastId) => void` | Dismisses the toast with this id; unknown ids are ignored. |
+  | `dismissAll` | `() => void` | Dismisses every shown toast and drops the ones still queued. |
 - `ToastDuration` — alias of `number | 'persistent'`.
 - `ToastId` — alias of `string`.
 - `ToastVariant` — one of `'neutral'`, `'success'`, `'warning'`, `'destructive'`, `'info'`.

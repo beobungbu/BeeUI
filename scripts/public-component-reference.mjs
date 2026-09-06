@@ -787,9 +787,17 @@ function renderPropsTypeEntry(entry) {
 
 function renderRelatedTypeEntry(entry) {
   if (entry.docKind === 'returned') {
+    // "Nothing passes it in" was a universal negative drawn from "some function returns it";
+    // `toast.tsx` passes the same value into a Provider. What is derived is narrower: nothing in
+    // this family takes the type as a parameter or property, so no prop of the family accepts it.
     const by = entry.returnedBy.map((name) => `\`${name}()\``).join(', ');
-    const fields = entry.fields.map((field) => `\`${field.name}\``).join(', ');
-    return `- \`${entry.name}\` — returned by ${by}; an object with ${fields}. Not props: nothing passes it in.`;
+    const rows = entry.fields
+      .map((field) => `  | \`${field.name}\` | \`${escapeCell(field.type)}\` | ${field.description || '—'} |`)
+      .join('\n');
+    return (
+      `- \`${entry.name}\` — returned by ${by}; not accepted by any prop of this family.\n\n` +
+      `  | Member | Type | Description |\n  | --- | --- | --- |\n${rows}`
+    );
   }
   if (entry.kind === 'literal-union') {
     return `- \`${entry.name}\` — one of ${entry.members.map((member) => `\`'${member}'\``).join(', ')}.`;
@@ -828,6 +836,9 @@ function platformOfFile(relPath, siblings = []) {
   const hasNative = siblings.some((other) => other === `${stem}.native.tsx` || other === `${stem}.native.ts`);
   if (hasWeb && !hasNative) return new Set(['ios', 'android']);
   if (hasNative && !hasWeb) return new Set(['web']);
+  // Shadowed on both sides (`sheet.tsx` beside `sheet.web.tsx` and `sheet.native.tsx`) the bare
+  // file is what the `default`/`import` conditions resolve — server rendering and tooling — and
+  // it is also the shared module both siblings import from. Nothing narrower is derivable.
   return new Set(ALL_PLATFORMS);
 }
 
@@ -844,6 +855,7 @@ export function collectScopedAccessibilityFacts(files) {
   const roleFiles = [];
   const stateFiles = [];
   const merge = (into, facts, scopes, fileScope) => {
+    let inserted = false;
     for (const fact of facts) {
       const branch = scopes.get(fact) ?? new Set(ALL_PLATFORMS);
       const here = new Set([...fileScope].filter((platform) => branch.has(platform)));
@@ -852,19 +864,20 @@ export function collectScopedAccessibilityFacts(files) {
       // set with the same silence as the full set published such a fact as universal.
       if (!here.size) continue;
       into.set(fact, new Set([...(into.get(fact) ?? []), ...here]));
+      inserted = true;
     }
+    return inserted;
   };
   const siblings = files.map((file) => file.path);
   for (const file of files) {
     const facts = extractAccessibilityFacts([file]);
     const fileScope = platformOfFile(file.path, siblings);
-    const before = { roles: roles.size, states: states.size };
-    merge(roles, facts.roles, facts.scopes.roles, fileScope);
-    merge(states, facts.states, facts.scopes.states, fileScope);
-    // A file is named only for facts that survived the scope intersection.
-    const contributed = (map, count) => map.size > count || [...map.values()].some((set) => set.size);
-    if (facts.roles.some((fact) => roles.has(fact)) && contributed(roles, before.roles)) roleFiles.push(file.path);
-    if (facts.states.some((fact) => states.has(fact)) && contributed(states, before.states)) stateFiles.push(file.path);
+    // A file is named only for facts that survived the scope intersection. `merge` reports
+    // whether this file inserted anything; an earlier predicate compared map sizes and was true
+    // whenever any previous file had contributed, which named files whose every fact was dropped
+    // and made the list depend on file order.
+    if (merge(roles, facts.roles, facts.scopes.roles, fileScope)) roleFiles.push(file.path);
+    if (merge(states, facts.states, facts.scopes.states, fileScope)) stateFiles.push(file.path);
   }
 
   return { roles, states, roleFiles, stateFiles };

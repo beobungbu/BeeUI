@@ -2368,7 +2368,11 @@ test('an object alias a function returns is not promoted to props', () => {
   // `useToast(): ToastApi` — a caller receives it, never passes it. A table headed "Props" for it
   // contradicted the page's own opening line.
   assert.equal(/#### `ToastApi`/u.test(page), false);
-  assert.match(page, /`ToastApi` — returned by `useToast\(\)`; an object with `show`, `dismiss`, `dismissAll`/u);
+  assert.match(page, /`ToastApi` — returned by `useToast\(\)`; not accepted by any prop of this family\./u);
+  // The members keep their descriptions on the page; demoting the table had dropped them, and the
+  // `dismissAll` JSDoc fixed in the same commit was published nowhere while still counted.
+  assert.match(page, /\| `dismissAll` \| `\(\) => void` \| Dismisses every shown toast and drops the ones still queued\. \|/u);
+  assert.equal(/nothing passes it in/u.test(page), false);
   assert.match(page, /#### `ToastOptions`/u);
 });
 
@@ -2383,4 +2387,46 @@ test('keyof typeof over a same-file constant resolves to its keys', () => {
   const width = kas.typeDocs.find((e) => e.name === 'KeyboardAwareScreenContentWidth');
   assert.equal(width.kind, 'literal-union');
   assert.deepEqual(width.members, ['sm', 'md', 'lg', 'full']);
+});
+
+
+test('a guard that does not leave the block narrows nothing after it', () => {
+  // `alwaysLeaves` returning true for everything survived every test: each else-less earlier `if`
+  // would then scope the rest of the block, so `if (Platform.OS === 'web') doThing();` followed by
+  // a role would publish that role as iOS-and-Android-only.
+  const facts = extractAccessibilityFacts([
+    { path: 'x.tsx', source: "function X() {\n  if (Platform.OS === 'web') doThing();\n  return <View accessibilityRole=\"switch\" />;\n}\n" },
+  ]);
+
+  assert.equal(facts.scopes.roles.get('switch').size, 3);
+});
+
+test('a file whose every fact was unreachable is not named, whatever the file order', () => {
+  const web = { path: 'x.web.tsx', source: "export const X = () => (Platform.OS === 'ios' ? <View accessibilityRole=\"button\" /> : null);\n" };
+  const native = { path: 'x.native.tsx', source: 'export const X = () => <View accessibilityRole="link" />;\n' };
+
+  // The previous predicate compared map sizes, so it was true whenever an earlier file had
+  // contributed — the named files depended on which file came first.
+  assert.deepEqual(collectScopedAccessibilityFacts([web, native]).roleFiles, ['x.native.tsx']);
+  assert.deepEqual(collectScopedAccessibilityFacts([native, web]).roleFiles, ['x.native.tsx']);
+});
+
+test('an object alias that is both returned and taken as input stays props', () => {
+  // `type Opts = {…}` with `function defaults(): Opts` and `show(options: Opts)` is what a caller
+  // passes; demoting it on the returning helper alone would publish "not accepted by any prop"
+  // about a props type.
+  const source = [
+    'export type Opts = { /** t */ title: string };',
+    'export type Api = { /** s */ show: (options: Opts) => void };',
+    'function defaults(): Opts { return { title: "" }; }',
+    'export function useApi(): Api { return { show() {} }; }',
+    'export const X = () => null;',
+  ].join('\n');
+  const index = buildTypeIndex([{ path: 'x.tsx', source }]);
+  const opts = { fromPath: 'x.tsx', familyPaths: ['x.tsx'], primaryPath: 'x.tsx', promoteObjectAliases: true };
+
+  assert.equal(resolveComponentTypeEntry(index, 'Opts', opts).docKind, 'props');
+  const api = resolveComponentTypeEntry(index, 'Api', opts);
+  assert.equal(api.docKind, 'returned');
+  assert.deepEqual(api.returnedBy, ['useApi']);
 });

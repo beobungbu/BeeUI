@@ -1386,18 +1386,39 @@ export function getBehaviorGuardKnownNames(component, typeDocs, rootDir = ROOT_D
 // shape cannot be parsed), `kind: 'literal-union'` for `type X = 'a' | 'b'`,
 // or `kind: 'alias'` for anything else this module deliberately does not
 // expand further.
-// Names of the functions in `sourceFile` whose declared return type is exactly `typeName`.
+// Names of the functions in `sourceFile` whose declared return type is exactly `typeName`:
+// declarations, arrows and function expressions bound to a `const`, a `const` annotated with a
+// function type, and method signatures.
 function functionsReturning(typeName, sourceFile) {
   const names = [];
+  const isRef = (type) => Boolean(type) && ts.isTypeReferenceNode(type) && type.typeName.getText(sourceFile) === typeName;
   walk(sourceFile, (node) => {
-    const returns = node.type;
-    if (!returns || !ts.isTypeReferenceNode(returns) || returns.typeName.getText(sourceFile) !== typeName) return;
-    if (ts.isFunctionDeclaration(node) && node.name) names.push(node.name.text);
-    else if ((ts.isArrowFunction(node) || ts.isFunctionExpression(node)) && ts.isVariableDeclaration(node.parent) && ts.isIdentifier(node.parent.name)) {
+    if (ts.isFunctionDeclaration(node) && node.name && isRef(node.type)) names.push(node.name.text);
+    else if ((ts.isArrowFunction(node) || ts.isFunctionExpression(node)) && isRef(node.type) && ts.isVariableDeclaration(node.parent) && ts.isIdentifier(node.parent.name)) {
       names.push(node.parent.name.text);
+    } else if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.type && ts.isFunctionTypeNode(node.type) && isRef(node.type.type)) {
+      names.push(node.name.text);
+    } else if ((ts.isMethodSignature(node) || ts.isMethodDeclaration(node)) && node.name && isRef(node.type)) {
+      names.push(node.name.getText(sourceFile));
     }
   });
   return [...new Set(names)];
+}
+
+// Whether anything in `sourceFile` takes `typeName` as a parameter or property type — the
+// signal that a caller passes it in. A type can be both returned and passed; only one that is
+// returned and never passed is a value a caller receives rather than props they supply.
+function isTakenAsInput(typeName, sourceFile) {
+  let taken = false;
+  walk(sourceFile, (node) => {
+    if (taken) return;
+    if ((ts.isParameter(node) || ts.isPropertySignature(node) || ts.isPropertyDeclaration(node)) && node.type) {
+      let type = node.type;
+      while (ts.isParenthesizedTypeNode(type)) type = type.type;
+      if (ts.isTypeReferenceNode(type) && type.typeName.getText(sourceFile) === typeName) taken = true;
+    }
+  });
+  return taken;
 }
 
 export function resolveComponentTypeEntry(index, name, opts = {}) {
@@ -1439,7 +1460,9 @@ export function resolveComponentTypeEntry(index, name, opts = {}) {
     // caller passes, and a table headed "Props" for it contradicts the page. Kept as an object
     // entry with its fields, rendered under related types with the function that returns it.
     const returnedBy = functionsReturning(name, sourceFile);
-    if (returnedBy.length) return { name, docKind: 'returned', ...shape, returnedBy, description };
+    if (returnedBy.length && !isTakenAsInput(name, sourceFile)) {
+      return { name, docKind: 'returned', ...shape, returnedBy, description };
+    }
     return { name, docKind: 'props', ...shape, names: ctx.names, description };
   }
   return { name, docKind: 'alias', kind: 'alias', aliasOf: typeNode.getText(sourceFile), description };
