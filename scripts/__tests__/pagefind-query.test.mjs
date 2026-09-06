@@ -59,6 +59,7 @@ test('normaliseQuery returns the original query when nothing but scaffolding rem
 test("normaliseQuery does not touch Pagefind's own query syntax", () => {
   assert.equal(normaliseQuery('"safe area" duplicated'), '"safe area" duplicated');
   assert.equal(normaliseQuery('provider -expo'), 'provider -expo');
+  assert.equal(normaliseQuery('what is the offset -4 for'), 'offset -4');
   assert.equal(normaliseQuery('how do I "use" it'), 'how do I "use" it');
 });
 

@@ -39,8 +39,9 @@
 //     rewrite existed (plans/reports/h075-search-heldout-blind-260906-1210.json), the rewrite
 //     moved the strict top-3 rate from 6/25 to 12/25 on the same index. Content was not tuned
 //     to that set; the stopword list was checked against it twice (whether to keep 'to', and
-//     whether to keep phrasal-verb particles) and the figure did not move, so the set is no
-//     longer blind for stopword decisions. The remaining misses are content the portal does not
+//     whether to keep phrasal-verb particles); the strict figure did not move (12/25 both
+//     times; counting each query's recorded alternative page, 14/25 became 15/25), so the set
+//     is no longer blind for stopword decisions. The remaining misses are content the portal does not
 //     say, not phrasing.
 //   - A pass here does not mean the page content is good — only that Pagefind indexes it for the
 //     terms a reader is expected to search.

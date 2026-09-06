@@ -58,7 +58,7 @@ export const QUERY_STOPWORDS = new Set([
 
 // A quoted phrase (two or more quotes) or a leading `-` exclusion is Pagefind syntax the reader
 // chose on purpose; a single stray quote is not.
-const PAGEFIND_SYNTAX = /".*"|(^|\s)-\S/u;
+const PAGEFIND_SYNTAX = /".*"|(^|\s)-\p{L}/u;
 
 // 'to' inside a phrase is content ("right to left", "add BeeUI to Expo"): dropping it turned
 // "right to left" into "right left", which ranks the safe-area page (edges: left/right) above
@@ -78,8 +78,9 @@ export function normaliseQuery(query) {
   let text = original.toLowerCase();
   for (const [pattern, replacement] of CONTRACTIONS) text = text.replace(pattern, replacement);
 
-  // Punctuation that only separates words is dropped; `/`, `@`, `-` and `.` stay because they
-  // occur inside identifiers readers paste (`@beemvp/beeui-ui`, `surface-raised`).
+  // Only sentence punctuation is treated as a separator. `/` and `\` are deliberately not in
+  // the class, so a pasted `@beemvp/beeui-ui` reaches the index intact; a token that carries no
+  // letter or digit (a lone `/`) is dropped.
   const tokens = text
     .replace(/[?!,;:()[\]{}|]+/gu, ' ')
     .split(/\s+/u)

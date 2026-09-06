@@ -1,5 +1,6 @@
 {
-  "writtenAt": "2026-09-06T12:10",
+  "writtenAt": "2026-09-06T11:31",
+  "note": "The 1210 in the file name is the label the reports cite; the file itself was written at 11:31 (mtime), before any query rewrite existed.",
   "blind": true,
   "queries": [
     {
