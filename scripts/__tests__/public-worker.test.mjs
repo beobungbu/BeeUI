@@ -11,7 +11,7 @@ function createEnv() {
       async fetch(request) {
         const url = new URL(request.url);
         if (url.pathname === '/build-identity.json') {
-          return Response.json({ version: '20260902.0.0', commit: 'abc123', environment: 'test' });
+          return Response.json({ version: '0.86.2', commit: 'abc123', environment: 'test' });
         }
         return new Response(`asset:${url.pathname}`, { status: 200, headers: { 'content-type': 'text/plain' } });
       },
@@ -27,7 +27,7 @@ test('/api/health returns exact build identity and no-store JSON', async () => {
   assert.deepEqual(await response.json(), {
     ok: true,
     service: 'beeui-web',
-    version: '20260902.0.0',
+    version: '0.86.2',
     commit: 'abc123',
     environment: 'test',
   });
@@ -58,7 +58,7 @@ test('health fails closed without exposing asset/runtime details when identity i
 // while every check stayed green. Assert the write set itself, so deleting a write is a
 // test failure rather than an invisible regression.
 test('the composed worker root owns build identity, headers and redirects', () => {
-  const identity = { service: 'beeui-web', version: '20260902.0.0', commit: 'abc123', environment: 'production' };
+  const identity = { service: 'beeui-web', version: '0.86.2', commit: 'abc123', environment: 'production' };
   const files = buildComposedRootFiles({
     rootDir: ROOT_DIR,
     contract: { indexPolicy: 'index,follow' },

@@ -12,12 +12,12 @@ import {
 // ---- fixtures mirroring the real repository state ----
 
 const PACKAGE_VERSIONS = {
-  '@beemvp/beeui-core': '20260902.0.0',
-  '@beemvp/beeui-tokens': '20260902.0.0',
-  '@beemvp/beeui-ui': '20260902.0.0',
+  '@beemvp/beeui-core': '0.86.2',
+  '@beemvp/beeui-tokens': '0.86.2',
+  '@beemvp/beeui-ui': '0.86.2',
 };
 const RELEASE_ENVIRONMENT = 'release';
-const ROOT_VERSION = '20260902.0.0';
+const ROOT_VERSION = '0.86.2';
 
 const UI_PEERS = {
   react: '>=19 <20',
@@ -46,10 +46,10 @@ const MATRIX_SNAPSHOT = {
 
 const GOOD_POLICY = {
   published: false,
-  currentVersion: '20260902.0.0',
-  candidateStableVersion: '20260902.0.0',
-  prereleaseVersionPattern: '^20260902\\.0\\.0-rc\\.(0|[1-9][0-9]*)$',
-  prereleaseExample: '20260902.0.0-rc.1',
+  currentVersion: '0.86.2',
+  candidateStableVersion: '0.86.2',
+  prereleaseVersionPattern: '^0\\.86\\.2-rc\\.(0|[1-9][0-9]*)$',
+  prereleaseExample: '0.86.2-rc.1',
   distTags: ['latest', 'next'],
   prereleaseDistTag: 'next',
   stableDistTag: 'latest',
@@ -61,7 +61,7 @@ const GOOD_POLICY = {
 const GOOD_REPORT = {
   published: false,
   packageSet: ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui'],
-  candidateVersion: '20260902.0.0',
+  candidateVersion: '0.86.2',
   cleanConsumerScripts: [
     'scripts/verify-bare-consumer.sh',
     'scripts/verify-web-consumer.sh',
@@ -116,16 +116,16 @@ test('currentVersion must equal the lockstep package version', () => {
 
 test('prerelease pattern must reject the stable version', () => {
   // A pattern that also matches the stable version would let it pose as a prerelease.
-  const v = policyViolations({ prereleaseVersionPattern: '^20260902\\.0\\.0(-rc\\.[0-9]+)?$' });
+  const v = policyViolations({ prereleaseVersionPattern: '^0\\.86\\.2(-rc\\.[0-9]+)?$' });
   assert.ok(v.some((m) => /must NOT match the stable version/.test(m)));
 });
 
 test('prerelease example must match the pattern', () => {
-  assert.ok(policyViolations({ prereleaseExample: '20260902.0.0' }).some((v) => /prereleaseExample/.test(v)));
+  assert.ok(policyViolations({ prereleaseExample: '0.86.2' }).some((v) => /prereleaseExample/.test(v)));
 });
 
 test('an invalid prerelease regex is reported', () => {
-  assert.ok(policyViolations({ prereleaseVersionPattern: '^20260902\\.0\\.0-rc\\.(' }).some((v) => /valid regex/.test(v)));
+  assert.ok(policyViolations({ prereleaseVersionPattern: '^0\\.86\\.2-rc\\.(' }).some((v) => /valid regex/.test(v)));
 });
 
 test('distTags must be exactly latest and next', () => {

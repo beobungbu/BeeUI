@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-export const EXPECTED_VERSION = '20260902.0.0';
+export const EXPECTED_VERSION = '0.86.2';
 export const EXPECTED_PACKAGE_NAMES = new Map([
   ['packages/core/package.json', '@beemvp/beeui-core'],
   ['packages/tokens/package.json', '@beemvp/beeui-tokens'],
