@@ -13,6 +13,7 @@ import {
   DOCS_DIST_DIR,
   main,
   pathArgument,
+  rejectUnknownArguments,
   run,
 } from '../check-docs-web-vitals.mjs';
 import budgetFile from '../../docs/web-vitals.budget.json' with { type: 'json' };
@@ -473,4 +474,25 @@ test('--no-sandbox is used only where the sandbox cannot work', () => {
   for (const ci of ['true', '1', 'yes']) {
     assert.ok(chromeFlagsFor({ ci, uid: 501 }).includes('--no-sandbox'), `CI=${ci} must read as CI`);
   }
+});
+
+// A typo in the gate's own flag used to measure and exit 0: `--check=1` is not `--check`, and any
+// unrecognised argument was ignored. A gate that silently stops gating is worse than one that
+// fails loudly, so anything unrecognised is now an error and nothing is measured.
+test('run rejects an argument this command does not accept, before measuring anything', async () => {
+  for (const argument of ['--chek', '--check=1', '--verbose']) {
+    await assert.rejects(
+      () => stubbedRun({ argv: [argument], measurements: [measurement({})] }),
+      /unknown argument/u,
+      `${argument} must not be silently ignored`,
+    );
+  }
+});
+
+test('rejectUnknownArguments accepts exactly the documented arguments', () => {
+  assert.doesNotThrow(() => rejectUnknownArguments(['--check', '--budget=/tmp/b.json', '--dist=/tmp/d']));
+  assert.throws(() => rejectUnknownArguments(['--check=1']), /unknown argument/u);
+  // A bare `--dist` is a known argument used wrongly; `pathArgument` is what refuses it.
+  assert.doesNotThrow(() => rejectUnknownArguments(['--dist']));
+  assert.throws(() => pathArgument(['--dist'], 'dist', DOCS_DIST_DIR), /needs a path/u);
 });

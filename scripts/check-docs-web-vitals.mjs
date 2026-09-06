@@ -36,7 +36,7 @@
 // `--budget` and `--dist` exist because the ceilings here are calibrated on one machine: an owner
 // wiring this into CI has to re-measure on the runner, and doing that means pointing the same code
 // at a different budget without editing the committed one. They also let the test suite drive a
-// real breach through this entrypoint, which is the only way to prove the exit code is wired.
+// real breach through this entrypoint, end to end.
 //
 // Requires a built portal (`pnpm docs:build`) and a Chrome/Chromium binary. Lighthouse discovers
 // and launches that browser itself; this script does not choose the binary, so which Chrome
@@ -446,6 +446,32 @@ export function pathArgument(argv, name, fallback) {
   return path.resolve(value);
 }
 
+/** Every argument this command accepts. A typo must not be read as "measure, do not check". */
+export const KNOWN_ARGUMENTS = Object.freeze(['--check', '--budget', '--dist']);
+
+/**
+ * Rejects anything this command does not accept.
+ *
+ * Without this, `--chek` or `--check=1` measured and exited 0: the gate silently stopped gating,
+ * which is the one failure mode a budget check must not have.
+ *
+ * @param {string[]} argv
+ */
+export function rejectUnknownArguments(argv) {
+  const unknown = argv.filter((argument) => {
+    const name = argument.split('=')[0];
+    if (!KNOWN_ARGUMENTS.includes(name)) return true;
+    // `--check` takes no value; `--check=1` is a typo for `--check`, not a request to check.
+    return name === '--check' && argument !== '--check';
+  });
+  if (unknown.length) {
+    throw new Error(
+      `unknown argument${unknown.length > 1 ? 's' : ''}: ${unknown.join(' ')}. ` +
+        `This command accepts ${KNOWN_ARGUMENTS.join(', ')}.`,
+    );
+  }
+}
+
 /**
  * The whole command: load the budget, measure, report, and decide the exit code.
  *
@@ -465,6 +491,7 @@ export async function run({
   log = console.log,
   logError = console.error,
 } = {}) {
+  rejectUnknownArguments(argv);
   const budgetFile = pathArgument(argv, 'budget', BUDGET_FILE);
   const distDir = pathArgument(argv, 'dist', DOCS_DIST_DIR);
 
