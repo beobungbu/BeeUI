@@ -131,8 +131,29 @@ pnpm --dir apps/visual-regression build:web
 pnpm --dir apps/visual-regression exec playwright test --project=a11y-audit -g "component-gallery"
 ```
 
+### Cross-engine documentation-portal audit
+
+`test:a11y` runs on Chromium. The documentation-portal spec also runs on Firefox and WebKit:
+
+```sh
+pnpm --dir apps/visual-regression exec playwright install firefox webkit
+pnpm --dir apps/visual-regression test:a11y:engines
+```
+
+That script sets `BEEUI_A11Y_DOCS_ONLY=1`, which narrows the Playwright config to the two
+`a11y-docs-*` projects and to the documentation web server alone. Playwright's `webServer` list
+is global rather than per project, so without it a docs-only run still starts the two Showcase
+servers first and reaches the documentation server on 4175 only after the gallery-qa export has
+succeeded — a failure there aborts the run before the portal is served, and every portal test
+then fails on a connection refused it had nothing to do with.
+
+Three focus-traversal scenarios skip on WebKit, where Tab reaches only form controls unless
+macOS Full Keyboard Access is on; the skip lives in the spec so the traversal measures the page
+rather than a macOS setting.
+
 ## Known limitations
 
 - Browser accessibility evidence does not prove native iOS/Android assistive-technology behavior (VoiceOver/TalkBack remain a separate, explicit evidence class — see `docs/native-verification.md`).
 - Automated axe-core coverage does not certify full WCAG conformance; several WCAG success criteria require human judgment axe cannot automate (e.g. whether alternative text is meaningful, whether reading order is logical).
 - This gate scans representative scenarios, not every component/pattern permutation; expand `a11yScenarios` as new surfaces are accepted into the Showcase, per the extension mechanism above.
+- Cross-engine coverage is a local command, not a gate: `web-a11y.yml` provisions Chromium only and calls `test:a11y`, so a Firefox- or WebKit-only regression is caught by whoever runs `test:a11y:engines`, not by CI.
