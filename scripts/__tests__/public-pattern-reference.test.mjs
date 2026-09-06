@@ -18,6 +18,7 @@ import {
   patternFileLabel,
   patternLayoutVocabularyViolations,
   patternOpaqueShapeViolations,
+  patternUnreachableRenderSiteViolations,
   PATTERN_BREAKPOINT_NONE_CLAIM,
   PATTERN_COMPOSED_NONE_CLAIM,
   PATTERN_HORIZONTAL_NONE_CLAIM,
@@ -583,6 +584,10 @@ const OPAQUE_SOURCE = new Map([
   ['a destructure', 'export const S = () => { const { OS } = Platform; return OS; };\n'],
   ['a dynamic import', "export const S = () => import('./shell');\n"],
   ['require', "export const S = () => require('./shell');\n"],
+  // The composed-families line is derived from the rendered tags now, which are keyed by the local
+  // name, so `Button as Cta` drops the `Button` link and publishes `Cta` — a symbol with no
+  // component page — as a family this screen inherits semantics from.
+  ['an aliased BeeUI import', "import { Button as Cta } from '@beemvp/beeui-ui';\nexport const S = () => <Cta />;\n"],
 ]);
 
 for (const [shape, source] of OPAQUE_SOURCE) {
@@ -596,10 +601,175 @@ for (const [shape, source] of OPAQUE_SOURCE) {
 test('the generator accepts the qualified tags and imports that hide nothing', () => {
   const files = [
     { path: 'patterns/screen.tsx', source: "import * as React from 'react';\nexport const S = () => <React.Fragment />;\n" },
-    { path: 'patterns/other.tsx', source: "import { Button as Cta } from '@beemvp/beeui-ui';\nexport const O = () => <Cta />;\n" },
+    // A type-only alias binds no value and renders nothing, so it can lose no family link.
+    { path: 'patterns/other.tsx', source: "import type { ButtonProps as P } from '@beemvp/beeui-ui';\nexport type Q = P;\n" },
+    { path: 'patterns/third.tsx', source: "import { type ButtonProps as R } from '@beemvp/beeui-ui';\nexport type T = R;\n" },
+    // An alias of a name no derivation keys on, from a module that is not BeeUI.
+    { path: 'patterns/fourth.tsx', source: "import { useState as useLocal } from 'react';\nexport const F = () => useLocal(0);\n" },
   ];
-  // `React.Fragment` and an aliased `Button` cannot turn a tracked primitive into silence.
   assert.deepEqual(patternOpaqueShapeViolations(files), []);
+});
+
+// The composed-families line names the *local* tag, so an aliased BeeUI import silently swaps a
+// linked family for a symbol with no page. Refusing the alias is the fix; resolving it back to
+// `Button` would mean teaching the textual oracle the same mapping, and two derivations that share
+// a mapping agree with each other even when both are wrong.
+test('an aliased BeeUI import would publish a family with no component page, so it is refused', () => {
+  withFixture(
+    { 'screen.tsx': "import { Button as Cta, Card } from '@beemvp/beeui-ui';\nexport const S = () => <Card><Cta /></Card>;\n" },
+    (rel) => {
+      const files = fixtureFiles(['screen.tsx'], rel);
+      // Without the refusal this is what would ship: `Cta` published, `Button` gone.
+      assert.deepEqual([...extractPatternComposedFamilies(files).keys()].sort(), ['Card', 'Cta']);
+      const violations = patternOpaqueShapeViolations(files);
+      assert.equal(violations.length, 1, `expected exactly one refusal, got ${JSON.stringify(violations)}`);
+      assert.match(violations[0], /the aliased import `Button as Cta`/);
+    },
+  );
+});
+
+// A render site inside a branch the screen does not select is still read as evidence: the branch
+// resolver reads sites from the whole read set without asking whether the site is reachable. One
+// level of indirection is enough — the screen renders `<Shell>`, the shell renders `<Inner wide />`
+// only inside a dead arm, and `inner.tsx`'s body was published under "the branch taken when `wide`
+// is true" for a component the screen never mounts.
+test('a component reachable only through a dead branch stops the generator', () => {
+  withFixture(
+    {
+      'screen.tsx': "import { Shell } from './shell';\nexport const S = () => <Shell />;\n",
+      'shell.tsx':
+        "import { Inner } from './inner';\n" +
+        'export function Shell({ keyboardAware = false }) {\n' +
+        '  if (keyboardAware) {\n' +
+        '    return <Inner wide />;\n' +
+        '  }\n' +
+        '  return <Box className="px-4" />;\n' +
+        '}\n',
+      'inner.tsx':
+        'export function Inner({ wide = false }) {\n' +
+        '  if (wide) {\n' +
+        '    return <Screen><Box className="max-w-[900px]" /></Screen>;\n' +
+        '  }\n' +
+        '  return <Box />;\n' +
+        '}\n',
+    },
+    (rel) => {
+      const files = fixtureFiles(['screen.tsx', 'shell.tsx', 'inner.tsx'], rel);
+      const violations = patternUnreachableRenderSiteViolations(files);
+      assert.equal(violations.length, 1, `expected one unreachable component, got ${JSON.stringify(violations)}`);
+      assert.match(violations[0], /every site rendering `<Inner>` sits in a branch this screen does not select/);
+      assert.match(violations[0], /`shell\.tsx`/);
+    },
+  );
+});
+
+test('a component the screen does reach through a live branch is not refused', () => {
+  withFixture(
+    {
+      'screen.tsx': "import { Shell } from './shell';\nexport const S = () => <Shell keyboardAware />;\n",
+      'shell.tsx':
+        "import { Inner } from './inner';\n" +
+        'export function Shell({ keyboardAware = false }) {\n' +
+        '  if (keyboardAware) {\n' +
+        '    return <Inner />;\n' +
+        '  }\n' +
+        '  return <Box />;\n' +
+        '}\n',
+      'inner.tsx': 'export function Inner() {\n  return <Screen />;\n}\n',
+    },
+    (rel) => {
+      assert.deepEqual(patternUnreachableRenderSiteViolations(fixtureFiles(['screen.tsx', 'shell.tsx', 'inner.tsx'], rel)), []);
+    },
+  );
+});
+
+// The defect the whole change exists to remove, in its last hiding place: positives were
+// branch-scoped and negatives were not, so a page denied a `ScrollView` element in a file that
+// renders one — in the arm the screen does not take — under a preamble telling the reader every
+// fact is scoped to that file and to nothing else.
+test('a negative about a file whose dead arm holds the denied thing names the branch it is true of', () => {
+  withFixture(
+    {
+      'screen.tsx': "import { Shell } from './shell';\nexport const S = () => <Shell keyboardAware />;\n",
+      'shell.tsx':
+        "import { ScrollView } from 'react-native';\n" +
+        'export function Shell({ keyboardAware = false }) {\n' +
+        '  if (keyboardAware) {\n' +
+        '    return <KeyboardAwareScreen><Box className="px-4" /></KeyboardAwareScreen>;\n' +
+        '  }\n' +
+        '  return <Screen><ScrollView><Box className="px-4" /></ScrollView></Screen>;\n' +
+        '}\n',
+    },
+    (rel) => {
+      const pattern = makePattern({ source: rel('screen.tsx'), propsType: null, beeuiComponents: [] });
+      const page = renderPublicPatternPage(pattern, ROOT_DIR);
+      const responsive = sectionBody(page, 'Responsive contract');
+      // `shell.tsx` renders a `ScrollView`, so the negative about it is true of the branch only.
+      assert.ok(
+        responsive.includes(
+          `${PATTERN_SCROLL_NONE_CLAIM} in \`screen.tsx\`; \`shell.tsx\`, the branch taken when \`keyboardAware\` is true`,
+        ),
+        `scroll negative is not branch-scoped:\n${responsive}`,
+      );
+      // A negative whose files hold nothing of the kind keeps the stronger file-level reading.
+      assert.ok(
+        responsive.includes(`${PATTERN_VIEWPORT_NONE_CLAIM} in \`screen.tsx\`, \`shell.tsx\`.`),
+        `viewport negative should stay file-scoped:\n${responsive}`,
+      );
+      assert.deepEqual(collectPatternDerivedClaimViolations(page, pattern, ROOT_DIR), []);
+    },
+  );
+});
+
+test('the oracle refuses a negative that bare-names a file whose dead arm holds the denied thing', () => {
+  withFixture(
+    {
+      'screen.tsx': "import { Shell } from './shell';\nexport const S = () => <Shell keyboardAware />;\n",
+      'shell.tsx':
+        "import { ScrollView } from 'react-native';\n" +
+        'export function Shell({ keyboardAware = false }) {\n' +
+        '  if (keyboardAware) {\n' +
+        '    return <KeyboardAwareScreen><Box className="px-4" /></KeyboardAwareScreen>;\n' +
+        '  }\n' +
+        '  return <Screen><ScrollView><Box className="px-4" /></ScrollView></Screen>;\n' +
+        '}\n',
+    },
+    (rel) => {
+      const pattern = makePattern({ source: rel('screen.tsx'), propsType: null, beeuiComponents: [] });
+      const page = renderPublicPatternPage(pattern, ROOT_DIR);
+      // The page as it was published before this rule: the branch clause stripped off, leaving the
+      // file bare-named — a claim about the whole file, which the whole file refutes.
+      const unscoped = page.replace(
+        `\`screen.tsx\`; \`shell.tsx\`, the branch taken when \`keyboardAware\` is true`,
+        '`screen.tsx`, `shell.tsx`',
+      );
+      assert.notEqual(unscoped, page, 'the fixture no longer produces a branch-scoped negative');
+      const violations = collectPatternDerivedClaimViolations(unscoped, pattern, ROOT_DIR);
+      assert.equal(violations.length, 1, `expected one refusal, got ${JSON.stringify(violations)}`);
+      assert.match(violations[0], /publishes "no scroll container" while its source renders one/);
+    },
+  );
+});
+
+test('the oracle refuses a negative that drops one of the files it read', () => {
+  withFixture(
+    {
+      'screen.tsx': "import { Shell } from './shell';\nexport const S = () => <Shell />;\n",
+      'shell.tsx': 'export const Shell = () => <Box className="px-4" />;\n',
+    },
+    (rel) => {
+      const pattern = makePattern({ source: rel('screen.tsx'), propsType: null, beeuiComponents: [] });
+      const page = renderPublicPatternPage(pattern, ROOT_DIR);
+      const narrowed = page.replace(
+        `${PATTERN_VIEWPORT_NONE_CLAIM} in \`screen.tsx\`, \`shell.tsx\`.`,
+        `${PATTERN_VIEWPORT_NONE_CLAIM} in \`screen.tsx\`.`,
+      );
+      assert.notEqual(narrowed, page, 'the fixture no longer publishes a two-file viewport negative');
+      const violations = collectPatternDerivedClaimViolations(narrowed, pattern, ROOT_DIR);
+      assert.equal(violations.length, 1, `expected one refusal, got ${JSON.stringify(violations)}`);
+      assert.match(violations[0], /without naming `shell\.tsx`, which it read/);
+    },
+  );
 });
 
 test('renderPublicPatternPage scopes every negative to the files it read and names them', () => {
@@ -1061,24 +1231,30 @@ test('the fact bodies themselves differ from page to page, not just the file lis
     }
   }
 
-  // Measured on the 37 canonical patterns, preamble and file names stripped. The floors are the
-  // measured values, so replacing the bullet lists with one shared sentence — the pre-PR defect,
-  // which the whole-body assertion above survives because the preamble carries it — drops the
-  // distinct count to 1 and raises the largest cluster to 37, and fails here twice.
+  // Measured on the 37 canonical patterns, preamble and file names stripped. Asserted as equality,
+  // not as a floor: a floor one below the measurement tolerates exactly the regression it exists to
+  // catch — with `distinct >= 21` against a measured 22, merging one page's facts into another's
+  // dropped the count to 21 and the guard stayed green. Equality means the numbers below are a
+  // record of a measurement rather than a slack bound, and any drift in either direction — a page
+  // losing its own facts, or gaining them — has to be re-measured and re-recorded here deliberately.
   const measured = {
-    'Responsive contract': { distinct: 21, largestCluster: 4 },
+    'Responsive contract': { distinct: 22, largestCluster: 4 },
     Accessibility: { distinct: 36, largestCluster: 2 },
   };
-  for (const [heading, floor] of Object.entries(measured)) {
+  for (const [heading, expected] of Object.entries(measured)) {
     const counts = clusters[heading];
-    assert.ok(
-      counts.size >= floor.distinct,
-      `${heading}: ${counts.size} distinct fact bodies, below the measured ${floor.distinct}`,
+    assert.equal(
+      counts.size,
+      expected.distinct,
+      `${heading}: ${counts.size} distinct fact bodies against the measured ${expected.distinct}. ` +
+      'If the pages genuinely changed, re-measure and update the recorded value; a page whose facts ' +
+      'merged into another page\'s is the regression this catches.',
     );
     const largest = Math.max(...counts.values());
-    assert.ok(
-      largest <= floor.largestCluster,
-      `${heading}: ${largest} pages share one fact body, above the measured ${floor.largestCluster}`,
+    assert.equal(
+      largest,
+      expected.largestCluster,
+      `${heading}: largest cluster is ${largest} pages against the measured ${expected.largestCluster}.`,
     );
   }
 });

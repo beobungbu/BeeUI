@@ -63,25 +63,38 @@ function symbolRouteMap(rootDir) {
 // generator had actually read ("assigns no roles", "same on all platforms"). The rules that
 // ended it are reproduced here:
 //
-//   1. Every fact names the files it was read from. A negative is scoped to those files
-//      ("no `horizontal` scroll container in `x.tsx`"), never categorical.
+//   1. Every fact names the files it was read from, and negatives are scoped no wider than
+//      positives. A file read whole is named bare ("no `horizontal` scroll container in `x.tsx`");
+//      a file whose dead arm holds the very thing a negative denies names the branch the negative
+//      is true of, because the preamble invites the reader to open the file and check.
 //   2. No sentence describes what another part of the page contains.
 //   3. An independent oracle — a grep over the comment-stripped source, deliberately not
 //      sharing code with the AST extractor — refuses every negative the source refutes, and
-//      every positive names a token the source does not contain.
-//   4. No fact from a branch the screen does not take. A shell that returns one of two layouts
-//      depending on a prop states two different things, and only one of them is about the screen
-//      reading it; a fact that survives from a branch names the condition that selects it. This
-//      binds the composed-family list too: a family is named because the screen renders it, not
-//      because a file it reads imports it.
+//      every positive names a token the source does not contain. It holds each negative to the
+//      scope the sentence claims: whole file for a bare name, selected branch for a scoped one.
+//   4. No fact from a branch the screen does not take, for the two branch shapes the render site
+//      settles. A shell that returns one of two layouts depending on a prop states two different
+//      things, and only one of them is about the screen reading it; a fact that survives from a
+//      branch names the condition that selects it. This binds the composed-family list too: a
+//      family is named because the screen renders it, not because a file it reads imports it.
 //   5. Every file is named by its path under `apps/showcase/patterns/`, because two packs each
 //      contain a `screen-shell.tsx` and the basename alone left a reader unable to tell which
 //      file a fact came from.
 //
+// Rule 4 is bounded by what a render site settles, and the bound is worth stating exactly rather
+// than reading the rule as total. A condition on a composite expression (`keyboardAware && dense`),
+// on a local alias of a prop, or on an imported module constant is a branch to neither derivation:
+// both arms are published plain, unqualified, even where the screen selects neither. That is the
+// honest reading of "the render site does not settle it", and it is why the rule is stated over
+// the two shapes it covers instead of over every conditional in the corpus.
+//
 // The derivation is not total, and the shapes outside it fail loudly rather than quietly:
-// `patternOpaqueShapeViolations` refuses an aliased or namespaced tag, `Platform['OS']`, a
-// destructured `OS`, and `import()`/`require()`, because each of those turns a real fact into
-// silence in both the extractor and the oracle.
+// `patternOpaqueShapeViolations` refuses an aliased or namespaced tag, an aliased BeeUI import,
+// `Platform['OS']`, a destructured `OS`, and `import()`/`require()`, because each of those turns a
+// real fact into silence in both the extractor and the oracle; and
+// `patternUnreachableRenderSiteViolations` refuses a pack-local component the screen reaches
+// through no live render site, because the branch resolution reads render sites without asking
+// whether the site itself is reachable.
 //
 // A pattern screen's layout is mostly in the pack-local shell it imports (`screen-shell.tsx`,
 // `auth-shared.tsx`), not in the screen file, so the read set follows relative imports inside
@@ -417,12 +430,36 @@ function statedInBothArms(all) {
     single.some((other) => other.component === one.component && other.prop === one.prop && other.value !== one.value));
 }
 
-// Sites → the published shape, `Map<value, Map<file, Set<condition>>>`, where the empty condition
-// is an unguarded fact. Sites in a branch the screen does not select are dropped, and a guarded
-// site is dropped when the same file states the fact unguarded too — the unguarded reading is
-// strictly stronger and two lines for one value would only read as a contradiction.
+// The branch this screen selects, for a site that is dropped as dead. Only the guards the screen
+// settles *against* the site's own value explain why the site is unreachable, so only those are
+// named: a site inside `if (keyboardAware)` dropped by a screen that passes `keyboardAware={false}`
+// is absent from the branch taken when `keyboardAware` is false, and that is the whole reason.
+function selectedFragments(guards, resolve) {
+  const fragments = [];
+  for (const guard of guards) {
+    const selected = resolve(guard);
+    if (!selected || selected.size !== 1) continue;
+    const [value] = [...selected];
+    if (value === guard.value) continue;
+    fragments.push(`\`${guard.prop}\` is ${value}`);
+  }
+  return fragments;
+}
+
+// Sites → `{ facts, dead }`. `facts` is the published shape, `Map<value, Map<file, Set<condition>>>`,
+// where the empty condition is an unguarded fact. Sites in a branch the screen does not select are
+// dropped, and a guarded site is dropped when the same file states the fact unguarded too — the
+// unguarded reading is strictly stronger and two lines for one value would only read as a
+// contradiction.
+//
+// `dead` is `Map<file, Set<fragment>>`: the files a value was dropped from, and the branch this
+// screen takes instead. A negative about such a file is true of that branch and not of the file,
+// and has to say so — `edit-profile-screen.md` denied any `ScrollView` element in
+// `settings-screen-shell.tsx` while the file renders one at `:55`, in the arm the screen does not
+// take, under a preamble inviting the reader to open the file and check.
 function resolveSites(sites, resolve) {
   const facts = new Map();
+  const dead = new Map();
   for (const [value, entries] of sites) {
     const byFile = new Map();
     for (const { file, guards } of entries) {
@@ -440,13 +477,18 @@ function resolveSites(sites, resolve) {
       const descriptors = new Set();
       for (const guards of all) {
         const descriptor = guardDescriptor(guards, resolve);
-        if (descriptor !== null) descriptors.add(descriptor);
+        if (descriptor !== null) {
+          descriptors.add(descriptor);
+          continue;
+        }
+        if (!dead.has(file)) dead.set(file, new Set());
+        for (const fragment of selectedFragments(guards, resolve)) dead.get(file).add(fragment);
       }
       if (descriptors.size) published.set(file, descriptors);
     }
     if (published.size) facts.set(value, published);
   }
-  return facts;
+  return { facts, dead };
 }
 
 function parsePatternFiles(files) {
@@ -556,9 +598,77 @@ export function extractPatternLayoutFacts(files) {
     });
   }
 
-  return Object.fromEntries(
-    Object.entries(sites).map(([key, value]) => [key, resolveSites(value, resolve)]),
-  );
+  // `deadArms` sits beside the fact categories rather than inside them: it is not a fact, it is
+  // what a *negative* about one of these files has to be scoped to.
+  const resolved = Object.entries(sites).map(([key, value]) => [key, resolveSites(value, resolve)]);
+  return {
+    ...Object.fromEntries(resolved.map(([key, { facts }]) => [key, facts])),
+    deadArms: Object.fromEntries(resolved.map(([key, { dead }]) => [key, dead])),
+  };
+}
+
+// Every component the read set declares. Broader than `componentPropDeclaration`, which only sees
+// a component that destructures props: a propless component is still something a screen may or may
+// not reach.
+function declaredComponentNames(sourceFile) {
+  const names = new Set();
+  walkNodes(sourceFile, (node) => {
+    if (ts.isFunctionDeclaration(node) && node.name && /^[A-Z]/u.test(node.name.text)) {
+      names.add(node.name.text);
+    }
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      /^[A-Z]/u.test(node.name.text) &&
+      node.initializer &&
+      (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer))
+    ) {
+      names.add(node.name.text);
+    }
+  });
+  return names;
+}
+
+// A render site inside a branch the screen does not select is not evidence of anything, and the
+// branch resolution reads render sites from the whole read set without asking whether the site
+// itself is reachable. One level of indirection defeats it: `screen.tsx` renders `<Shell>`,
+// `shell.tsx` renders `<Inner wide />` only inside `if (keyboardAware)`, and a screen that never
+// selects that arm published `inner.tsx`'s body as "the branch taken when `wide` is true" — a
+// clause asserting the screen selects a component it never mounts.
+//
+// Propagating reachability through the closure means a second resolver over the whole read set,
+// re-deriving which sites are live before any fact is read. Refusing the shape is one walk and
+// holds the same published invariant — no page carries a fact from a render site the screen does
+// not reach — at a fraction of the machinery, and the day the shape appears CI stops rather than a
+// page quietly gaining a false clause. No pack-local component in `apps/showcase/patterns/**` has
+// this shape today.
+export function patternUnreachableRenderSiteViolations(files) {
+  const parsed = parsePatternFiles(files);
+  const resolve = renderedPropResolver(parsed);
+  const declared = new Set();
+  const sites = new Map();
+  for (const { name, sourceFile } of parsed) {
+    for (const component of declaredComponentNames(sourceFile)) declared.add(component);
+    walkGuarded(sourceFile, { component: null, props: null, guards: [] }, (node, guards) => {
+      const tag = jsxTagName(node);
+      if (tag) addSite(sites, tag, name, guards);
+    });
+  }
+
+  const violations = [];
+  for (const [tag, entries] of sites) {
+    if (!declared.has(tag)) continue;
+    if (entries.some(({ guards }) => guardDescriptor(guards, resolve) !== null)) continue;
+    const where = [...new Set(entries.map(({ file }) => file))].sort();
+    violations.push(
+      `every site rendering \`<${tag}>\` sits in a branch this screen does not select ` +
+      `(${where.map((file) => `\`${file}\``).join(', ')}), so \`${tag}\`'s own body is unreachable ` +
+      'from this screen. The derivation still reads facts out of it and would publish them under a ' +
+      'condition clause asserting the screen selects them. Resolve the render sites transitively ' +
+      'before publishing this page.',
+    );
+  }
+  return violations;
 }
 
 // Shapes neither the AST extractor above nor the textual oracle below can see. None occurs in
@@ -570,6 +680,14 @@ const OPAQUE_ALIAS_NAMES = new Set([
   ...BEEUI_LAYOUT_PRIMITIVES, ...SCROLL_CONTAINERS, ...VIEWPORT_APIS, 'Dimensions', 'Platform',
 ]);
 const OPAQUE_NAMESPACE_MODULES = new Set(['@beemvp/beeui-ui', 'react-native']);
+// Every aliased import from BeeUI is opaque, not only the layout primitives above. The composed
+// families line used to be derived from the import list, where an alias could not turn a tracked
+// primitive into silence; it is derived from the rendered tags now, and those are keyed by the
+// local name. `import { Button as Cta }` therefore drops the `Button` link and publishes `Cta` as a
+// family with no component page. Resolving the alias back to `Button` would mean teaching the
+// textual oracle the same mapping, and two derivations that share a mapping agree with each other
+// even when both are wrong — so the alias is refused instead.
+const OPAQUE_ALIAS_MODULES = new Set(['@beemvp/beeui-ui']);
 
 export function patternOpaqueShapeViolations(files) {
   const violations = [];
@@ -602,9 +720,12 @@ export function patternOpaqueShapeViolations(files) {
         if (bindings && ts.isNamespaceImport(bindings) && OPAQUE_NAMESPACE_MODULES.has(node.moduleSpecifier.text)) {
           report(name, `a namespace import of \`${node.moduleSpecifier.text}\``);
         }
-        if (bindings && ts.isNamedImports(bindings)) {
+        if (bindings && ts.isNamedImports(bindings) && !node.importClause?.isTypeOnly) {
+          const opaqueModule = OPAQUE_ALIAS_MODULES.has(node.moduleSpecifier.text);
           for (const element of bindings.elements) {
-            if (!element.propertyName || !OPAQUE_ALIAS_NAMES.has(element.propertyName.text)) continue;
+            if (!element.propertyName || element.isTypeOnly) continue;
+            // A type-only alias binds no value and can render nothing, so it hides nothing.
+            if (!opaqueModule && !OPAQUE_ALIAS_NAMES.has(element.propertyName.text)) continue;
             report(name, `the aliased import \`${element.propertyName.text} as ${element.name.text}\``);
           }
         }
@@ -794,8 +915,30 @@ function renderGroups(groups) {
     .join('; ');
 }
 
-function factLine(label, facts, noneClaim, readScope, noneSuffix = '') {
-  if (!facts.size) return `- ${noneClaim} in ${readScope}${noneSuffix}.`;
+// The scope of a negative. Positives are branch-scoped and negatives were not: a file whose dead
+// arm holds the very thing the negative denies was named bare, so the sentence was true of the
+// render and false of the file the reader is invited to open. A file the screen reads whole is
+// still named bare — that is the stronger statement and it is true — and a file whose dead arm was
+// dropped for this fact names the branch the negative is true of, exactly as a positive does.
+// `collectPatternDerivedClaimViolations` holds each form to its own standard: a bare file is
+// probed against its whole source, a branch-scoped one against the branch this screen renders.
+function negativeScope(files, deadArms) {
+  const bare = [];
+  const scoped = [];
+  for (const file of files) {
+    const name = patternFileLabel(file.path);
+    const fragments = deadArms?.get(name);
+    if (!fragments?.size) {
+      bare.push(`\`${name}\``);
+      continue;
+    }
+    scoped.push(`\`${name}\`, the branch taken when ${[...fragments].sort().join(' and ')}`);
+  }
+  return [bare.join(', '), ...scoped].filter(Boolean).join('; ');
+}
+
+function factLine(label, facts, noneClaim, scope, noneSuffix = '') {
+  if (!facts.size) return `- ${noneClaim} in ${scope}${noneSuffix}.`;
   const values = [...facts.keys()]
     .sort()
     .map((value) => `\`${value}\` (${renderGroups(conditionGroups(facts.get(value)))})`);
@@ -881,8 +1024,9 @@ export function collectPublicPatternViolations(rootDir = ROOT_DIR) {
   violations.push(...patternLayoutVocabularyViolations(rootDir));
   for (const pattern of manifest) {
     const key = `${pattern.pack}/${pattern.slug}`;
-    const opaque = patternOpaqueShapeViolations(collectPatternSourceFiles(pattern.source, rootDir));
-    violations.push(...opaque.map((violation) => `${key}: ${violation}`));
+    const files = collectPatternSourceFiles(pattern.source, rootDir);
+    violations.push(...patternOpaqueShapeViolations(files).map((violation) => `${key}: ${violation}`));
+    violations.push(...patternUnreachableRenderSiteViolations(files).map((violation) => `${key}: ${violation}`));
     violations.push(...collectPatternDerivedClaimViolations(renderPublicPatternPage(pattern, rootDir), pattern, rootDir));
   }
 
@@ -974,7 +1118,7 @@ export function extractPatternBeeuiImports(files) {
 // screens that select the other arm — a family the screen never composes, published as a fact
 // about it. Only names the read set imports from `@beemvp/beeui-ui` count, so a pattern-local
 // component sharing a family's name cannot be published as one.
-export function extractPatternComposedFamilies(files) {
+function collectComposedFamilySites(files) {
   const imported = extractPatternBeeuiImports(files);
   const parsed = parsePatternFiles(files);
   const resolve = renderedPropResolver(parsed);
@@ -986,6 +1130,10 @@ export function extractPatternComposedFamilies(files) {
     });
   }
   return resolveSites(sites, resolve);
+}
+
+export function extractPatternComposedFamilies(files) {
+  return collectComposedFamilySites(files).facts;
 }
 
 const NO_SOURCE_NOTICE = '_No source file for this screen could be read, so no fact is derived here._';
@@ -1028,8 +1176,11 @@ function scrollOwningPrimitives(rootDir) {
 
 function renderResponsiveFacts(files, rootDir) {
   if (!files.length) return NO_SOURCE_NOTICE;
-  const readScope = scopeSentence(files);
   const facts = extractPatternLayoutFacts(files);
+  // One scope per fact category, not one per page: a file is branch-scoped only for the facts it
+  // actually hides in a dead arm, so every other negative about it keeps the stronger file-level
+  // reading.
+  const scopeOf = (category) => negativeScope(files, facts.deadArms[category]);
   // Where these files render no scrolling element but do compose one that scrolls, the negative
   // says who owns the scrolling instead of leaving the reader with "this screen does not scroll".
   const owners = [...facts.primitives.keys()].filter((name) => scrollOwningPrimitives(rootDir).has(name)).sort();
@@ -1038,14 +1189,14 @@ function renderResponsiveFacts(files, rootDir) {
       `whose own page${owners.length === 1 ? '' : 's'} derive${owners.length === 1 ? 's' : ''} it`
     : '';
   const lines = [
-    factLine('BeeUI layout primitives rendered', facts.primitives, PATTERN_LAYOUT_NONE_CLAIM, readScope),
-    factLine('Scroll ownership', facts.scrollContainers, PATTERN_SCROLL_NONE_CLAIM, readScope, scrollSuffix),
-    factLine('Horizontal scrolling', facts.horizontal, PATTERN_HORIZONTAL_NONE_CLAIM, readScope),
-    factLine('Width constraint', facts.widths, PATTERN_WIDTH_NONE_CLAIM, readScope),
-    factLine('Breakpoint-prefixed utility classes', facts.breakpointClasses, PATTERN_BREAKPOINT_NONE_CLAIM, readScope),
-    factLine('Platform-prefixed utility classes', facts.platformClasses, PATTERN_PLATFORM_CLASS_NONE_CLAIM, readScope),
-    factLine('Platform branching', facts.platformApi, PATTERN_PLATFORM_API_NONE_CLAIM, readScope),
-    factLine('Viewport measurement', facts.viewport, PATTERN_VIEWPORT_NONE_CLAIM, readScope),
+    factLine('BeeUI layout primitives rendered', facts.primitives, PATTERN_LAYOUT_NONE_CLAIM, scopeOf('primitives')),
+    factLine('Scroll ownership', facts.scrollContainers, PATTERN_SCROLL_NONE_CLAIM, scopeOf('scrollContainers'), scrollSuffix),
+    factLine('Horizontal scrolling', facts.horizontal, PATTERN_HORIZONTAL_NONE_CLAIM, scopeOf('horizontal')),
+    factLine('Width constraint', facts.widths, PATTERN_WIDTH_NONE_CLAIM, scopeOf('widths')),
+    factLine('Breakpoint-prefixed utility classes', facts.breakpointClasses, PATTERN_BREAKPOINT_NONE_CLAIM, scopeOf('breakpointClasses')),
+    factLine('Platform-prefixed utility classes', facts.platformClasses, PATTERN_PLATFORM_CLASS_NONE_CLAIM, scopeOf('platformClasses')),
+    factLine('Platform branching', facts.platformApi, PATTERN_PLATFORM_API_NONE_CLAIM, scopeOf('platformApi')),
+    factLine('Viewport measurement', facts.viewport, PATTERN_VIEWPORT_NONE_CLAIM, scopeOf('viewport')),
   ];
   return `${readScopePreamble(files)}\n\n${lines.join('\n')}`;
 }
@@ -1080,6 +1231,10 @@ function renderPatternAccessibilityFacts(files, routes) {
       return label ? `\`${fact}\` (${label}; ${where})` : `\`${fact}\` (${where})`;
     }).join(', ');
 
+  // These two negatives stay file-scoped, and are true at that scope. The role/state scan is
+  // whole-file: a role written in a dead arm is still read, so it is published rather than denied,
+  // and the negative arises only where no file in the read set writes one anywhere. Branch-scoping
+  // it would state something weaker than what was actually measured.
   const roleLine = roles.size
     ? `- **Roles this screen sets itself:** ${qualified(roles, (facts) => facts.roles)}.`
     : `- ${PATTERN_ROLES_NONE_CLAIM} set in ${readScope}.`;
@@ -1092,7 +1247,7 @@ function renderPatternAccessibilityFacts(files, routes) {
   // A family rendered under every branch this screen selects needs no qualifier; one the screen
   // renders only inside a prop-conditional branch names that branch, exactly as the responsive
   // bullets do, because the semantics it contributes hold only under that condition.
-  const composed = extractPatternComposedFamilies(files);
+  const { facts: composed, dead: composedDeadArms } = collectComposedFamilySites(files);
   const rendered = (symbol) => {
     const groups = conditionGroups(composed.get(symbol));
     const conditional = groups.filter((group) => group.condition);
@@ -1105,7 +1260,7 @@ function renderPatternAccessibilityFacts(files, routes) {
     ? `- **Semantics inherited from composed BeeUI families:** ${linked
         .map((symbol) => `[\`${symbol}\`](${routes.get(symbol)})${rendered(symbol)}`)
         .join(', ')} — each family's own page derives the roles and states it sets; they are not restated here.`
-    : `- ${PATTERN_COMPOSED_NONE_CLAIM} in ${readScope}.`;
+    : `- ${PATTERN_COMPOSED_NONE_CLAIM} in ${negativeScope(files, composedDeadArms)}.`;
   const unlinkedLine = unlinked.length
     ? `\n- **Rendered from \`@beemvp/beeui-ui\` with no public component page:** ${unlinked
         .map((symbol) => `\`${symbol}\`${rendered(symbol)}`)
@@ -1435,6 +1590,30 @@ export function publishedFactGroups(section) {
   return groups;
 }
 
+// Per registered negative, the files it names and whether each is named bare or under a branch
+// clause. Read back off the rendered page, like `publishedFactGroups`, because what a reader is
+// entitled to check is the sentence, not the derivation behind it. A bare file is a claim about
+// the whole file; a branch-scoped one is a claim about the branch this screen renders, and the
+// oracle probes each against exactly that much source.
+export function publishedNegativeScopes(page) {
+  const scopes = new Map();
+  for (const line of page.split('\n')) {
+    if (!line.startsWith('- ')) continue;
+    const claim = ALL_PATTERN_NONE_CLAIMS.find((candidate) => line.includes(candidate));
+    if (!claim) continue;
+    const named = new Map();
+    for (const part of line.slice(line.indexOf(claim) + claim.length).split(';')) {
+      const scoped = /the branch taken when|only when/u.test(part);
+      for (const match of part.matchAll(/`([^`]+)`/gu)) {
+        if (!/\.tsx?$/u.test(match[1])) continue;
+        named.set(match[1], scoped);
+      }
+    }
+    scopes.set(claim, named);
+  }
+  return scopes;
+}
+
 const UNCONDITIONAL = Symbol('unconditional');
 
 // Where a value occurs in one file's `live` source, relative to that file's prop-conditional
@@ -1502,9 +1681,22 @@ export function collectPatternDerivedClaimViolations(page, pattern, rootDir = RO
   const byName = new Map(analysis.map((file) => [file.name, file]));
   const sources = analysis.map((file) => file.live).join('\n');
 
+  const scopes = publishedNegativeScopes(page);
   for (const { claim, pattern: probe, refute, message } of PATTERN_NEGATIVE_ORACLES) {
     if (!page.includes(claim)) continue;
-    if (!(probe ? probe.test(sources) : refute(analysis))) continue;
+    const named = scopes.get(claim) ?? new Map();
+    const unnamed = analysis.filter((file) => !named.has(file.name));
+    if (unnamed.length) {
+      violations.push(
+        `${key}: publishes "${claim}" without naming ${unnamed.map((file) => `\`${file.name}\``).join(', ')}, ` +
+        'which it read. A negative is only as wide as the files it names.',
+      );
+    }
+    // A file the negative names bare is probed against its whole source, a branch-scoped one only
+    // against the branch this screen renders. That is what stops a page denying a `ScrollView` in a
+    // file that contains one, in an arm the screen does not take, while claiming file-level scope.
+    const scoped = analysis.map((file) => (named.get(file.name) ? file : { ...file, live: file.stripped }));
+    if (!(probe ? probe.test(scoped.map((file) => file.live).join('\n')) : refute(scoped))) continue;
     violations.push(`${key}: ${message}${probe ? ` (${probe.source})` : ''}.`);
   }
 

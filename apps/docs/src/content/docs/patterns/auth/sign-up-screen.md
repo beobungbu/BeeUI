@@ -64,7 +64,7 @@ Read from the screen file and the 2 pattern-local files in its runtime import cl
 - **Horizontal scrolling:** no `horizontal` scroll container in `auth/screens/sign-up-screen.tsx`, `auth/components/auth-shared.tsx`, `auth/fixtures/auth-fixtures.ts`.
 - **Width constraint:** `contentWidth="sm"` (`auth/components/auth-shared.tsx`).
 - **Breakpoint-prefixed utility classes:** none in `auth/screens/sign-up-screen.tsx`, `auth/components/auth-shared.tsx`, `auth/fixtures/auth-fixtures.ts`.
-- **Platform-prefixed utility classes:** none in `auth/screens/sign-up-screen.tsx`, `auth/components/auth-shared.tsx`, `auth/fixtures/auth-fixtures.ts`.
+- **Platform-prefixed utility classes:** none in `auth/screens/sign-up-screen.tsx`, `auth/fixtures/auth-fixtures.ts`; `auth/components/auth-shared.tsx`, the branch taken when `compact` is true.
 - **Platform branching:** no `Platform.OS` or `Platform.select` call in `auth/screens/sign-up-screen.tsx`, `auth/components/auth-shared.tsx`, `auth/fixtures/auth-fixtures.ts`.
 - **Viewport measurement:** no `useWindowDimensions`, `Dimensions.get` or breakpoint hook in `auth/screens/sign-up-screen.tsx`, `auth/components/auth-shared.tsx`, `auth/fixtures/auth-fixtures.ts`.
 

@@ -58,7 +58,7 @@ Read from the screen file and the 1 pattern-local file in its runtime import clo
 - **Horizontal scrolling:** no `horizontal` scroll container in `auth/screens/profile-setup-screen.tsx`, `auth/components/auth-shared.tsx`.
 - **Width constraint:** `contentWidth="sm"` (`auth/components/auth-shared.tsx`).
 - **Breakpoint-prefixed utility classes:** none in `auth/screens/profile-setup-screen.tsx`, `auth/components/auth-shared.tsx`.
-- **Platform-prefixed utility classes:** none in `auth/screens/profile-setup-screen.tsx`, `auth/components/auth-shared.tsx`.
+- **Platform-prefixed utility classes:** none in `auth/screens/profile-setup-screen.tsx`; `auth/components/auth-shared.tsx`, the branch taken when `compact` is true.
 - **Platform branching:** no `Platform.OS` or `Platform.select` call in `auth/screens/profile-setup-screen.tsx`, `auth/components/auth-shared.tsx`.
 - **Viewport measurement:** no `useWindowDimensions`, `Dimensions.get` or breakpoint hook in `auth/screens/profile-setup-screen.tsx`, `auth/components/auth-shared.tsx`.
 
