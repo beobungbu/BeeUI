@@ -48,26 +48,26 @@ Common product states such as loading, success, empty, error, permission-like re
 
 ## Responsive contract
 
-Read from the screen file and the 2 pattern-local files in its runtime import closure, direct and transitive: `reset-password-screen.tsx`, `auth-shared.tsx`, `auth-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 2 pattern-local files in its runtime import closure, direct and transitive: `auth/screens/reset-password-screen.tsx`, `auth/components/auth-shared.tsx`, `auth/fixtures/auth-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
 
-- **BeeUI layout primitives rendered:** `Box` (`auth-shared.tsx`), `HStack` (`auth-shared.tsx`), `KeyboardAwareScreen` (`auth-shared.tsx`), `VStack` (`auth-shared.tsx`, `reset-password-screen.tsx`).
-- **Scroll ownership:** no `ScrollView`, `FlatList`, `SectionList` or `VirtualizedList` element in `reset-password-screen.tsx`, `auth-shared.tsx`, `auth-fixtures.ts`; scrolling is owned by the composed `KeyboardAwareScreen`, whose own page derives it.
-- **Horizontal scrolling:** no `horizontal` scroll container in `reset-password-screen.tsx`, `auth-shared.tsx`, `auth-fixtures.ts`.
-- **Width constraint:** `contentWidth="sm"` (`auth-shared.tsx`).
-- **Breakpoint-prefixed utility classes:** none in `reset-password-screen.tsx`, `auth-shared.tsx`, `auth-fixtures.ts`.
-- **Platform-prefixed utility classes:** `web:py-12` (`auth-shared.tsx`, the branch taken when `compact` is false).
-- **Platform branching:** no `Platform.OS` or `Platform.select` call in `reset-password-screen.tsx`, `auth-shared.tsx`, `auth-fixtures.ts`.
-- **Viewport measurement:** no `useWindowDimensions`, `Dimensions.get` or breakpoint hook in `reset-password-screen.tsx`, `auth-shared.tsx`, `auth-fixtures.ts`.
+- **BeeUI layout primitives rendered:** `Box` (`auth/components/auth-shared.tsx`), `HStack` (`auth/components/auth-shared.tsx`), `KeyboardAwareScreen` (`auth/components/auth-shared.tsx`), `VStack` (`auth/components/auth-shared.tsx`, `auth/screens/reset-password-screen.tsx`).
+- **Scroll ownership:** no `ScrollView`, `FlatList`, `SectionList` or `VirtualizedList` element in `auth/screens/reset-password-screen.tsx`, `auth/components/auth-shared.tsx`, `auth/fixtures/auth-fixtures.ts`; scrolling is owned by the composed `KeyboardAwareScreen`, whose own page derives it.
+- **Horizontal scrolling:** no `horizontal` scroll container in `auth/screens/reset-password-screen.tsx`, `auth/components/auth-shared.tsx`, `auth/fixtures/auth-fixtures.ts`.
+- **Width constraint:** `contentWidth="sm"` (`auth/components/auth-shared.tsx`).
+- **Breakpoint-prefixed utility classes:** none in `auth/screens/reset-password-screen.tsx`, `auth/components/auth-shared.tsx`, `auth/fixtures/auth-fixtures.ts`.
+- **Platform-prefixed utility classes:** `web:py-12` (`auth/components/auth-shared.tsx`, the branch taken when `compact` is false).
+- **Platform branching:** no `Platform.OS` or `Platform.select` call in `auth/screens/reset-password-screen.tsx`, `auth/components/auth-shared.tsx`, `auth/fixtures/auth-fixtures.ts`.
+- **Viewport measurement:** no `useWindowDimensions`, `Dimensions.get` or breakpoint hook in `auth/screens/reset-password-screen.tsx`, `auth/components/auth-shared.tsx`, `auth/fixtures/auth-fixtures.ts`.
 
 BeeUI's [mobile-first responsive contract](/docs/responsive/) is the framework-level document; the list above states only what this screen's own files declare, and says nothing about how the composed components behave internally.
 
 ## Accessibility
 
-Read from the screen file and the 2 pattern-local files in its runtime import closure, direct and transitive: `reset-password-screen.tsx`, `auth-shared.tsx`, `auth-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 2 pattern-local files in its runtime import closure, direct and transitive: `auth/screens/reset-password-screen.tsx`, `auth/components/auth-shared.tsx`, `auth/fixtures/auth-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
 
-- **Roles this screen sets itself:** none set in `reset-password-screen.tsx`, `auth-shared.tsx`, `auth-fixtures.ts`.
-- **Accessibility states and properties it sets itself:** `accessibilityLabel` (`auth-shared.tsx`).
-- **Semantics inherited from composed BeeUI families:** [`AlertBanner`](/docs/components/alert-banner/), [`Box`](/docs/components/box/), [`Button`](/docs/components/button/), [`Card`](/docs/components/card/), [`Field`](/docs/components/field/), [`HStack`](/docs/components/stack/), [`KeyboardAwareScreen`](/docs/components/keyboard-aware-screen/), [`PasswordInput`](/docs/components/password-input/), [`Progress`](/docs/components/progress/), [`Separator`](/docs/components/separator/), [`Text`](/docs/components/text/), [`VStack`](/docs/components/stack/) — each family's own page derives the roles and states it sets; they are not restated here.
+- **Roles this screen sets itself:** none set in `auth/screens/reset-password-screen.tsx`, `auth/components/auth-shared.tsx`, `auth/fixtures/auth-fixtures.ts`.
+- **Accessibility states and properties it sets itself:** `accessibilityLabel` (`auth/components/auth-shared.tsx`).
+- **Semantics inherited from composed BeeUI families:** [`AlertBanner`](/docs/components/alert-banner/) (`auth/components/auth-shared.tsx`, only when `error` is true), [`Box`](/docs/components/box/), [`Button`](/docs/components/button/), [`Card`](/docs/components/card/), [`Field`](/docs/components/field/), [`HStack`](/docs/components/stack/), [`KeyboardAwareScreen`](/docs/components/keyboard-aware-screen/), [`PasswordInput`](/docs/components/password-input/), [`Progress`](/docs/components/progress/), [`Separator`](/docs/components/separator/), [`Text`](/docs/components/text/), [`VStack`](/docs/components/stack/) — each family's own page derives the roles and states it sets; they are not restated here.
 
 Touch-target size, focus order, announcements, RTL, large-text and reduced-motion behavior are not derived from this source — see the [Accessibility guide](/docs/accessibility/) for what is and is not covered by evidence. A Web preview does not substitute for VoiceOver/TalkBack runtime evidence.
 

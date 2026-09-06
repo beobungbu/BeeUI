@@ -40,25 +40,25 @@ Common product states such as loading, success, empty, error, permission-like re
 
 ## Responsive contract
 
-Read from the screen file and the 2 pattern-local files in its runtime import closure, direct and transitive: `notifications-screen.tsx`, `screen-shell.tsx`, `social-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 2 pattern-local files in its runtime import closure, direct and transitive: `commerce-social/screens/notifications-screen.tsx`, `commerce-social/components/screen-shell.tsx`, `commerce-social/fixtures/social-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
 
-- **BeeUI layout primitives rendered:** `Box` (`screen-shell.tsx`), `HStack` (`notifications-screen.tsx`), `Screen` (`screen-shell.tsx`), `VStack` (`notifications-screen.tsx`, `screen-shell.tsx`).
-- **Scroll ownership:** `ScrollView` (`screen-shell.tsx`).
-- **Horizontal scrolling:** no `horizontal` scroll container in `notifications-screen.tsx`, `screen-shell.tsx`, `social-fixtures.ts`.
-- **Width constraint:** `max-w-2xl` (`screen-shell.tsx`), `max-w-3xl` (`screen-shell.tsx`).
-- **Breakpoint-prefixed utility classes:** none in `notifications-screen.tsx`, `screen-shell.tsx`, `social-fixtures.ts`.
-- **Platform-prefixed utility classes:** `web:px-6` (`screen-shell.tsx`).
-- **Platform branching:** no `Platform.OS` or `Platform.select` call in `notifications-screen.tsx`, `screen-shell.tsx`, `social-fixtures.ts`.
-- **Viewport measurement:** no `useWindowDimensions`, `Dimensions.get` or breakpoint hook in `notifications-screen.tsx`, `screen-shell.tsx`, `social-fixtures.ts`.
+- **BeeUI layout primitives rendered:** `Box` (`commerce-social/components/screen-shell.tsx`), `HStack` (`commerce-social/screens/notifications-screen.tsx`), `Screen` (`commerce-social/components/screen-shell.tsx`), `VStack` (`commerce-social/components/screen-shell.tsx`, `commerce-social/screens/notifications-screen.tsx`).
+- **Scroll ownership:** `ScrollView` (`commerce-social/components/screen-shell.tsx`).
+- **Horizontal scrolling:** no `horizontal` scroll container in `commerce-social/screens/notifications-screen.tsx`, `commerce-social/components/screen-shell.tsx`, `commerce-social/fixtures/social-fixtures.ts`.
+- **Width constraint:** `max-w-2xl` (`commerce-social/components/screen-shell.tsx`), `max-w-3xl` (`commerce-social/components/screen-shell.tsx`).
+- **Breakpoint-prefixed utility classes:** none in `commerce-social/screens/notifications-screen.tsx`, `commerce-social/components/screen-shell.tsx`, `commerce-social/fixtures/social-fixtures.ts`.
+- **Platform-prefixed utility classes:** `web:px-6` (`commerce-social/components/screen-shell.tsx`).
+- **Platform branching:** no `Platform.OS` or `Platform.select` call in `commerce-social/screens/notifications-screen.tsx`, `commerce-social/components/screen-shell.tsx`, `commerce-social/fixtures/social-fixtures.ts`.
+- **Viewport measurement:** no `useWindowDimensions`, `Dimensions.get` or breakpoint hook in `commerce-social/screens/notifications-screen.tsx`, `commerce-social/components/screen-shell.tsx`, `commerce-social/fixtures/social-fixtures.ts`.
 
 BeeUI's [mobile-first responsive contract](/docs/responsive/) is the framework-level document; the list above states only what this screen's own files declare, and says nothing about how the composed components behave internally.
 
 ## Accessibility
 
-Read from the screen file and the 2 pattern-local files in its runtime import closure, direct and transitive: `notifications-screen.tsx`, `screen-shell.tsx`, `social-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 2 pattern-local files in its runtime import closure, direct and transitive: `commerce-social/screens/notifications-screen.tsx`, `commerce-social/components/screen-shell.tsx`, `commerce-social/fixtures/social-fixtures.ts`. Every fact below is scoped to those files and to nothing else.
 
-- **Roles this screen sets itself:** `button` (`notifications-screen.tsx`).
-- **Accessibility states and properties it sets itself:** `accessibilityLabel` (`notifications-screen.tsx`).
+- **Roles this screen sets itself:** `button` (`commerce-social/screens/notifications-screen.tsx`).
+- **Accessibility states and properties it sets itself:** `accessibilityLabel` (`commerce-social/screens/notifications-screen.tsx`).
 - **Semantics inherited from composed BeeUI families:** [`Avatar`](/docs/components/avatar/), [`Badge`](/docs/components/badge/), [`Box`](/docs/components/box/), [`Button`](/docs/components/button/), [`Card`](/docs/components/card/), [`EmptyState`](/docs/components/state-message/), [`HStack`](/docs/components/stack/), [`Screen`](/docs/components/screen/), [`Text`](/docs/components/text/), [`VStack`](/docs/components/stack/) — each family's own page derives the roles and states it sets; they are not restated here.
 
 Touch-target size, focus order, announcements, RTL, large-text and reduced-motion behavior are not derived from this source — see the [Accessibility guide](/docs/accessibility/) for what is and is not covered by evidence. A Web preview does not substitute for VoiceOver/TalkBack runtime evidence.

@@ -13,7 +13,9 @@ import {
   collectPublicPatternViolations,
   extractPatternLayoutFacts,
   extractPropsTypeSource,
+  extractPatternComposedFamilies,
   patternBranchAnalysis,
+  patternFileLabel,
   patternLayoutVocabularyViolations,
   patternOpaqueShapeViolations,
   PATTERN_BREAKPOINT_NONE_CLAIM,
@@ -27,6 +29,7 @@ import {
   PATTERN_STATES_NONE_CLAIM,
   PATTERN_VIEWPORT_NONE_CLAIM,
   PATTERN_WIDTH_NONE_CLAIM,
+  publishedComposedFamilies,
   publishedFactGroups,
   renderPublicPatternIndex,
   renderPublicPatternPage,
@@ -694,6 +697,14 @@ function pageWithClaim(claim) {
   return `\n## Responsive contract\n\n- ${claim} in \`screen.tsx\`.\n\n## Accessibility\n\n- ${claim} in \`screen.tsx\`.\n\n## Related\n`;
 }
 
+// A page whose Accessibility section carries only the composed-family line, so a violation can
+// only have come from that line.
+function composedPage(entries) {
+  return '\n## Responsive contract\n\n- x\n\n## Accessibility\n\n' +
+    `- **Semantics inherited from composed BeeUI families:** ${entries} — each family's own page ` +
+    'derives the roles and states it sets; they are not restated here.\n\n## Related\n';
+}
+
 test('every registered negative claim has a source that refutes it', () => {
   assert.deepEqual(
     ALL_PATTERN_NONE_CLAIMS.filter((claim) => !REFUTING_SOURCE.has(claim)),
@@ -779,6 +790,225 @@ test('the accessibility line attributes each fact to the files that set it, not 
   );
 });
 
+// --- Composed families: rendered, not imported ------------------------------
+
+// A shell whose two returns render different BeeUI families, so "what it imports" and "what this
+// screen renders" are different sets — the shape `account-settings/components/
+// settings-screen-shell.tsx` has, and the reason six pages named `KeyboardAwareScreen` as a
+// family whose semantics they inherit for screens that never render it.
+const COMPOSING_SHELL =
+  "import { Box, KeyboardAwareScreen, Screen } from '@beemvp/beeui-ui';\n" +
+  'export function Shell({ keyboardAware = false, children }) {\n' +
+  '  if (keyboardAware) {\n' +
+  '    return <KeyboardAwareScreen><Box>{children}</Box></KeyboardAwareScreen>;\n' +
+  '  }\n' +
+  '  return <Screen><Box>{children}</Box></Screen>;\n' +
+  '}\n';
+
+test('a family the read set imports but does not render under the selected branch is not named as composed', () => {
+  withFixture(
+    {
+      'screen.tsx': "import { Shell } from './shell';\nexport const S = () => <Shell />;\n",
+      'shell.tsx': COMPOSING_SHELL,
+    },
+    (rel) => {
+      const files = collectPatternSourceFiles(rel('screen.tsx'), ROOT_DIR);
+      assert.deepEqual([...extractPatternComposedFamilies(files).keys()].sort(), ['Box', 'Screen']);
+      const a11y = sectionBody(
+        renderPublicPatternPage(makePattern({ source: rel('screen.tsx'), propsType: null }), ROOT_DIR),
+        'Accessibility',
+      );
+      assert.ok(!a11y.includes('KeyboardAwareScreen'), a11y);
+      // `Box` is rendered in both arms, so the condition decides nothing and it carries no clause;
+      // `Screen` exists only in the arm this screen takes, and says so.
+      assert.match(a11y, /\[`Box`\]\(\/docs\/components\/box\/\),/);
+      assert.match(a11y, /\[`Screen`\]\([^)]*\) \(`shell\.tsx`, the branch taken when `keyboardAware` is false\)/);
+    },
+  );
+});
+
+test('a family rendered in both arms of a screen that selects both is named under each condition', () => {
+  withFixture(
+    {
+      'screen.tsx':
+        "import { Shell } from './shell';\n" +
+        'export const S = () => <><Shell /><Shell keyboardAware /></>;\n',
+      'shell.tsx': COMPOSING_SHELL,
+    },
+    (rel) => {
+      const a11y = sectionBody(
+        renderPublicPatternPage(makePattern({ source: rel('screen.tsx'), propsType: null }), ROOT_DIR),
+        'Accessibility',
+      );
+      assert.match(a11y, /\[`KeyboardAwareScreen`\]\([^)]*\) \(`shell\.tsx`, only when `keyboardAware` is true\)/);
+      assert.match(a11y, /\[`Screen`\]\([^)]*\) \(`shell\.tsx`, only when `keyboardAware` is false\)/);
+    },
+  );
+});
+
+test('the source oracle refuses a page naming a family the read set does not render under the selected branch', () => {
+  withFixture(
+    {
+      'screen.tsx': "import { Shell } from './shell';\nexport const S = () => <Shell />;\n",
+      'shell.tsx': COMPOSING_SHELL,
+    },
+    (rel) => {
+      const pattern = makePattern({ source: rel('screen.tsx'), beeuiComponents: [] });
+      const page = composedPage('[`KeyboardAwareScreen`](/docs/components/keyboard-aware-screen/)');
+      const violations = collectPatternDerivedClaimViolations(page, pattern, ROOT_DIR);
+      assert.ok(
+        violations.some((violation) => /names `KeyboardAwareScreen` as a composed BeeUI family, but no file it reads renders/u.test(violation)),
+        violations.join('\n'),
+      );
+    },
+  );
+});
+
+test('the source oracle refuses a composed family published without the condition that selects it', () => {
+  withFixture(
+    {
+      // Both arms are selected here, so nothing is blanked and `KeyboardAwareScreen` is live —
+      // the fact is true, but only under a condition, and the bare line does not say so.
+      'screen.tsx':
+        "import { Shell } from './shell';\n" +
+        'export const S = () => <><Shell /><Shell keyboardAware /></>;\n',
+      'shell.tsx': COMPOSING_SHELL,
+    },
+    (rel) => {
+      const pattern = makePattern({ source: rel('screen.tsx'), beeuiComponents: [] });
+      const page = composedPage('[`KeyboardAwareScreen`](/docs/components/keyboard-aware-screen/)');
+      const violations = collectPatternDerivedClaimViolations(page, pattern, ROOT_DIR);
+      assert.deepEqual(violations.map((violation) => violation.replace(/^[^:]+: /u, '')), [
+        'names `KeyboardAwareScreen` as a composed BeeUI family with no condition, but every file ' +
+        'that renders it does so only inside a prop-conditional branch (`keyboardAware`).',
+      ]);
+    },
+  );
+});
+
+test('the source oracle accepts a composed family that carries its condition', () => {
+  withFixture(
+    {
+      'screen.tsx':
+        "import { Shell } from './shell';\n" +
+        'export const S = () => <><Shell /><Shell keyboardAware /></>;\n',
+      'shell.tsx': COMPOSING_SHELL,
+    },
+    (rel) => {
+      const pattern = makePattern({ source: rel('screen.tsx'), beeuiComponents: [] });
+      const page = composedPage(
+        '[`KeyboardAwareScreen`](/docs/components/keyboard-aware-screen/) (`shell.tsx`, only when `keyboardAware` is true)',
+      );
+      assert.deepEqual(collectPatternDerivedClaimViolations(page, pattern, ROOT_DIR), []);
+    },
+  );
+});
+
+test('publishedComposedFamilies reads a family and its clause back off the page, and no module specifier', () => {
+  const section =
+    '- **Semantics inherited from composed BeeUI families:** [`Box`](/docs/components/box/), ' +
+    '[`Screen`](/docs/components/screen/) (`shell.tsx`, the branch taken when `keyboardAware` is false)' +
+    " — each family's own page derives the roles and states it sets; they are not restated here.\n" +
+    '- **Rendered from `@beemvp/beeui-ui` with no public component page:** `NotAFamily`.\n';
+  assert.deepEqual(publishedComposedFamilies(section), [
+    { name: 'Box', condition: '' },
+    { name: 'Screen', condition: 'the branch taken when `keyboardAware` is false' },
+    { name: 'NotAFamily', condition: '' },
+  ]);
+});
+
+test('a rendered BeeUI export with no public component page is listed separately and unlinked', () => {
+  withFixture(
+    {
+      'screen.tsx':
+        "import { Box, NotAPublishedFamily } from '@beemvp/beeui-ui';\n" +
+        'export const S = () => <Box><NotAPublishedFamily /></Box>;\n',
+    },
+    (rel) => {
+      const a11y = sectionBody(
+        renderPublicPatternPage(makePattern({ source: rel('screen.tsx'), propsType: null }), ROOT_DIR),
+        'Accessibility',
+      );
+      assert.ok(
+        a11y.includes('**Rendered from `@beemvp/beeui-ui` with no public component page:** `NotAPublishedFamily`.'),
+        a11y,
+      );
+    },
+  );
+});
+
+test('a composite condition is a branch to neither derivation, so no clause is published or demanded', () => {
+  withFixture(
+    {
+      // `actionLabel && onAction ? …` is the shape `dashboard-finance/components/section-header
+      // .tsx` uses. The extractor resolves a branch only when the whole condition is a prop
+      // identifier, and the textual oracle has to draw the same line: reading this as a branch on
+      // `onAction` blanked text the extractor kept, and the two disagreed on a true fact.
+      'screen.tsx': "import { Shell } from './shell';\nexport const S = () => <Shell />;\n",
+      'shell.tsx':
+        "import { Button, Screen } from '@beemvp/beeui-ui';\n" +
+        'export function Shell({ label, onAction }) {\n' +
+        '  return <Screen>{label && onAction ? <Button onPress={onAction} /> : null}</Screen>;\n' +
+        '}\n',
+    },
+    (rel) => {
+      const pattern = makePattern({ source: rel('screen.tsx'), propsType: null, beeuiComponents: [] });
+      const page = renderPublicPatternPage(pattern, ROOT_DIR);
+      const a11y = sectionBody(page, 'Accessibility');
+      assert.match(a11y, /\[`Button`\]\(\/docs\/components\/button\/\),/);
+      assert.ok(!a11y.includes('only when `onAction`'), a11y);
+      assert.deepEqual(collectPatternDerivedClaimViolations(page, pattern, ROOT_DIR), []);
+    },
+  );
+});
+
+// --- File identity ----------------------------------------------------------
+
+test('a file named on a pattern page resolves to exactly one source file', () => {
+  const byLabel = new Map();
+  for (const pattern of buildPublicPatternManifest(ROOT_DIR)) {
+    for (const file of collectPatternSourceFiles(pattern.source, ROOT_DIR)) {
+      const label = patternFileLabel(file.path);
+      if (!byLabel.has(label)) byLabel.set(label, new Set());
+      byLabel.get(label).add(file.path);
+    }
+  }
+  const ambiguous = [...byLabel].filter(([, paths]) => paths.size > 1).map(([label]) => label);
+  assert.deepEqual(ambiguous, [], 'a name that stands for two different source files cannot be resolved by a reader');
+  // The two files this rule exists for: same basename, different pack, different content.
+  assert.ok(byLabel.has('commerce-social/components/screen-shell.tsx'));
+  assert.ok(byLabel.has('dashboard-finance/components/screen-shell.tsx'));
+  assert.equal(
+    patternFileLabel('apps/showcase/patterns/commerce-social/components/screen-shell.tsx'),
+    'commerce-social/components/screen-shell.tsx',
+  );
+});
+
+// --- Platform-scoped accessibility facts -------------------------------------
+
+test('an accessibility fact a pattern sets on one platform only is published with that platform named', () => {
+  withFixture(
+    {
+      'screen.tsx':
+        "import { Platform } from 'react-native';\n" +
+        "import { Box } from '@beemvp/beeui-ui';\n" +
+        "export const S = () => (Platform.OS === 'ios'\n" +
+        '  ? <Box accessibilityRole="header" />\n' +
+        '  : <Box accessibilityLabel="Summary" />);\n',
+    },
+    (rel) => {
+      const a11y = sectionBody(
+        renderPublicPatternPage(makePattern({ source: rel('screen.tsx'), propsType: null }), ROOT_DIR),
+        'Accessibility',
+      );
+      // A pattern can branch on `Platform.OS` exactly as a component can, so the platform-qualified
+      // form is reachable from pattern source, not only from a platform-suffixed component file.
+      assert.ok(a11y.includes('**Roles this screen sets itself:** `header` (iOS; `screen.tsx`).'), a11y);
+      assert.ok(a11y.includes('`accessibilityLabel` (Android and Web; `screen.tsx`)'), a11y);
+    },
+  );
+});
+
 test('the layout-primitive vocabulary names only real public BeeUI exports', () => {
   assert.ok(BEEUI_LAYOUT_PRIMITIVES.length > 0);
   assert.deepEqual(patternLayoutVocabularyViolations(ROOT_DIR), []);
@@ -792,7 +1022,7 @@ test('every pattern page derives its own Responsive contract and Accessibility b
   const accessibility = new Set();
   for (const pattern of manifest) {
     const page = renderPublicPatternPage(pattern, ROOT_DIR);
-    const screenFile = pattern.source.split('/').pop();
+    const screenFile = patternFileLabel(pattern.source);
     const responsiveBody = sectionBody(page, 'Responsive contract');
     const accessibilityBody = sectionBody(page, 'Accessibility');
     // A section that does not name the file it was read from is not scoped to anything.

@@ -48,26 +48,26 @@ Common product states such as loading, success, empty, error, permission-like re
 
 ## Responsive contract
 
-Read from the screen file and the 2 pattern-local files in its runtime import closure, direct and transitive: `transactions-screen.tsx`, `screen-shell.tsx`, `transaction-row.tsx`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 2 pattern-local files in its runtime import closure, direct and transitive: `dashboard-finance/screens/transactions-screen.tsx`, `dashboard-finance/components/screen-shell.tsx`, `dashboard-finance/components/transaction-row.tsx`. Every fact below is scoped to those files and to nothing else.
 
-- **BeeUI layout primitives rendered:** `Box` (`screen-shell.tsx`, `transaction-row.tsx`), `HStack` (`transaction-row.tsx`), `VStack` (`transaction-row.tsx`, `transactions-screen.tsx`).
-- **Scroll ownership:** `ScrollView` (`screen-shell.tsx`).
-- **Horizontal scrolling:** no `horizontal` scroll container in `transactions-screen.tsx`, `screen-shell.tsx`, `transaction-row.tsx`.
-- **Width constraint:** `max-w-6xl` (`screen-shell.tsx`).
-- **Breakpoint-prefixed utility classes:** none in `transactions-screen.tsx`, `screen-shell.tsx`, `transaction-row.tsx`.
-- **Platform-prefixed utility classes:** none in `transactions-screen.tsx`, `screen-shell.tsx`, `transaction-row.tsx`.
-- **Platform branching:** no `Platform.OS` or `Platform.select` call in `transactions-screen.tsx`, `screen-shell.tsx`, `transaction-row.tsx`.
-- **Viewport measurement:** no `useWindowDimensions`, `Dimensions.get` or breakpoint hook in `transactions-screen.tsx`, `screen-shell.tsx`, `transaction-row.tsx`.
+- **BeeUI layout primitives rendered:** `Box` (`dashboard-finance/components/screen-shell.tsx`, `dashboard-finance/components/transaction-row.tsx`), `HStack` (`dashboard-finance/components/transaction-row.tsx`), `VStack` (`dashboard-finance/components/transaction-row.tsx`, `dashboard-finance/screens/transactions-screen.tsx`).
+- **Scroll ownership:** `ScrollView` (`dashboard-finance/components/screen-shell.tsx`).
+- **Horizontal scrolling:** no `horizontal` scroll container in `dashboard-finance/screens/transactions-screen.tsx`, `dashboard-finance/components/screen-shell.tsx`, `dashboard-finance/components/transaction-row.tsx`.
+- **Width constraint:** `max-w-6xl` (`dashboard-finance/components/screen-shell.tsx`).
+- **Breakpoint-prefixed utility classes:** none in `dashboard-finance/screens/transactions-screen.tsx`, `dashboard-finance/components/screen-shell.tsx`, `dashboard-finance/components/transaction-row.tsx`.
+- **Platform-prefixed utility classes:** none in `dashboard-finance/screens/transactions-screen.tsx`, `dashboard-finance/components/screen-shell.tsx`, `dashboard-finance/components/transaction-row.tsx`.
+- **Platform branching:** no `Platform.OS` or `Platform.select` call in `dashboard-finance/screens/transactions-screen.tsx`, `dashboard-finance/components/screen-shell.tsx`, `dashboard-finance/components/transaction-row.tsx`.
+- **Viewport measurement:** no `useWindowDimensions`, `Dimensions.get` or breakpoint hook in `dashboard-finance/screens/transactions-screen.tsx`, `dashboard-finance/components/screen-shell.tsx`, `dashboard-finance/components/transaction-row.tsx`.
 
 BeeUI's [mobile-first responsive contract](/docs/responsive/) is the framework-level document; the list above states only what this screen's own files declare, and says nothing about how the composed components behave internally.
 
 ## Accessibility
 
-Read from the screen file and the 2 pattern-local files in its runtime import closure, direct and transitive: `transactions-screen.tsx`, `screen-shell.tsx`, `transaction-row.tsx`. Every fact below is scoped to those files and to nothing else.
+Read from the screen file and the 2 pattern-local files in its runtime import closure, direct and transitive: `dashboard-finance/screens/transactions-screen.tsx`, `dashboard-finance/components/screen-shell.tsx`, `dashboard-finance/components/transaction-row.tsx`. Every fact below is scoped to those files and to nothing else.
 
-- **Roles this screen sets itself:** `button` (`transaction-row.tsx`).
-- **Accessibility states and properties it sets itself:** `accessibilityLabel` (`transactions-screen.tsx`, `transaction-row.tsx`).
-- **Semantics inherited from composed BeeUI families:** [`AppHeader`](/docs/components/app-header/), [`Badge`](/docs/components/badge/), [`Box`](/docs/components/box/), [`Button`](/docs/components/button/), [`Card`](/docs/components/card/), [`EmptyState`](/docs/components/state-message/), [`ErrorState`](/docs/components/state-message/), [`HStack`](/docs/components/stack/), [`SearchInput`](/docs/components/search-input/), [`Tabs`](/docs/components/tabs/), [`TabsList`](/docs/components/tabs/), [`TabsTrigger`](/docs/components/tabs/), [`Text`](/docs/components/text/), [`VStack`](/docs/components/stack/) — each family's own page derives the roles and states it sets; they are not restated here.
+- **Roles this screen sets itself:** `button` (`dashboard-finance/components/transaction-row.tsx`).
+- **Accessibility states and properties it sets itself:** `accessibilityLabel` (`dashboard-finance/screens/transactions-screen.tsx`, `dashboard-finance/components/transaction-row.tsx`).
+- **Semantics inherited from composed BeeUI families:** [`AppHeader`](/docs/components/app-header/), [`Badge`](/docs/components/badge/), [`Box`](/docs/components/box/), [`Button`](/docs/components/button/) (`dashboard-finance/screens/transactions-screen.tsx`, only when `onRetry` is true), [`Card`](/docs/components/card/), [`EmptyState`](/docs/components/state-message/), [`ErrorState`](/docs/components/state-message/), [`HStack`](/docs/components/stack/), [`SearchInput`](/docs/components/search-input/), [`Tabs`](/docs/components/tabs/), [`TabsList`](/docs/components/tabs/), [`TabsTrigger`](/docs/components/tabs/), [`Text`](/docs/components/text/), [`VStack`](/docs/components/stack/) — each family's own page derives the roles and states it sets; they are not restated here.
 
 Touch-target size, focus order, announcements, RTL, large-text and reduced-motion behavior are not derived from this source — see the [Accessibility guide](/docs/accessibility/) for what is and is not covered by evidence. A Web preview does not substitute for VoiceOver/TalkBack runtime evidence.
 

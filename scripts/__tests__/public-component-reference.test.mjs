@@ -29,6 +29,7 @@ import {
   collectRenderedPageViolations,
   collectDerivedClaimViolations,
   collectScopedAccessibilityFacts,
+  isKnownAccessibilityRole,
   ROLES_NONE_CLAIM,
   STATES_NONE_CLAIM,
   collectPropDescriptionViolations,
@@ -2450,4 +2451,16 @@ test('a positive platform-split claim without a platform file is a violation', (
   const violations = collectDerivedClaimViolations(page, component, REPO_ROOT);
 
   assert.equal(violations.length, 2, violations.join('\n'));
+});
+
+test('the accessibility-role vocabulary is reachable only through a predicate, never as a mutable set', async () => {
+  const module = await import('../public-component-reference.mjs');
+  // An exported `Set` is a mutable module singleton: any importer could widen the vocabulary for
+  // every other importer, and a deliberate edit to the list is the only thing that should.
+  for (const [name, value] of Object.entries(module)) {
+    assert.ok(!(value instanceof Set), `${name} is exported as a mutable Set`);
+    assert.ok(!(value instanceof Map), `${name} is exported as a mutable Map`);
+  }
+  assert.equal(isKnownAccessibilityRole('radiogroup'), true);
+  assert.equal(isKnownAccessibilityRole('single'), false);
 });

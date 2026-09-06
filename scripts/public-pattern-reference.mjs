@@ -17,7 +17,7 @@ import {
 import {
   buildPublicComponentManifest,
   collectScopedAccessibilityFacts,
-  KNOWN_ACCESSIBILITY_ROLES,
+  isKnownAccessibilityRole,
   platformLabel,
 } from './public-component-reference.mjs';
 import { stripSourceComments } from './component-props-lib.mjs';
@@ -71,7 +71,12 @@ function symbolRouteMap(rootDir) {
 //      every positive names a token the source does not contain.
 //   4. No fact from a branch the screen does not take. A shell that returns one of two layouts
 //      depending on a prop states two different things, and only one of them is about the screen
-//      reading it; a fact that survives from a branch names the condition that selects it.
+//      reading it; a fact that survives from a branch names the condition that selects it. This
+//      binds the composed-family list too: a family is named because the screen renders it, not
+//      because a file it reads imports it.
+//   5. Every file is named by its path under `apps/showcase/patterns/`, because two packs each
+//      contain a `screen-shell.tsx` and the basename alone left a reader unable to tell which
+//      file a fact came from.
 //
 // The derivation is not total, and the shapes outside it fail loudly rather than quietly:
 // `patternOpaqueShapeViolations` refuses an aliased or namespaced tag, `Platform['OS']`, a
@@ -83,6 +88,18 @@ function symbolRouteMap(rootDir) {
 // `apps/showcase/patterns/**`. That widening is exactly why rule 1 matters: the scope sentence
 // names every file, so a reader can tell a shell fact from a screen fact.
 export const PATTERN_SOURCE_ROOT = 'apps/showcase/patterns';
+
+// How a file is named everywhere on a pattern page: its path relative to the pattern source root.
+// The basename alone was ambiguous — `commerce-social/components/screen-shell.tsx` and
+// `dashboard-finance/components/screen-shell.tsx` are different files with different content
+// (`max-w-3xl`/`Screen` against `max-w-6xl`/`AppHeader`), and pages link only the screen file, so
+// a reader given `screen-shell.tsx` had no way to resolve which one a fact came from. A file
+// outside the root — only a test fixture is — keeps its basename, because it has no pack path to
+// be qualified by.
+export function patternFileLabel(relPath) {
+  const prefix = `${PATTERN_SOURCE_ROOT}/`;
+  return relPath.startsWith(prefix) ? relPath.slice(prefix.length) : relPath.split('/').pop();
+}
 
 function resolveLocalImport(fromRel, specifier, rootDir) {
   if (!specifier.startsWith('.')) return null;
@@ -214,7 +231,10 @@ function addFact(map, key, file) {
 // — with the rest of the enclosing block as the implicit else when the block returns — and
 // `prop ? a : b`, where `prop` is a destructured prop of the enclosing component. A condition
 // like `state === 'empty'` is deliberately not one: both arms are reachable for the same screen
-// through its own named states, so its facts stay unlabelled as before.
+// through its own named states, so its facts stay unlabelled as before. Neither is a composite
+// condition (`actionLabel && onAction ? …`, `state.loading ? …`): the render site does not settle
+// it, and the textual oracle draws the same line, so both derivations leave those facts plain
+// rather than one of them inventing a clause the other cannot check.
 
 // The destructured props of a component function, keyed by the local binding name so a condition
 // can be matched, and carrying the external name so a render site can be read.
@@ -387,6 +407,16 @@ function addSite(sites, key, file, guards) {
   sites.get(key).push({ file, guards });
 }
 
+// A file that writes the value into both arms of one condition writes it unconditionally: the
+// condition decides nothing. `web:py-10` and `<Box>` sit in both returns of
+// `settings-screen-shell.tsx`, and "the branch taken when `keyboardAware` is false" would claim
+// the false arm is what makes them true.
+function statedInBothArms(all) {
+  const single = all.filter((guards) => guards.length === 1).map(([guard]) => guard);
+  return single.some((one) =>
+    single.some((other) => other.component === one.component && other.prop === one.prop && other.value !== one.value));
+}
+
 // Sites → the published shape, `Map<value, Map<file, Set<condition>>>`, where the empty condition
 // is an unguarded fact. Sites in a branch the screen does not select are dropped, and a guarded
 // site is dropped when the same file states the fact unguarded too — the unguarded reading is
@@ -396,42 +426,32 @@ function resolveSites(sites, resolve) {
   for (const [value, entries] of sites) {
     const byFile = new Map();
     for (const { file, guards } of entries) {
-      const descriptor = guardDescriptor(guards, resolve);
-      if (descriptor === null) continue;
-      if (!byFile.has(file)) byFile.set(file, new Map());
-      byFile.get(file).set(descriptor, guards);
-    }
-    for (const [, descriptors] of byFile) {
-      // A file that declares the value in both arms of the same condition declares it
-      // unconditionally; `web:py-10` sits in both returns of `settings-screen-shell.tsx`, and two
-      // complementary clauses would say less than no clause at all.
-      for (const [descriptor, guards] of [...descriptors]) {
-        if (guards.length !== 1) continue;
-        const complement = [...descriptors].find(([, other]) =>
-          other.length === 1 && other[0].prop === guards[0].prop && other[0].value !== guards[0].value);
-        if (!complement) continue;
-        descriptors.delete(descriptor);
-        descriptors.delete(complement[0]);
-        descriptors.set('', []);
-      }
-      // An unguarded reading is strictly stronger than a guarded one from the same file.
-      if (descriptors.has('') && descriptors.size > 1) {
-        for (const descriptor of [...descriptors.keys()]) if (descriptor) descriptors.delete(descriptor);
-      }
+      if (!byFile.has(file)) byFile.set(file, []);
+      byFile.get(file).push(guards);
     }
     const published = new Map();
-    for (const [file, descriptors] of byFile) if (descriptors.size) published.set(file, new Set(descriptors.keys()));
+    for (const [file, all] of byFile) {
+      // Both tests run before the dead arms are dropped, because whether a condition decides
+      // anything is a property of the file, not of which arm this screen happens to select.
+      if (all.some((guards) => !guards.length) || statedInBothArms(all)) {
+        published.set(file, new Set(['']));
+        continue;
+      }
+      const descriptors = new Set();
+      for (const guards of all) {
+        const descriptor = guardDescriptor(guards, resolve);
+        if (descriptor !== null) descriptors.add(descriptor);
+      }
+      if (descriptors.size) published.set(file, descriptors);
+    }
     if (published.size) facts.set(value, published);
   }
   return facts;
 }
 
-// Responsive facts, read from the AST of every file in the read set. Deliberately AST-based:
-// the oracle that checks the rendered sentences greps the same files as text, and two
-// derivations that share code agree with each other even when both are wrong.
-export function extractPatternLayoutFacts(files) {
-  const parsed = files.map(({ path: filePath, source }) => ({
-    name: filePath.split('/').pop(),
+function parsePatternFiles(files) {
+  return files.map(({ path: filePath, source }) => ({
+    name: patternFileLabel(filePath),
     sourceFile: ts.createSourceFile(
       filePath,
       source,
@@ -440,15 +460,27 @@ export function extractPatternLayoutFacts(files) {
       filePath.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
     ),
   }));
+}
 
+// What the read set passes at every render site, memoized per guard, so both branch-aware
+// derivations resolve a condition the same way from the same evidence.
+function renderedPropResolver(parsed) {
   const renderSites = new Map();
   for (const { sourceFile } of parsed) collectRenderSites(sourceFile, renderSites);
   const resolved = new Map();
-  const resolve = (guard) => {
+  return (guard) => {
     const key = `${guard.component}.${guard.prop}.${guard.fallback}`;
     if (!resolved.has(key)) resolved.set(key, resolveRenderedProp(renderSites, guard));
     return resolved.get(key);
   };
+}
+
+// Responsive facts, read from the AST of every file in the read set. Deliberately AST-based:
+// the oracle that checks the rendered sentences greps the same files as text, and two
+// derivations that share code agree with each other even when both are wrong.
+export function extractPatternLayoutFacts(files) {
+  const parsed = parsePatternFiles(files);
+  const resolve = renderedPropResolver(parsed);
 
   const sites = {
     primitives: new Map(),
@@ -548,7 +580,7 @@ export function patternOpaqueShapeViolations(files) {
   );
 
   for (const { path: filePath, source } of files) {
-    const name = filePath.split('/').pop();
+    const name = patternFileLabel(filePath);
     const sourceFile = ts.createSourceFile(
       filePath,
       source,
@@ -624,7 +656,10 @@ export const PATTERN_PLATFORM_API_NONE_CLAIM = '**Platform branching:** no `Plat
 export const PATTERN_VIEWPORT_NONE_CLAIM = '**Viewport measurement:** no `useWindowDimensions`, `Dimensions.get` or breakpoint hook';
 export const PATTERN_ROLES_NONE_CLAIM = '**Roles this screen sets itself:** none';
 export const PATTERN_STATES_NONE_CLAIM = '**Accessibility states and properties it sets itself:** none';
-export const PATTERN_COMPOSED_NONE_CLAIM = '**Semantics inherited from composed BeeUI families:** none imported';
+// "None rendered", not "none imported": the line is derived from the JSX the screen selects, so
+// a family imported but never rendered under that branch is not on it and must not be denied by a
+// sentence about imports either.
+export const PATTERN_COMPOSED_NONE_CLAIM = '**Semantics inherited from composed BeeUI families:** none rendered';
 
 // Each negative, and the comment-stripped grep that refutes it. A negative is the only claim
 // shape a grep can decide, and it is the shape that does the damage: it is an assertion about
@@ -685,18 +720,47 @@ const PATTERN_NEGATIVE_ORACLES = [
     // being a registered claim is also what keeps `publishedFactTokens` from reading the module
     // specifier inside it as a derived fact — a token no source that imports nothing contains,
     // which would have made the claim refute itself.
+    //
+    // The only claim here a fixed regex cannot decide: which tags are BeeUI families is itself
+    // read out of the imports. So the probe reads them as text — `extractPatternBeeuiImports`
+    // reads the same thing from the AST and the two share no line — and asks whether any is
+    // rendered in the branch this screen selects. An import alone no longer refutes it, because
+    // the line is no longer about imports.
     claim: PATTERN_COMPOSED_NONE_CLAIM,
-    pattern: /from\s*['"]@beemvp\/beeui-ui['"]/u,
-    message: 'publishes "no composed BeeUI families" while its source imports from `@beemvp/beeui-ui`',
+    refute: (analysis) => analysis.some((file) =>
+      textBeeuiImports(file.stripped).some((name) => tagOccurrences(file.live, name).length)),
+    message: 'publishes "no composed BeeUI families" while its source renders one it imports from `@beemvp/beeui-ui`',
   },
 ];
+
+// The names a file imports from `@beemvp/beeui-ui`, read as text. Aliased to the local name, which
+// is what a JSX tag in that file spells and what the AST derivation publishes.
+function textBeeuiImports(source) {
+  const names = [];
+  for (const match of source.matchAll(/import\s+(type\s+)?\{([^}]*)\}\s*from\s*['"]@beemvp\/beeui-ui['"]/gu)) {
+    if (match[1]) continue;
+    for (const part of match[2].split(',')) {
+      const trimmed = part.trim();
+      if (!trimmed || /^type\b/u.test(trimmed)) continue;
+      names.push(trimmed.split(/\s+as\s+/u).pop().trim());
+    }
+  }
+  return names;
+}
+
+// Where `<Name` opens in `text`. Used by the oracle only; the extractor reads JSX tags from the
+// AST, and the disagreement between the two is the thing worth catching.
+function tagOccurrences(text, name) {
+  if (!/^[A-Za-z_$][\w$]*$/u.test(name)) return [];
+  return [...text.matchAll(new RegExp(`<\\s*${name}(?![\\w$])`, 'gu'))].map((match) => match.index);
+}
 
 // Exported so a test can require a refuting source for every registered claim: an oracle whose
 // probe matches nothing refuses nothing, and would sit in this list looking like a guard.
 export const ALL_PATTERN_NONE_CLAIMS = PATTERN_NEGATIVE_ORACLES.map((oracle) => oracle.claim);
 
 function scopeSentence(files) {
-  const names = files.map((file) => `\`${file.path.split('/').pop()}\``);
+  const names = files.map((file) => `\`${patternFileLabel(file.path)}\``);
   return names.join(', ');
 }
 
@@ -707,24 +771,34 @@ function scopeSentence(files) {
 // Group order puts the unconditional reading first, so `` `VStack` (`shell.tsx`) `` and
 // `` `Box` (`shell.tsx`, the branch taken when `keyboardAware` is false) `` read as what they
 // are: one fact that always holds and one that holds because of how this screen renders it.
+function conditionGroups(byFile) {
+  const byCondition = new Map();
+  for (const [file, conditions] of [...byFile].sort((a, b) => a[0].localeCompare(b[0]))) {
+    for (const condition of [...conditions].sort()) {
+      if (!byCondition.has(condition)) byCondition.set(condition, []);
+      byCondition.get(condition).push(file);
+    }
+  }
+  // The empty condition sorts first, so the unconditional reading leads.
+  return [...byCondition.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([condition, files]) => ({ condition, files }));
+}
+
+function renderGroups(groups) {
+  return groups
+    .map(({ condition, files }) => {
+      const named = files.map((file) => `\`${file}\``).join(', ');
+      return condition ? `${named}, ${condition}` : named;
+    })
+    .join('; ');
+}
+
 function factLine(label, facts, noneClaim, readScope, noneSuffix = '') {
   if (!facts.size) return `- ${noneClaim} in ${readScope}${noneSuffix}.`;
-  const values = [...facts.keys()].sort().map((value) => {
-    const byCondition = new Map();
-    for (const [file, conditions] of [...facts.get(value)].sort((a, b) => a[0].localeCompare(b[0]))) {
-      for (const condition of [...conditions].sort()) {
-        if (!byCondition.has(condition)) byCondition.set(condition, []);
-        byCondition.get(condition).push(file);
-      }
-    }
-    const groups = [...byCondition.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([condition, where]) => {
-        const named = where.map((file) => `\`${file}\``).join(', ');
-        return condition ? `${named}, ${condition}` : named;
-      });
-    return `\`${value}\` (${groups.join('; ')})`;
-  });
+  const values = [...facts.keys()]
+    .sort()
+    .map((value) => `\`${value}\` (${renderGroups(conditionGroups(facts.get(value)))})`);
   return `- **${label}:** ${values.join(', ')}.`;
 }
 
@@ -873,7 +947,7 @@ export function extractPatternBeeuiImports(files) {
   for (const { path: filePath, source } of files) {
     const kind = filePath.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
     const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, kind);
-    const name = filePath.split('/').pop();
+    const name = patternFileLabel(filePath);
     walkNodes(sourceFile, (node) => {
       if (!ts.isImportDeclaration(node)) return;
       if (!ts.isStringLiteralLike(node.moduleSpecifier)) return;
@@ -889,6 +963,29 @@ export function extractPatternBeeuiImports(files) {
     });
   }
   return imports;
+}
+
+// The BeeUI families this screen actually renders, in the same shape and under the same branch
+// resolution as the responsive facts: `Map<family, Map<file, Set<condition>>>`.
+//
+// Derived from the JSX rather than from the import list, because an import is not a rendering.
+// `settings-screen-shell.tsx` imports `KeyboardAwareScreen` unconditionally and renders it in one
+// arm of `if (keyboardAware)`, and six account-settings pages named it as inherited semantics for
+// screens that select the other arm — a family the screen never composes, published as a fact
+// about it. Only names the read set imports from `@beemvp/beeui-ui` count, so a pattern-local
+// component sharing a family's name cannot be published as one.
+export function extractPatternComposedFamilies(files) {
+  const imported = extractPatternBeeuiImports(files);
+  const parsed = parsePatternFiles(files);
+  const resolve = renderedPropResolver(parsed);
+  const sites = new Map();
+  for (const { name, sourceFile } of parsed) {
+    walkGuarded(sourceFile, { component: null, props: null, guards: [] }, (node, guards) => {
+      const tag = jsxTagName(node);
+      if (tag && imported.has(tag)) addSite(sites, tag, name, guards);
+    });
+  }
+  return resolveSites(sites, resolve);
 }
 
 const NO_SOURCE_NOTICE = '_No source file for this screen could be read, so no fact is derived here._';
@@ -966,7 +1063,7 @@ function renderPatternAccessibilityFacts(files, routes) {
   // lines do. A fact is attributed to a file only where the file's own platform scope overlaps
   // the scope the fact is published under, so a branch no target reaches names no file.
   const perFile = files.map((file) => ({
-    name: file.path.split('/').pop(),
+    name: patternFileLabel(file.path),
     facts: collectScopedAccessibilityFacts([file]),
   }));
   const qualified = (facts, pick) =>
@@ -992,17 +1089,26 @@ function renderPatternAccessibilityFacts(files, routes) {
 
   // Where the rest of the semantics live. The families are named, not their facts: restating a
   // component's roles here would be a second copy that drifts from the page that derives them.
-  const composed = [...extractPatternBeeuiImports(files).keys()].sort();
-  const linked = composed.filter((symbol) => routes.has(symbol));
-  const unlinked = composed.filter((symbol) => !routes.has(symbol));
+  // A family rendered under every branch this screen selects needs no qualifier; one the screen
+  // renders only inside a prop-conditional branch names that branch, exactly as the responsive
+  // bullets do, because the semantics it contributes hold only under that condition.
+  const composed = extractPatternComposedFamilies(files);
+  const rendered = (symbol) => {
+    const groups = conditionGroups(composed.get(symbol));
+    const conditional = groups.filter((group) => group.condition);
+    return conditional.length === groups.length ? ` (${renderGroups(conditional)})` : '';
+  };
+  const names = [...composed.keys()].sort();
+  const linked = names.filter((symbol) => routes.has(symbol));
+  const unlinked = names.filter((symbol) => !routes.has(symbol));
   const composedLine = linked.length
     ? `- **Semantics inherited from composed BeeUI families:** ${linked
-        .map((symbol) => `[\`${symbol}\`](${routes.get(symbol)})`)
+        .map((symbol) => `[\`${symbol}\`](${routes.get(symbol)})${rendered(symbol)}`)
         .join(', ')} — each family's own page derives the roles and states it sets; they are not restated here.`
     : `- ${PATTERN_COMPOSED_NONE_CLAIM} in ${readScope}.`;
   const unlinkedLine = unlinked.length
-    ? `\n- **Imported from \`@beemvp/beeui-ui\` with no public component page:** ${unlinked
-        .map((symbol) => `\`${symbol}\``)
+    ? `\n- **Rendered from \`@beemvp/beeui-ui\` with no public component page:** ${unlinked
+        .map((symbol) => `\`${symbol}\`${rendered(symbol)}`)
         .join(', ')}.`
     : '';
 
@@ -1161,6 +1267,31 @@ function ternaryArms(source, question) {
   return { whenTrue: [question + 1, colon], whenFalse: [colon + 1, index] };
 }
 
+// Whether a ternary condition starting at `start` is the whole condition, rather than the tail of
+// a larger one. The extractor resolves a branch only when the entire condition is a prop
+// identifier, optionally negated, and this side has to agree: reading `actionLabel && onAction ?`
+// as a branch on `onAction`, or `state.loading ?` as a branch on `loading`, blanked text the
+// extractor kept live, and the disagreement surfaced as the oracle demanding a condition clause
+// for a family the page is right to publish plain. Refusing to recognise a branch is the safe
+// direction — the text stays live and the claim is probed against more source, never less.
+function conditionStartsHere(source, start) {
+  let index = start - 1;
+  while (index >= 0 && /\s/u.test(source[index])) index -= 1;
+  if (index < 0) return true;
+  const char = source[index];
+  if ('{(,;:'.includes(char)) return true;
+  // `=>` opens an arrow body; `>`, `>=`, `==`, `===`, `!==` and `<=` are comparisons whose result
+  // is the condition, not the identifier beside them.
+  if (char === '>') return source[index - 1] === '=';
+  if (char === '=') return !'=!<>'.includes(source[index - 1] ?? '');
+  if (/[\w$]/u.test(char)) {
+    const end = index + 1;
+    while (index >= 0 && /[\w$]/u.test(source[index])) index -= 1;
+    return source.slice(index + 1, end) === 'return';
+  }
+  return false;
+}
+
 // Every prop-conditional character range in one file.
 function textConditionalRegions(source, pairs, components) {
   const regions = [];
@@ -1187,7 +1318,7 @@ function textConditionalRegions(source, pairs, components) {
   for (const match of source.matchAll(/(!)?\s*\b([A-Za-z_$][\w$]*)\s*\?(?![.:?])/gu)) {
     const question = match.index + match[0].length - 1;
     const owner = innermostComponent(components, question);
-    if (!owner) continue;
+    if (!owner || !conditionStartsHere(source, match.index)) continue;
     const arms = ternaryArms(source, question);
     if (!arms) continue;
     const value = !match[1];
@@ -1238,7 +1369,7 @@ export function patternBranchAnalysis(files) {
     const pairs = braceIndex(stripped);
     const components = textComponents(stripped, pairs);
     return {
-      name: file.path.split('/').pop(),
+      name: patternFileLabel(file.path),
       stripped,
       components,
       regions: textConditionalRegions(stripped, pairs, components),
@@ -1304,6 +1435,60 @@ export function publishedFactGroups(section) {
   return groups;
 }
 
+const UNCONDITIONAL = Symbol('unconditional');
+
+// Where a value occurs in one file's `live` source, relative to that file's prop-conditional
+// regions: `null` when it never occurs there, `UNCONDITIONAL` when at least one occurrence sits
+// outside every branch — or in both arms of one condition, which is how
+// `settings-screen-shell.tsx` declares `web:py-10` and says the same thing — and otherwise the
+// props every occurrence depends on.
+function occurrenceConditions(file, indices) {
+  if (!indices.length) return null;
+  const covering = indices.map((at) =>
+    file.regions.filter((region) => at >= region.start && at < region.end));
+  if (covering.some((regions) => !regions.length)) return UNCONDITIONAL;
+  const arms = new Map();
+  for (const regions of covering) {
+    for (const region of regions) {
+      const condition = `${region.component}.${region.prop}`;
+      if (!arms.has(condition)) arms.set(condition, new Set());
+      arms.get(condition).add(region.value);
+    }
+  }
+  if ([...arms.values()].some((values) => values.size > 1)) return UNCONDITIONAL;
+  return [...arms.keys()].map((condition) => condition.split('.').pop());
+}
+
+function namedConditions(conditions) {
+  return conditions.map((condition) => `\`${condition}\``).join(', ');
+}
+
+// The families the Accessibility section names as composed, and the condition clause each one
+// carries. Read back off the rendered page, like `publishedFactGroups`, so a family that lost its
+// clause between the derivation and the page is still caught.
+export function publishedComposedFamilies(section) {
+  const families = [];
+  for (const line of section.split('\n')) {
+    if (!line.startsWith('- **Semantics inherited from composed BeeUI families:**')
+      && !line.startsWith('- **Rendered from `@beemvp/beeui-ui` with no public component page:**')) continue;
+    if (ALL_PATTERN_NONE_CLAIMS.some((claim) => line.includes(claim))) continue;
+    // Everything after the em dash is prose about the families, and everything up to `:**` is the
+    // label — which on the second line backticks the module specifier, a token that is not a
+    // family name.
+    const [published] = line.slice(line.indexOf(':**') + 3).split(' — ');
+    // `` [`X`](/route) `` or a bare `` `X` ``, each optionally followed by the parenthesised
+    // files-and-condition group the responsive bullets use. The group is consumed by the match,
+    // so the backticks inside a clause are never read as another family.
+    for (const match of published.matchAll(/`([^`]+)`(?:\]\([^)]*\))?(?:\s\(([^)]*)\))?/gu)) {
+      const name = match[1];
+      if (/\.(?:tsx?|json|md)$/u.test(name)) continue;
+      const condition = (match[2] ?? '').replace(/`[^`]+\.tsx?`/gu, '').replace(/^[\s,]+|[\s,]+$/gu, '');
+      families.push({ name, condition });
+    }
+  }
+  return families;
+}
+
 // The independent oracle for the two derived sections, greping the same files as text after
 // stripping comments. It shares the claim constants with the renderer — that is the point, a
 // guard keyed on a phrase stops guarding the moment the phrase is edited — and shares no
@@ -1317,10 +1502,10 @@ export function collectPatternDerivedClaimViolations(page, pattern, rootDir = RO
   const byName = new Map(analysis.map((file) => [file.name, file]));
   const sources = analysis.map((file) => file.live).join('\n');
 
-  for (const { claim, pattern: probe, message } of PATTERN_NEGATIVE_ORACLES) {
+  for (const { claim, pattern: probe, refute, message } of PATTERN_NEGATIVE_ORACLES) {
     if (!page.includes(claim)) continue;
-    if (!probe.test(sources)) continue;
-    violations.push(`${key}: ${message} (${probe.source}).`);
+    if (!(probe ? probe.test(sources) : refute(analysis))) continue;
+    violations.push(`${key}: ${message}${probe ? ` (${probe.source})` : ''}.`);
   }
 
   // The other direction, which the component pages left unguarded and which published a false
@@ -1343,43 +1528,61 @@ export function collectPatternDerivedClaimViolations(page, pattern, rootDir = RO
     // branch reached only when `keyboardAware` is passed, is what this refuses.
     //
     // Applied to the responsive facts, which are the ones derived with branch awareness. The
-    // accessibility facts come from the shared component-page scan, which is platform-scoped but
+    // role and state lines come from the shared component-page scan, which is platform-scoped but
     // not prop-scoped, and `transaction-row.tsx` writes `accessibilityRole={onPress ? 'button' :
-    // undefined}` — a live branch every screen selects, but one this rule would demand a clause
-    // for that the accessibility derivation cannot produce. The dead-branch check above still
-    // covers both sections: a fact lifted out of a branch the screen never selects is blanked
-    // from `live` and refused there, whichever section publishes it.
+    // undefined}` — a live branch every screen that renders it selects, but one this rule would
+    // demand a clause for that the accessibility derivation cannot produce. The composed-family
+    // line is branch-scoped and is checked below by the rule that fits it. The dead-branch check
+    // above covers both sections: a fact lifted out of a branch the screen never selects is
+    // blanked from `live` and refused there, whichever section publishes it.
     if (!branchScoped) continue;
     for (const { value, files: named, condition } of publishedFactGroups(section)) {
       if (condition) continue;
       for (const name of named) {
         const file = byName.get(name);
         if (!file) continue;
-        const occurrences = tokenOccurrences(file.live, value);
-        if (!occurrences.length) continue;
-        const covering = occurrences.map((at) =>
-          file.regions.filter((region) => at >= region.start && at < region.end));
-        // One occurrence outside every branch makes the fact unconditional in this file.
-        if (covering.some((regions) => !regions.length)) continue;
-        // So does a value written into both arms of the same condition, which is how
-        // `settings-screen-shell.tsx` declares `web:py-10`.
-        const arms = new Map();
-        for (const regions of covering) {
-          for (const region of regions) {
-            const condition = `${region.component}.${region.prop}`;
-            if (!arms.has(condition)) arms.set(condition, new Set());
-            arms.get(condition).add(region.value);
-          }
-        }
-        if ([...arms.values()].some((values) => values.size > 1)) continue;
-        const conditions = [...arms.keys()].map((condition) => `\`${condition.split('.').pop()}\``).join(', ');
+        // A value with nothing left in `live` is a dead-branch fact, already refused above; a
+        // second message about its missing clause would only describe the same defect twice.
+        if (!tokenOccurrences(file.live, value).length) continue;
+        // Read from `stripped`, not `live`: whether the file states the value unconditionally is
+        // a property of the file. Blanking the dead arm first would turn "written into both arms
+        // of `if (keyboardAware)`" into "written only in the false arm" and demand a clause the
+        // file does not justify.
+        const conditions = occurrenceConditions(file, tokenOccurrences(file.stripped, value));
+        if (!conditions || conditions === UNCONDITIONAL) continue;
         violations.push(
           `${key}: publishes \`${value}\` from \`${name}\` with no condition, but \`${name}\` only ` +
-          `declares it inside a prop-conditional branch (${conditions}). A fact that depends on a ` +
-          'branch must name the condition that selects it.',
+          `declares it inside a prop-conditional branch (${namedConditions(conditions)}). A fact ` +
+          'that depends on a branch must name the condition that selects it.',
         );
       }
     }
+  }
+
+  // The composed-family line, held to the same two rules as the responsive facts, because it is
+  // now derived the same way. A family the screen does not render under the branch it selects is
+  // not a family whose semantics it inherits, and one it renders only inside a branch says so.
+  for (const { name, condition } of publishedComposedFamilies(sectionBody(page, 'Accessibility'))) {
+    const where = analysis
+      .map((file) => ({
+        live: tagOccurrences(file.live, name).length,
+        conditions: occurrenceConditions(file, tagOccurrences(file.stripped, name)),
+      }))
+      .filter((entry) => entry.conditions);
+    if (!where.some((entry) => entry.live)) {
+      violations.push(
+        `${key}: names \`${name}\` as a composed BeeUI family, but no file it reads renders ` +
+        `\`<${name}>\` in the branch this screen selects. A page must not name a family the ` +
+        'screen does not render.',
+      );
+      continue;
+    }
+    if (condition || where.some((entry) => entry.conditions === UNCONDITIONAL)) continue;
+    const conditions = [...new Set(where.flatMap((entry) => entry.conditions))];
+    violations.push(
+      `${key}: names \`${name}\` as a composed BeeUI family with no condition, but every file that ` +
+      `renders it does so only inside a prop-conditional branch (${namedConditions(conditions)}).`,
+    );
   }
 
   // Page against itself. The Composition section lists the screen file's own BeeUI imports, so a
@@ -1395,7 +1598,7 @@ export function collectPatternDerivedClaimViolations(page, pattern, rootDir = RO
   }
 
   for (const role of publishedPatternRoles(page)) {
-    if (KNOWN_ACCESSIBILITY_ROLES.has(role)) continue;
+    if (isKnownAccessibilityRole(role)) continue;
     violations.push(
       `${key}: publishes \`${role}\` as an accessibility role, which is not one. Either the ` +
       'derivation read a value that is not a role, or the role is new and belongs in ' +
