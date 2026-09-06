@@ -12,6 +12,8 @@
     "test:update": "pnpm build:web && playwright test --update-snapshots",
     "pretest:a11y": "pnpm --filter '@beemvp/beeui-visual-regression...' --if-present run build",
     "test:a11y": "pnpm build:web && BEEUI_A11Y_AUDIT=1 playwright test --project=a11y-audit --project=a11y-gate-regression",
+    "pretest:a11y:engines": "pnpm --filter '@beemvp/beeui-visual-regression...' --if-present run build",
+    "test:a11y:engines": "BEEUI_A11Y_DOCS_ONLY=1 playwright test",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

@@ -19,6 +19,17 @@ const viewportNames = Object.keys(visualViewports) as VisualViewportName[];
 // on accessibility findings it was never designed to enforce.
 const runA11yProjects = process.env.BEEUI_A11Y_AUDIT === '1';
 
+// #474 WBS-H075 — the cross-engine portal audit needs the documentation server on 4175 and
+// nothing else, but Playwright's `webServer` list is global rather than per project: selecting
+// only `a11y-docs-firefox` still starts the two Showcase servers first, and the docs server is
+// started last, after the gallery-qa export in the second entry has succeeded. When anything in
+// that chain fails the run aborts before 4175 is ever listening, and every docs test fails with
+// a connection refused — a Showcase build problem reported as a documentation accessibility
+// failure. `test:a11y:engines` sets this flag so the cross-engine run depends on the portal
+// alone. It also narrows the project list to the two engine projects, so the flag cannot leave a
+// Showcase project selected with no server to talk to.
+const runDocsEnginesOnly = process.env.BEEUI_A11Y_DOCS_ONLY === '1';
+
 const canonicalProjects = viewportNames.flatMap((viewportName) =>
   visualThemes.map((theme) => ({
     name: `${viewportName}-${theme}`,
@@ -54,6 +65,48 @@ const showcaseUse = {
 const rootShowcaseSpec = /[\\/]showcase\.spec\.ts$/;
 const fullAcceptanceMatrix = /runs the full 37-screen acceptance matrix without PNG baselines/;
 
+// The Showcase fixtures: the visual-regression web app and the gallery-qa export. Only the
+// projects that navigate to 4173/4174 need them.
+const showcaseWebServers = [
+  {
+    command: 'pnpm serve:web',
+    url: 'http://127.0.0.1:4173',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
+  },
+  {
+    command: 'pnpm --filter @beemvp/beeui-showcase exec expo export --platform web --output-dir dist-gallery-qa && node ./scripts/serve-showcase.mjs',
+    url: 'http://127.0.0.1:4174',
+    reuseExistingServer: !process.env.CI,
+    timeout: 180_000,
+  },
+];
+
+// The documentation portal, for the WBS-H072 audit. Every a11y scenario before this one
+// navigated to the Showcase, so `web-a11y` passing said nothing about the 151-page site a
+// reader actually uses.
+const docsWebServer = {
+  command: 'pnpm --filter @beemvp/beeui-docs build && node ./scripts/serve-docs.mjs',
+  url: 'http://127.0.0.1:4175/docs/',
+  reuseExistingServer: !process.env.CI,
+  timeout: 300_000,
+};
+
+// The portal audit on the other two engines. Chromium-only was on H072's "not covered" list: a
+// rendering or focus difference in WebKit or Gecko would have been invisible. Scoped to the docs
+// spec — the Showcase suite stays Chromium. Run them with `test:a11y:engines`, which needs
+// `playwright install firefox webkit` once.
+const docsEngineProjects = (['firefox', 'webkit'] as const).map((browserName) => ({
+  name: `a11y-docs-${browserName}`,
+  testMatch: /a11y-docs-portal\.spec\.ts/,
+  use: {
+    browserName,
+    colorScheme: 'light' as const,
+    deviceScaleFactor: 1,
+    viewport: { width: 1280, height: 800 },
+  },
+}));
+
 export default defineConfig({
   testDir: './tests',
   snapshotPathTemplate: '{testDir}/__screenshots__/{arg}{ext}',
@@ -75,30 +128,8 @@ export default defineConfig({
     timezoneId: 'UTC',
     trace: 'retain-on-failure',
   },
-  webServer: [
-    {
-      command: 'pnpm serve:web',
-      url: 'http://127.0.0.1:4173',
-      reuseExistingServer: !process.env.CI,
-      timeout: 120_000,
-    },
-    {
-      command: 'pnpm --filter @beemvp/beeui-showcase exec expo export --platform web --output-dir dist-gallery-qa && node ./scripts/serve-showcase.mjs',
-      url: 'http://127.0.0.1:4174',
-      reuseExistingServer: !process.env.CI,
-      timeout: 180_000,
-    },
-    // The documentation portal, for the WBS-H072 audit. Every a11y scenario before this one
-    // navigated to the Showcase, so `web-a11y` passing said nothing about the 151-page site a
-    // reader actually uses.
-    {
-      command: 'pnpm --filter @beemvp/beeui-docs build && node ./scripts/serve-docs.mjs',
-      url: 'http://127.0.0.1:4175/docs/',
-      reuseExistingServer: !process.env.CI,
-      timeout: 300_000,
-    },
-  ],
-  projects: [
+  webServer: runDocsEnginesOnly ? [docsWebServer] : [...showcaseWebServers, docsWebServer],
+  projects: runDocsEnginesOnly ? docsEngineProjects : [
     ...canonicalProjects,
     {
       name: 'showcase-integration',
@@ -138,19 +169,7 @@ export default defineConfig({
               viewport: { width: 1280, height: 800 },
             },
           },
-          // The portal audit again on the other two engines. Chromium-only was on H072's
-          // "not covered" list: a rendering or focus difference in WebKit or Gecko would have
-          // been invisible. Scoped to the docs spec — the Showcase suite stays Chromium.
-          ...(['firefox', 'webkit'] as const).map((browserName) => ({
-            name: `a11y-docs-${browserName}`,
-            testMatch: /a11y-docs-portal\.spec\.ts/,
-            use: {
-              browserName,
-              colorScheme: 'light' as const,
-              deviceScaleFactor: 1,
-              viewport: { width: 1280, height: 800 },
-            },
-          })),
+          ...docsEngineProjects,
           // Pure-logic regression coverage for the allowlist/blocking gate
           // itself — no browser page is used, so it runs under any project's
           // browser context.
