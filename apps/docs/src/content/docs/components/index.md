@@ -79,7 +79,7 @@ This index is generated from the public Registry + `@beemvp/beeui-ui` export map
 - **[Skeleton](/docs/components/skeleton/)** — Decorative static loading placeholder surface. · [Showcase](/showcase/?surface=component&id=skeleton&example=basic)
 - **[Spinner](/docs/components/spinner/)** — Native activity indicator with semantic tone mapping. · [Showcase](/showcase/?surface=component&id=spinner&example=basic)
 - **[State Message](/docs/components/state-message/)** — Empty-state and error-state (with retry) composition for zero/failure surfaces. · [Showcase](/showcase/?surface=component&id=state-message&example=basic)
-- **[Toast](/docs/components/toast/)** — Provider-scoped toast runtime exposed via useToast (show/dismiss/dismissAll) with FIFO queueing and safe-area-aware stacking. · [Showcase](/showcase/?surface=component&id=toast&example=basic)
+- **[Toast](/docs/components/toast/)** — Provider-scoped runtime for toast notifications, exposed via useToast (show/dismiss/dismissAll) with FIFO queueing and safe-area-aware stacking. · [Showcase](/showcase/?surface=component&id=toast&example=basic)
 - **[Tooltip](/docs/components/tooltip/)** — Non-interactive contextual annotation (ADR-005): a hover/focus delay state machine plus an anchored, non-focusable bubble. · [Showcase](/showcase/?surface=component&id=tooltip&example=basic)
 
 ## Theming & utilities

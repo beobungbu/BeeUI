@@ -18,6 +18,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
+    "@pagefind/default-ui": "1.5.2",
     "typescript": "~5.9.2"
   }
 }
