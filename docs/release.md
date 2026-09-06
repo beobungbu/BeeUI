@@ -32,7 +32,7 @@ The anchored-overlay transport ships as platform files (`overlay-transport.web.t
 All BeeUI packages and the CLI use one lockstep version matching the workspace root. For the current BeeUI 1.0 product milestone the package version is plain SemVer `0.86.2` (ADR-015, 2026-09-06, superseding the #407 date label `20260902.0.0`, which was never published).
 
 - package versions must not drift;
-- intentional breaking changes require changelog/migration notes;
+- intentional breaking changes require changelog/migration notes — carried by a changeset (`pnpm changeset`, see `.changeset/README.md`) and enforced by `pnpm docs:surface:diff`, which refuses a removed, narrowed or reclassified public-surface row without one;
 - packed manifests must not expose unresolved `workspace:*` dependency ranges;
 - the product milestone name (`BeeUI 1.0`) and npm package version are separate concepts; release instructions must use the exact package version recorded in the approved candidate rather than deriving `1.0.0` from the milestone name.
 
