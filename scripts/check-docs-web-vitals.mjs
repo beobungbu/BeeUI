@@ -28,8 +28,15 @@
 //     not a statement that the portal is fast. Lab runs vary by roughly 10% run to run, so a
 //     single breach near the line is worth re-running before treating it as a regression.
 //
-//   node scripts/check-docs-web-vitals.mjs           # measure and report
-//   node scripts/check-docs-web-vitals.mjs --check   # fail if any ceiling is exceeded
+//   node scripts/check-docs-web-vitals.mjs                  # measure and report
+//   node scripts/check-docs-web-vitals.mjs --check          # fail if any ceiling is exceeded
+//   node scripts/check-docs-web-vitals.mjs --budget=<file>  # measure against another budget file
+//   node scripts/check-docs-web-vitals.mjs --dist=<dir>     # measure another built portal copy
+//
+// `--budget` and `--dist` exist because the ceilings here are calibrated on one machine: an owner
+// wiring this into CI has to re-measure on the runner, and doing that means pointing the same code
+// at a different budget without editing the committed one. They also let the test suite drive a
+// real breach through this entrypoint, which is the only way to prove the exit code is wired.
 //
 // Requires a built portal (`pnpm docs:build`) and a Chrome/Chromium binary. Lighthouse discovers
 // and launches that browser itself; this script does not choose the binary, so which Chrome
@@ -261,13 +268,30 @@ function formatMetric(key, value) {
  * start with it, and CI runners do not grant the privileges it needs. On a developer machine the
  * sandbox is available, and measuring a local static site is no reason to switch it off.
  *
+ * `CI` is read as a value, not as a presence: a shell that exports `CI=false` to say "this is not
+ * CI" would otherwise turn the sandbox off on a developer machine, because every non-empty string
+ * is truthy.
+ *
  * @param {{uid?: number, ci?: string}} [environment]
  * @returns {string[]}
  */
 export function chromeFlagsFor({ uid, ci } = {}) {
   const flags = ['--headless=new', '--disable-gpu', '--disable-dev-shm-usage'];
-  if (uid === 0 || Boolean(ci)) flags.push('--no-sandbox');
+  if (uid === 0 || isEnabled(ci)) flags.push('--no-sandbox');
   return flags;
+}
+
+const DISABLED_ENV_VALUES = new Set(['', '0', 'false', 'no', 'off']);
+
+/**
+ * Reads an environment flag as a value rather than as a presence.
+ *
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+function isEnabled(value) {
+  if (typeof value !== 'string') return Boolean(value);
+  return !DISABLED_ENV_VALUES.has(value.trim().toLowerCase());
 }
 
 /**
@@ -399,11 +423,36 @@ async function writeVitalsReport({ budget, lighthouseVersion, pages, violations 
 }
 
 /**
+ * Reads a `--name=value` argument.
+ *
+ * A bare `--name` is an error rather than a silent fall back to the default: a run that was asked
+ * to use another budget and quietly used the committed one would report the wrong thing.
+ *
+ * @param {string[]} argv
+ * @param {string} name
+ * @param {string} fallback
+ * @returns {string} the resolved path, or `fallback` when the argument is absent
+ */
+export function pathArgument(argv, name, fallback) {
+  if (argv.includes(`--${name}`)) throw new Error(`--${name} needs a path: --${name}=<path>.`);
+
+  const prefix = `--${name}=`;
+  const found = argv.filter((argument) => argument.startsWith(prefix));
+  if (found.length === 0) return fallback;
+  if (found.length > 1) throw new Error(`--${name} was given more than once: ${found.join(' ')}.`);
+
+  const value = found[0].slice(prefix.length).trim();
+  if (!value) throw new Error(`--${name} needs a path: --${name}=<path>.`);
+  return path.resolve(value);
+}
+
+/**
  * The whole command: load the budget, measure, report, and decide the exit code.
  *
  * Everything that touches a browser, the clock or the filesystem is injected, so the decision this
  * function makes — which is the part that can silently stop failing — is testable without running
- * Lighthouse. The measurement itself is still the real thing in the CLI path below.
+ * Lighthouse. The measurement itself is still the real thing in the CLI path below, and `--budget`
+ * lets a test drive a real breach through it.
  *
  * @param {{argv?: string[], measure?: typeof measureDocsVitals, readBudget?: typeof loadBudget, writeReport?: typeof writeVitalsReport, log?: (line: string) => void, logError?: (line: string) => void}} [options]
  * @returns {Promise<number>} the process exit code: 0 when passing or when not asked to check
@@ -416,8 +465,11 @@ export async function run({
   log = console.log,
   logError = console.error,
 } = {}) {
-  const { budget, pages } = await readBudget();
-  const { lighthouseVersion, pages: measurements } = await measure({ pages });
+  const budgetFile = pathArgument(argv, 'budget', BUDGET_FILE);
+  const distDir = pathArgument(argv, 'dist', DOCS_DIST_DIR);
+
+  const { budget, pages } = await readBudget(budgetFile);
+  const { lighthouseVersion, pages: measurements } = await measure({ distDir, pages });
   const violations = collectVitalsViolations(measurements, budget);
 
   const reportFile = await writeReport({ budget, lighthouseVersion, pages: measurements, violations });
@@ -427,6 +479,10 @@ export async function run({
     `\nMeasured with Lighthouse ${lighthouseVersion} (mobile emulation). Report: ` +
       `${path.relative(ROOT_DIR, reportFile)}`,
   );
+  // A run against anything other than the committed budget and the built portal must say so, or
+  // its numbers read as the portal's own.
+  if (budgetFile !== BUDGET_FILE) log(`Budget: ${budgetFile} (not the committed budget).`);
+  if (distDir !== DOCS_DIST_DIR) log(`Measured: ${distDir} (not the built portal).`);
 
   if (!argv.includes('--check')) return 0;
 
@@ -445,12 +501,25 @@ export async function run({
   return 0;
 }
 
-const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-if (isCli) {
-  // One assignment for both outcomes: a verdict and a crash reach the exit code by the same line,
-  // so a test that proves one path is wired proves the other is too.
-  process.exitCode = await run({ argv: process.argv.slice(2) }).catch((error) => {
-    console.error(error.message);
+/**
+ * Turns both outcomes of a command run — a verdict and a crash — into an exit code.
+ *
+ * Exported because this mapping is the part that can silently stop failing: an entrypoint that
+ * discards what `run` returned still prints every violation and still exits 0. The assignment
+ * below only delivers this value to the process.
+ *
+ * @param {string[]} argv
+ * @param {{execute?: typeof run, logError?: (line: string) => void}} [options]
+ * @returns {Promise<number>}
+ */
+export async function main(argv, { execute = run, logError = console.error } = {}) {
+  return execute({ argv }).catch((error) => {
+    logError(error.message);
     return 1;
   });
+}
+
+const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isCli) {
+  process.exitCode = await main(process.argv.slice(2));
 }

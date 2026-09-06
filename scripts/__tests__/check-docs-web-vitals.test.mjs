@@ -1,15 +1,64 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { assertBudgetShape, chromeFlagsFor, collectVitalsViolations, run } from '../check-docs-web-vitals.mjs';
+import {
+  assertBudgetShape,
+  chromeFlagsFor,
+  collectVitalsViolations,
+  DOCS_DIST_DIR,
+  main,
+  pathArgument,
+  run,
+} from '../check-docs-web-vitals.mjs';
 import budgetFile from '../../docs/web-vitals.budget.json' with { type: 'json' };
 
 const SCRIPT_FILE = fileURLToPath(new URL('../check-docs-web-vitals.mjs', import.meta.url));
+
+// One real Lighthouse run costs about a minute and needs a Chrome the machine may not have, so the
+// end-to-end breach below is opt-in: `BEEUI_VITALS_CLI_E2E=1 pnpm docs:vitals:test`. Everything it
+// covers about the exit code is also covered without a browser by the `main` cases above it —
+// nothing here depends on that variable being set to stay honest.
+const E2E_ENABLED = process.env.BEEUI_VITALS_CLI_E2E === '1';
+
+/**
+ * Runs the script the way `docs:vitals:check` does, in its own process.
+ *
+ * @param {string[]} args
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+function runScript(args, env = process.env) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [SCRIPT_FILE, ...args], { env, stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk;
+    });
+    child.on('error', reject);
+    child.on('close', (code) => resolve({ code, stderr, stdout }));
+  });
+}
+
+/**
+ * Writes a budget file the script will accept, with the ceilings the caller cares about.
+ *
+ * @param {string} directory
+ * @param {Record<string, number>} overrides
+ * @param {{name: string, path: string}[]} [pages]
+ */
+async function writeBudgetFile(directory, overrides, pages = [{ name: 'home', path: '/' }]) {
+  const file = path.join(directory, 'budget.json');
+  await writeFile(file, `${JSON.stringify({ budget: { ...BUDGET, ...overrides }, pages }, null, 2)}\n`);
+  return file;
+}
 
 const BUDGET = {
   cumulativeLayoutShift: 0.1,
@@ -223,29 +272,50 @@ test('the run writes a report carrying the measurements and the verdict', async 
   assert.equal(reports[0].violations.length, 1);
 });
 
-// The exit code only matters if the file wired to `docs:vitals:check` actually runs `run` and
-// hands its result to the process. Nothing else in this suite executes the entrypoint.
+// --- the entrypoint -----------------------------------------------------------------------
+// `run` returning 1 is worth nothing if the file wired to `docs:vitals:check` drops that value.
+// `main` is the mapping from both outcomes to an exit code; the spawn test below proves the one
+// remaining line hands `main`'s value to the process.
+
+test('the entrypoint returns the verdict the run produced, it does not re-decide it', async () => {
+  for (const verdict of [0, 1]) {
+    const code = await main(['--check'], { execute: async () => verdict, logError: () => {} });
+    assert.equal(code, verdict, `a run that returned ${verdict} must exit ${verdict}`);
+  }
+});
+
+test('the entrypoint turns a crash into a failing exit code and says why', async () => {
+  const errors = [];
+  const code = await main([], {
+    execute: async () => {
+      throw new Error('No built portal at apps/docs/dist.');
+    },
+    logError: (line) => errors.push(line),
+  });
+
+  assert.equal(code, 1, 'a measurement that could not run must not report success');
+  assert.deepEqual(errors, ['No built portal at apps/docs/dist.']);
+});
+
+test('the entrypoint passes the command line through instead of choosing its own', async () => {
+  const seen = [];
+  await main(['--check', '--budget=/tmp/other.json'], {
+    execute: async ({ argv }) => {
+      seen.push(argv);
+      return 0;
+    },
+    logError: () => {},
+  });
+
+  assert.deepEqual(seen, [['--check', '--budget=/tmp/other.json']]);
+});
+
 test('the CLI entrypoint fails loudly when the measurement cannot run', async () => {
   const emptyDir = await mkdtemp(path.join(tmpdir(), 'beeui-vitals-cli-'));
   try {
     // Lighthouse is launched through `pnpm`; an empty PATH makes that unreachable, so the run
     // fails early instead of measuring for minutes.
-    const result = await new Promise((resolve, reject) => {
-      const child = spawn(process.execPath, [SCRIPT_FILE, '--check'], {
-        env: { ...process.env, PATH: emptyDir },
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
-      let stdout = '';
-      let stderr = '';
-      child.stdout.on('data', (chunk) => {
-        stdout += chunk;
-      });
-      child.stderr.on('data', (chunk) => {
-        stderr += chunk;
-      });
-      child.on('error', reject);
-      child.on('close', (code) => resolve({ code, stderr, stdout }));
-    });
+    const result = await runScript(['--check'], { ...process.env, PATH: emptyDir });
 
     assert.equal(result.code, 1, `expected a failing exit code, got ${result.code}\n${result.stdout}${result.stderr}`);
     assert.match(
@@ -255,6 +325,128 @@ test('the CLI entrypoint fails loudly when the measurement cannot run', async ()
     );
   } finally {
     await rm(emptyDir, { force: true, recursive: true });
+  }
+});
+
+test('a run against another budget or another build says so in its own output', async () => {
+  const { logs } = await stubbedRun({
+    argv: ['--check', '--budget=/tmp/other-budget.json', '--dist=/tmp/other-dist'],
+    measurements: [measurement()],
+  });
+
+  assert.match(logs, /Budget: \S*other-budget\.json \(not the committed budget\)/);
+  assert.match(logs, /Measured: \S*other-dist \(not the built portal\)/);
+});
+
+// The arguments are only worth having if they reach the budget reader and the measurement. Both
+// failures are reported before any browser starts, so this costs two process spawns.
+test('--budget and --dist name what the run actually reads', async () => {
+  const missingBudget = await runScript(['--check', '--budget=/nonexistent/beeui-budget.json']);
+  assert.equal(missingBudget.code, 1);
+  assert.match(missingBudget.stderr, /No budget file at \/nonexistent\/beeui-budget\.json\./);
+
+  const missingDist = await runScript(['--check', '--dist=/nonexistent/beeui-dist']);
+  assert.equal(missingDist.code, 1);
+  assert.match(missingDist.stderr, /No built portal at \/nonexistent\/beeui-dist\./);
+});
+
+test('a path argument without a path is an error, not a silent fall back to the committed file', () => {
+  assert.equal(pathArgument(['--check'], 'budget', '/default.json'), '/default.json');
+  assert.equal(pathArgument(['--budget=docs/x.json'], 'budget', '/default.json'), path.resolve('docs/x.json'));
+  assert.throws(() => pathArgument(['--budget'], 'budget', '/default.json'), /--budget needs a path/);
+  assert.throws(() => pathArgument(['--budget='], 'budget', '/default.json'), /--budget needs a path/);
+  assert.throws(
+    () => pathArgument(['--budget=a.json', '--budget=b.json'], 'budget', '/default.json'),
+    /given more than once/,
+  );
+});
+
+// --- the Chrome flags actually handed to Lighthouse ---------------------------------------
+// `chromeFlagsFor` is pure and tested; what it is *called with* is the part that can regress into
+// the old unconditional `--no-sandbox`. A stub `pnpm` on PATH records the real command line.
+
+/**
+ * Runs the script against a throwaway portal with a fake `pnpm`, and returns what it was called
+ * with. Nothing here launches a browser: the stub exits before Lighthouse would start.
+ *
+ * @param {string | undefined} ciValue
+ * @returns {Promise<{chromeFlags: string[], result: {code: number, stderr: string, stdout: string}}>}
+ */
+async function recordLighthouseCommand(ciValue) {
+  const directory = await mkdtemp(path.join(tmpdir(), 'beeui-vitals-flags-'));
+  try {
+    const recordFile = path.join(directory, 'argv.txt');
+    const stubPnpm = path.join(directory, 'pnpm');
+    await writeFile(stubPnpm, `#!/bin/sh\nprintf '%s\\n' "$@" > '${recordFile}'\nexit 3\n`, { mode: 0o755 });
+
+    const distDir = path.join(directory, 'dist');
+    await mkdir(distDir);
+    await writeFile(path.join(distDir, 'index.html'), '<!doctype html><title>fixture</title>\n');
+    const budget = await writeBudgetFile(directory, {});
+
+    const env = { ...process.env, PATH: directory };
+    if (ciValue === undefined) delete env.CI;
+    else env.CI = ciValue;
+
+    const result = await runScript(['--check', `--budget=${budget}`, `--dist=${distDir}`], env);
+    const recorded = await readFile(recordFile, 'utf8').catch(() => null);
+    assert.notEqual(recorded, null, `the script never invoked Lighthouse\n${result.stdout}${result.stderr}`);
+
+    const flagLine = recorded.split('\n').find((line) => line.startsWith('--chrome-flags='));
+    assert.ok(flagLine, `no --chrome-flags in the recorded command:\n${recorded}`);
+    return { chromeFlags: flagLine.slice('--chrome-flags='.length).split(' '), result };
+  } finally {
+    await rm(directory, { force: true, recursive: true });
+  }
+}
+
+test('the flags Lighthouse is launched with come from this environment', async () => {
+  const onCi = await recordLighthouseCommand('true');
+  assert.ok(onCi.chromeFlags.includes('--headless=new'), 'every run is headless');
+  assert.ok(onCi.chromeFlags.includes('--no-sandbox'), 'a CI runner cannot use the Chrome sandbox');
+  assert.equal(onCi.result.code, 1, 'a Lighthouse that exits non-zero fails the run');
+  assert.match(onCi.result.stderr, /Lighthouse exited 3/);
+
+  // CI=false is a shell saying "not CI". Only a run that is genuinely privileged-or-rootless may
+  // drop the sandbox; as root it is dropped whatever CI says, so that case asserts nothing here.
+  const offCi = await recordLighthouseCommand('false');
+  assert.ok(offCi.chromeFlags.includes('--headless=new'));
+  if (process.getuid?.() !== 0) {
+    assert.ok(
+      !offCi.chromeFlags.includes('--no-sandbox'),
+      `CI=false must not turn the sandbox off, got ${offCi.chromeFlags.join(' ')}`,
+    );
+  }
+});
+
+// --- the whole command, measured for real -------------------------------------------------
+// Opt-in (see E2E_ENABLED): about a minute of Lighthouse per case, and a Chrome to run it.
+
+test('a real breach of a real budget exits non-zero', { skip: !E2E_ENABLED }, async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), 'beeui-vitals-e2e-'));
+  try {
+    // 1 ms is unreachable by any page, so the only way this exits 0 is a gate that stopped gating.
+    const budget = await writeBudgetFile(directory, { largestContentfulPaintMs: 1 });
+    const result = await runScript(['--check', `--budget=${budget}`, `--dist=${DOCS_DIST_DIR}`]);
+
+    assert.equal(result.code, 1, `a breach must fail the command\n${result.stdout}${result.stderr}`);
+    assert.match(result.stderr, /Core Web Vitals budget exceeded/);
+    assert.match(result.stderr, /LCP \d+ ms, over the 1 ms budget/);
+  } finally {
+    await rm(directory, { force: true, recursive: true });
+  }
+});
+
+test('the same page under a reachable budget exits zero', { skip: !E2E_ENABLED }, async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), 'beeui-vitals-e2e-'));
+  try {
+    const budget = await writeBudgetFile(directory, { largestContentfulPaintMs: 60_000 });
+    const result = await runScript(['--check', `--budget=${budget}`, `--dist=${DOCS_DIST_DIR}`]);
+
+    assert.equal(result.code, 0, `a passing measurement must not fail\n${result.stdout}${result.stderr}`);
+    assert.match(result.stdout, /Web vitals check passed \(1 pages/);
+  } finally {
+    await rm(directory, { force: true, recursive: true });
   }
 });
 
@@ -268,5 +460,17 @@ test('--no-sandbox is used only where the sandbox cannot work', () => {
   assert.ok(chromeFlagsFor({ ci: 'true', uid: 501 }).includes('--no-sandbox'), 'CI runners cannot either');
   for (const environment of [{}, { uid: 0 }, { ci: '1' }]) {
     assert.ok(chromeFlagsFor(environment).includes('--headless=new'), 'every run is headless');
+  }
+
+  // `CI` carries a value. A shell that exports CI=false is saying "not CI", and reading it as a
+  // presence would switch the sandbox off on the machine most likely to have one.
+  for (const ci of ['false', 'FALSE', '0', '', ' ', 'no', 'off']) {
+    assert.ok(
+      !chromeFlagsFor({ ci, uid: 501 }).includes('--no-sandbox'),
+      `CI=${JSON.stringify(ci)} must not read as CI`,
+    );
+  }
+  for (const ci of ['true', '1', 'yes']) {
+    assert.ok(chromeFlagsFor({ ci, uid: 501 }).includes('--no-sandbox'), `CI=${ci} must read as CI`);
   }
 });
