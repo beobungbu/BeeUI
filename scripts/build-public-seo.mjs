@@ -9,6 +9,15 @@ import { buildPublicDiscovery } from './build-public-discovery.mjs';
 import { buildPublicComponentManifest } from './public-component-reference.mjs';
 import { buildPublicPatternManifest } from './public-pattern-reference.mjs';
 import { ROOT_DIR, buildPublicSiteContract } from './public-site-contract-lib.mjs';
+import { SOCIAL_CARD } from './social-card-lib.mjs';
+
+// One card for the whole site. The bytes are committed at SOCIAL_CARD.sourcePath (published by
+// the docs app) and copied here so the landing origin serves its own copy at /assets/.
+export const SOCIAL_CARD_ASSET_PATH = `assets/${SOCIAL_CARD.fileName}`;
+
+function socialCardUrl(contract) {
+  return `${contract.origin}/${SOCIAL_CARD_ASSET_PATH}`;
+}
 
 function escapeHtml(value) {
   return String(value)
@@ -56,10 +65,14 @@ function addSocialMetadata(html, { title, description, canonical, image, robots 
 <meta property="og:description" content="${escapeHtml(description)}" />
 <meta property="og:url" content="${escapeHtml(canonical)}" />
 <meta property="og:image" content="${escapeHtml(image)}" />
+<meta property="og:image:width" content="${SOCIAL_CARD.width}" />
+<meta property="og:image:height" content="${SOCIAL_CARD.height}" />
+<meta property="og:image:alt" content="${escapeHtml(SOCIAL_CARD.alt)}" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="${escapeHtml(title)}" />
 <meta name="twitter:description" content="${escapeHtml(description)}" />
-<meta name="twitter:image" content="${escapeHtml(image)}" />`;
+<meta name="twitter:image" content="${escapeHtml(image)}" />
+<meta name="twitter:image:alt" content="${escapeHtml(SOCIAL_CARD.alt)}" />`;
   return html.replace('</head>', `${meta}\n</head>`);
 }
 
@@ -74,7 +87,7 @@ function renderChangelog(markdown, contract) {
     return `<p>${escapeHtml(line)}</p>`;
   }).join('\n');
   const canonical = `${contract.origin}/changelog/`;
-  const image = `${contract.origin}/assets/og-beeui.svg`;
+  const image = socialCardUrl(contract);
   return addSocialMetadata(`<!doctype html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="description" content="Consumer-facing BeeUI change history sourced from the repository CHANGELOG." /><title>BeeUI changelog</title><link rel="canonical" href="${canonical}" /><link rel="stylesheet" href="/assets/site.css" /></head><body><a class="skip-link" href="#main">Skip to content</a><header class="site-header"><a class="brand" href="/">BeeUI</a><nav aria-label="Primary"><a href="/docs/">Docs</a><a href="/showcase/">Showcase</a><a href="/demo/">Demo</a></nav></header><main id="main" class="shell section"><p class="eyebrow">Source-driven history · current workspace v${escapeHtml(contract.buildTruth.version)}</p><p>Historical entries describe the state at that time. They do not override the current unpublished distribution status.</p>${body}</main></body></html>`, {
     title: 'BeeUI changelog',
     description: 'Consumer-facing BeeUI change history sourced from the repository CHANGELOG.',
@@ -82,10 +95,6 @@ function renderChangelog(markdown, contract) {
     image,
     robots: contract.indexPolicy,
   });
-}
-
-function socialSvg(version) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc"><title id="title">BeeUI</title><desc id="desc">Native-first product UI for React Native and Web.</desc><rect width="1200" height="630" fill="#0a0b0d"/><circle cx="1050" cy="100" r="260" fill="#f4b942" opacity="0.16"/><circle cx="1040" cy="540" r="340" fill="#7c6cff" opacity="0.12"/><rect x="72" y="74" width="92" height="92" rx="24" fill="#f4b942"/><text x="118" y="139" text-anchor="middle" font-family="system-ui,sans-serif" font-size="54" font-weight="800" fill="#0a0b0d">B</text><text x="72" y="278" font-family="system-ui,sans-serif" font-size="86" font-weight="800" fill="#ffffff">BeeUI</text><text x="72" y="358" font-family="system-ui,sans-serif" font-size="38" font-weight="600" fill="#d8d9df">Native-first product UI.</text><text x="72" y="414" font-family="system-ui,sans-serif" font-size="29" fill="#a8abb5">Expo · bare React Native · Web</text><text x="72" y="536" font-family="ui-monospace,monospace" font-size="22" fill="#f4b942">v${escapeHtml(version)} · public source · unpublished distribution</text></svg>`;
 }
 
 export function renderRobotsTxt(contract) {
@@ -104,7 +113,7 @@ export function buildPublicSeo({ rootDir = ROOT_DIR, outDir = path.join(rootDir,
   const contract = buildPublicSiteContract(rootDir, { environment });
   buildPublicLanding({ rootDir, outDir, environment });
   const discovery = buildPublicDiscovery({ rootDir, outDir, environment });
-  const image = `${contract.origin}/assets/og-beeui.svg`;
+  const image = socialCardUrl(contract);
 
   const landingPath = path.join(outDir, 'index.html');
   const landing = fs.readFileSync(landingPath, 'utf8');
@@ -130,7 +139,7 @@ export function buildPublicSeo({ rootDir = ROOT_DIR, outDir = path.join(rootDir,
 
   fs.mkdirSync(path.join(outDir, 'changelog'), { recursive: true });
   fs.writeFileSync(path.join(outDir, 'changelog/index.html'), renderChangelog(fs.readFileSync(path.join(rootDir, 'CHANGELOG.md'), 'utf8'), contract));
-  fs.writeFileSync(path.join(outDir, 'assets/og-beeui.svg'), socialSvg(contract.buildTruth.version));
+  fs.copyFileSync(path.join(rootDir, SOCIAL_CARD.sourcePath), path.join(outDir, SOCIAL_CARD_ASSET_PATH));
 
   const routes = publicRoutes(rootDir, discovery);
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${routes.map((route) => `  <url><loc>${contract.origin}${route}</loc></url>`).join('\n')}\n</urlset>\n`;

@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import { buildPublicSeo } from '../build-public-seo.mjs';
 import { buildPublicSiteContract } from '../public-site-contract-lib.mjs';
+import { collectDistSocialCardViolations } from '../social-card-lib.mjs';
 
 export async function collectViolations(rootDir) {
   const violations = [];
@@ -16,7 +17,6 @@ export async function collectViolations(rootDir) {
     const changelog = fs.readFileSync(path.join(outDir, 'changelog/index.html'), 'utf8');
     const sitemap = fs.readFileSync(path.join(outDir, 'sitemap.xml'), 'utf8');
     const robots = fs.readFileSync(path.join(outDir, 'robots.txt'), 'utf8');
-    const og = fs.readFileSync(path.join(outDir, 'assets/og-beeui.svg'), 'utf8');
 
     const representativeComponent = discovery.components.find((candidate) => candidate.name === 'dialog') ?? discovery.components[0];
     const representativePattern = discovery.patterns.find((candidate) => candidate.slug === 'sign-in-screen') ?? discovery.patterns[0];
@@ -56,7 +56,19 @@ export async function collectViolations(rootDir) {
       if (!routes.includes(page.route)) violations.push(`sitemap route inventory missing generated example ${page.route}`);
       if (!sitemap.includes(`${contract.origin}${page.route}`)) violations.push(`sitemap XML missing generated example ${page.route}`);
     }
-    if (!og.includes('width="1200"') || !og.includes('height="630"')) violations.push('shared OG asset must remain 1200x630.');
+    // Every page here declares `twitter:card=summary_large_image`. This asserts the other half of
+    // that promise on the built output: an absolute `og:image` on this origin, the advertised
+    // dimensions, and a real 1200x630 PNG at that path inside the build. Open Graph consumers do
+    // not render SVG, so the card being a PNG is part of the contract, not a preference.
+    violations.push(...collectDistSocialCardViolations({ distDir: outDir, routePrefix: '/', expectedOrigin: contract.origin }));
+
+    // The portal is built by a different job, so its output is only here sometimes. When it is,
+    // it is held to the same contract; scripts/check-docs-social-card.mjs is the gate that always
+    // runs, from the docs build itself.
+    const docsDist = path.join(rootDir, 'apps/docs/dist');
+    if (fs.existsSync(docsDist)) {
+      violations.push(...collectDistSocialCardViolations({ distDir: docsDist, routePrefix: contract.docsBase, label: 'apps/docs/dist/' }));
+    }
 
     const gitignore = fs.readFileSync(path.join(rootDir, '.gitignore'), 'utf8');
     // Component and pattern pages are generated but deliberately tracked: docs:surface:check
