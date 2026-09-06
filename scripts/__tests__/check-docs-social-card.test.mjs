@@ -7,7 +7,7 @@ import test from 'node:test';
 import zlib from 'node:zlib';
 
 import { collectDocsSocialCardViolations, main, parseArguments, run } from '../check-docs-social-card.mjs';
-import { collectSocialCardAssetViolations, main as generatorMain } from '../generate-og-image.mjs';
+import { collectSocialCardAssetViolations, main as generatorMain, run as generatorRun } from '../generate-og-image.mjs';
 import {
   SOCIAL_CARD,
   collectCardFileViolations,
@@ -462,10 +462,47 @@ test('the generator entrypoint returns the verdict, and turns a crash into one',
   assert.deepEqual(errors, ['Cannot load Playwright Chromium from apps/visual-regression.']);
 });
 
+// The floors are a calibration, and a calibration nothing asserts drifts back. A logo box that
+// keeps the solid square but loses its letter measures 7.1%; the committed card measures 19.4%.
+// A floor at or below 7.1% cannot tell those apart, which is what the 5% it shipped with did.
+test('each ink floor sits between an empty region and what the card actually draws', () => {
+  const measured = measureCardContent(fs.readFileSync(path.join(rootDir, SOCIAL_CARD.sourcePath)));
+  const EMPTY_LOGO_BOX_INK = 0.071;
+
+  const logo = SOCIAL_CARD.inkRegions.find((region) => region.name === 'logo box');
+  assert.ok(
+    logo.minInk > EMPTY_LOGO_BOX_INK,
+    `the logo-box floor (${logo.minInk}) must exceed the ${EMPTY_LOGO_BOX_INK} an empty box measures, or a card that lost its wordmark passes`,
+  );
+
+  for (const region of measured.regions) {
+    assert.ok(region.ink > region.minInk, `${region.name} draws ${region.ink}, at or under its own floor ${region.minInk}`);
+  }
+});
+
+// `run` takes the root it reads the card from, so a real asset-check breach can be driven
+// without touching the committed card. Without this, `run` could return 0 on a breach — printing
+// every violation and exiting 0 — with the whole suite green.
+test('the generator returns a failing code when the card it checks is missing', async () => {
+  const emptyRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-og-missing-'));
+  try {
+    const errors = [];
+    const code = await generatorRun({
+      argv: ['--check'],
+      rootDir: emptyRoot,
+      log: () => {},
+      logError: (line) => errors.push(line),
+    });
+    assert.equal(code, 1, 'a missing card is a breach, not a pass');
+    assert.match(errors.join('\n'), /is missing/u);
+  } finally {
+    fs.rmSync(emptyRoot, { recursive: true, force: true });
+  }
+});
+
 test('the generator CLI delivers its exit code to the process', async () => {
-  // The generator reads the committed card from its own location, so a *verdict* of 1 cannot be
-  // driven from outside without breaking the repository. The rejected argument takes the same
-  // single assignment to `process.exitCode`, so it proves that line is still there.
+  // The rejected argument takes the same single assignment to `process.exitCode` as a verdict,
+  // so it proves that line is still there; the verdict itself is covered by the test above.
   const rejected = await runScript(['--nope'], path.join(rootDir, 'scripts/generate-og-image.mjs'));
   assert.equal(rejected.code, 1, `expected a rejected argument to fail\n${rejected.stdout}${rejected.stderr}`);
   assert.match(rejected.stderr, /unknown argument: --nope/u);
