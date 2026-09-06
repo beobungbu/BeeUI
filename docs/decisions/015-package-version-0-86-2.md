@@ -15,11 +15,11 @@ On 2026-09-05 the owner chose `0.86.2` instead, and on 2026-09-06 reaffirmed it 
 
 - The lockstep package version is **`0.86.2`**. Prereleases are `0.86.2-rc.N`; the stable release is `0.86.2`, promoted to `latest` only after verification, exactly as `docs/dist-tag-policy.md` already describes.
 - BeeUI 1.0 remains the **product milestone name**, not the package version.
-- Documents that record evidence gathered under the `20260902.0.0` label (`docs/rc-candidate.md`, `docs/rc-ci-matrix.md`, `docs/release-integrity-20260902.md`, `docs/consumer-compatibility-report.md`, ADR-014) are **not rewritten**; they are dated and describe artifacts that carried that label.
+- `docs/rc-candidate.md`, `docs/rc-ci-matrix.md` and `docs/release-integrity-20260902.md` keep their evidence and gain a one-line superseded pointer; they are not otherwise rewritten. `docs/consumer-compatibility-report.md` carries a machine-checked `candidateVersion` and moves with the version. ADR-014's `/api/health` example moves too, because that ADR is still the live authority for that endpoint.
 
 ## Consequences
 
 - `package.json` ×6 and the two Expo `app.json` files move to `0.86.2`; `verify-release` and `check-release-control-plane` assert it.
 - The coincidence with the React Native version is accepted knowingly. Any reader-facing statement of compatibility must name React Native explicitly (`>=0.86.0 <0.87.0`) rather than rely on the number.
 - PR #478 (npm RC bootstrap) hard-codes the old label in its workflow default and prerelease regex; that file is under `.github/` and is changed by that PR's author, not here.
-- Subsequent versions follow SemVer with changesets (`.changeset/`) and the public-surface inventory diff (`scripts/check-public-surface-diff.mjs`) deciding the bump.
+- Subsequent versions follow SemVer. The bump is decided by changesets and a public-surface inventory diff, introduced separately in PR #510; until that merges, `docs/release.md`'s changelog/migration-note requirement is the only rule.

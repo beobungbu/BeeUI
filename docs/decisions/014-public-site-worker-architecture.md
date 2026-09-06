@@ -68,7 +68,7 @@ Future bindings are local additions to Worker config/types/runtime and do not re
 {
   "ok": true,
   "service": "beeui-web",
-  "version": "20260902.0.0",
+  "version": "0.86.2",
   "commit": "<build-sha>",
   "environment": "production|preview|local"
 }
