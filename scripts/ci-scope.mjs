@@ -111,6 +111,7 @@ const RELEASE_EXACT = new Set([
   'CHANGELOG.md',
   'scripts/verify-release.mjs',
   'scripts/pack-artifacts.mjs',
+  'scripts/sync-root-version.mjs',
   '.github/workflows/ci.yml',
 ]);
 const RELEASE_PREFIXES = ['.changeset/', 'scripts/release/'];

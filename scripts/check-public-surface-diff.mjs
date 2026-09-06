@@ -24,12 +24,10 @@ function reachOf(row) {
   return row.family !== undefined ? 'root' : row.subpath ? `subpath:${row.subpath}` : 'unknown';
 }
 
-// Removal, a narrower reach, a different package, or any change of classification is breaking.
-// The inventory carries nine classification values and none of them is "internal" — internal
-// rows are not listed — so a row moving from `consumer` to `advanced-consumer` is a demotion a
-// consumer reads about after the fact, and the only safe reading of *any* move is breaking.
-// Source path, docs owner and owner status are where a row is documented, not what a consumer
-// can reach, so they change freely.
+// Removal, a narrower reach (root barrel → subpath only), or a different package is breaking.
+// A classification change is recorded separately: it needs a changeset (see `classifyDiff`) but
+// not a breaking bump. Source path, docs owner and owner status are where a row is documented,
+// not what a consumer can reach, so they change freely.
 export function diffInventories(base, head) {
   const baseById = new Map(base.rows.map((row) => [row.id, row]));
   const headById = new Map(head.rows.map((row) => [row.id, row]));
@@ -93,7 +91,9 @@ export function parseChangeset(text) {
 export function readAddedChangesets(ref, rootDir = ROOT_DIR) {
   const dir = path.join(rootDir, '.changeset');
   if (!fs.existsSync(dir)) return [];
-  const committed = git(['diff', '--diff-filter=A', '--name-only', `${ref}...HEAD`, '--', '.changeset/'], rootDir);
+  // Two trees compared directly. `base...HEAD` needs a merge base, and a checkout one commit
+  // deep has none — the guard failed every pull request the moment it could run there.
+  const committed = git(['diff', '--diff-filter=A', '--name-only', ref, 'HEAD', '--', '.changeset/'], rootDir);
   const untracked = git(['ls-files', '--others', '--exclude-standard', '--', '.changeset/'], rootDir);
   const names = [...new Set(`${committed}\n${untracked}`.split('\n').map((line) => line.trim()).filter(Boolean))];
   // `changeset version` deletes the files it consumes, so a name in the base diff may be gone.
@@ -115,6 +115,7 @@ export function collectSurfaceDiffViolations({ diff, changesets, rootVersion }) 
     const what = [
       ...diff.removed.map((id) => `removed ${id}`),
       ...diff.changed.map((entry) => `${entry.what} of ${entry.id}: ${entry.from} → ${entry.to}`),
+      ...diff.reclassified.map((entry) => `reclassified ${entry.id}: ${entry.from} → ${entry.to}`),
     ].join('; ');
     return [
       `public surface broken (${what}) with no changeset added in this change that bumps a public package by ` +
@@ -130,7 +131,21 @@ export function collectSurfaceDiffViolations({ diff, changesets, rootVersion }) 
 }
 
 function git(args, rootDir) {
-  return execFileSync('git', args, { cwd: rootDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  return execFileSync('git', args, {
+    cwd: rootDir,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    timeout: 60_000,
+    env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+  });
+}
+
+function isShallow(rootDir) {
+  try {
+    return git(['rev-parse', '--is-shallow-repository'], rootDir).trim() === 'true';
+  } catch {
+    return false;
+  }
 }
 
 // A guard that dies with a stack trace is a guard someone disables. Say what is missing.
@@ -148,10 +163,14 @@ function refExists(ref, rootDir) {
 // only when that fails does the check refuse to run.
 export function readBaseInventory(ref, rootDir = ROOT_DIR, { fetch = true } = {}) {
   if (!refExists(ref, rootDir) && fetch) {
-    const remote = ref.match(/^([^/]+)\/(.+)$/u);
+    // Only a remote-tracking shape is fetched, and only with a depth when the clone is already
+    // shallow: `--depth=1` into a full clone marks it shallow and can graft away the developer's
+    // own history, which a check that sounds read-only must not do.
+    const remote = ref.match(/^([A-Za-z0-9._-]+)\/([A-Za-z0-9._/-]+)$/u);
     if (remote) {
+      const depth = isShallow(rootDir) ? ['--depth=1'] : [];
       try {
-        git(['fetch', '--depth=1', remote[1], `${remote[2]}:refs/remotes/${remote[1]}/${remote[2]}`], rootDir);
+        git(['fetch', ...depth, remote[1], `${remote[2]}:refs/remotes/${remote[1]}/${remote[2]}`], rootDir);
       } catch {
         // fall through to the sentence below
       }
@@ -183,7 +202,7 @@ function main() {
     const head = JSON.parse(serializePublicSurfaceInventory(ROOT_DIR));
     const diff = diffInventories(base, head);
     console.log(
-      `Public surface vs ${ref}: ${classifyDiff(diff)} — removed ${diff.removed.length}, changed ${diff.changed.length}, added ${diff.added.length}.`,
+      `Public surface vs ${ref}: ${classifyDiff(diff)} — removed ${diff.removed.length}, changed ${diff.changed.length}, reclassified ${diff.reclassified.length}, added ${diff.added.length}.`,
     );
     for (const id of diff.removed) console.log(`  - removed: ${id}`);
     for (const { id, what, from, to } of diff.changed) console.log(`  ~ ${what}: ${id} (${from} → ${to})`);

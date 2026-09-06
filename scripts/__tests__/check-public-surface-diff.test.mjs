@@ -119,13 +119,43 @@ test('the base is fetched on demand in a shallow checkout, and named when that f
   fs.mkdirSync(path.join(upstream, 'docs'));
   fs.writeFileSync(path.join(upstream, 'docs/public-surface.inventory.json'), JSON.stringify(inventory(row('a'))));
   g(upstream, 'add', '.'); g(upstream, 'commit', '-q', '-m', 'base');
+  // A second commit on the upstream, so the clone below has history to be shallow *of* and a
+  // changeset added after the base.
+  fs.mkdirSync(path.join(upstream, '.changeset'), { recursive: true });
+  fs.writeFileSync(path.join(upstream, '.changeset/fresh.md'), '---\n"@beemvp/beeui-core": patch\n---\nnew\n');
+  g(upstream, 'add', '.'); g(upstream, 'commit', '-q', '-m', 'work');
   const shallow = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-shallow-'));
-  execFileSync('git', ['clone', '-q', '--depth=1', '--no-tags', '--branch', 'development', upstream, shallow], { stdio: 'ignore' });
+  // `--depth` is ignored for a path clone; a file:// URL makes it a real shallow clone.
+  execFileSync('git', ['clone', '-q', '--depth=1', '--no-tags', '--branch', 'development', `file://${upstream}`, shallow], { stdio: 'ignore' });
+  assert.equal(execFileSync('git', ['rev-parse', '--is-shallow-repository'], { cwd: shallow, encoding: 'utf8' }).trim(), 'true');
   // A depth-1 clone of a branch still carries origin/<branch>; drop it to model a CI checkout of a sha.
   g(shallow, 'update-ref', '-d', 'refs/remotes/origin/development');
+  // Move the upstream branch back to the base commit so the on-demand fetch retrieves the base.
+  g(upstream, 'reset', '-q', '--hard', 'HEAD~1');
 
   assert.deepEqual(readBaseInventory('origin/development', shallow).rows.map((r) => r.id), ['a']);
+  // The second call in main() needs no merge base: it compares two trees.
+  assert.deepEqual(readAddedChangesets('origin/development', shallow).map((e) => e.name), ['.changeset/fresh.md']);
   assert.throws(() => readBaseInventory('origin/nope', shallow), /could not be fetched/u);
+});
+
+test('fetching into a full clone does not make it shallow', () => {
+  const upstream = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-up2-'));
+  const g = (cwd, ...args) => execFileSync('git', args, { cwd, stdio: 'ignore' });
+  g(upstream, 'init', '-q', '-b', 'development'); g(upstream, 'config', 'user.email', 't@t'); g(upstream, 'config', 'user.name', 't');
+  fs.mkdirSync(path.join(upstream, 'docs'));
+  fs.writeFileSync(path.join(upstream, 'docs/public-surface.inventory.json'), JSON.stringify(inventory(row('a'))));
+  g(upstream, 'add', '.'); g(upstream, 'commit', '-q', '-m', 'one');
+  fs.writeFileSync(path.join(upstream, 'docs/x'), 'x'); g(upstream, 'add', '.'); g(upstream, 'commit', '-q', '-m', 'two');
+  const full = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-full-'));
+  execFileSync('git', ['clone', '-q', `file://${upstream}`, full], { stdio: 'ignore' });
+  g(full, 'update-ref', '-d', 'refs/remotes/origin/development');
+
+  readBaseInventory('origin/development', full);
+
+  // `--depth=1` into a full clone marked it shallow and grafted history away (3 commits → 1).
+  assert.equal(execFileSync('git', ['rev-parse', '--is-shallow-repository'], { cwd: full, encoding: 'utf8' }).trim(), 'false');
+  assert.equal(execFileSync('git', ['rev-list', '--count', 'HEAD'], { cwd: full, encoding: 'utf8' }).trim(), '2');
 });
 
 test('a missing base ref or inventory fails with a sentence, not a stack', () => {
@@ -157,4 +187,6 @@ test('the root, worker and Expo identities follow the packages after a bump', as
   assert.deepEqual(result.changed.sort(), ['apps/demo/app.json', 'package.json', 'web/worker/package.json']);
   assert.match(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'), /"private": true,\n  "version": "0.87.0"/u, 'only the version value changes');
   assert.deepEqual(syncRootVersion(dir).changed, [], 'idempotent');
+  fs.writeFileSync(path.join(dir, 'web/worker/package.json'), '{ "name": "w" }\n');
+  assert.throws(() => syncRootVersion(dir), /has no "version" field/u, 'a follower without a version is reported, not skipped');
 });

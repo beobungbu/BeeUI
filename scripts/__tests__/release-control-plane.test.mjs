@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { collectReleaseControlPlaneViolations, EXPECTED_PACKAGE_NAMES, EXPECTED_VERSION } from '../check-release-control-plane.mjs';
+import { collectReleaseControlPlaneViolations, EXPECTED_PACKAGE_NAMES, EXPECTED_VERSION, readPinnedVersion } from '../check-release-control-plane.mjs';
 
 function createFixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-release-control-plane-'));
@@ -19,6 +19,11 @@ function createFixture() {
   for (const doc of ['release.md', 'dist-tag-policy.md', 'consumer-compatibility-report.md', 'rc-candidate.md', 'rc-ci-matrix.md', 'registry-cli.md', 'package-compatibility-report.md']) {
     fs.writeFileSync(path.join(root, 'docs', doc), 'current @beemvp package release guidance\n');
   }
+  // The pin the checks compare against lives in the dist-tag-policy block.
+  fs.writeFileSync(
+    path.join(root, 'docs/dist-tag-policy.md'),
+    `\`\`\`json dist-tag-policy\n${JSON.stringify({ published: false, currentVersion: EXPECTED_VERSION })}\n\`\`\`\n`,
+  );
   return root;
 }
 
@@ -39,4 +44,22 @@ test('rejects version drift and legacy release scope', () => {
   assert.ok(violations.some((entry) => entry.includes('packages/core/package.json: expected version')));
   assert.ok(violations.some((entry) => entry.includes('docs/release.md: contains superseded legacy package scope')));
   fs.rmSync(root, { recursive: true, force: true });
+});
+
+
+test('names the bump procedure when every package agrees and only the pin lags', () => {
+  const root = createFixture();
+  for (const relative of ['packages/core/package.json', 'packages/tokens/package.json', 'packages/ui/package.json', 'packages/cli/package.json']) {
+    const file = path.join(root, relative);
+    const manifest = JSON.parse(fs.readFileSync(file, 'utf8'));
+    fs.writeFileSync(file, `${JSON.stringify({ ...manifest, version: '9.9.9' })}\n`);
+  }
+
+  const violations = collectReleaseControlPlaneViolations(root);
+
+  // This is the shape `changeset version` leaves behind: the four members moved, the human pin
+  // and the private root did not. Deleting the hint had left both suites green.
+  assert.ok(violations.some((v) => v.includes('run `pnpm version:sync`')), violations.join('\n'));
+  assert.ok(violations.some((v) => v.includes('docs/dist-tag-policy.md pins')), violations.join('\n'));
+  assert.equal(readPinnedVersion(root), EXPECTED_VERSION);
 });

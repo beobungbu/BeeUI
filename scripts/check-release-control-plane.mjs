@@ -4,14 +4,18 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { readPublicationState } from './public-site-contract-lib.mjs';
+
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-// The root manifest is the lockstep source; every other manifest must equal it. Pinning a literal
-// here as well meant `changeset version` — which bumps the workspace members and the root together
-// through the `fixed` group — tripped this gate on its own output, and the literal had to be
-// hand-edited beside the manifests it was supposed to check. `docs/dist-tag-policy.md` still pins
-// the value a human chose, and `dist-policy:check` compares it to the root; that is where a bump
-// is confirmed on purpose.
-export const EXPECTED_VERSION = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8')).version;
+// The version a release is checked against is the one a human pinned in `docs/dist-tag-policy.md`
+// (`currentVersion` in its `json dist-tag-policy` block), not the manifests. Reading it from the
+// root manifest made every comparison against the root a tautology — `pack-artifacts` and
+// `verify-release` compare the root to this constant — and let `changeset version` move the
+// packages with nothing left to disagree. The pin is what a bump has to update on purpose.
+export function readPinnedVersion(rootDir = ROOT_DIR) {
+  return readPublicationState(rootDir).currentVersion;
+}
+export const EXPECTED_VERSION = readPinnedVersion(ROOT_DIR);
 export const EXPECTED_PACKAGE_NAMES = new Map([
   ['packages/core/package.json', '@beemvp/beeui-core'],
   ['packages/tokens/package.json', '@beemvp/beeui-tokens'],
@@ -43,10 +47,11 @@ function walkFiles(directory) {
 export function collectReleaseControlPlaneViolations(rootDir = ROOT_DIR) {
   const violations = [];
   const rootManifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8'));
-  // The root is the lockstep source for the tree under `rootDir` — read here, not at module
-  // load, so a test's temporary root is checked against itself and not against this repository.
-  const expected = rootManifest.version;
+  // Read from the tree under `rootDir`, not at module load, so a temporary root is checked
+  // against its own pin rather than this repository's.
+  const expected = readPinnedVersion(rootDir);
   const seen = new Map();
+  if (rootManifest.version !== expected) violations.push(`package.json: expected version ${expected}, found ${rootManifest.version}`);
 
   for (const [relative, expectedName] of EXPECTED_PACKAGE_NAMES) {
     const manifest = JSON.parse(fs.readFileSync(path.join(rootDir, relative), 'utf8'));
@@ -59,7 +64,10 @@ export function collectReleaseControlPlaneViolations(rootDir = ROOT_DIR) {
   // "every package agrees and the root lags" is the shape a bump leaves behind. Name the command.
   const packageVersions = new Set(seen.values());
   if (packageVersions.size === 1 && !packageVersions.has(expected)) {
-    violations.push(`packages are at ${[...packageVersions][0]} while package.json is at ${expected}: run \`pnpm version:sync\` to move the root, Worker and Expo identities.`);
+    violations.push(
+      `packages are at ${[...packageVersions][0]} while docs/dist-tag-policy.md pins ${expected}: if that bump is intended, ` +
+        'set `currentVersion` (and the prerelease pattern) there, then run `pnpm version:sync` for the root, Worker and Expo identities.',
+    );
   }
 
   const workflowFiles = walkFiles(path.join(rootDir, '.github/workflows')).filter(

@@ -22,6 +22,7 @@ function readJson(file) {
 // Rewrites only the `version` value, byte-for-byte otherwise, so the diff is the one line.
 function setVersion(file, version) {
   const text = fs.readFileSync(file, 'utf8');
+  if (!/"version"\s*:\s*"/u.test(text)) throw new Error(`${file} has no "version" field to sync.`);
   const next = text.replace(/("version"\s*:\s*")[^"]*(")/u, `$1${version}$2`);
   if (next === text) return false;
   fs.writeFileSync(file, next);
