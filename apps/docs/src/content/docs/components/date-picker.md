@@ -99,24 +99,31 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 - `BeeUIProvider` is required above this family because it participates in shared overlay/toast runtime infrastructure.
 - **Peer/native dependencies visible to this Registry item:** `@react-native-community/datetimepicker`, `react`, `react-native`
 - **Registry dependency closure:** `button`, `calendar`, `core-overlay`, `dialog`, `field-context`, `icon-button`, `popover`, `text`, `theme`
+- On Web this family renders from `date-picker.web.tsx`, which does not import `@react-native-community/datetimepicker`: that peer serves the native implementation.
 - Safe-area ownership remains explicit: shell surfaces touching system edges opt into `SafeArea`; components do not silently invent app-shell insets.
 - Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).
 
 ## Platform behavior
 
+This family is split by platform and renders from `date-picker.native.tsx` (iOS and Android), `date-picker.web.tsx` (Web). Where the two shapes differ, the difference is listed under the affected type above rather than summarised here.
+
 This family has platform-split source files. The bundler selects the native/Web implementation; do not infer native runtime behavior from the Web preview.
 
-- **Web:** live browser/keyboard behavior is verified by Web-specific checks where applicable.
-- **iOS / Android:** package/export/native compile evidence is not described as device-runtime proof. Consult the compatibility and native-preview guides for the exact evidence class.
-- Platform-specific or experimental behavior is called out in the canonical component/compatibility docs rather than hidden behind a generic parity claim.
+Evidence classes are not equal and this page does not blur them: Web behavior is exercised in a real browser, while iOS and Android carry package/export and native-compile evidence, which is not device-runtime proof. The [compatibility contract](/docs/compatibility/) records which class each claim rests on.
 
 ## Accessibility
 
-Use the [Accessibility overview](/docs/accessibility/), [RTL/localization](/docs/accessibility/rtl/), and [Large text & zoom](/docs/accessibility/large-text/) alongside this family. Roles/states, keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL, and reduced-motion expectations remain component-specific; BeeUI does not claim universal accessibility certification from automated tests.
+- **Roles this family assigns:** `button` — set in `date-picker.native.tsx` by the components themselves, not by the caller.
+- **Accessibility states and properties it sets:** `accessibilityHint`, `accessibilityLabel`, `accessibilityLabelledBy`, `disabled`, `expanded`, `hidden` — read from `date-picker.native.tsx`, `date-picker.web.tsx`, `date-picker-shared.tsx`.
+
+Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
 ## Styling and theming
 
-BeeUI components consume semantic tokens and support the current typed variant/density contracts. Use [Theming](/docs/theming/) and [Density](/docs/guides/density/). `className` is an implementation escape hatch for source-owned/application work, not a cross-engine portability guarantee.
+- **Style axes:** not enumerated here: `align`, `collisionPadding`, `direction`, `placement` are typed by an alias this page does not resolve to values.
+- **Class-name surfaces:** `className`.
+
+Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.
 
 ## Executable examples
 
@@ -260,7 +267,8 @@ export function DatePickerShowcase() {
 Use the code block's copy affordance to copy the exact fixture. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+- Passing `open` without `onOpenChange` leaves the value read-only: the component renders what you passed and can never change it. It warns in development builds rather than failing silently in production.
+- Requires `@react-native-community/datetimepicker` to be installed by the consuming app. It is an optional peer of `@beemvp/beeui-ui`, so nothing installs it for you, and a target that never renders this family does not need it.
 
 **Implementation note:** Platform-split: resolves date-picker.native.tsx / date-picker.web.tsx at build time.
 

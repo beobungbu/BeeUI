@@ -45,7 +45,10 @@ export default defineConfig({
         },
         {
           label: 'Showcase & preview',
-          items: [{ label: 'Web & native preview', slug: 'showcase' }],
+          items: [
+            { label: 'Web & native preview', slug: 'showcase' },
+            { label: 'Reference app', slug: 'reference-app' },
+          ],
         },
         {
           label: 'Learn',
@@ -59,6 +62,7 @@ export default defineConfig({
             { label: 'Forms model', slug: 'learn/forms-model' },
             { label: 'Cross-platform model', slug: 'learn/cross-platform-model' },
             { label: 'Responsive model', slug: 'learn/responsive-model' },
+            { label: 'Responsive layout', slug: 'responsive' },
             { label: 'Accessibility model', slug: 'learn/accessibility-model' },
           ],
         },
@@ -93,6 +97,9 @@ export default defineConfig({
             { label: 'Overview', slug: 'accessibility' },
             { label: 'RTL & localization', slug: 'accessibility/rtl' },
             { label: 'Large text & zoom', slug: 'accessibility/large-text' },
+            { label: 'Keyboard & focus', slug: 'accessibility/keyboard-focus' },
+            { label: 'Reduced motion', slug: 'accessibility/reduced-motion' },
+            { label: 'Native assistive tech', slug: 'accessibility/native-assistive-tech' },
           ],
         },
         {
@@ -104,6 +111,9 @@ export default defineConfig({
             { label: 'CLI', slug: 'reference/cli' },
             { label: 'Registry', slug: 'reference/registry' },
             { label: 'Styling', slug: 'reference/styling' },
+            { label: 'Source registry', slug: 'registry' },
+            { label: 'Architecture', slug: 'architecture' },
+            { label: 'AI agents', slug: 'ai' },
           ],
         },
         {
@@ -112,6 +122,7 @@ export default defineConfig({
             { label: 'Overview', slug: 'compatibility' },
             { label: 'Native (RN/Expo)', slug: 'compatibility/native' },
             { label: 'Web', slug: 'compatibility/web' },
+            { label: 'Current matrix', slug: 'compatibility/current' },
           ],
         },
         {
@@ -120,7 +131,10 @@ export default defineConfig({
         },
         {
           label: 'Release & security',
-          items: [{ label: 'Overview', slug: 'release-security' }],
+          items: [
+            { label: 'Overview', slug: 'release-security' },
+            { label: 'Current release', slug: 'guides/current-release' },
+          ],
         },
       ],
     }),

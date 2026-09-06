@@ -7,7 +7,7 @@ BeeUI components are **state-transparent by default**: a component holds interna
 
 ## Why the concept exists
 
-"Controlled or uncontrolled" sounds like an API detail until it decides whether a user's half-filled form survives a re-render. BeeUI does not apply one blanket policy, because the right answer differs by component: whether a checkbox is ticked is almost always product state, while whether a tooltip is showing almost never is.
+Controlled vs uncontrolled sounds like an API detail until it decides whether a user's half-filled form survives a re-render. BeeUI does not apply one blanket policy, because the right answer differs by component: whether a checkbox is ticked is almost always product state, while whether a tooltip is showing almost never is.
 
 So instead of guessing, learn the three shapes BeeUI actually uses. Every component falls into one of them, and the exact props for each are on its [component reference](/docs/components/) page.
 

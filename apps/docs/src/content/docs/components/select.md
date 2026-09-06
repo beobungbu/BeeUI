@@ -164,19 +164,25 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 ## Platform behavior
 
+This family ships no platform-specific file, but its source branches on `Platform`, so some behavior differs by target.
+
 The same public family is exposed across the supported target matrix; meaningful platform differences remain governed by the compatibility contract.
 
-- **Web:** live browser/keyboard behavior is verified by Web-specific checks where applicable.
-- **iOS / Android:** package/export/native compile evidence is not described as device-runtime proof. Consult the compatibility and native-preview guides for the exact evidence class.
-- Platform-specific or experimental behavior is called out in the canonical component/compatibility docs rather than hidden behind a generic parity claim.
+Evidence classes are not equal and this page does not blur them: Web behavior is exercised in a real browser, while iOS and Android carry package/export and native-compile evidence, which is not device-runtime proof. The [compatibility contract](/docs/compatibility/) records which class each claim rests on.
 
 ## Accessibility
 
-Use the [Accessibility overview](/docs/accessibility/), [RTL/localization](/docs/accessibility/rtl/), and [Large text & zoom](/docs/accessibility/large-text/) alongside this family. Roles/states, keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL, and reduced-motion expectations remain component-specific; BeeUI does not claim universal accessibility certification from automated tests.
+- **Roles this family assigns:** `combobox`, `group`, `listbox`, `option` — set in `select.tsx` by the components themselves, not by the caller.
+- **Accessibility states and properties it sets:** `accessibilityElementsHidden`, `accessibilityLabel`, `accessibilityLabelledBy`, `accessible`, `controls`, `disabled`, `expanded`, `haspopup`, `hidden`, `labelledby`, `selected`, `text` — read from `select.tsx`.
+
+Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
 ## Styling and theming
 
-BeeUI components consume semantic tokens and support the current typed variant/density contracts. Use [Theming](/docs/theming/) and [Density](/docs/guides/density/). `className` is an implementation escape hatch for source-owned/application work, not a cross-engine portability guarantee.
+- **Style axes:** none of its own — its appearance comes from tokens and your own classes; it also carries `Omit<PressableProps, 'accessibilityRole' | 'children' | 'onPress' | 'role'>`, `Omit<PressableProps, 'accessibilityRole' | 'children' | 'role'>`, `Omit<RNTextProps, 'children' | 'role'>`, `Omit<RNTextProps, 'nativeID' | 'role'>`, `Omit<ViewProps, 'accessibilityRole' | 'role'>`, `Omit<ViewProps, 'nativeID' | 'role'>`.
+- **Class-name surfaces:** `className`, `textClassName`.
+
+Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.
 
 ## Executable examples
 
@@ -339,7 +345,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
 Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.
+- Passing `open` without `onOpenChange` leaves the value read-only: the component renders what you passed and can never change it. It warns in development builds rather than failing silently in production.
 
 ## Related
 

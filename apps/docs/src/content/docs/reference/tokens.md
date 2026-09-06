@@ -1,11 +1,11 @@
 ---
-title: Tokens reference
+title: Design tokens reference
 description: Every public token group, runtime value, runtime type and machine-readable export in @beemvp/beeui-tokens.
 ---
 
 <!-- Generated file: written by scripts/public-reference.mjs from docs/public-surface.inventory.json. Prose lives in docs/reference.content.json. Do not hand-edit. -->
 
-This is the exact inventory of what `@beemvp/beeui-tokens` exposes. Use it to check whether a name exists and where it comes from; use [Branding](/docs/guides/branding/) and [Density](/docs/guides/density/) when you want to change something, and [Theming](/docs/theming/) for the model behind the names.
+This is the exact inventory of the design tokens `@beemvp/beeui-tokens` exposes. Use it to check whether a name exists and where it comes from; use [Branding](/docs/guides/branding/) and [Density](/docs/guides/density/) when you want to change something, and [Theming](/docs/theming/) for the model behind the names.
 
 Token **groups** are the design values themselves, generated from `tokens.json` into CSS variables and typed objects. **Runtime values and types** are the API for reading and overriding them at runtime — `defineThemeOverrides`, `applyDensity`, `beeTokenReader` and the type vocabulary around them. **Package export subpaths** are the machine-readable artifacts: consumed by tooling, not imported as code.
 

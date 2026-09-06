@@ -3,9 +3,9 @@
   "schemaVersion": 1,
   "owners": {
     "tokens": {
-      "title": "Tokens reference",
+      "title": "Design tokens reference",
       "description": "Every public token group, runtime value, runtime type and machine-readable export in @beemvp/beeui-tokens.",
-      "intro": "This is the exact inventory of what `@beemvp/beeui-tokens` exposes. Use it to check whether a name exists and where it comes from; use [Branding](/docs/guides/branding/) and [Density](/docs/guides/density/) when you want to change something, and [Theming](/docs/theming/) for the model behind the names.\n\nToken **groups** are the design values themselves, generated from `tokens.json` into CSS variables and typed objects. **Runtime values and types** are the API for reading and overriding them at runtime — `defineThemeOverrides`, `applyDensity`, `beeTokenReader` and the type vocabulary around them. **Package export subpaths** are the machine-readable artifacts: consumed by tooling, not imported as code.",
+      "intro": "This is the exact inventory of the design tokens `@beemvp/beeui-tokens` exposes. Use it to check whether a name exists and where it comes from; use [Branding](/docs/guides/branding/) and [Density](/docs/guides/density/) when you want to change something, and [Theming](/docs/theming/) for the model behind the names.\n\nToken **groups** are the design values themselves, generated from `tokens.json` into CSS variables and typed objects. **Runtime values and types** are the API for reading and overriding them at runtime — `defineThemeOverrides`, `applyDensity`, `beeTokenReader` and the type vocabulary around them. **Package export subpaths** are the machine-readable artifacts: consumed by tooling, not imported as code.",
       "notes": "Only `colors`, `radius` and `motionDuration` are runtime-overridable. Everything else is a build-time contract — see the customizable-versus-contractual table in [Branding](/docs/guides/branding/)."
     },
     "core": {
