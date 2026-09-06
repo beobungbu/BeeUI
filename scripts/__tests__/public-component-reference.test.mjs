@@ -1718,7 +1718,7 @@ test('distinct limitations and an absent one are both accepted', () => {
   assert.deepEqual(collectCuratedLimitationViolations(clean), []);
 });
 
-// The rule's stated contract is that case, markdown emphasis, whitespace and trailing punctuation
+// The rule's stated contract is that case, markdown emphasis, whitespace and trailing `.;:,` and whitespace
 // do not buy a pass. Trailing whitespace used to: the punctuation strip ran before the trim, so a
 // copy plus one trailing space or newline kept its final period and compared unequal.
 for (const [label, suffix] of [
