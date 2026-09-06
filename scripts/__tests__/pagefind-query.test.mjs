@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import test from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { FALLBACK_MIN_RESULTS, QUERY_STOPWORDS, normaliseQuery, searchWithFallback } from '../../apps/docs/pagefind-query.mjs';
 
@@ -12,6 +12,7 @@ const SEARCH_OVERRIDE = path.join(ROOT_DIR, 'apps/docs/src/components/Search.ast
 const ASTRO_CONFIG = path.join(ROOT_DIR, 'apps/docs/astro.config.mjs');
 const INTENT_CHECK = path.join(ROOT_DIR, 'scripts/check-docs-search-intent.mjs');
 const PAGEFIND_SHIM = path.join(ROOT_DIR, 'apps/docs/public/pagefind-fallback/pagefind.js');
+const DOCS_DIST_DIR = path.join(ROOT_DIR, 'apps/docs/dist');
 
 // Pagefind requires every term to occur on a page, so a question phrased the way a reader
 // types it ("how do I show a loading spinner on a button") returned nothing while the content
@@ -201,8 +202,71 @@ test('searchWithFallback preserves the rest of the Pagefind result envelope', as
   const searcher = stubSearcher({ 'a b': [], a: ['x'], b: ['y'] });
   const result = await searchWithFallback(searcher, 'a b');
 
+  // Deliberate: `unfilteredResultCount` keeps counting what the AND matched before filters. The
+  // union's pages come from different queries, so no honest number exists for it, and PagefindUI
+  // reads only `results.length`.
   assert.equal(result.unfilteredResultCount, 0, 'the AND-side envelope is passed through untouched');
   assert.deepEqual(idsOf(result), ['x', 'y']);
+});
+
+// A `sort` is a total order over a page value that the caller asked for. Appending relaxed pages
+// after the AND's would break it, so a sorted search is answered by the AND alone.
+test('searchWithFallback does not relax a search that asked for an explicit sort', async () => {
+  const searcher = stubSearcher({ 'a b': [], a: ['x'], b: ['y'] });
+  const sorted = await searchWithFallback(searcher, 'a b', { sort: { date: 'desc' } });
+
+  assert.deepEqual(idsOf(sorted), []);
+  assert.deepEqual(searcher.calls, ['a b'], 'a sorted search must cost exactly one search');
+  assert.deepEqual(idsOf(await searchWithFallback(searcher, 'a b', { filters: {} })), ['x', 'y']);
+});
+
+// The ladder issues up to 35 extra index queries, each of which fetches a chunk over the network
+// in the browser. PagefindUI has no try/catch around its search call, so an error escaping the
+// ladder both discards the results the AND found and leaves the modal loading forever.
+test('searchWithFallback survives a window search that rejects, keeping what the AND found', async () => {
+  const calls = [];
+  const searcher = {
+    async search(term) {
+      calls.push(term);
+      if (term === 'a b c') return { results: [{ id: 'and-hit', score: 9 }], unfilteredResultCount: 1 };
+      if (term === 'a b') throw new Error('failed to fetch index chunk');
+      return { results: [{ id: 'relaxed', score: 1 }], unfilteredResultCount: 1 };
+    },
+  };
+
+  const result = await searchWithFallback(searcher, 'a b c');
+
+  assert.deepEqual(idsOf(result), ['and-hit', 'relaxed'], 'the AND hit survives and the windows that did answer still count');
+  assert.ok(calls.includes('b c'), 'one failed window must not abandon the rest of the ladder');
+});
+
+test('searchWithFallback survives a window search that resolves a malformed envelope', async () => {
+  const shapes = [{}, null, { results: null }, { results: [null] }];
+  for (const shape of shapes) {
+    const searcher = {
+      async search(term) {
+        if (term === 'a b c') return { results: [{ id: 'and-hit', score: 9 }], unfilteredResultCount: 1 };
+        if (term === 'a b') return shape;
+        return { results: [{ id: 'relaxed', score: 1 }], unfilteredResultCount: 1 };
+      },
+    };
+
+    const result = await searchWithFallback(searcher, 'a b c');
+    assert.deepEqual(idsOf(result), ['and-hit', 'relaxed'], `a ${JSON.stringify(shape)} envelope must not lose the AND's results`);
+  }
+});
+
+test('searchWithFallback returns exactly the AND result when every window fails', async () => {
+  const primary = { results: [{ id: 'and-hit', score: 9 }], unfilteredResultCount: 1 };
+  const searcher = {
+    async search(term) {
+      if (term === 'a b c') return primary;
+      throw new Error('index unreachable');
+    },
+  };
+
+  const result = await searchWithFallback(searcher, 'a b c');
+  assert.equal(result, primary, 'a ladder that finds nothing must hand back the untouched AND envelope');
 });
 
 // The browser UI and the search-intent check must issue the same rewritten query, otherwise the
@@ -239,12 +303,47 @@ test('the fallback entrypoint re-exports Pagefind with search wrapped in searchW
   assert.match(source, /import \* as pagefind from '\.\.\/pagefind\/pagefind\.js';/u);
   assert.match(source, /import \{ searchWithFallback \} from '\.\/pagefind-query\.mjs';/u);
   assert.match(source, /export const search = \(term, searchOptions\) => searchWithFallback\(pagefind, term, searchOptions\);/u);
+});
 
-  // Anything the shim forgets to forward is an export PagefindUI silently loses. pagefind.js is
-  // only present after a build, so the list is checked against the built engine when there is
-  // one and against the shim's own completeness otherwise.
-  for (const name of ['createInstance', 'debouncedSearch', 'destroy', 'filters', 'init', 'mergeIndex', 'options', 'preload']) {
-    assert.match(source, new RegExp(`\\b${name}\\b`, 'u'), `${name} must be re-exported or the search modal loses it`);
+// Anything the shim forgets to forward is an export PagefindUI silently loses, and a name that
+// merely appears in the source text proves nothing — this imports both modules and compares what
+// they actually export. The real engine only exists after a build, so it skips without one.
+test('the fallback entrypoint exports exactly what the real Pagefind engine does', async (t) => {
+  const builtShim = path.join(DOCS_DIST_DIR, 'pagefind-fallback', 'pagefind.js');
+  const builtEngine = path.join(DOCS_DIST_DIR, 'pagefind', 'pagefind.js');
+  if (!fs.existsSync(builtShim) || !fs.existsSync(builtEngine)) {
+    t.skip('apps/docs/dist is not built in this environment; run `pnpm docs:build` first');
+    return;
+  }
+
+  const [shim, engine] = await Promise.all([
+    import(pathToFileURL(builtShim).href),
+    import(pathToFileURL(builtEngine).href),
+  ]);
+
+  assert.deepEqual(Object.keys(shim).sort(), Object.keys(engine).sort(), 'the shim must export the same names as the engine it replaces');
+  for (const name of Object.keys(engine)) {
+    if (name === 'search') continue;
+    assert.equal(shim[name], engine[name], `${name} must be the engine's own export, not a copy`);
+  }
+  assert.notEqual(shim.search, engine.search, 'search is the one export the shim replaces');
+});
+
+// The shim wraps the module-level `search` only, so the relaxation reaches the reader only while
+// PagefindUI keeps calling that export. It does today (@pagefind/default-ui 1.5.2 calls
+// `pagefind.search(` once and never `debouncedSearch` or `createInstance` on the namespace). A
+// version that switched would silently drop the ladder in the browser while every check here and
+// scripts/check-docs-search-intent.mjs stayed green, so the installed dependency is asserted.
+test('PagefindUI still searches through the module-level export the shim wraps', () => {
+  const require = createRequire(path.join(ROOT_DIR, 'apps/docs/package.json'));
+  const manifestPath = require.resolve('@pagefind/default-ui/package.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+
+  for (const entry of [manifest.module, manifest.main]) {
+    const source = fs.readFileSync(path.join(path.dirname(manifestPath), entry), 'utf8');
+    assert.match(source, /pagefind\.search\(/u, `${entry} no longer calls the wrapped module-level search; the browser would run no fallback`);
+    assert.doesNotMatch(source, /pagefind\.debouncedSearch\(/u, `${entry} now searches through debouncedSearch, which the shim does not wrap`);
+    assert.doesNotMatch(source, /pagefind\.createInstance\(/u, `${entry} now searches through a createInstance handle, which the shim does not wrap`);
   }
 });
 

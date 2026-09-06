@@ -138,11 +138,32 @@ function termWindows(terms, width) {
 // that page at exactly the rank it had (and a query with >= 3 results does not search again at
 // all), so the fallback cannot regress a working query, only lengthen a starved one.
 //
+// Append-only was also measured against the alternative (2026-09-06, built index, both held-out
+// sets): ordering the union by Pagefind's own score instead scored strict top-3 14/26 vs 13/26 on
+// the first set but 13/24 vs 15/24 on the second, and dropped /components/password-input/ out of
+// the top 3 for "password field with a show hide toggle" — a page the AND alone already ranked
+// first. Score order buys a starved query a better rank by risking a page a working query already
+// found, so it was not taken. The price of keeping append-only is a low-scoring AND hit sitting
+// above a better relaxed one: "sign up screen example" shows /components/sheet/ (score 0.31)
+// above /patterns/auth/sign-up-screen/ (score 14.66).
+//
+// What the ladder does not promise is that a relaxed answer is a right answer. It ends the empty
+// result — on both held-out sets no query returns nothing any more — but "how fast do the docs
+// pages load" now returns 107 pages headed by /compatibility/native/, and the strict score of
+// those seven queries did not move. Returning something is not answering something.
+//
+// Only `results` is extended; the rest of the AND's envelope is passed through as Pagefind built
+// it, so `unfilteredResultCount` still counts what the AND matched before filters. The union has
+// no true value for that field — its pages come from different queries — and PagefindUI reads
+// only `results.length`. A search that asks for an explicit `sort` is not relaxed at all: sorting
+// by a page value is a total order the reader chose, and appending would silently break it.
+//
 // `searcher` is anything with Pagefind's `search(term, options)` shape: the module namespace of
 // pagefind.js in the browser, or a `createInstance()` handle in the search-intent check.
 export async function searchWithFallback(searcher, query, searchOptions, { minResults = FALLBACK_MIN_RESULTS } = {}) {
   const primary = await searcher.search(query, searchOptions);
   if (typeof query !== 'string' || PAGEFIND_SYNTAX.test(query)) return primary;
+  if (searchOptions?.sort) return primary;
   if (!Array.isArray(primary?.results) || primary.results.length >= minResults) return primary;
 
   // A one-term query has no narrower question to ask, and the ladder below starts one term
@@ -158,16 +179,26 @@ export async function searchWithFallback(searcher, query, searchOptions, { minRe
     // answers a single pair very densely.
     const rung = new Map();
     for (const window of termWindows(terms, width)) {
-      const { results } = await searcher.search(window, searchOptions);
-      for (const result of results) {
-        if (seen.has(result.id)) continue;
-        const entry = rung.get(result.id);
-        if (entry) {
-          entry.windows += 1;
-          entry.score = Math.max(entry.score, result.score ?? 0);
-        } else {
-          rung.set(result.id, { result, windows: 1, score: result.score ?? 0 });
+      // Each rung costs another index query, and any one of them can fail in a reader's browser:
+      // a chunk that 404s, an offline moment, an envelope a future engine shapes differently.
+      // PagefindUI has no try/catch around its own search call, so an error escaping here would
+      // leave the modal loading forever and throw away the results the AND did find. A window
+      // that fails is skipped instead, which leaves the reader with what the AND found, never
+      // less than before the relaxation existed.
+      try {
+        const { results } = await searcher.search(window, searchOptions);
+        for (const result of results) {
+          if (seen.has(result.id)) continue;
+          const entry = rung.get(result.id);
+          if (entry) {
+            entry.windows += 1;
+            entry.score = Math.max(entry.score, result.score ?? 0);
+          } else {
+            rung.set(result.id, { result, windows: 1, score: result.score ?? 0 });
+          }
         }
+      } catch {
+        continue;
       }
     }
 

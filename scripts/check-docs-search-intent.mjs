@@ -30,20 +30,26 @@
 //   - It does not test typo tolerance, non-English queries, or queries a reader might phrase
 //     differently from QUERY_MATRIX; it only proves the *listed* intents are covered.
 //   - The matrix is a LOWER BOUND, not a quality measure, and it does not generalize: it grew by
-//     fixing failures one at a time, so passing every entry is close to tautological. Measured
-//     against 26 held-out queries an independent scorer wrote, the portal scored 17 (65%) while
-//     this matrix read 21/21; a second scorer's 24 held-out queries scored 12 (50%) at 24/24.
-//     Treat a green run as "these known intents still work", never as "search is good".
+//     fixing failures one at a time, so passing every entry is close to tautological. Two scoring
+//     passes made before the rewrite and the fallback existed — 26 held-out queries scored
+//     2026-09-05, and 24 different held-out queries scored 2026-09-06 at head 4f322cd — put the
+//     portal at 17/26 (65%) and 12/24 (50%) while this matrix read 21/21 and 24/24. Treat a green
+//     run as "these known intents still work", never as "search is good".
 //   - Queries take the same path the portal's search modal takes: apps/docs/pagefind-query.mjs
 //     rewrites them, and its searchWithFallback re-asks a starved query in narrower windows.
-//     Measured on two held-out sets neither the rewrite nor the fallback was tuned against
+//     Measured 2026-09-06 on this branch's built index, against two further held-out sets neither
+//     the rewrite nor the fallback was tuned against and neither of them a set scored above
 //     (26 queries from an independent scorer, 24 written from the route list before this change),
-//     the fallback moved strict top-3 from 8/26 to 13/26 and 8/24 to 15/24, and took the queries
-//     that returned literally nothing from 7/26 and 7/24 to zero on both. It cannot move this
-//     It cannot break an entry in this matrix, by construction: relaxed pages are only appended
-//     after whatever the AND already found, never reordered into it. Exactly one entry below
-//     depends on it (and says so). The misses that remain on both held-out sets are content the
-//     portal does not say, not phrasing.
+//     the fallback moved strict top-3 from 8/26 to 13/26 and 8/24 to 15/24.
+//     It also took the 7 queries per set that returned literally nothing down to zero, which is a
+//     change of behaviour rather than a win on its own: "how fast do the docs pages load" now
+//     returns 107 pages headed by /compatibility/native/ instead of an honest empty state, and
+//     the strict score of those seven queries did not move. What it cannot do is break an entry
+//     in this matrix, by construction: relaxed pages are only appended after whatever the AND
+//     already found, never reordered into it — and the alternative was measured, not assumed
+//     (see THE RULE in apps/docs/pagefind-query.mjs). Exactly one entry below depends on the
+//     fallback (and says so). The misses that remain on both held-out sets are content the portal
+//     does not say, not phrasing.
 //   - A pass here does not mean the page content is good — only that Pagefind indexes it for the
 //     terms a reader is expected to search.
 //
