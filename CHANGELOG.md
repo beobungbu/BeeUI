@@ -48,17 +48,19 @@ All notable consumer-facing changes to BeeUI are recorded here.
 - `Tooltip` remains component-level work with its own hover/focus/accessibility contract; a first-class `Sheet` remains separately gated. `Select` is now implemented as its own value-selection contract on the accepted anchored-overlay runtime.
 - Documentation treats Registry/CLI as implemented phase-1 tooling and Wave 0 Pattern Gallery as implemented, while preserving that public `npx beeui` and public npm distribution do not exist yet.
 
-## [1.0.0] — release-ready, not yet published
+## [0.86.2] — release-ready, not yet published
 
-> **Not published.** This entry describes the frozen BeeUI 1.0 scope prepared for release. The
-> `1.0.0` lockstep version bump and the `npm publish` are owner-gated at
-> [#254](https://github.com/beobungbu/BeeUI/issues/254): the `@beemvp/beeui-*` scope is
-> unpublished, no dist-tag exists, and every manifest still reads `0.1.0` today. "Release-ready"
-> is not publication ([docs/beeui-1.0-owner-gates.md](docs/beeui-1.0-owner-gates.md),
-> [docs/dist-tag-policy.md](docs/dist-tag-policy.md)). This section consolidates the running
-> `Unreleased` log above into the consumer-facing 1.0 story. Upgrade steps and validated
-> examples: [docs/migration-guide.md](docs/migration-guide.md); semver classification of every
-> change: [docs/semver-audit.md](docs/semver-audit.md).
+> **Not published.** This entry describes the BeeUI 1.0 product milestone scope prepared for the
+> stable npm package version `0.86.2`. Publication of `0.86.2` and any preceding
+> `0.86.2-rc.N` candidate is owner-gated at
+> [#254](https://github.com/beobungbu/BeeUI/issues/254): the `@beemvp/beeui-*` scope remains
+> unpublished and no public dist-tag exists yet. The package manifests are intentionally pinned
+> to `0.86.2` until an explicit prerelease candidate bump is frozen. "Release-ready" is not
+> publication ([docs/beeui-1.0-owner-gates.md](docs/beeui-1.0-owner-gates.md),
+> [docs/dist-tag-policy.md](docs/dist-tag-policy.md)). BeeUI 1.0 is the product milestone name;
+> it is not the npm version. Upgrade steps and validated examples:
+> [docs/migration-guide.md](docs/migration-guide.md); semver classification of every change:
+> [docs/semver-audit.md](docs/semver-audit.md).
 
 ### Added
 
@@ -106,15 +108,16 @@ All notable consumer-facing changes to BeeUI are recorded here.
 
 ### Deprecated
 
-- No public component export, subpath, or stable token is deprecated at 1.0. The token
+- No public component export, subpath, or stable token is deprecated at the BeeUI 1.0 product milestone. The token
   lifecycle path (deprecate → compatibility alias → removal in a MAJOR once the window and
   migration evidence are met) is the governed mechanism for future deprecations
   ([docs/token-lifecycle.md](docs/token-lifecycle.md)).
 
 ### Known limitations
 
-- **iOS `pageSheet`/`formSheet` presentation is EXPERIMENTAL** and outside the `1.x` stability
-  promise until exact-head native runtime evidence promotes it; `overFullScreen` is unaffected
-  ([#62](https://github.com/beobungbu/BeeUI/issues/62) policy, [docs/release.md](docs/release.md)).
+- **iOS `pageSheet`/`formSheet` presentation is EXPERIMENTAL** and outside the current stable
+  package support promise until exact-head native runtime evidence promotes it; `overFullScreen`
+  is unaffected ([#62](https://github.com/beobungbu/BeeUI/issues/62) policy,
+  [docs/release.md](docs/release.md)).
 - **Web support is Chromium-only** through the Expo/Metro and Vite bundlers; Firefox/WebKit,
   other bundlers, and SSR/SSG are not claimed ([docs/web-support-contract.md](docs/web-support-contract.md)).

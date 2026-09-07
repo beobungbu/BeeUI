@@ -1,6 +1,6 @@
 # Branch, tag and release ruleset (R6.10, #196)
 
-This documents the live GitHub configuration that protects `main`, protects release tags, and gates the eventual publish workflow (#254) behind an explicit human approval. It is the audit trail for the repository rules and the contract enforced by `scripts/check-release-ruleset.mjs` and `scripts/__tests__/release-ruleset-contract.test.mjs`.
+This documents the live GitHub configuration that protects `main`, protects release tags, and gates npm release operations behind explicit human approval. It is the audit trail for the repository rules and the contract enforced by `scripts/check-release-ruleset.mjs` and `scripts/__tests__/release-ruleset-contract.test.mjs`.
 
 ## Required-check design
 
@@ -67,14 +67,27 @@ Environment id `20896613487` exists with required reviewer `beobungbu` and `prev
 
 Its registry-mutating operations are:
 
-- `bootstrap-rc` — the one-time first-package prerelease bootstrap under `next`, because npm staged publishing cannot create a package that does not exist yet. It runs behind `environment: release`. Registry authentication is the temporary environment secret `NPM_BOOTSTRAP_TOKEN`, and the workflow exposes that secret to the final direct-publish step only: dependency install, release verification, builds, packing and registry probes do not inherit it. The job also grants job-local `id-token: write`, but solely because `npm publish --provenance` needs OIDC to mint the attestation — that grant is not Trusted Publisher authentication.
-- `stage-rc` — steady-state prerelease staging once the packages exist. It runs behind `environment: release` with `contents: read` plus job-local `id-token: write`, authenticates to npm through Trusted Publishing/OIDC, and uses no long-lived publish token.
+- `bootstrap-rc` — one-time first-package prerelease bootstrap under `next`, because npm staged publishing cannot create a package that does not exist yet. It runs behind `environment: release`. Registry authentication is the temporary environment secret `NPM_BOOTSTRAP_TOKEN`, exposed only to the final direct-publish step. The job also grants job-local `id-token: write` so `npm publish --provenance` can mint provenance.
+- `stage-rc` — steady-state prerelease staging once the packages exist. It runs behind `environment: release` with `contents: read` plus job-local `id-token: write`, authenticates to npm through Trusted Publishing/OIDC, and stages under `next` for owner 2FA approval.
+- `stage-stable` — stable `0.86.2` staging after the RC/bootstrap path exists. It uses the same stage-only Trusted Publishing/OIDC boundary and deliberately stages stable under `next`, not `latest`, so approving a partial package set cannot change the default-install channel.
 
-Both mutation paths require all of: dispatch from `refs/heads/main`; a checkout of the exact `GITHUB_SHA`; a workspace version matching the prerelease form pinned in [docs/dist-tag-policy.md](dist-tag-policy.md); the operator-entered `expected_version` equal to that workspace version; and the confirmation string `BEEUI_RC_RELEASE`. Preflight runs `pnpm release-control-plane:check`, `pnpm dist-policy:check` and `pnpm release:verify` before the environment-gated job can reach the registry. Registry existence probes treat only `E404`/404 as absence; any other probe failure stops the workflow instead of being read as "package missing".
+`verify-stable` is non-mutating but main-only and release-environment-scoped. After the owner approves all four staged stable packages, it requires all four public `0.86.2` versions, checks registry integrity and canonical repository metadata, verifies `next`, installs the actual registry packages in a clean consumer, and executes the public `beeui` CLI.
 
-The workflow does **not** implement stable `latest` publication. That remains #254 and requires an exact owner-approved candidate plus the promotion and recovery contract in [docs/dist-tag-policy.md](dist-tag-policy.md).
+Operation-specific preflight guards require:
 
-The npm-side owner handoff — token creation, teardown, and Trusted Publisher binding — is [docs/npm-release-bootstrap.md](npm-release-bootstrap.md).
+- exact checkout of `GITHUB_SHA`;
+- registry mutations only from `refs/heads/main`;
+- operator-entered `expected_version` equal to the workspace root version;
+- `bootstrap-rc` / `stage-rc`: version matches the prerelease pattern in [docs/dist-tag-policy.md](dist-tag-policy.md) and confirmation is `BEEUI_RC_RELEASE`;
+- `stage-stable`: version is exactly `0.86.2` and confirmation is `BEEUI_STABLE_STAGE`;
+- `verify-stable`: exact stable `0.86.2` on `main`;
+- `pnpm release-control-plane:check`, `pnpm dist-policy:check` and `pnpm release:verify` all pass before any release job can proceed.
+
+Registry existence probes treat only npm `E404`/404 as absence; any other registry/network/authentication failure stops the workflow instead of being read as "package missing". Registry mutation is sequential in dependency order: core, tokens, ui, cli.
+
+The workflow intentionally does **not** call `npm dist-tag`. npm Trusted Publishing/OIDC authenticates publish/stage-publish, not dist-tag mutation. Final stable `latest` promotion therefore remains an owner proof-of-presence action after `verify-stable` is green, as defined in [docs/dist-tag-policy.md](dist-tag-policy.md) and issue #254.
+
+The npm-side owner handoff — token creation, teardown, Trusted Publisher binding, stable staging and final promotion sequence — is [docs/npm-release-bootstrap.md](npm-release-bootstrap.md).
 
 ## Trusted Publishing security boundary
 
