@@ -393,20 +393,32 @@ function useSheetFocusTrap(panelRef: React.RefObject<WebElementLike | null>, ope
         panel.focus({ preventScroll: true });
         return;
       }
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
+      // Every Tab inside the panel is moved by this handler, not just the two
+      // that wrap. Handling only the edges left each interior step to the
+      // browser's own sequential navigation, which resumes from a starting
+      // point that a programmatic `.focus()` does not always update in time:
+      // after the wrap focused `last`, the very next Shift+Tab could resume
+      // from the pre-wrap position and land somewhere else entirely — and the
+      // handler could not correct it, because it inspects focus before the
+      // move, never after. Measured on the dialog matrix spec: 3 of 10 local
+      // runs and one CI shard failed that second Shift+Tab. Driving every step
+      // from this list makes the order the panel's own, not the browser's.
       const active = doc.activeElement;
-      const activeInsidePanel = active !== null && panel.contains(active);
+      const index = active === null ? -1 : focusable.indexOf(active as WebElementLike);
 
-      if (event.shiftKey) {
-        if (!activeInsidePanel || active === first) {
-          event.preventDefault?.();
-          last.focus({ preventScroll: true });
-        }
-      } else if (!activeInsidePanel || active === last) {
-        event.preventDefault?.();
-        first.focus({ preventScroll: true });
+      event.preventDefault?.();
+
+      // Focus outside the panel, or on the panel box itself, re-enters at the
+      // edge the key came from rather than guessing an interior position.
+      if (index === -1) {
+        const entry = event.shiftKey ? focusable[focusable.length - 1] : focusable[0];
+        entry.focus({ preventScroll: true });
+        return;
       }
+
+      const step = event.shiftKey ? -1 : 1;
+      const next = (index + step + focusable.length) % focusable.length;
+      focusable[next].focus({ preventScroll: true });
     };
 
     // Capture phase, matching `SheetEscapeBinding`'s Escape listener: a
