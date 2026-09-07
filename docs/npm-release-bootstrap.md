@@ -1,45 +1,58 @@
-# npm bootstrap and Trusted Publishing handoff
+# npm bootstrap, Trusted Publishing and stable handoff
 
-BeeUI's public npm scope is `@beemvp`. The repository-side release control plane is prepared, but registry mutation remains owner-gated by `docs/beeui-1.0-owner-gates.md` and issue #254.
+BeeUI publishes under the public npm scope `@beemvp`. Registry mutation remains owner-gated by `docs/beeui-1.0-owner-gates.md` and issue #254.
 
-## Current owner/account state
+## Current account state
 
-As of 2026-09-04, the owner has confirmed that the npm organization/scope `@beemvp` exists and that 2FA is enabled on the npm owner account. No BeeUI package publication is implied by those account-level actions.
+The owner has confirmed that the npm organization/scope `@beemvp` exists and npm account 2FA is enabled. No BeeUI package publication is implied by those account-level actions.
 
-The release workflow filename is `.github/workflows/npm-release.yml`. Its mutating jobs use the protected GitHub environment `release`. Both registry-mutating jobs grant `id-token: write` only at the job level, but for different purposes: bootstrap uses it only to mint provenance for a token-authenticated direct publish, while steady-state staging uses it for npm Trusted Publishing/OIDC (and provenance).
+The release workflow is `.github/workflows/npm-release.yml`. Every registry-mutating job uses the protected GitHub environment `release` and runs on a GitHub-hosted runner.
 
-## Important npm bootstrap constraint
+## Why a bootstrap is required
 
-npm staged publishing cannot create a brand-new package. `npm stage publish` requires the package to already exist on the public registry. Trusted Publisher configuration is also package-scoped, so the first publication of each BeeUI package needs a one-time bootstrap path before OIDC-only staged publishing can take over.
+npm staged publishing and package-scoped Trusted Publisher configuration require the package to already exist. The first-ever BeeUI package publication therefore cannot start with `npm stage publish`.
 
-BeeUI therefore uses this sequence:
+BeeUI uses one exceptional bootstrap RC, then switches to OIDC-only staged publishing.
 
-1. Prepare an owner-approved prerelease version `0.86.2-rc.N` and merge that exact candidate to `main`. The pin is `currentVersion` in the `json dist-tag-policy` block of `docs/dist-tag-policy.md`, but moving the pin alone stops at preflight, which runs `pnpm dist-policy:check` itself. The full set, measured by pinning a tree to `0.86.2-rc.1` and running every gate:
-   1. Set `currentVersion` in the `json dist-tag-policy` block of `docs/dist-tag-policy.md`. Leave `candidateStableVersion` on the stable base and leave `prereleaseVersionPattern` alone unless the release *line* itself moves — the workflow's prerelease guard must be that pattern verbatim, and `pnpm release-control-plane:check` compares the two strings.
-   2. Set `version` in `packages/core`, `packages/tokens`, `packages/ui` and `packages/cli`, then run `pnpm version:sync` for the manifests changesets cannot reach: `package.json`, `web/worker/package.json`, `apps/demo/app.json`, `apps/showcase/app.json`. Skipping it fails `pnpm web:check`.
-   3. Set the workflow's `expected_version` default to the same string. `pnpm release-control-plane:check` requires it to equal the pin exactly, so it is not optional at an RC.
-   4. Set `"candidateVersion"` in the JSON block of `docs/consumer-compatibility-report.md`, or `pnpm dist-policy:check` fails inside preflight.
-   5. Update the seven prose sentences `pnpm docs:public-truth:check` reads against the workspace version: `README.md` (distribution status), `docs/release.md` (milestone, versioning policy), `docs/dist-tag-policy.md` (stable-release sentence, owner-decision blockquote), `docs/consumer-compatibility-report.md` (candidate sentence) and `docs/decisions/015-package-version-0-86-2.md` (decision line). Two of them are worded about the stable line, so they need rewording rather than a literal version swap.
-   6. Run `pnpm llms:generate` and commit the regenerated `llms.txt` and `llms-full.txt`, or `pnpm llms:check` fails.
-   7. Confirm with `pnpm release-control-plane:check`, `pnpm dist-policy:check`, `pnpm docs:public-truth:check`, `pnpm llms:check`, `pnpm web:check` and `pnpm release:verify` before dispatching anything.
-2. Run `npm-release` with `operation=verify` first. This is non-mutating and may be used for dry-run verification.
-3. For the first-ever package publication only, dispatch `operation=bootstrap-rc` from `main` through the protected `release` environment. This path publishes the RC under `next` with provenance and requires the temporary environment secret `NPM_BOOTSTRAP_TOKEN`. Registry authentication comes from that token; the job-local OIDC permission exists only so npm/Sigstore can generate provenance.
-4. Immediately after the four packages exist, configure npm Trusted Publisher for every package using the exact values below.
-5. Revoke the bootstrap token and delete `NPM_BOOTSTRAP_TOKEN` from the GitHub `release` environment.
-6. For later RCs, dispatch `operation=stage-rc` from `main`. The workflow authenticates with OIDC, stages each package, and stops. The owner reviews and approves each staged package with 2FA on npm.
+## Prepare a prerelease candidate
 
-No workflow operation promotes `latest`. Stable publication remains #254 work and must follow `docs/dist-tag-policy.md` plus exact-candidate approval.
+A publishable RC must be a fresh lockstep `0.86.2-rc.N` version on an exact integrated `main` SHA.
 
-## Trusted Publisher values on npm
+When intentionally moving the source tree to an RC version:
 
-Configure each of these packages independently after the first bootstrap publication:
+1. update all four package manifests (`packages/core`, `packages/tokens`, `packages/ui`, `packages/cli`) to the same `0.86.2-rc.N`;
+2. run `pnpm version:sync` so `package.json`, `web/worker/package.json`, `apps/demo/app.json` and `apps/showcase/app.json` follow;
+3. update `currentVersion` in the `json dist-tag-policy` block while leaving `candidateStableVersion` at `0.86.2`;
+4. set `.github/workflows/npm-release.yml`'s `expected_version` default to the same RC version;
+5. update `candidateVersion` in `docs/consumer-compatibility-report.md`;
+6. regenerate checked generated docs/LLM surfaces required by the repository;
+7. run the release-control, distribution-policy, public-truth, Web and release-verification gates before dispatch.
+
+The active prerelease regex remains `^0\.86\.2-rc\.(0|[1-9][0-9]*)$`.
+
+## First-ever RC bootstrap
+
+After explicit owner authorization and a green exact candidate on `main`:
+
+1. run `npm-release` with `operation=verify` first;
+2. create a temporary granular npm token with only the permissions required to create the four `@beemvp/beeui-*` packages;
+3. store it only as `NPM_BOOTSTRAP_TOKEN` in the protected GitHub `release` environment;
+4. dispatch `operation=bootstrap-rc`, `expected_version=<exact rc>`, `confirmation=BEEUI_RC_RELEASE`;
+5. the workflow rebuilds/verifies the package set and publishes sequentially under `next` with provenance;
+6. verify the resulting public packages before continuing.
+
+The bootstrap token is exposed only to the direct publish step. It must not be a repository-level token and must not be used by ordinary CI.
+
+## Configure Trusted Publishing after bootstrap
+
+Configure each package independently:
 
 - `@beemvp/beeui-core`
 - `@beemvp/beeui-tokens`
 - `@beemvp/beeui-ui`
 - `@beemvp/beeui-cli`
 
-Use the following trust relationship:
+Use this trust relationship:
 
 | npm field | Value |
 | --- | --- |
@@ -50,48 +63,76 @@ Use the following trust relationship:
 | Environment | `release` |
 | Allowed action | `npm stage publish` only |
 
-Do **not** enable direct `npm publish` on the steady-state Trusted Publisher. Staged publishing intentionally preserves a human 2FA approval boundary.
+After all four Trusted Publishers are configured and a staged publish has been proven, revoke the bootstrap token and delete `NPM_BOOTSTRAP_TOKEN` from the GitHub release environment. Then configure the strongest npm publishing-access posture that disallows normal automation tokens while preserving owner 2FA administration.
 
-After OIDC is proven, set each package's publishing access to the strongest npm option that disallows normal publish tokens while retaining 2FA for owner/admin package changes. Keep no long-lived publish token in ordinary CI.
+## Subsequent RCs
 
-## Temporary bootstrap token
+For a later fresh `0.86.2-rc.N` candidate:
 
-The bootstrap token is intentionally exceptional. It exists only because npm cannot use staged publishing or package-level Trusted Publisher before the package exists.
+1. freeze the exact candidate on `main`;
+2. dispatch `operation=stage-rc` with `confirmation=BEEUI_RC_RELEASE`;
+3. CI stages all four packages under `next` through npm Trusted Publishing/OIDC;
+4. owner reviews/downloads the staged tarballs as needed and approves each package with npm 2FA;
+5. verify the actual public registry artifacts and clean-consumer behavior.
 
-Create a granular npm access token with the minimum scope that can create the four public `@beemvp/beeui-*` packages. Because the one-time bootstrap happens in non-interactive GitHub Actions, npm direct publishing may require the token to bypass the interactive 2FA challenge. Store it only as the `NPM_BOOTSTRAP_TOKEN` secret in the protected GitHub `release` environment, never as a repository-level secret and never in `.npmrc`, source, logs or issue comments.
+Do not silently retry an occupied staged version. Reject/reconcile the existing stage first.
 
-The workflow exposes `NPM_BOOTSTRAP_TOKEN` only to the final direct-publish step. Dependency installation, release verification, package builds, tarball packing, and registry existence probes run without the token in their environment. This prevents dependency lifecycle scripts or build tooling from inheriting the bootstrap credential.
+## Stable `0.86.2`
 
-The bootstrap job also has job-local `id-token: write`, but that permission is not used for npm registry authentication. It is required by `npm publish --provenance` so the GitHub-hosted runner can mint the Sigstore/OIDC provenance attestation for the token-authenticated first publish.
+Stable publication uses the same staged-publishing trust path, but it deliberately does **not** expose a partial set through `latest`.
 
-Revoke the bootstrap token immediately after bootstrap and Trusted Publisher configuration. The steady state is OIDC-only registry authentication through Trusted Publishing.
+1. restore/freeze the source manifests and policy to lockstep stable `0.86.2` on the exact approved `main` SHA;
+2. run `operation=verify`;
+3. dispatch `operation=stage-stable`, `expected_version=0.86.2`, `confirmation=BEEUI_STABLE_STAGE`;
+4. CI stages all four stable packages under `next` through OIDC;
+5. owner approves all four staged packages with npm 2FA;
+6. dispatch `operation=verify-stable` from the exact approved stable main line;
+7. `verify-stable` requires all four public `0.86.2` versions, checks registry integrity and canonical repository metadata, verifies the `next` tag, installs the actual public packages into a clean consumer and executes the packed `beeui` binary;
+8. only after that verification is green, the owner moves `latest` for all four packages to `0.86.2` in one uninterrupted authenticated 2FA session;
+9. verify the resulting `latest` tags and record release evidence.
+
+The stable upload temporarily uses `next` as a safety channel because npm staged approval would otherwise attach the default `latest` tag package-by-package. `latest` remains the final consumer commit point.
+
+## Why final dist-tag promotion is manual
+
+npm Trusted Publishing/OIDC authenticates `npm publish` and `npm stage publish`. It does not authorize `npm dist-tag` mutation. The final `latest` move is therefore an owner proof-of-presence operation rather than a CI write-token workflow.
+
+This is intentional: BeeUI does not add a long-lived npm write token merely to automate the last four dist-tag changes.
 
 ## Workflow guardrails
 
-`.github/workflows/npm-release.yml` is manual-dispatch only. Registry-mutating operations require all of the following before their job can run:
+Registry-mutating workflow operations require:
 
-- the workflow was dispatched from `refs/heads/main`; feature/topic branches cannot mutate npm;
-- exact workflow SHA checkout (`git rev-parse HEAD == GITHUB_SHA`);
-- exact user-entered version equals the workspace root version;
-- version matches `0.86.2-rc.N`;
-- explicit confirmation string `BEEUI_RC_RELEASE`;
-- `pnpm release-control-plane:check`, `pnpm dist-policy:check`, and `pnpm release:verify` pass;
+- `refs/heads/main`;
+- exact workflow SHA checkout;
+- user-entered `expected_version` equals the workspace root version;
+- the correct version shape (`0.86.2-rc.N` for RC operations, exactly `0.86.2` for stable staging);
+- explicit confirmation (`BEEUI_RC_RELEASE` or `BEEUI_STABLE_STAGE`);
+- `pnpm release-control-plane:check`;
+- `pnpm dist-policy:check`;
+- `pnpm release:verify`;
 - protected `release` environment approval.
 
-`bootstrap-rc` additionally refuses a version that is already public. `stage-rc` requires all package names to already exist and refuses a version that is already public. Registry existence checks treat only an npm `E404`/404 as "missing"; network, authentication, registry, or other unexpected probe failures stop the workflow instead of being misclassified as package absence. Registry mutation is sequential in dependency order: core, tokens, ui, cli.
+`bootstrap-rc` refuses reused versions. `stage-rc` and `stage-stable` require the package names to already exist and refuse a public version collision. Only an npm 404 is treated as absence; unexpected registry/network/auth failures abort.
 
-A partial bootstrap is not automatically retried. The current `bootstrap-rc` operation deliberately refuses to rerun once any package/version already exists. Stop and reconcile the exact registry state, package hashes, provenance, and the set of missing packages before recovery.
+Registry mutation is sequential in dependency order: core → tokens → ui → cli.
 
-If recovery is owner-authorized, publish only the missing package/version pairs using the exact previously reviewed tarballs; do not rebuild or change the artifact under the same version. That recovery is a separate explicit/manual action (or a separately reviewed recovery workflow), not a normal rerun of `bootstrap-rc`. Keep the same dependency order and the `release` approval boundary. Never publish a different artifact under the same semantic version.
+## Partial publication recovery
 
-## Staged approval
+Never rebuild a different artifact under the same semantic version.
 
-After `stage-rc` succeeds, review the staged package entries on npm before approval. Inspect package metadata/tarballs and approve with 2FA in dependency order: core, tokens, ui, cli. Approval is the action that makes each staged version public.
+If a bootstrap or approval sequence is partial:
 
-If anything is wrong, reject the staged version instead of approving it. A staged version occupies npm's version uniqueness index until it is rejected, so do not try to stage the same package/version again without first resolving the existing staged entry.
+- stop;
+- inspect exact registry/stage state;
+- compare package integrity/provenance with the reviewed candidate;
+- recover only the missing package/version pair with explicit owner authorization;
+- keep `latest` untouched until the full stable set is verified.
+
+Published versions are immutable. Correct forward; do not unpublish to reclaim a version.
 
 ## Owner boundary
 
-Creating this workflow and documentation does not authorize registry mutation. Until the owner explicitly authorizes the exact RC/publication action, the correct operational state is:
+Until the owner explicitly authorizes a concrete registry operation, the correct operational state remains:
 
 `OWNER_ACTION_REQUIRED`
