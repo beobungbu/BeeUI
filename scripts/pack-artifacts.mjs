@@ -1,13 +1,10 @@
 #!/usr/bin/env node
-// #203 (R7.7, parent #114): produce the exact package tarballs a BeeUI 1.0
-// prerelease would publish, retained only as local/CI build artifacts — no
-// npm registry mutation, no dist-tag mutation, no public CLI publication.
-// This is deliberately a *sibling* of `scripts/verify-release.mjs`, not a
-// replacement: release:verify proves the packed contract is correct (#202);
-// this script is the "what we would ship" evidence (#203), so it always
-// rebuilds and re-packs fresh rather than reusing verify's ephemeral temp
-// packs, and it writes into a durable, gitignored location instead of a
-// temp dir that gets deleted on exit.
+// #203 (R7.7, parent #114): produce the exact package tarballs a BeeUI prerelease
+// would publish, retained only as local/CI build artifacts — no npm registry mutation,
+// no dist-tag mutation, no public CLI publication.
+// This is deliberately a *sibling* of `scripts/verify-release.mjs`, not a replacement:
+// release:verify proves the packed contract is correct; this script is the durable
+// "what we would ship" evidence, so it always rebuilds and re-packs fresh.
 
 import { spawnSync } from 'node:child_process';
 import crypto from 'node:crypto';
@@ -21,12 +18,6 @@ const ROOT_DIR = path.resolve(SCRIPT_DIR, '..');
 const ARTIFACT_DIR = path.join(ROOT_DIR, '.artifacts', 'pack');
 const MANIFEST_PATH = path.join(ARTIFACT_DIR, 'manifest.json');
 
-// Lockstep order matches scripts/verify-release.mjs's packageSpecs (D6,
-// docs/decisions/011-distribution-architecture.md): @beemvp/beeui-ui depends on the
-// other two, but pack order does not matter for `npm pack` itself, only for
-// readable manifest output. `@beemvp/beeui-cli` (#209) is a standalone bin-only
-// package with no runtime dependency on the other three, but it is still
-// part of the same lockstep-versioned release surface (ADR-011 D6).
 const PACKAGE_NAMES = ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui', '@beemvp/beeui-cli'];
 
 function run(command, args, options = {}) {
@@ -58,21 +49,12 @@ function sha256File(filePath) {
   return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
 }
 
-// A candidate version is deterministic per exact commit SHA (ADR-011 D7:
-// "reproducible publication-ready artifacts from an exact SHA") without ever
-// writing that version into a package.json — it exists only in this
-// artifact's own metadata, per #203's requirement.
 function resolveCandidateSha() {
   const override = process.env.BEEUI_RELEASE_CANDIDATE_SHA;
   if (override) return override.trim();
   return run('git', ['rev-parse', 'HEAD']).trim();
 }
 
-// #203's "changelog/migration/version inputs validated": a prerelease
-// candidate must have recorded, reviewable changes waiting to ship — an
-// empty "## Unreleased" section means there is nothing new to certify as a
-// candidate. Mirrors the release-candidate checklist in docs/release.md
-// ("CHANGELOG.md contains candidate changes").
 function validateChangelogHasCandidateChanges() {
   const changelogPath = path.join(ROOT_DIR, 'CHANGELOG.md');
   if (!fs.existsSync(changelogPath)) {
@@ -109,13 +91,11 @@ try {
   validateChangelogHasCandidateChanges();
 
   const candidateSha = resolveCandidateSha();
-  const candidateVersion = `${rootVersion}-rc-ready.${candidateSha.slice(0, 12)}`;
+  // The release version is now intentionally frozen in the manifests before evidence is
+  // generated. Do not invent a second `rc-ready.<sha>` pseudo-version in artifact metadata:
+  // the exact SHA is a separate field and candidateVersion must equal what npm would receive.
+  const candidateVersion = rootVersion;
 
-  // Deterministic from source: always rebuild before packing, rather than
-  // trusting whatever dist/ happens to be on disk (mirrors
-  // scripts/verify-release.mjs's own reasoning for the same `pnpm pack`'s
-  // `prepack` also rebuilds, but doing it explicitly here keeps this
-  // script's own log output honest about what it packed).
   run('pnpm', ['--filter', './packages/*', 'run', 'build']);
 
   fs.rmSync(ARTIFACT_DIR, { recursive: true, force: true });
@@ -138,6 +118,9 @@ try {
     if (packedManifest.name !== name) {
       throw new Error(`${tarballName} packed manifest name "${packedManifest.name}" does not match "${name}".`);
     }
+    if (packedManifest.version !== rootVersion) {
+      throw new Error(`${tarballName} packed manifest version "${packedManifest.version}" does not match "${rootVersion}".`);
+    }
     if (JSON.stringify(packedManifest).includes('workspace:')) {
       throw new Error(`${tarballName} packed manifest still contains an unresolved workspace: protocol reference.`);
     }
@@ -157,9 +140,6 @@ try {
     commit: candidateSha,
     candidateVersion,
     lockstepVersion: rootVersion,
-    // Explicit, machine-checkable statement of what this run did NOT do —
-    // the owner guard from ADR-011: no publish, no dist-tag mutation, no
-    // npm account action.
     publish: { executed: false, registry: null, distTag: null },
     packages,
   };
@@ -167,7 +147,7 @@ try {
   fs.writeFileSync(MANIFEST_PATH, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
 
   console.log(
-    `Packed ${packages.length} prerelease-equivalent artifact(s) as candidate ${candidateVersion} (commit ${candidateSha}). No package was published: no npm registry mutation, no dist-tag change, no version bump.`,
+    `Packed ${packages.length} release-equivalent artifact(s) for ${candidateVersion} (commit ${candidateSha}). No package was published: no npm registry mutation, no dist-tag change, no version bump.`,
   );
   console.log(`Manifest: ${path.relative(ROOT_DIR, MANIFEST_PATH)}`);
   for (const pkg of packages) {
