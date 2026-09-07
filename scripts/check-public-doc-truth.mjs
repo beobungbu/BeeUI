@@ -42,11 +42,6 @@ function availableCommandOnLine(line, pattern) {
   return match[0];
 }
 
-// The repository's own visibility is a checkable fact, and all four llms artifacts asserted the
-// opposite of it — telling every AI agent that consumes them that the source is private when
-// `gh api repos/beobungbu/BeeUI` reports `"private": false`. `llms:check` regenerates and diffs,
-// so it reproduced the sentence rather than catching it. Publication state is owner-gated and
-// genuinely unpublished; repository visibility is not the same claim and must not ride along.
 const FALSE_REPOSITORY_CLAIMS = [
   /\brepository is private\b/iu,
   /\bsource (?:code )?is not public\b/iu,
@@ -72,19 +67,23 @@ export function collectRepositoryVisibilityViolations(rootDir = ROOT_DIR) {
   return violations;
 }
 
-// Prose that states the package version, sentence by sentence. `dist-policy:check` reads the
-// fenced JSON blocks, so the prose wrapped around them was unguarded: each of these was set to
-// 9.9.9 with every gate green. A generic scan for version-shaped literals cannot do this job —
-// the React Native pin is also 0.86.2 — so the sentence is the unit, and only README is required
-// to exist (fixtures build minimal roots).
+function stableBase(version) {
+  return typeof version === 'string' ? version.replace(/-rc\.(0|[1-9][0-9]*)$/, '') : version;
+}
+
+// Version prose has two different truths during an RC:
+// - current identity: the exact candidate in the manifests (for example 0.86.2-rc.1);
+// - stable line: the ADR-selected version that candidate will become (0.86.2).
+// Treating every sentence as current identity made a valid prerelease impossible without rewriting
+// ADR-015 and stable-release policy into false statements. Each sentence declares which truth it owns.
 const VERSION_SENTENCES = [
-  { file: 'README.md', label: 'distribution-status line', pattern: /repository\/package version is `([^`]+)`/u, required: true },
-  { file: 'docs/release.md', label: 'milestone sentence', pattern: /ships as package version `([^`]+)`/u },
-  { file: 'docs/release.md', label: 'versioning policy', pattern: /the package version is plain SemVer `([^`]+)`/u },
-  { file: 'docs/dist-tag-policy.md', label: 'stable-release sentence', pattern: /The stable `([^`]+)` is published, verified/u },
-  { file: 'docs/dist-tag-policy.md', label: 'owner-decision blockquote', pattern: /plain SemVer starting at `([^`]+)`/u },
-  { file: 'docs/consumer-compatibility-report.md', label: 'candidate sentence', pattern: /candidate version `([^`]+)` today/u },
-  { file: 'docs/decisions/015-package-version-0-86-2.md', label: 'decision line', pattern: /The lockstep package version is \*\*`([^`]+)`\*\*/u },
+  { file: 'README.md', label: 'distribution-status line', pattern: /repository\/package version is `([^`]+)`/u, required: true, kind: 'current' },
+  { file: 'docs/release.md', label: 'milestone sentence', pattern: /ships as package version `([^`]+)`/u, kind: 'stable' },
+  { file: 'docs/release.md', label: 'versioning policy', pattern: /the package version is plain SemVer `([^`]+)`/u, kind: 'stable' },
+  { file: 'docs/dist-tag-policy.md', label: 'stable-release sentence', pattern: /The stable `([^`]+)` is published, verified/u, kind: 'stable' },
+  { file: 'docs/dist-tag-policy.md', label: 'owner-decision blockquote', pattern: /plain SemVer starting at `([^`]+)`/u, kind: 'stable' },
+  { file: 'docs/consumer-compatibility-report.md', label: 'candidate sentence', pattern: /candidate version `([^`]+)` today/u, kind: 'current' },
+  { file: 'docs/decisions/015-package-version-0-86-2.md', label: 'decision line', pattern: /The lockstep package version is \*\*`([^`]+)`\*\*/u, kind: 'stable' },
 ];
 
 export function collectPublicTruthViolations(rootDir = ROOT_DIR) {
@@ -105,9 +104,6 @@ export function collectPublicTruthViolations(rootDir = ROOT_DIR) {
     });
   }
 
-  // README's distribution-status line states the package version in prose. Setting it to 9.9.9
-  // left every gate green: the control plane compares manifests, web:check compares the Expo and
-  // Worker identities, and nothing read this sentence. It is the first version a visitor sees.
   const manifestPath = path.join(rootDir, 'package.json');
   let workspaceVersion;
   try {
@@ -119,7 +115,8 @@ export function collectPublicTruthViolations(rootDir = ROOT_DIR) {
     violations.push('package.json: missing or has no version, so stated versions cannot be checked.');
   }
   if (workspaceVersion) {
-    for (const { file, label, pattern, required } of VERSION_SENTENCES) {
+    const stableVersion = stableBase(workspaceVersion);
+    for (const { file, label, pattern, required, kind } of VERSION_SENTENCES) {
       const absolute = path.join(rootDir, file);
       if (!fs.existsSync(absolute)) {
         if (required) violations.push(`${file}: missing, so its ${label} cannot be checked.`);
@@ -131,8 +128,10 @@ export function collectPublicTruthViolations(rootDir = ROOT_DIR) {
         if (required) violations.push(`${file}: no longer carries its ${label}, so the version it states cannot be checked.`);
         continue;
       }
-      if (stated[1] !== workspaceVersion) {
-        violations.push(`${file}: ${label} states version ${stated[1]} but the workspace version is ${workspaceVersion}.`);
+      const expected = kind === 'stable' ? stableVersion : workspaceVersion;
+      if (stated[1] !== expected) {
+        const authority = kind === 'stable' ? 'stable base' : 'workspace version';
+        violations.push(`${file}: ${label} states version ${stated[1]} but the ${authority} is ${expected}.`);
       }
     }
   }
@@ -165,7 +164,7 @@ function main() {
     process.exitCode = 1;
     return;
   }
-  console.log('Public documentation truth check passed (publication commands and demo workspace commands are consistent).');
+  console.log('Public documentation truth check passed (publication commands and version authorities are consistent).');
 }
 
 const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
