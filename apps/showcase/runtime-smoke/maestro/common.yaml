@@ -127,8 +127,26 @@ appId: com.beeui.showcase
       - assertNotVisible:
           id: "runtime-alert-content"
 
-- tapOn:
-    id: "runtime-popover-trigger"
+# Popover is anchored to its trigger. On iOS a direct Maestro tap can resolve a
+# below-fold accessibility node without scrolling the React Native anchor into
+# a stable viewport position; the tap reports success but the overlay never
+# opens. Center the trigger first and use the rendered content as tap proof.
+- scrollUntilVisible:
+    element:
+      id: "runtime-popover-trigger"
+    direction: DOWN
+    visibilityPercentage: 100
+    centerElement: true
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-popover-trigger"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-popover-content"
+          timeout: 15000
 - assertVisible:
     id: "runtime-popover-content"
 - assertVisible:
