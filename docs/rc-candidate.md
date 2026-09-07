@@ -23,7 +23,7 @@ A public prerelease candidate is frozen only after all of the following are true
 3. release-equivalent tarballs are rebuilt from source and their SHA-256 values are retained;
 4. required Web, clean-consumer, Android/native compile and scheduled iOS/native evidence is green for the exact candidate or explicitly classified by the release contract;
 5. `CHANGELOG.md`, migration/support documentation, distribution policy and npm workflow all describe the same version authority;
-6. no `@beeui/*`, `0.1.0`, `1.0.0`-as-npm-version, or `20260902.0.0` instruction remains in an active release path;
+6. no superseded package scope or old package-version authority remains in an active release path;
 7. the repository owner explicitly authorizes registry mutation.
 
 Any package/CLI/registry/token source change after freeze invalidates the candidate and requires a new `rc.N`. Evidence-only documentation may describe an already-frozen source candidate but must never silently change its package contents.
