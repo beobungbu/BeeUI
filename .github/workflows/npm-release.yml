@@ -186,29 +186,19 @@ jobs:
             assert_version_absent "${package}@${RELEASE_VERSION}" bootstrap
           done
 
-      - name: Build and pack the first RC
+      - name: Build and verify canonical RC artifacts
         run: |
           set -euo pipefail
+          pnpm release-control-plane:check
+          pnpm dist-policy:check
           pnpm release:verify
-          artifact_root="$RUNNER_TEMP/beeui-npm-bootstrap"
-          rm -rf "$artifact_root"
-          mkdir -p "$artifact_root"
 
-          pack_one() {
-            package_dir="$1"
-            key="$2"
-            package_out="$artifact_root/$key"
-            mkdir -p "$package_out"
-            (cd "$package_dir" && pnpm pack --pack-destination "$package_out")
-            shopt -s nullglob
-            tarballs=("$package_out"/*.tgz)
-            test "${#tarballs[@]}" -eq 1
-          }
-
-          pack_one packages/core core
-          pack_one packages/tokens tokens
-          pack_one packages/ui ui
-          pack_one packages/cli cli
+          artifact_root=".artifacts/release-packages"
+          for key in core tokens ui cli; do
+            tarball="$artifact_root/beemvp-beeui-${key}-${RELEASE_VERSION}.tgz"
+            test -f "$tarball"
+            test "$(tar -xOzf "$tarball" package/package.json | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version")" = "$RELEASE_VERSION"
+          done
 
       - name: Bootstrap the first RC under next
         env:
@@ -216,18 +206,17 @@ jobs:
         run: |
           set -euo pipefail
           test -n "${NODE_AUTH_TOKEN:-}"
-          artifact_root="$RUNNER_TEMP/beeui-npm-bootstrap"
+          artifact_root=".artifacts/release-packages"
 
           publish_one() {
             key="$1"
-            package_out="$artifact_root/$key"
-            shopt -s nullglob
-            tarballs=("$package_out"/*.tgz)
-            test "${#tarballs[@]}" -eq 1
-            npm publish "${tarballs[0]}" --access public --tag next --provenance
+            tarball="$artifact_root/beemvp-beeui-${key}-${RELEASE_VERSION}.tgz"
+            test -f "$tarball"
+            npm publish "$tarball" --access public --tag next --provenance
           }
 
-          # Dependency order; never parallelize registry mutation.
+          # Dependency order; never parallelize registry mutation. These are exactly the
+          # canonical tarballs produced and digest-verified by release:verify above.
           publish_one core
           publish_one tokens
           publish_one ui
@@ -304,31 +293,27 @@ jobs:
             assert_version_absent "${package}@${RELEASE_VERSION}" stage
           done
 
-      - name: Build, pack, and stage the RC under next via OIDC
+      - name: Verify and stage canonical RC artifacts under next via OIDC
         run: |
           set -euo pipefail
+          pnpm release-control-plane:check
+          pnpm dist-policy:check
           pnpm release:verify
-          artifact_root="$RUNNER_TEMP/beeui-npm-stage"
-          rm -rf "$artifact_root"
-          mkdir -p "$artifact_root"
+          artifact_root=".artifacts/release-packages"
 
           stage_one() {
-            package_dir="$1"
-            key="$2"
-            package_out="$artifact_root/$key"
-            mkdir -p "$package_out"
-            (cd "$package_dir" && pnpm pack --pack-destination "$package_out")
-            shopt -s nullglob
-            tarballs=("$package_out"/*.tgz)
-            test "${#tarballs[@]}" -eq 1
-            npm stage publish "${tarballs[0]}" --access public --tag next --provenance
+            key="$1"
+            tarball="$artifact_root/beemvp-beeui-${key}-${RELEASE_VERSION}.tgz"
+            test -f "$tarball"
+            test "$(tar -xOzf "$tarball" package/package.json | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version")" = "$RELEASE_VERSION"
+            npm stage publish "$tarball" --access public --tag next --provenance
           }
 
           # Staging is sequential and approval remains a separate owner 2FA action on npm.
-          stage_one packages/core core
-          stage_one packages/tokens tokens
-          stage_one packages/ui ui
-          stage_one packages/cli cli
+          stage_one core
+          stage_one tokens
+          stage_one ui
+          stage_one cli
 
   stage-stable:
     if: ${{ inputs.operation == 'stage-stable' }}
@@ -400,32 +385,28 @@ jobs:
             assert_version_absent "${package}@${RELEASE_VERSION}"
           done
 
-      - name: Build, pack, and stage stable under next via OIDC
+      - name: Verify and stage canonical stable artifacts under next via OIDC
         run: |
           set -euo pipefail
+          pnpm release-control-plane:check
+          pnpm dist-policy:check
           pnpm release:verify
-          artifact_root="$RUNNER_TEMP/beeui-npm-stable-stage"
-          rm -rf "$artifact_root"
-          mkdir -p "$artifact_root"
+          artifact_root=".artifacts/release-packages"
 
           stage_one() {
-            package_dir="$1"
-            key="$2"
-            package_out="$artifact_root/$key"
-            mkdir -p "$package_out"
-            (cd "$package_dir" && pnpm pack --pack-destination "$package_out")
-            shopt -s nullglob
-            tarballs=("$package_out"/*.tgz)
-            test "${#tarballs[@]}" -eq 1
+            key="$1"
+            tarball="$artifact_root/beemvp-beeui-${key}-${RELEASE_VERSION}.tgz"
+            test -f "$tarball"
+            test "$(tar -xOzf "$tarball" package/package.json | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version")" = "$RELEASE_VERSION"
             # Stable is staged under `next` so approval cannot expose a partial set via `latest`.
             # After all four are approved and verify-stable passes, the owner promotes `latest`.
-            npm stage publish "${tarballs[0]}" --access public --tag next --provenance
+            npm stage publish "$tarball" --access public --tag next --provenance
           }
 
-          stage_one packages/core core
-          stage_one packages/tokens tokens
-          stage_one packages/ui ui
-          stage_one packages/cli cli
+          stage_one core
+          stage_one tokens
+          stage_one ui
+          stage_one cli
 
   verify-stable:
     if: ${{ inputs.operation == 'verify-stable' }}
