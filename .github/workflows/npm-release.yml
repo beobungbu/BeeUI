@@ -17,7 +17,7 @@ on:
       expected_version:
         description: Exact lockstep package version expected at this workflow SHA
         required: true
-        default: 0.86.2
+        default: 0.86.2-rc.1
         type: string
       confirmation:
         description: Registry mutation confirmation (`BEEUI_RC_RELEASE` or `BEEUI_STABLE_STAGE`)
