@@ -32,6 +32,20 @@ test('accepts repository-local evaluation commands and verified demo commands', 
   assert.deepEqual(collectPublicTruthViolations(root), []);
 });
 
+test('accepts an RC identity while stable policy and ADR prose stay on the stable base', () => {
+  const root = fixture({
+    'README.md': '> the repository/package version is `0.86.2-rc.1`.\n',
+    'package.json': '{"version":"0.86.2-rc.1"}',
+    'apps/demo/README.md': validDemo,
+    'apps/docs/src/content/docs/index.md': 'BeeUI is unpublished.\n',
+    'docs/release.md': 'The BeeUI 1.0 product milestone ships as package version `0.86.2` (ADR-015).\nFor the current BeeUI 1.0 product milestone the package version is plain SemVer `0.86.2`.\n',
+    'docs/dist-tag-policy.md': '- The stable `0.86.2` is published, verified, and only then promoted.\n',
+    'docs/consumer-compatibility-report.md': 'candidate version `0.86.2-rc.1` today\n',
+    'docs/decisions/015-package-version-0-86-2.md': 'The lockstep package version is **`0.86.2`**.\n',
+  });
+  assert.deepEqual(collectPublicTruthViolations(root), []);
+});
+
 test('rejects unavailable public registry commands', () => {
   const root = fixture({
     'README.md': '> the repository/package version is `1.2.3`.\n' + 'pnpm add @beemvp/beeui-ui\n',
@@ -57,7 +71,6 @@ test('rejects stale demo build command and missing workspace commands', () => {
   assert.equal(violations.filter((line) => line.includes('missing verified workspace command')).length, 3);
 });
 
-
 test('a README that states the wrong package version is a violation, and a missing sentence too', () => {
   const root = fixture({
     'README.md': '> the repository/package version is `9.9.9`.\npnpm install --frozen-lockfile\n',
@@ -77,10 +90,7 @@ test('a README that states the wrong package version is a violation, and a missi
   assert.ok(broken.some((v) => v.startsWith('package.json: not parseable')), broken.join('\n'));
 });
 
-test('a prose sentence elsewhere that states the wrong package version is a violation', () => {
-  // Six sentences outside README stated the version with no gate reading them; each was set to
-  // 9.9.9 with every check green. The sentence is the unit, because the React Native pin shares
-  // the number and a generic literal scan would fire on it.
+test('a prose sentence elsewhere that states the wrong stable version is a violation', () => {
   const root = fixture({
     'README.md': '> the repository/package version is `1.2.3`.\n',
     'package.json': '{"version":"1.2.3"}',
@@ -91,5 +101,5 @@ test('a prose sentence elsewhere that states the wrong package version is a viol
   });
   const violations = collectPublicTruthViolations(root);
   assert.ok(violations.some((v) => v.includes('docs/release.md: milestone sentence states version 9.9.9')), violations.join('\n'));
-  assert.equal(violations.some((v) => v.includes('dist-tag-policy')), false, 'a correct sentence is not a violation');
+  assert.equal(violations.some((v) => v.includes('dist-tag-policy')), false, 'a correct stable sentence is not a violation');
 });

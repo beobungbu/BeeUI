@@ -4,7 +4,7 @@
 
 BeeUI is a mobile-first TypeScript UI system focused on long-lived application interfaces: accessible behavior, explicit responsive contracts, semantic theming, production screen patterns, and source ownership without coupling application code to a styling engine.
 
-> **Distribution status — 2026-09-06:** the repository/package version is `0.86.2` (ADR-015). BeeUI packages and the CLI are **not published to the public npm registry yet**. Do not treat public `npm install @beemvp/beeui-*` or `npx @beemvp/beeui-cli` commands as available. Publication remains an owner-gated action; `docs/dist-tag-policy.md` is the machine-checked authority.
+> **Distribution status — 2026-09-07:** the repository/package version is `0.86.2-rc.1`, the first unpublished release candidate on the ADR-015 stable line `0.86.2`. BeeUI packages and the CLI are **not published to the public npm registry yet**. Do not treat public `npm install @beemvp/beeui-*` or `npx @beemvp/beeui-cli` commands as available. Publication remains an owner-gated action; `docs/dist-tag-policy.md` is the machine-checked authority.
 
 ## What is included
 

@@ -1,10 +1,10 @@
 {
   "name": "beeui-workspace",
   "private": true,
-  "version": "0.86.2",
+  "version": "0.86.2-rc.1",
   "license": "MIT",
   "author": {
-    "name": "Tr\u1ea7n \u0110\u1ee9c L\u00e2n",
+    "name": "Trần Đức Lân",
     "email": "lantranduc@gmail.com"
   },
   "packageManager": "pnpm@10.15.0",
@@ -82,7 +82,7 @@
     "typecheck": "pnpm hygiene:check && pnpm docs:social-card:asset-check && pnpm docs:public-truth:check && pnpm site:contract:check && pnpm docs:foundation:check && pnpm docs:surface:check && pnpm docs:reference:check && pnpm docs:portal-pages:check && pnpm web:check && pnpm release-control-plane:check && pnpm lint && pnpm tokens:check && pnpm tokens:consumption-check && pnpm compat:check && pnpm ui-exports:check && pnpm release-ruleset:check && pnpm dist-policy:check && pnpm llms:check && pnpm ai-contract:check && pnpm docs:contract:check && pnpm docs:examples:check && pnpm docs:patterns:check && pnpm build && pnpm -r --if-present typecheck",
     "test": "pnpm docs:public-truth:test && pnpm site:contract:test && pnpm docs:foundation:test && pnpm docs:surface:test && pnpm docs:surface:diff:test && pnpm docs:surface:diff && pnpm docs:reference:test && pnpm docs:portal-pages:test && pnpm docs:a11y:test && pnpm docs:search:test && pnpm docs:budget:test && pnpm docs:vitals:test && pnpm docs:social-card:test && pnpm ci-contract:test && pnpm portal-shell:test && pnpm web:test && pnpm release-control-plane:test && pnpm tokens:test && pnpm compat:test && pnpm ui-exports:test && pnpm release-ruleset:test && pnpm dist-policy:test && pnpm llms:test && pnpm ai-contract:test && pnpm docs:contract:test && pnpm docs:examples:test && pnpm docs:patterns:test && pnpm bench:test && pnpm --filter @beemvp/beeui-showcase test && pnpm registry:verify && pnpm registry:test",
     "check": "pnpm typecheck && pnpm test",
-    "release:verify": "node ./scripts/verify-release.mjs",
+    "release:verify": "node ./scripts/verify-release.mjs && node ./scripts/release/add-artifact-digests.mjs",
     "pack:artifacts": "node ./scripts/pack-artifacts.mjs",
     "beeui": "node ./scripts/beeui.mjs",
     "registry:verify": "node ./scripts/verify-registry.mjs",
