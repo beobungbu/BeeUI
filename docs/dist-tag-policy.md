@@ -2,7 +2,7 @@
 
 This document is the machine-checked authority for BeeUI npm versioning, staging and dist-tag behavior.
 
-BeeUI 1.0 is the product milestone name. The stable npm package line starts at **`0.86.2`** per ADR-015. The superseded `20260902.0.0`, `1.0.0`-as-npm-version and historical `0.1.0` candidate must not be used by an active release path.
+BeeUI 1.0 is the product milestone name. The stable npm package line starts at **`0.86.2`** per ADR-015. The current unpublished release candidate is **`0.86.2-rc.1`**. The superseded `20260902.0.0`, `1.0.0`-as-npm-version and historical `0.1.0` candidate must not be used by an active release path.
 
 ## Owner guard
 
@@ -105,7 +105,7 @@ The block below is parsed by `scripts/check-distribution-policy.mjs` and feeds t
 ```json dist-tag-policy
 {
   "published": false,
-  "currentVersion": "0.86.2",
+  "currentVersion": "0.86.2-rc.1",
   "candidateStableVersion": "0.86.2",
   "prereleaseVersionPattern": "^0\\.86\\.2-rc\\.(0|[1-9][0-9]*)$",
   "prereleaseExample": "0.86.2-rc.1",
