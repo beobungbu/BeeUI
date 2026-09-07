@@ -1,0 +1,68 @@
+#!/usr/bin/env node
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { ROOT_DIR, buildPublicSiteContract } from './public-site-contract-lib.mjs';
+import { buildPublicComponentManifest } from './public-component-reference.mjs';
+import { buildPublicPatternManifest } from './public-pattern-reference.mjs';
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function renderNavigation(navigation) {
+  return navigation
+    .map((item) => `<a href="${escapeHtml(item.href)}">${escapeHtml(item.label)}</a>`)
+    .join('');
+}
+
+export function renderPublicLanding(rootDir = ROOT_DIR, { environment } = {}) {
+  const contract = buildPublicSiteContract(rootDir, { environment });
+  // #456 requires the landing's proof points to come from mechanically supported repository
+  // state. The pattern count was a hand-typed 37 in the template: correct on the day it was
+  // written, and with nothing to make it wrong on the day it stopped being true.
+  const componentCount = buildPublicComponentManifest(rootDir).length;
+  const patternCount = buildPublicPatternManifest(rootDir).length;
+  const packageCount = contract.buildTruth.publication.lockstepPackages.length;
+  const template = fs.readFileSync(path.join(rootDir, 'web/site/index.template.html'), 'utf8');
+  const publicationLabel = contract.buildTruth.publication.published ? 'Published' : 'Unpublished';
+  const replacements = new Map([
+    ['{{ORIGIN}}', contract.origin],
+    ['{{VERSION}}', contract.buildTruth.version],
+    ['{{PUBLICATION_LABEL}}', publicationLabel],
+    ['{{NAVIGATION}}', renderNavigation(contract.navigation)],
+    ['{{COMPONENT_COUNT}}', String(componentCount)],
+    ['{{PATTERN_COUNT}}', String(patternCount)],
+    ['{{PACKAGE_COUNT}}', String(packageCount)],
+  ]);
+
+  let html = template;
+  for (const [token, value] of replacements) html = html.replaceAll(token, value);
+  const unresolved = html.match(/\{\{[A-Z0-9_]+\}\}/g);
+  if (unresolved) throw new Error(`landing template has unresolved tokens: ${[...new Set(unresolved)].join(', ')}`);
+  return { html, contract, publicationLabel };
+}
+
+export function buildPublicLanding({ rootDir = ROOT_DIR, outDir = path.join(rootDir, 'web/dist'), environment } = {}) {
+  const { html } = renderPublicLanding(rootDir, { environment });
+  fs.rmSync(outDir, { recursive: true, force: true });
+  fs.mkdirSync(path.join(outDir, 'assets'), { recursive: true });
+  fs.writeFileSync(path.join(outDir, 'index.html'), html);
+  fs.copyFileSync(path.join(rootDir, 'web/site/site.css'), path.join(outDir, 'assets/site.css'));
+  return outDir;
+}
+
+function main() {
+  const outDir = buildPublicLanding();
+  console.log(`Built BeeUI public landing into ${path.relative(ROOT_DIR, outDir)}.`);
+}
+
+const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isCli) main();

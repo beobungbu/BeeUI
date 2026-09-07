@@ -21,8 +21,11 @@ function useSegmentedControlContext() {
 export type SegmentedControlProps = Omit<ViewProps, 'children' | 'role'> & {
   children?: React.ReactNode;
   className?: string;
+  /** Disables every `SegmentedControlItem` inside, overriding each item's own `disabled`. Defaults to false. */
   disabled?: boolean;
+  /** Called with the newly selected item's `value` when a non-selected item is pressed. Required for enabled usage (logs a dev warning otherwise). */
   onValueChange?: (value: string) => void;
+  /** The `value` of the currently selected `SegmentedControlItem`. Always controlled by the caller — there is no uncontrolled mode. */
   value: string;
 };
 
@@ -60,7 +63,9 @@ export type SegmentedControlItemProps = Omit<
   children?: React.ReactNode;
   className?: string;
   labelClassName?: string;
+  /** Called before the item's own selection logic runs, regardless of whether this item is already selected. */
   onPress?: PressableProps['onPress'];
+  /** Identifies this item; compared against the parent `SegmentedControl`'s `value` to determine whether it is selected. */
   value: string;
 };
 

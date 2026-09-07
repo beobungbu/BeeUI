@@ -19,23 +19,36 @@ export type ToastVariant = 'neutral' | 'success' | 'warning' | 'destructive' | '
 export type ToastDuration = number | 'persistent';
 
 export type ToastAction = {
+  /** Text of the action button rendered inside the toast. */
   label: string;
+  /** Called when the action button is pressed. */
   onPress: () => void;
   /** Dismisses after the callback by default. Set false for an explicit persistent action. */
   dismissOnPress?: boolean;
 };
 
 export type ToastOptions = {
+  /** Primary line of the toast. */
   title: string;
+  /** Secondary line under the title. */
   description?: string;
+  /** Semantic surface the toast renders in; each value maps to one surface class. */
   variant?: ToastVariant;
+  /**
+   * Auto-dismiss delay in milliseconds, or `'persistent'` to stay until dismissed. A value that
+   * is not a positive finite number falls back to `TOAST_DEFAULT_DURATION` (5000).
+   */
   duration?: ToastDuration;
+  /** An optional action button; see `ToastAction`. */
   action?: ToastAction;
 };
 
 export type ToastApi = {
+  /** Enqueues a toast and returns the id `dismiss` accepts for it. */
   show: (options: ToastOptions) => ToastId;
+  /** Dismisses the toast with this id; unknown ids are ignored. */
   dismiss: (id: ToastId) => void;
+  /** Dismisses every shown toast and drops the ones still queued. */
   dismissAll: () => void;
 };
 

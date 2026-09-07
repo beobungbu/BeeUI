@@ -1,0 +1,114 @@
+{
+  "writtenAt": "2026-09-06T11:31",
+  "note": "The 1210 in the file name is the label the reports cite; the file itself was written at 11:31 (mtime), before any query rewrite existed.",
+  "blind": true,
+  "queries": [
+    {
+      "query": "how do I add beeui to my expo app",
+      "expect": "/docs/start/expo/"
+    },
+    {
+      "query": "using this in a react native app without expo",
+      "expect": "/docs/start/bare-react-native/"
+    },
+    {
+      "query": "beeui with vite and react native web",
+      "expect": "/docs/start/web/"
+    },
+    {
+      "query": "how do I switch between light and dark mode",
+      "expect": "/docs/theming/"
+    },
+    {
+      "query": "how do I change the primary brand color",
+      "expect": "/docs/guides/branding/",
+      "alternative": "/docs/reference/tokens/"
+    },
+    {
+      "query": "compact vs comfortable spacing for lists",
+      "expect": "/docs/guides/density/"
+    },
+    {
+      "query": "how do I show a loading spinner on a button while it submits",
+      "expect": "/docs/components/button/"
+    },
+    {
+      "query": "can the select component pick more than one value",
+      "expect": "/docs/components/select/"
+    },
+    {
+      "query": "how many toasts can be on screen at once",
+      "expect": "/docs/components/toast/"
+    },
+    {
+      "query": "bottom sheet with snap points",
+      "expect": "/docs/components/sheet/"
+    },
+    {
+      "query": "switch component warning in console when there's no onValueChange",
+      "expect": "/docs/components/switch/"
+    },
+    {
+      "query": "how do I make a sortable table that works on mobile",
+      "expect": "/docs/guides/table/",
+      "alternative": "/docs/components/table/"
+    },
+    {
+      "query": "does this actually work with voiceover on ios",
+      "expect": "/docs/accessibility/native-assistive-tech/"
+    },
+    {
+      "query": "tab order and escape key for dialogs and popovers",
+      "expect": "/docs/accessibility/keyboard-focus/",
+      "alternative": "/docs/components/dialog/"
+    },
+    {
+      "query": "sign up screen example",
+      "expect": "/docs/patterns/auth/sign-up-screen/"
+    },
+    {
+      "query": "dashboard overview screen template",
+      "expect": "/docs/patterns/dashboard-finance/dashboard-overview-screen/"
+    },
+    {
+      "query": "is this on npm yet",
+      "expect": "/docs/guides/current-release/"
+    },
+    {
+      "query": "if I upgrade later will it break my app",
+      "expect": "/docs/guides/migration-versioning/"
+    },
+    {
+      "query": "what react and react native versions are actually tested",
+      "expect": "/docs/compatibility/current/",
+      "alternative": "/docs/compatibility/index/"
+    },
+    {
+      "query": "does this work with react native web",
+      "expect": "/docs/compatibility/web/",
+      "alternative": "/docs/start/web/"
+    },
+    {
+      "query": "BeeUI anchored overlays require BeeUIProvider at the application root",
+      "expect": "/docs/guides/troubleshooting/"
+    },
+    {
+      "query": "my popover / select isn't showing up at all",
+      "expect": "/docs/guides/troubleshooting/",
+      "alternative": "/docs/start/provider-safe-area/"
+    },
+    {
+      "query": "how do I copy the component source into my own repo instead of installing a package",
+      "expect": "/docs/guides/cli-source-ownership/"
+    },
+    {
+      "query": "full list of cli commands and flags",
+      "expect": "/docs/reference/cli/",
+      "alternative": "/docs/guides/cli-source-ownership/"
+    },
+    {
+      "query": "mobile first breakpoints for responsive layout",
+      "expect": "/docs/responsive/"
+    }
+  ]
+}

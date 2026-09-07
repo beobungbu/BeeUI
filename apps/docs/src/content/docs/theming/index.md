@@ -1,19 +1,48 @@
 ---
 title: Theming
-description: BeeUI's semantic design token system.
+description: Apply semantic color, brand, density and runtime theme contracts without coupling product code to the styling engine.
 ---
 
-BeeUI ships Theme Tokens v3: a canonical DTCG token source with codegen, a
-semantic-consumption guard (components may not hardcode brand literals), scoped
-theme overrides, light/dark/high-contrast variants, density, dataviz, and motion
-contracts.
+BeeUI components consume **semantic tokens** such as background, surface, foreground,
+border and intent roles. Your application chooses theme/brand/density; reusable component
+behavior should not depend on literal brand colors.
 
-- **[Branding](/theming/branding/)** — applying your own brand tokens.
-- **[Density](/theming/density/)** — compact/comfortable/spacious layout density.
+## Choose light, dark or system
 
-:::note[Content pending]
-Full theming guidance (token authoring, runtime overrides, high-contrast and
-reduced-motion behavior) is tracked for a follow-up docs content issue and will be
-sourced from `docs/theming.md`, `docs/theme-authoring-primitives.md`, and
-`docs/token-lifecycle.md`.
-:::
+Mount `BeeUIProvider` once, then let Uniwind's adaptive theme follow the OS or switch the
+runtime theme intentionally. The Showcase demonstrates system/light/dark switching in the
+same component tree: [open Theme & tokens](/showcase/).
+
+## Web CSS
+
+```css
+@import 'tailwindcss';
+@import 'uniwind';
+@import '@beemvp/beeui-tokens/theme.css';
+```
+
+This is the same CSS contract used by the clean Expo/Web consumers. The package is still
+unpublished; see [Start](/docs/start/) for the current packed/workspace
+consumption path.
+
+## Brand scope and density
+
+Use `BeeThemeScope` when one subtree needs a different supported brand/appearance while
+preserving semantic roles. Density changes spacing/control presentation through the
+accepted density contract; it does not reduce accessibility touch-target obligations.
+High-contrast variants exist in the current token runtime and are treated as explicit
+supported theme variants, not a claim that every device accessibility setting is simulated.
+
+## Stable API vs escape hatch
+
+Semantic token names, typed component variants and behavior contracts are the reusable
+surface. `className` remains a current-engine escape hatch for application/source-owned
+work and is **not** a portability promise across future styling engines.
+
+## Task guides built on this contract
+
+- [Branding](/docs/guides/branding/) — override a brand palette without leaving the semantic model.
+- [Density](/docs/guides/density/) — the orthogonal row-height and gap axis.
+
+Deeper authorities: [theming](https://github.com/beobungbu/BeeUI/blob/main/docs/theming.md),
+[theme scope](https://github.com/beobungbu/BeeUI/blob/main/docs/theme-scope.md), [density](https://github.com/beobungbu/BeeUI/blob/main/docs/density.md), and [token lifecycle](https://github.com/beobungbu/BeeUI/blob/main/docs/token-lifecycle.md).

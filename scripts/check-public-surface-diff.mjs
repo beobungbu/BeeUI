@@ -1,0 +1,238 @@
+// Breaking-change tracking for the public surface, by measurement rather than by memory.
+//
+// `docs/public-surface.inventory.json` is regenerated from source on every check, so a row that
+// disappears between the base branch and HEAD is a public export, type, token, CLI flag or
+// registry item that consumers can no longer reach — whether or not anyone remembered to call
+// that breaking. This diff is the second half of the owner's "both" decision: changesets carry
+// the human-written note, the inventory diff refuses to let a removal ship without one.
+import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { OUTPUT_FILE, serializePublicSurfaceInventory } from './generate-public-surface-inventory.mjs';
+
+const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const PUBLIC_PACKAGES = ['@beemvp/beeui-ui', '@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-cli'];
+
+// A row's id is package-scoped, so a symbol reachable both from the root barrel and from a
+// subpath keeps its id when it leaves the barrel: the row swaps `family` for `subpath` and, read
+// as metadata, that was a "none". Removing `alertBannerVariants` from `packages/ui/src/index.ts`
+// passed this check. Reach is part of what a consumer has; losing the root barrel breaks
+// `import { x } from '@beemvp/beeui-ui'` even while `@beemvp/beeui-ui/alert-banner` still works.
+function reachOf(row) {
+  return row.family !== undefined ? 'root' : row.subpath ? `subpath:${row.subpath}` : 'unknown';
+}
+
+// Removal, a narrower reach (root barrel → subpath only), or a different package is breaking.
+// A classification change is recorded separately: it needs a changeset (see `classifyDiff`) but
+// not a breaking bump. Source path, docs owner and owner status are where a row is documented,
+// not what a consumer can reach, so they change freely.
+export function diffInventories(base, head) {
+  const baseById = new Map(base.rows.map((row) => [row.id, row]));
+  const headById = new Map(head.rows.map((row) => [row.id, row]));
+  const removed = [];
+  const changed = [];
+  const reclassified = [];
+  for (const [id, row] of baseById) {
+    const now = headById.get(id);
+    if (!now) {
+      removed.push(id);
+      continue;
+    }
+    if (row.classification !== now.classification) {
+      reclassified.push({ id, from: row.classification, to: now.classification });
+    }
+    if (row.package !== now.package) changed.push({ id, what: 'package', from: row.package, to: now.package });
+    const was = reachOf(row);
+    const is = reachOf(now);
+    if (was === 'root' && is !== 'root') changed.push({ id, what: 'reach', from: was, to: is });
+  }
+  const added = [...headById.keys()].filter((id) => !baseById.has(id));
+  return { removed, changed, reclassified, added };
+}
+
+// Nine classification values exist and none is "internal" — internal rows are not listed — and
+// three of them are driven by lists in `docs/public-surface-owners.json`. A move between them
+// changes how a row is documented, not whether a consumer can reach it, so it needs a changeset
+// (the note is what changes) but not a breaking bump. Treating it as breaking made a docs-only
+// edit to that JSON demand a major bump of four packages.
+export function classifyDiff(diff) {
+  if (diff.removed.length || diff.changed.length) return 'breaking';
+  if (diff.added.length || diff.reclassified.length) return 'additive';
+  return 'none';
+}
+
+// The bump a removal needs depends on where the workspace sits on SemVer. On 0.x, changesets'
+// own convention is that breaking changes bump the minor, so `minor` is the floor; on 1.x and
+// above only `major` is. This was first written assuming 0.x while the workspace major was
+// 20260902, where a `minor` is a compatible upgrade for every `^` range and would have
+// auto-installed the removal.
+export function breakingFloor(rootVersion) {
+  const major = Number.parseInt(String(rootVersion).split('.')[0], 10);
+  return major === 0 ? ['minor', 'major'] : ['major'];
+}
+
+// `---\n"@beemvp/beeui-ui": minor\n---` — the frontmatter of one changeset file.
+export function parseChangeset(text) {
+  const match = text.match(/^---\n([\s\S]*?)\n---/u);
+  if (!match) return {};
+  const bumps = {};
+  for (const line of match[1].split('\n')) {
+    const entry = line.match(/^\s*["']?(@?[\w./-]+)["']?\s*:\s*(major|minor|patch)\s*$/u);
+    if (entry) bumps[entry[1]] = entry[2];
+  }
+  return bumps;
+}
+
+// Only changesets this change adds count. Reading the working tree let one pending `minor`
+// already on the base branch satisfy every later breaking change (`commit: false` keeps them
+// there until a release), so the comparison is against the same ref the inventory diff uses.
+export function readAddedChangesets(ref, rootDir = ROOT_DIR) {
+  const dir = path.join(rootDir, '.changeset');
+  if (!fs.existsSync(dir)) return [];
+  // `base...HEAD` (from the merge base) is right: a changeset that existed when the branch was
+  // cut and has since been consumed on the base is not one this change added. It needs history a
+  // checkout one commit deep does not have, so two trees are compared only when there is no
+  // merge base — that reading can count a consumed changeset, which is why #513 should check
+  // out the pull request's merge ref rather than the head sha.
+  const range = hasMergeBase(ref, rootDir) ? [`${ref}...HEAD`] : [ref, 'HEAD'];
+  const committed = git(['diff', '--diff-filter=A', '--name-only', ...range, '--', '.changeset/'], rootDir);
+  const untracked = git(['ls-files', '--others', '--exclude-standard', '--', '.changeset/'], rootDir);
+  const names = [...new Set(`${committed}\n${untracked}`.split('\n').map((line) => line.trim()).filter(Boolean))];
+  // `changeset version` deletes the files it consumes, so a name in the base diff may be gone.
+  return names
+    .filter((name) => name.endsWith('.md') && path.basename(name).toLowerCase() !== 'readme.md')
+    .filter((name) => fs.existsSync(path.join(rootDir, name)))
+    .map((name) => ({ name, bumps: parseChangeset(fs.readFileSync(path.join(rootDir, name), 'utf8')) }));
+}
+
+export function collectSurfaceDiffViolations({ diff, changesets, rootVersion }) {
+  const level = classifyDiff(diff);
+  if (level === 'none') return [];
+  const publicBumps = changesets.flatMap(({ bumps }) =>
+    Object.entries(bumps).filter(([name]) => PUBLIC_PACKAGES.includes(name)).map(([, bump]) => bump),
+  );
+  if (level === 'breaking') {
+    const floor = breakingFloor(rootVersion);
+    if (publicBumps.some((bump) => floor.includes(bump))) return [];
+    const what = [
+      ...diff.removed.map((id) => `removed ${id}`),
+      ...diff.changed.map((entry) => `${entry.what} of ${entry.id}: ${entry.from} → ${entry.to}`),
+      ...diff.reclassified.map((entry) => `reclassified ${entry.id}: ${entry.from} → ${entry.to}`),
+    ].join('; ');
+    return [
+      `public surface broken (${what}) with no changeset added in this change that bumps a public package by ` +
+        `${floor.join(' or ')}. Run \`pnpm changeset\`, pick the bump, and describe the migration.`,
+    ];
+  }
+  if (publicBumps.length) return [];
+  const what = [
+    ...diff.added.map((id) => `added ${id}`),
+    ...diff.reclassified.map((entry) => `reclassified ${entry.id}: ${entry.from} → ${entry.to}`),
+  ].join('; ');
+  return [`public surface changed (${what}) with no changeset added in this change naming a public package. Run \`pnpm changeset\`.`];
+}
+
+function git(args, rootDir) {
+  return execFileSync('git', args, {
+    cwd: rootDir,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    timeout: 60_000,
+    env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+  });
+}
+
+function hasMergeBase(ref, rootDir) {
+  try {
+    git(['merge-base', ref, 'HEAD'], rootDir);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function isShallow(rootDir) {
+  try {
+    return git(['rev-parse', '--is-shallow-repository'], rootDir).trim() === 'true';
+  } catch {
+    return false;
+  }
+}
+
+// A guard that dies with a stack trace is a guard someone disables. Say what is missing.
+function refExists(ref, rootDir) {
+  try {
+    git(['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], rootDir);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// A CI checkout is usually one commit deep with no remote-tracking refs, which is where a guard
+// that reads the base goes quiet. `origin/development` is fetched on demand, one commit deep;
+// only when that fails does the check refuse to run.
+export function readBaseInventory(ref, rootDir = ROOT_DIR, { fetch = true } = {}) {
+  if (!refExists(ref, rootDir) && fetch) {
+    // Only a remote-tracking shape is fetched, and only with a depth when the clone is already
+    // shallow: `--depth=1` into a full clone marks it shallow and can graft away the developer's
+    // own history, which a check that sounds read-only must not do.
+    const remote = ref.match(/^([A-Za-z0-9._][A-Za-z0-9._-]*)\/([A-Za-z0-9._][A-Za-z0-9._/-]*)$/u);
+    if (remote) {
+      const depth = isShallow(rootDir) ? ['--depth=1'] : [];
+      try {
+        git(['fetch', ...depth, remote[1], `${remote[2]}:refs/remotes/${remote[1]}/${remote[2]}`], rootDir);
+      } catch {
+        // fall through to the sentence below
+      }
+    }
+  }
+  if (!refExists(ref, rootDir)) {
+    throw new Error(`base ref "${ref}" is not available locally and could not be fetched. Run \`git fetch origin development\` (or pass --base <ref>).`);
+  }
+  try {
+    return JSON.parse(git(['show', `${ref}:${OUTPUT_FILE}`], rootDir));
+  } catch {
+    throw new Error(`${OUTPUT_FILE} does not exist at "${ref}"; the base has no inventory to diff against.`);
+  }
+}
+
+export function parseArgs(argv) {
+  const baseIndex = argv.indexOf('--base');
+  if (baseIndex === -1) return { ref: 'origin/development' };
+  const ref = argv[baseIndex + 1];
+  if (!ref || ref.startsWith('--')) throw new Error('--base needs a ref, e.g. --base origin/development');
+  return { ref };
+}
+
+function main() {
+  let ref;
+  try {
+    ({ ref } = parseArgs(process.argv.slice(2)));
+    const base = readBaseInventory(ref, ROOT_DIR);
+    const head = JSON.parse(serializePublicSurfaceInventory(ROOT_DIR));
+    const diff = diffInventories(base, head);
+    console.log(
+      `Public surface vs ${ref}: ${classifyDiff(diff)} — removed ${diff.removed.length}, changed ${diff.changed.length}, reclassified ${diff.reclassified.length}, added ${diff.added.length}.`,
+    );
+    for (const id of diff.removed) console.log(`  - removed: ${id}`);
+    for (const { id, what, from, to } of diff.changed) console.log(`  ~ ${what}: ${id} (${from} → ${to})`);
+    for (const { id, from, to } of diff.reclassified) console.log(`  ~ classification: ${id} (${from} → ${to})`);
+    for (const id of diff.added) console.log(`  + added: ${id}`);
+    const rootVersion = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8')).version;
+    const violations = collectSurfaceDiffViolations({ diff, changesets: readAddedChangesets(ref, ROOT_DIR), rootVersion });
+    if (violations.length) {
+      console.error('Public surface diff check failed:');
+      for (const violation of violations) console.error(`- ${violation}`);
+      process.exit(1);
+    }
+    console.log('Public surface diff check passed.');
+  } catch (error) {
+    console.error(`Public surface diff check could not run: ${error.message}`);
+    process.exit(1);
+  }
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

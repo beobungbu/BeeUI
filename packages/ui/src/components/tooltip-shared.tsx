@@ -77,14 +77,42 @@ type TooltipBaseProps = {
 };
 
 type TooltipControlledProps = TooltipBaseProps & {
+  /**
+   * Not accepted in the controlled variant, where `open` already owns the state.
+   * Pass `defaultOpen` on its own, without `open`, to use the uncontrolled variant.
+   */
   defaultOpen?: never;
+  /**
+   * Applies a requested open state, and is required here because the controlled
+   * variant never updates its own visibility. If this does not change `open`,
+   * nothing does.
+   */
   onOpenChange: (open: boolean) => void;
+  /**
+   * Current open state, owned by the caller; supplying a defined value alongside
+   * `onOpenChange` is what selects the controlled variant. Passing `open` without
+   * an `onOpenChange` function warns in development and falls back to uncontrolled
+   * behavior.
+   */
   open: boolean;
 };
 
 type TooltipUncontrolledProps = TooltipBaseProps & {
+  /**
+   * Open state to start from, read once when the component mounts, so later changes
+   * to it are ignored. Defaults to false; drive visibility with `open` +
+   * `onOpenChange` instead when it needs to change.
+   */
   defaultOpen?: boolean;
+  /**
+   * Notified after the open state changes, and optional here because the
+   * uncontrolled variant updates its own state either way.
+   */
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Must be left undefined in the uncontrolled variant, because a defined `open`
+   * together with `onOpenChange` selects the controlled variant instead.
+   */
   open?: undefined;
 };
 
@@ -264,11 +292,16 @@ export type TooltipContentProps = Omit<
   avoidKeyboard?: boolean;
   avoidSafeArea?: boolean;
   children?: React.ReactNode;
+  /** Plain style value only — unlike `Pressable`'s `style`, this does not accept a per-press-state style function, since tooltip content has no press states. */
   style?: StyleProp<ViewStyle>;
   collisionPadding?: TooltipCollisionPadding;
+  /** Logical direction used to resolve `align`/`placement` for RTL layouts. Defaults to the app's resolved layout direction. */
   direction?: TooltipDirection;
+  /** Flips `placement` to the opposite side of the trigger when there is not enough room. Defaults to true. */
   flip?: boolean;
+  /** Which side of the trigger the tooltip opens on. Defaults to `'top'`. */
   placement?: TooltipPlacement;
+  /** Shifts the tooltip along the trigger's edge to stay within the viewport instead of overflowing. Defaults to true. */
   shift?: boolean;
   sideOffset?: number;
 };

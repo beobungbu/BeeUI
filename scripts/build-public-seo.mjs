@@ -1,0 +1,157 @@
+#!/usr/bin/env node
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { buildPublicLanding } from './build-public-landing.mjs';
+import { buildPublicDiscovery } from './build-public-discovery.mjs';
+import { buildPublicComponentManifest } from './public-component-reference.mjs';
+import { buildPublicPatternManifest } from './public-pattern-reference.mjs';
+import { ROOT_DIR, buildPublicSiteContract } from './public-site-contract-lib.mjs';
+import { SOCIAL_CARD } from './social-card-lib.mjs';
+
+// One card for the whole site. The bytes are committed at SOCIAL_CARD.sourcePath (published by
+// the docs app) and copied here so the landing origin serves its own copy at /assets/.
+export const SOCIAL_CARD_ASSET_PATH = `assets/${SOCIAL_CARD.fileName}`;
+
+function socialCardUrl(contract) {
+  return `${contract.origin}/${SOCIAL_CARD_ASSET_PATH}`;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function docsSourceRoutes(rootDir) {
+  const base = path.join(rootDir, 'apps/docs/src/content/docs');
+  const routes = [];
+  function walk(dir) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const absolute = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(absolute);
+      else if (/\.(md|mdx)$/.test(entry.name) && !absolute.includes(`${path.sep}components${path.sep}reference${path.sep}`) && !absolute.includes(`${path.sep}patterns${path.sep}reference${path.sep}`)) {
+        const relative = path.relative(base, absolute).replaceAll(path.sep, '/').replace(/\.(md|mdx)$/, '');
+        const slug = relative === 'index' ? '' : relative.replace(/\/index$/, '');
+        routes.push(`/docs/${slug ? `${slug}/` : ''}`);
+      }
+    }
+  }
+  walk(base);
+  return routes;
+}
+
+function publicRoutes(rootDir, discovery) {
+  const routes = new Set(['/', '/showcase/', '/demo/', '/changelog/']);
+  for (const page of discovery.pages) routes.add(page.route);
+  for (const route of docsSourceRoutes(rootDir)) routes.add(route);
+  for (const component of buildPublicComponentManifest(rootDir)) routes.add(`/docs/components/${component.name}/`);
+  for (const pattern of buildPublicPatternManifest(rootDir)) routes.add(`/docs/patterns/${pattern.pack}/${pattern.slug}/`);
+  return [...routes].sort();
+}
+
+function addSocialMetadata(html, { title, description, canonical, image, robots }) {
+  if (!html.includes('</head>')) throw new Error(`cannot inject metadata into ${canonical}: missing </head>`);
+  const meta = `
+<meta name="robots" content="${escapeHtml(robots)}" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="BeeUI" />
+<meta property="og:title" content="${escapeHtml(title)}" />
+<meta property="og:description" content="${escapeHtml(description)}" />
+<meta property="og:url" content="${escapeHtml(canonical)}" />
+<meta property="og:image" content="${escapeHtml(image)}" />
+<meta property="og:image:width" content="${SOCIAL_CARD.width}" />
+<meta property="og:image:height" content="${SOCIAL_CARD.height}" />
+<meta property="og:image:alt" content="${escapeHtml(SOCIAL_CARD.alt)}" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="${escapeHtml(title)}" />
+<meta name="twitter:description" content="${escapeHtml(description)}" />
+<meta name="twitter:image" content="${escapeHtml(image)}" />
+<meta name="twitter:image:alt" content="${escapeHtml(SOCIAL_CARD.alt)}" />`;
+  return html.replace('</head>', `${meta}\n</head>`);
+}
+
+function renderChangelog(markdown, contract) {
+  const body = markdown.split('\n').map((line) => {
+    if (line.startsWith('### ')) return `<h3>${escapeHtml(line.slice(4))}</h3>`;
+    if (line.startsWith('## ')) return `<h2>${escapeHtml(line.slice(3))}</h2>`;
+    if (line.startsWith('# ')) return `<h1>${escapeHtml(line.slice(2))}</h1>`;
+    if (line.startsWith('- ')) return `<p>• ${escapeHtml(line.slice(2))}</p>`;
+    if (line.startsWith('> ')) return `<blockquote>${escapeHtml(line.slice(2))}</blockquote>`;
+    if (!line.trim()) return '';
+    return `<p>${escapeHtml(line)}</p>`;
+  }).join('\n');
+  const canonical = `${contract.origin}/changelog/`;
+  const image = socialCardUrl(contract);
+  return addSocialMetadata(`<!doctype html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="description" content="Consumer-facing BeeUI change history sourced from the repository CHANGELOG." /><title>BeeUI changelog</title><link rel="canonical" href="${canonical}" /><link rel="stylesheet" href="/assets/site.css" /></head><body><a class="skip-link" href="#main">Skip to content</a><header class="site-header"><a class="brand" href="/">BeeUI</a><nav aria-label="Primary"><a href="/docs/">Docs</a><a href="/showcase/">Showcase</a><a href="/demo/">Demo</a></nav></header><main id="main" class="shell section"><p class="eyebrow">Source-driven history · current workspace v${escapeHtml(contract.buildTruth.version)}</p><p>Historical entries describe the state at that time. They do not override the current unpublished distribution status.</p>${body}</main></body></html>`, {
+    title: 'BeeUI changelog',
+    description: 'Consumer-facing BeeUI change history sourced from the repository CHANGELOG.',
+    canonical,
+    image,
+    robots: contract.indexPolicy,
+  });
+}
+
+export function renderRobotsTxt(contract) {
+  const rules = ['User-agent: *'];
+  if (contract.indexPolicy === 'index,follow') rules.push('Allow: /');
+  for (const pathname of contract.robotsDisallow ?? []) rules.push(`Disallow: ${pathname}`);
+  rules.push(`Sitemap: ${contract.origin}/sitemap.xml`);
+  // Starlight also emits `/docs/sitemap-index.xml` and links it from every docs page head. It is a
+  // subset of the composed sitemap above; advertising only one left a crawler two sitemaps, one
+  // declared. Both are valid, so both are declared.
+  rules.push(`Sitemap: ${contract.origin}/docs/sitemap-index.xml`);
+  return `${rules.join('\n')}\n`;
+}
+
+export function buildPublicSeo({ rootDir = ROOT_DIR, outDir = path.join(rootDir, 'web/dist'), environment } = {}) {
+  const contract = buildPublicSiteContract(rootDir, { environment });
+  buildPublicLanding({ rootDir, outDir, environment });
+  const discovery = buildPublicDiscovery({ rootDir, outDir, environment });
+  const image = socialCardUrl(contract);
+
+  const landingPath = path.join(outDir, 'index.html');
+  const landing = fs.readFileSync(landingPath, 'utf8');
+  fs.writeFileSync(landingPath, addSocialMetadata(landing, {
+    title: 'BeeUI — production-oriented React Native UI',
+    description: 'BeeUI is a mobile-first React Native UI system for Expo, bare React Native, and Web.',
+    canonical: `${contract.origin}/`,
+    image,
+    robots: contract.indexPolicy,
+  }).replace('</head>', `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'SoftwareSourceCode', name: 'BeeUI', codeRepository: 'https://github.com/beobungbu/BeeUI', programmingLanguage: ['TypeScript', 'JavaScript'], runtimePlatform: ['React Native', 'Web'], license: 'https://opensource.org/license/mit', version: contract.buildTruth.version })}</script>\n</head>`));
+
+  for (const page of discovery.pages) {
+    const pagePath = path.join(outDir, page.relativePath);
+    const html = fs.readFileSync(pagePath, 'utf8');
+    fs.writeFileSync(pagePath, addSocialMetadata(html, {
+      title: page.title,
+      description: page.description,
+      canonical: `${contract.origin}${page.route}`,
+      image,
+      robots: contract.indexPolicy,
+    }));
+  }
+
+  fs.mkdirSync(path.join(outDir, 'changelog'), { recursive: true });
+  fs.writeFileSync(path.join(outDir, 'changelog/index.html'), renderChangelog(fs.readFileSync(path.join(rootDir, 'CHANGELOG.md'), 'utf8'), contract));
+  fs.copyFileSync(path.join(rootDir, SOCIAL_CARD.sourcePath), path.join(outDir, SOCIAL_CARD_ASSET_PATH));
+
+  const routes = publicRoutes(rootDir, discovery);
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${routes.map((route) => `  <url><loc>${contract.origin}${route}</loc></url>`).join('\n')}\n</urlset>\n`;
+  fs.writeFileSync(path.join(outDir, 'sitemap.xml'), sitemap);
+  fs.writeFileSync(path.join(outDir, 'robots.txt'), renderRobotsTxt(contract));
+  return { routes, discovery, outDir, contract };
+}
+
+function main() {
+  const { routes, outDir, contract } = buildPublicSeo();
+  console.log(`Built SEO/changelog assets (${routes.length} routes) into ${path.relative(ROOT_DIR, outDir)} for ${contract.environment}.`);
+}
+
+const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isCli) main();

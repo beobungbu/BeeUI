@@ -67,7 +67,7 @@ are already final** and are out of scope for the rename alignment below.
 `npx @beemvp/beeui-cli add <component>`, exposing a `beeui` binary (`"bin": { "beeui": … }`).**
 
 The owner deferred this choice to this preflight because the unscoped `beeui` command name
-currently shown in `docs/registry-cli.md` (`pnpm beeui -- add …`) cannot become a published
+currently shown in `docs/registry-cli.md` (`pnpm beeui add …`) cannot become a published
 `npx beeui`: the unscoped name is a tombstone (above).
 
 ### `@beemvp/beeui-cli` vs `create-beeui`
@@ -116,7 +116,7 @@ Do **not** edit these here — the alignment is owned by **#199** (package metad
 **CLI invocation** wording changes; `@beemvp/beeui-*` library import examples do not. Files that
 advertise the CLI invocation or the "no public `npx beeui` yet" posture:
 
-- `docs/registry-cli.md` — all `pnpm beeui -- <cmd>` examples, the "Why there is no public
+- `docs/registry-cli.md` — all `pnpm beeui <cmd>` examples, the "Why there is no public
   `npx beeui` yet" section, and the Roadmap section (item 1: "decide the publishable CLI
   package/binary name").
 - `README.md` (line ~86) — "not yet a public `npx beeui` distribution contract".
@@ -124,12 +124,12 @@ advertise the CLI invocation or the "no public `npx beeui` yet" posture:
   product".
 - `docs/compatibility-matrix.md` (Node/CLI-tooling row) — "The packed BeeUI CLI (R8,
   #209–#219) … does not exist as a distributable artifact yet"; "No published CLI package
-  yet; … `pnpm beeui -- add <item>`".
+  yet; … `pnpm beeui add <item>`".
 - Root `package.json` — the `"beeui": "node ./scripts/beeui.mjs"` workspace script (repo-local
   shim; a future `packages/cli` with `"name": "@beemvp/beeui-cli"` + `"bin": { "beeui": … }` is the
   publish target, created under the R8 tranche, not #198).
 - `scripts/beeui.mjs`, `scripts/registry-lib.mjs`, `scripts/__tests__/beeui.test.mjs` — help
-  text and the `run 'pnpm beeui -- init' first` invariant message.
+  text and the `run 'pnpm beeui init' first` invariant message.
 - `docs/decisions/011-distribution-architecture.md` uses `beeui add` as the invocation name;
   as the authority ADR it should be updated only if the invocation form itself changes (the
   `beeui` binary name is retained, so the ADR text stays valid).

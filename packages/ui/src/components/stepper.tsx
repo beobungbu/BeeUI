@@ -27,8 +27,11 @@ function normalizeStep(step: number) {
 export type StepperProps = Omit<ViewProps, 'children'> & {
   children?: React.ReactNode;
   className?: string;
+  /** The active step number (1-based), clamped to `[1, number of StepperItem children]`. Non-finite values fall back to 1. */
   currentStep: number;
+  /** Disables every `StepperItem` inside, overriding each item's own `disabled`. Defaults to false. */
   disabled?: boolean;
+  /** Called with a step's normalized step number when a non-disabled `StepperItem` is pressed. Also required (alongside a per-item `onPress`) for any item to render as interactive. */
   onStepChange?: (step: number) => void;
 };
 
@@ -98,6 +101,7 @@ export type StepperItemProps = Omit<
 > & {
   className?: string;
   description?: React.ReactNode;
+  /** This item's position (1-based); non-finite values are floored and clamped to at least 1. Compared against the parent `Stepper`'s `currentStep` to determine current/complete state. A value duplicated by another item is disabled with a dev-mode warning. */
   step: number;
   title: React.ReactNode;
 };

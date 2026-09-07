@@ -7,11 +7,17 @@ export type OTPInputProps = Omit<
   InputProps,
   'defaultValue' | 'inputMode' | 'keyboardType' | 'maxLength' | 'onChangeText' | 'value'
 > & {
+  /** Initial code for uncontrolled usage; normalized (digits-only in `'numeric'` mode, truncated to `length`) like any other value. Defaults to `''`. */
   defaultValue?: string;
+  /** Number of characters the code must reach before `onComplete` fires. Also sets the underlying input's `maxLength`. Defaults to 6. */
   length?: number;
+  /** `'numeric'` strips non-digit characters as they are typed and shows a numeric keyboard; `'text'` accepts any character. Defaults to `'numeric'`. */
   mode?: 'numeric' | 'text';
+  /** Called once when the code reaches `length` characters; not called again for the same value until it changes and comes back to full length. */
   onComplete?: (value: string) => void;
+  /** Called with the normalized value on every change, including partial (incomplete) codes. */
   onValueChange?: (value: string) => void;
+  /** Controlled code value; normalized (digits-only in `'numeric'` mode, truncated to `length`) before being displayed. */
   value?: string;
 };
 

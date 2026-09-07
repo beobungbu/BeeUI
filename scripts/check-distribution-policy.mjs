@@ -34,6 +34,9 @@ const REPORT_DOC = path.join(ROOT_DIR, 'docs', 'consumer-compatibility-report.md
 const MATRIX_DOC = path.join(ROOT_DIR, 'docs', 'compatibility-matrix.md');
 const RELEASE_RULESET_DOC = path.join(ROOT_DIR, 'docs', 'release-ruleset.md');
 
+// The CLI is held to the same version by scripts/check-release-control-plane.mjs, but it is not
+// listed here: `lockstepPackages` feeds the docs foundation's `packageNames` and the landing's
+// public-package-boundary count, where the CLI is modelled separately as `cliPackageName`.
 const LOCKSTEP_PACKAGE_MANIFESTS = ['packages/core', 'packages/tokens', 'packages/ui'];
 
 function readJson(filePath) {
@@ -65,6 +68,14 @@ export function extractReleaseEnvironment(markdown) {
   return block.releaseEnvironment;
 }
 
+// `0.86.2-rc.1` and `0.86.2` are the same release line; the stable base is what a prerelease
+// eventually becomes. Only the exact `-rc.N` suffix the policy sanctions is stripped, so an
+// unrecognised prerelease form stays visible to the comparisons below rather than being
+// silently normalised away.
+function stableBase(version) {
+  return typeof version === 'string' ? version.replace(/-rc\.(0|[1-9][0-9]*)$/, '') : version;
+}
+
 // ---- dist-tag / prerelease policy (#206) ----
 
 export function collectDistTagPolicyViolations({ policy, packageVersions, releaseEnvironment, existsSync }) {
@@ -87,10 +98,28 @@ export function collectDistTagPolicyViolations({ policy, packageVersions, releas
     );
   }
 
-  // No package is at the stable candidate yet (pre-publication).
-  if (Object.values(packageVersions).includes(policy.candidateStableVersion)) {
+  // The stable candidate is the release line the workspace is already on, not a future number.
+  // Owner decision #407 (2026-09-02) had replaced the 0.x -> 1.0.0 scheme with a date label
+  // (20260902.0.0); ADR-015 (2026-09-06) supersedes that with plain SemVer 0.86.2. Under either,
+  // the workspace legitimately sits *at* the candidate from the start, so "no package has reached
+  // it yet" is unsatisfiable — it could only be kept by letting this block contradict its own prose.
+  //
+  // A release candidate lives on the same line: with currentVersion at 0.86.2-rc.1 the stable
+  // candidate is still 0.86.2, so the comparison is against the stable base rather than the
+  // literal current version. Requiring equality instead would make an RC pin unsatisfiable,
+  // because prereleaseVersionPattern must simultaneously match every rc.N and reject the
+  // candidate.
+  //
+  // What the original rule was protecting is still enforced, just not by a version comparison:
+  // `published` must be false (checked above), the docs foundation refuses an install CTA,
+  // an available CLI or a missing #254 owner gate while unpublished, and verify-release
+  // asserts the root manifest stays private. Publication remains an owner action, not a
+  // consequence of a version number.
+  const currentStableBase = stableBase(policy.currentVersion);
+  if (policy.candidateStableVersion !== currentStableBase) {
     violations.push(
-      `${label}: a package is already at candidateStableVersion ${JSON.stringify(policy.candidateStableVersion)}; the stable candidate must not be reached before publication.`,
+      `${label}: "candidateStableVersion" ${JSON.stringify(policy.candidateStableVersion)} must equal ` +
+      `the stable base ${JSON.stringify(currentStableBase)} of "currentVersion" ${JSON.stringify(policy.currentVersion)}.`,
     );
   }
 
@@ -116,6 +145,13 @@ export function collectDistTagPolicyViolations({ policy, packageVersions, releas
         `${label}: prereleaseVersionPattern must NOT match the stable version ${JSON.stringify(policy.candidateStableVersion)} (a prerelease is not the stable release).`,
       );
     }
+    // When the pin itself is a candidate, the pattern has to describe it. Without this, a pin of
+    // 0.86.2-rc.1 could sit beside a pattern for a different line and every check stayed green.
+    if (policy.currentVersion !== currentStableBase && !re.test(policy.currentVersion)) {
+      violations.push(
+        `${label}: prerelease "currentVersion" ${JSON.stringify(policy.currentVersion)} must match prereleaseVersionPattern ${JSON.stringify(policy.prereleaseVersionPattern)}.`,
+      );
+    }
   }
 
   // Exactly the two dist-tags, and the stable/prerelease/promotion tags are among them.
@@ -124,13 +160,21 @@ export function collectDistTagPolicyViolations({ policy, packageVersions, releas
   if (!Array.isArray(tags) || tags.length !== expectedTags.length || !expectedTags.every((t) => tags.includes(t))) {
     violations.push(`${label}: "distTags" must be exactly ${JSON.stringify(expectedTags)}, got ${JSON.stringify(tags)}.`);
   }
-  for (const key of ['stableDistTag', 'prereleaseDistTag', 'atomicPromotionTag']) {
+  for (const key of ['stableDistTag', 'prereleaseDistTag', 'stablePromotionTag']) {
     if (Array.isArray(tags) && !tags.includes(policy[key])) {
       violations.push(`${label}: "${key}" ${JSON.stringify(policy[key])} must be one of distTags ${JSON.stringify(tags)}.`);
     }
   }
   if (policy.stableDistTag !== 'latest') {
     violations.push(`${label}: "stableDistTag" must be "latest".`);
+  }
+  // The tag a finished release is promoted to is the stable consumer channel, not a third
+  // destination. Naming it separately was only ever a restatement; being in distTags did not
+  // stop it naming "next" and pointing default installs at a prerelease.
+  if (policy.stablePromotionTag !== policy.stableDistTag) {
+    violations.push(
+      `${label}: "stablePromotionTag" ${JSON.stringify(policy.stablePromotionTag)} must equal "stableDistTag" ${JSON.stringify(policy.stableDistTag)}.`,
+    );
   }
   if (policy.prereleaseDistTag === policy.stableDistTag) {
     violations.push(`${label}: prereleaseDistTag and stableDistTag must differ (prereleases never publish to latest).`);

@@ -471,7 +471,7 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
   return (
     <Screen testID="component-gallery">
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} />
-      <SafeArea className="bg-surface" edges={['top', 'left', 'right']}>
+      <SafeArea className="bg-surface" edges={['top', 'left', 'right']} testID="component-gallery-safe-area">
         <AppHeader
           description="Interactive React Native component playground built entirely from the public BeeUI API."
           testID="component-gallery-header"
@@ -554,10 +554,10 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
               </Box>
               <Separator />
               <Box className="flex-row items-center gap-5">
-                <Spinner />
+                <Spinner testID="spinner-default" />
                 <Spinner tone="success" />
                 <Spinner tone="warning" />
-                <Spinner tone="destructive" />
+                <Spinner testID="spinner-destructive" tone="destructive" />
               </Box>
               <Progress accessibilityLabel="Profile completion" value={72} />
             </Card>
@@ -592,7 +592,7 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
             </PlaygroundHeading>
 
             <Card className="gap-4">
-              <Field description="Used only for account notifications." label="Email" required>
+              <Field description="Used only for account notifications." label="Email" required testID="component-gallery-field">
                 <Input autoCapitalize="none" placeholder="you@example.com" />
               </Field>
               <Field label="Search">
@@ -601,17 +601,17 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
               <Field label="Password">
                 <PasswordInput placeholder="Enter password" />
               </Field>
-              <Field description="Six numeric digits." label="Verification code">
+              <Field description="Six numeric digits." label="Verification code" testID="field-otp-composition">
                 <OTPInput
                   accessibilityLabel="Verification code"
                   onValueChange={setOtp}
                   value={otp}
                 />
               </Field>
-              <Field error="Enter a valid project name." invalid label="Project name">
+              <Field error="Enter a valid project name." invalid label="Project name" testID="field-invalid-state">
                 <Input placeholder="Invalid value" />
               </Field>
-              <Field disabled label="Managed field">
+              <Field disabled label="Managed field" testID="field-disabled-state">
                 <Input placeholder="Disabled by field context" />
               </Field>
               <Field description="Optional long-form content." label="Notes">
@@ -619,6 +619,13 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
               </Field>
               <Separator />
               <Checkbox checked={accepted} label="Accept terms" onCheckedChange={setAccepted} />
+              <Checkbox
+                checked
+                disabled
+                label="Managed by policy"
+                onCheckedChange={() => undefined}
+                testID="checkbox-managed-state"
+              />
               <FormGroup
                 description="The group owns legend/guidance metadata while each radio stays independently discoverable."
                 legend="Subscription plan"
@@ -894,7 +901,7 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
                 </SegmentedControl>
                 <Text variant="label">Page</Text>
                 <Pagination onPageChange={setPage} page={page} pageCount={4}>
-                  <PaginationItem type="previous" />
+                  <PaginationItem testID="pagination-previous" type="previous" />
                   <PaginationItem page={1} />
                   <PaginationItem page={2} />
                   <PaginationItem page={3} />
@@ -965,7 +972,7 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
                     </Stat>
                   </HStack>
 
-                  <Stepper currentStep={step} onStepChange={setStep}>
+                  <Stepper currentStep={step} onStepChange={setStep} testID="stepper-showcase">
                     <StepperItem step={1} title="Foundation" />
                     <StepperItem step={2} title="Application patterns" />
                     <StepperItem step={3} title="Overlays" />

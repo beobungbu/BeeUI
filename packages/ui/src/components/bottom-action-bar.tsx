@@ -3,6 +3,7 @@ import * as React from 'react';
 import { View, type ViewProps } from 'react-native';
 
 export type BottomActionBarProps = ViewProps & {
+  /** Renders a top border separating the bar from the content above. Defaults to true. */
   bordered?: boolean;
   className?: string;
 };

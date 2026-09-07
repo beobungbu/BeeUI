@@ -18,10 +18,15 @@ const ChipGroupContext = React.createContext<ChipGroupContextValue | null>(null)
 export type ChipGroupProps = Omit<ViewProps, 'children'> & {
   children?: React.ReactNode;
   className?: string;
+  /** Initial selection for uncontrolled usage: a string in `'single'` mode, an array in `'multiple'` mode. Defaults to no selection. */
   defaultValue?: ChipGroupValue;
+  /** Disables every `Chip` inside the group, overriding each item's own `disabled`. Defaults to false. */
   disabled?: boolean;
+  /** Called with the updated selection (a string in `'single'` mode, an array in `'multiple'` mode) whenever a member `Chip` is pressed. */
   onValueChange?: (value: ChipGroupValue) => void;
+  /** `'single'` renders the group with `accessibilityRole="radiogroup"` and each Chip as a radio, allowing at most one selection; `'multiple'` renders each Chip as a checkbox and allows any number selected. Defaults to `'single'`. */
   selectionMode?: ChipSelectionMode;
+  /** The selected member Chip's `value` (a string in `'single'` mode, an array of values in `'multiple'` mode). Passing this switches the group to controlled mode. */
   value?: ChipGroupValue;
 };
 
@@ -105,10 +110,14 @@ export type ChipProps = Omit<
 > & {
   children?: React.ReactNode;
   className?: string;
+  /** Initial selected state when this Chip is standalone (not inside a `ChipGroup`) and uncontrolled. Defaults to false. */
   defaultSelected?: boolean;
   labelClassName?: string;
+  /** Called with the next selected state when pressed, if this Chip is standalone (not inside a `ChipGroup`). */
   onSelectedChange?: (selected: boolean) => void;
+  /** Controls whether this standalone Chip is selected. Ignored inside a `ChipGroup`, which derives selection from `value` instead. */
   selected?: boolean;
+  /** Identifies this Chip within a parent `ChipGroup`. Required there — without it the Chip renders disabled with a dev-mode warning. Has no effect on a standalone Chip. */
   value?: string;
 };
 

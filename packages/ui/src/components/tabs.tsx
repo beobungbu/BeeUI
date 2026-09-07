@@ -25,8 +25,11 @@ function useTabsContext(component: string) {
 export type TabsProps = Omit<ViewProps, 'children'> & {
   children: React.ReactNode;
   className?: string;
+  /** Disables every `TabsTrigger` inside, overriding each trigger's own `disabled`. Defaults to false. */
   disabled?: boolean;
+  /** Called with the pressed tab's `value` when a non-selected `TabsTrigger` is pressed. Required for enabled usage (logs a dev warning otherwise). */
   onValueChange?: (value: string) => void;
+  /** The `value` of the currently active tab, matched against each `TabsTrigger`/`TabsContent`'s own `value`. Always controlled by the caller — there is no uncontrolled mode. */
   value: string;
 };
 
@@ -75,6 +78,7 @@ export type TabsTriggerProps = Omit<
   children?: React.ReactNode;
   className?: string;
   labelClassName?: string;
+  /** Identifies this tab; compared against the parent `Tabs`'s `value` to determine whether it is selected. */
   value: string;
 };
 
@@ -157,6 +161,7 @@ TabsTrigger.displayName = 'TabsTrigger';
 export type TabsContentProps = Omit<ViewProps, 'children' | 'role'> & {
   children?: React.ReactNode;
   className?: string;
+  /** Identifies this panel; it renders only while the parent `Tabs`'s `value` matches. */
   value: string;
 };
 

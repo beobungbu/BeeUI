@@ -5,11 +5,14 @@ import { Box } from './box';
 import { Text } from './text';
 
 export type SectionProps = ViewProps & {
+  /** Rendered end-aligned opposite the title/description (e.g. a "See all" link). Only shown, along with the header row, when at least one of `title`, `description`, or `action` is set. */
   action?: React.ReactNode;
   className?: string;
   description?: React.ReactNode;
+  /** Applied to the description `Text` when `description` is a plain string or number; ignored if `description` is a custom element. */
   descriptionClassName?: string;
   title?: React.ReactNode;
+  /** Applied to the title `Text` when `title` is a plain string or number; ignored if `title` is a custom element. */
   titleClassName?: string;
 };
 

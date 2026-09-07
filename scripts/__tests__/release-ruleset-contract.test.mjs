@@ -32,30 +32,42 @@ jobs:
 
 const CLASSIFY_GATED_JOBS = `
 jobs:
-  bare-bundle:
+  verify-docs:
+    needs: [classify]
+    if: needs.classify.outputs.docs-required == 'true'
+  verify-tokens:
+    needs: [classify]
+    if: needs.classify.outputs.tokens-required == 'true'
+  verify-runtime:
+    needs: [classify]
+    if: needs.classify.outputs.package-required == 'true'
+  verify-release:
+    needs: [classify]
+    if: needs.classify.outputs.release-required == 'true'
+  verify-benchmark:
+    needs: [classify]
+    if: needs.classify.outputs.benchmark-required == 'true'
+  bare-consumer:
     needs: [classify]
     if: >
       needs.classify.outputs.package-boundary-required == 'true' ||
-      needs.classify.outputs.bare-native-required == 'true'
-  bare-android:
+      needs.classify.outputs.consumer-required == 'true'
+  android-native:
     needs: [classify]
     if: needs.classify.outputs.bare-native-required == 'true'
-  ios-showcase:
+  ios-native:
     needs: [classify]
-    if: needs.classify.outputs.showcase-native-required == 'true'
-  ios-bare:
-    needs: [classify]
-    if: needs.classify.outputs.bare-native-required == 'true'
+    if: needs.classify.outputs.ios-native-required == 'true'
 `;
 
 const ALWAYS_WRAPPED_REPORT_JOB = `
 jobs:
-  visual-web:
+  visual-web-full:
     strategy:
       matrix:
-        shard: [1, 2, 3]
+        lane: [showcase-acceptance-matrix, showcase-integration, canonical-and-smoke]
   visual-web-report:
-    needs: [visual-web]
+    needs: [visual-web-full]
     if: always()
 `;
 
@@ -70,7 +82,7 @@ jobs:
 `;
 
 test('extractJobIfCondition reads classifier-gated condition', () => {
-  const condition = extractJobIfCondition(CLASSIFY_GATED_JOBS, 'bare-bundle');
+  const condition = extractJobIfCondition(CLASSIFY_GATED_JOBS, 'bare-consumer');
   assert.match(condition, /package-boundary-required/);
 });
 
@@ -81,9 +93,39 @@ test('required fan-in aggregators using always() count as always-run', () => {
 });
 
 test('classifier/runtime gated jobs remain conditionally skippable', () => {
-  assert.equal(jobIsConditionallySkippable(CLASSIFY_GATED_JOBS, 'bare-android'), true);
-  assert.equal(jobIsConditionallySkippable(CLASSIFY_GATED_JOBS, 'ios-showcase'), true);
+  assert.equal(jobIsConditionallySkippable(CLASSIFY_GATED_JOBS, 'android-native'), true);
+  assert.equal(jobIsConditionallySkippable(CLASSIFY_GATED_JOBS, 'ios-native'), true);
   assert.equal(jobIsConditionallySkippable(LABEL_GATED_RUNTIME_JOB, 'ios-runtime'), true);
+});
+
+test('a required job gated on the pull_request event still counts as always-run', () => {
+  const prScoped = `
+jobs:
+  visual-web-report:
+    if: github.event_name == 'pull_request'
+`;
+  assert.equal(jobAlwaysRuns(prScoped, 'visual-web-report'), true);
+});
+
+test('a required job hidden behind a label or classifier is still rejected', () => {
+  const labelScoped = `
+jobs:
+  visual-web-report:
+    if: contains(github.event.pull_request.labels.*.name, 'ci:visual')
+`;
+  const classifierScoped = `
+jobs:
+  visual-web-report:
+    if: needs.classify.outputs.visual-required == 'true'
+`;
+  const pushScoped = `
+jobs:
+  visual-web-report:
+    if: github.event_name == 'push'
+`;
+  assert.equal(jobAlwaysRuns(labelScoped, 'visual-web-report'), false);
+  assert.equal(jobAlwaysRuns(classifierScoped, 'visual-web-report'), false);
+  assert.equal(jobAlwaysRuns(pushScoped, 'visual-web-report'), false);
 });
 
 test('collectReleaseRulesetViolations passes for coherent parallel topology', () => {
@@ -117,14 +159,22 @@ jobs:
   verify:
     needs: [classify]
     if: needs.classify.outputs.bare-native-required == 'true'
-  bare-bundle:
-    if: needs.classify.outputs.package-boundary-required == 'true'
-  bare-android:
+  verify-docs:
+    if: needs.classify.outputs.docs-required == 'true'
+  verify-tokens:
+    if: needs.classify.outputs.tokens-required == 'true'
+  verify-runtime:
+    if: needs.classify.outputs.package-required == 'true'
+  verify-release:
+    if: needs.classify.outputs.release-required == 'true'
+  verify-benchmark:
+    if: needs.classify.outputs.benchmark-required == 'true'
+  bare-consumer:
+    if: needs.classify.outputs.consumer-required == 'true'
+  android-native:
     if: needs.classify.outputs.bare-native-required == 'true'
-  ios-showcase:
-    if: needs.classify.outputs.showcase-native-required == 'true'
-  ios-bare:
-    if: needs.classify.outputs.bare-native-required == 'true'
+  ios-native:
+    if: needs.classify.outputs.ios-native-required == 'true'
 `;
 
   const workflowContentsByFile = {

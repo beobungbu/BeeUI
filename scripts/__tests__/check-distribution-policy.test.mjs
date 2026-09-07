@@ -12,12 +12,12 @@ import {
 // ---- fixtures mirroring the real repository state ----
 
 const PACKAGE_VERSIONS = {
-  '@beemvp/beeui-core': '0.1.0',
-  '@beemvp/beeui-tokens': '0.1.0',
-  '@beemvp/beeui-ui': '0.1.0',
+  '@beemvp/beeui-core': '0.86.2',
+  '@beemvp/beeui-tokens': '0.86.2',
+  '@beemvp/beeui-ui': '0.86.2',
 };
 const RELEASE_ENVIRONMENT = 'release';
-const ROOT_VERSION = '0.1.0';
+const ROOT_VERSION = '0.86.2';
 
 const UI_PEERS = {
   react: '>=19 <20',
@@ -46,14 +46,14 @@ const MATRIX_SNAPSHOT = {
 
 const GOOD_POLICY = {
   published: false,
-  currentVersion: '0.1.0',
-  candidateStableVersion: '1.0.0',
-  prereleaseVersionPattern: '^1\\.0\\.0-rc\\.(0|[1-9][0-9]*)$',
-  prereleaseExample: '1.0.0-rc.1',
+  currentVersion: '0.86.2',
+  candidateStableVersion: '0.86.2',
+  prereleaseVersionPattern: '^0\\.86\\.2-rc\\.(0|[1-9][0-9]*)$',
+  prereleaseExample: '0.86.2-rc.1',
   distTags: ['latest', 'next'],
   prereleaseDistTag: 'next',
   stableDistTag: 'latest',
-  atomicPromotionTag: 'latest',
+  stablePromotionTag: 'latest',
   lockstepPackages: ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui'],
   releaseEnvironment: 'release',
 };
@@ -61,7 +61,7 @@ const GOOD_POLICY = {
 const GOOD_REPORT = {
   published: false,
   packageSet: ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui'],
-  candidateVersion: '0.1.0',
+  candidateVersion: '0.86.2',
   cleanConsumerScripts: [
     'scripts/verify-bare-consumer.sh',
     'scripts/verify-web-consumer.sh',
@@ -81,13 +81,17 @@ const GOOD_REPORT = {
 
 const alwaysExists = () => true;
 
-function policyViolations(overrides) {
+function policyViolations(overrides, packageVersions = PACKAGE_VERSIONS) {
   return collectDistTagPolicyViolations({
     policy: { ...GOOD_POLICY, ...overrides },
-    packageVersions: PACKAGE_VERSIONS,
+    packageVersions,
     releaseEnvironment: RELEASE_ENVIRONMENT,
     existsSync: alwaysExists,
   });
+}
+
+function everyPackageAt(version) {
+  return Object.fromEntries(Object.keys(PACKAGE_VERSIONS).map((name) => [name, version]));
 }
 
 function reportViolations(overrides) {
@@ -115,17 +119,17 @@ test('currentVersion must equal the lockstep package version', () => {
 });
 
 test('prerelease pattern must reject the stable version', () => {
-  // A pattern that also matches "1.0.0" would let a stable version pose as a prerelease.
-  const v = policyViolations({ prereleaseVersionPattern: '^1\\.0\\.0(-rc\\.[0-9]+)?$' });
+  // A pattern that also matches the stable version would let it pose as a prerelease.
+  const v = policyViolations({ prereleaseVersionPattern: '^0\\.86\\.2(-rc\\.[0-9]+)?$' });
   assert.ok(v.some((m) => /must NOT match the stable version/.test(m)));
 });
 
 test('prerelease example must match the pattern', () => {
-  assert.ok(policyViolations({ prereleaseExample: '1.0.0' }).some((v) => /prereleaseExample/.test(v)));
+  assert.ok(policyViolations({ prereleaseExample: '0.86.2' }).some((v) => /prereleaseExample/.test(v)));
 });
 
 test('an invalid prerelease regex is reported', () => {
-  assert.ok(policyViolations({ prereleaseVersionPattern: '^1\\.0\\.0-rc\\.(' }).some((v) => /valid regex/.test(v)));
+  assert.ok(policyViolations({ prereleaseVersionPattern: '^0\\.86\\.2-rc\\.(' }).some((v) => /valid regex/.test(v)));
 });
 
 test('distTags must be exactly latest and next', () => {
@@ -138,18 +142,51 @@ test('prerelease must not publish to the stable dist-tag', () => {
   );
 });
 
+test('the stable promotion tag must be the stable dist-tag', () => {
+  assert.ok(policyViolations({ stablePromotionTag: 'next' }).some((v) => /stablePromotionTag/.test(v)));
+});
+
+test('the declared lockstep set must equal the measured package set', () => {
+  const v = policyViolations({ lockstepPackages: ['@beemvp/beeui-core', '@beemvp/beeui-tokens'] });
+  assert.ok(v.some((m) => /lockstepPackages/.test(m)), v.join('\n'));
+});
+
 test('releaseEnvironment must match the ruleset', () => {
   assert.ok(policyViolations({ releaseEnvironment: 'prod' }).some((v) => /releaseEnvironment/.test(v)));
 });
 
-test('a package already at the stable candidate is rejected', () => {
+// The stable candidate is the release line the workspace is already on, so the two must agree.
+// A candidate that drifts from the shipped version is how the policy block and its own prose
+// came apart: the block said 1.0.0 while every package and the prose said 20260902.0.0, and the
+// generated release page rendered "Stable target: 1.0.0" beside "Workspace version: 20260902.0.0".
+test('a stable candidate that differs from the current version is rejected', () => {
   const v = collectDistTagPolicyViolations({
-    policy: GOOD_POLICY,
-    packageVersions: { '@beemvp/beeui-core': '1.0.0', '@beemvp/beeui-tokens': '1.0.0', '@beemvp/beeui-ui': '1.0.0' },
+    policy: { ...GOOD_POLICY, candidateStableVersion: '1.0.0', prereleaseVersionPattern: '^1\\.0\\.0-rc\\.(0|[1-9][0-9]*)$', prereleaseExample: '1.0.0-rc.1' },
+    packageVersions: PACKAGE_VERSIONS,
     releaseEnvironment: RELEASE_ENVIRONMENT,
     existsSync: alwaysExists,
   });
-  assert.ok(v.some((m) => /candidateStableVersion/.test(m)));
+  assert.ok(v.some((m) => /candidateStableVersion/.test(m)), v.join('\n'));
+});
+
+// A release candidate is the same line, one step earlier. Comparing candidateStableVersion to the
+// literal currentVersion made this unsatisfiable: the candidate would have to be 0.86.2-rc.3 while
+// the pattern that must match every rc.N is also forbidden from matching the candidate.
+test('an rc pin on the same release line produces no violations', () => {
+  const rc = '0.86.2-rc.3';
+  assert.deepEqual(policyViolations({ currentVersion: rc }, everyPackageAt(rc)), []);
+});
+
+// The remaining rules constrain the pattern only through candidateStableVersion, so a pattern
+// that covers rc.2 and rejects the stable version can still fail to describe the rc actually
+// pinned. Then the policy would sanction a candidate it does not name.
+test('an rc pin that the prerelease pattern does not describe is rejected', () => {
+  const rc = '0.86.2-rc.1';
+  const v = policyViolations(
+    { currentVersion: rc, prereleaseVersionPattern: '^0\\.86\\.2-rc\\.[2-9]$', prereleaseExample: '0.86.2-rc.2' },
+    everyPackageAt(rc),
+  );
+  assert.ok(v.some((m) => /prerelease "currentVersion"/.test(m)), v.join('\n'));
 });
 
 // ---- consumer compatibility report ----

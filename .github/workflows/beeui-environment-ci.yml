@@ -1,0 +1,82 @@
+name: beeui-environment-ci
+
+on:
+  push:
+    branches:
+      - development
+      - staging
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Superseding a pull request run is the point; superseding a push run is
+  # not. The group carries no SHA, so one merge cancelled the previous
+  # merge's run and lost the post-merge integration gate that is the only real check on development.
+  # Merges land faster than the native jobs finish, so that was not rare.
+  # main keeps newest-wins: beeui-web-delivery's production gate waits at most
+  # 30 minutes for `verify`, already spends 12-14 of them, and main pushes have
+  # landed 7 seconds apart here — a queued run would miss that deadline.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 24.13.1
+  PNPM_VERSION: 10.15.0
+
+jobs:
+  environment-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact merged revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pinned pnpm
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+          test "$(node --version)" = "v${NODE_VERSION}"
+          test "$(pnpm --version)" = "${PNPM_VERSION}"
+          pnpm config set store-dir "$HOME/.pnpm-store"
+
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      # Complete integration remains intentionally after merge. PR CI is
+      # affected/fast; development/staging are the backstop that proves the
+      # whole repository still composes before promotion.
+      - name: Run complete repository type contract
+        run: pnpm typecheck
+
+      - name: Run complete repository test contract
+        run: pnpm test
+
+      - name: Record integration identity
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### BeeUI environment integration CI"
+            echo "- Branch: \`${GITHUB_REF_NAME}\`"
+            echo "- Exact SHA: \`${GITHUB_SHA}\`"
+            echo "- Full-repository mode: \`true\`"
+            echo "- Cloudflare credentials available: \`false\`"
+          } >> "$GITHUB_STEP_SUMMARY"

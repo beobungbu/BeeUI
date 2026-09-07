@@ -56,11 +56,11 @@ Concretely:
 RTL is implemented and exercised per-component with real evidence (deterministic
 precedence tests plus Chromium Playwright tests for Table, Calendar, Sheet, and Tooltip),
 but BeeUI does not yet have a single cross-cutting RTL acceptance matrix the way it has one
-for keyboard/focus (`docs/keyboard-focus-acceptance-matrix.md`, #146). That consolidation
-is tracked as open work in BeeUI issues #141 (RTL overlay acceptance) and #142 (RTL
+for keyboard/focus ([`docs/keyboard-focus-acceptance-matrix.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/keyboard-focus-acceptance-matrix.md), [#146](https://github.com/beobungbu/BeeUI/issues/146)). That consolidation
+is tracked as open work in BeeUI issues [#141](https://github.com/beobungbu/BeeUI/issues/141) (RTL overlay acceptance) and [#142](https://github.com/beobungbu/BeeUI/issues/142) (RTL
 component stress matrix). Localized/long-content stress testing (CJK, long translated
 strings, etc.) beyond BeeUI's existing Dynamic Type wrap-vs-truncation policy is tracked
-separately and also remains open (#144).
+separately and also remains open ([#144](https://github.com/beobungbu/BeeUI/issues/144)).
 
 The full, per-component RTL evidence index lives in `docs/accessibility-contract.md` and
 `docs/decisions/004-direction-architecture.md` in the source repository.

@@ -46,7 +46,9 @@ EngineTextInput.displayName = 'BeeUIEngineTextInput';
 export type InputProps = TextInputProps &
   Omit<VariantProps<typeof inputVariants>, 'invalid'> & {
     className?: string;
+    /** Sets `editable={false}` (unless `editable` is already explicitly `false`) and applies disabled styling. ORed with the enclosing `Field`'s own `disabled`. Defaults to false. */
     disabled?: boolean;
+    /** Applies destructive border styling and, when true, uses the enclosing `Field`'s `error` (instead of its `description`) as this input's accessibility hint. ORed with the enclosing `Field`'s own `invalid`. Defaults to false. */
     invalid?: boolean;
   };
 

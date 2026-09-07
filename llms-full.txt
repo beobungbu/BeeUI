@@ -2,21 +2,21 @@
 
 > Expanded stable-API, setup, compatibility, and architecture-contract detail for coding agents. Companion to llms.txt (compact index), llms-components.txt (component inventory), and llms-patterns.txt (patterns).
 
-STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm, no `v1.0.0` tag or GitHub Release exists, and the repository is private by owner decision. Package/CLI names and install commands below are release-ready-but-not-published targets, not live registry commands. Do not tell a user to `npm install @beemvp/beeui-ui` or `npx @beemvp/beeui-cli` yet — those resolve to nothing today. The working, in-repo path is the source-ownership CLI (`pnpm beeui -- add <component>`).
+STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm, no `v1.0.0` tag or GitHub Release exists. Package/CLI names and install commands below are release-ready-but-not-published targets, not live registry commands. Do not tell a user to `npm install @beemvp/beeui-ui` or `npx @beemvp/beeui-cli` yet — those resolve to nothing today. The working, in-repo path is the source-ownership CLI (`pnpm beeui add <component>`).
 
 ## What BeeUI is
 BeeUI is a reusable, mobile-first React Native UI foundation for long-lived client apps. The public component API stops at `@beemvp/beeui-ui`; applications should not need to know the styling engine. Web support is additive and native ergonomics remain first-class. See [docs/architecture.md](docs/architecture.md).
 
 ## Packages (all unpublished / pre-1.0, one lockstep version)
-- `@beemvp/beeui-core` v20260902.0.0 — Engine-neutral utilities (class-name merging, anchored-overlay geometry) shared by @beemvp/beeui-ui. No React, React Native, or Expo dependency. [unpublished (publishConfig.access=public prepared)]
-- `@beemvp/beeui-tokens` v20260902.0.0 — BeeUI's design-token system: semantic color/spacing/typography/motion contracts and the canonical Uniwind/Tailwind theme CSS. [unpublished (publishConfig.access=public prepared)]
-- `@beemvp/beeui-ui` v20260902.0.0 — Typed React Native + Web components built on @beemvp/beeui-core and @beemvp/beeui-tokens, styled through Uniwind/Tailwind. [unpublished (publishConfig.access=public prepared)]
+- `@beemvp/beeui-core` v0.86.2-rc.1 — Engine-neutral utilities (class-name merging, anchored-overlay geometry) shared by @beemvp/beeui-ui. No React, React Native, or Expo dependency. [unpublished (publishConfig.access=public prepared)]
+- `@beemvp/beeui-tokens` v0.86.2-rc.1 — BeeUI's design-token system: semantic color/spacing/typography/motion contracts and the canonical Uniwind/Tailwind theme CSS. [unpublished (publishConfig.access=public prepared)]
+- `@beemvp/beeui-ui` v0.86.2-rc.1 — Typed React Native + Web components built on @beemvp/beeui-core and @beemvp/beeui-tokens, styled through Uniwind/Tailwind. [unpublished (publishConfig.access=public prepared)]
 
 `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` share one lockstep version and are released together (ADR-011 D6). Package manifests declare `publishConfig.access=public` + provenance but remain unpublished; `exports` maps ship dual ESM+CJS with `.d.ts`, a `react-native` condition for Metro, `browser`/`default` for Web, and `@beemvp/beeui-tokens/theme.css` for the Web theme.
 
 ## Consumption models
 1. Centralized packages (release-ready target, NOT on npm): `npm i @beemvp/beeui-ui` pulls `@beemvp/beeui-core` + `@beemvp/beeui-tokens`; import components from `@beemvp/beeui-ui`; wire Web theme with `@import '@beemvp/beeui-tokens/theme.css'`.
-2. Source ownership (works today, repo-local): `pnpm beeui -- add <component>` copies component source in-tree and rewrites `@beemvp/beeui-core` imports via `rewrite-beeui-core-cn` / `rewrite-beeui-core-module`. Run `pnpm beeui -- list` for the canonical component list (generated from registry/registry.json). Future published CLI: `@beemvp/beeui-cli` (binary `beeui`), `npx @beemvp/beeui-cli add <component>` — never `npx beeui` (the unscoped name is an npm tombstone; see [docs/distribution-names.md](docs/distribution-names.md)).
+2. Source ownership (works today, repo-local): `pnpm beeui add <component>` copies component source in-tree and rewrites `@beemvp/beeui-core` imports via `rewrite-beeui-core-cn` / `rewrite-beeui-core-module`. Run `pnpm beeui list` for the canonical component list (generated from registry/registry.json). Future published CLI: `@beemvp/beeui-cli` (binary `beeui`), `npx @beemvp/beeui-cli add <component>` — never `npx beeui` (the unscoped name is an npm tombstone; see [docs/distribution-names.md](docs/distribution-names.md)).
 
 See [docs/decisions/011-distribution-architecture.md](docs/decisions/011-distribution-architecture.md) and [docs/registry-cli.md](docs/registry-cli.md).
 
@@ -32,7 +32,7 @@ pnpm showcase   # then press i (iOS), a (Android), or w (Web)
 Verification: `pnpm check` (typecheck + tests), `pnpm release:verify` (package gate), `pnpm --dir apps/visual-regression test` (browser QA). See [README.md](README.md).
 
 ## Provider and safe-area setup
-Wrap the app root in `BeeUIProvider` (installs safe-area measurement, the Toast runtime, and the shared anchored-overlay runtime). `SafeArea` assigns explicit `top`/`bottom`/`left`/`right` edge ownership; `Screen`, `AppHeader`, and `BottomActionBar` never add insets themselves. See [apps/docs/src/content/docs/getting-started/provider-safe-area.md](apps/docs/src/content/docs/getting-started/provider-safe-area.md).
+Wrap the app root in `BeeUIProvider` (installs safe-area measurement, the Toast runtime, and the shared anchored-overlay runtime). `SafeArea` assigns explicit `top`/`bottom`/`left`/`right` edge ownership; `Screen`, `AppHeader`, and `BottomActionBar` never add insets themselves. See [apps/docs/src/content/docs/start/provider-safe-area.md](apps/docs/src/content/docs/start/provider-safe-area.md).
 
 ## Web bundling (Vite + react-native-web)
 `@import '@beemvp/beeui-tokens/theme.css'` supplies the semantic tokens but is not, by itself, a Web build. A from-scratch Vite + react-native-web app needs a specific plugin stack and a Tailwind/Uniwind CSS entry; get it wrong and the app either fails to resolve `react-native` or builds **unstyled**. The tested stack:
@@ -98,9 +98,9 @@ Accessibility roles/names/states/focus/keyboard are component correctness, not a
 ## Documentation map
 - AI-agent contract + prompt cookbook: [docs/ai-agent-cookbook.md](docs/ai-agent-cookbook.md)
 - Authority index: [docs/README.md](docs/README.md)
-- Getting started: [Expo](apps/docs/src/content/docs/getting-started/expo.md) · [bare RN](apps/docs/src/content/docs/getting-started/bare-react-native.md) · [Web](apps/docs/src/content/docs/getting-started/web.md)
-- CLI: [apps/docs/src/content/docs/cli/index.md](apps/docs/src/content/docs/cli/index.md)
-- Components site: [apps/docs/src/content/docs/components/index.md](apps/docs/src/content/docs/components/index.md) (deep dives: [Table](apps/docs/src/content/docs/components/table.md), [Calendar/DatePicker](apps/docs/src/content/docs/components/calendar-date-time.md))
+- Start: [Expo](apps/docs/src/content/docs/start/expo.md) · [bare RN](apps/docs/src/content/docs/start/bare-react-native.md) · [Web](apps/docs/src/content/docs/start/web.md)
+- CLI: [apps/docs/src/content/docs/guides/cli-source-ownership.md](apps/docs/src/content/docs/guides/cli-source-ownership.md)
+- Components site: [apps/docs/src/content/docs/components/index.md](apps/docs/src/content/docs/components/index.md) (deep dives: [Table guide](apps/docs/src/content/docs/guides/table.md), [Dates and times guide](apps/docs/src/content/docs/guides/date-time.md))
 - Performance: methodology [docs/benchmark-harness.md](docs/benchmark-harness.md) · baseline report [docs/performance-baseline-report.md](docs/performance-baseline-report.md) · package/bundle footprint [docs/bundle-footprint-baseline.md](docs/bundle-footprint-baseline.md) · docs site [apps/docs/src/content/docs/performance/index.md](apps/docs/src/content/docs/performance/index.md)
 - Release policy: [docs/release.md](docs/release.md) · Changelog: [CHANGELOG.md](CHANGELOG.md) · License: [LICENSE](LICENSE) (MIT)
 

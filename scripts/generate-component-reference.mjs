@@ -51,7 +51,7 @@ const HEADER_NOTE =
 const UNPUBLISHED_NOTE =
   'STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm. The install / ' +
   'import lines below are release-ready-but-not-published targets; the working, in-repo path today is the ' +
-  'source-ownership CLI (`pnpm beeui -- add <component>`).';
+  'source-ownership CLI (`pnpm beeui add <component>`).';
 
 export function readContent(rootDir = ROOT_DIR) {
   return JSON.parse(fs.readFileSync(path.join(rootDir, CONTENT_FILE), 'utf8'));
@@ -67,7 +67,16 @@ function rankExample(file) {
 }
 
 function pickExamples(files, limit = 3) {
-  return [...files].sort((a, b) => rankExample(a) - rankExample(b) || a.localeCompare(b)).slice(0, limit);
+  // `public-doc-fixtures.tsx` is a meta-fixture used by the richer generated public
+  // component pages when no better runtime source exists. Keep it out of this legacy
+  // repository reference's "Executable examples" list so adding/changing that fallback
+  // does not recursively churn the generated contract. Real screens/galleries/tests
+  // remain the examples for this document; the public site still displays the exact
+  // runtime fallback source through `public-component-previews.mjs`.
+  return [...files]
+    .filter((file) => !file.endsWith('/component-gallery/public-doc-fixtures.tsx'))
+    .sort((a, b) => rankExample(a) - rankExample(b) || a.localeCompare(b))
+    .slice(0, limit);
 }
 
 function providerLine(component) {

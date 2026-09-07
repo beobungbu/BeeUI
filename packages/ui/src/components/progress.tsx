@@ -19,9 +19,13 @@ const progressVariants = cva('w-full overflow-hidden rounded-full bg-muted', {
 export type ProgressProps = Omit<ViewProps, 'accessibilityRole' | 'role' | 'children'> &
   VariantProps<typeof progressVariants> & {
     className?: string;
+    /** Applied to the filled indicator bar, not the track. */
     indicatorClassName?: string;
+    /** Applied to the filled indicator bar, alongside the computed `width` style; not the track. */
     indicatorStyle?: StyleProp<ViewStyle>;
+    /** Upper bound `value` is measured against to compute the filled percentage. Non-finite or non-positive values fall back to 100. The accessible minimum is always 0 — there is no `min` prop. Defaults to 100. */
     max?: number;
+    /** Current progress, clamped to `[0, max]`; a non-finite value is treated as 0. */
     value: number;
   };
 

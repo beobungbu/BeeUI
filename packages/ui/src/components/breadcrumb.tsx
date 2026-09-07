@@ -11,6 +11,7 @@ function getBreadcrumbChildKey(item: React.ReactNode, index: number) {
 export type BreadcrumbProps = Omit<ViewProps, 'children'> & {
   children?: React.ReactNode;
   className?: string;
+  /** Rendered between each item, hidden from accessibility. Defaults to `›` in LTR / `‹` in RTL; pass `null` to render no separator. */
   separator?: React.ReactNode;
 };
 
@@ -64,6 +65,7 @@ export type BreadcrumbItemProps = Omit<
 > & {
   children?: React.ReactNode;
   className?: string;
+  /** Marks this item as the current page: it renders as non-interactive text (even with `onPress` set) and is exposed as `accessibilityState.selected`. Defaults to false. */
   current?: boolean;
   labelClassName?: string;
 };

@@ -28,15 +28,19 @@ export const REQUIRED_STATUS_CHECKS = Object.freeze([
 ]);
 
 export const CONDITIONAL_JOBS_EXCLUDED_FROM_REQUIRED_CHECKS = Object.freeze([
-  { workflow: 'ci.yml', job: 'bare-bundle' },
-  { workflow: 'ci.yml', job: 'bare-android' },
-  { workflow: 'ci.yml', job: 'ios-showcase' },
-  { workflow: 'ci.yml', job: 'ios-bare' },
+  { workflow: 'ci.yml', job: 'verify-docs' },
+  { workflow: 'ci.yml', job: 'verify-tokens' },
+  { workflow: 'ci.yml', job: 'verify-runtime' },
+  { workflow: 'ci.yml', job: 'verify-release' },
+  { workflow: 'ci.yml', job: 'verify-benchmark' },
+  { workflow: 'ci.yml', job: 'bare-consumer' },
+  { workflow: 'ci.yml', job: 'android-native' },
+  { workflow: 'ci.yml', job: 'ios-native' },
   { workflow: 'runtime-native.yml', job: 'ios-runtime' },
   { workflow: 'runtime-native.yml', job: 'android-runtime' },
 ]);
 
-export const VISUAL_WEB_MATRIX_JOB = Object.freeze({ workflow: 'visual-web.yml', job: 'visual-web' });
+export const VISUAL_WEB_MATRIX_JOB = Object.freeze({ workflow: 'visual-web.yml', job: 'visual-web-full' });
 
 function normalizeCondition(raw) {
   return raw.replace(/\s+/g, ' ').trim();
@@ -89,13 +93,21 @@ export function extractJobIfCondition(workflowYaml, jobName) {
   return normalizeCondition(inlineValue);
 }
 
-// Required jobs either have no `if:` at all, or use `always()` only when
-// they fan in upstream jobs/matrices. Any other condition can make a required
-// check disappear or report skipped for a legitimate PR.
+// Branch protection only evaluates a pull request's head commit, so a
+// condition that is true for every `pull_request` event cannot make a required
+// check disappear. Anything narrower than that — labels, path classifiers,
+// same-repository guards — can, and stays rejected.
+const PULL_REQUEST_TAUTOLOGIES = Object.freeze([
+  "github.event_name == 'pull_request'",
+]);
+
+// Required jobs either have no `if:` at all, use `always()` when they fan in
+// upstream jobs/matrices, or carry a condition every pull request satisfies.
 export function jobAlwaysRuns(workflowYaml, jobName) {
   const condition = extractJobIfCondition(workflowYaml, jobName);
   if (condition === null) return true;
-  return condition.replace(/\s+/g, '') === 'always()';
+  if (condition.replace(/\s+/g, '') === 'always()') return true;
+  return PULL_REQUEST_TAUTOLOGIES.includes(condition);
 }
 
 export function jobIsConditionallySkippable(workflowYaml, jobName) {

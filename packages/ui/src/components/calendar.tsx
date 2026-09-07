@@ -46,23 +46,35 @@ export type CalendarProps = Omit<ViewProps, 'children' | 'role'> & {
   className?: string;
   /** Initial visible month when `visibleMonth` is uncontrolled. Defaults to `value`'s month, else today's. */
   defaultVisibleMonth?: CalendarVisibleMonth;
+  /** Forces the grid's text direction (`'ltr'` or `'rtl'`) instead of inferring it from `I18nManager`; also flips which arrow key/icon moves to the previous vs. next day. */
   direction?: AnchoredOverlayDirection;
+  /** Disables month navigation and every day cell, and stops keyboard navigation. Distinct from `readOnly`, which keeps the grid navigable but blocks only selection. Defaults to false. */
   disabled?: boolean;
+  /** Marks individual dates as disabled (in addition to any `min`/`max` bounds) without disabling the whole grid. */
   isDateDisabled?: (date: CalendarDate) => boolean;
   /** Explicit-only (ADR-008) — no ambient device/browser locale auto-detection. Defaults to `'en-US'`. */
   locale?: string;
+  /** Latest selectable date (inclusive); later dates render disabled. */
   max?: CalendarDate;
+  /** Earliest selectable date (inclusive); earlier dates render disabled. */
   min?: CalendarDate;
+  /** Accessible label for the "next month" navigation button. Defaults to `'Next month'`. */
   nextMonthAccessibilityLabel?: string;
+  /** Called with the pressed or keyboard-committed date when it is not disabled and `readOnly` is false. */
   onValueChange?: (date: CalendarDate) => void;
+  /** Called whenever the visible month changes (navigation, or `value` moving into a different month). Required alongside `visibleMonth` to make it controlled; otherwise the calendar falls back to internal navigation state. */
   onVisibleMonthChange?: (visibleMonth: CalendarVisibleMonth) => void;
+  /** Accessible label for the "previous month" navigation button. Defaults to `'Previous month'`. */
   previousMonthAccessibilityLabel?: string;
   /** Keeps the grid focusable/navigable but blocks selection, distinct from `disabled`. */
   readOnly?: boolean;
   /** Controlled selected date. Single-date selection only for 1.0 (ADR-008). */
   value: CalendarDate | null;
+  /** Controls which month/year the grid displays. Pass alongside `onVisibleMonthChange` to control navigation; otherwise defaults to `value`'s month, else today's, and updates internally. */
   visibleMonth?: CalendarVisibleMonth;
+  /** Controls how weekday header labels are formatted (e.g. short vs. narrow). Defaults to `'short'`. */
   weekdayFormat?: CalendarWeekdayFormat;
+  /** Which day starts each week row. Defaults to the convention for `locale` when omitted. */
   weekStartsOn?: CalendarWeekStartsOn;
 };
 

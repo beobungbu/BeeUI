@@ -72,15 +72,15 @@ export const LINKED_PATHS = [
   'docs/decisions/010-select-presentation-1-0-decision.md',
   'docs/decisions/011-distribution-architecture.md',
   'apps/docs/src/content/docs/index.md',
-  'apps/docs/src/content/docs/getting-started/index.md',
-  'apps/docs/src/content/docs/getting-started/expo.md',
-  'apps/docs/src/content/docs/getting-started/bare-react-native.md',
-  'apps/docs/src/content/docs/getting-started/web.md',
-  'apps/docs/src/content/docs/getting-started/provider-safe-area.md',
-  'apps/docs/src/content/docs/cli/index.md',
+  'apps/docs/src/content/docs/start/index.md',
+  'apps/docs/src/content/docs/start/expo.md',
+  'apps/docs/src/content/docs/start/bare-react-native.md',
+  'apps/docs/src/content/docs/start/web.md',
+  'apps/docs/src/content/docs/start/provider-safe-area.md',
+  'apps/docs/src/content/docs/guides/cli-source-ownership.md',
   'apps/docs/src/content/docs/components/index.md',
-  'apps/docs/src/content/docs/components/table.md',
-  'apps/docs/src/content/docs/components/calendar-date-time.md',
+  'apps/docs/src/content/docs/guides/table.md',
+  'apps/docs/src/content/docs/guides/date-time.md',
   'apps/docs/src/content/docs/patterns/index.md',
   'apps/docs/src/content/docs/performance/index.md',
   'examples/README.md',
@@ -108,6 +108,11 @@ function readJson(relPath) {
 
 // Parses `export { A, B, type C } from './components/x';` / `export type { … } from '…';`
 // blocks out of the @beemvp/beeui-ui barrel, grouped by the module specifier they re-export from.
+//
+// A renamed re-export (`export { Foo as Bar }`) is recorded under `Bar`, the name a consumer
+// actually imports. Recording the raw `Foo as Bar` specifier would put a name nobody can import
+// into the public-surface inventory, llms.txt and the generated reference pages at once, since
+// all three read this function.
 export function parseBarrelExports(indexSource) {
   // Strip line comments so commented-out export illustrations never count as real exports.
   const withoutComments = indexSource.replace(/\/\/[^\n]*/g, '');
@@ -122,11 +127,10 @@ export function parseBarrelExports(indexSource) {
     for (const rawSymbol of match[2].split(',')) {
       const symbol = rawSymbol.trim();
       if (!symbol) continue;
-      if (blockIsType || symbol.startsWith('type ')) {
-        entry.types.push(symbol.replace(/^type\s+/, ''));
-      } else {
-        entry.values.push(symbol);
-      }
+      const isType = blockIsType || symbol.startsWith('type ');
+      const exported = symbol.replace(/^type\s+/, '').split(/\s+as\s+/).pop().trim();
+      if (!exported) continue;
+      (isType ? entry.types : entry.values).push(exported);
     }
 
     bySpecifier.set(specifier, entry);
@@ -200,10 +204,10 @@ const HEADER_NOTE =
 
 const UNPUBLISHED_NOTE =
   'STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm, no `v1.0.0` tag or ' +
-  'GitHub Release exists, and the repository is private by owner decision. Package/CLI names and install ' +
+  'GitHub Release exists. Package/CLI names and install ' +
   'commands below are release-ready-but-not-published targets, not live registry commands. Do not tell a ' +
   'user to `npm install @beemvp/beeui-ui` or `npx @beemvp/beeui-cli` yet — those resolve to nothing today. The working, ' +
-  'in-repo path is the source-ownership CLI (`pnpm beeui -- add <component>`).';
+  'in-repo path is the source-ownership CLI (`pnpm beeui add <component>`).';
 
 function buildIndex(model) {
   const { packages } = model;
@@ -222,7 +226,7 @@ BeeUI ships ${model.componentCount} public component modules from \`@beemvp/beeu
 
 ## Install (both models, targets are unpublished)
 - Centralized (release-ready target, NOT yet on npm): \`npm i @beemvp/beeui-ui @beemvp/beeui-core @beemvp/beeui-tokens\`, then \`import { Button } from '@beemvp/beeui-ui'\` and wire the Web theme via \`@import '@beemvp/beeui-tokens/theme.css'\`. See [docs/decisions/011-distribution-architecture.md](docs/decisions/011-distribution-architecture.md).
-- Source ownership (works today, repo-local): \`pnpm beeui -- add <component>\` copies component source into the consumer and rewrites \`@beemvp/beeui-core\` imports. The published CLI target is \`@beemvp/beeui-cli\` (binary \`beeui\`), invoked \`npx @beemvp/beeui-cli add <component>\` once released — NOT \`npx beeui\`. See [docs/registry-cli.md](docs/registry-cli.md) and [docs/distribution-names.md](docs/distribution-names.md).
+- Source ownership (works today, repo-local): \`pnpm beeui add <component>\` copies component source into the consumer and rewrites \`@beemvp/beeui-core\` imports. The published CLI target is \`@beemvp/beeui-cli\` (binary \`beeui\`), invoked \`npx @beemvp/beeui-cli add <component>\` once released — NOT \`npx beeui\`. See [docs/registry-cli.md](docs/registry-cli.md) and [docs/distribution-names.md](docs/distribution-names.md).
 
 ## Start here
 - [README.md](README.md): project overview, quick start, safe-area/overlay/toast foundations.
@@ -285,7 +289,7 @@ BeeUI is a reusable, mobile-first React Native UI foundation for long-lived clie
 
 ## Consumption models
 1. Centralized packages (release-ready target, NOT on npm): \`npm i @beemvp/beeui-ui\` pulls \`@beemvp/beeui-core\` + \`@beemvp/beeui-tokens\`; import components from \`@beemvp/beeui-ui\`; wire Web theme with \`@import '@beemvp/beeui-tokens/theme.css'\`.
-2. Source ownership (works today, repo-local): \`pnpm beeui -- add <component>\` copies component source in-tree and rewrites \`@beemvp/beeui-core\` imports via \`rewrite-beeui-core-cn\` / \`rewrite-beeui-core-module\`. Run \`pnpm beeui -- list\` for the canonical component list (generated from registry/registry.json). Future published CLI: \`@beemvp/beeui-cli\` (binary \`beeui\`), \`npx @beemvp/beeui-cli add <component>\` — never \`npx beeui\` (the unscoped name is an npm tombstone; see [docs/distribution-names.md](docs/distribution-names.md)).
+2. Source ownership (works today, repo-local): \`pnpm beeui add <component>\` copies component source in-tree and rewrites \`@beemvp/beeui-core\` imports via \`rewrite-beeui-core-cn\` / \`rewrite-beeui-core-module\`. Run \`pnpm beeui list\` for the canonical component list (generated from registry/registry.json). Future published CLI: \`@beemvp/beeui-cli\` (binary \`beeui\`), \`npx @beemvp/beeui-cli add <component>\` — never \`npx beeui\` (the unscoped name is an npm tombstone; see [docs/distribution-names.md](docs/distribution-names.md)).
 
 See [docs/decisions/011-distribution-architecture.md](docs/decisions/011-distribution-architecture.md) and [docs/registry-cli.md](docs/registry-cli.md).
 
@@ -301,7 +305,7 @@ pnpm showcase   # then press i (iOS), a (Android), or w (Web)
 Verification: \`pnpm check\` (typecheck + tests), \`pnpm release:verify\` (package gate), \`pnpm --dir apps/visual-regression test\` (browser QA). See [README.md](README.md).
 
 ## Provider and safe-area setup
-Wrap the app root in \`BeeUIProvider\` (installs safe-area measurement, the Toast runtime, and the shared anchored-overlay runtime). \`SafeArea\` assigns explicit \`top\`/\`bottom\`/\`left\`/\`right\` edge ownership; \`Screen\`, \`AppHeader\`, and \`BottomActionBar\` never add insets themselves. See [apps/docs/src/content/docs/getting-started/provider-safe-area.md](apps/docs/src/content/docs/getting-started/provider-safe-area.md).
+Wrap the app root in \`BeeUIProvider\` (installs safe-area measurement, the Toast runtime, and the shared anchored-overlay runtime). \`SafeArea\` assigns explicit \`top\`/\`bottom\`/\`left\`/\`right\` edge ownership; \`Screen\`, \`AppHeader\`, and \`BottomActionBar\` never add insets themselves. See [apps/docs/src/content/docs/start/provider-safe-area.md](apps/docs/src/content/docs/start/provider-safe-area.md).
 
 ## Web bundling (Vite + react-native-web)
 \`@import '@beemvp/beeui-tokens/theme.css'\` supplies the semantic tokens but is not, by itself, a Web build. A from-scratch Vite + react-native-web app needs a specific plugin stack and a Tailwind/Uniwind CSS entry; get it wrong and the app either fails to resolve \`react-native\` or builds **unstyled**. The tested stack:
@@ -357,9 +361,9 @@ ${adrs.map(([slug, note]) => `- [ADR-${slug.slice(0, 3)} ${slug.slice(4)}](docs/
 ## Documentation map
 - AI-agent contract + prompt cookbook: [docs/ai-agent-cookbook.md](docs/ai-agent-cookbook.md)
 - Authority index: [docs/README.md](docs/README.md)
-- Getting started: [Expo](apps/docs/src/content/docs/getting-started/expo.md) · [bare RN](apps/docs/src/content/docs/getting-started/bare-react-native.md) · [Web](apps/docs/src/content/docs/getting-started/web.md)
-- CLI: [apps/docs/src/content/docs/cli/index.md](apps/docs/src/content/docs/cli/index.md)
-- Components site: [apps/docs/src/content/docs/components/index.md](apps/docs/src/content/docs/components/index.md) (deep dives: [Table](apps/docs/src/content/docs/components/table.md), [Calendar/DatePicker](apps/docs/src/content/docs/components/calendar-date-time.md))
+- Start: [Expo](apps/docs/src/content/docs/start/expo.md) · [bare RN](apps/docs/src/content/docs/start/bare-react-native.md) · [Web](apps/docs/src/content/docs/start/web.md)
+- CLI: [apps/docs/src/content/docs/guides/cli-source-ownership.md](apps/docs/src/content/docs/guides/cli-source-ownership.md)
+- Components site: [apps/docs/src/content/docs/components/index.md](apps/docs/src/content/docs/components/index.md) (deep dives: [Table guide](apps/docs/src/content/docs/guides/table.md), [Dates and times guide](apps/docs/src/content/docs/guides/date-time.md))
 - Performance: methodology [docs/benchmark-harness.md](docs/benchmark-harness.md) · baseline report [docs/performance-baseline-report.md](docs/performance-baseline-report.md) · package/bundle footprint [docs/bundle-footprint-baseline.md](docs/bundle-footprint-baseline.md) · docs site [apps/docs/src/content/docs/performance/index.md](apps/docs/src/content/docs/performance/index.md)
 - Release policy: [docs/release.md](docs/release.md) · Changelog: [CHANGELOG.md](CHANGELOG.md) · License: [LICENSE](LICENSE) (MIT)
 
@@ -383,7 +387,7 @@ function buildComponents(model) {
 ${UNPUBLISHED_NOTE}
 
 ## How to read this
-- Import all listed symbols from \`@beemvp/beeui-ui\` (centralized model) or copy the source file via \`pnpm beeui -- add <name>\` (source-ownership model). Type-only exports are omitted here for brevity; see the source file or [packages/ui/src/index.ts](packages/ui/src/index.ts) for \`Props\` and value-type exports.
+- Import all listed symbols from \`@beemvp/beeui-ui\` (centralized model) or copy the source file via \`pnpm beeui add <name>\` (source-ownership model). Type-only exports are omitted here for brevity; see the source file or [packages/ui/src/index.ts](packages/ui/src/index.ts) for \`Props\` and value-type exports.
 - "source" paths are repository files. Platform-split modules (e.g. \`date-picker\`, \`table\`, \`sheet\`, \`tooltip\`) resolve \`*.web.tsx\` / \`*.native.tsx\` at build time from the listed entry.
 - Every text-bearing component honors OS/browser font scaling (docs/dynamic-type.md via [docs/components.md](docs/components.md)); interactive components carry accessibility roles/states.
 
@@ -404,8 +408,8 @@ ${model.privateUtilities.map((name) => `- \`${name}\``).join('\n')}
 
 ## Deep-dive contracts
 - Overlays (Popover/DropdownMenu/Select/Tooltip): [docs/anchored-overlays.md](docs/anchored-overlays.md), [ADR-002](docs/decisions/002-overlay-behavior.md), [ADR-005](docs/decisions/005-tooltip-contract.md), [ADR-010](docs/decisions/010-select-presentation-1-0-decision.md).
-- Sheet: [ADR-006](docs/decisions/006-sheet-gesture-engine.md). Table: [ADR-007](docs/decisions/007-table-datatable-architecture.md), [apps/docs/src/content/docs/components/table.md](apps/docs/src/content/docs/components/table.md).
-- Calendar/DatePicker/DateTimePicker: [ADR-008](docs/decisions/008-datetime-architecture.md), [apps/docs/src/content/docs/components/calendar-date-time.md](apps/docs/src/content/docs/components/calendar-date-time.md).
+- Sheet: [ADR-006](docs/decisions/006-sheet-gesture-engine.md). Table: [ADR-007](docs/decisions/007-table-datatable-architecture.md), [apps/docs/src/content/docs/guides/table.md](apps/docs/src/content/docs/guides/table.md).
+- Calendar/DatePicker/DateTimePicker: [ADR-008](docs/decisions/008-datetime-architecture.md), [apps/docs/src/content/docs/guides/date-time.md](apps/docs/src/content/docs/guides/date-time.md).
 
 ${HEADER_NOTE}
 `;

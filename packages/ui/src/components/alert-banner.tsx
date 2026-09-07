@@ -50,10 +50,13 @@ function getPrimitiveAnnouncement(...values: React.ReactNode[]) {
 
 export type AlertBannerProps = Omit<ViewProps, 'children'> &
   VariantProps<typeof alertBannerVariants> & {
+    /** Rendered below the description, indented to align with it (e.g. a retry or dismiss button). */
     action?: React.ReactNode;
+    /** Overrides the text announced to screen readers on iOS when the banner appears; by default the title and description are joined and announced, but only while neither holds element content — an element in either slot drops the announcement rather than announcing the other. `live="none"` suppresses it entirely. */
     announcement?: string;
     className?: string;
     description?: React.ReactNode;
+    /** Sets `accessibilityLiveRegion` and, on iOS, whether the announcement queues (`polite`) or interrupts (`assertive`); `none` suppresses the announcement entirely. Defaults to `polite`. */
     live?: 'none' | 'polite' | 'assertive';
     title: React.ReactNode;
   };

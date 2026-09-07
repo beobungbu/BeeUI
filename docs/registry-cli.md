@@ -11,16 +11,16 @@ Current repository-local entry points (unchanged for contributors — `pnpm beeu
 to the same engine as the packed CLI, see "CLI packaging" below):
 
 ```sh
-pnpm beeui -- help
-pnpm beeui -- version
-pnpm beeui -- init
-pnpm beeui -- list
-pnpm beeui -- add button
-pnpm beeui -- add --dry-run button
-pnpm beeui -- doctor
+pnpm beeui help
+pnpm beeui version
+pnpm beeui init
+pnpm beeui list
+pnpm beeui add button
+pnpm beeui add --dry-run button
+pnpm beeui doctor
 pnpm registry:verify
 pnpm registry:test
-pnpm beeui -- add --all
+pnpm beeui add --all
 ```
 
 The workflow copies supported BeeUI source into a consumer project. The consumer then owns those copied files. It does not create a dependency from the consumer back to this monorepo, does not install packages automatically, and does not fetch executable remote code.
@@ -79,7 +79,7 @@ implementation at `packages/cli/src/` (`beeui.mjs` + `registry-lib.mjs` + `updat
 Two thin entry points call the same engine:
 
 - `scripts/beeui.mjs` (repo root) re-exports `packages/cli/src/beeui.mjs` directly, so
-  `pnpm beeui -- <command>` keeps working with no build step, against the live monorepo
+  `pnpm beeui <command>` keeps working with no build step, against the live monorepo
   registry and component source.
 - The publishable `@beemvp/beeui-cli` package's `bin` (`packages/cli/dist/beeui.mjs`, produced by
   `pnpm --filter @beemvp/beeui-cli run build`) runs the same engine standalone.
@@ -158,7 +158,7 @@ consumer fixtures already follow.
 
 ## Supported registry entries
 
-Registry coverage has expanded from the initial 6-component slice to the full stable public component-module surface exported by `packages/ui/src/index.ts` (**62 public component modules** as of this writing, including `Table`, #170, and `Sheet`, #161). Run `pnpm beeui -- list` for the canonical, sorted, up-to-date list — it is generated from `registry/registry.json`.
+Registry coverage has expanded from the initial 6-component slice to the full stable public component-module surface exported by `packages/ui/src/index.ts` (**62 public component modules** as of this writing, including `Table`, #170, and `Sheet`, #161). Run `pnpm beeui list` for the canonical, sorted, up-to-date list — it is generated from `registry/registry.json`.
 
 `pnpm registry:verify` additionally compares those public `./components/*` barrel exports with public registry component entries. Adding or removing a public component module without updating the registry therefore fails CI instead of silently allowing registry coverage to drift.
 
@@ -172,7 +172,7 @@ Internal transitive entries (not directly addable, but resolved automatically):
 - `overlay-runtime` — the shared anchored-overlay runtime/transport kernel (`overlay-runtime.tsx` plus its platform transport/dismiss-event files), required by `dialog`, `popover`, `dropdown-menu`, `select`, `tooltip`, and `safe-area`
 - `use-direction` — the single stateless logical-direction resolver (ADR-004, `use-direction.ts`) required by every component that defaults a `direction` prop from ambient RTL/LTR state: `breadcrumb`, `calendar`, `dropdown-menu`, `pagination`, `popover`, `select`, `table`, and `tooltip` all declare it as an explicit registry dependency (#319 closed the gap where `breadcrumb`/`dropdown-menu`/`pagination`/`popover`/`select` imported the module at the source level without declaring it here)
 
-**Resolved — `@beemvp/beeui-tokens` runtime imports (#355):** `dropdown-menu`, `overlay-runtime`, `popover`, `select`, `sheet`/`sheet.web`/`sheet.native`, `theme-scope`, `toast`, `tooltip.web`/`tooltip.native`, and `use-bee-token` import runtime values (`layer`, `spacing`, `resolveMotion`, `resolveNativeMotion`, and others) directly from `@beemvp/beeui-tokens`. Unlike `@beemvp/beeui-core`, this import is **not vendored**: per [ADR-011](decisions/011-distribution-architecture.md) D5, `@beemvp/beeui-tokens` is now a published package (#199/#200), so each affected registry item declares `@beemvp/beeui-tokens` in its `dependencies` map instead. `beeui add` reports it the same way it reports any other external package requirement (`pnpm beeui -- add sheet` prints `dependency @beemvp/beeui-tokens@<range> [declared in dependencies as <range> | missing from package.json]`) — the copied source keeps its resolvable `@beemvp/beeui-tokens` import, and the consumer installs the package like any other declared dependency.
+**Resolved — `@beemvp/beeui-tokens` runtime imports (#355):** `dropdown-menu`, `overlay-runtime`, `popover`, `select`, `sheet`/`sheet.web`/`sheet.native`, `theme-scope`, `toast`, `tooltip.web`/`tooltip.native`, and `use-bee-token` import runtime values (`layer`, `spacing`, `resolveMotion`, `resolveNativeMotion`, and others) directly from `@beemvp/beeui-tokens`. Unlike `@beemvp/beeui-core`, this import is **not vendored**: per [ADR-011](decisions/011-distribution-architecture.md) D5, `@beemvp/beeui-tokens` is now a published package (#199/#200), so each affected registry item declares `@beemvp/beeui-tokens` in its `dependencies` map instead. `beeui add` reports it the same way it reports any other external package requirement (`pnpm beeui add sheet` prints `dependency @beemvp/beeui-tokens@<range> [declared in dependencies as <range> | missing from package.json]`) — the copied source keeps its resolvable `@beemvp/beeui-tokens` import, and the consumer installs the package like any other declared dependency.
 
 `button` remains a representative vertical slice. Adding it resolves and copies `core-cn`, `theme`, `text`, and `button` in deterministic dependency order. The resulting Button source imports the copied consumer-local `cn` helper rather than `@beemvp/beeui-core`.
 
@@ -182,7 +182,7 @@ Internal transitive entries (not directly addable, but resolved automatically):
 
 ## Configuration
 
-`pnpm beeui -- init` creates `beeui.config.json` in the target project's current working directory:
+`pnpm beeui init` creates `beeui.config.json` in the target project's current working directory:
 
 ```json
 {
@@ -267,7 +267,7 @@ The array-based item representation is deliberate: duplicate item names remain d
 Example:
 
 ```sh
-pnpm beeui -- add button
+pnpm beeui add button
 ```
 
 Resolution:
@@ -345,7 +345,7 @@ packages/tokens/src/theme.css
 Consumers can copy it explicitly:
 
 ```sh
-pnpm beeui -- add theme
+pnpm beeui add theme
 ```
 
 Each registry item that relies on BeeUI semantic theme tokens declares `theme` in its dependency closure, so adding such a component preflights and copies the canonical CSS to `config.themeFile` when it is absent.
@@ -369,7 +369,7 @@ Existing destination behavior:
 Example explicit replacement:
 
 ```sh
-pnpm beeui -- add --overwrite button
+pnpm beeui add --overwrite button
 ```
 
 `--overwrite` is intentionally explicit. It should not be added to automated workflows casually because source-owned files may contain consumer changes.
@@ -379,7 +379,7 @@ A preflight collision prevents unrelated files in the same requested component s
 ## Dry run
 
 ```sh
-pnpm beeui -- add --dry-run button input
+pnpm beeui add --dry-run button input
 ```
 
 Dry-run performs the same registry/config validation, dependency resolution, transform calculation, package requirement inspection, symlink/path checks, and collision preflight as a real add. It prints the deterministic plan but creates or changes no destination files.
@@ -402,8 +402,8 @@ the copied source) — it is the only thing that lets a later `diff`/`update` di
 edited this" from "upstream moved this" instead of guessing from a single snapshot.
 
 ```sh
-pnpm beeui -- diff
-pnpm beeui -- diff button
+pnpm beeui diff
+pnpm beeui diff button
 ```
 
 For each file in the requested (or, with no arguments, every previously-added) item's
@@ -428,10 +428,10 @@ content) under every status where that comparison is informative (`UPSTREAM`, `L
 agent/script can parse the exact change, not just the classification.
 
 ```sh
-pnpm beeui -- update
-pnpm beeui -- update button
-pnpm beeui -- update --dry-run
-pnpm beeui -- update --force button
+pnpm beeui update
+pnpm beeui update button
+pnpm beeui update --dry-run
+pnpm beeui update --force button
 ```
 
 `update` re-syncs files using the same classification: `UPSTREAM`, `NEW`, and `MISSING`
@@ -451,9 +451,9 @@ not have to remember which specific new transitive file appeared.
 ## Doctor / verify
 
 ```sh
-pnpm beeui -- doctor
+pnpm beeui doctor
 # or
-pnpm beeui -- verify
+pnpm beeui verify
 ```
 
 This validates the canonical registry, the local `beeui.config.json`, configured path boundaries, practical symlink constraints, and — in a packed/published install — the bundled registry's checksum integrity (see "Registry delivery and integrity" below). It does not add components.

@@ -50,7 +50,7 @@ test('there are 62 public components and each maps to barrel exports', () => {
   assert.equal(components.length, 62);
   for (const component of components) {
     assert.ok(component.values.length > 0, `${component.name} has no exported values`);
-    assert.match(component.cliAdd, /^pnpm beeui -- add /);
+    assert.match(component.cliAdd, /^pnpm beeui add /);
   }
 });
 

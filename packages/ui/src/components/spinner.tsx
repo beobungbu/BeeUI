@@ -29,6 +29,7 @@ const spinnerToneClasses: Record<SpinnerTone, string> = {
 
 export type SpinnerProps = Omit<ActivityIndicatorProps, 'color'> & {
   className?: string;
+  /** Semantic color the spinner renders in (e.g. `'destructive'` for an inline error-state spinner). Defaults to `'primary'`. */
   tone?: SpinnerTone;
 };
 

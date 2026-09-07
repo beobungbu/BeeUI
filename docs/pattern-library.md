@@ -4,7 +4,7 @@
 
 > 37 production screen patterns across 4 domain packs, composed entirely from public `@beemvp/beeui-ui` components. Each entry links to its executable, typechecked source in the [@beemvp/beeui-showcase](../apps/showcase) Pattern Gallery. Derived from the showcase pattern sources and docs/pattern-library.content.json; enforced by `pnpm docs:patterns:check`.
 
-STATUS: BeeUI is pre-1.0 and UNPUBLISHED. The Pattern Gallery is an in-repo reference application, not a published template. Screens are original BeeUI compositions you own via source-ownership (`pnpm beeui -- add <component>`), not a redistributable third-party template.
+STATUS: BeeUI is pre-1.0 and UNPUBLISHED. The Pattern Gallery is an in-repo reference application, not a published template. Screens are original BeeUI compositions you own via source-ownership (`pnpm beeui add <component>`), not a redistributable third-party template.
 
 Each pattern documents its purpose, state contract, composition, the callback
 ownership boundary between the screen and the application, and the application
@@ -34,7 +34,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/auth/screens/forgot-password-screen.tsx`](../apps/showcase/patterns/auth/screens/forgot-password-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/auth/screens/forgot-password-screen.tsx`](../apps/showcase/patterns/auth/screens/forgot-password-screen.tsx).
 - **Excluded application logic:** Sending the reset email, rate limiting, and account lookup.
 
 ### Interests Onboarding
@@ -46,7 +46,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/auth/screens/interests-onboarding-screen.tsx`](../apps/showcase/patterns/auth/screens/interests-onboarding-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/auth/screens/interests-onboarding-screen.tsx`](../apps/showcase/patterns/auth/screens/interests-onboarding-screen.tsx).
 - **Excluded application logic:** Topic catalog fetching and persistence of selected interests.
 
 ### Password Updated
@@ -58,7 +58,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/auth/screens/password-updated-screen.tsx`](../apps/showcase/patterns/auth/screens/password-updated-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/auth/screens/password-updated-screen.tsx`](../apps/showcase/patterns/auth/screens/password-updated-screen.tsx).
 - **Excluded application logic:** The password mutation and any post-change session handling.
 
 ### Profile Setup
@@ -70,7 +70,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/auth/screens/profile-setup-screen.tsx`](../apps/showcase/patterns/auth/screens/profile-setup-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/auth/screens/profile-setup-screen.tsx`](../apps/showcase/patterns/auth/screens/profile-setup-screen.tsx).
 - **Excluded application logic:** Username availability checks, image upload, and profile persistence.
 
 ### Reset Password
@@ -82,7 +82,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/auth/screens/reset-password-screen.tsx`](../apps/showcase/patterns/auth/screens/reset-password-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/auth/screens/reset-password-screen.tsx`](../apps/showcase/patterns/auth/screens/reset-password-screen.tsx).
 - **Excluded application logic:** Reset-token validation and the password mutation.
 
 ### Sign In
@@ -94,7 +94,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/auth/screens/sign-in-screen.tsx`](../apps/showcase/patterns/auth/screens/sign-in-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/auth/screens/sign-in-screen.tsx`](../apps/showcase/patterns/auth/screens/sign-in-screen.tsx).
 - **Excluded application logic:** Credential verification, OAuth flows, and session creation.
 
 ### Sign Up
@@ -106,7 +106,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/auth/screens/sign-up-screen.tsx`](../apps/showcase/patterns/auth/screens/sign-up-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/auth/screens/sign-up-screen.tsx`](../apps/showcase/patterns/auth/screens/sign-up-screen.tsx).
 - **Excluded application logic:** Account creation, validation rules, OAuth, and terms storage.
 
 ### Verify Code
@@ -118,7 +118,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/auth/screens/verify-code-screen.tsx`](../apps/showcase/patterns/auth/screens/verify-code-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/auth/screens/verify-code-screen.tsx`](../apps/showcase/patterns/auth/screens/verify-code-screen.tsx).
 - **Excluded application logic:** Code delivery, verification, and resend throttling.
 
 ### Welcome
@@ -130,7 +130,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/auth/screens/welcome-screen.tsx`](../apps/showcase/patterns/auth/screens/welcome-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/auth/screens/welcome-screen.tsx`](../apps/showcase/patterns/auth/screens/welcome-screen.tsx).
 - **Excluded application logic:** Navigation and any onboarding state.
 
 ## Dashboard + Finance
@@ -146,7 +146,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/dashboard-finance/screens/analytics-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/analytics-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/dashboard-finance/screens/analytics-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/analytics-screen.tsx).
 - **Excluded application logic:** Metric aggregation, data fetching, and chart rendering.
 
 ### Dashboard Overview
@@ -158,7 +158,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/dashboard-finance/screens/dashboard-overview-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/dashboard-overview-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/dashboard-finance/screens/dashboard-overview-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/dashboard-overview-screen.tsx).
 - **Excluded application logic:** Data fetching, invoice creation, and navigation.
 
 ### Invoice Detail
@@ -170,7 +170,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/dashboard-finance/screens/invoice-detail-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/invoice-detail-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/dashboard-finance/screens/invoice-detail-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/invoice-detail-screen.tsx).
 - **Excluded application logic:** Invoice retrieval, PDF generation, and share transport.
 
 ### Payment Methods
@@ -182,7 +182,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/dashboard-finance/screens/payment-methods-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/payment-methods-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/dashboard-finance/screens/payment-methods-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/payment-methods-screen.tsx).
 - **Excluded application logic:** Payment-provider integration and method mutations.
 
 ### Subscription
@@ -194,7 +194,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/dashboard-finance/screens/subscription-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/subscription-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/dashboard-finance/screens/subscription-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/subscription-screen.tsx).
 - **Excluded application logic:** Billing-provider integration and plan mutations.
 
 ### Transaction Detail
@@ -206,7 +206,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/dashboard-finance/screens/transaction-detail-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/transaction-detail-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/dashboard-finance/screens/transaction-detail-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/transaction-detail-screen.tsx).
 - **Excluded application logic:** Transaction retrieval and receipt generation.
 
 ### Transactions
@@ -218,7 +218,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/dashboard-finance/screens/transactions-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/transactions-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/dashboard-finance/screens/transactions-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/transactions-screen.tsx).
 - **Excluded application logic:** Query execution, pagination, and data fetching.
 
 ### Wallet
@@ -230,7 +230,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/dashboard-finance/screens/wallet-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/wallet-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/dashboard-finance/screens/wallet-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/wallet-screen.tsx).
 - **Excluded application logic:** Balance retrieval and send/receive/transfer execution.
 
 ## Commerce + Social
@@ -246,7 +246,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/commerce-social/screens/cart-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/cart-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/commerce-social/screens/cart-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/cart-screen.tsx).
 - **Excluded application logic:** Cart persistence, pricing/tax calculation, and checkout routing.
 
 ### Checkout
@@ -258,7 +258,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/commerce-social/screens/checkout-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/checkout-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/commerce-social/screens/checkout-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/checkout-screen.tsx).
 - **Excluded application logic:** Address validation, payment capture, and order creation.
 
 ### Messages
@@ -270,7 +270,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/commerce-social/screens/messages-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/messages-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/commerce-social/screens/messages-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/messages-screen.tsx).
 - **Excluded application logic:** Message fetching, realtime updates, and thread navigation.
 
 ### Notifications
@@ -282,7 +282,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/commerce-social/screens/notifications-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/notifications-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/commerce-social/screens/notifications-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/notifications-screen.tsx).
 - **Excluded application logic:** Notification fetching and read-state persistence.
 
 ### Order Detail
@@ -294,7 +294,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/commerce-social/screens/order-detail-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/order-detail-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/commerce-social/screens/order-detail-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/order-detail-screen.tsx).
 - **Excluded application logic:** Order retrieval, reorder logic, and support routing.
 
 ### Orders
@@ -306,7 +306,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/commerce-social/screens/orders-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/orders-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/commerce-social/screens/orders-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/orders-screen.tsx).
 - **Excluded application logic:** Order fetching and pagination.
 
 ### Post Detail
@@ -318,7 +318,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/commerce-social/screens/post-detail-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/post-detail-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/commerce-social/screens/post-detail-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/post-detail-screen.tsx).
 - **Excluded application logic:** Post/comment fetching and mutation persistence.
 
 ### Product Detail
@@ -330,7 +330,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/commerce-social/screens/product-detail-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/product-detail-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/commerce-social/screens/product-detail-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/product-detail-screen.tsx).
 - **Excluded application logic:** Product fetching, inventory, and cart mutations.
 
 ### Product Feed
@@ -342,7 +342,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/commerce-social/screens/product-feed-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/product-feed-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/commerce-social/screens/product-feed-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/product-feed-screen.tsx).
 - **Excluded application logic:** Catalog fetching, search execution, and favorite persistence.
 
 ### Product Search
@@ -354,7 +354,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/commerce-social/screens/product-search-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/product-search-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/commerce-social/screens/product-search-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/product-search-screen.tsx).
 - **Excluded application logic:** Search execution, sorting/filtering logic, and data fetching.
 
 ### Social Feed
@@ -366,7 +366,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/commerce-social/screens/social-feed-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/social-feed-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/commerce-social/screens/social-feed-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/social-feed-screen.tsx).
 - **Excluded application logic:** Feed fetching, realtime updates, and post persistence.
 
 ### User Profile
@@ -378,7 +378,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/commerce-social/screens/user-profile-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/user-profile-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/commerce-social/screens/user-profile-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/user-profile-screen.tsx).
 - **Excluded application logic:** Profile/post fetching and follow-state persistence.
 
 ## Account + Settings
@@ -394,7 +394,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/account-settings/screens/account-screen.tsx`](../apps/showcase/patterns/account-settings/screens/account-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/account-settings/screens/account-screen.tsx`](../apps/showcase/patterns/account-settings/screens/account-screen.tsx).
 - **Excluded application logic:** Account data fetching and destructive account mutations.
 
 ### Appearance
@@ -406,7 +406,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/account-settings/screens/appearance-screen.tsx`](../apps/showcase/patterns/account-settings/screens/appearance-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/account-settings/screens/appearance-screen.tsx`](../apps/showcase/patterns/account-settings/screens/appearance-screen.tsx).
 - **Excluded application logic:** Theme persistence and system-theme integration.
 
 ### Change Password
@@ -418,7 +418,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/account-settings/screens/change-password-screen.tsx`](../apps/showcase/patterns/account-settings/screens/change-password-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/account-settings/screens/change-password-screen.tsx`](../apps/showcase/patterns/account-settings/screens/change-password-screen.tsx).
 - **Excluded application logic:** Password verification and the change mutation.
 
 ### Edit Profile
@@ -430,7 +430,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/account-settings/screens/edit-profile-screen.tsx`](../apps/showcase/patterns/account-settings/screens/edit-profile-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/account-settings/screens/edit-profile-screen.tsx`](../apps/showcase/patterns/account-settings/screens/edit-profile-screen.tsx).
 - **Excluded application logic:** Avatar upload, validation, and profile persistence.
 
 ### Notification Settings
@@ -442,7 +442,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/account-settings/screens/notification-settings-screen.tsx`](../apps/showcase/patterns/account-settings/screens/notification-settings-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/account-settings/screens/notification-settings-screen.tsx`](../apps/showcase/patterns/account-settings/screens/notification-settings-screen.tsx).
 - **Excluded application logic:** Preference persistence and push-registration.
 
 ### Privacy Security
@@ -454,7 +454,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/account-settings/screens/privacy-security-screen.tsx`](../apps/showcase/patterns/account-settings/screens/privacy-security-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/account-settings/screens/privacy-security-screen.tsx`](../apps/showcase/patterns/account-settings/screens/privacy-security-screen.tsx).
 - **Excluded application logic:** Session management, 2FA setup, and data-export execution.
 
 ### Profile
@@ -466,7 +466,7 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/account-settings/screens/profile-screen.tsx`](../apps/showcase/patterns/account-settings/screens/profile-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/account-settings/screens/profile-screen.tsx`](../apps/showcase/patterns/account-settings/screens/profile-screen.tsx).
 - **Excluded application logic:** Profile fetching and navigation.
 
 ### Settings
@@ -478,5 +478,5 @@ documentation contract](component-documentation-contract.md).
 - **Responsive:** follows the [responsive layout contract](responsive-layout.md) (bounded content width, safe-area-aware shells).
 - **Accessibility:** inherits the per-component [accessibility contract](accessibility-contract.md); no bespoke a11y overrides.
 - **Related components:** see the [component reference](component-reference.md) entries for the composition above.
-- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui -- add <component>`; the screen source is [`patterns/account-settings/screens/settings-screen.tsx`](../apps/showcase/patterns/account-settings/screens/settings-screen.tsx).
+- **Source ownership:** copy the screen and its BeeUI parts into your app via `pnpm beeui add <component>`; the screen source is [`patterns/account-settings/screens/settings-screen.tsx`](../apps/showcase/patterns/account-settings/screens/settings-screen.tsx).
 - **Excluded application logic:** Preference persistence and navigation.

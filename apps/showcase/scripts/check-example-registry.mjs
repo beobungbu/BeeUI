@@ -1,0 +1,140 @@
+#!/usr/bin/env node
+
+import fs from 'node:fs';
+import path from 'node:path';
+
+import {
+  ROOT_DIR,
+  getPatternRuntimeIds,
+  getPatternScreens,
+  getPublicComponents,
+  buildShowcaseUsageIndex,
+  usageForComponent,
+} from '../../../scripts/component-docs-lib.mjs';
+import { coverageForComponent } from '../component-coverage.ts';
+import { buildPublicPatternManifest } from '../../../scripts/public-pattern-reference.mjs';
+import { selectPreviewFixture } from '../../../scripts/public-component-previews.mjs';
+import {
+  buildProductionPatternUsage,
+  renderProductionPatternUsage,
+} from '../../../scripts/generate-production-pattern-usage.mjs';
+
+const REGISTRY_SOURCE = 'apps/showcase/example-registry.ts';
+
+function read(relPath) {
+  return fs.readFileSync(path.join(ROOT_DIR, relPath), 'utf8');
+}
+
+function componentFixtureEntries(source) {
+  const block = /const COMPONENT_FIXTURES:[\s\S]*?= \[([\s\S]*?)\n\];/u.exec(source)?.[1];
+  if (!block) throw new Error('example-registry.ts is missing COMPONENT_FIXTURES.');
+  return [...block.matchAll(/\['([^']+)',\s*([^\]]+)\]/gu)].map((match) => ({
+    ownerId: match[1],
+    rawSource: match[2].trim(),
+  }));
+}
+
+function resolvedFixturePath(entry) {
+  if (entry.rawSource === 'MAIN_GALLERY') return 'apps/showcase/component-gallery/component-gallery.tsx';
+  if (entry.rawSource === 'PUBLIC_DOC_FIXTURES') return 'apps/showcase/component-gallery/public-doc-fixtures.tsx';
+  const literal = /^'([^']+)'$/u.exec(entry.rawSource);
+  return literal?.[1] ?? null;
+}
+
+export function validateExampleRegistry() {
+  const source = read(REGISTRY_SOURCE);
+  const entries = componentFixtureEntries(source);
+  const violations = [];
+  const canonical = getPublicComponents(ROOT_DIR);
+  const canonicalIds = canonical.map((component) => component.name).sort((a, b) => a.localeCompare(b));
+  const registryIds = entries.map((entry) => entry.ownerId).sort((a, b) => a.localeCompare(b));
+
+  if (new Set(registryIds).size !== registryIds.length) violations.push('COMPONENT_FIXTURES contains duplicate owner ids.');
+  const missing = canonicalIds.filter((id) => !registryIds.includes(id));
+  const extra = registryIds.filter((id) => !canonicalIds.includes(id));
+  if (missing.length) violations.push(`public components missing Example Registry entries: ${missing.join(', ')}.`);
+  if (extra.length) violations.push(`Example Registry contains non-public component ids: ${extra.join(', ')}.`);
+
+  const usageIndex = buildShowcaseUsageIndex(ROOT_DIR);
+  for (const entry of entries) {
+    const fixture = resolvedFixturePath(entry);
+    if (!fixture || !fs.existsSync(path.join(ROOT_DIR, fixture))) {
+      violations.push(`${entry.ownerId}: Example Registry fixture does not exist: ${fixture ?? entry.rawSource}.`);
+      continue;
+    }
+    const component = canonical.find((candidate) => candidate.name === entry.ownerId);
+    if (!component) continue;
+    if (!usageForComponent(component, usageIndex).includes(fixture)) {
+      violations.push(`${entry.ownerId}: ${fixture} is not a real Showcase usage of any public symbol in that family.`);
+      continue;
+    }
+    const docsFixture = selectPreviewFixture(component, ROOT_DIR).fixture;
+    if (fixture !== docsFixture) {
+      violations.push(`${entry.ownerId}: Example Registry fixture ${fixture} drifted from docs preview authority ${docsFixture}.`);
+    }
+  }
+
+  // #472 section 2's `production` mapping is derived from real pattern imports, so a pattern
+  // that stops composing a component must invalidate the committed mapping rather than rot.
+  const renderedUsage = renderProductionPatternUsage(buildProductionPatternUsage(ROOT_DIR));
+  if (read('apps/showcase/production-pattern-usage.ts') !== renderedUsage) {
+    violations.push('production pattern usage mapping is stale. Run `pnpm showcase:production-usage:generate`.');
+  }
+
+  const patternSources = getPatternScreens(ROOT_DIR);
+  if (patternSources.length === 0) violations.push('canonical pattern screen inventory is empty.');
+  for (const pattern of patternSources) {
+    if (!fs.existsSync(path.join(ROOT_DIR, pattern.file))) violations.push(`pattern source is missing: ${pattern.file}.`);
+  }
+
+  // #472 section 13: a generated docs link that names an example or state the runtime cannot
+  // resolve must fail CI rather than send a reader to the target-recovery screen.
+  const runtimeIds = getPatternRuntimeIds(ROOT_DIR);
+  const runtimeStates = new Map(
+    [...runtimeIds.values()].map((entry) => [entry.id, new Set(entry.states)]),
+  );
+  for (const pattern of buildPublicPatternManifest(ROOT_DIR)) {
+    if (!runtimeStates.has(pattern.runtimeId)) {
+      violations.push(`${pattern.slug}: generated docs link names pattern id ${pattern.runtimeId}, which the runtime Pattern Gallery does not expose.`);
+      continue;
+    }
+    for (const { state } of pattern.stateTargets) {
+      if (!runtimeStates.get(pattern.runtimeId).has(state)) {
+        violations.push(`${pattern.slug}: generated docs link names unknown pattern state ${state}.`);
+      }
+    }
+  }
+  for (const component of canonical) {
+    const claimed = new Set(coverageForComponent(component.name));
+    if (!claimed.has('basic')) {
+      violations.push(`${component.name}: declared coverage does not include the required basic example.`);
+    }
+  }
+
+  const foundation = read('apps/docs/src/lib/foundation-contract.ts');
+  if (!foundation.includes("from '../../../showcase/showcase-target.ts'") || !foundation.includes('return showcaseHref({')) {
+    violations.push('Foundation docs URL builder no longer delegates to the canonical Showcase target serializer.');
+  }
+  if (foundation.includes('new URLSearchParams()')) {
+    violations.push('Foundation docs URL builder reintroduced a second Showcase target serializer.');
+  }
+
+  const publicComponentReference = read('scripts/public-component-reference.mjs');
+  if (!publicComponentReference.includes("showcaseHref({ surface: 'component', id: component.name, example: 'basic' })")) {
+    violations.push('generated component docs no longer use the canonical Showcase target builder.');
+  }
+  if (publicComponentReference.includes('?component=')) {
+    violations.push('generated component docs still emit the legacy ?component= query contract.');
+  }
+
+  return violations;
+}
+
+const violations = validateExampleRegistry();
+if (violations.length) {
+  console.error('Showcase Example Registry contract failed:');
+  for (const violation of violations) console.error(`- ${violation}`);
+  process.exitCode = 1;
+} else {
+  console.log(`Showcase Example Registry contract passed (${getPublicComponents(ROOT_DIR).length} public components + ${getPatternScreens(ROOT_DIR).length} pattern sources).`);
+}

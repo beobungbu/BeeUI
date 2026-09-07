@@ -1,0 +1,1 @@
+- [WBS #474 docs-portal wave](project_474_docs_portal_wave.md) — meta-guards checking references not content, `includes` proves membership not association, vacuous-pass predicates, lane-mapped checks CI never runs, review-copy recipe

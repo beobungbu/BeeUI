@@ -5,7 +5,7 @@ description: What BeeUI's native React Native/Expo verification proves and does 
 
 Full detail lives in `docs/native-verification.md` in the repository; this page is the
 published summary. It mirrors the rigor `docs/web-support-contract.md` established for
-the [Web contract](/compatibility/web/).
+the [Web contract](/docs/compatibility/web/).
 
 ## Two consumer paths, both proved by CI
 

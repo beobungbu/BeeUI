@@ -65,7 +65,9 @@ export type SafeAreaProps = React.ComponentProps<typeof NativeSafeAreaView> & {
 };
 
 /**
- * Explicit safe-area surface. Defaults to all edges like react-native-safe-area-context.
+ * Explicit safe-area surface: a pass-through to react-native-safe-area-context's own view, with
+ * no `edges` default and no inset arithmetic added here — whichever edges that library pads by
+ * default are what a caller who omits `edges` gets.
  * Use `edges` to assign ownership to the exact shell element that touches a system edge.
  */
 export const SafeArea = React.forwardRef<

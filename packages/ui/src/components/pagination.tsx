@@ -22,9 +22,13 @@ function usePaginationContext() {
 export type PaginationProps = Omit<ViewProps, 'children' | 'role'> & {
   children?: React.ReactNode;
   className?: string;
+  /** Disables every `PaginationItem` inside, overriding each item's own `disabled`. Defaults to false. */
   disabled?: boolean;
+  /** Called with the requested page number when a non-selected, in-range `PaginationItem` is pressed. Not called for the currently selected page or an out-of-range target. */
   onPageChange?: (page: number) => void;
+  /** The current page, clamped to `[1, pageCount]`. Non-finite values fall back to 1. */
   page: number;
+  /** Total number of pages. Non-finite or sub-1 values are floored and clamped to at least 1. */
   pageCount: number;
 };
 
@@ -81,12 +85,30 @@ type PaginationItemBaseProps = Omit<
 };
 
 type PaginationPageItemProps = PaginationItemBaseProps & {
+  /**
+   * Page number this item targets, starting at 1 and truncated toward zero; a
+   * non-finite value renders the item as a disabled em dash. An item whose target
+   * falls outside `[1, pageCount]` is also disabled.
+   */
   page: number;
+  /**
+   * Marks this item as a page numeral rather than a navigation arrow, and renders
+   * selected when its `page` is the current page. Defaults to `'page'`.
+   */
   type?: 'page';
 };
 
 type PaginationNavigationItemProps = PaginationItemBaseProps & {
+  /**
+   * Not accepted on a navigation item, whose target is derived from the current
+   * page: one before it for `'previous'`, one after it for `'next'`.
+   */
   page?: never;
+  /**
+   * Which navigation affordance to render, as a logical rather than physical
+   * direction, so `'previous'` points toward the visual right in an RTL layout.
+   * The item is disabled when its derived target falls outside `[1, pageCount]`.
+   */
   type: 'previous' | 'next';
 };
 

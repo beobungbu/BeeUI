@@ -7,11 +7,17 @@ import { Input, type InputProps } from './input';
 
 export type PasswordInputProps = Omit<InputProps, 'secureTextEntry'> & {
   containerClassName?: string;
+  /** Initial visibility for uncontrolled usage. Defaults to false (masked). */
   defaultVisible?: boolean;
+  /** Accessible label for the toggle button when the password is currently visible (pressing it hides it). Defaults to `'Hide password'`. */
   hideLabel?: string;
+  /** Called with the next visibility whenever the show/hide toggle is pressed. */
   onVisibleChange?: (visible: boolean) => void;
+  /** Accessible label for the toggle button when the password is currently masked (pressing it shows it). Defaults to `'Show password'`. */
   showLabel?: string;
+  /** Applied to the show/hide toggle `Button`, not the input. */
   toggleClassName?: string;
+  /** Controls whether the password is shown in plain text (`true`) or masked via `secureTextEntry` (`false`). Passing this switches visibility to controlled mode. */
   visible?: boolean;
 };
 

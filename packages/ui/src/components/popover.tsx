@@ -79,14 +79,42 @@ type PopoverBaseProps = {
 };
 
 type PopoverControlledProps = PopoverBaseProps & {
+  /**
+   * Not accepted in the controlled variant, where `open` already owns the state.
+   * Pass `defaultOpen` on its own, without `open`, to use the uncontrolled variant.
+   */
   defaultOpen?: never;
+  /**
+   * Applies a requested open state, and is required here because the controlled
+   * variant never updates its own visibility. If this does not change `open`,
+   * nothing does.
+   */
   onOpenChange: (open: boolean) => void;
+  /**
+   * Current open state, owned by the caller; supplying a defined value alongside
+   * `onOpenChange` is what selects the controlled variant. Passing `open` without
+   * an `onOpenChange` function warns in development and falls back to uncontrolled
+   * behavior.
+   */
   open: boolean;
 };
 
 type PopoverUncontrolledProps = PopoverBaseProps & {
+  /**
+   * Open state to start from, read once when the component mounts, so later changes
+   * to it are ignored. Defaults to false; drive visibility with `open` +
+   * `onOpenChange` instead when it needs to change.
+   */
   defaultOpen?: boolean;
+  /**
+   * Notified after the open state changes, and optional here because the
+   * uncontrolled variant updates its own state either way.
+   */
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Must be left undefined in the uncontrolled variant, because a defined `open`
+   * together with `onOpenChange` selects the controlled variant instead.
+   */
   open?: undefined;
 };
 
@@ -173,11 +201,17 @@ export type PopoverContentProps = Omit<
   avoidSafeArea?: boolean;
   closeOnOutsidePress?: boolean;
   collisionPadding?: PopoverCollisionPadding;
+  /** Logical direction used to resolve `align`/`placement` for RTL layouts. Defaults to the app's resolved layout direction. */
   direction?: PopoverDirection;
+  /** Flips `placement` to the opposite side of the trigger when there is not enough room. Defaults to true. */
   flip?: boolean;
+  /** Forwarded to the outside-press dismiss layer, excluding `children`/`onPress`/`style`, which this component owns. */
   outsidePressProps?: Omit<PressableProps, 'children' | 'onPress' | 'style'>;
+  /** `testID` applied to the outside-press dismiss layer, for targeting it in tests. */
   outsidePressTestID?: string;
+  /** Which side of the trigger the popover opens on. Defaults to `'bottom'`. */
   placement?: PopoverPlacement;
+  /** Shifts the popover along the trigger's edge to stay within the viewport instead of overflowing. Defaults to true. */
   shift?: boolean;
   sideOffset?: number;
 };

@@ -1,0 +1,2575 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+
+import {
+  buildTypeIndex,
+  cvaVariantType,
+  extractAccessibilityFacts,
+  extractControlledPropWarnings,
+  extractCvaVariants,
+  variantsIdentifierFromBase,
+  diffPlatformObjectShape,
+  diffPlatformPropsShape,
+  extractConsumedProps,
+  extractDefaults,
+  getBehaviorGuardKnownNames,
+  getComponentTypeDocs,
+  resolveComponentTypeEntry,
+  resolveDeclaration,
+  summarizeDescription,
+} from '../component-props-lib.mjs';
+import { stripSourceComments, extractClassMapAxes } from '../component-props-lib.mjs';
+import {
+  buildPublicComponentManifest,
+  collectPropDescriptionCoverage,
+  collectCuratedLimitationViolations,
+  collectRenderedPageViolations,
+  collectDerivedClaimViolations,
+  collectScopedAccessibilityFacts,
+  isKnownAccessibilityRole,
+  ROLES_NONE_CLAIM,
+  STATES_NONE_CLAIM,
+  collectPropDescriptionViolations,
+  PROP_DESCRIPTION_FLOOR,
+  PROP_DISTINCT_DESCRIPTION_FLOOR,
+  collectPublicComponentReferenceViolations,
+  renderPublicComponentIndex,
+  renderPublicComponentPage,
+} from '../public-component-reference.mjs';
+import { getPublicComponents } from '../component-docs-lib.mjs';
+
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+
+// --- component-props-lib.mjs: synthetic-source unit tests -------------------
+//
+// Each fixture below is a minimal, self-contained TypeScript source string —
+// not a read against the real repository — so a test failure points at a
+// specific parser behavior instead of "something in packages/ui/src changed".
+
+function index(files) {
+  return buildTypeIndex(files);
+}
+
+// `getComponentTypeDocs`/`getBehaviorGuardKnownNames` read real files under
+// `<rootDir>/packages/ui/src/components/*` — a synthetic tmp directory shaped the same way
+// lets those integration-level code paths run against small, purpose-built fixtures instead of
+// the real 62-family repository.
+function makeSyntheticComponentsRoot(files) {
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'public-component-reference-fixture-'));
+  const dir = path.join(tmpRoot, 'packages/ui/src/components');
+  fs.mkdirSync(dir, { recursive: true });
+  for (const [filename, source] of Object.entries(files)) {
+    fs.writeFileSync(path.join(dir, filename), source);
+  }
+  return tmpRoot;
+}
+
+test('intersection with an external base cites it without expanding it', () => {
+  const files = [
+    {
+      path: 'components/widget.tsx',
+      source: `
+        export type WidgetProps = Omit<ExternalLibraryProps, 'foo'> & {
+          /** Visible label. */
+          label?: string;
+        };
+      `,
+    },
+  ];
+  const entry = resolveComponentTypeEntry(index(files), 'WidgetProps', { fromPath: files[0].path, errorLabel: 'widget' });
+  assert.equal(entry.docKind, 'props');
+  assert.equal(entry.kind, 'object');
+  assert.deepEqual(entry.bases, ["Omit<ExternalLibraryProps, 'foo'>"]);
+  assert.deepEqual(
+    entry.fields.map((field) => field.name),
+    ['label'],
+  );
+  assert.equal(entry.fields[0].description, 'Visible label.');
+});
+
+test('interface extends an unresolvable external interface: heritage cited as a base, own field kept', () => {
+  const files = [
+    {
+      path: 'components/card.tsx',
+      source: `
+        export interface CardProps extends React.ComponentProps<'div'> {
+          title: string;
+        }
+      `,
+    },
+  ];
+  const entry = resolveComponentTypeEntry(index(files), 'CardProps', { fromPath: files[0].path, errorLabel: 'card' });
+  assert.equal(entry.kind, 'object');
+  assert.deepEqual(entry.bases, ["React.ComponentProps<'div'>"]);
+  assert.deepEqual(
+    entry.fields.map((field) => field.name),
+    ['title'],
+  );
+  assert.equal(entry.fields[0].optional, false);
+});
+
+test('a local, no-type-argument heritage/intersection member is embedded (flattened), not cited as a base', () => {
+  const files = [
+    {
+      path: 'components/head.tsx',
+      source: `
+        type ColumnPositionProps = {
+          columnIndex?: number;
+        };
+        export type HeadProps = ColumnPositionProps & {
+          label?: string;
+        };
+      `,
+    },
+  ];
+  const entry = resolveComponentTypeEntry(index(files), 'HeadProps', { fromPath: files[0].path, errorLabel: 'head' });
+  assert.deepEqual(entry.bases, []);
+  assert.deepEqual(
+    entry.fields.map((field) => field.name).sort(),
+    ['columnIndex', 'label'],
+  );
+});
+
+test('@internal members are excluded entirely from the field list', () => {
+  const files = [
+    {
+      path: 'components/widget.tsx',
+      source: `
+        export type WidgetProps = {
+          label?: string;
+          /** @internal assigned by the parent, not part of the public API. */
+          secretIndex?: number;
+        };
+      `,
+    },
+  ];
+  const entry = resolveComponentTypeEntry(index(files), 'WidgetProps', { fromPath: files[0].path, errorLabel: 'widget' });
+  assert.deepEqual(
+    entry.fields.map((field) => field.name),
+    ['label'],
+  );
+});
+
+test('a bare alias of another local Props type recurses and records aliasOf', () => {
+  const files = [
+    {
+      path: 'components/dialog.tsx',
+      source: `
+        export type DialogTitleProps = { children?: string };
+      `,
+    },
+    {
+      path: 'components/alert-dialog.tsx',
+      source: `
+        import type { DialogTitleProps } from './dialog';
+        export type AlertDialogTitleProps = DialogTitleProps;
+      `,
+    },
+  ];
+  const entry = resolveComponentTypeEntry(index(files), 'AlertDialogTitleProps', {
+    fromPath: files[1].path,
+    errorLabel: 'alert-dialog',
+  });
+  assert.equal(entry.aliasOf, 'DialogTitleProps');
+  assert.deepEqual(
+    entry.fields.map((field) => field.name),
+    ['children'],
+  );
+});
+
+test('a union of local named Props types resolves to labeled variants', () => {
+  const files = [
+    {
+      path: 'components/dialog.tsx',
+      source: `
+        type DialogControlledProps = { open: boolean; onOpenChange: (open: boolean) => void };
+        type DialogUncontrolledProps = { open?: undefined; defaultOpen?: boolean };
+        export type DialogProps = DialogControlledProps | DialogUncontrolledProps;
+      `,
+    },
+  ];
+  const entry = resolveComponentTypeEntry(index(files), 'DialogProps', { fromPath: files[0].path, errorLabel: 'dialog' });
+  assert.equal(entry.kind, 'union');
+  assert.deepEqual(
+    entry.variants.map((variant) => variant.name),
+    ['DialogControlledProps', 'DialogUncontrolledProps'],
+  );
+  assert.deepEqual(
+    entry.variants[0].fields.map((field) => field.name),
+    ['open', 'onOpenChange'],
+  );
+});
+
+test('a union/literal type alias renders its members instead of just its name', () => {
+  const files = [
+    {
+      path: 'components/table-shared.ts',
+      source: `export type TableLayout = 'scroll' | 'stacked';`,
+    },
+  ];
+  const entry = resolveComponentTypeEntry(index(files), 'TableLayout', { fromPath: files[0].path, errorLabel: 'table' });
+  assert.equal(entry.docKind, 'literal-union');
+  assert.deepEqual(entry.members, ['scroll', 'stacked']);
+});
+
+test('a mapped type (or any other unsupported shape) fails loudly instead of publishing an empty table', () => {
+  const files = [
+    {
+      path: 'components/widget.tsx',
+      source: `
+        type Keys = 'a' | 'b';
+        export type WidgetProps = { [K in Keys]: string };
+      `,
+    },
+  ];
+  assert.throws(
+    () => resolveComponentTypeEntry(index(files), 'WidgetProps', { fromPath: files[0].path, errorLabel: 'widget: WidgetProps' }),
+    /unsupported type shape/,
+  );
+});
+
+test('resolveDeclaration disambiguates a platform-split name collision via family context, and throws with none', () => {
+  const files = [
+    { path: 'components/table.tsx', source: `export type TableProps = { native: true };` },
+    { path: 'components/table.web.tsx', source: `export type TableProps = { web: true };` },
+  ];
+  const typeIndex = index(files);
+  const preferPrimary = resolveDeclaration(typeIndex, 'TableProps', {
+    primaryPath: 'components/table.tsx',
+    familyPaths: ['components/table.tsx', 'components/table.web.tsx'],
+  });
+  assert.equal(preferPrimary.path, 'components/table.tsx');
+
+  assert.throws(() => resolveDeclaration(typeIndex, 'TableProps', {}), /ambiguous type/);
+});
+
+test('extractDefaults reads a forwardRef render function destructured default', () => {
+  const files = [
+    {
+      path: 'components/widget.tsx',
+      source: `
+        export const Widget = React.forwardRef<unknown, WidgetProps>(({ size = 'md', ...rest }, ref) => null);
+      `,
+    },
+  ];
+  const defaults = extractDefaults(files, new Set(['WidgetProps']));
+  assert.equal(defaults.get('size'), "'md'");
+});
+
+test('extractDefaults reads a body-level destructure of a typed function parameter (non-forwardRef)', () => {
+  const files = [
+    {
+      path: 'components/dialog.tsx',
+      source: `
+        export function Dialog(props: DialogProps) {
+          const { children, defaultOpen = false, onOpenChange, open } = props;
+        }
+      `,
+    },
+  ];
+  const defaults = extractDefaults(files, new Set(['DialogProps']));
+  assert.equal(defaults.get('defaultOpen'), 'false');
+});
+
+test('extractDefaults finds nothing (never guesses) when no matching typed parameter exists', () => {
+  const files = [{ path: 'components/widget.tsx', source: `export function useWidget() { return {}; }` }];
+  const defaults = extractDefaults(files, new Set(['WidgetProps']));
+  assert.equal(defaults.size, 0);
+});
+
+// --- public-component-reference.mjs: renderer + contract integration -------
+
+test('M1: a generated component page carries exactly one Markdown H1 (frontmatter title only)', () => {
+  const manifest = getPublicComponents().slice(0, 1);
+  const component = {
+    ...manifest[0],
+    title: 'Widget',
+    purpose: 'p',
+    behavior: 'b',
+    limitations: '',
+    notes: '',
+    typeDocs: [],
+    examples: [],
+    category: 'Other',
+    providerRequired: false,
+    exampleTargets: [],
+    showcaseHref: '/showcase/',
+    sourceHref: 'https://example.com',
+    registryHref: 'https://example.com',
+  };
+  const page = renderPublicComponentPage(component);
+  const h1Lines = page.split('\n').filter((line) => /^# /.test(line));
+  assert.deepEqual(h1Lines, [], `body must not carry a Markdown H1, found: ${JSON.stringify(h1Lines)}`);
+});
+
+test('M1: the generated component index carries no body H1 either', () => {
+  const generatedIndex = renderPublicComponentIndex([]);
+  const h1Lines = generatedIndex.split('\n').filter((line) => /^# /.test(line));
+  assert.deepEqual(h1Lines, []);
+});
+
+test('renderPublicComponentPage prints a real props table with the field name, type and default', () => {
+  const base = getPublicComponents().find((c) => c.name === 'table');
+  const component = {
+    ...base,
+    title: 'Table',
+    purpose: 'p',
+    behavior: 'Real behavior text.',
+    limitations: '',
+    notes: '',
+    typeDocs: [
+      {
+        name: 'TableProps',
+        docKind: 'props',
+        kind: 'object',
+        bases: ["Omit<ViewProps, 'children'>"],
+        fields: [{ name: 'layout', optional: true, type: 'TableLayout', description: 'Responsive presentation.', default: "'scroll'" }],
+      },
+    ],
+    examples: [],
+    category: 'Data display',
+    providerRequired: false,
+    exampleTargets: [],
+    showcaseHref: '/showcase/',
+    sourceHref: 'https://example.com',
+    registryHref: 'https://example.com',
+  };
+  const page = renderPublicComponentPage(component);
+  assert.match(page, /\| `layout` \| `TableLayout` \| `'scroll'` \| Responsive presentation\. \|/);
+  assert.match(page, /Also carries every prop of `Omit<ViewProps, 'children'>`/);
+  assert.doesNotMatch(page, /Controlled\/uncontrolled props, callbacks, disabled semantics/);
+});
+
+test('the committed content.json already carries a behavior contract for every component', () => {
+  const violations = collectPublicComponentReferenceViolations();
+  assert.deepEqual(violations.filter((v) => v.includes('missing curated behavior contract')), []);
+});
+
+test('collectPublicComponentReferenceViolations flags a component whose curated behavior is stripped', () => {
+  // A real (fixture) rootDir rather than a mock: symlinks the actual
+  // registry/packages so `getPublicComponents()` sees the true 62-component
+  // surface, then swaps in a `docs/component-reference.content.json` with one
+  // component's `behavior` deleted — proving the enforcement added alongside
+  // `purpose` actually fires, not just that the committed file happens to be
+  // complete today.
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'public-component-reference-behavior-'));
+  try {
+    fs.symlinkSync(path.join(REPO_ROOT, 'registry'), path.join(tmpRoot, 'registry'));
+    fs.symlinkSync(path.join(REPO_ROOT, 'packages'), path.join(tmpRoot, 'packages'));
+    fs.mkdirSync(path.join(tmpRoot, 'docs'), { recursive: true });
+    // The manifest reads the #473 inventory to learn which surfaces are routed to each page,
+    // so a fixture root needs the owner policy the inventory derives from.
+    for (const file of ['public-surface-owners.json', 'reference.content.json', 'pattern-library.content.json']) {
+      const from = path.join(REPO_ROOT, 'docs', file);
+      if (fs.existsSync(from)) fs.copyFileSync(from, path.join(tmpRoot, 'docs', file));
+    }
+    for (const file of ['llms-components.txt', 'package.json']) {
+      const from = path.join(REPO_ROOT, file);
+      if (fs.existsSync(from)) fs.copyFileSync(from, path.join(tmpRoot, file));
+    }
+    fs.symlinkSync(path.join(REPO_ROOT, 'web'), path.join(tmpRoot, 'web'));
+    const content = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'docs/component-reference.content.json'), 'utf8'));
+    delete content.components.button.behavior;
+    fs.writeFileSync(path.join(tmpRoot, 'docs/component-reference.content.json'), JSON.stringify(content));
+
+    const violations = collectPublicComponentReferenceViolations(tmpRoot);
+    assert.ok(
+      violations.includes('button: missing curated behavior contract.'),
+      `expected a missing-behavior violation for button, got: ${JSON.stringify(violations)}`,
+    );
+  } finally {
+    fs.rmSync(tmpRoot, { recursive: true, force: true });
+  }
+});
+
+test('every public component resolves a typeDocs model with no thrown errors, and every *Props type has fields or a documented base', () => {
+  // Exercises the full real-repo integration path once: every `*Props` type
+  // across all 62 families must be parseable (fail loudly, not silently, is
+  // enforced by generatePublicComponentPages itself; this asserts it in test).
+  const manifest = buildPublicComponentManifest();
+  assert.equal(manifest.length, 62);
+  for (const component of manifest) {
+    assert.ok(component.behavior.trim().length > 0, `${component.name} has no curated behavior`);
+    for (const entry of component.typeDocs) {
+      if (entry.docKind !== 'props') continue;
+      const hasContent = entry.kind === 'union'
+        ? entry.variants.every((variant) => variant.fields.length > 0 || variant.bases.length > 0)
+        : entry.fields.length > 0 || entry.bases.length > 0;
+      assert.ok(hasContent, `${component.name}.${entry.name} resolved to neither fields nor a base`);
+    }
+  }
+});
+
+// `SwitchProps = Omit<RNSwitchProps, …>` has no fields of its own, so a fields table for it is
+// empty and the page never names `value` or `onValueChange` — the "documented but unanswerable"
+// shape surviving inside its own fix. The implementation destructures the props it reads.
+test('a Props type that only narrows an upstream type still documents what the family reads', () => {
+  const files = [{
+    path: 'switch.tsx',
+    source: [
+      "export type SwitchProps = Omit<RNSwitchProps, 'thumbColor'>;",
+      'export const Switch = React.forwardRef<Ref, SwitchProps>(',
+      '  ({ accessibilityState, disabled = false, onValueChange, value = false, ...props }, ref) => null,',
+      ');',
+    ].join('\n'),
+  }];
+
+  const consumed = extractConsumedProps(files, new Set(['SwitchProps']));
+  assert.deepEqual([...consumed.keys()].sort(), ['accessibilityState', 'disabled', 'onValueChange', 'value']);
+  assert.equal(consumed.get('disabled'), 'false');
+  assert.equal(consumed.get('value'), 'false');
+  // `...props` is the passthrough, not a prop anyone looks up.
+  assert.equal(consumed.has('props'), false);
+});
+
+// --- Default-value resolution (MINOR: select.md's `resolveDirection()`/`SELECT_DEFAULT_PLACEHOLDER`) ---
+
+test('extractDefaults resolves a bare identifier default to the literal a local `const` binds it to', () => {
+  const files = [
+    {
+      path: 'components/select.tsx',
+      source: [
+        "const SELECT_DEFAULT_PLACEHOLDER = 'Select an option';",
+        'export const Select = React.forwardRef<unknown, SelectProps>(',
+        '  ({ placeholder = SELECT_DEFAULT_PLACEHOLDER, ...rest }, ref) => null,',
+        ');',
+      ].join('\n'),
+    },
+  ];
+  const defaults = extractDefaults(files, new Set(['SelectProps']));
+  assert.equal(defaults.get('placeholder'), "'Select an option'");
+});
+
+test('extractDefaults never prints a call expression default — an unreadable symbol is dropped, not guessed at', () => {
+  const files = [
+    {
+      path: 'components/select.tsx',
+      source: [
+        'export const Select = React.forwardRef<unknown, SelectProps>(',
+        '  ({ direction = resolveDirection(), ...rest }, ref) => null,',
+        ');',
+      ].join('\n'),
+    },
+  ];
+  const defaults = extractDefaults(files, new Set(['SelectProps']));
+  assert.equal(defaults.has('direction'), false);
+});
+
+test('extractDefaults drops an identifier default that does not resolve to a local literal const', () => {
+  const files = [
+    {
+      path: 'components/select.tsx',
+      source: [
+        'import { IMPORTED_DEFAULT } from "./constants";',
+        'export const Select = React.forwardRef<unknown, SelectProps>(',
+        '  ({ tone = IMPORTED_DEFAULT, ...rest }, ref) => null,',
+        ');',
+      ].join('\n'),
+    },
+  ];
+  const defaults = extractDefaults(files, new Set(['SelectProps']));
+  assert.equal(defaults.has('tone'), false);
+});
+
+// --- Platform-split shape diffing (MAJOR M4) ---------------------------------
+
+test('diffPlatformObjectShape reports native-only, Web-only, and changed fields, plus a changed base', () => {
+  const nativeShape = {
+    kind: 'object',
+    bases: ["Omit<ViewProps, 'children'>"],
+    fields: [
+      { name: 'colSpan', optional: true, type: 'number', description: '', default: '1' },
+      { name: 'label', optional: true, type: 'string', description: '' },
+    ],
+  };
+  const webShape = {
+    kind: 'object',
+    bases: ["Omit<React.HTMLAttributes<HTMLElement>, 'children'>"],
+    fields: [
+      { name: 'label', optional: true, type: 'React.ReactNode', description: '' },
+      { name: 'testID', optional: true, type: 'string', description: '' },
+    ],
+  };
+  const diff = diffPlatformObjectShape(nativeShape, webShape);
+  assert.deepEqual(diff.nativeOnly.map((f) => f.name), ['colSpan']);
+  assert.deepEqual(diff.webOnly.map((f) => f.name), ['testID']);
+  assert.deepEqual(diff.changed.map((c) => c.name), ['label']);
+  assert.equal(diff.changed[0].typeChanged, true);
+  assert.equal(diff.changed[0].defaultChanged, false);
+  assert.equal(diff.basesChanged, true);
+});
+
+test('diffPlatformObjectShape returns null when both platforms resolve to the identical shape', () => {
+  const shape = {
+    kind: 'object',
+    bases: ["Omit<ViewProps, 'children'>"],
+    fields: [{ name: 'children', optional: true, type: 'React.ReactNode', description: '' }],
+  };
+  assert.equal(diffPlatformObjectShape(shape, { ...shape, fields: [...shape.fields] }), null);
+});
+
+test('diffPlatformPropsShape returns `unsupported` when native is a union and Web is a plain object', () => {
+  const nativeEntry = { kind: 'union', variants: [{ name: 'A', kind: 'object', bases: [], fields: [] }] };
+  const webShape = { kind: 'object', bases: [], fields: [] };
+  assert.deepEqual(diffPlatformPropsShape(nativeEntry, webShape), { kind: 'unsupported' });
+});
+
+test('diffPlatformPropsShape diffs matching union variants by name and reports genuinely unmatched ones', () => {
+  const nativeEntry = {
+    kind: 'union',
+    variants: [
+      { name: 'Controlled', kind: 'object', bases: [], fields: [{ name: 'open', optional: false, type: 'boolean', description: '' }] },
+      { name: 'NativeOnly', kind: 'object', bases: [], fields: [] },
+    ],
+  };
+  const webShape = {
+    kind: 'union',
+    variants: [
+      { name: 'Controlled', kind: 'object', bases: [], fields: [{ name: 'open', optional: true, type: 'boolean', description: '' }] },
+    ],
+  };
+  const diff = diffPlatformPropsShape(nativeEntry, webShape);
+  assert.equal(diff.kind, 'union');
+  assert.deepEqual(diff.variantDiffs[0].variantName, 'Controlled');
+  assert.deepEqual(diff.variantDiffs[0].diff.changed[0].name, 'open');
+  assert.equal(diff.variantDiffs[0].diff.changed[0].optionalChanged, true);
+  assert.deepEqual(diff.unmatched, ['NativeOnly']);
+});
+
+test('getComponentTypeDocs attaches a webShape only when the Web file locally redeclares the same type name', () => {
+  const rootDir = makeSyntheticComponentsRoot({
+    'widget.tsx': [
+      "export type WidgetProps = Omit<ViewProps, 'children'> & {",
+      '  label?: string;',
+      '};',
+    ].join('\n'),
+    'widget.web.tsx': [
+      "export type WidgetProps = Omit<React.HTMLAttributes<HTMLElement>, 'children'> & {",
+      '  label?: string;',
+      '  testID?: string;',
+      '};',
+    ].join('\n'),
+    'shared-widget.tsx': "export type SharedWidgetLayout = 'a' | 'b';",
+  });
+  try {
+    const component = {
+      name: 'widget',
+      types: ['WidgetProps'],
+      source: 'packages/ui/src/components/widget.tsx',
+      allSources: [
+        'packages/ui/src/components/widget.tsx',
+        'packages/ui/src/components/widget.web.tsx',
+        'packages/ui/src/components/shared-widget.tsx',
+      ],
+    };
+    const [entry] = getComponentTypeDocs(component, rootDir);
+    assert.ok(entry.webShape, 'expected a webShape to be attached for a Web-redeclared type');
+    assert.equal(entry.webSource, 'packages/ui/src/components/widget.web.tsx');
+    const diff = diffPlatformPropsShape(entry, entry.webShape);
+    assert.deepEqual(diff.diff.webOnly.map((f) => f.name), ['testID']);
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('getComponentTypeDocs does not attach a webShape when only a shared (non-`.web.`-local) declaration exists', () => {
+  const rootDir = makeSyntheticComponentsRoot({
+    'widget.native.tsx': "export { Widget } from './widget-shared';",
+    'widget.web.tsx': "export { Widget } from './widget-shared';",
+    'widget-shared.tsx': [
+      'export type WidgetProps = {',
+      '  label?: string;',
+      '};',
+      'export const Widget = (props: WidgetProps) => null;',
+    ].join('\n'),
+  });
+  try {
+    const component = {
+      name: 'widget',
+      types: ['WidgetProps'],
+      source: 'packages/ui/src/components/widget-shared.tsx',
+      allSources: [
+        'packages/ui/src/components/widget-shared.tsx',
+        'packages/ui/src/components/widget.native.tsx',
+        'packages/ui/src/components/widget.web.tsx',
+      ],
+    };
+    const [entry] = getComponentTypeDocs(component, rootDir);
+    assert.equal(entry.webShape, undefined);
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+// `applyDefaults` (component-props-lib.mjs) and its call site inside `getComponentTypeDocs`
+// have no direct test: deleting that call site blanks the Default column on every page with a
+// green suite everywhere else, because every other test either constructs a typeDocs entry by
+// hand (bypassing `getComponentTypeDocs`) or does not assert on `.default`. This drives the
+// real `getComponentTypeDocs` entry point against a synthetic fixture and asserts the
+// destructured default actually lands on the field.
+test('getComponentTypeDocs applies a real destructured default to its field (proves the applyDefaults call site)', () => {
+  const rootDir = makeSyntheticComponentsRoot({
+    'widget.tsx': [
+      'export type WidgetProps = {',
+      "  layout?: 'scroll' | 'stacked';",
+      '};',
+      'export const Widget = React.forwardRef<unknown, WidgetProps>(',
+      "  ({ layout = 'scroll', ...rest }, ref) => null,",
+      ');',
+    ].join('\n'),
+  });
+  try {
+    const component = {
+      name: 'widget',
+      types: ['WidgetProps'],
+      source: 'packages/ui/src/components/widget.tsx',
+      allSources: ['packages/ui/src/components/widget.tsx'],
+    };
+    const [entry] = getComponentTypeDocs(component, rootDir);
+    const layout = entry.fields.find((field) => field.name === 'layout');
+    assert.equal(layout.default, "'scroll'");
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+// --- Behavior-prose prop guard (MAJOR M8) ------------------------------------
+
+test('getBehaviorGuardKnownNames credits own fields, cva() variant keys, and one level of a local base\'s fields', () => {
+  const rootDir = makeSyntheticComponentsRoot({
+    'button.tsx': [
+      "import { cva } from 'class-variance-authority';",
+      "const buttonVariants = cva('base', { variants: { variant: { primary: 'x' }, size: { md: 'y' } } });",
+      "export type ButtonProps = Omit<PressableProps, 'children'> & VariantProps<typeof buttonVariants> & {",
+      '  loading?: boolean;',
+      '};',
+      'export const Button = (props: ButtonProps) => null;',
+    ].join('\n'),
+    'icon-button.tsx': [
+      "export type IconButtonProps = Omit<ButtonProps, 'children'> & {",
+      '  accessibilityLabel: string;',
+      '};',
+      'export const IconButton = (props: IconButtonProps) => null;',
+    ].join('\n'),
+  });
+  try {
+    const iconButton = {
+      name: 'icon-button',
+      values: ['IconButton'],
+      types: ['IconButtonProps'],
+      source: 'packages/ui/src/components/icon-button.tsx',
+      allSources: ['packages/ui/src/components/icon-button.tsx'],
+    };
+    const typeDocs = getComponentTypeDocs(iconButton, rootDir);
+    const known = getBehaviorGuardKnownNames(iconButton, typeDocs, rootDir);
+    // Own field.
+    assert.ok(known.has('accessibilityLabel'));
+    // One level into the locally-resolvable `Omit<ButtonProps, …>` base.
+    assert.ok(known.has('loading'), 'expected `loading` resolved from the ButtonProps base');
+    // Not a real name anywhere in this fixture.
+    assert.equal(known.has('somethingMadeUp'), false);
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('getBehaviorGuardKnownNames credits cva() variant keys directly declared on the family itself', () => {
+  const rootDir = makeSyntheticComponentsRoot({
+    'badge.tsx': [
+      "import { cva } from 'class-variance-authority';",
+      "const badgeVariants = cva('base', { variants: { variant: { primary: 'x' } } });",
+      'export type BadgeProps = VariantProps<typeof badgeVariants> & {',
+      '  className?: string;',
+      '};',
+      'export const Badge = (props: BadgeProps) => null;',
+    ].join('\n'),
+  });
+  try {
+    const badge = {
+      name: 'badge',
+      values: ['Badge'],
+      types: ['BadgeProps'],
+      source: 'packages/ui/src/components/badge.tsx',
+      allSources: ['packages/ui/src/components/badge.tsx'],
+    };
+    const typeDocs = getComponentTypeDocs(badge, rootDir);
+    const known = getBehaviorGuardKnownNames(badge, typeDocs, rootDir);
+    assert.ok(known.has('variant'));
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('collectPublicComponentReferenceViolations flags a behavior string that references a prop the family does not have', () => {
+  // Real (fixture) rootDir, same symlink pattern as the missing-behavior test above: proves
+  // the guard fires against the true 62-family surface, not a mock. Reverts `progress.behavior`
+  // to its actual pre-fix wording ("`value` is clamped to its `min`/`max` range") — `min` was
+  // never a `ProgressProps` field — and asserts the guard names exactly that identifier.
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'public-component-reference-behavior-prop-'));
+  try {
+    fs.symlinkSync(path.join(REPO_ROOT, 'registry'), path.join(tmpRoot, 'registry'));
+    fs.symlinkSync(path.join(REPO_ROOT, 'packages'), path.join(tmpRoot, 'packages'));
+    fs.mkdirSync(path.join(tmpRoot, 'docs'), { recursive: true });
+    // The manifest reads the #473 inventory to learn which surfaces are routed to each page,
+    // so a fixture root needs the owner policy the inventory derives from.
+    for (const file of ['public-surface-owners.json', 'reference.content.json', 'pattern-library.content.json']) {
+      const from = path.join(REPO_ROOT, 'docs', file);
+      if (fs.existsSync(from)) fs.copyFileSync(from, path.join(tmpRoot, 'docs', file));
+    }
+    for (const file of ['llms-components.txt', 'package.json']) {
+      const from = path.join(REPO_ROOT, file);
+      if (fs.existsSync(from)) fs.copyFileSync(from, path.join(tmpRoot, file));
+    }
+    fs.symlinkSync(path.join(REPO_ROOT, 'web'), path.join(tmpRoot, 'web'));
+    const content = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'docs/component-reference.content.json'), 'utf8'));
+    content.components.progress.behavior =
+      "Stateless clamped determinate progress bar; `value` is clamped to its `min`/`max` range and exposes native progressbar semantics — there is no indeterminate mode.";
+    fs.writeFileSync(path.join(tmpRoot, 'docs/component-reference.content.json'), JSON.stringify(content));
+
+    const violations = collectPublicComponentReferenceViolations(tmpRoot);
+    assert.ok(
+      violations.includes('progress: behavior references `min`, which is not a known prop or exported value of this family.'),
+      `expected a \`min\` mismatch violation for progress, got: ${JSON.stringify(violations)}`,
+    );
+  } finally {
+    fs.rmSync(tmpRoot, { recursive: true, force: true });
+  }
+});
+
+test('the committed content.json behavior strings reference only real props/exported values', () => {
+  const violations = collectPublicComponentReferenceViolations();
+  assert.deepEqual(violations.filter((v) => v.includes('is not a known prop or exported value')), []);
+});
+
+// --- BeeUI-owned base linking (MEDIUM D2) ------------------------------------
+
+test('renderPublicComponentPage links a base that resolves to another public family\'s own Props type, and drops "upstream"', () => {
+  const base = getPublicComponents().find((c) => c.name === 'textarea');
+  const component = {
+    ...base,
+    title: 'Textarea',
+    purpose: 'p',
+    behavior: 'b',
+    limitations: '',
+    notes: '',
+    typeDocs: [
+      {
+        name: 'TextareaProps',
+        docKind: 'props',
+        kind: 'object',
+        bases: ["Omit<InputProps, 'multiline' | 'size'>"],
+        fields: [],
+      },
+    ],
+    examples: [],
+    category: 'Forms & selection',
+    providerRequired: false,
+    exampleTargets: [],
+    showcaseHref: '/showcase/',
+    sourceHref: 'https://example.com',
+    registryHref: 'https://example.com',
+  };
+  const page = renderPublicComponentPage(component);
+  // A `|` here is prose, not a table cell: the published signature must read `'multiline' | 'size'`.
+  assert.match(page, /Also carries every prop of `Omit<InputProps, 'multiline' \| 'size'>` — documented on the \[Input\]\(\/docs\/components\/input\/\) page, not reproduced here\./);
+  // Scoped to the bases line: a page-wide search for the phrase makes this test fail whenever
+  // any other sentence happens to use the same words.
+  const basesLine = page.split('\n').find((line) => line.startsWith('Also carries every prop of'));
+  assert.doesNotMatch(basesLine, /upstream contract/);
+});
+
+test('renderPublicComponentPage keeps the "upstream" wording for a genuinely external base, and collapses bracket-adjacent whitespace', () => {
+  const base = getPublicComponents().find((c) => c.name === 'table');
+  const component = {
+    ...base,
+    title: 'Table',
+    purpose: 'p',
+    behavior: 'b',
+    limitations: '',
+    notes: '',
+    typeDocs: [
+      {
+        name: 'TableProps',
+        docKind: 'props',
+        kind: 'object',
+        bases: ["Omit<\n  ViewProps,\n  'children' | 'style'\n>"],
+        fields: [],
+      },
+    ],
+    examples: [],
+    category: 'Data display',
+    providerRequired: false,
+    exampleTargets: [],
+    showcaseHref: '/showcase/',
+    sourceHref: 'https://example.com',
+    registryHref: 'https://example.com',
+  };
+  const page = renderPublicComponentPage(component);
+  assert.match(page, /Also carries every prop of `Omit<ViewProps, 'children' \| 'style'>` — that upstream contract is not reproduced here\./);
+  assert.doesNotMatch(page, /Omit<\s+ViewProps/, 'expected the bracket-adjacent space to be collapsed');
+  assert.doesNotMatch(page, /'style'\s+>/, 'expected the bracket-adjacent space to be collapsed');
+});
+
+// --- Platform-diff rendering (MAJOR M4, render layer) ------------------------
+
+function baseSyntheticComponentForRender() {
+  const base = getPublicComponents().find((c) => c.name === 'table');
+  return {
+    ...base,
+    title: 'Widget',
+    purpose: 'p',
+    behavior: 'b',
+    limitations: '',
+    notes: '',
+    examples: [],
+    category: 'Data display',
+    providerRequired: false,
+    exampleTargets: [],
+    showcaseHref: '/showcase/',
+    sourceHref: 'https://example.com',
+    registryHref: 'https://example.com',
+  };
+}
+
+test('renderPublicComponentPage renders explicit platform-difference bullets for an object-kind entry', () => {
+  const component = {
+    ...baseSyntheticComponentForRender(),
+    typeDocs: [
+      {
+        name: 'WidgetProps',
+        docKind: 'props',
+        kind: 'object',
+        bases: ["Omit<ViewProps, 'children'>"],
+        fields: [{ name: 'colSpan', optional: true, type: 'number', description: '', default: '1' }],
+        webShape: {
+          kind: 'object',
+          bases: ["Omit<React.HTMLAttributes<HTMLElement>, 'children'>"],
+          fields: [{ name: 'testID', optional: true, type: 'string', description: '' }],
+        },
+        webSource: 'packages/ui/src/components/widget.web.tsx',
+      },
+    ],
+  };
+  const page = renderPublicComponentPage(component);
+  assert.match(page, /\*\*Platform differences \(native vs\. \[Web\]/);
+  // A field listed on one declaration and not the other is not evidence the other platform
+  // lacks it: `testID` is explicit on Web and inherited from `ViewProps` on native, `colSpan`
+  // is the reverse. Both were published as exclusive and both were false, so the page must say
+  // where the field is declared and leave the other platform's base type unasserted.
+  assert.match(page, /`colSpan` is declared explicitly on native \(native default `1`\)/u);
+  assert.match(page, /`testID` is declared explicitly on Web/u);
+  assert.equal(/declared on (?:native|Web) only/u.test(page), false, 'must not assert platform exclusivity');
+  assert.match(page, /Base type differs: native carries `Omit<ViewProps, 'children'>`; Web carries `Omit<React\.HTMLAttributes<HTMLElement>, 'children'>`\./);
+});
+
+test('renderPublicComponentPage prints no platform-difference note when the Web shape is identical', () => {
+  const component = {
+    ...baseSyntheticComponentForRender(),
+    typeDocs: [
+      {
+        name: 'WidgetProps',
+        docKind: 'props',
+        kind: 'object',
+        bases: [],
+        fields: [{ name: 'label', optional: true, type: 'string', description: '' }],
+        webShape: { kind: 'object', bases: [], fields: [{ name: 'label', optional: true, type: 'string', description: '' }] },
+        webSource: 'packages/ui/src/components/widget.web.tsx',
+      },
+    ],
+  };
+  const page = renderPublicComponentPage(component);
+  assert.doesNotMatch(page, /Platform differences/);
+  assert.doesNotMatch(page, /Platform note/);
+});
+
+test('renderPublicComponentPage falls back to an explicit native-only note when the two shapes are not diffable', () => {
+  const component = {
+    ...baseSyntheticComponentForRender(),
+    typeDocs: [
+      {
+        name: 'WidgetProps',
+        docKind: 'props',
+        kind: 'union',
+        variants: [{ name: 'A', kind: 'object', bases: [], fields: [] }],
+        webShape: { kind: 'object', bases: [], fields: [] },
+        webSource: 'packages/ui/src/components/widget.web.tsx',
+      },
+    ],
+  };
+  const page = renderPublicComponentPage(component);
+  assert.match(page, /\*\*Platform note:\*\* this table documents the native declaration only\./);
+  assert.match(page, /\[`packages\/ui\/src\/components\/widget\.web\.tsx`\]/);
+});
+
+// A prop the Web implementation destructures into an underscore binding is accepted for API
+// parity and never read, so its type there is moot. Suppressing the type note must not suppress
+// a default or optionality difference, which is real on the native side.
+test('an inert Web prop suppresses only its type-difference note', () => {
+  const component = {
+    ...baseSyntheticComponentForRender(),
+    typeDocs: [
+      {
+        name: 'WidgetProps',
+        docKind: 'props',
+        kind: 'object',
+        bases: [],
+        fields: [
+          { name: 'modalProps', optional: true, type: 'WidgetModalProps', description: '' },
+          { name: 'avoidKeyboard', optional: true, type: 'boolean', description: '', default: 'true' },
+        ],
+        webShape: {
+          kind: 'object',
+          bases: [],
+          inert: ['modalProps', 'avoidKeyboard'],
+          fields: [
+            { name: 'modalProps', optional: true, type: 'Record<string, unknown>', description: '' },
+            { name: 'avoidKeyboard', optional: false, type: 'boolean', description: '', default: 'false' },
+          ],
+        },
+        webSource: 'packages/ui/src/components/widget.web.tsx',
+      },
+    ],
+  };
+  const page = renderPublicComponentPage(component);
+
+  assert.match(page, /`modalProps` is accepted on Web for API parity but has no effect there\./u);
+  assert.equal(/`modalProps` type differs/u.test(page), false, 'the type note is redundant for an inert prop');
+  // A default or optionality difference is real on the native side and must survive the skip.
+  assert.match(page, /`avoidKeyboard` default differs/u);
+  assert.match(page, /`avoidKeyboard` is optional on native but required on Web/u);
+});
+
+
+// A `union` entry keeps its props in `variants[].fields`, never in `fields`. Counting
+// only `entry.fields` reported a perfect score while every controlled/uncontrolled
+// overlay prop rendered an em dash, because the props that would have disagreed were
+// never in the counter's scope.
+test('prop-description coverage counts union variant fields', () => {
+  const manifest = [
+    {
+      typeDocs: [
+        {
+          name: 'DialogProps',
+          kind: 'union',
+          variants: [
+            {
+              name: 'DialogControlledProps',
+              kind: 'object',
+              fields: [
+                { name: 'open', type: 'boolean', description: 'Current open state.' },
+                { name: 'defaultOpen', type: 'never', description: '' },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ];
+
+  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 1, distinct: 1, sharedAcrossProps: 0, total: 2 });
+});
+
+test('prop-description coverage reaches variants nested inside a variant', () => {
+  const manifest = [
+    {
+      typeDocs: [
+        {
+          name: 'OuterProps',
+          kind: 'union',
+          variants: [
+            {
+              name: 'Inner',
+              kind: 'union',
+              variants: [
+                {
+                  name: 'Leaf',
+                  kind: 'object',
+                  fields: [{ name: 'page', type: 'number', description: '' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ];
+
+  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 0, distinct: 0, sharedAcrossProps: 0, total: 1 });
+});
+
+// The floor is only meaningful if it is the real published total. A floor set below
+// the true denominator silently tolerates undescribed props.
+test('every published prop carries a description', () => {
+  const { described, total } = collectPropDescriptionCoverage(
+    buildPublicComponentManifest(REPO_ROOT),
+  );
+
+  assert.equal(described, total, `${total - described} published prop(s) have no description`);
+  assert.equal(PROP_DESCRIPTION_FLOOR, total, 'the floor must track the real published total');
+});
+
+
+// Without this, lowering the distinct floor to 100 left the whole suite green: every other test
+// builds its fixture *from* the constant, so it moves with whatever the constant says. A floor
+// that no test pins to a measurement is a number, not a ratchet.
+test('the distinct-description floor tracks the real measurement', () => {
+  const { distinct } = collectPropDescriptionCoverage(buildPublicComponentManifest(REPO_ROOT));
+
+  assert.equal(
+    PROP_DISTINCT_DESCRIPTION_FLOOR,
+    distinct,
+    'the distinct floor must equal the measured distinct count, so it can only ratchet up',
+  );
+});
+
+
+// Publishing only the first sentence turned `table.tsx`'s `layout` JSDoc into
+// "Responsive presentation." and discarded the sentence that names `'stacked'`; a later
+// character cap truncated seven props, six of which lost contract rather than rationale.
+test('a prop description is published whole', () => {
+  const full =
+    "Responsive presentation. Defaults to 'scroll'. Set 'stacked' to render a card presentation instead.";
+
+  assert.equal(summarizeDescription(full), full);
+});
+
+test('a prop description is published whole however long it runs', () => {
+  const long = `${'a'.repeat(300)}. ${'b'.repeat(300)}.`;
+
+  assert.equal(summarizeDescription(long), long);
+});
+
+test('a prop description collapses the line breaks a JSDoc block wraps at', () => {
+  assert.equal(summarizeDescription('Column span,\n   e.g. 2.\n'), 'Column span, e.g. 2.');
+});
+
+
+
+// A floor comparison alone passes 583 of 584 whenever the total grows by the same amount as the
+// gap, so one newly undocumented prop reaches the published tables with every gate green.
+test('one undescribed prop is a violation even when the floor is still met', () => {
+  // Distinct text per prop: these fixtures test the coverage floors, not the boilerplate floor.
+  const fields = Array.from({ length: PROP_DESCRIPTION_FLOOR }, (unused, index) => ({
+    name: `documented${index}`,
+    description: `Described ${index}.`,
+  }));
+  const manifest = [
+    { typeDocs: [{ kind: 'object', fields: [...fields, { name: 'brandNew', description: '' }] }] },
+  ];
+
+  const violations = collectPropDescriptionViolations(manifest);
+
+  assert.equal(violations.length, 1);
+  assert.match(violations[0], /1 published prop\(s\) have no description/u);
+});
+
+test('a manifest below the floor reports the floor, not the per-prop gap', () => {
+  const manifest = [{ typeDocs: [{ kind: 'object', fields: [{ name: 'only', description: '' }] }] }];
+
+  assert.match(collectPropDescriptionViolations(manifest)[0], /floor \d+/u);
+});
+
+test('a fully described manifest at the floor is clean', () => {
+  // Distinct text per prop: these fixtures test the coverage floors, not the boilerplate floor.
+  const fields = Array.from({ length: PROP_DESCRIPTION_FLOOR }, (unused, index) => ({
+    name: `documented${index}`,
+    description: `Described ${index}.`,
+  }));
+
+  assert.deepEqual(collectPropDescriptionViolations([{ typeDocs: [{ kind: 'object', fields }] }]), []);
+});
+
+
+// `escapeCell`'s pipe escape is correct in a table row and wrong in a paragraph. Applying it to
+// the bases line published `Omit<PressableProps, 'role' \| 'children'>` on 34 of 62 pages, with
+// every existing check green — they all read the manifest or the cells, never the prose.
+test('an escaped pipe in prose is a violation', () => {
+  const page = ["## Composition", '', "Also carries every prop of `Omit<P, 'a' \\| 'b'>` — see Text.", ''].join('\n');
+
+  const violations = collectRenderedPageViolations(page, 'accordion');
+
+  assert.equal(violations.length, 1);
+  assert.match(violations[0], /literal \\\| outside a table row/u);
+});
+
+test('an escaped pipe inside a table row is allowed', () => {
+  const page = [
+    '| Prop | Type | Default | Description |',
+    '| --- | --- | --- | --- |',
+    "| `variant` | `'a' \\| 'b'` | `'a'` | Visual variant. |",
+  ].join('\n');
+
+  assert.deepEqual(collectRenderedPageViolations(page, 'button'), []);
+});
+
+// A fenced example may legitimately contain an escaped pipe as sample text.
+test('an escaped pipe inside a code fence is not a violation', () => {
+  const page = ['```md', "| `x` | `'a' \\| 'b'` |", '```'].join('\n');
+
+  assert.deepEqual(collectRenderedPageViolations(page, 'table'), []);
+});
+
+test('every generated component page is free of escaped pipes in prose', () => {
+  const offenders = buildPublicComponentManifest(REPO_ROOT).flatMap((component) =>
+    collectRenderedPageViolations(renderPublicComponentPage(component), component.name),
+  );
+
+  assert.deepEqual(offenders, []);
+});
+
+
+// `variant`/`size` arrive through `VariantProps<typeof x>`, which this parser cannot resolve, so
+// the allowed values were published nowhere. They are literals in the `cva()` call.
+test('cva variants are read from the call, with their defaults', () => {
+  const source = `
+    const buttonVariants = cva('base', {
+      variants: {
+        variant: { primary: 'a', ghost: 'b' },
+        size: { sm: 'c', md: 'd' },
+      },
+      defaultVariants: { variant: 'primary', size: 'md' },
+    });
+  `;
+
+  const found = extractCvaVariants([{ path: 'button.tsx', source }]);
+
+  assert.deepEqual(found.get('buttonVariants').props.get('variant'), {
+    values: ['primary', 'ghost'],
+    default: 'primary',
+  });
+  assert.deepEqual(found.get('buttonVariants').props.get('size'), { values: ['sm', 'md'], default: 'md' });
+});
+
+test('a cva call with no defaultVariants still publishes its values', () => {
+  const source = "const x = cva('', { variants: { tone: { neutral: 'a' } } });";
+
+  assert.deepEqual(extractCvaVariants([{ path: 'x.tsx', source }]).get('x').props.get('tone'), {
+    values: ['neutral'],
+    default: undefined,
+  });
+});
+
+test('a non-cva call is not mistaken for variants', () => {
+  const source = "const x = notCva('', { variants: { tone: { neutral: 'a' } } });";
+
+  assert.equal(extractCvaVariants([{ path: 'x.tsx', source }]).size, 0);
+});
+
+// Input declares `Omit<VariantProps<typeof inputVariants>, 'invalid'>` because it re-declares
+// `invalid`; matching only the bare form left its variants unpublished.
+test('a VariantProps base is recognised bare and inside Omit', () => {
+  assert.deepEqual(variantsIdentifierFromBase('VariantProps<typeof buttonVariants>'), {
+    identifier: 'buttonVariants',
+    omitted: new Set(),
+  });
+  assert.deepEqual(variantsIdentifierFromBase("Omit<VariantProps<typeof inputVariants>, 'invalid'>"), {
+    identifier: 'inputVariants',
+    omitted: new Set(['invalid']),
+  });
+  assert.equal(variantsIdentifierFromBase("Omit<PressableProps, 'role'>"), undefined);
+});
+
+
+// cva types a variant whose keys are `true`/`false` as `boolean`. Publishing the string union
+// put `'true' | 'false'` on the Stack page, which the same page contradicts with `<HStack wrap>`.
+test('a boolean cva variant keeps its boolean default', () => {
+  const source = `
+    const stackVariants = cva('', {
+      variants: { wrap: { true: 'flex-wrap', false: 'flex-nowrap' } },
+      defaultVariants: { wrap: false },
+    });
+  `;
+
+  assert.deepEqual(extractCvaVariants([{ path: 'stack.tsx', source }]).get('stackVariants').props.get('wrap'), {
+    values: ['true', 'false'],
+    default: 'false',
+  });
+});
+
+test('a numeric cva default is not dropped', () => {
+  const source = "const x = cva('', { variants: { level: { 1: 'a', 2: 'b' } }, defaultVariants: { level: 1 } });";
+
+  assert.equal(extractCvaVariants([{ path: 'x.tsx', source }]).get('x').props.get('level').default, '1');
+});
+
+// A `VariantProps<...>` reaching the page means the cva behind it was never resolved, so the page
+// points a reader at a module-private const. It survived on 11 lines across six pages.
+test('an unresolved VariantProps on the page is a violation', () => {
+  const page = 'Also carries every prop of `VariantProps<typeof buttonVariants>` — not reproduced here.';
+
+  const violations = collectRenderedPageViolations(page, 'dialog');
+
+  assert.equal(violations.length, 1);
+  assert.match(violations[0], /unresolved `VariantProps<\.\.\.>`/u);
+});
+
+test('no generated component page names an unresolved VariantProps', () => {
+  const offenders = buildPublicComponentManifest(REPO_ROOT).flatMap((component) =>
+    collectRenderedPageViolations(renderPublicComponentPage(component), component.name),
+  );
+
+  assert.deepEqual(offenders, []);
+});
+
+// "100% described" counts glossary sentences and generated variant text, not only per-prop prose.
+test('prop-description coverage reports how many descriptions are distinct', () => {
+  const manifest = [
+    {
+      typeDocs: [
+        {
+          kind: 'object',
+          fields: [
+            { name: 'a', description: 'Shared.' },
+            { name: 'b', description: 'Shared.' },
+            { name: 'c', description: 'Its own.' },
+          ],
+        },
+      ],
+    },
+  ];
+
+  assert.deepEqual(collectPropDescriptionCoverage(manifest), { described: 3, distinct: 2, sharedAcrossProps: 1, total: 3 });
+});
+
+
+// The boolean decision happens where the field is emitted, not in the extractor, so a test on
+// `extractCvaVariants` alone cannot see it — reverting the fix left that test green. This asserts
+// the published shape instead: Stack's `wrap` is `boolean`, and the page uses `<HStack wrap>`.
+test('a boolean cva variant publishes as boolean, not a string union', () => {
+  const stack = buildPublicComponentManifest(REPO_ROOT).find((component) => component.name === 'stack');
+  const props = stack.typeDocs.find((entry) => entry.name === 'StackProps');
+  const wrap = props.fields.find((field) => field.name === 'wrap');
+
+  assert.equal(wrap.type, 'boolean');
+  assert.equal(wrap.default, 'false');
+});
+
+
+test('cva boolean keys publish as boolean, other keys as string literals', () => {
+  assert.equal(cvaVariantType(['true', 'false']).type, 'boolean');
+  assert.equal(cvaVariantType(['sm', 'md']).type, "'sm' | 'md'");
+  // Numeric keys are NOT special-cased: `extractCvaVariants` strips quotes, so `{ 1: … }` and
+  // `{ '1': … }` are indistinguishable here and guessing was wrong for the quoted form.
+  assert.equal(cvaVariantType(['1', '2']).type, "'1' | '2'");
+});
+
+// A wrapper that forwards a prop can re-default it. Applying the shared cva's own defaults
+// globally published 'primary' for AlertDialogAction, whose real default is 'destructive'.
+test('a prop re-defaulted by a forwarding wrapper takes the wrapper default', () => {
+  const source = `
+    export const AlertDialogAction = React.forwardRef<Ref, AlertDialogActionProps>(
+      ({ variant, ...props }, ref) => <DialogClose ref={ref} {...props} variant={variant ?? 'destructive'} />
+    );
+  `;
+
+  const defaults = extractDefaults(
+    [{ path: 'alert-dialog.tsx', source }],
+    new Set(['AlertDialogActionProps']),
+  );
+
+  assert.equal(defaults.get('variant'), "'destructive'");
+});
+
+test('AlertDialog publishes the defaults its wrappers apply, not buttonVariants own', () => {
+  const alertDialog = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'alert-dialog');
+  const defaultFor = (typeName) =>
+    alertDialog.typeDocs
+      .find((entry) => entry.name === typeName)
+      ?.fields?.find((field) => field.name === 'variant')?.default;
+
+  assert.equal(defaultFor('AlertDialogActionProps'), "'destructive'");
+  assert.equal(defaultFor('AlertDialogCancelProps'), "'outline'");
+  // The trigger does not re-default, so it keeps buttonVariants own default.
+  assert.equal(defaultFor('AlertDialogTriggerProps'), "'primary'");
+});
+
+// Coverage can sit at 100% while saying one thing 700 times.
+test('a manifest whose descriptions are all one sentence is a violation', () => {
+  const fields = Array.from({ length: 700 }, (unused, index) => ({
+    name: `p${index}`,
+    description: 'Same boilerplate.',
+  }));
+
+  const violations = collectPropDescriptionViolations([{ typeDocs: [{ kind: 'object', fields }] }]);
+
+  assert.match(violations[0], /distinct prop descriptions dropped to 1/u);
+});
+
+
+// A sentence reused for the SAME prop across families is correct — that is what the glossary is
+// for. A sentence covering two DIFFERENT props is not, and it needs no threshold to detect.
+test('reusing a sentence for the same prop across families is not a violation', () => {
+  const fields = [
+    ...Array.from({ length: 400 }, () => ({ name: 'className', description: 'Extra utility classes.' })),
+    ...Array.from({ length: PROP_DISTINCT_DESCRIPTION_FLOOR }, (unused, index) => ({
+      name: `p${index}`,
+      description: `Sentence ${index}.`,
+    })),
+  ];
+
+  const violations = collectPropDescriptionViolations([{ typeDocs: [{ kind: 'object', fields }] }]);
+
+  assert.deepEqual(violations.filter((entry) => /different names/u.test(entry)), []);
+});
+
+test('one sentence covering two different props is a violation', () => {
+  const fields = [
+    { name: 'size', description: 'Selects a preset.' },
+    { name: 'variant', description: 'Selects a preset.' },
+    ...Array.from({ length: PROP_DISTINCT_DESCRIPTION_FLOOR }, (unused, index) => ({
+      name: `p${index}`,
+      description: `Sentence ${index}.`,
+    })),
+  ];
+
+  const violations = collectPropDescriptionViolations([{ typeDocs: [{ kind: 'object', fields }] }]);
+
+  assert.match(
+    violations.find((entry) => /different names/u.test(entry)),
+    /1 description\(s\) are shared by props with different names/u,
+  );
+});
+
+test('no published description covers two different props', () => {
+  const { sharedAcrossProps } = collectPropDescriptionCoverage(buildPublicComponentManifest(REPO_ROOT));
+
+  assert.equal(sharedAcrossProps, 0);
+});
+
+// forwardRef((props, ref) => { const { x = 'lit' } = props }) — the shape that left 30 rows blank.
+test('a default destructured in a forwardRef body is published', () => {
+  const source = `
+    export const Calendar = React.forwardRef<Ref, CalendarProps>((props, forwardedRef) => {
+      const { readOnly = false, weekdayFormat = 'short' } = props;
+      return null;
+    });
+  `;
+
+  const defaults = extractDefaults([{ path: 'calendar.tsx', source }], new Set(['CalendarProps']));
+
+  assert.equal(defaults.get('readOnly'), 'false');
+  assert.equal(defaults.get('weekdayFormat'), "'short'");
+});
+
+
+// The two default collectors used to disagree on precedence, so which default was published
+// depended on which of them ran. A node that both destructures a default and forwards a `??`
+// fallback must publish the destructured one.
+test('a destructured default wins over a forwarded fallback on the same node', () => {
+  const source = `
+    export const Trigger = React.forwardRef<Ref, TriggerProps>(
+      ({ variant = 'destructured', ...rest }, ref) => <Inner ref={ref} {...rest} variant={variant ?? 'fallback'} />
+    );
+  `;
+
+  const defaults = extractDefaults([{ path: 'trigger.tsx', source }], new Set(['TriggerProps']));
+
+  assert.equal(defaults.get('variant'), "'destructured'");
+});
+
+// The body walk must only read a destructure of the props parameter itself.
+test('a destructure of something other than the props parameter is not a default source', () => {
+  const source = `
+    export const Widget = React.forwardRef<Ref, WidgetProps>((props, ref) => {
+      const { size = 'lg' } = somethingElse;
+      return null;
+    });
+  `;
+
+  const defaults = extractDefaults([{ path: 'widget.tsx', source }], new Set(['WidgetProps']));
+
+  assert.equal(defaults.get('size'), undefined);
+});
+
+// An expression-bodied forwardRef has no block to walk; it must not throw or invent defaults.
+test('an expression-bodied forwardRef yields no body defaults', () => {
+  const source = `
+    export const Plain = React.forwardRef<Ref, PlainProps>((props, ref) => <Inner {...props} />);
+  `;
+
+  const defaults = extractDefaults([{ path: 'plain.tsx', source }], new Set(['PlainProps']));
+
+  assert.equal(defaults.size, 0);
+});
+
+
+// The cva rows used to end "see Styling and theming for what each value changes". That section is
+// one boilerplate paragraph across all 62 pages and says nothing about any value — a pointer that
+// answered nothing, published on 41 rows. The replacement names the file, so assert the file.
+test('a cva-derived description names the file that declares the variants', () => {
+  const button = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'button');
+  const props = button.typeDocs.find((entry) => entry.name === 'ButtonProps');
+  const variant = props.fields.find((field) => field.name === 'variant');
+
+  assert.match(variant.description, /packages\/ui\/src\/components\/button\.tsx/u);
+  assert.equal(/Styling and theming/u.test(variant.description), false);
+});
+
+test('no generated page still points at Styling and theming for variant values', () => {
+  const offenders = buildPublicComponentManifest(REPO_ROOT).filter((component) =>
+    renderPublicComponentPage(component).includes('see Styling and theming for what each value changes'),
+  );
+
+  assert.deepEqual(offenders.map((component) => component.name), []);
+});
+
+
+// The Accessibility section was one identical paragraph on all 62 pages asserting that roles and
+// states "remain component-specific" — a page contradicting itself.
+test('accessibility facts are read from JSX, not from comments or selector strings', () => {
+  const source = `
+    // react-native-web always renders \`role="progressbar"\` here, which is not ours to claim.
+    const q = '[role="cell"][tabindex="0"]';
+    export const Thing = () => (
+      <View role="listitem" accessibilityState={{ checked: true, disabled: false }}>
+        <Inner aria-expanded={open} />
+      </View>
+    );
+  `;
+
+  const { roles, states } = extractAccessibilityFacts([{ path: 'thing.tsx', source }]);
+
+  assert.deepEqual(roles, ['listitem']);
+  assert.deepEqual(states, ['checked', 'disabled', 'expanded']);
+});
+
+// `role={decorative ? undefined : 'separator'}` assigns a real role on one branch.
+test('a role assigned through a conditional expression is read', () => {
+  const source = "export const S = () => <View role={decorative ? undefined : 'separator'} />;";
+
+  assert.deepEqual(extractAccessibilityFacts([{ path: 's.tsx', source }]).roles, ['separator']);
+});
+
+test('a role coming from a variable claims nothing', () => {
+  const source = 'export const S = () => <View role={someRole} />;';
+
+  assert.deepEqual(extractAccessibilityFacts([{ path: 's.tsx', source }]).roles, []);
+});
+
+test('every component page states the roles that family assigns', () => {
+  const pages = buildPublicComponentManifest(REPO_ROOT).map((component) => ({
+    name: component.name,
+    page: renderPublicComponentPage(component),
+  }));
+
+  for (const { name, page } of pages) {
+    assert.match(page, /\*\*Roles this family assigns:\*\*/u, `${name} lost its roles line`);
+  }
+  // The section used to be one body across all 62 pages while claiming to be component-specific.
+  const bodies = new Set(pages.map(({ page }) => page.split('## Accessibility')[1].split('## ')[0]));
+  assert.ok(bodies.size > 20, `expected differentiated accessibility sections, got ${bodies.size}`);
+});
+
+
+// Platform behavior closed by saying platform-specific behavior is called out "rather than hidden
+// behind a generic parity claim", while being exactly that claim on 56 of 62 pages.
+test('a platform-split family names the files it renders from', () => {
+  const sheet = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'sheet');
+  const page = renderPublicComponentPage(sheet);
+
+  assert.match(page, /split by platform and renders from/u);
+  assert.match(page, /`sheet\.web\.tsx` \(Web\)/u);
+  assert.match(page, /`sheet\.native\.tsx` \(iOS and Android\)/u);
+});
+
+test('a single-implementation family says so instead of claiming parity', () => {
+  const text = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'text');
+  const page = renderPublicComponentPage(text);
+
+  assert.match(page, /ships no platform-specific file/u);
+  assert.equal(/rather than hidden behind a generic parity claim/u.test(page), false);
+});
+
+// Styling and theming was one identical paragraph on all 62 pages.
+test('the styling section names the family own style axes and class surfaces', () => {
+  const avatar = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'avatar');
+  const page = renderPublicComponentPage(avatar);
+
+  assert.match(page, /\*\*Style axes:\*\* `size` \(4 values\)/u);
+  assert.match(page, /`className`, `fallbackClassName`, `imageClassName`/u);
+});
+
+test('a family with no variant prop and no base says it has no style axes', () => {
+  // This test has now named two counter-examples as its example. Toast's props live in an
+  // unparsed alias carrying `variant`; KeyboardAwareScreen's `contentWidth` is `keyof typeof
+  // CONTENT_WIDTH_CLASSES`, four max-width classes. Both were moved here *because* the sentence
+  // was published on them, which is how a test comes to assert a false fact as correct. The
+  // absolute negative is now available only where nothing at all is unresolved.
+  const hook = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'use-bee-token');
+
+  assert.match(renderPublicComponentPage(hook, REPO_ROOT), /\*\*Style axes:\*\* none;/u);
+});
+
+test('a prop typed by an alias with no resolved values blocks the absolute negative', () => {
+  // KeyboardAwareScreen was this test's subject until `contentWidth` became derivable as a real
+  // axis from the class table it indexes. DatePicker's `placement` and `align` still are not.
+  const picker = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'date-picker');
+
+  const page = renderPublicComponentPage(picker, REPO_ROOT);
+
+  assert.equal(/\*\*Style axes:\*\* none;/u.test(page), false);
+  assert.match(page, /`placement`.*typed by an alias this page does not resolve to values/u);
+});
+
+test('an accessibility property outside accessibilityState is published', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const statesLine = (name) =>
+    renderPublicComponentPage(
+      manifest.find((component) => component.name === name),
+      REPO_ROOT,
+    )
+      .split('\n')
+      .find((line) => line.startsWith('- **Accessibility states and properties it sets:**'));
+
+  // Asserted against the whole page first, and passed with the derivation hard-wired off:
+  // `accessibilityLiveRegion` also appears in AlertBanner's props table, forty lines above the
+  // line this test is about. Scoping the assertion to that line is the whole test.
+  assert.match(statesLine('progress'), /`max`, `min`, `now`/u);
+  assert.match(statesLine('alert-banner'), /`accessibilityLiveRegion`/u);
+});
+
+// M3: reverting the states oracle to `accessibilityState|aria-` shipped green, because the
+// derivation had been fixed too and no page was left publishing the negative falsely. Nothing
+// exercised the oracle's own scope, so it could be narrowed back to exactly the scope the audit
+// had flagged with every gate passing.
+test('the states oracle refuses the negative for any accessibility attribute', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-states-oracle-'));
+  const page = '- **Accessibility states and properties it sets:** none set in `x.tsx`.';
+
+  for (const attribute of [
+    'accessibilityLiveRegion="polite"',
+    'accessibilityElementsHidden={true}',
+    'accessibilityValue={{ now: 1 }}',
+    'accessible={false}',
+    'aria-checked={true}',
+    'accessibilityState={{ disabled }}',
+  ]) {
+    fs.writeFileSync(path.join(dir, 'x.tsx'), `export const X = () => <View ${attribute} />;\n`);
+    const violations = collectDerivedClaimViolations(page, { name: 'x', allSources: ['x.tsx'], source: 'x.tsx' }, dir);
+    assert.equal(violations.length, 1, `${attribute} must refute "sets none"`);
+  }
+
+  fs.writeFileSync(path.join(dir, 'x.tsx'), 'export const X = () => <View accessibilityRole="button" />;\n');
+  assert.deepEqual(
+    collectDerivedClaimViolations(page, { name: 'x', allSources: ['x.tsx'], source: 'x.tsx' }, dir),
+    [],
+    'a role is not a state, and must not be read as one',
+  );
+});
+
+test('a family whose source branches on Platform does not claim identical behavior', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const screen = manifest.find((component) => component.name === 'keyboard-aware-screen');
+
+  const page = renderPublicComponentPage(screen, REPO_ROOT);
+
+  // Decided from a filename glob, this was false on ten of 62 pages. AlertBanner's own props
+  // table contradicted it two sections above.
+  assert.equal(/takes no `Platform` branch/u.test(page), false);
+  assert.match(page, /its source branches on `Platform`/u);
+});
+
+test('every accessibility line names the files it was read from, positive or negative', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const lines = manifest
+    .flatMap((component) => renderPublicComponentPage(component, REPO_ROOT).split('\n'))
+    .filter(
+      (line) =>
+        line.startsWith('- **Roles this family assigns:**') ||
+        line.startsWith('- **Accessibility states and properties it sets:**'),
+    );
+
+  assert.equal(lines.length, manifest.length * 2);
+  for (const line of lines) {
+    // A list reads as complete. Adding an attribute to a shared module a family renders leaves
+    // the list unchanged and every gate green, so the list must say what it covers.
+    assert.match(line, /`[\w.-]+\.tsx?`/u, `accessibility line with no scope: ${line}`);
+  }
+});
+
+test('a negative accessibility claim names the files it was read from', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const pages = manifest.map((component) => renderPublicComponentPage(component, REPO_ROOT));
+  const negatives = pages
+    .flatMap((page) => page.split('\n'))
+    .filter((line) => line.includes(ROLES_NONE_CLAIM) || line.includes(STATES_NONE_CLAIM));
+
+  assert.ok(negatives.length > 0, 'no page exercises the negative lines');
+  for (const line of negatives) {
+    // The claim is only as wide as the files behind it; an unqualified "none" asserts past them.
+    assert.match(line, /none set in `[^`]+\.tsx?`/u, `unscoped negative: ${line}`);
+  }
+});
+
+// Separator has none of its own either, but defers part of its surface to `ViewProps`. Saying
+// "none" there is a claim about props the page never read.
+test('a family that defers props upstream does not claim to have no style axes', () => {
+  const separator = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'separator');
+
+  const page = renderPublicComponentPage(separator, REPO_ROOT);
+
+  assert.equal(/\*\*Style axes:\*\* none;/u.test(page), false);
+  assert.match(page, /\*\*Style axes:\*\* none of its own — .*it also carries `Omit<ViewProps/u);
+});
+
+// The three sections that used to be one body across every page must stay differentiated.
+test('the shared-template sections are no longer one body for every page', () => {
+  const pages = buildPublicComponentManifest(REPO_ROOT).map((c) => renderPublicComponentPage(c));
+  const bodies = (heading) =>
+    new Set(pages.map((page) => page.split(`## ${heading}`)[1]?.split('\n## ')[0] ?? ''));
+
+  assert.ok(bodies('Styling and theming').size > 10, 'styling section is still one template');
+  assert.ok(bodies('Accessibility').size > 20, 'accessibility section is still one template');
+  assert.ok(bodies('Platform behavior').size > 5, 'platform section is still one template');
+});
+
+
+// "No component-specific limitation is curated here" was published on DatePicker, which requires
+// an optional native peer nothing installs for you, and on Sheet, which accepts three Web props
+// that do nothing there. The page said there was nothing to say while the repo had something.
+test('a family needing an optional native peer says so in Limitations', () => {
+  const datePicker = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'date-picker');
+  const page = renderPublicComponentPage(datePicker);
+
+  assert.match(page, /Requires `@react-native-community\/datetimepicker` to be installed/u);
+  assert.match(page, /It is an optional peer/u);
+  assert.equal(/No component-specific limitation is curated here/u.test(page), false);
+});
+
+test('a family with props that do nothing on Web says which ones', () => {
+  const sheet = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'sheet');
+  const page = renderPublicComponentPage(sheet);
+
+  assert.match(page, /`avoidKeyboard`, `enableSwipeToDismiss`, `modalProps` are accepted for API parity/u);
+});
+
+// A derived limitation must never replace a curated one.
+test('curated limitations survive alongside derived ones', () => {
+  const tooltip = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'tooltip');
+
+  assert.match(renderPublicComponentPage(tooltip), /Never a press target and never interactive content/u);
+});
+
+// A family with no derivable constraint must still admit the gap rather than invent one. Box is
+// a `View` plus a `className` — no variants, no platform branch, no omitted prop, nothing a
+// limitation could be read from — so its page keeps the admission.
+test('a family with nothing derivable still says none is curated', () => {
+  const box = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'box');
+
+  assert.match(renderPublicComponentPage(box), /No component-specific limitation is curated here/u);
+});
+
+
+// The two ways the Limitations section fills up while saying nothing new. Both are mutations of
+// the shipped content: the repository passes, and each edit that would empty the section of
+// meaning fails.
+test('a limitation that restates the family own purpose is rejected', () => {
+  const restating = {
+    name: 'card',
+    purpose: 'Elevated/outlined surface with variant and spacing contract.',
+    behavior: 'Stateless elevated/outlined surface.',
+    limitations: 'Elevated/outlined surface with variant and spacing contract.',
+  };
+
+  assert.deepEqual(collectCuratedLimitationViolations([restating]), [
+    'card: limitations restates its own purpose verbatim; a limitation has to say something the rest of the page does not.',
+  ]);
+});
+
+test('a limitation that restates the family own behavior is rejected', () => {
+  const restating = {
+    name: 'card',
+    purpose: 'Elevated/outlined surface.',
+    behavior: 'Stateless surface driven by a `variant`; no controlled state.',
+    // Same sentence, re-marked and re-punctuated: normalization is what makes the rule hold.
+    limitations: 'Stateless surface driven by a **variant**; no controlled state',
+  };
+
+  assert.deepEqual(collectCuratedLimitationViolations([restating]), [
+    'card: limitations restates its own behavior verbatim; a limitation has to say something the rest of the page does not.',
+  ]);
+});
+
+test('one limitation pasted across two families is rejected', () => {
+  const pasted = ['card', 'section', 'stat'].map((name) => ({
+    name,
+    purpose: `${name} purpose.`,
+    behavior: `${name} behavior.`,
+    limitations: 'Only plain string or number children receive the label typography.',
+  }));
+
+  assert.deepEqual(collectCuratedLimitationViolations(pasted), [
+    'card, section, stat: share one curated limitation verbatim; a limitation derived from a family\'s own source cannot be identical across families.',
+  ]);
+});
+
+test('distinct limitations and an absent one are both accepted', () => {
+  const clean = [
+    { name: 'card', purpose: 'a', behavior: 'b', limitations: 'Card has no press handling.' },
+    { name: 'stat', purpose: 'a', behavior: 'b', limitations: 'Stat adds no accessibility grouping.' },
+    { name: 'box', purpose: 'a', behavior: 'b', limitations: '' },
+    { name: 'stack', purpose: 'a', behavior: 'b' },
+  ];
+
+  assert.deepEqual(collectCuratedLimitationViolations(clean), []);
+});
+
+// The rule's stated contract is that case, markdown emphasis, whitespace and trailing `.;:,` and whitespace
+// do not buy a pass. Trailing whitespace used to: the punctuation strip ran before the trim, so a
+// copy plus one trailing space or newline kept its final period and compared unequal.
+for (const [label, suffix] of [
+  ['a trailing space', ' '],
+  ['a trailing newline', '\n'],
+  ['trailing whitespace around the period', ' . '],
+  ['a different case', ''],
+]) {
+  test(`a limitation that restates the family own purpose with ${label} is still rejected`, () => {
+    const purpose = 'Elevated/outlined surface with variant and spacing contract.';
+    const restating = {
+      name: 'card',
+      purpose,
+      behavior: 'Stateless elevated/outlined surface.',
+      limitations: suffix ? `${purpose}${suffix}` : purpose.toUpperCase(),
+    };
+
+    assert.deepEqual(collectCuratedLimitationViolations([restating]), [
+      'card: limitations restates its own purpose verbatim; a limitation has to say something the rest of the page does not.',
+    ]);
+  });
+
+  test(`one limitation pasted across two families with ${label} is still rejected`, () => {
+    const pasted = 'Only plain string or number children receive the label typography.';
+    const families = [
+      { name: 'card', purpose: 'a', behavior: 'b', limitations: pasted },
+      {
+        name: 'stat',
+        purpose: 'a',
+        behavior: 'b',
+        limitations: suffix ? `${pasted}${suffix}` : pasted.toUpperCase(),
+      },
+    ];
+
+    assert.deepEqual(collectCuratedLimitationViolations(families), [
+      'card, stat: share one curated limitation verbatim; a limitation derived from a family\'s own source cannot be identical across families.',
+    ]);
+  });
+}
+
+// The strip must not eat words: a limitation that genuinely differs still passes, and normalization
+// only removes the marks the contract names.
+test('two limitations differing by a whole clause are accepted', () => {
+  const distinct = [
+    { name: 'card', purpose: 'a', behavior: 'b', limitations: 'Card has no press handling.' },
+    { name: 'stat', purpose: 'a', behavior: 'b', limitations: 'Card has no press handling of its own.' },
+  ];
+
+  assert.deepEqual(collectCuratedLimitationViolations(distinct), []);
+});
+
+// Dialog's curated limitation is "Controlled open requires onOpenChange" — a fact the component
+// states itself in a development warning, so it is derivable rather than product judgement.
+test('a controlled-prop requirement is read from the component own warning', () => {
+  const warning = "console.warn('BeeUI Select: \\`open\\` requires \\`onOpenChange\\`. Falling back.');";
+
+  assert.deepEqual(extractControlledPropWarnings([{ path: 'select.tsx', source: warning }]), [
+    { prop: 'open', handler: 'onOpenChange' },
+  ]);
+});
+
+test('an unrelated console.warn is not read as a controlled-prop requirement', () => {
+  const source = "console.warn('BeeUI Select: something else entirely.');";
+
+  assert.deepEqual(extractControlledPropWarnings([{ path: 'select.tsx', source }]), []);
+});
+
+test('a family that warns publishes the requirement in Limitations', () => {
+  const select = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'select');
+
+  assert.match(renderPublicComponentPage(select), /Passing `open` without `onOpenChange` leaves the value read-only/u);
+});
+
+// Dialog curates the same fact; it must not be said twice on one page.
+test('a derived requirement is skipped when a curated limitation already says it', () => {
+  const dialog = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'dialog');
+  const page = renderPublicComponentPage(dialog);
+
+  assert.match(page, /Controlled open requires onOpenChange/u);
+  assert.equal(/Passing `open` without `onOpenChange` leaves the value read-only/u.test(page), false);
+});
+
+
+// Each of the four derived sections shipped with a test, every test passed, and the sections
+// published five classes of false fact anyway: each test had picked the one component whose
+// source made its claim true. These pin the claims to components that would disagree.
+
+test('a role is read from the branches of a conditional, never from its condition', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'chip.tsx',
+      source: "const C = () => <View accessibilityRole={mode === 'single' ? 'radiogroup' : undefined} />;",
+    },
+  ]);
+
+  assert.deepEqual(facts.roles, ['radiogroup'], '`single` is the value compared against, not a role');
+});
+
+test('roles and states are read from an object literal spread into a primitive', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'switch.tsx',
+      source: [
+        'const props = {',
+        "  ...(isWeb ? null : { accessibilityRole: 'switch', accessibilityState: { checked, disabled } }),",
+        '};',
+      ].join('\n'),
+    },
+  ]);
+
+  assert.deepEqual(facts.roles, ['switch']);
+  assert.deepEqual(facts.states, ['checked', 'disabled']);
+});
+
+test('an accessibilityState wrapped in a conditional is still read', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'list-item.tsx',
+      source: 'const C = () => <View accessibilityState={interactive ? { disabled } : undefined} />;',
+    },
+  ]);
+
+  assert.deepEqual(facts.states, ['disabled']);
+});
+
+test('the portal publishes no accessibility role outside the known vocabulary', () => {
+  const violations = collectPublicComponentReferenceViolations(REPO_ROOT);
+
+  assert.deepEqual(violations.filter((entry) => entry.includes('as an accessibility role')), []);
+});
+
+test('an absolute negative is refused when the page defers part of its prop surface upstream', () => {
+  const component = { name: 'demo', allSources: [], source: '' };
+  const page = [
+    "Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.",
+    '- **Style axes:** none; this family has no variant or size prop.',
+  ].join('\n\n');
+
+  const violations = collectDerivedClaimViolations(page, component, REPO_ROOT);
+
+  assert.equal(violations.length, 1);
+  assert.match(violations[0], /never looked at/u);
+});
+
+// The first version of that oracle keyed on "upstream contract is not reproduced here", the
+// phrasing used only for bases that leave the repository — which excluded IconButton, the very
+// page the oracle was written for, because its base resolves to BeeUI's own `ButtonProps` and
+// gets the "documented on the [Button] page" phrasing instead. A guard whose key excludes its
+// motivating case is not a guard.
+test('an absolute negative is refused for a base documented on another BeeUI page too', () => {
+  const component = { name: 'icon-button', allSources: [], source: '' };
+  const page = [
+    "Also carries every prop of `Omit<ButtonProps, 'size'>` — documented on the [Button](/docs/components/button/) page, not reproduced here.",
+    '- **Class-name surfaces:** none; this family accepts no `className` of its own.',
+  ].join('\n\n');
+
+  const violations = collectDerivedClaimViolations(page, component, REPO_ROOT);
+
+  assert.equal(violations.length, 1, 'a BeeUI-owned base defers prop surface exactly as an external one does');
+});
+
+test('the negative-claim oracle reads code, not the comments that describe it', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-oracle-'));
+  const rel = 'spinner.tsx';
+  fs.writeFileSync(
+    path.join(dir, rel),
+    '// react-native-web\'s ActivityIndicator always renders role="progressbar" itself.\nexport const S = () => null;\n',
+  );
+
+  const violations = collectDerivedClaimViolations(
+    '- **Roles this family assigns:** none of its own; each element keeps the role of the primitive it renders.',
+    { name: 'spinner', allSources: [rel], source: rel },
+    dir,
+  );
+
+  assert.deepEqual(violations, [], 'a comment explaining what the primitive does is not the component doing it');
+});
+
+test('a class-name surface inherited through a base type is published', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const textarea = manifest.find((component) => component.name === 'textarea');
+
+  const page = renderPublicComponentPage(textarea, REPO_ROOT);
+
+  assert.match(page, /\*\*Class-name surfaces:\*\* `className`/u);
+  assert.equal(/accepts no `className` of its own/u.test(page), false);
+});
+
+test('a style axis inherited from a public base type is published, and named', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const iconButton = manifest.find((component) => component.name === 'icon-button');
+
+  const page = renderPublicComponentPage(iconButton, REPO_ROOT);
+
+  assert.match(page, /\*\*Style axes:\*\* `variant` \(5 values, inherited from `ButtonProps`\)/u);
+  // `size` is in the Omit list, so inheriting `variant` must not drag it along.
+  assert.equal(/`size` \(\d+ values, inherited/u.test(page), false);
+});
+
+test('a peer the Web implementation never imports is scoped to native', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const sheet = manifest.find((component) => component.name === 'sheet');
+  // Read the file directly rather than through the renderer, so this fails if Web starts
+  // importing the engine ADR-006 says it does not use.
+  const webSource = fs.readFileSync(path.join(REPO_ROOT, 'packages/ui/src/components/sheet.web.tsx'), 'utf8');
+  const imported = [...webSource.matchAll(/from\s*'([^']+)'/gu)].map((match) => match[1]);
+  // The ADR-006 header names the package in prose to say Web does not use it, so an `includes`
+  // check would read the explanation as the thing it denies.
+  assert.equal(imported.includes('@gorhom/bottom-sheet'), false);
+
+  const page = renderPublicComponentPage(sheet, REPO_ROOT);
+
+  assert.match(page, /On Web this family renders from `sheet\.web\.tsx`, which does not import/u);
+  assert.match(page, /those peers serve the native implementation/u);
+});
+
+
+// Four more positions the derivation was not reading, each found by re-checking the pages the
+// previous round had just rewritten.
+
+test('a role assigned through a local constant is read', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'chip.tsx',
+      source: [
+        'const C = () => {',
+        "  const role = inGroup ? (single ? 'radio' : 'checkbox') : 'button';",
+        '  return <Pressable accessibilityRole={role} />;',
+        '};',
+      ].join('\n'),
+    },
+  ]);
+
+  assert.deepEqual(facts.roles, ['button', 'checkbox', 'radio']);
+});
+
+test('a state inside a spread of a conditional is read, and a spread variable adds nothing', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'chip.tsx',
+      source:
+        'const C = () => <Pressable accessibilityState={{ ...accessibilityState, disabled, ' +
+        '...(inGroup ? { checked } : { selected }) }} />;',
+    },
+  ]);
+
+  assert.deepEqual(facts.states, ['checked', 'disabled', 'selected']);
+});
+
+test('a bare `role` key in an object literal is read', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'select.tsx',
+      source: "const p = Platform.OS === 'web' ? { 'aria-labelledby': id, role: 'group' } : {};",
+    },
+  ]);
+
+  assert.deepEqual(facts.roles, ['group']);
+  assert.deepEqual(facts.states, ['labelledby']);
+});
+
+test('a prop the family declares itself is not relabelled as inherited', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const stack = manifest.find((component) => component.name === 'stack');
+
+  const page = renderPublicComponentPage(stack, REPO_ROOT);
+
+  // `HStackProps extends StackProps` made the bases pass overwrite Stack's own provenance.
+  assert.match(page, /`gap` \(\d+ values\)/u);
+  assert.equal(/`gap` \(\d+ values, inherited/u.test(page), false);
+});
+
+test('a discriminated union at an intersection site becomes named variants, not quoted text', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const themeScope = manifest.find((component) => component.name === 'theme-scope');
+
+  const page = renderPublicComponentPage(themeScope, REPO_ROOT);
+
+  // `{ registry; children } & ({ brand; appearance } | { theme })` used to be pushed as raw base
+  // text and quoted verbatim — JSDoc, nested backticks and all — while `brand`, `appearance` and
+  // `theme` reached no table at all (#506). Each arm is now a variant carrying the common fields.
+  assert.match(page, /\*\*Variant `brand \+ appearance`:\*\*/u);
+  assert.match(page, /\*\*Variant `theme`:\*\*/u);
+  assert.match(page, /\| `brand` \*\*\(required\)\*\* \| `RegistryBrand<Def>`/u);
+  assert.equal(/declared inline at its `extends` site/u.test(page), false, 'nothing is left to describe as inline');
+  assert.equal(/Also carries every prop of/u.test(page), false, 'the union is no longer a base');
+  // `theme?: undefined` in the brand arm forbids `theme` there; it is not a prop a caller sets.
+  assert.equal(/\| `theme` \| `undefined`/u.test(page), false);
+});
+
+
+test('a base that names an imported type is named, not called inline', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const safeArea = manifest.find((component) => component.name === 'safe-area');
+
+  const page = renderPublicComponentPage(safeArea, REPO_ROOT);
+
+  // `React.ComponentProps<typeof NativeSafeAreaView>` has no name this parser extracts, which is
+  // not the same as having no name.
+  assert.match(page, /it also carries .*NativeSafeAreaView/u);
+  assert.equal(
+    /it also carries a type declared inline/u.test(page),
+    false,
+    'an imported type is not written inline',
+  );
+});
+
+test('every base a family defers to is listed, named and structural alike', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const table = manifest.find((component) => component.name === 'table');
+
+  const page = renderPublicComponentPage(table, REPO_ROOT);
+  const axes = page.split('\n').find((line) => line.startsWith('- **Style axes:**'));
+
+  // Table defers to both `ViewProps` and `React.ComponentProps<typeof Text>`; listing named
+  // bases only when no structural one exists dropped the second.
+  assert.match(axes, /ViewProps/u);
+  assert.match(axes, /typeof Text/u);
+});
+
+test('a family with no Props type gets a table for the object alias that is its prop surface', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const toast = manifest.find((component) => component.name === 'toast');
+
+  const page = renderPublicComponentPage(toast, REPO_ROOT);
+  const axes = page.split('\n').find((line) => line.startsWith('- **Style axes:**'));
+
+  // `ToastOptions` rendered as one line of raw type text, so `variant` and its five values
+  // reached no table and the page first claimed no variant prop, then that the axes were "not
+  // enumerated" (#506). Promoted to a props entry, its `variant` is now derivable from
+  // `surfaceClassByVariant[toast.variant]` like any other class-map axis.
+  assert.match(page, /#### `ToastOptions`/u);
+  assert.match(page, /\| `variant` \| `ToastVariant` \|/u);
+  assert.match(axes, /`variant` \(5 values/u);
+  assert.equal(/_This family exports no `\*Props` type\._/u.test(page), false);
+});
+
+test('a page naming a variant prop may not also claim to have no style axes', () => {
+  const page = [
+    '- `ToastOptions` — alias of `{ title: string; variant?: ToastVariant; }`.',
+    '- **Style axes:** none; this family has no variant or size prop.',
+  ].join('\n');
+
+  const violations = collectDerivedClaimViolations(page, { name: 'toast', allSources: [], source: '' }, REPO_ROOT);
+
+  assert.equal(violations.length, 1, 'the page contradicts itself with no base involved');
+  assert.match(violations[0], /naming a `variant` or `size` prop/u);
+});
+
+test('every declaration of a role constant is read, not just the first', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'tabs.tsx',
+      source: [
+        "const Trigger = () => { const role = 'tab'; return <View accessibilityRole={role} />; };",
+        "const Content = () => { const role = 'tabpanel'; return <View accessibilityRole={role} />; };",
+      ].join('\n'),
+    },
+  ]);
+
+  assert.deepEqual(facts.roles, ['tab', 'tabpanel']);
+});
+
+test('a role identifier shadowed by a parameter resolves to nothing', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'thing.tsx',
+      source: [
+        "const role = 'alert';",
+        'const Thing = ({ role }) => <View accessibilityRole={role} />;',
+      ].join('\n'),
+    },
+  ]);
+
+  assert.deepEqual(facts.roles, [], 'the module constant is not what the JSX names');
+});
+
+test('comment stripping survives a string that contains a comment opener', () => {
+  const stripped = stripSourceComments("const glob = '/*.ts';\nimport { X } from 'x'; // gone\n");
+
+  assert.match(stripped, /import \{ X \} from 'x';/u, 'a glob in a string must not swallow the file');
+  assert.equal(stripped.includes('gone'), false);
+});
+
+test('every rendered absolute negative is a string the oracle recognises', () => {
+  const pages = buildPublicComponentManifest(REPO_ROOT).map((component) => ({
+    component,
+    page: renderPublicComponentPage(component, REPO_ROOT),
+  }));
+
+  // The oracle keyed on literal copies of these sentences; rewording one left it matching
+  // nothing with every gate green. A coupling test that covers one of four constants leaves the
+  // other three able to drift exactly the same way, which is what happened next.
+  const negatives = [
+    '**Roles this family assigns:** none',
+    '**Accessibility states and properties it sets:** none',
+    '**Class-name surfaces:** none;',
+    '**Style axes:** none;',
+  ];
+  for (const negative of negatives) {
+    assert.ok(
+      pages.some(({ page }) => page.includes(negative)),
+      `no page publishes "${negative}", so nothing exercises the oracle that refuses it`,
+    );
+  }
+});
+
+test('the rendered negative and the oracle that refuses it are the same string', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  // Renaming the rendered line by one word once left the oracle matching nothing, with every
+  // gate green and all 62 pages free to publish the negative falsely.
+  const withNoRoles = manifest
+    .map((component) => renderPublicComponentPage(component, REPO_ROOT))
+    .filter((page) => page.includes(ROLES_NONE_CLAIM));
+
+  assert.ok(withNoRoles.length > 0, 'no page exercises the negative role line');
+  for (const page of withNoRoles) {
+    assert.ok(
+      collectDerivedClaimViolations(page, { name: 'x', allSources: ['packages/ui/src/components/switch.tsx'], source: '' }, REPO_ROOT).some(
+        (violation) => violation.includes('assigns no roles'),
+      ),
+      'the oracle must recognise the sentence the renderer actually prints',
+    );
+  }
+});
+
+
+// The scope file names were the whole subject of the commit that introduced them and were
+// asserted by nothing: replacing `scope` with a literal `nonexistent.tsx` regenerated all 62
+// pages and left --check, the whole suite and the freshness check green.
+test('the files an accessibility line names are the files that set something', () => {
+  // Written for the roles line only the first time. The states line's scope could then be
+  // replaced with a fabricated `nonexistent.tsx` on all 62 pages with --check, the whole suite
+  // and the freshness check green — the same hole, one line lower, in the test written to close
+  // it. Both lines are checked here against a list recomputed per file.
+  const lines = [
+    { prefix: '- **Roles this family assigns:**', key: 'roles' },
+    { prefix: '- **Accessibility states and properties it sets:**', key: 'states' },
+  ];
+
+  for (const component of buildPublicComponentManifest(REPO_ROOT)) {
+    const sources = (component.allSources ?? [component.source]).filter(
+      (relPath) => relPath && !relPath.endsWith('.d.ts'),
+    );
+    const page = renderPublicComponentPage(component, REPO_ROOT);
+
+    for (const { prefix, key } of lines) {
+      const contributing = sources.filter(
+        (relPath) =>
+          extractAccessibilityFacts([
+            { path: relPath, source: fs.readFileSync(path.join(REPO_ROOT, relPath), 'utf8') },
+          ])[key].length > 0,
+      );
+      const line = page.split('\n').find((candidate) => candidate.startsWith(prefix));
+      const named = [...line.matchAll(/`([\w.-]+\.tsx?)`/gu)].map((match) => match[1]);
+      const expected = (contributing.length ? contributing : sources).map((relPath) =>
+        relPath.split('/').pop(),
+      );
+
+      assert.deepEqual(named, expected, `${component.name} ${key}: named files are not the files read`);
+    }
+  }
+});
+
+test('a file that sets nothing is not named as a file something is set in', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const tooltip = manifest.find((component) => component.name === 'tooltip');
+
+  const page = renderPublicComponentPage(tooltip, REPO_ROOT);
+  const roleLine = page.split('\n').find((line) => line.startsWith('- **Roles this family assigns:**'));
+
+  // `tooltip.d.ts` says in its own header that it produces no runtime module, and
+  // `tooltip.native.tsx` assigns no role: on iOS and Android Tooltip has none. Listing all four
+  // sources presented alternatives as a conjunction and a declaration file as a component.
+  assert.match(roleLine, /set in `tooltip\.web\.tsx` by the components themselves/u);
+  assert.equal(/tooltip\.d\.ts/u.test(roleLine), false);
+  assert.equal(/tooltip-shared\.tsx/u.test(roleLine), false);
+});
+
+// Hard-wiring the platform branch to `true` flips 47 pages and leaves every gate green.
+test('the platform sentence matches whether the source actually branches on Platform', () => {
+  for (const component of buildPublicComponentManifest(REPO_ROOT)) {
+    const sources = (component.allSources ?? [component.source]).filter(
+      (relPath) => relPath && fs.existsSync(path.join(REPO_ROOT, relPath)),
+    );
+    if (sources.some((relPath) => /\.(native|web|ios|android)\.tsx?$/u.test(relPath))) continue;
+
+    const branches = sources.some((relPath) =>
+      /\bPlatform\s*\.\s*(?:OS|select)\b/u.test(
+        stripSourceComments(fs.readFileSync(path.join(REPO_ROOT, relPath), 'utf8')),
+      ),
+    );
+    const page = renderPublicComponentPage(component, REPO_ROOT);
+
+    assert.equal(
+      /its source branches on `Platform`/u.test(page),
+      branches,
+      `${component.name}: platform sentence disagrees with its own source`,
+    );
+  }
+});
+
+test('a prop that indexes a table of class strings is published as a style axis', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const axisLine = (name) =>
+    renderPublicComponentPage(
+      manifest.find((component) => component.name === name),
+      REPO_ROOT,
+    )
+      .split('\n')
+      .find((line) => line.startsWith('- **Style axes:**'));
+
+  // `spinnerToneClasses[tone]` is what a style axis is; the previous heuristic saw only props
+  // whose description had been generated from a `cva()` call, so these pages said there was none.
+  assert.match(axisLine('spinner'), /`tone` \(7 values/u);
+  assert.match(axisLine('timeline'), /`status` \(4 values/u);
+  assert.match(axisLine('keyboard-aware-screen'), /`contentWidth` \(4 values/u);
+  // `button.tsx` indexes its map with a local `resolvedVariant`, which is not a prop.
+  assert.equal(/resolvedVariant/u.test(axisLine('button')), false);
+});
+
+test('the axes line points at the props table only when the values are in it', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  for (const component of manifest) {
+    const page = renderPublicComponentPage(component, REPO_ROOT);
+    const line = page.split('\n').find((candidate) => candidate.startsWith('- **Style axes:**'));
+    if (!line.includes('the values are in the props tables above')) continue;
+
+    // Spinner's table prints `SpinnerTone`, not its seven values. The Platform sentence shipped
+    // exactly this defect one commit earlier — a true claim followed by a false pointer.
+    const names = [...line.matchAll(/`(\w+)` \(\d+ values/gu)].map((match) => match[1]);
+    for (const name of names) {
+      if (line.includes(`\`${name}\` (`) && line.includes('not enumerated on this page')) continue;
+      assert.ok(
+        new RegExp(`\\| \`${name}\` \\| \`[^|]*'`, 'u').test(page),
+        `${component.name}: points at the props table for \`${name}\`, which does not list its values`,
+      );
+    }
+  }
+});
+
+test('an accessibility attribute set by shorthand is read', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'spinner.tsx',
+      source: 'const p = { ...props, accessibilityLabelledBy, colorClassName: x };',
+    },
+  ]);
+
+  assert.deepEqual(facts.states, ['accessibilityLabelledBy']);
+});
+
+test('a family that delegates to another does not claim its primitive keeps its own role', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const alertDialog = manifest.find((component) => component.name === 'alert-dialog');
+
+  const page = renderPublicComponentPage(alertDialog, REPO_ROOT);
+
+  // `alert-dialog.tsx` is `return <Dialog {...props} />` and `dialog.tsx` sets `role="dialog"`,
+  // so "each element keeps the role of the primitive it renders" was false, not a hedge.
+  assert.equal(/each element keeps the role of the primitive/u.test(page), false);
+});
+
+test('the platform sentence makes no promise about text elsewhere on the page', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  for (const component of manifest) {
+    const page = renderPublicComponentPage(component, REPO_ROOT);
+    // "The differences are called out on the affected props above" was true on none of the six
+    // pages that carried it.
+    assert.equal(/called out on the affected props above/u.test(page), false);
+  }
+});
+
+
+test('the axes line makes no claim about what the rest of the page prints', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  for (const component of manifest) {
+    const line = renderPublicComponentPage(component, REPO_ROOT)
+      .split('\n')
+      .find((candidate) => candidate.startsWith('- **Style axes:**'));
+
+    // ", not enumerated on this page" was false on `screen.md`, whose props row lists
+    // `padding`'s four values, and on `text.md`, which prints `'tabular'` for `numeric`. Every
+    // clause this section wrote about its own page's other content has been wrong once.
+    assert.equal(/not enumerated on this page/u.test(line), false, `${component.name}: ${line}`);
+  }
+});
+
+
+test('the platform sentence states its premise and draws no conclusion from it', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  for (const component of manifest) {
+    const page = renderPublicComponentPage(component, REPO_ROOT);
+
+    // "so the props and behavior above are the same on iOS, Android and Web" survived one fix —
+    // it was moved from a filename glob onto a real `Platform` branch — and stayed false on
+    // AlertDialog and Popover, which take no branch themselves and render families that do.
+    // AlertDialog's own props table names the Android hardware back path 79 lines above it.
+    assert.equal(
+      /the same on iOS, Android and Web/u.test(page),
+      false,
+      `${component.name}: the platform sentence draws a conclusion its scope cannot reach`,
+    );
+  }
+});
+
+
+// #507 — a fact is published with the platforms it is set on.
+
+test('a role assigned only off Web is qualified, through a local `isWeb` constant', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'switch.tsx',
+      source: [
+        "const isWeb = Platform.OS === 'web';",
+        "const p = { ...props, ...(isWeb ? null : { accessibilityRole: 'switch', accessibilityState: { checked } }) };",
+      ].join('\n'),
+    },
+  ]);
+
+  assert.deepEqual(facts.roles, ['switch']);
+  assert.deepEqual([...facts.scopes.roles.get('switch')].sort(), ['android', 'ios']);
+  assert.deepEqual([...facts.scopes.states.get('checked')].sort(), ['android', 'ios']);
+});
+
+test('a role assigned on the Web arm of a Platform branch is qualified as Web', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'select.tsx',
+      source: "const p = Platform.OS === 'web' ? { role: 'group' } : {};",
+    },
+  ]);
+
+  assert.deepEqual([...facts.scopes.roles.get('group')], ['web']);
+});
+
+test('a fact set both inside and outside a Platform branch is unqualified', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'x.tsx',
+      source: [
+        "const a = Platform.OS === 'web' ? <View accessibilityRole=\"button\" /> : null;",
+        'const b = <View accessibilityRole="button" />;',
+      ].join('\n'),
+    },
+  ]);
+
+  assert.equal(facts.scopes.roles.get('button').size, 3, 'set everywhere, so no qualifier');
+});
+
+test('a condition this reader cannot interpret leaves the scope unconstrained', () => {
+  const facts = extractAccessibilityFacts([
+    { path: 'x.tsx', source: 'const a = isFancy ? <View accessibilityRole="button" /> : null;' },
+  ]);
+
+  // Over-publishing is the safe direction; inventing a platform is not.
+  assert.equal(facts.scopes.roles.get('button').size, 3);
+});
+
+test('the page qualifies Switch and Tooltip by the platforms their facts are set on', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const line = (name) =>
+    renderPublicComponentPage(manifest.find((c) => c.name === name), REPO_ROOT)
+      .split('\n')
+      .find((l) => l.startsWith('- **Roles this family assigns:**'));
+
+  // `switch.tsx:35-46` sets the role only off Web; `tooltip.web.tsx:208` is the only file
+  // assigning `tooltip`. Both pages used to publish them for every target (#507).
+  assert.match(line('switch'), /`switch` \(iOS and Android\)/u);
+  assert.match(line('tooltip'), /`tooltip` \(Web\)/u);
+  assert.match(line('accordion'), /`button`, `region` — set in/u);
+  assert.equal(/`button` \(/u.test(line('accordion')), false, 'a fact set on every target carries no qualifier');
+});
+
+test('a string table read in a text position is not a style axis', () => {
+  // First written with both tables at three entries, this passed with the position filter
+  // disabled: `Math.max` over two equal counts is the same count. The two cases below cannot
+  // both hold unless the text-position lookup is actually ignored.
+  const glyphsOnly = extractClassMapAxes([
+    {
+      path: 'table.tsx',
+      source: [
+        "const sortGlyphs = { asc: '↑', desc: '↓', none: '↕' };",
+        'const C = ({ sortDirection }) => <Text>{sortGlyphs[sortDirection]}</Text>;',
+      ].join('\n'),
+    },
+  ]);
+  assert.equal(glyphsOnly.size, 0, 'the arrow the user sees is not a style axis');
+
+  const both = extractClassMapAxes([
+    {
+      path: 'table.tsx',
+      source: [
+        "const sortGlyphs = { asc: '↑', desc: '↓', none: '↕' };",
+        "const glyphClasses = { asc: 'text-primary', desc: 'text-muted' };",
+        "const C = ({ sortDirection }) => <Text className={cn('x', glyphClasses[sortDirection])}>{sortGlyphs[sortDirection]}</Text>;",
+      ].join('\n'),
+    },
+  ]);
+  assert.deepEqual([...both], [['sortDirection', 2]], 'the count is the class table\'s, not the larger one');
+});
+
+
+// Round-9 (PR #509 review) — five fixes, each pinned to the case that exposed it.
+
+test('a bare file shadowed by a .web.tsx sibling is the native entry', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const table = manifest.find((c) => c.name === 'table');
+  const lines = renderPublicComponentPage(table, REPO_ROOT).split('\n');
+  const roles = lines.find((l) => l.startsWith('- **Roles this family assigns:**'));
+  const states = lines.find((l) => l.startsWith('- **Accessibility states and properties it sets:**'));
+
+  // `packages/ui/package.json` maps `react-native` to `table.js` and `browser` to `table.web.js`:
+  // `table.tsx` never runs on Web. Its `button` role and `accessible` were published bare on a
+  // line whose neighbours were correctly marked "(Web)", and under this generator's contract a
+  // bare fact means all three targets.
+  assert.match(roles, /`button` \(iOS and Android\)/u);
+  assert.match(states, /`accessible` \(iOS and Android\)/u);
+  assert.match(states, /`sort` \(Web\)/u);
+});
+
+test('a branch no target reaches contributes nothing rather than everything', () => {
+  const { roles, roleFiles } = collectScopedAccessibilityFacts([
+    { path: 'x.web.tsx', source: "export const X = () => (Platform.OS === 'ios' ? <View accessibilityRole=\"button\" /> : null);\n" },
+    { path: 'x.native.tsx', source: 'export const X = () => <View accessibilityRole="link" />;\n' },
+  ]);
+
+  // A Web file guarded by `Platform.OS === 'ios'` is an empty intersection; rendering the empty
+  // set with the same silence as the full set published such a fact as universal.
+  assert.equal(roles.has('button'), false, 'an unreachable fact is not published');
+  assert.deepEqual([...roles.get('link')].sort(), ['android', 'ios']);
+  assert.deepEqual(roleFiles, ['x.native.tsx'], 'a file whose only fact was unreachable is not named');
+});
+
+test('an early-return platform guard narrows what follows it', () => {
+  const facts = extractAccessibilityFacts([
+    {
+      path: 'x.tsx',
+      source: [
+        'function X() {',
+        "  if (Platform.OS === 'web') return <View />;",
+        '  return <View accessibilityRole="switch" />;',
+        '}',
+      ].join('\n'),
+    },
+  ]);
+
+  // The guard is an earlier sibling, not an ancestor. Four families use this shape.
+  assert.deepEqual([...facts.scopes.roles.get('switch')].sort(), ['android', 'ios']);
+});
+
+test('an object alias a function returns is not promoted to props', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const toast = manifest.find((c) => c.name === 'toast');
+  const page = renderPublicComponentPage(toast, REPO_ROOT);
+
+  // `useToast(): ToastApi` — a caller receives it, never passes it. A table headed "Props" for it
+  // contradicted the page's own opening line.
+  assert.equal(/#### `ToastApi`/u.test(page), false);
+  assert.match(page, /`ToastApi` — returned by `useToast\(\)`; not accepted by any prop of this family\./u);
+  // The members keep their descriptions on the page; demoting the table had dropped them, and the
+  // `dismissAll` JSDoc fixed in the same commit was published nowhere while still counted.
+  assert.match(page, /\| `dismissAll` \| `\(\) => void` \| Dismisses every shown toast and drops the ones still queued\. \|/u);
+  assert.equal(/nothing passes it in/u.test(page), false);
+  assert.match(page, /#### `ToastOptions`/u);
+});
+
+test('keyof typeof over a same-file constant resolves to its keys', () => {
+  // #508 had no behavioural test; reverting the resolver left the suite green.
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const screen = manifest.find((c) => c.name === 'screen');
+  const kas = manifest.find((c) => c.name === 'keyboard-aware-screen');
+
+  const padding = screen.typeDocs.find((e) => e.name === 'ScreenProps').fields.find((f) => f.name === 'padding');
+  assert.equal(padding.type, "'none' | 'sm' | 'md' | 'lg'");
+  const width = kas.typeDocs.find((e) => e.name === 'KeyboardAwareScreenContentWidth');
+  assert.equal(width.kind, 'literal-union');
+  assert.deepEqual(width.members, ['sm', 'md', 'lg', 'full']);
+});
+
+
+test('a guard that does not leave the block narrows nothing after it', () => {
+  // `alwaysLeaves` returning true for everything survived every test: each else-less earlier `if`
+  // would then scope the rest of the block, so `if (Platform.OS === 'web') doThing();` followed by
+  // a role would publish that role as iOS-and-Android-only.
+  const facts = extractAccessibilityFacts([
+    { path: 'x.tsx', source: "function X() {\n  if (Platform.OS === 'web') doThing();\n  return <View accessibilityRole=\"switch\" />;\n}\n" },
+  ]);
+
+  assert.equal(facts.scopes.roles.get('switch').size, 3);
+});
+
+test('a file whose every fact was unreachable is not named, whatever the file order', () => {
+  const web = { path: 'x.web.tsx', source: "export const X = () => (Platform.OS === 'ios' ? <View accessibilityRole=\"button\" /> : null);\n" };
+  const native = { path: 'x.native.tsx', source: 'export const X = () => <View accessibilityRole="link" />;\n' };
+
+  // The previous predicate compared map sizes, so it was true whenever an earlier file had
+  // contributed — the named files depended on which file came first.
+  assert.deepEqual(collectScopedAccessibilityFacts([web, native]).roleFiles, ['x.native.tsx']);
+  assert.deepEqual(collectScopedAccessibilityFacts([native, web]).roleFiles, ['x.native.tsx']);
+});
+
+test('an object alias that is both returned and taken as input stays props', () => {
+  // `type Opts = {…}` with `function defaults(): Opts` and `show(options: Opts)` is what a caller
+  // passes; demoting it on the returning helper alone would publish "not accepted by any prop"
+  // about a props type.
+  const source = [
+    'export type Opts = { /** t */ title: string };',
+    'export type Api = { /** s */ show: (options: Opts) => void };',
+    'function defaults(): Opts { return { title: "" }; }',
+    'export function useApi(): Api { return { show() {} }; }',
+    'export const X = () => null;',
+  ].join('\n');
+  const index = buildTypeIndex([{ path: 'x.tsx', source }]);
+  const opts = { fromPath: 'x.tsx', familyPaths: ['x.tsx'], primaryPath: 'x.tsx', promoteObjectAliases: true };
+
+  assert.equal(resolveComponentTypeEntry(index, 'Opts', opts).docKind, 'props');
+  const api = resolveComponentTypeEntry(index, 'Api', opts);
+  assert.equal(api.docKind, 'returned');
+  assert.deepEqual(api.returnedBy, ['useApi']);
+});
+
+
+test('"platform-split source files" is derived from platform suffixes, not from a file count', () => {
+  const manifest = buildPublicComponentManifest(REPO_ROOT);
+  const calendar = manifest.find((c) => c.name === 'calendar');
+  const tooltip = manifest.find((c) => c.name === 'tooltip');
+
+  // Calendar has two files, neither platform-specific; the page said "has platform-split source
+  // files" directly under "ships no platform-specific file". Tooltip really is split.
+  assert.equal(/has platform-split source files/u.test(renderPublicComponentPage(calendar, REPO_ROOT)), false);
+  assert.match(renderPublicComponentPage(tooltip, REPO_ROOT), /has platform-split source files/u);
+});
+
+test('a positive platform-split claim without a platform file is a violation', () => {
+  const component = { name: 'x', allSources: ['x.tsx', 'x-locale.ts'], source: 'x.tsx' };
+  const page = 'This family ships no platform-specific file.\n\nThis family has platform-split source files.';
+
+  const violations = collectDerivedClaimViolations(page, component, REPO_ROOT);
+
+  assert.equal(violations.length, 2, violations.join('\n'));
+});
+
+test('the accessibility-role vocabulary is reachable only through a predicate, never as a mutable set', async () => {
+  const module = await import('../public-component-reference.mjs');
+  // An exported `Set` is a mutable module singleton: any importer could widen the vocabulary for
+  // every other importer, and a deliberate edit to the list is the only thing that should.
+  for (const [name, value] of Object.entries(module)) {
+    assert.ok(!(value instanceof Set), `${name} is exported as a mutable Set`);
+    assert.ok(!(value instanceof Map), `${name} is exported as a mutable Map`);
+  }
+  assert.equal(isKnownAccessibilityRole('radiogroup'), true);
+  assert.equal(isKnownAccessibilityRole('single'), false);
+});

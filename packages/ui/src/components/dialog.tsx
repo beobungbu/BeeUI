@@ -132,20 +132,32 @@ function useDialogFocusTrap(
         panel.focus({ preventScroll: true });
         return;
       }
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
+      // Every Tab inside the panel is moved by this handler, not just the two
+      // that wrap. Handling only the edges left each interior step to the
+      // browser's own sequential navigation, which resumes from a starting
+      // point that a programmatic `.focus()` does not always update in time:
+      // after the wrap focused `last`, the very next Shift+Tab could resume
+      // from the pre-wrap position and land somewhere else entirely — and the
+      // handler could not correct it, because it inspects focus before the
+      // move, never after. Measured on the dialog matrix spec: 3 of 10 local
+      // runs and one CI shard failed that second Shift+Tab. Driving every step
+      // from this list makes the order the panel's own, not the browser's.
       const active = doc.activeElement;
-      const activeInsidePanel = active !== null && panel.contains(active);
+      const index = active === null ? -1 : focusable.indexOf(active as WebFocusableElement);
 
-      if (event.shiftKey) {
-        if (!activeInsidePanel || active === first) {
-          event.preventDefault?.();
-          last.focus({ preventScroll: true });
-        }
-      } else if (!activeInsidePanel || active === last) {
-        event.preventDefault?.();
-        first.focus({ preventScroll: true });
+      event.preventDefault?.();
+
+      // Focus outside the panel, or on the panel box itself, re-enters at the
+      // edge the key came from rather than guessing an interior position.
+      if (index === -1) {
+        const entry = event.shiftKey ? focusable[focusable.length - 1] : focusable[0];
+        entry.focus({ preventScroll: true });
+        return;
       }
+
+      const step = event.shiftKey ? -1 : 1;
+      const next = (index + step + focusable.length) % focusable.length;
+      focusable[next].focus({ preventScroll: true });
     };
 
     // Capture phase: a focused text Input inside the dialog would otherwise
@@ -287,14 +299,42 @@ type DialogBaseProps = {
 };
 
 type DialogControlledProps = DialogBaseProps & {
+  /**
+   * Not accepted in the controlled variant, where `open` already owns the state.
+   * Pass `defaultOpen` on its own, without `open`, to use the uncontrolled variant.
+   */
   defaultOpen?: never;
+  /**
+   * Applies a requested open state, and is required here because the controlled
+   * variant never updates its own visibility. If this does not change `open`,
+   * nothing does.
+   */
   onOpenChange: (open: boolean) => void;
+  /**
+   * Current open state, owned by the caller; supplying a defined value alongside
+   * `onOpenChange` is what selects the controlled variant. Passing `open` without
+   * an `onOpenChange` function warns in development and falls back to uncontrolled
+   * behavior.
+   */
   open: boolean;
 };
 
 type DialogUncontrolledProps = DialogBaseProps & {
+  /**
+   * Open state to start from, read once when the component mounts, so later changes
+   * to it are ignored. Defaults to false; drive visibility with `open` +
+   * `onOpenChange` instead when it needs to change.
+   */
   defaultOpen?: boolean;
+  /**
+   * Notified after the open state changes, and optional here because the
+   * uncontrolled variant updates its own state either way.
+   */
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Must be left undefined in the uncontrolled variant, because a defined `open`
+   * together with `onOpenChange` selects the controlled variant instead.
+   */
   open?: undefined;
 };
 
@@ -371,6 +411,7 @@ export type DialogContentProps = Omit<
   ViewProps,
   'accessibilityRole' | 'accessibilityViewIsModal' | 'role'
 > & {
+  /** Whether pressing the dimmed backdrop behind the panel closes the dialog. Defaults to true. */
   closeOnBackdropPress?: boolean;
   containerClassName?: string;
   /**
@@ -382,11 +423,16 @@ export type DialogContentProps = Omit<
    * contract regardless of `cancelOnRequestClose`.
    */
   dismissOnEscape?: boolean;
+  /** Whether native request-close sources (Android hardware back, iOS/other native modal dismissal, and — on Web — the RN `Modal` internal Escape shim) close the dialog. Defaults to true. `AlertDialogContent` maps this to its `cancelOnRequestClose` prop. */
   dismissOnRequestClose?: boolean;
+  /** Forwarded to the underlying React Native `Modal`, minus the props this component already controls (`animationType` and `presentationStyle` may still be overridden here). */
   modalProps?: DialogModalProps;
+  /** Called whenever a request-close source fires, before this dialog applies its own `dismissOnRequestClose`/`dismissOnEscape` policy. Does not by itself close the dialog. */
   onRequestClose?: () => void;
   overlayClassName?: string;
+  /** Forwarded to the backdrop `Pressable`, excluding `children` and `onPress` which this component owns. */
   overlayProps?: Omit<PressableProps, 'children' | 'onPress'>;
+  /** `testID` applied to the backdrop `Pressable`, for targeting it in tests. */
   overlayTestID?: string;
 };
 

@@ -191,6 +191,17 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      # setup-gradle owns Gradle User Home caching. Configuration-cache entries
+      # are persisted only when GRADLE_ENCRYPTION_KEY exists; without that secret
+      # the action safely keeps dependency/build-cache reuse and skips serialized
+      # configuration state instead of storing it unencrypted.
+      - name: Setup Gradle cache
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+          add-job-summary: always
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.0
 
@@ -238,18 +249,6 @@ jobs:
           key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pnpm-${{ runner.os }}-
 
-      # Prebuild generates Gradle files after cache evaluation, so never key the
-      # cache from **/*.gradle*. Use checked-in inputs that exist before prebuild
-      # and cover dependency/app/runtime-toolchain changes instead.
-      - name: Cache Gradle
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-runtime-v2-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'apps/showcase/app.json', 'apps/showcase/package.json', 'scripts/runtime-smoke/android.sh') }}
-          restore-keys: gradle-runtime-v2-${{ runner.os }}-
-
       - name: Cache Maestro CLI
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
@@ -264,6 +263,13 @@ jobs:
 
       - name: Run Android Emulator smoke
         uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2.37.0
+        env:
+          # Normal PR/push/manual runs reuse Gradle task and configuration
+          # outputs. The weekly schedule is the clean-room backstop: dependencies
+          # remain cached, while task/configuration outputs must be rebuilt.
+          GRADLE_OPTS: >-
+            -Dorg.gradle.caching=${{ github.event_name == 'schedule' && 'false' || 'true' }}
+            -Dorg.gradle.configuration-cache=${{ github.event_name == 'schedule' && 'false' || 'true' }}
         with:
           api-level: 36
           target: google_apis

@@ -1,43 +1,55 @@
 ---
-title: BeeUI
-description: >-
-  BeeUI is a production-oriented, accessibility-first React Native UI system
-  for Expo, bare React Native, and Web.
+title: BeeUI Docs
+description: Build mobile-first React Native interfaces for Expo, bare React Native and Web with BeeUI.
 ---
 
-BeeUI is a production-oriented React Native UI system written in TypeScript. It is
-mobile-first, framework-light, and designed for long-lived client applications.
-Stable behavior, semantic, and variant APIs do not require callers to know the
-underlying styling engine.
+BeeUI is a production-oriented React Native UI system with one public behavior contract across
+Expo, bare React Native and Web. Packages and the CLI are **not published**; these docs always
+separate the stable target API from the distribution actions actually available today.
 
-:::caution[Site status]
-This site is being filled in incrementally. Per-component API reference, executable
-examples, the production pattern library, and the Web Showcase/native preview workflow are
-in place (see [Showcase & preview](/showcase/)); some pages remain stubs pending their
-follow-up content and say so explicitly.
-:::
+Use the search box at the top of any page to jump straight to a component, token, CLI command or
+error message.
 
-## Where to start
+## What do you want to do?
 
-- **[Getting started](/getting-started/)** — install BeeUI and choose your platform: Expo, bare React Native, or Web.
-- **[Showcase & preview](/showcase/)** — run the real component and pattern surface on Web, and preview it natively on iOS and Android.
-- **[Theming](/theming/)** — tokens, branding, and density.
-- **[Components](/components/)** — the component catalog, including Table and Calendar/date-time.
-- **[Patterns](/patterns/)** — production screen patterns built from BeeUI primitives.
-- **[Accessibility](/accessibility/)** — RTL, large text, and assistive-technology behavior.
-- **[CLI & source ownership](/cli/)** — the BeeUI registry CLI for source-owned components.
-- **[Compatibility](/compatibility/)** — supported React Native/React/Node/Expo/Web versions.
-- **[Migration & versioning](/migration/)** — upgrade paths and semver policy.
-- **[Troubleshooting](/troubleshooting/)** — common setup and runtime problems.
-- **[Performance](/performance/)** — benchmarks, budgets, and footprint.
-- **[Release & security](/release-security/)** — release process and how to report vulnerabilities.
+| I want to… | Go to |
+| --- | --- |
+| Get BeeUI rendering in my app for the first time | [Start](/docs/start/) — Expo, bare React Native or Web |
+| Look up a component's props, types or behavior | [Components](/docs/components/) |
+| Copy a whole screen composition | [Production patterns](/docs/patterns/) |
+| Achieve a specific outcome — theming, density, tables, dates | [Guides](/docs/guides/) |
+| Understand why BeeUI works the way it does | [Learn](/docs/learn/) |
+| Find an exact token, symbol, command or Registry item | [Reference](/docs/reference/) |
+| Fix an error I am seeing right now | [Troubleshooting](/docs/guides/troubleshooting/) |
+| See it running before I commit to anything | [Showcase](/showcase/) · [Demo app](/demo/) |
+| Own the source instead of depending on a package | [CLI & source ownership](/docs/guides/cli-source-ownership/) |
+| Build against BeeUI with an AI agent | [AI & LLM surfaces](/docs/ai/) |
 
-## Current foundation
+## The four documentation modes
 
-BeeUI currently includes React Native + TypeScript packages (`@beemvp/beeui-core`, `@beemvp/beeui-tokens`,
-`@beemvp/beeui-ui`), Uniwind + Tailwind CSS v4 styling, semantic light/dark design tokens, explicit
-safe-area ownership, broad layout/typography/form/selection/navigation/disclosure/overlay/feedback
-coverage, and a repository-local Registry + source-ownership CLI.
+BeeUI splits documentation by what you need in the moment, so the same subject can appear in more
+than one place without contradicting itself.
 
-Source of truth for the exact current component inventory and the BeeUI 1.0 release plan lives
-in the repository's `docs/components.md` and `docs/roadmap.md`.
+| Section | Answers | Shape |
+| --- | --- | --- |
+| [Start](/docs/start/) | "How do I get a first result?" | one verified path per platform |
+| [Guides](/docs/guides/) | "How do I achieve X?" | task, action, verification |
+| [Learn](/docs/learn/) | "Why does it work this way?" | concept, invariants, consequences |
+| [Reference](/docs/reference/) | "What exactly is it called?" | derived from source, never prose-first |
+
+Where a guide and a reference page disagree, the generated reference wins — it is derived from the
+package exports themselves.
+
+## Platform and release truth
+
+- [Current compatibility](/docs/compatibility/current/) — the tested and pinned versions, machine-checked.
+- [Migration & versioning](/docs/guides/migration-versioning/) — channel, version authority and what changes at publication.
+- [Release & security](/docs/release-security/) — reporting path and source-ownership implications.
+- [Accessibility](/docs/accessibility/) · [Responsive](/docs/responsive/) · [Performance](/docs/performance/) · [Architecture](/docs/architecture/)
+
+BeeUI distinguishes evidence classes and never infers a stronger one from a weaker one: type and
+contract checks, bundle and native compile, browser interaction, and simulator or device runtime.
+Each page states which class backs its claims.
+
+For maintainer contracts, source history and exact evidence records, the public repository remains
+the authority: [`docs/`](https://github.com/beobungbu/BeeUI/tree/main/docs).

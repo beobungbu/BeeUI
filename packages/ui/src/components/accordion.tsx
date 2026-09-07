@@ -30,10 +30,15 @@ function useAccordionItemContext() {
 export type AccordionProps = Omit<ViewProps, 'children'> & {
   children?: React.ReactNode;
   className?: string;
+  /** When true, pressing the open item's trigger again closes it, leaving no item open. Defaults to true. */
   collapsible?: boolean;
+  /** Sets the initially open item's value for uncontrolled usage. Defaults to null (all items closed). */
   defaultValue?: string | null;
+  /** Prevents any item from opening or closing, including via `AccordionTrigger` presses. Defaults to false. */
   disabled?: boolean;
+  /** Called with the newly open item's value (or null when it closes) whenever the open item changes. */
   onValueChange?: (value: string | null) => void;
+  /** The value of the currently open `AccordionItem`. Passing this switches the accordion to controlled mode. */
   value?: string | null;
 };
 
@@ -72,6 +77,7 @@ Accordion.displayName = 'Accordion';
 export type AccordionItemProps = Omit<ViewProps, 'children'> & {
   children?: React.ReactNode;
   className?: string;
+  /** Identifies this item; matched against the parent `Accordion`'s `value` to determine whether it is open. */
   value: string;
 };
 
@@ -93,6 +99,7 @@ export type AccordionTriggerProps = Omit<
 > & {
   children?: React.ReactNode;
   className?: string;
+  /** Disables presses on this trigger only, without affecting other items in the accordion. */
   disabled?: boolean;
   labelClassName?: string;
 };

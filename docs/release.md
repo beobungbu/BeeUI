@@ -1,6 +1,6 @@
 # BeeUI release contract
 
-This document defines BeeUI release-candidate evidence and separates automated package/compile proof from runtime/device proof. The BeeUI 1.0 product milestone uses the owner-selected date-version label `20260902`, encoded as the npm-compatible lockstep SemVer `20260902.0.0` (#407).
+This document defines BeeUI release-candidate evidence and separates automated package/compile proof from runtime/device proof. The BeeUI 1.0 product milestone ships as package version `0.86.2` (ADR-015; supersedes the #407 date label).
 
 ## Current distribution model
 
@@ -29,10 +29,10 @@ The anchored-overlay transport ships as platform files (`overlay-transport.web.t
 
 ## Versioning policy
 
-All BeeUI packages and the CLI use one lockstep version matching the workspace root. For the current BeeUI 1.0 product milestone, the owner-selected date-version label `20260902` is represented as npm SemVer `20260902.0.0`. A prerelease, if needed, uses `20260902.0.0-rc.N`; stable publication uses `20260902.0.0`.
+All BeeUI packages and the CLI use one lockstep version matching the workspace root. For the current BeeUI 1.0 product milestone the package version is plain SemVer `0.86.2` (ADR-015, 2026-09-06, superseding the #407 date label `20260902.0.0`, which was never published).
 
 - package versions must not drift;
-- intentional breaking changes require changelog/migration notes;
+- intentional breaking changes require changelog/migration notes — carried by a changeset (`pnpm changeset`, see `.changeset/README.md`) and enforced by `pnpm docs:surface:diff`, which refuses a removed, narrowed or reclassified public-surface row without one;
 - packed manifests must not expose unresolved `workspace:*` dependency ranges;
 - the product milestone name (`BeeUI 1.0`) and npm package version are separate concepts; release instructions must use the exact package version recorded in the approved candidate rather than deriving `1.0.0` from the milestone name.
 

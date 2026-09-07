@@ -1,55 +1,124 @@
+import { copyFile, mkdir } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 
-// Static, framework-light docs site for BeeUI. This is infrastructure only
-// (issue #220): the IA below is a navigation/theming skeleton. Final
-// per-component content lands in #221-#225 and must replace the
-// "content pending" placeholders without changing this structure unless the
-// IA itself needs to change.
+import { buildPublicSiteContract } from '../../scripts/public-site-contract-lib.mjs';
+import { PAGEFIND_RANKING } from './pagefind-ranking.mjs';
+
+const publicSite = buildPublicSiteContract();
+
+// public/pagefind-fallback/pagefind.js is the Pagefind entrypoint the search modal loads, and it
+// imports `./pagefind-query.mjs` at runtime by URL. Ship that module beside it rather than
+// checking a second copy into public/, so the browser, scripts/check-docs-search-intent.mjs and
+// the unit tests all execute the same file. A copy that fails to land is caught by
+// scripts/check-docs-search-intent.mjs --check, which runs in this app's build script.
+const pagefindFallbackRuntime = {
+  name: 'pagefind-fallback-runtime',
+  hooks: {
+    'astro:build:done': async ({ dir }) => {
+      const target = new URL('pagefind-fallback/', dir);
+      await mkdir(fileURLToPath(target), { recursive: true });
+      await copyFile(
+        fileURLToPath(new URL('./pagefind-query.mjs', import.meta.url)),
+        fileURLToPath(new URL('pagefind-query.mjs', target)),
+      );
+    },
+  },
+};
+
+// W2 (#414) owns global public-site route/IA authority. Content workstreams may
+// add pages and sidebar-local entries, but canonical origin/base paths and
+// top-level product navigation come from web/public-site.config.json.
 export default defineConfig({
+  site: publicSite.origin,
+  base: publicSite.docsBase,
   output: 'static',
   integrations: [
+    pagefindFallbackRuntime,
     starlight({
       title: 'BeeUI',
       description:
-        'BeeUI is a production-oriented, accessibility-first React Native UI system for Expo, bare React Native, and Web.',
+        'BeeUI is a production-oriented React Native UI system for Expo, bare React Native, and Web.',
       defaultLocale: 'en',
       lastUpdated: false,
       pagination: true,
+      components: {
+        // Adds a `data-pagefind-filter` meta tag per page, driven only by the route slug, so
+        // the built index carries a `section` facet (#466) without hand-editing any generated
+        // page. Index-side only: Starlight ships its own search modal with no filter control,
+        // so readers cannot narrow by section yet — see #500 and the note in
+        // src/components/SearchFilterHead.astro.
+        Head: './src/components/SearchFilterHead.astro',
+        // Starlight's own Search.astro with two changes, both from apps/docs/pagefind-query.mjs:
+        // PagefindUI's `processTerm` rewrites the reader's query, and `bundlePath` points at
+        // public/pagefind-fallback/ so the engine PagefindUI loads relaxes a query that found
+        // almost nothing. Starlight serialises the `pagefind` option with JSON.stringify, so
+        // neither can be passed there as a function.
+        Search: './src/components/Search.astro',
+      },
+      pagefind: {
+        ranking: PAGEFIND_RANKING,
+      },
       sidebar: [
         {
-          label: 'Getting started',
+          label: 'Start',
           items: [
-            { label: 'Overview', slug: 'getting-started' },
-            { label: 'Expo', slug: 'getting-started/expo' },
-            { label: 'Bare React Native', slug: 'getting-started/bare-react-native' },
-            { label: 'Web', slug: 'getting-started/web' },
-            { label: 'Provider & safe area', slug: 'getting-started/provider-safe-area' },
+            { label: 'Overview', slug: 'start' },
+            { label: 'Expo', slug: 'start/expo' },
+            { label: 'Bare React Native', slug: 'start/bare-react-native' },
+            { label: 'Web', slug: 'start/web' },
+            { label: 'Provider & safe area', slug: 'start/provider-safe-area' },
           ],
         },
         {
           label: 'Showcase & preview',
-          items: [{ label: 'Web & native preview', slug: 'showcase' }],
+          items: [
+            { label: 'Web & native preview', slug: 'showcase' },
+            { label: 'Reference app', slug: 'reference-app' },
+          ],
+        },
+        {
+          label: 'Learn',
+          items: [
+            { label: 'Overview', slug: 'learn' },
+            { label: 'Foundations', slug: 'learn/foundations' },
+            { label: 'Ownership model', slug: 'learn/ownership-model' },
+            { label: 'Composition model', slug: 'learn/composition-model' },
+            { label: 'State model', slug: 'learn/state-model' },
+            { label: 'Overlays & runtime', slug: 'learn/overlays-and-runtime' },
+            { label: 'Forms model', slug: 'learn/forms-model' },
+            { label: 'Cross-platform model', slug: 'learn/cross-platform-model' },
+            { label: 'Responsive model', slug: 'learn/responsive-model' },
+            { label: 'Responsive layout', slug: 'responsive' },
+            { label: 'Accessibility model', slug: 'learn/accessibility-model' },
+          ],
+        },
+        {
+          label: 'Guides',
+          items: [
+            { label: 'Overview', slug: 'guides' },
+            { label: 'Branding', slug: 'guides/branding' },
+            { label: 'Density', slug: 'guides/density' },
+            { label: 'Table', slug: 'guides/table' },
+            { label: 'Dates & times', slug: 'guides/date-time' },
+            { label: 'CLI & source ownership', slug: 'guides/cli-source-ownership' },
+            { label: 'Troubleshooting', slug: 'guides/troubleshooting' },
+            { label: 'Migration & versioning', slug: 'guides/migration-versioning' },
+          ],
         },
         {
           label: 'Theming',
-          items: [
-            { label: 'Overview', slug: 'theming' },
-            { label: 'Branding', slug: 'theming/branding' },
-            { label: 'Density', slug: 'theming/density' },
-          ],
+          items: [{ label: 'Overview', slug: 'theming' }],
         },
         {
           label: 'Components',
-          items: [
-            { label: 'Overview', slug: 'components' },
-            { label: 'Table', slug: 'components/table' },
-            { label: 'Calendar & date/time', slug: 'components/calendar-date-time' },
-          ],
+          items: [{ autogenerate: { directory: 'components' } }],
         },
         {
           label: 'Patterns',
-          items: [{ label: 'Overview', slug: 'patterns' }],
+          items: [{ autogenerate: { directory: 'patterns' } }],
         },
         {
           label: 'Accessibility',
@@ -57,11 +126,24 @@ export default defineConfig({
             { label: 'Overview', slug: 'accessibility' },
             { label: 'RTL & localization', slug: 'accessibility/rtl' },
             { label: 'Large text & zoom', slug: 'accessibility/large-text' },
+            { label: 'Keyboard & focus', slug: 'accessibility/keyboard-focus' },
+            { label: 'Reduced motion', slug: 'accessibility/reduced-motion' },
+            { label: 'Native assistive tech', slug: 'accessibility/native-assistive-tech' },
           ],
         },
         {
-          label: 'CLI & source ownership',
-          items: [{ label: 'Overview', slug: 'cli' }],
+          label: 'Reference',
+          items: [
+            { label: 'Overview', slug: 'reference' },
+            { label: 'Tokens', slug: 'reference/tokens' },
+            { label: 'Core', slug: 'reference/core' },
+            { label: 'CLI', slug: 'reference/cli' },
+            { label: 'Registry', slug: 'reference/registry' },
+            { label: 'Styling', slug: 'reference/styling' },
+            { label: 'Source registry', slug: 'registry' },
+            { label: 'Architecture', slug: 'architecture' },
+            { label: 'AI agents', slug: 'ai' },
+          ],
         },
         {
           label: 'Compatibility',
@@ -69,15 +151,8 @@ export default defineConfig({
             { label: 'Overview', slug: 'compatibility' },
             { label: 'Native (RN/Expo)', slug: 'compatibility/native' },
             { label: 'Web', slug: 'compatibility/web' },
+            { label: 'Current matrix', slug: 'compatibility/current' },
           ],
-        },
-        {
-          label: 'Migration & versioning',
-          items: [{ label: 'Overview', slug: 'migration' }],
-        },
-        {
-          label: 'Troubleshooting',
-          items: [{ label: 'Overview', slug: 'troubleshooting' }],
         },
         {
           label: 'Performance',
@@ -85,7 +160,10 @@ export default defineConfig({
         },
         {
           label: 'Release & security',
-          items: [{ label: 'Overview', slug: 'release-security' }],
+          items: [
+            { label: 'Overview', slug: 'release-security' },
+            { label: 'Current release', slug: 'guides/current-release' },
+          ],
         },
       ],
     }),

@@ -1,17 +1,17 @@
 import '../global.css';
 
-import { BeeUIProvider } from '@beemvp/beeui-ui';
+import { BeeUIProvider, Box } from '@beemvp/beeui-ui';
 import { Stack } from 'expo-router';
 import * as React from 'react';
 import { AppProviders } from '../src/providers/app-providers';
+import { PublicSiteBar } from '../src/shell/public-site-bar';
 import { DemoScenarioProvider } from '../src/state/demo-scenario';
 import { AppPreferencesProvider, useAppPreferences } from '../src/state/preferences';
 
 /**
  * Keys the router's `Stack` on the active direction preference so a Web
- * runtime `dir` change (ADR-004 "Change expectations on Web") gets the one
- * explicit re-render of the affected subtree BeeUI's ambient direction
- * resolver requires — see `src/state/preferences.tsx`'s `setDirection`.
+ * runtime `dir` change gets the one explicit re-render BeeUI's ambient
+ * direction resolver requires.
  */
 function DirectionKeyedNavigator() {
   const { direction } = useAppPreferences();
@@ -29,7 +29,12 @@ export default function RootLayout() {
       <AppProviders>
         <AppPreferencesProvider>
           <DemoScenarioProvider>
-            <DirectionKeyedNavigator />
+            <Box className="flex-1">
+              <PublicSiteBar />
+              <Box className="flex-1">
+                <DirectionKeyedNavigator />
+              </Box>
+            </Box>
           </DemoScenarioProvider>
         </AppPreferencesProvider>
       </AppProviders>

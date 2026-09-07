@@ -1,12 +1,14 @@
 ---
-title: Web
+title: Web compatibility
+sidebar:
+  label: Web
 description: BeeUI's Web support boundary — browser engine, bundlers, and the independent consumer proof.
 ---
 
 Full detail lives in `docs/web-support-contract.md` in the repository
 ([#136](https://github.com/beobungbu/BeeUI/issues/136)); this page is the published
 summary. It mirrors the rigor `docs/native-verification.md` established for the
-[Native contract](/compatibility/native/).
+[Native contract](/docs/compatibility/native/).
 
 ## Two independently wired Web paths
 
@@ -17,7 +19,7 @@ summary. It mirrors the rigor `docs/native-verification.md` established for the
    `web-consumer.yml`) — a non-Showcase, non-monorepo-fallback app. It packs
    `@beemvp/beeui-core`/`@beemvp/beeui-tokens`/`@beemvp/beeui-ui` with `pnpm pack`, scaffolds a fresh Vite +
    `react-native-web` app with no Expo and no workspace symlinks, installs the tarballs
-   plus the exact pinned runtime versions from the [compatibility matrix](/compatibility/)
+   plus the exact pinned runtime versions from the [compatibility matrix](/docs/compatibility/)
    (`react-native-web@0.21.0`, `react@19.2.3`, `tailwindcss@4.3.3`, `uniwind@1.10.1`),
    wires `vite-plugin-rnw` + `uniwind/vite` + `@tailwindcss/vite`, and renders a fixture
    through `BeeUIProvider` covering `Input`/`Checkbox`, `Dialog`, `Select`, `Tooltip`,
@@ -25,7 +27,7 @@ summary. It mirrors the rigor `docs/native-verification.md` established for the
 
 Both matter: the Showcase proves the Web path BeeUI ships; the independent Vite consumer
 proves the package boundary and the Web promise reproduce **outside** this monorepo — the
-same bar `scripts/verify-bare-consumer.sh` sets for the [native contract](/compatibility/native/).
+same bar `scripts/verify-bare-consumer.sh` sets for the [native contract](/docs/compatibility/native/).
 
 ## What this proves
 
