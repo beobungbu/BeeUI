@@ -71,6 +71,64 @@ function fail(message) {
   throw new Error(message);
 }
 
+function sha256File(filePath) {
+  return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
+}
+
+function describeTree(rootDir) {
+  const entries = new Map();
+
+  function visit(absolute, relative) {
+    const stat = fs.lstatSync(absolute);
+    const mode = `0${(stat.mode & 0o7777).toString(8)}`;
+    let entry;
+
+    if (stat.isDirectory()) {
+      entry = { type: 'dir', mode, size: stat.size };
+    } else if (stat.isSymbolicLink()) {
+      entry = { type: 'symlink', mode, size: stat.size, target: fs.readlinkSync(absolute) };
+    } else if (stat.isFile()) {
+      entry = { type: 'file', mode, size: stat.size, sha256: sha256File(absolute) };
+    } else {
+      entry = { type: 'other', mode, size: stat.size };
+    }
+
+    entries.set(relative || '.', entry);
+    if (!stat.isDirectory()) return;
+
+    for (const child of fs.readdirSync(absolute).sort()) {
+      visit(path.join(absolute, child), relative ? `${relative}/${child}` : child);
+    }
+  }
+
+  visit(rootDir, '');
+  return entries;
+}
+
+function formatTreeEntry(entry) {
+  if (!entry) return '<missing>';
+  const fields = [`type=${entry.type}`, `mode=${entry.mode}`, `size=${entry.size}`];
+  if (entry.sha256) fields.push(`sha256=${entry.sha256}`);
+  if (entry.target) fields.push(`target=${JSON.stringify(entry.target)}`);
+  return fields.join(',');
+}
+
+function comparePayloadTrees(firstRoot, secondRoot) {
+  const first = describeTree(firstRoot);
+  const second = describeTree(secondRoot);
+  const paths = [...new Set([...first.keys(), ...second.keys()])].sort();
+  const differences = [];
+
+  for (const relative of paths) {
+    const a = first.get(relative);
+    const b = second.get(relative);
+    if (JSON.stringify(a) === JSON.stringify(b)) continue;
+    differences.push(`${relative}: first(${formatTreeEntry(a)}) second(${formatTreeEntry(b)})`);
+  }
+
+  return differences;
+}
+
 function cleanDist(name) {
   const packageDir = PACKAGE_DIRS.get(name);
   if (!packageDir) fail(`No package directory is registered for ${name}.`);
@@ -163,9 +221,21 @@ function packCanonical(name, destination, workDir) {
   canonicalizeTarball(path.join(rawDir, tarball), canonicalTarballPath, workDir);
 
   const bytes = fs.statSync(canonicalTarballPath).size;
-  const sha256 = crypto.createHash('sha256').update(fs.readFileSync(canonicalTarballPath)).digest('hex');
+  const sha256 = sha256File(canonicalTarballPath);
+  const canonicalTarPath = path.join(workDir, 'canonical.tar');
+  const tarBytes = fs.statSync(canonicalTarPath).size;
+  const tarSha256 = sha256File(canonicalTarPath);
   const packedManifest = JSON.parse(run('tar', ['-xOzf', canonicalTarballPath, 'package/package.json']));
-  return { tarball, tarballPath: canonicalTarballPath, bytes, sha256, packedManifest };
+  return {
+    tarball,
+    tarballPath: canonicalTarballPath,
+    bytes,
+    sha256,
+    tarBytes,
+    tarSha256,
+    payloadRoot: path.join(workDir, 'extract', 'package'),
+    packedManifest,
+  };
 }
 
 if (!fs.existsSync(REPORT_PATH)) {
@@ -213,9 +283,16 @@ try {
       fail(`${name}: clean reproducibility packs produced different tarball names (${first.tarball} vs ${second.tarball}).`);
     }
     if (first.bytes !== second.bytes || first.sha256 !== second.sha256) {
+      const payloadDifferences = comparePayloadTrees(first.payloadRoot, second.payloadRoot);
+      const diagnostics = [
+        `canonical tar: first(${first.tarBytes} bytes / ${first.tarSha256}) second(${second.tarBytes} bytes / ${second.tarSha256})`,
+        payloadDifferences.length > 0
+          ? `payload differences:\n${payloadDifferences.map((line) => `  - ${line}`).join('\n')}`
+          : 'payload differences: none (tar metadata/header-only drift)',
+      ].join('\n');
       fail(
         `${name}: canonical reproducibility check failed; identical source produced ` +
-          `${first.bytes} bytes / ${first.sha256} then ${second.bytes} bytes / ${second.sha256}.`,
+          `${first.bytes} bytes / ${first.sha256} then ${second.bytes} bytes / ${second.sha256}.\n${diagnostics}`,
       );
     }
 
