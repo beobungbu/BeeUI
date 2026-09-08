@@ -3,18 +3,19 @@
 // Enriches the successful release-verification report with the exact byte size and
 // SHA-256 of a canonical release tarball for every public BeeUI package.
 //
-// `pnpm pack` is still the authority for package selection and manifest rewriting,
-// but its gzip/tar envelope is not guaranteed to be byte-identical across repeated
-// invocations. The normal Bob package build intentionally runs configured targets
-// concurrently; the release path instead serializes those targets so reproducibility
-// verification cannot depend on target scheduling. To make the artifact that we
-// verify the artifact that we publish, we:
+// `pnpm pack` remains the authority for package selection and publish-manifest
+// rewriting. BeeUI owns the deterministic publication envelope after that point:
 //   1. build from a clean dist/ with deterministic target ordering;
 //   2. run pnpm pack with lifecycle scripts disabled so it does not rebuild again;
-//   3. extract that npm-compatible package payload;
-//   4. repack it with stable ordering, ownership, mtimes, and gzip headers;
-//   5. repeat the whole clean build + pack process and require byte-identical
+//   3. extract the npm-compatible payload;
+//   4. canonicalize only semantically unordered package.json ordering;
+//   5. repack with stable ordering, ownership, mtimes, and gzip headers;
+//   6. repeat the whole clean build + pack process and require byte-identical
 //      canonical tarballs.
+//
+// Conditional `exports`/`imports` ordering is deliberately not normalized. If that
+// ever drifts, the reproducibility check must fail because condition order can affect
+// package resolution semantics.
 //
 // Canonical tarballs are written to .artifacts/release-packages/ and are the only
 // tarballs the npm release workflow is allowed to publish/stage.
@@ -25,6 +26,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { canonicalizePublishManifestFile } from './canonicalize-publish-manifest.mjs';
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const REPORT_PATH = path.join(ROOT_DIR, '.artifacts', 'release-verification.json');
@@ -174,18 +176,16 @@ function buildForRelease(name) {
   cleanDist(name);
 
   if (BOB_PACKAGE_NAMES.has(name)) {
-    // `bob build` runs configured targets through Promise.all. That is desirable
-    // for normal development speed, but release reproducibility needs a fixed
-    // build order. Bob's supported --target entry point gives us the same target
-    // implementations without concurrent writes into the package dist tree.
+    // `bob build` runs configured targets through Promise.all. Normal development
+    // can keep that fast path; release artifact construction uses Bob's supported
+    // single-target entry point to avoid concurrent writes into dist/.
     for (const target of BOB_TARGETS) {
       run('pnpm', ['--filter', name, 'exec', 'bob', 'build', '--target', target]);
     }
 
     if (name === '@beemvp/beeui-ui') {
-      // The UI package's normal build performs this deterministic post-build step
-      // after Bob finishes: copy hand-written declaration shims and prune Babel's
-      // dead .d.js/.d.js.map artifacts. Preserve that exact package contract here.
+      // Preserve the UI package's deterministic post-build contract: copy the
+      // hand-written declaration shims and remove Babel's dead .d.js artifacts.
       run('node', ['packages/ui/scripts/copy-type-shims.mjs']);
     }
     return;
@@ -200,9 +200,15 @@ function canonicalizeTarball(rawTarballPath, canonicalTarballPath, workDir) {
   fs.mkdirSync(extractDir, { recursive: true });
   run('tar', ['-xzf', rawTarballPath, '-C', extractDir]);
 
-  if (!fs.existsSync(path.join(extractDir, 'package', 'package.json'))) {
+  const packedManifestPath = path.join(extractDir, 'package', 'package.json');
+  if (!fs.existsSync(packedManifestPath)) {
     fail(`Packed tarball ${path.basename(rawTarballPath)} does not contain package/package.json.`);
   }
+
+  // pnpm has already performed all publish-manifest rewriting (including
+  // workspace protocol resolution). From here on BeeUI only removes serialization
+  // order noise that package.json semantics explicitly do not depend on.
+  canonicalizePublishManifestFile(packedManifestPath);
 
   const canonicalTarPath = path.join(workDir, 'canonical.tar');
   run('tar', [
@@ -239,10 +245,8 @@ function packCanonical(name, destination, workDir) {
   const rawDir = path.join(workDir, 'raw');
   fs.mkdirSync(rawDir, { recursive: true });
 
-  // Every public package has a prepack build. We already performed the release
-  // build explicitly above, so disable lifecycle scripts here; otherwise pack
-  // would invoke a second normal (parallel Bob) build and reintroduce the race
-  // this reproducibility check exists to detect.
+  // Every public package has a prepack build. The release build was completed
+  // explicitly above, so lifecycle scripts are disabled for this pack invocation.
   run('pnpm', ['--config.ignore-scripts=true', '--filter', name, 'pack', '--pack-destination', rawDir]);
 
   const rawTarballs = fs.readdirSync(rawDir).filter((file) => file.endsWith('.tgz'));
@@ -312,6 +316,9 @@ try {
       if (packed.packedManifest.version !== report.version) {
         fail(`${name}: packed version ${JSON.stringify(packed.packedManifest.version)} does not match report version ${JSON.stringify(report.version)}.`);
       }
+      if (JSON.stringify(packed.packedManifest).includes('workspace:')) {
+        fail(`${name}: canonical packed manifest still contains an unresolved workspace: protocol reference.`);
+      }
     }
 
     if (first.tarball !== second.tarball) {
@@ -350,6 +357,7 @@ try {
     entry.bytes = first.bytes;
     entry.sha256 = first.sha256;
     entry.reproducible = true;
+    entry.canonicalManifest = true;
     entry.artifact = path.relative(ROOT_DIR, finalPath);
   }
 
@@ -359,6 +367,7 @@ try {
       entry.bytes <= 0 ||
       !/^[0-9a-f]{64}$/.test(entry.sha256 ?? '') ||
       entry.reproducible !== true ||
+      entry.canonicalManifest !== true ||
       typeof entry.artifact !== 'string' ||
       !fs.existsSync(path.join(ROOT_DIR, entry.artifact)),
   );
