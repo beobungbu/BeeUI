@@ -129,6 +129,41 @@ function comparePayloadTrees(firstRoot, secondRoot) {
   return differences;
 }
 
+function compareTextFiles(firstPath, secondPath, limit = 24) {
+  const first = fs.readFileSync(firstPath, 'utf8').split('\n');
+  const second = fs.readFileSync(secondPath, 'utf8').split('\n');
+  const differences = [];
+  const length = Math.max(first.length, second.length);
+
+  for (let index = 0; index < length; index += 1) {
+    if (first[index] === second[index]) continue;
+    differences.push(
+      `line ${index + 1}: first=${JSON.stringify(first[index] ?? '<missing>')} second=${JSON.stringify(second[index] ?? '<missing>')}`,
+    );
+    if (differences.length >= limit) break;
+  }
+
+  return differences;
+}
+
+function manifestStructureDiagnostics(firstPath, secondPath) {
+  const first = JSON.parse(fs.readFileSync(firstPath, 'utf8'));
+  const second = JSON.parse(fs.readFileSync(secondPath, 'utf8'));
+  const sections = ['dependencies', 'peerDependencies', 'peerDependenciesMeta', 'optionalDependencies', 'devDependencies'];
+  const output = [
+    `top-level keys first=${JSON.stringify(Object.keys(first))}`,
+    `top-level keys second=${JSON.stringify(Object.keys(second))}`,
+  ];
+
+  for (const section of sections) {
+    if (!(section in first) && !(section in second)) continue;
+    output.push(`${section} first=${JSON.stringify(first[section])}`);
+    output.push(`${section} second=${JSON.stringify(second[section])}`);
+  }
+
+  return output;
+}
+
 function cleanDist(name) {
   const packageDir = PACKAGE_DIRS.get(name);
   if (!packageDir) fail(`No package directory is registered for ${name}.`);
@@ -284,11 +319,19 @@ try {
     }
     if (first.bytes !== second.bytes || first.sha256 !== second.sha256) {
       const payloadDifferences = comparePayloadTrees(first.payloadRoot, second.payloadRoot);
+      const firstManifestPath = path.join(first.payloadRoot, 'package.json');
+      const secondManifestPath = path.join(second.payloadRoot, 'package.json');
+      const manifestTextDifferences = compareTextFiles(firstManifestPath, secondManifestPath);
+      const manifestStructure = manifestStructureDiagnostics(firstManifestPath, secondManifestPath);
       const diagnostics = [
         `canonical tar: first(${first.tarBytes} bytes / ${first.tarSha256}) second(${second.tarBytes} bytes / ${second.tarSha256})`,
         payloadDifferences.length > 0
           ? `payload differences:\n${payloadDifferences.map((line) => `  - ${line}`).join('\n')}`
           : 'payload differences: none (tar metadata/header-only drift)',
+        manifestTextDifferences.length > 0
+          ? `package.json differing lines:\n${manifestTextDifferences.map((line) => `  - ${line}`).join('\n')}`
+          : 'package.json differing lines: none',
+        `package.json structure:\n${manifestStructure.map((line) => `  - ${line}`).join('\n')}`,
       ].join('\n');
       fail(
         `${name}: canonical reproducibility check failed; identical source produced ` +
