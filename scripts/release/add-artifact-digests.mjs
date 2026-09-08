@@ -150,7 +150,7 @@ function packCanonical(name, destination, workDir) {
   // build explicitly above, so disable lifecycle scripts here; otherwise pack
   // would invoke a second normal (parallel Bob) build and reintroduce the race
   // this reproducibility check exists to detect.
-  run('pnpm', ['--filter', name, 'pack', '--ignore-scripts', '--pack-destination', rawDir]);
+  run('pnpm', ['--config.ignore-scripts=true', '--filter', name, 'pack', '--pack-destination', rawDir]);
 
   const rawTarballs = fs.readdirSync(rawDir).filter((file) => file.endsWith('.tgz'));
   if (rawTarballs.length !== 1) {
