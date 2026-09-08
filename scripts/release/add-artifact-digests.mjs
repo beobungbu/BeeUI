@@ -5,12 +5,16 @@
 //
 // `pnpm pack` is still the authority for package selection and manifest rewriting,
 // but its gzip/tar envelope is not guaranteed to be byte-identical across repeated
-// invocations. To make the artifact that we verify the artifact that we publish, we:
-//   1. build from a clean dist/;
-//   2. run pnpm pack;
+// invocations. The normal Bob package build intentionally runs configured targets
+// concurrently; the release path instead serializes those targets so reproducibility
+// verification cannot depend on target scheduling. To make the artifact that we
+// verify the artifact that we publish, we:
+//   1. build from a clean dist/ with deterministic target ordering;
+//   2. run pnpm pack with lifecycle scripts disabled so it does not rebuild again;
 //   3. extract that npm-compatible package payload;
 //   4. repack it with stable ordering, ownership, mtimes, and gzip headers;
-//   5. repeat the whole process and require byte-identical canonical tarballs.
+//   5. repeat the whole clean build + pack process and require byte-identical
+//      canonical tarballs.
 //
 // Canonical tarballs are written to .artifacts/release-packages/ and are the only
 // tarballs the npm release workflow is allowed to publish/stage.
@@ -33,6 +37,12 @@ const PACKAGE_DIRS = new Map([
   ['@beemvp/beeui-cli', 'packages/cli'],
 ]);
 const PACKAGE_NAMES = [...PACKAGE_DIRS.keys()];
+const BOB_PACKAGE_NAMES = new Set([
+  '@beemvp/beeui-core',
+  '@beemvp/beeui-tokens',
+  '@beemvp/beeui-ui',
+]);
+const BOB_TARGETS = ['module', 'commonjs', 'typescript'];
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -65,6 +75,31 @@ function cleanDist(name) {
   const packageDir = PACKAGE_DIRS.get(name);
   if (!packageDir) fail(`No package directory is registered for ${name}.`);
   fs.rmSync(path.join(ROOT_DIR, packageDir, 'dist'), { recursive: true, force: true });
+}
+
+function buildForRelease(name) {
+  cleanDist(name);
+
+  if (BOB_PACKAGE_NAMES.has(name)) {
+    // `bob build` runs configured targets through Promise.all. That is desirable
+    // for normal development speed, but release reproducibility needs a fixed
+    // build order. Bob's supported --target entry point gives us the same target
+    // implementations without concurrent writes into the package dist tree.
+    for (const target of BOB_TARGETS) {
+      run('pnpm', ['--filter', name, 'exec', 'bob', 'build', '--target', target]);
+    }
+
+    if (name === '@beemvp/beeui-ui') {
+      // The UI package's normal build performs this deterministic post-build step
+      // after Bob finishes: copy hand-written declaration shims and prune Babel's
+      // dead .d.js/.d.js.map artifacts. Preserve that exact package contract here.
+      run('node', ['packages/ui/scripts/copy-type-shims.mjs']);
+    }
+    return;
+  }
+
+  // The CLI owns a custom deterministic build rather than a Bob configuration.
+  run('pnpm', ['--filter', name, 'run', 'build']);
 }
 
 function canonicalizeTarball(rawTarballPath, canonicalTarballPath, workDir) {
@@ -107,10 +142,15 @@ function canonicalizeTarball(rawTarballPath, canonicalTarballPath, workDir) {
 }
 
 function packCanonical(name, destination, workDir) {
-  cleanDist(name);
+  buildForRelease(name);
   const rawDir = path.join(workDir, 'raw');
   fs.mkdirSync(rawDir, { recursive: true });
-  run('pnpm', ['--filter', name, 'pack', '--pack-destination', rawDir]);
+
+  // Every public package has a prepack build. We already performed the release
+  // build explicitly above, so disable lifecycle scripts here; otherwise pack
+  // would invoke a second normal (parallel Bob) build and reintroduce the race
+  // this reproducibility check exists to detect.
+  run('pnpm', ['--config.ignore-scripts=true', '--filter', name, 'pack', '--pack-destination', rawDir]);
 
   const rawTarballs = fs.readdirSync(rawDir).filter((file) => file.endsWith('.tgz'));
   if (rawTarballs.length !== 1) {
