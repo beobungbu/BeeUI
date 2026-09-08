@@ -159,6 +159,24 @@ test('CI/native policy implementation changes self-validate with full native pro
   assert.equal(classifyBareNativeChanges(['.github/workflows/ci.yml']).bareNative, true);
 });
 
+test('release-only tooling stays native-safe while unknown scripts still fail closed', () => {
+  for (const file of [
+    'scripts/verify-release.mjs',
+    'scripts/pack-artifacts.mjs',
+    'scripts/check-release-control-plane.mjs',
+    'scripts/release/add-artifact-digests.mjs',
+    'scripts/release/canonicalize-publish-manifest.mjs',
+  ]) {
+    assert.equal(classifyBareNativeChanges([file]).bareNative, false, file);
+    assert.equal(classifyShowcaseNativeChanges([file]).showcaseNative, false, file);
+    assert.equal(classifyNativeIosChanges([file]).iosNative, false, file);
+  }
+
+  const unknown = 'scripts/change-native-tooling.sh';
+  assert.equal(classifyShowcaseNativeChanges([unknown]).showcaseNative, true);
+  assert.equal(classifyNativeIosChanges([unknown]).iosNative, true);
+});
+
 test('documentation, registry and isolated tests stay native-safe', () => {
   for (const file of [
     'README.md',
