@@ -114,6 +114,7 @@ const NO_LANE_REQUIRED = [
   { prefix: 'scripts/__tests__/check-compatibility-matrix', why: 'run by verify-fast' },
   { prefix: 'scripts/__tests__/check-distribution-policy', why: 'run by verify-fast' },
   { prefix: 'scripts/__tests__/release-control-plane', why: 'run by verify-fast' },
+  { prefix: 'scripts/__tests__/release-artifacts', why: 'run by verify-fast via release-control-plane:test' },
   { prefix: 'scripts/__tests__/release-ruleset-contract', why: 'run by verify-fast' },
   { prefix: 'scripts/__tests__/ci-scope', why: 'run by verify-fast' },
   { prefix: 'scripts/__tests__/classify-ci-changes', why: 'run by verify-fast' },

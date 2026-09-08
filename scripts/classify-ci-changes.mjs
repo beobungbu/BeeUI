@@ -36,6 +36,11 @@ const SAFE_EXACT_PATHS = new Set([
   'scripts/registry-lib.mjs',
   'scripts/verify-registry.mjs',
   'scripts/verify-bare-consumer.sh',
+  // Release control-plane implementation changes are exercised by release
+  // verification itself and do not alter either native dependency graph.
+  'scripts/verify-release.mjs',
+  'scripts/pack-artifacts.mjs',
+  'scripts/check-release-control-plane.mjs',
 ]);
 
 const SAFE_PREFIXES = [
@@ -44,6 +49,7 @@ const SAFE_PREFIXES = [
   'apps/visual-regression/',
   'apps/showcase/__tests__/',
   'scripts/__tests__/',
+  'scripts/release/',
 ];
 
 const PACKAGE_BOUNDARY_EXACT_PATHS = new Set(['scripts/verify-bare-consumer.sh']);

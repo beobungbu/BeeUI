@@ -92,7 +92,7 @@
     "tokens:migration-report": "node ./scripts/generate-token-migration-report.mjs",
     "lint": "eslint packages/ui/src apps/demo/src --max-warnings=0",
     "release-control-plane:check": "node ./scripts/check-release-control-plane.mjs && node ./scripts/check-public-surface-ownership.mjs",
-    "release-control-plane:test": "node --test ./scripts/__tests__/release-control-plane.test.mjs",
+    "release-control-plane:test": "node --test ./scripts/__tests__/release-control-plane.test.mjs ./scripts/__tests__/release-artifacts.test.mjs",
     "docs:a11y:check": "node ./scripts/public-docs-a11y.mjs --check",
     "docs:a11y:test": "node --test ./scripts/__tests__/public-docs-a11y.test.mjs",
     "docs:search:check": "node ./scripts/check-docs-search-intent.mjs --check",
