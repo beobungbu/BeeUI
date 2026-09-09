@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { buildPublicDiscovery } from '../build-public-discovery.mjs';
+import { extractPublicationPolicy } from '../check-public-doc-truth.mjs';
 import { buildPublicComponentManifest } from '../public-component-reference.mjs';
 import { buildPublicPatternManifest } from '../public-pattern-reference.mjs';
 
@@ -13,6 +14,7 @@ export async function collectViolations(rootDir) {
   const cliPath = path.join(rootDir, 'apps/docs/src/content/docs/guides/cli-source-ownership.md');
   const registryPath = path.join(rootDir, 'apps/docs/src/content/docs/registry/index.md');
   const aiPath = path.join(rootDir, 'apps/docs/src/content/docs/ai/index.md');
+  const publication = extractPublicationPolicy(rootDir);
 
   for (const file of [cliPath, registryPath, aiPath]) {
     if (!fs.existsSync(file)) violations.push(`missing public discovery guide ${path.relative(rootDir, file)}`);
@@ -23,8 +25,13 @@ export async function collectViolations(rootDir) {
     for (const token of ['pnpm beeui add --dry-run', 'pnpm beeui doctor', 'pnpm beeui diff', 'pnpm beeui update']) {
       if (!cli.includes(token)) violations.push(`CLI guide is missing canonical repository-local command: ${token}`);
     }
-    if (/```[^`]*(?:npx\s+(?:@beemvp\/beeui-cli|beeui)|npm\s+(?:i|install)\s+@beemvp\/beeui-ui)/s.test(cli)) {
+    const hasPublicRegistryCommand = /```[^`]*(?:npx\s+(?:@beemvp\/beeui-cli|beeui)|npm\s+(?:i|install)\s+@beemvp\/beeui-ui)/s.test(cli);
+    if (publication.published !== true && hasPublicRegistryCommand) {
       violations.push('CLI guide contains a runnable public npm/npx command while distribution is unpublished.');
+    }
+    if (publication.published === true && publication.currentVersion?.includes('-rc.')) {
+      const unsafe = [...cli.matchAll(/\b(?:npx\s+@beemvp\/beeui-cli|npm\s+(?:i|install)\s+@beemvp\/beeui-(?:ui|core|tokens))(?!@)/g)];
+      if (unsafe.length) violations.push('CLI guide contains an unqualified public registry command while the published channel is a prerelease.');
     }
   }
 

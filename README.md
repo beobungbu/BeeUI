@@ -4,16 +4,26 @@
 
 BeeUI is a mobile-first TypeScript UI system focused on long-lived application interfaces: accessible behavior, explicit responsive contracts, semantic theming, production screen patterns, and source ownership without coupling application code to a styling engine.
 
-> **Distribution status — 2026-09-07:** the repository/package version is `0.86.2-rc.1`, the first unpublished release candidate on the ADR-015 stable line `0.86.2`. BeeUI packages and the CLI are **not published to the public npm registry yet**. Do not treat public `npm install @beemvp/beeui-*` or `npx @beemvp/beeui-cli` commands as available. Publication remains an owner-gated action; `docs/dist-tag-policy.md` is the machine-checked authority.
+> **Distribution status — 2026-09-09:** BeeUI `0.86.2-rc.1` is publicly published on npm under the opt-in `next` dist-tag. The stable `latest` channel is intentionally not promoted yet. Use `@next` or pin `@0.86.2-rc.1` while evaluating the release candidate. `docs/dist-tag-policy.md` is the machine-checked authority.
+
+## Install the public release candidate
+
+```bash
+npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next
+npx @beemvp/beeui-cli@next --help
+```
+
+Do not document a bare `npm install @beemvp/beeui-ui` as the RC install path: unqualified installs follow `latest`, and BeeUI has not promoted stable `0.86.2` to `latest` yet.
 
 ## What is included
 
 - `@beemvp/beeui-core` — engine-neutral utilities and contracts.
 - `@beemvp/beeui-tokens` — semantic tokens, breakpoints, density, and Web theme output.
 - `@beemvp/beeui-ui` — React Native components for iOS, Android, and Web.
+- `@beemvp/beeui-cli` — source-ownership Registry CLI (`beeui`).
 - `apps/showcase` — executable Component + Pattern inspection surface.
 - `apps/demo` — routed production reference application.
-- `registry/` + repository-local CLI — source-ownership workflow.
+- `registry/` — source-ownership registry consumed by the CLI.
 - `apps/docs` — Astro + Starlight public documentation source.
 - `llms*.txt` + AI-agent contracts — machine-readable discovery/context surfaces.
 
@@ -32,7 +42,7 @@ The repository currently exercises Expo SDK 57, React Native 0.86.2, React 19.2.
 
 ## Evaluate BeeUI from this repository
 
-Because public package publication is closed, the supported evaluation path today is the repository itself:
+The npm RC is available for external consumers, while the repository remains the best way to inspect Showcase, demo, docs and release evidence together:
 
 ```bash
 corepack enable
@@ -86,10 +96,10 @@ export function AppShell() {
 
 ## Two consumption models
 
-BeeUI intentionally supports two product models, while public registry publication remains closed:
+BeeUI intentionally supports two product models:
 
-1. **Package boundary** — the Showcase, demo, and clean-consumer fixtures use the intended public `@beemvp/beeui-*` export shape through the workspace/packed-artifact verification paths.
-2. **Source ownership** — the repository-local Registry CLI can inspect/add owned component source into a consumer project.
+1. **Package boundary** — install the public RC from npm using `@next` (or pin `0.86.2-rc.1`) and consume the public `@beemvp/beeui-*` exports.
+2. **Source ownership** — use `@beemvp/beeui-cli@next` to inspect/add owned component source into a consumer project.
 
 The two models share behavior, accessibility, token, compatibility, and component contracts. Source ownership is not permission to fork a second independent API inventory.
 

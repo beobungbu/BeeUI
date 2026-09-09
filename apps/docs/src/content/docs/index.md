@@ -4,8 +4,16 @@ description: Build mobile-first React Native interfaces for Expo, bare React Nat
 ---
 
 BeeUI is a production-oriented React Native UI system with one public behavior contract across
-Expo, bare React Native and Web. Packages and the CLI are **not published**; these docs always
-separate the stable target API from the distribution actions actually available today.
+Expo, bare React Native and Web.
+
+The first public release candidate, **`0.86.2-rc.1`**, is published on npm under the opt-in
+**`next`** dist-tag. Stable `latest` is intentionally not published yet. Use `@next` or the exact
+RC version in install commands until the stable `0.86.2` promotion is completed.
+
+```bash
+npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next
+npx @beemvp/beeui-cli@next --help
+```
 
 Use the search box at the top of any page to jump straight to a component, token, CLI command or
 error message.
@@ -42,8 +50,10 @@ package exports themselves.
 
 ## Platform and release truth
 
+- **Current RC:** `0.86.2-rc.1` on npm tag `next`.
+- **Stable channel:** `latest` remains intentionally unassigned to this RC.
 - [Current compatibility](/docs/compatibility/current/) — the tested and pinned versions, machine-checked.
-- [Migration & versioning](/docs/guides/migration-versioning/) — channel, version authority and what changes at publication.
+- [Migration & versioning](/docs/guides/migration-versioning/) — channel, version authority and upgrade rules.
 - [Release & security](/docs/release-security/) — reporting path and source-ownership implications.
 - [Accessibility](/docs/accessibility/) · [Responsive](/docs/responsive/) · [Performance](/docs/performance/) · [Architecture](/docs/architecture/)
 
