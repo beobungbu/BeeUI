@@ -24,7 +24,10 @@ export function collectViolations(rootDir) {
   const root = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8'));
   if (data.version !== root.version) violations.push('public guide version source does not match root manifest.');
   if (data.distribution.currentVersion !== root.version) violations.push('dist-tag currentVersion does not match public guide version.');
-  if (data.distribution.published !== false) violations.push('guide corpus launch contract expected unpublished distribution state.');
+  if (typeof data.distribution.published !== 'boolean') violations.push('guide corpus distribution state must expose a boolean published flag.');
+  if (data.distribution.published === true && root.version.includes('-rc.') && data.distribution.prereleaseDistTag !== 'next') {
+    violations.push('published guide corpus prerelease must use the next channel.');
+  }
 
   for (const file of REQUIRED) {
     const full = path.join(rootDir, file);
