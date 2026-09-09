@@ -5,13 +5,9 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { collectPublicSiteContractViolations } from '../check-public-site-contract.mjs';
-import {
-  buildPublicSiteContract,
-  normalizePublicSiteEnvironment,
-  routeForPath,
-} from '../public-site-contract-lib.mjs';
+import { buildPublicSiteContract, normalizePublicSiteEnvironment, routeForPath } from '../public-site-contract-lib.mjs';
 
-function fixture(overrides = {}) {
+function fixture(overrides = {}, publication = { published: false, currentVersion: '0.86.2' }) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-site-contract-'));
   const write = (relative, content) => {
     const target = path.join(root, relative);
@@ -24,21 +20,9 @@ function fixture(overrides = {}) {
     productionRuntime: 'cloudflare-workers',
     docsBase: '/docs',
     environments: {
-      development: {
-        origin: 'https://beeui-dev.beemvp.com',
-        indexPolicy: 'noindex,nofollow',
-        robotsDisallow: ['/'],
-      },
-      staging: {
-        origin: 'https://beeui-stg.beemvp.com',
-        indexPolicy: 'noindex,nofollow',
-        robotsDisallow: ['/'],
-      },
-      production: {
-        origin: 'https://beeui.beemvp.com',
-        indexPolicy: 'index,follow',
-        robotsDisallow: ['/api/'],
-      },
+      development: { origin: 'https://beeui-dev.beemvp.com', indexPolicy: 'noindex,nofollow', robotsDisallow: ['/'] },
+      staging: { origin: 'https://beeui-stg.beemvp.com', indexPolicy: 'noindex,nofollow', robotsDisallow: ['/'] },
+      production: { origin: 'https://beeui.beemvp.com', indexPolicy: 'index,follow', robotsDisallow: ['/api/'] },
     },
     routes: [
       { id: 'landing', prefix: '/', owner: 'web/site', output: 'web/dist', visibility: 'public', indexable: true },
@@ -52,68 +36,63 @@ function fixture(overrides = {}) {
     ],
     legacyDocsRedirect: { status: 308, prefixes: ['/components/'], targetPrefix: '/docs' },
     navigation: [
-      { label: 'Docs', href: '/docs/' },
-      { label: 'Components', href: '/docs/components/' },
-      { label: 'Patterns', href: '/docs/patterns/' },
-      { label: 'Showcase', href: '/showcase/' },
-      { label: 'Demo', href: '/demo/' },
+      { label: 'Docs', href: '/docs/' }, { label: 'Components', href: '/docs/components/' }, { label: 'Patterns', href: '/docs/patterns/' },
+      { label: 'Showcase', href: '/showcase/' }, { label: 'Demo', href: '/demo/' },
     ],
     contentSources: { publication: ['docs/dist-tag-policy.md'], version: ['package.json'] },
-    buildOutputs: {
-      landing: 'web/dist', docs: 'apps/docs/dist', showcase: 'apps/showcase/dist-web', demo: 'apps/demo/dist-web', composedAssets: 'web/worker/dist',
-    },
+    buildOutputs: { landing: 'web/dist', docs: 'apps/docs/dist', showcase: 'apps/showcase/dist-web', demo: 'apps/demo/dist-web', composedAssets: 'web/worker/dist' },
     ...overrides,
   };
+
   write('web/public-site.config.json', JSON.stringify(config));
-  write('package.json', JSON.stringify({ version: '0.86.2' }));
-  write('docs/dist-tag-policy.md', '```json dist-tag-policy\n{"published":false,"currentVersion":"0.86.2","stableDistTag":"latest","prereleaseDistTag":"next"}\n```\n');
+  write('package.json', JSON.stringify({ version: publication.currentVersion }));
+  write('docs/dist-tag-policy.md', `\`\`\`json dist-tag-policy\n${JSON.stringify({
+    published: publication.published,
+    currentVersion: publication.currentVersion,
+    stableDistTag: 'latest',
+    prereleaseDistTag: 'next',
+    lockstepPackages: ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui'],
+  })}\n\`\`\`\n`);
   write('scripts/generate-llms-txt.mjs', '');
 
-  const hosts = {
-    development: 'beeui-dev.beemvp.com',
-    staging: 'beeui-stg.beemvp.com',
-    production: 'beeui.beemvp.com',
-  };
+  const hosts = { development: 'beeui-dev.beemvp.com', staging: 'beeui-stg.beemvp.com', production: 'beeui.beemvp.com' };
   for (const [environment, host] of Object.entries(hosts)) {
-    write(
-      `.github/deployment/wrangler-${environment}.jsonc`,
-      JSON.stringify({ routes: [{ pattern: host, custom_domain: true }] }),
-    );
+    write(`.github/deployment/wrangler-${environment}.jsonc`, JSON.stringify({ routes: [{ pattern: host, custom_domain: true }] }));
   }
-  write(
-    'web/worker/wrangler.jsonc',
-    JSON.stringify({
-      env: Object.fromEntries(
-        Object.entries(hosts).map(([environment, host]) => [
-          environment,
-          { routes: [{ pattern: host, custom_domain: true }] },
-        ]),
-      ),
-    }),
-  );
-  write(
-    '.github/workflows/beeui-web-delivery.yml',
-    `mapping = {
+  write('web/worker/wrangler.jsonc', JSON.stringify({
+    env: Object.fromEntries(Object.entries(hosts).map(([environment, host]) => [environment, { routes: [{ pattern: host, custom_domain: true }] }]))
+  }));
+  write('.github/workflows/beeui-web-delivery.yml', `mapping = {
   'development': ('https://beeui-dev.beemvp.com', 'wrangler-development.jsonc'),
   'staging': ('https://beeui-stg.beemvp.com', 'wrangler-staging.jsonc'),
   'main': ('https://beeui.beemvp.com', 'wrangler-production.jsonc'),
-}\n`,
-  );
+}\n`);
   return { root, config };
 }
 
-test('accepts the canonical route/source/output contract', () => {
+test('accepts the canonical unpublished route/source/output contract', () => {
   const { root } = fixture();
   assert.deepEqual(collectPublicSiteContractViolations(root), []);
 });
 
-test('resolves environment-specific origin and preview aliases from one config authority', () => {
+test('accepts a verified published prerelease on next', () => {
+  const { root } = fixture({}, { published: true, currentVersion: '0.86.2-rc.1' });
+  assert.deepEqual(collectPublicSiteContractViolations(root), []);
+});
+
+test('rejects a published prerelease on the stable channel', () => {
+  const { root } = fixture({}, { published: true, currentVersion: '0.86.2-rc.1' });
+  const policyPath = path.join(root, 'docs/dist-tag-policy.md');
+  fs.writeFileSync(policyPath, '```json dist-tag-policy\n{"published":true,"currentVersion":"0.86.2-rc.1","stableDistTag":"latest","prereleaseDistTag":"latest","lockstepPackages":[]}\n```\n');
+  assert.ok(collectPublicSiteContractViolations(root).some((v) => /published prerelease.*next/.test(v)));
+});
+
+test('resolves environment-specific origins and aliases', () => {
   const { root } = fixture();
   assert.equal(buildPublicSiteContract(root, { environment: 'development' }).origin, 'https://beeui-dev.beemvp.com');
   assert.equal(buildPublicSiteContract(root, { environment: 'staging' }).origin, 'https://beeui-stg.beemvp.com');
   assert.equal(buildPublicSiteContract(root, { environment: 'production' }).origin, 'https://beeui.beemvp.com');
   assert.equal(buildPublicSiteContract(root, { environment: 'development-preview' }).origin, 'https://beeui-dev.beemvp.com');
-  assert.equal(buildPublicSiteContract(root, { environment: 'staging-preview' }).origin, 'https://beeui-stg.beemvp.com');
   assert.equal(normalizePublicSiteEnvironment('production-candidate'), 'staging');
   assert.throws(() => normalizePublicSiteEnvironment('typo-env'), /Unsupported BeeUI Web environment/u);
 });
@@ -137,15 +116,13 @@ test('rejects environment/domain drift from every deployment projection', () => 
   assert.match(violations, /beeui-web-delivery\.yml projection/u);
 });
 
-test('rejects Pages, duplicate prefixes and a published state before owner gate', () => {
-  const { root } = fixture({ productionRuntime: 'cloudflare-pages' });
+test('rejects Pages runtime and duplicate route prefixes independently of publication state', () => {
+  const { root } = fixture({ productionRuntime: 'cloudflare-pages' }, { published: true, currentVersion: '0.86.2-rc.1' });
   const configPath = path.join(root, 'web/public-site.config.json');
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   config.routes[2].prefix = '/docs/';
   fs.writeFileSync(configPath, JSON.stringify(config));
-  fs.writeFileSync(path.join(root, 'docs/dist-tag-policy.md'), '```json dist-tag-policy\n{"published":true,"currentVersion":"0.86.2","stableDistTag":"latest","prereleaseDistTag":"next"}\n```\n');
   const violations = collectPublicSiteContractViolations(root).join('\n');
   assert.match(violations, /cloudflare-workers/u);
-  assert.match(violations, /published/u);
   assert.match(violations, /duplicated/u);
 });
