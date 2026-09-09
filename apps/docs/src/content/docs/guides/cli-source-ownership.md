@@ -76,6 +76,9 @@ When developing BeeUI itself, maintainers can still run the workspace CLI from t
 ```bash
 pnpm beeui list
 pnpm beeui add --dry-run button
+pnpm beeui doctor
+pnpm beeui diff
+pnpm beeui update
 ```
 
 That repository-local path is a maintainer/development convenience. External consumers should use the published CLI RC.
