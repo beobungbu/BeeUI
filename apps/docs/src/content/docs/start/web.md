@@ -15,17 +15,19 @@ npm install react@19.2.3 react-dom@19.2.3 react-native@0.86.2 \
 npm install -D vite@8.2.2 vite-plugin-rnw@0.0.12 @tailwindcss/vite@4.3.3
 ```
 
-Pin `@0.86.2-rc.1` instead of `@next` when you need an immutable RC dependency.
+Pin `@0.86.2-rc.1` instead of `@next` when you need an immutable RC dependency. Check [Compatibility](/docs/compatibility/) before changing the pinned Web stack.
 
 ## Styling entry
+
+The maintained starter keeps `global.css` under `src/`, so its Tailwind source paths are relative to that directory:
 
 ```css
 @import 'tailwindcss';
 @import 'uniwind';
 @import '@beemvp/beeui-tokens/theme.css';
 
-@source './node_modules/@beemvp/beeui-core/src';
-@source './node_modules/@beemvp/beeui-ui/src';
+@source '../node_modules/@beemvp/beeui-core/src';
+@source '../node_modules/@beemvp/beeui-ui/src';
 ```
 
 ## Vite configuration
@@ -50,14 +52,23 @@ export function App() {
 }
 ```
 
-## Verify
+## Verify the maintained Web consumer
+
+From `examples/web-consumer`:
+
+```bash
+bash setup.sh
+npm run build
+```
+
+For an application that already has dependencies installed, the normal production verification remains:
 
 ```bash
 npm run build
 npm run preview
 ```
 
-The clean Web consumer in `examples/web-consumer` installs the package boundary without monorepo links and produces a Vite production build in CI.
+The clean Web consumer installs the package boundary without monorepo links and produces a Vite + React Native Web production build in CI.
 
 ## Current Web evidence boundary
 
