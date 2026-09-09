@@ -1,9 +1,13 @@
 ---
-title: RTL & localization
-description: Right-to-left layout and localized/long-content behavior.
+title: Right to left (RTL) & localization
+description: Right to left layout, RTL direction handling, and localized or long-content behavior in BeeUI.
 ---
 
+# Right to left layout
+
 BeeUI supports **right to left** (RTL) layout through one shared, stateless direction resolver rather than each component reading the platform independently. This is [ADR-004: Direction architecture](https://github.com/beobungbu/BeeUI/blob/main/docs/decisions/004-direction-architecture.md) in the source repository, implemented in `use-direction.ts` (`@beemvp/beeui-ui`).
+
+If you are adding **right to left** support to an application, set the host platform's direction authority and let BeeUI read it; BeeUI does not create a second RTL state system.
 
 ## How direction is resolved
 
