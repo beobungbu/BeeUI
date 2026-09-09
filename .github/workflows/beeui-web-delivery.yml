@@ -150,8 +150,18 @@ jobs:
           target = os.environ['TARGET_ENV']
           token = os.environ['GH_TOKEN']
 
-          if mode == 'preview' or target == 'production':
+          if mode == 'preview':
               required = {'classify', 'verify', 'web-a11y', 'visual-web-report', 'web-consumer'}
+          elif target == 'production':
+              required = {
+                  'classify',
+                  'verify',
+                  'web-a11y',
+                  'visual-web-full (canonical-and-smoke)',
+                  'visual-web-full (showcase-integration)',
+                  'visual-web-full (showcase-acceptance-matrix)',
+                  'web-consumer',
+              }
           else:
               required = {'environment-ci'}
 
