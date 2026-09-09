@@ -7,6 +7,8 @@ BeeUI now has its first public npm release: **`0.86.2-rc.1`** under the opt-in *
 
 Because this is the first public package release, there is still no older public BeeUI version to migrate from. The migration work today is primarily for repository/internal consumers moving onto the public package boundary.
 
+Canonical source: https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md
+
 ## Which channel am I on?
 
 | Channel | Exists today | What it means |
