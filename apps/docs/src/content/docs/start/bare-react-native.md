@@ -49,7 +49,18 @@ export default function App() {
 
 Your Metro/Uniwind setup should follow the maintained consumer fixture at `examples/bare-rn-consumer`.
 
-## Verify Metro for both native platforms
+## Verify the maintained bare consumer
+
+From `examples/bare-rn-consumer`:
+
+```bash
+bash setup.sh
+bash bundle.sh
+```
+
+The fixture scaffolds a clean RN 0.86 app, installs BeeUI through the package boundary and performs **Metro bundling** for Android and iOS without an Expo fallback.
+
+Equivalent direct Metro commands inside a configured consumer look like:
 
 ```bash
 npx react-native bundle \
@@ -67,7 +78,7 @@ npx react-native bundle \
   --assets-dest build/ios-assets
 ```
 
-The maintained `examples/bare-rn-consumer` fixture remains stricter than an ordinary app install: CI scaffolds a fresh React Native app, installs BeeUI through its packed package boundary, asserts that Expo is not resolvable, builds Metro bundles, and separately exercises native compile lanes.
+The maintained fixture remains stricter than an ordinary app install: CI asserts that Expo is not resolvable and separately exercises native compile lanes.
 
 ## Native toolchains
 
