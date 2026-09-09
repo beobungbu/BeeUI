@@ -31,6 +31,21 @@ Optional native peers used by `Sheet`, `DatePicker` and `DateTimePicker` are lis
 
 The `@source` entries are required so Tailwind sees BeeUI's published source classes.
 
+## Metro configuration
+
+The maintained Expo fixture uses Uniwind's Metro wrapper:
+
+```js
+const { getDefaultConfig } = require('expo/metro-config');
+const { withUniwindConfig } = require('uniwind/metro');
+
+module.exports = withUniwindConfig(getDefaultConfig(__dirname), {
+  cssEntryFile: './global.css',
+  dtsFile: './uniwind-types.d.ts',
+  extraThemes: ['violet-light', 'violet-dark', 'high-contrast-light', 'high-contrast-dark'],
+});
+```
+
 ## Provider
 
 ```tsx
@@ -49,13 +64,16 @@ export default function App() {
 }
 ```
 
-## Verify all Expo targets
+## Verify with the maintained consumer
+
+The executable authority is `examples/expo-package-consumer`. From that directory, the release-equivalent flow is:
 
 ```bash
-npx expo export --platform all --output-dir dist
+bash setup.sh
+bash bundle.sh
 ```
 
-The maintained clean consumer at `examples/expo-package-consumer` remains the executable authority for the exact Expo SDK 57 package boundary used in CI. It intentionally installs packed artifacts rather than workspace links so release verification can catch package-resolution defects before publication.
+The setup script creates the isolated consumer boundary and the bundle script exercises Metro/export behavior with the fixture's exact dependency/configuration contract.
 
 For an interactive session:
 
