@@ -5,7 +5,9 @@ description: Install the BeeUI release candidate in Expo SDK 57 and verify Andro
 
 Use this path for an Expo SDK 57 application. BeeUI `0.86.2-rc.1` is public under the npm `next` dist-tag; stable `latest` is not promoted yet.
 
-## Install
+## Add BeeUI to Expo
+
+Install the BeeUI RC packages explicitly from `next`:
 
 ```bash
 npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next
