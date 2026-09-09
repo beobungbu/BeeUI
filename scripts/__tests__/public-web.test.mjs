@@ -67,8 +67,10 @@ test('landing build writes deterministic HTML and CSS without unresolved placeho
 
 test('landing derives publication/version truth from canonical repository state', () => {
   const { html, contract, publicationLabel } = renderPublicLanding(rootDir);
-  assert.equal(contract.buildTruth.publication.published, false);
-  assert.equal(publicationLabel, 'Unpublished');
+  assert.equal(contract.buildTruth.publication.published, true);
+  assert.equal(contract.buildTruth.publication.currentVersion.includes('-rc.'), true);
+  assert.equal(contract.buildTruth.publication.prereleaseDistTag, 'next');
+  assert.equal(publicationLabel, 'Published');
   assert.match(html, new RegExp(contract.buildTruth.version.replaceAll('.', '\\.')));
 });
 

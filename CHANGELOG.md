@@ -4,120 +4,89 @@ All notable consumer-facing changes to BeeUI are recorded here.
 
 ## Unreleased
 
+No unreleased consumer-facing changes are recorded after the first public release candidate yet.
+
+## [0.86.2-rc.1] — 2026-09-09
+
+First public BeeUI release candidate. Published from exact source SHA
+`ddf415b0d665c14e1b154bb02570a906585b4b98` through the protected `npm-release` workflow.
+
+### Distribution
+
+- Published `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`, and `@beemvp/beeui-cli` in lockstep at `0.86.2-rc.1`.
+- Published the release candidate under npm dist-tag **`next`** with provenance. Stable **`latest`** is intentionally not promoted to this prerelease.
+- Public RC install path:
+
+  ```bash
+  npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next
+  npx @beemvp/beeui-cli@next --help
+  ```
+
+- Release artifacts are canonicalized and reproducibility-checked before registry mutation; the release workflow publishes the same verified tarballs rather than independently rebuilding a second artifact.
+- Clean-consumer verification covers package installation, public exports/subpaths, the CLI binary, Expo package consumption, bare React Native consumption, and Web consumption.
+
 ### Added
 
-- Packaging-verification chain closing R7's packed-inventory/prerelease-artifact/clean-consumer gap (#202, #203, #204): `pnpm release:verify` now asserts every packed tarball excludes generated build junk, test fixtures, and repository-private config, ships LICENSE/README, and that every declared export target (including all 62 `@beemvp/beeui-ui` granular subpaths) is actually inside the tarball, not just present on disk pre-pack; a new `pnpm pack:artifacts` script produces the exact tarballs a prerelease would publish (with checksums and a deterministic `<version>-rc-ready.<sha>` candidate identifier) into a gitignored `.artifacts/pack/` directory and CI workflow artifact, with no npm registry mutation, dist-tag change, or version bump; `scripts/verify-bare-consumer.sh` and `scripts/verify-web-consumer.sh` now additionally import a component through its granular subpath (`@beemvp/beeui-ui/badge`) to prove ADR-012 resolves from the packed tarball, not only the barrel; and a new independent, clean Expo SDK 57 consumer (`scripts/verify-expo-consumer.sh`, `.github/workflows/expo-consumer.yml`) installs only the packed tarballs (no workspace link) and proves TypeScript typechecking plus a Metro Web/Android/iOS export from them.
-- A reproducible performance benchmark harness (`pnpm bench:web` / `pnpm bench:native`, tested via `pnpm bench:test`) that records OS/CPU/runtime/React Native/Node/git-SHA environment metadata, applies a documented warm-up/sampling strategy, and emits both machine-readable JSON and a human-readable summary. Web and native methodologies are kept separate: the native lane defers off-device instead of fabricating device timings. Scenarios register through a shared registry so future performance work plugs in without bespoke per-scenario scripts. Methodology documented in `docs/benchmark-harness.md`.
-- Real component-render/commit stress, overlay open-latency, and theme-runtime performance scenarios (`pnpm bench:components`) extending the benchmark harness's component lane: Button/Badge/ListItem/SettingsItem/Select/Table/Calendar/Toast mount and update costs; Dialog/Popover/DropdownMenu/Select/Tooltip/Sheet cold- and warm-open latency (plus a Sheet reduced-motion variant); and light/dark, high-contrast, scoped Bee/Violet, runtime-override, density, and token-reader theme-switch costs, with correctness checks proving static-className consumers and scoped-theme siblings do not unnecessarily re-render. Results are recorded as `platform: 'web'` deterministic-contract evidence (real `react-test-renderer` component mounts, not a browser or on-device runner). Documented in `docs/benchmark-harness.md`'s "Component lane" section.
-- Theme Tokens v3: canonical DTCG token source/codegen, a typed theme registry/scoping system, runtime overrides/readers, density, high-contrast, semantic data-viz, and motion/layout/typography contracts, enforced by strict semantic-consumption guardrails, plus targeted visual acceptance coverage.
-- Machine-readable token lifecycle/deprecation governance in the canonical token model: per-token `stable`/`experimental`/`deprecated` status, replacement paths, reasons, and optional removal targets under `$extensions["com.beeui"]`, honoring the standard DTCG `$deprecated` field. Codegen consumes it to keep deprecated tokens generating as compatibility aliases (TypeScript `@deprecated` JSDoc, CSS `--color-*` alias to the replacement), emits a generated `@beemvp/beeui-tokens/lifecycle.json` manifest, and produces a deterministic migration report via `pnpm tokens:migration-report`. Existing public tokens are governed as stable with no fake deprecations. Policy documented in `docs/token-lifecycle.md`.
-- Production `Select` composition with controlled/uncontrolled string-value selection, persistent option state, placeholder/disabled/group contracts, duplicate-value fail-safe behavior, shared anchored-overlay transport, Web keyboard/typeahead/focus behavior, long-list scrolling, and Dialog-local nesting without aliasing `DropdownMenu` command semantics.
-- Provider-scoped Toast / transient notifications through `useToast()`, with descriptor-only content, three-visible FIFO queueing, timed or explicit persistent dismissal, actions, safe-area-aware stacking, and accessibility announcements without reusing the anchored-overlay portal or React Native core `Modal`.
+- Packaging-verification chain closing R7's packed-inventory/prerelease-artifact/clean-consumer gap (#202, #203, #204): `pnpm release:verify` asserts every packed tarball excludes generated build junk, test fixtures, and repository-private config, ships LICENSE/README, and that every declared export target (including all 62 `@beemvp/beeui-ui` granular subpaths) is actually inside the tarball, not just present on disk pre-pack. `pnpm pack:artifacts` produces the exact release-equivalent tarballs with checksums into `.artifacts/pack/`; the bare, Web, and Expo clean-consumer verification paths install package artifacts rather than workspace links.
+- A reproducible performance benchmark harness (`pnpm bench:web` / `pnpm bench:native`, tested via `pnpm bench:test`) that records OS/CPU/runtime/React Native/Node/git-SHA environment metadata, applies a documented warm-up/sampling strategy, and emits machine-readable JSON plus a human-readable summary. Web and native methodologies are kept separate; native measurements defer off-device instead of fabricating device timings.
+- Real component-render/commit stress, overlay open-latency, and theme-runtime performance scenarios (`pnpm bench:components`) covering representative components, overlays, light/dark and high-contrast themes, runtime overrides, density, and token-reader theme switches.
+- Theme Tokens v3: canonical DTCG token source/codegen, typed theme registry/scoping, runtime overrides/readers, density, high-contrast, semantic data-viz, and motion/layout/typography contracts, enforced by semantic-consumption guardrails and targeted visual acceptance coverage.
+- Machine-readable token lifecycle/deprecation governance in the canonical token model, including stable/experimental/deprecated status, replacement paths, reasons, optional removal targets, generated TypeScript deprecation metadata, CSS compatibility aliases, lifecycle manifest, and deterministic migration reporting.
+- Production `Select` composition with controlled/uncontrolled string-value selection, persistent option state, placeholder/disabled/group contracts, duplicate-value fail-safe behavior, shared anchored-overlay transport, Web keyboard/typeahead/focus behavior, long-list scrolling, and Dialog-local nesting.
+- Provider-scoped Toast / transient notifications through `useToast()`, including descriptor-only content, FIFO queueing, timed or explicit persistent dismissal, actions, safe-area-aware stacking, and accessibility announcements.
 - Release-package verification via `pnpm release:verify`, including package export checks, packed-manifest validation, clean-consumer installation, and a CI verification artifact.
-- Native iOS Simulator compilation on the trusted macOS ARM64 runner for both the generated Expo Showcase and a fresh true bare React Native 0.86.2 consumer.
-- Change-aware pull-request scheduling for the expensive native iOS job, with conservative fail-safe path classification, `ci:native` forcing, and full native iOS verification retained on every push to `main`.
-- Persistent macOS Xcode/DerivedData and Bundler caches plus Xcode compilation caching/build timing summaries for native iOS verification; caches are performance-only and do not replace fresh consumer/package evaluation.
-- Deterministic Chromium visual regression with 28 canonical light/dark screenshots across representative foundation, forms, navigation/data, Dialog, AlertDialog, Popover, and DropdownMenu states.
-- Executable Showcase navigation between the preserved Component Gallery and a declarative Pattern Gallery over all 37 production screens, with local demo state, responsive mobile/desktop browsing, representative state inspection, and light/dark support.
-- Durable browser integration QA owned by `apps/visual-regression`, including representative component/pattern smoke coverage, anchored-overlay context/dismissal scenarios, and a full 370-render Pattern Gallery acceptance matrix without committed Gallery PNG baselines.
-- A phase-1 repository-local Registry + source-ownership CLI with deterministic dependency resolution, source transforms, collision protection, dry-run, doctor/verify, security/path validation, and initial public component/theme entries.
+- Native iOS Simulator compilation for both the generated Expo Showcase and a fresh true bare React Native 0.86.2 consumer.
+- Change-aware pull-request scheduling for expensive native iOS verification, with conservative fail-safe path classification and full native iOS verification retained where required.
+- Persistent macOS Xcode/DerivedData and Bundler caches plus build-timing summaries for native iOS verification; caches are performance-only and do not replace fresh consumer/package evaluation.
+- Deterministic Chromium visual regression across representative foundation, forms, navigation/data, Dialog, AlertDialog, Popover, DropdownMenu, and pattern states.
+- Executable Showcase navigation between Component Gallery and Pattern Gallery over 37 production screens, with local demo state, responsive mobile/desktop browsing, representative state inspection, and light/dark support.
+- Durable browser integration QA owned by `apps/visual-regression`, including representative component/pattern smoke coverage, anchored-overlay context/dismissal scenarios, and full Pattern Gallery acceptance coverage.
+- Registry + source-ownership CLI with deterministic dependency resolution, source transforms, collision protection, dry-run, `doctor`/`verify`, security/path validation, `diff`, and `update` workflows.
 - `AlertDialog` composition for destructive/confirmation flows, including non-dismissible backdrops, explicit native request-close policy, cancel actions, and destructive actions.
 - `FormGroup` legend/description/error composition with metadata inheritance for semantic `RadioGroup` descendants without collapsing child controls into one accessibility element.
 - A pure anchored-overlay geometry resolver in `@beemvp/beeui-core` with deterministic placement, flip, shift, collision padding, available-space metadata, and RTL-aware alignment.
 - An internal anchored-overlay runtime under `BeeUIProvider` with root/modal-local scopes, window-coordinate measurement, safe-area/keyboard metadata, deterministic portal ordering, and topmost-only scoped dismissal.
-- Public `Popover` composition with controlled/uncontrolled state, anchored placement, title/description accessibility fallbacks, explicit close actions, and topmost-only outside/back/Escape dismissal.
-- Public `DropdownMenu` composition with anchored placement, normal/checkbox/radio items, disabled-state semantics, topmost dismissal, and deterministic Web Arrow/Home/End/Enter/Space navigation.
+- Public `Popover` and `DropdownMenu` compositions with anchored placement, controlled/uncontrolled state where applicable, keyboard/focus behavior, topmost dismissal, and deterministic interaction semantics.
 - Four production-oriented Showcase pattern packs containing 37 screens across Authentication/Onboarding, Dashboard/Finance, Commerce/Social, and Account/Settings.
-- `docs/roadmap.md` as the canonical pre-1.0 production-readiness plan covering runtime device verification, Theme Tokens v3, Select/Tooltip/Sheet, distribution, compatibility, accessibility, performance, motion, docs/demo, and later component/pattern expansion.
+- AI-native discovery surfaces through the `llms.txt` family and agent documentation.
+- Maintained Expo package consumer, true bare React Native consumer, Vite + React Native Web consumer, routed demo, and Showcase applications.
 
 ### Fixed
 
-- `@beemvp/beeui-ui`'s build no longer leaks babel-compiled `.d.js`/`.d.js.map` artifacts into the packed tarball. Its hand-written ambient `.d.ts` type shims (`date-picker`, `date-time-picker`, `overlay-transport`, `tooltip`, `react-native-classname`) matched `react-native-builder-bob`'s `module`/`commonjs` babel glob (which targets every `*.ts`/`*.tsx` file, `.d.ts` included) in addition to its intended `typescript` target, producing dead compiled output nothing imports. `packages/ui/scripts/copy-type-shims.mjs` now prunes it after every build, caught by the #202 packed-inventory audit in `pnpm release:verify`.
+- `@beemvp/beeui-ui` no longer leaks Babel-compiled `.d.js` / `.d.js.map` declaration artifacts into the packed tarball; the release verification inventory catches this class of packaging regression.
+- Release reproducibility drift caused by nondeterministic packed publish-manifest serialization was removed by canonicalizing safe manifest regions while preserving order-sensitive export conditions.
+- Web-delivery gate handling no longer lets a skipped duplicate check name overwrite a valid successful check.
 
 ### Changed
 
-- Production pattern implementation under `apps/showcase/patterns/**` is native-sensitive in the pull-request classifier because executable Showcase reaches those files; pattern-specific tests remain native-safe when not bundled.
-- The existing component playground was extracted into a maintained Component Gallery instead of being replaced by Pattern Gallery-only navigation.
-- The release contract separates automated Linux cross-platform/Android proof, automated macOS native iOS compile proof, deterministic browser evidence, and native runtime/device interaction evidence.
-- The bare React Native smoke consumer installs packed BeeUI tarballs instead of copying package source directly.
-- `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` manifests are publication-ready per [ADR-011](docs/decisions/011-distribution-architecture.md): `private: true` is removed, each declares public package metadata (`repository`/`homepage`/`bugs`/`license`/`keywords`/`sideEffects`/`publishConfig`), and each ships a built `dist/` (dual ESM + CJS plus `.d.ts`, via `react-native-builder-bob`) as the primary artifact while `src` stays packed for the source-ownership path. Package `exports` gained `types`/`source`/`react-native`/`import`/`require`/`browser`/`default` conditions at each package's root entry. No package is published to npm.
-- `DialogContent` can make native request-close paths notification-only through `dismissOnRequestClose={false}`.
-- Anchored overlays now use a runtime-selected portal transport — Web `ReactDOM.createPortal`, native `react-native-teleport`, defensive legacy fallback — with consumer React context preserved on the context-preserving transports (#35). Each modal surface provisions its own overlay scope with portal host, measured geometry, stable dismiss controller, and semantic depth. Global dismissal selects the deepest active scope rather than effect-registration order, so initial-open and nested Dialogs remain correct; a root overlay behind a modal cannot steal modal-child dismissal even if the root overlay opens later. Native host/anchor `measureInWindow` uses latest-request-wins generations so stale asynchronous callbacks cannot overwrite newer geometry or spuriously close an overlay. `DialogContent` sets `transparent=true` only for `overFullScreen`; native `fullScreen`, `pageSheet`, and `formSheet` use `transparent=false` so RN Fabric can honor the requested presentation. Android Modal hardware back remains child-first; iOS/other native request-close is not child-intercepted. Live iOS sheet placement/swipe remains a simulator/device acceptance gate rather than a Jest claim.
-- Active-scope state is runtime-local, but physical global Escape/back arbitration is documented for one application-root overlay runtime; nested `BeeUIProvider`s reuse that runtime, while simultaneous unrelated application roots are not promised cross-root event ownership.
-- `react-native-teleport` is a peer dependency. `react-dom` is optional as BeeUI's own direct peer, though teleport's peer shape can still require it under strict native-only resolution.
-- `Tooltip` remains component-level work with its own hover/focus/accessibility contract; a first-class `Sheet` remains separately gated. `Select` is now implemented as its own value-selection contract on the accepted anchored-overlay runtime.
-- Documentation treats Registry/CLI as implemented phase-1 tooling and Wave 0 Pattern Gallery as implemented, while preserving that public `npx beeui` and public npm distribution do not exist yet.
+- Production pattern implementation under `apps/showcase/patterns/**` is treated as native-sensitive by the pull-request classifier because executable Showcase reaches those files; pattern-specific tests remain native-safe when not bundled.
+- The component playground was retained as a maintained Component Gallery alongside Pattern Gallery navigation rather than being replaced.
+- The release contract separates Linux cross-platform/Android proof, macOS native iOS compile proof, deterministic browser evidence, and native runtime/device interaction evidence.
+- Bare React Native and other clean-consumer paths consume BeeUI through package artifacts instead of copying package source directly.
+- Public package manifests expose built `dist/` output (dual ESM + CJS + `.d.ts`) as the primary package artifact while retaining governed source required for source ownership and styling discovery.
+- Package `exports` define public root and granular subpath boundaries with explicit `types`, `source`, `react-native`, `import`, `require`, `browser`, and `default` conditions where applicable.
+- Web theme import is `@import '@beemvp/beeui-tokens/theme.css'`.
+- `react-native-teleport` is a peer dependency; `react-dom` is optional as BeeUI's own direct peer, subject to the compatibility matrix and transitive peer behavior.
+- Anchored overlays use a runtime-selected portal transport with context-preserving Web/native paths, modal-local scopes, latest-request-wins measurement, and deepest-active-scope dismissal arbitration.
+- Active-scope state is runtime-local; nested `BeeUIProvider`s reuse the application-root runtime while unrelated simultaneous application roots are not promised cross-root event ownership.
+- The public Registry/CLI is no longer repository-only: external consumers can use `@beemvp/beeui-cli@next`; repository-local `pnpm beeui ...` remains a maintainer path.
+- Documentation, landing, generated release state, and public Web checks now derive publication status from `docs/dist-tag-policy.md` and correctly model a published prerelease on `next`.
 
-## [0.86.2] — release-ready, not yet published
+### Compatibility
 
-> **Not published.** This entry describes the BeeUI 1.0 product milestone scope prepared for the
-> stable npm package version `0.86.2`. Publication of `0.86.2` and any preceding
-> `0.86.2-rc.N` candidate is owner-gated at
-> [#254](https://github.com/beobungbu/BeeUI/issues/254): the `@beemvp/beeui-*` scope remains
-> unpublished and no public dist-tag exists yet. The package manifests are intentionally pinned
-> to `0.86.2` until an explicit prerelease candidate bump is frozen. "Release-ready" is not
-> publication ([docs/beeui-1.0-owner-gates.md](docs/beeui-1.0-owner-gates.md),
-> [docs/dist-tag-policy.md](docs/dist-tag-policy.md)). BeeUI 1.0 is the product milestone name;
-> it is not the npm version. Upgrade steps and validated examples:
-> [docs/migration-guide.md](docs/migration-guide.md); semver classification of every change:
-> [docs/semver-audit.md](docs/semver-audit.md).
+The tested/declared compatibility line is governed by `docs/compatibility-matrix.md` and `docs/consumer-compatibility-report.md`. Key RC1 points include:
 
-### Added
-
-- **Published package set (target shape).** `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and
-  `@beemvp/beeui-ui` become public scoped packages on one lockstep version, plus the
-  source-ownership CLI `@beemvp/beeui-cli` (binary `beeui`) — all owner-gated at #254
-  ([ADR-011](docs/decisions/011-distribution-architecture.md)).
-- **62 granular `@beemvp/beeui-ui` component subpath exports** alongside the barrel, resolving
-  the correct platform build (`react-native` vs web) through the package `exports` conditions
-  ([ADR-012](docs/decisions/012-granular-subpath-exports.md)).
-- **New hard 1.0 surfaces:** `Tooltip`, `Sheet`, `Table`/`DataTable`, `Calendar`, `DatePicker`,
-  `DateTimePicker`, `Select` (its own anchored value-selection contract), and provider-scoped
-  `Toast` via `useToast()`.
-- **Theme Tokens v3** frozen as the stable token contract (DTCG source/codegen, typed theme
-  registry/scoping, runtime overrides/readers, density, high-contrast, semantic data-viz,
-  motion/layout/typography), with machine-readable token lifecycle governance
-  ([docs/token-lifecycle.md](docs/token-lifecycle.md)).
-- **Accessibility, RTL, and large-text contracts** across the component surface, recorded as
-  their own evidence classes (VoiceOver/TalkBack/large-text/physical-device are not implied by
-  compile/deterministic proof) ([docs/accessibility-contract.md](docs/accessibility-contract.md),
-  [docs/release.md](docs/release.md)).
-- **Source-ownership CLI** with `add`/`list`/`init`/`doctor`/`diff`/`update`, a bundled
-  checksum-verified registry, and deterministic non-destructive re-sync
-  ([docs/registry-cli.md](docs/registry-cli.md)).
-- **AI-native docs** (`llms.txt` family + agent cookbook) and a **production demo** exercising
-  the real 1.0 surface.
-- **Final semver/breaking-change audit** ([docs/semver-audit.md](docs/semver-audit.md)) and the
-  **rollback/hotfix/deprecation runbook** ([docs/rollback-runbook.md](docs/rollback-runbook.md)).
-
-### Changed (breaking from the pre-1.0 repository shape)
-
-- **Package format:** the published artifact is built `dist/` (dual ESM + CJS + `.d.ts`); the
-  raw-`src`-only entry that required the monorepo/Metro toolchain is gone from the centralized
-  path (`src` is retained for source ownership) ([ADR-011](docs/decisions/011-distribution-architecture.md) D2/D3).
-- **Web theme import path:** `@import '@beemvp/beeui-tokens/theme.css'` (package subpath) rather
-  than a monorepo-relative path.
-- **`@beemvp/beeui-tokens` is public:** promoted from internal to a published package and, for
-  the source-ownership path, a declared runtime dependency rather than a vendored copy
-  (resolves [#355](https://github.com/beobungbu/BeeUI/issues/355)).
-- **CLI invocation:** the repo-local `pnpm beeui -- add …` shim becomes
-  `npx @beemvp/beeui-cli add …` once published; the command/flag/exit-code contract is unchanged.
-- **Peer ranges frozen to tested evidence:** `react >=19 <20`, `react-native >=0.86.0 <0.87.0`
-  (0.87 excluded on real compile-failure evidence), `tailwindcss >=4 <5`, `uniwind >=1.10.1 <2`,
-  and the optional native peers ([docs/consumer-compatibility-report.md](docs/consumer-compatibility-report.md)).
-
-### Deprecated
-
-- No public component export, subpath, or stable token is deprecated at the BeeUI 1.0 product milestone. The token
-  lifecycle path (deprecate → compatibility alias → removal in a MAJOR once the window and
-  migration evidence are met) is the governed mechanism for future deprecations
-  ([docs/token-lifecycle.md](docs/token-lifecycle.md)).
+- React `>=19 <20` with React 19.2.3 used in maintained consumers;
+- React Native `>=0.86.0 <0.87.0`, with 0.87 excluded on real native compile-failure evidence outside BeeUI's supported line;
+- Expo SDK 57 as the maintained Expo line;
+- React Native Web 0.21.x in the maintained Web consumer;
+- Tailwind CSS `>=4 <5` and Uniwind `>=1.10.1 <2`;
+- Chromium browser evidence for the current Web support contract.
 
 ### Known limitations
 
-- **iOS `pageSheet`/`formSheet` presentation is EXPERIMENTAL** and outside the current stable
-  package support promise until exact-head native runtime evidence promotes it; `overFullScreen`
-  is unaffected ([#62](https://github.com/beobungbu/BeeUI/issues/62) policy,
-  [docs/release.md](docs/release.md)).
-- **Web support is Chromium-only** through the Expo/Metro and Vite bundlers; Firefox/WebKit,
-  other bundlers, and SSR/SSG are not claimed ([docs/web-support-contract.md](docs/web-support-contract.md)).
+- iOS `pageSheet` / `formSheet` presentation remains experimental until the repository's native-runtime acceptance gate promotes it; `overFullScreen` is unaffected.
+- Web support is currently evidence-bounded to Chromium with Expo/Metro and Vite + React Native Web. Firefox/WebKit, other bundlers, SSR, and SSG are not claimed unless separately documented.
+- Native runtime evidence for some optional peer-backed components remains narrower than deterministic/compile evidence; see `docs/consumer-compatibility-report.md` and `docs/release.md` for exact evidence classes.
+
+Stable `0.86.2` is a separate future release event. RC1 publication under `next` does not authorize or imply promotion of `latest`.

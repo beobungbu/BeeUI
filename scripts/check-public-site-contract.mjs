@@ -55,11 +55,19 @@ export function collectPublicSiteContractViolations(rootDir = ROOT_DIR) {
 
   if (contract.productionRuntime !== 'cloudflare-workers') violations.push('productionRuntime must remain cloudflare-workers.');
   if (contract.docsBase !== '/docs') violations.push('docsBase must remain /docs.');
-  if (contract.buildTruth.publication.published !== false) {
-    violations.push('public-site contract may not describe packages as published before the owner publication gate opens.');
+
+  const publication = contract.buildTruth.publication;
+  if (typeof publication.published !== 'boolean') {
+    violations.push('public-site publication state must expose a boolean published flag.');
   }
-  if (contract.buildTruth.version !== contract.buildTruth.publication.currentVersion) {
-    violations.push(`workspace version ${contract.buildTruth.version} does not match distribution currentVersion ${contract.buildTruth.publication.currentVersion}.`);
+  if (contract.buildTruth.version !== publication.currentVersion) {
+    violations.push(`workspace version ${contract.buildTruth.version} does not match distribution currentVersion ${publication.currentVersion}.`);
+  }
+  if (publication.published === true && publication.currentVersion.includes('-') && publication.prereleaseDistTag !== 'next') {
+    violations.push('a published prerelease must remain on the opt-in next channel.');
+  }
+  if (publication.stableDistTag !== 'latest') {
+    violations.push('stableDistTag must remain latest for the public-site contract.');
   }
 
   const environmentNames = Object.keys(rawConfig.environments ?? {});
@@ -82,25 +90,18 @@ export function collectPublicSiteContractViolations(rootDir = ROOT_DIR) {
     if (origins.has(profile.origin)) violations.push(`environment origin ${profile.origin} is duplicated.`);
     origins.add(profile.origin);
     const expectedPolicy = environment === 'production' ? 'index,follow' : 'noindex,nofollow';
-    if (profile.indexPolicy !== expectedPolicy) {
-      violations.push(`environment ${environment} indexPolicy must be ${expectedPolicy}.`);
-    }
-    if (environment !== 'production' && !(profile.robotsDisallow ?? []).includes('/')) {
-      violations.push(`environment ${environment} robots policy must disallow /.`);
-    }
+    if (profile.indexPolicy !== expectedPolicy) violations.push(`environment ${environment} indexPolicy must be ${expectedPolicy}.`);
+    if (environment !== 'production' && !(profile.robotsDisallow ?? []).includes('/')) violations.push(`environment ${environment} robots policy must disallow /.`);
+
     try {
       const deploymentHost = readWranglerRouteHost(rootDir, deploymentConfig);
-      if (parsedOrigin.hostname !== deploymentHost) {
-        violations.push(`environment ${environment} origin host ${parsedOrigin.hostname} does not match ${deploymentConfig} host ${deploymentHost}.`);
-      }
+      if (parsedOrigin.hostname !== deploymentHost) violations.push(`environment ${environment} origin host ${parsedOrigin.hostname} does not match ${deploymentConfig} host ${deploymentHost}.`);
     } catch (error) {
       violations.push(error.message);
     }
     try {
       const workerHost = readWorkerEnvironmentHost(rootDir, environment);
-      if (parsedOrigin.hostname !== workerHost) {
-        violations.push(`environment ${environment} origin host ${parsedOrigin.hostname} does not match ${WORKER_WRANGLER} host ${workerHost}.`);
-      }
+      if (parsedOrigin.hostname !== workerHost) violations.push(`environment ${environment} origin host ${parsedOrigin.hostname} does not match ${WORKER_WRANGLER} host ${workerHost}.`);
     } catch (error) {
       violations.push(error.message);
     }
@@ -143,17 +144,13 @@ export function collectPublicSiteContractViolations(rootDir = ROOT_DIR) {
     }
     for (const source of sources) {
       const isDirectoryPrefix = source.endsWith('/components') || source.endsWith('/patterns') || source.endsWith('/src');
-      if (!fs.existsSync(path.join(rootDir, source)) && !isDirectoryPrefix) {
-        violations.push(`content source ${className} references missing ${source}.`);
-      }
+      if (!fs.existsSync(path.join(rootDir, source)) && !isDirectoryPrefix) violations.push(`content source ${className} references missing ${source}.`);
     }
   }
 
   for (const legacy of contract.legacyDocsRedirect?.prefixes ?? []) {
     if (!legacy.startsWith('/') || !legacy.endsWith('/')) violations.push(`legacy docs prefix ${legacy} must be slash-delimited.`);
-    if (['/docs/', '/showcase/', '/demo/', '/examples/', '/changelog/', '/api/'].includes(legacy)) {
-      violations.push(`legacy docs prefix ${legacy} collides with a canonical route.`);
-    }
+    if (['/docs/', '/showcase/', '/demo/', '/examples/', '/changelog/', '/api/'].includes(legacy)) violations.push(`legacy docs prefix ${legacy} collides with a canonical route.`);
   }
 
   for (const [name, output] of Object.entries(contract.buildOutputs ?? {})) {
@@ -171,7 +168,7 @@ function main() {
     process.exitCode = 1;
     return;
   }
-  console.log('Public site architecture contract passed (environment origins, delivery projections, routes, sources, publication state and outputs are consistent).');
+  console.log('Public site architecture contract passed (environments, routes, sources, publication channel and outputs are consistent).');
 }
 
 const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
