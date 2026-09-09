@@ -22,84 +22,102 @@ pnpm --filter @beemvp/beeui-demo web
 pnpm --filter @beemvp/beeui-demo build:web
 `;
 
-test('accepts repository-local evaluation commands and verified demo commands', () => {
-  const root = fixture({
-    'README.md': '> the repository/package version is `1.2.3`.\n' + 'pnpm install --frozen-lockfile\n',
-    'package.json': '{"version":"1.2.3"}',
+function policy({ published, version = '0.86.2-rc.1' }) {
+  return `\`\`\`json dist-tag-policy\n${JSON.stringify({
+    published,
+    currentVersion: version,
+    prereleaseDistTag: 'next',
+  })}\n\`\`\`\n`;
+}
+
+function baseFiles({ published = false, version = '0.86.2-rc.1', readme } = {}) {
+  return {
+    'README.md': readme ?? (published
+      ? `> **Distribution status:** BeeUI \`${version}\` is publicly published on npm under \`next\`.\n`
+      : `> the repository/package version is \`${version}\`.\n`),
+    'package.json': JSON.stringify({ version }),
+    'docs/dist-tag-policy.md': policy({ published, version }),
     'apps/demo/README.md': validDemo,
-    'apps/docs/src/content/docs/index.md': 'BeeUI is unpublished.\n',
-  });
+    'apps/docs/src/content/docs/index.md': published ? 'Public RC docs.\n' : 'BeeUI is unpublished.\n',
+  };
+}
+
+test('accepts repository-local evaluation commands while unpublished', () => {
+  const root = fixture({ ...baseFiles(), 'apps/docs/src/content/docs/start.md': 'pnpm install --frozen-lockfile\n' });
   assert.deepEqual(collectPublicTruthViolations(root), []);
 });
 
-test('accepts an RC identity while stable policy and ADR prose stay on the stable base', () => {
+test('rejects registry commands while unpublished', () => {
   const root = fixture({
-    'README.md': '> the repository/package version is `0.86.2-rc.1`.\n',
-    'package.json': '{"version":"0.86.2-rc.1"}',
-    'apps/demo/README.md': validDemo,
-    'apps/docs/src/content/docs/index.md': 'BeeUI is unpublished.\n',
-    'docs/release.md': 'The BeeUI 1.0 product milestone ships as package version `0.86.2` (ADR-015).\nFor the current BeeUI 1.0 product milestone the package version is plain SemVer `0.86.2`.\n',
-    'docs/dist-tag-policy.md': '- The stable `0.86.2` is published, verified, and only then promoted.\n',
-    'docs/consumer-compatibility-report.md': 'candidate version `0.86.2-rc.1` today\n',
-    'docs/decisions/015-package-version-0-86-2.md': 'The lockstep package version is **`0.86.2`**.\n',
-  });
-  assert.deepEqual(collectPublicTruthViolations(root), []);
-});
-
-test('rejects unavailable public registry commands', () => {
-  const root = fixture({
-    'README.md': '> the repository/package version is `1.2.3`.\n' + 'pnpm add @beemvp/beeui-ui\n',
-    'package.json': '{"version":"1.2.3"}',
-    'apps/demo/README.md': validDemo,
-    'apps/docs/src/content/docs/index.md': 'npx @beemvp/beeui-cli add button\n',
+    ...baseFiles(),
+    'apps/docs/src/content/docs/start.md': 'npm install @beemvp/beeui-ui@next\nnpx @beemvp/beeui-cli@next list\n',
   });
   const violations = collectPublicTruthViolations(root);
-  assert.equal(violations.length, 2);
-  assert.match(violations.join('\n'), /pnpm add/);
-  assert.match(violations.join('\n'), /npx/);
+  assert.equal(violations.filter((v) => /unavailable registry command/.test(v)).length, 2);
+});
+
+test('accepts @next and exact-version commands after prerelease publication', () => {
+  const root = fixture({
+    ...baseFiles({ published: true }),
+    'apps/docs/src/content/docs/start.md': [
+      'npm install @beemvp/beeui-ui@next @beemvp/beeui-core@0.86.2-rc.1',
+      'npx @beemvp/beeui-cli@next list',
+      'pnpm dlx @beemvp/beeui-cli@0.86.2-rc.1 doctor',
+    ].join('\n'),
+  });
+  assert.deepEqual(collectPublicTruthViolations(root), []);
+});
+
+test('rejects unqualified registry commands while current public version is an RC', () => {
+  const root = fixture({
+    ...baseFiles({ published: true }),
+    'apps/docs/src/content/docs/start.md': 'npm install @beemvp/beeui-ui\nnpx @beemvp/beeui-cli list\n',
+  });
+  const violations = collectPublicTruthViolations(root);
+  assert.equal(violations.filter((v) => /must pin @next or @0\.86\.2-rc\.1/.test(v)).length, 2);
+});
+
+test('accepts unqualified registry commands once current public version is stable', () => {
+  const root = fixture({
+    ...baseFiles({ published: true, version: '0.86.2' }),
+    'apps/docs/src/content/docs/start.md': 'npm install @beemvp/beeui-ui\nnpx @beemvp/beeui-cli list\n',
+  });
+  assert.deepEqual(collectPublicTruthViolations(root), []);
 });
 
 test('rejects stale demo build command and missing workspace commands', () => {
   const root = fixture({
-    'README.md': '> the repository/package version is `1.2.3`.\n' + 'BeeUI\n',
-    'package.json': '{"version":"1.2.3"}',
+    ...baseFiles(),
     'apps/demo/README.md': 'npm run build\n',
-    'apps/docs/src/content/docs/index.md': 'BeeUI\n',
   });
   const violations = collectPublicTruthViolations(root);
   assert.equal(violations.some((line) => line.includes('npm run build')), true);
   assert.equal(violations.filter((line) => line.includes('missing verified workspace command')).length, 3);
 });
 
-test('a README that states the wrong package version is a violation, and a missing sentence too', () => {
-  const root = fixture({
-    'README.md': '> the repository/package version is `9.9.9`.\npnpm install --frozen-lockfile\n',
-    'package.json': '{"version":"1.2.3"}',
-    'apps/demo/README.md': validDemo,
-    'apps/docs/src/content/docs/index.md': 'BeeUI is unpublished.\n',
-  });
-  const wrong = collectPublicTruthViolations(root);
-  assert.ok(wrong.some((v) => v.includes('README.md: distribution-status line states version 9.9.9 but the workspace version is 1.2.3')), wrong.join('\n'));
+test('README distribution status must match workspace version', () => {
+  const wrong = fixture(baseFiles({
+    published: true,
+    readme: '> **Distribution status:** BeeUI `9.9.9` is publicly published on npm under `next`.\n',
+  }));
+  assert.ok(
+    collectPublicTruthViolations(wrong).some((v) => v.includes('states version 9.9.9 but the workspace version is 0.86.2-rc.1')),
+  );
 
-  const missing = collectPublicTruthViolations(fixture({ 'README.md': 'BeeUI\n', 'package.json': '{"version":"1.2.3"}', 'apps/demo/README.md': validDemo,
-    'apps/docs/src/content/docs/index.md': 'BeeUI is unpublished.\n' }));
-  assert.ok(missing.some((v) => v.includes('README.md: no longer carries its distribution-status line')), missing.join('\n'));
-
-  const broken = collectPublicTruthViolations(fixture({ 'README.md': '> the repository/package version is `1.2.3`.\n', 'package.json': '{not json', 'apps/demo/README.md': validDemo,
-    'apps/docs/src/content/docs/index.md': 'BeeUI is unpublished.\n' }));
-  assert.ok(broken.some((v) => v.startsWith('package.json: not parseable')), broken.join('\n'));
+  const missing = fixture(baseFiles({ published: true, readme: 'BeeUI\n' }));
+  assert.ok(collectPublicTruthViolations(missing).some((v) => v.includes('no longer carries its distribution-status line')));
 });
 
-test('a prose sentence elsewhere that states the wrong stable version is a violation', () => {
-  const root = fixture({
-    'README.md': '> the repository/package version is `1.2.3`.\n',
-    'package.json': '{"version":"1.2.3"}',
-    'apps/demo/README.md': validDemo,
-    'apps/docs/src/content/docs/index.md': 'BeeUI is unpublished.\n',
-    'docs/release.md': 'The BeeUI 1.0 product milestone ships as package version `9.9.9` (ADR-015).\n',
-    'docs/dist-tag-policy.md': '- The stable `1.2.3` is published, verified, and only then promoted.\n',
-  });
-  const violations = collectPublicTruthViolations(root);
-  assert.ok(violations.some((v) => v.includes('docs/release.md: milestone sentence states version 9.9.9')), violations.join('\n'));
-  assert.equal(violations.some((v) => v.includes('dist-tag-policy')), false, 'a correct stable sentence is not a violation');
+test('policy currentVersion must agree with the workspace version', () => {
+  const files = baseFiles({ published: true });
+  files['docs/dist-tag-policy.md'] = policy({ published: true, version: '0.86.2-rc.2' });
+  const violations = collectPublicTruthViolations(fixture(files));
+  assert.ok(violations.some((v) => /currentVersion 0\.86\.2-rc\.2 must equal workspace version 0\.86\.2-rc\.1/.test(v)));
+});
+
+test('malformed workspace manifest is reported', () => {
+  const files = baseFiles();
+  files['package.json'] = '{not json';
+  const violations = collectPublicTruthViolations(fixture(files));
+  assert.ok(violations.some((v) => v.startsWith('package.json: not parseable')));
 });
