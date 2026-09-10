@@ -1,6 +1,6 @@
 import { cn } from '@beemvp/beeui-core';
 import * as React from 'react';
-import { Pressable, View, type PressableProps, type ViewProps } from 'react-native';
+import { Platform, Pressable, View, type PressableProps, type ViewProps } from 'react-native';
 import { Box } from './box';
 import { Text } from './text';
 
@@ -106,10 +106,7 @@ export type StepperItemProps = Omit<
   title: React.ReactNode;
 };
 
-export const StepperItem = React.forwardRef<
-  React.ComponentRef<typeof Pressable>,
-  StepperItemProps
->(
+export const StepperItem = React.forwardRef<React.ComponentRef<typeof Pressable>, StepperItemProps>(
   (
     {
       accessibilityLabel,
@@ -132,13 +129,14 @@ export const StepperItem = React.forwardRef<
     const complete = !duplicate && normalizedStep < stepper.currentStep;
     const isDisabled = disabled === true || stepper.disabled || duplicate;
     const interactive = typeof stepper.onStepChange === 'function' || typeof onPress === 'function';
-    const inferredLabel =
-      typeof title === 'string' || typeof title === 'number' ? String(title) : undefined;
+    const inferredLabel = typeof title === 'string' || typeof title === 'number' ? String(title) : undefined;
+    const webCurrentProps = Platform.OS === 'web' && current ? ({ 'aria-current': 'step' } as const) : {};
 
     return (
       <Pressable
         ref={ref}
         {...props}
+        {...webCurrentProps}
         accessibilityLabel={accessibilityLabel ?? inferredLabel}
         accessibilityRole={interactive ? 'button' : undefined}
         accessibilityState={{ ...accessibilityState, disabled: isDisabled, selected: current }}
@@ -165,10 +163,7 @@ export const StepperItem = React.forwardRef<
             current || complete ? 'border-primary bg-primary' : 'border-border-strong bg-surface',
           )}
         >
-          <Text
-            className={current || complete ? 'text-primary-foreground' : 'text-muted-foreground'}
-            variant="label"
-          >
+          <Text className={current || complete ? 'text-primary-foreground' : 'text-muted-foreground'} variant="label">
             {complete ? '✓' : normalizedStep}
           </Text>
         </Box>
