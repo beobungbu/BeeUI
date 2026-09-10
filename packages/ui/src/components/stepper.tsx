@@ -106,7 +106,10 @@ export type StepperItemProps = Omit<
   title: React.ReactNode;
 };
 
-export const StepperItem = React.forwardRef<React.ComponentRef<typeof Pressable>, StepperItemProps>(
+export const StepperItem = React.forwardRef<
+  React.ComponentRef<typeof Pressable>,
+  StepperItemProps
+>(
   (
     {
       accessibilityLabel,
@@ -129,8 +132,10 @@ export const StepperItem = React.forwardRef<React.ComponentRef<typeof Pressable>
     const complete = !duplicate && normalizedStep < stepper.currentStep;
     const isDisabled = disabled === true || stepper.disabled || duplicate;
     const interactive = typeof stepper.onStepChange === 'function' || typeof onPress === 'function';
-    const inferredLabel = typeof title === 'string' || typeof title === 'number' ? String(title) : undefined;
-    const webCurrentProps = Platform.OS === 'web' && current ? ({ 'aria-current': 'step' } as const) : {};
+    const inferredLabel =
+      typeof title === 'string' || typeof title === 'number' ? String(title) : undefined;
+    const webCurrentProps =
+      Platform.OS === 'web' && current ? ({ 'aria-current': 'step' } as const) : {};
 
     return (
       <Pressable
@@ -163,7 +168,10 @@ export const StepperItem = React.forwardRef<React.ComponentRef<typeof Pressable>
             current || complete ? 'border-primary bg-primary' : 'border-border-strong bg-surface',
           )}
         >
-          <Text className={current || complete ? 'text-primary-foreground' : 'text-muted-foreground'} variant="label">
+          <Text
+            className={current || complete ? 'text-primary-foreground' : 'text-muted-foreground'}
+            variant="label"
+          >
             {complete ? '✓' : normalizedStep}
           </Text>
         </Box>
