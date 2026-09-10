@@ -120,6 +120,10 @@ export const TabsTrigger = React.forwardRef<
           disabled: isDisabled,
           selected,
         }}
+        // React Native Web expresses semantics through direct `aria-*` props and
+        // does not forward `accessibilityState` to the DOM. Keep the native state
+        // above while also exposing the required tab-selection state on Web.
+        aria-selected={selected}
         className={cn(
           'min-h-9 flex-1 items-center justify-center rounded-sm border px-3 py-2 active:opacity-80 web:focus-visible:bee-focus-ring',
           selected
