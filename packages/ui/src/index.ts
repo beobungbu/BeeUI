@@ -321,6 +321,7 @@ export {
   type TableBodyProps,
   type TableCaptionProps,
   type TableCellProps,
+  type TableDensity,
   type TableFooterProps,
   type TableHeadProps,
   type TableAlign,
