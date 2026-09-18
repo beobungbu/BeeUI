@@ -39,7 +39,7 @@ const CATEGORY_RULES = [
   ['Layout & surfaces', /^(box|stack|screen|safe-area|card|section|keyboard-aware-screen|bottom-action-bar)$/],
   ['Navigation & disclosure', /^(app-header|breadcrumb|link|pagination|tabs|accordion|collapsible|stepper)$/],
   ['Data display', /^(avatar|badge|chip|description-list|list-group|list-item|metadata-row|separator|stat|table|text|timeline)$/],
-  ['Actions & controls', /^(button|icon-button|segmented-control)$/],
+  ['Actions & controls', /^(button|icon-button|segmented-control|toolbar)$/],
   ['Theming & utilities', /^(theme-scope|use-bee-token|visually-hidden)$/],
 ];
 
