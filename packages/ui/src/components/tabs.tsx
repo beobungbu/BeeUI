@@ -120,6 +120,12 @@ export const TabsTrigger = React.forwardRef<
           disabled: isDisabled,
           selected,
         }}
+        // `accessibilityState` alone does not reach the DOM on react-native-web (it is
+        // not in its forwarded-props allowlist — see Checkbox), so `role="tab"` would
+        // otherwise render without the required `aria-selected`. Setting the web-native
+        // `aria-selected` prop directly keeps native platforms (which read
+        // `accessibilityState`) and Web (which reads `aria-*`) both correct.
+        aria-selected={selected}
         className={cn(
           'min-h-9 flex-1 items-center justify-center rounded-sm border px-3 py-2 active:opacity-80 web:focus-visible:bee-focus-ring',
           selected
