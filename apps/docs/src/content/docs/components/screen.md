@@ -55,6 +55,7 @@ Stateless base application surface with a semantic background and optional spaci
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `padding` | `'none' \| 'sm' \| 'md' \| 'lg'` | `'none'` | Preset horizontal/vertical padding: `'none'` (0), `'sm'`, `'md'`, or `'lg'`. Defaults to `'none'`. |
+| `scroll` | `boolean \| Omit<ScrollViewProps, 'children'>` | `false` | Wraps `children` in a keyboard-avoiding `ScrollView` (`behavior="padding"` on iOS, matching `KeyboardAwareScreen`'s basic case) so a long form or list needs no hand-rolled `ScrollView`. Pass `true` for the default scroll body, or a `ScrollViewProps` object (excluding `children`) to override any of it — e.g. `{ keyboardShouldPersistTaps: 'always' }`. Defaults to `false`: children render directly, unchanged. For the fuller Android focused-field scroll-into-view contract, use `KeyboardAwareScreen` instead. |
 
 Also carries every prop of `ViewProps` — that upstream contract is not reproduced here.
 
@@ -70,7 +71,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 ## Platform behavior
 
-This family ships no platform-specific file, and its own source takes no `Platform` branch.
+This family ships no platform-specific file, but its source branches on `Platform`, so some behavior differs by target.
 
 The same public family is exposed across the supported target matrix; meaningful platform differences remain governed by the compatibility contract.
 
@@ -93,9 +94,9 @@ Colors, spacing and typography come from semantic tokens rather than from values
 ## Executable examples
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/screen-scroll-prop.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/screen-scroll-prop.test.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
 - **Additional fixture:** [`apps/showcase/pattern-gallery/pattern-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/pattern-gallery/pattern-gallery.tsx)
-- **Additional fixture:** [`apps/showcase/patterns/account-settings/components/settings-screen-shell.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/account-settings/components/settings-screen-shell.tsx)
 
 ### Addressable examples
 

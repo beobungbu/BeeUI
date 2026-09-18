@@ -95,7 +95,7 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 ## Accessibility
 
 - **Roles this family assigns:** `radio`, `radiogroup` — set in `segmented-control.tsx` by the components themselves, not by the caller.
-- **Accessibility states and properties it sets:** `accessibilityLabel`, `checked`, `disabled` — read from `segmented-control.tsx`.
+- **Accessibility states and properties it sets:** `accessibilityLabel`, `accessibilityLabelledBy`, `checked`, `disabled` — read from `segmented-control.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
@@ -110,8 +110,8 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-7-remaining-hardening.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-remaining-hardening.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/segmented-control-name-and-label-wrap.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/segmented-control-name-and-label-wrap.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/selection-control-aria.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/selection-control-aria.test.tsx)
-- **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
 
 ### Addressable examples
 

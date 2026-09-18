@@ -100,10 +100,10 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/__tests__/issue-15-alert-dialog-form-group.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-15-alert-dialog-form-group.test.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/checkbox-radio-field-form-group-context.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/checkbox-radio-field-form-group-context.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/field-label-accessible-name-dedup.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/field-label-accessible-name-dedup.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/issue-15-alert-dialog-form-group.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-15-alert-dialog-form-group.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/perf-render-commit.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/perf-render-commit.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/theme-density-v3.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/theme-density-v3.test.tsx)
-- **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
 
 ### Addressable examples
 

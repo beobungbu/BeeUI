@@ -129,8 +129,8 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-7-remaining-hardening.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-remaining-hardening.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/tabs-pagination-stepper-current-aria.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/tabs-pagination-stepper-current-aria.test.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
-- **Additional fixture:** [`apps/showcase/patterns/dashboard-finance/screens/analytics-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/dashboard-finance/screens/analytics-screen.tsx)
 
 ### Addressable examples
 

@@ -56,7 +56,7 @@ Controlled `currentStep` context shared with every `StepperItem`; step values ar
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
-| `step` **(required)** | `number` | — | This item's position (1-based); non-finite values are floored and clamped to at least 1. Compared against the parent `Stepper`'s `currentStep` to determine current/complete state. A value duplicated by another item is disabled with a dev-mode warning. |
+| `step` **(required)** | `number` | — | This item's position, 1-based (never 0-based). Non-finite values, and values below 1 (including `0`), are floored and clamp up to `1` with a dev-mode warning. Compared against the parent `Stepper`'s `currentStep` to determine current/complete state. A value duplicated by another item is disabled with a separate dev-mode warning. |
 | `title` **(required)** | `React.ReactNode` | — | The primary heading text for this surface. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'children' | 'role'>` — that upstream contract is not reproduced here.
@@ -67,9 +67,10 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'children
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `currentStep` **(required)** | `number` | — | The active step number (1-based), clamped to `[1, number of StepperItem children]`. Non-finite values fall back to 1. |
+| `currentStep` **(required)** | `number` | — | The active step number, 1-based (never 0-based) and clamped to `[1, number of StepperItem children]`. Non-finite values, and values below 1 (including `0`), fall back to/clamp up to `1` with a dev-mode warning. |
 | `disabled` | `boolean` | `false` | Disables every `StepperItem` inside, overriding each item's own `disabled`. Defaults to false. |
 | `onStepChange` | `(step: number) => void` | — | Called with a step's normalized step number when a non-disabled `StepperItem` is pressed. Also required (alongside a per-item `onPress`) for any item to render as interactive. |
+| `orientation` | `'horizontal' \| 'vertical'` | `'vertical'` | Lays items out as a horizontal row (e.g. a desktop onboarding wizard) instead of the default vertical stack. Defaults to `'vertical'`. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
@@ -94,7 +95,7 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 ## Accessibility
 
 - **Roles this family assigns:** `button` — set in `stepper.tsx` by the components themselves, not by the caller.
-- **Accessibility states and properties it sets:** `accessibilityLabel`, `accessible`, `disabled`, `selected`, `text` — read from `stepper.tsx`.
+- **Accessibility states and properties it sets:** `accessibilityLabel`, `accessible`, `current`, `disabled`, `selected`, `text` — read from `stepper.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
@@ -109,7 +110,8 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/application-primitives.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/application-primitives.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-7-state-edge-cases.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-state-edge-cases.test.tsx)
-- **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/stepper-orientation-and-step-clamp-warning.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/stepper-orientation-and-step-clamp-warning.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/tabs-pagination-stepper-current-aria.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/tabs-pagination-stepper-current-aria.test.tsx)
 
 ### Addressable examples
 

@@ -53,6 +53,7 @@ Stateless form/control label; `required` renders accessible required-state wordi
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
+| `presentational` | `boolean` | `false` | Internal — set by `Field`/`FormGroup` on the `Label` they render for a child control that already derives its own accessible name via `accessibilityLabelledBy` pointing at this `Label`'s `nativeID`, so the name lives once on that association (matching native `<label for>` semantics) rather than being duplicated onto the label element itself, even when `required` is true. Not meant for direct standalone `Label` usage. Defaults to false. |
 | `required` | `boolean` | `false` | Appends a visual `*` (hidden from accessibility) and, when the label's children are a plain string or number, appends `requiredAccessibilityLabel` to the accessible name instead. Defaults to false. |
 | `requiredAccessibilityLabel` | `string` | `'required'` | Text appended to the accessible name after the label when `required` is true and the label's children are a plain string or number (e.g. `"Email, required"`). Defaults to `'required'`. |
 
@@ -93,6 +94,8 @@ Colors, spacing and typography come from semantic tokens rather than from values
 ## Executable examples
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/accessibility-readonly.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/accessibility-readonly.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/field-label-accessible-name-dedup.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/field-label-accessible-name-dedup.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/switch-labelledby-and-disabled-contrast.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/switch-labelledby-and-disabled-contrast.test.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/public-doc-fixtures.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/public-doc-fixtures.tsx)
 
 ### Addressable examples

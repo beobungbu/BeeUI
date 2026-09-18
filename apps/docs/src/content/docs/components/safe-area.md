@@ -56,6 +56,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `syncUniwindInsets` | `boolean` | `true` | Keeps Uniwind OSS safe-area utilities (`pt-safe`, `bottom-safe`, etc.) in sync with react-native-safe-area-context. Disable only when the application already owns that bridge elsewhere. |
+| `toastPlacement` | `ToastPlacement` | — | Where the transient `useToast()` notification stack docks. Defaults to `'bottom'` on native (so it clears the bottom tab bar / home indicator) and `'top'` on Web. |
 
 Also carries every prop of `Omit<React.ComponentProps<typeof NativeSafeAreaProvider>, 'children'>` — that upstream contract is not reproduced here.
 
@@ -101,10 +102,10 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/__tests__/dynamic-type-fixture.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/dynamic-type-fixture.test.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/class-name-merge-safety.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/class-name-merge-safety.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/dynamic-type-fixture.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/dynamic-type-fixture.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-19-overlay-runtime.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-19-overlay-runtime.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/pattern-gallery.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/pattern-gallery.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/perf-render-commit.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/perf-render-commit.test.tsx)
 
 ### Addressable examples
 

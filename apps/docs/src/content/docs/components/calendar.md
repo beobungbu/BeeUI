@@ -112,10 +112,10 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/__tests__/issue-172-calendar.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-172-calendar.test.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/calendar-selected-day-aria-selected.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/calendar-selected-day-aria-selected.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/issue-172-calendar.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-172-calendar.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-175-date-i18n-component-matrix.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-175-date-i18n-component-matrix.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-176-calendar-date-a11y.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-176-calendar-date-a11y.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/perf-render-commit.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/perf-render-commit.test.tsx)
 
 ### Addressable examples
 

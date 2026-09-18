@@ -62,7 +62,8 @@ Stateless label/description/error composition; it wires accessible label/require
 | `label` **(required)** | `string` | — | The visible text naming this element, and the accessible name unless one is set explicitly. |
 | `labelNativeID` | `string` | — | `nativeID` for the rendered `Label`, used to build `accessibilityLabelledBy` links. Defaults to a generated, stable-per-mount ID. |
 | `required` | `boolean` | `false` | Renders the label with a required indicator and exposes it via `requiredAccessibilityLabel`. Defaults to false. |
-| `requiredAccessibilityLabel` | `string` | `'required'` | Accessible label appended to the field's name when `required` is true (e.g. announced as "Email, required"). Defaults to `'required'`. |
+| `requiredAccessibilityLabel` | `string` | `'required'` | Accessible label appended to the field's name when `required` is true (e.g. announced as "Email, required"). No default — omit to expose `required` only through `aria-required`/`accessibilityRequired` on field-consuming controls, without injecting English copy. |
+| `requiredLabel` | `string` | — | Localized copy appended to the field's accessible name when `required` is true (e.g. `"Email, Bắt buộc"`). No default — omit it to expose `required` only through `aria-required`/`accessibilityRequired` on field-context-aware controls (Checkbox, Radio, Switch), without injecting any English copy. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
@@ -101,9 +102,9 @@ Colors, spacing and typography come from semantic tokens rather than from values
 ## Executable examples
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/accessibility-readonly.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/accessibility-readonly.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/checkbox-radio-field-form-group-context.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/checkbox-radio-field-form-group-context.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/issue-173-date-picker-native.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-173-date-picker-native.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/issue-173-date-picker-web.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-173-date-picker-web.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/field-label-accessible-name-dedup.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/field-label-accessible-name-dedup.test.tsx)
 
 ### Addressable examples
 

@@ -19,7 +19,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/component-contracts.test.tsx`](../apps/showcase/__tests__/component-contracts.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/accordion-collapsible-aria-expanded.test.tsx`](../apps/showcase/__tests__/accordion-collapsible-aria-expanded.test.tsx), [`__tests__/component-contracts.test.tsx`](../apps/showcase/__tests__/component-contracts.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Limitations:** `AccordionTrigger` and `AccordionContent` throw when rendered outside `Accordion`/`AccordionItem` rather than degrading, so the parts cannot be lifted out of the family's own tree; and because a closed item's content is unmounted rather than hidden, any state its children hold is discarded on every collapse.
 - **Notes:** Coming from shadcn/ui: this Accordion does not accept a `type="single" | "multiple"` prop. BeeUI models the single-expand behavior this family implements as the only mode — pass `value`/`onValueChange` (or `defaultValue`) the same way you would for shadcn's `type="single"`. Multi-expand (`type="multiple"`) is not implemented; compose independent `Collapsible` instances instead if every item must be able to stay open simultaneously.
 
@@ -159,7 +159,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md). Platform-split module (native/web files resolve at build time).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`__tests__/issue-172-calendar.test.tsx`](../apps/showcase/__tests__/issue-172-calendar.test.tsx), [`__tests__/issue-175-date-i18n-component-matrix.test.tsx`](../apps/showcase/__tests__/issue-175-date-i18n-component-matrix.test.tsx), [`__tests__/issue-176-calendar-date-a11y.test.tsx`](../apps/showcase/__tests__/issue-176-calendar-date-a11y.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Executable examples:** [`__tests__/calendar-selected-day-aria-selected.test.tsx`](../apps/showcase/__tests__/calendar-selected-day-aria-selected.test.tsx), [`__tests__/issue-172-calendar.test.tsx`](../apps/showcase/__tests__/issue-172-calendar.test.tsx), [`__tests__/issue-175-date-i18n-component-matrix.test.tsx`](../apps/showcase/__tests__/issue-175-date-i18n-component-matrix.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 
 ## `card`
 
@@ -214,7 +214,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/component-contracts.test.tsx`](../apps/showcase/__tests__/component-contracts.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/accordion-collapsible-aria-expanded.test.tsx`](../apps/showcase/__tests__/accordion-collapsible-aria-expanded.test.tsx), [`__tests__/component-contracts.test.tsx`](../apps/showcase/__tests__/component-contracts.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Limitations:** `CollapsibleTrigger` and `CollapsibleContent` throw outside a `Collapsible`. A trigger's own `disabled` is combined with the parent's, so one trigger cannot opt back in when the whole collapsible is disabled. Opening and closing is a mount/unmount switch with no height animation.
 
 ## `date-picker`
@@ -284,7 +284,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`runtime-smoke/runtime-acceptance.tsx`](../apps/showcase/runtime-smoke/runtime-acceptance.tsx), [`__tests__/issue-141-rtl-overlay-acceptance.test.tsx`](../apps/showcase/__tests__/issue-141-rtl-overlay-acceptance.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`runtime-smoke/runtime-acceptance.tsx`](../apps/showcase/runtime-smoke/runtime-acceptance.tsx), [`__tests__/dropdown-menu-item-description-slot.test.tsx`](../apps/showcase/__tests__/dropdown-menu-item-description-slot.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 
 ## `field`
 
@@ -311,7 +311,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/issue-15-alert-dialog-form-group.test.tsx`](../apps/showcase/__tests__/issue-15-alert-dialog-form-group.test.tsx), [`__tests__/perf-render-commit.test.tsx`](../apps/showcase/__tests__/perf-render-commit.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/checkbox-radio-field-form-group-context.test.tsx`](../apps/showcase/__tests__/checkbox-radio-field-form-group-context.test.tsx), [`__tests__/field-label-accessible-name-dedup.test.tsx`](../apps/showcase/__tests__/field-label-accessible-name-dedup.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Limitations:** `RadioGroup` is the only component in the package that reads this group's context, so its `disabled`, `invalid` and legend link reach a radio group and nothing else: a checkbox, switch or input nested in a form group is unaffected and has to be wired by hand. The group is deliberately not one accessible element and accepts no role override.
 
 ## `form-message`
@@ -381,7 +381,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`__tests__/accessibility-readonly.test.tsx`](../apps/showcase/__tests__/accessibility-readonly.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Executable examples:** [`__tests__/accessibility-readonly.test.tsx`](../apps/showcase/__tests__/accessibility-readonly.test.tsx), [`__tests__/field-label-accessible-name-dedup.test.tsx`](../apps/showcase/__tests__/field-label-accessible-name-dedup.test.tsx), [`__tests__/switch-labelledby-and-disabled-contrast.test.tsx`](../apps/showcase/__tests__/switch-labelledby-and-disabled-contrast.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Limitations:** `required` reaches the accessible name only when the label's children are all plain strings or numbers. With an element child the appended asterisk is hidden from assistive technology, so the required state is conveyed visually only.
 
 ## `link`
@@ -521,7 +521,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`patterns/commerce-social/screens/checkout-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/checkout-screen.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/component-contracts.test.tsx`](../apps/showcase/__tests__/component-contracts.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Executable examples:** [`patterns/commerce-social/screens/checkout-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/checkout-screen.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/checkbox-radio-field-form-group-context.test.tsx`](../apps/showcase/__tests__/checkbox-radio-field-form-group-context.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Limitations:** Inside a `RadioGroup`, a radio that supplies a `value` ignores its own `checked` and `onCheckedChange` — checked state is derived by comparing that `value` with the group's selection, and only the group's callback fires; a radio with no `value` keeps its own controlled pair even inside the group. A radio does not accept a press handler of its own.
 
 ## `safe-area`

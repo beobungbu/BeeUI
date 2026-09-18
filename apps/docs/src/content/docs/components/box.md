@@ -91,10 +91,10 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/class-name-merge-safety.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/class-name-merge-safety.test.tsx)
+- **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/select-showcase.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/select-showcase.tsx)
 - **Additional fixture:** [`apps/showcase/pattern-gallery/pattern-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/pattern-gallery/pattern-gallery.tsx)
-- **Additional fixture:** [`apps/showcase/patterns/account-settings/components/danger-zone.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/account-settings/components/danger-zone.tsx)
 
 ### Addressable examples
 

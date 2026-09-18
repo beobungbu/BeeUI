@@ -74,7 +74,7 @@ Controlled `value`/`onValueChange` (`CalendarDate | null`) field wrapping the na
 | `onOpenChange` | `(open: boolean) => void` | — | Controlled/uncontrolled open state — BeeUI owns Web presentation (`Popover`). |
 | `onValueChange` | `(date: CalendarDate \| null) => void` | — | `null` signals an explicit clear (see `clearable`). |
 | `open` | `boolean` | — | Controls whether the picker (Web `Popover`, native system picker) is open. Requires `onOpenChange`; otherwise falls back to internal open state with a dev-mode warning. |
-| `placeholder` | `string` | `'Select a date'` | Text shown on the trigger when no date is selected. Defaults to `'Select a date'`. |
+| `placeholder` | `string` | — | Text shown on the trigger when no date is selected. Defaults to `'Select a date'`. |
 | `placement` | `DatePickerPlacement` | `'bottom'` | Web-only: `Popover` placement relative to the trigger. Ignored on native. |
 | `previousMonthAccessibilityLabel` | `string` | `'Previous month'` | Accessible label for the `Calendar`'s "previous month" button. Defaults to `'Previous month'`. |
 | `readOnly` | `boolean` | `false` | Keeps the trigger focusable/announced but blocks opening and clearing. |

@@ -55,6 +55,8 @@ This type adds no fields of its own. These are the props the implementation read
 
 | Prop | Default |
 | --- | --- |
+| `accessibilityLabel` | — |
+| `accessibilityLabelledBy` | — |
 | `accessibilityState` | — |
 | `disabled` | `false` |
 | `onValueChange` | — |
@@ -84,7 +86,7 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 ## Accessibility
 
 - **Roles this family assigns:** `switch` (iOS and Android) — set in `switch.tsx` by the components themselves, not by the caller.
-- **Accessibility states and properties it sets:** `checked` (iOS and Android), `disabled` (iOS and Android) — read from `switch.tsx`.
+- **Accessibility states and properties it sets:** `accessibilityLabel`, `accessibilityLabelledBy`, `checked` (iOS and Android), `disabled` (iOS and Android), `labelledby` (Web), `required` — read from `switch.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
@@ -98,9 +100,9 @@ Colors, spacing and typography come from semantic tokens rather than from values
 ## Executable examples
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/field-required-aria-required-no-english-default.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/field-required-aria-required-no-english-default.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-7-remaining-hardening.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-remaining-hardening.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/perf-render-commit.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/perf-render-commit.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/selection-control-aria.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/selection-control-aria.test.tsx)
 
 ### Addressable examples
 

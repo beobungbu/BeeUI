@@ -53,7 +53,9 @@ Uncontrolled-by-default search-keyboard field layered on `Input`; clearing a pre
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
+| `containerClassName` | `string` | — | Applied to the row wrapping the input and `trailing`; ignored when `trailing` is omitted (the input then renders with no extra wrapper, unchanged). |
 | `onSearch` | `(value: string) => void` | — | Called with the submitted text when the return key is pressed, and with `''` when the text is cleared back to empty after having had content. Not called for every keystroke — use `onChangeText` for that. |
+| `trailing` | `React.ReactNode` | — | Rendered after the input, outside it (e.g. a scan-glyph button or a keyboard-shortcut hint). Forward a ref (`React.ComponentRef<typeof TextInput>`) to this component and call `ref.current.focus()` to focus the field from it. |
 
 Also carries every prop of `Omit<InputProps, 'inputMode' | 'returnKeyType'>` — documented on the [Input](/docs/components/input/) page, not reproduced here.
 
@@ -85,16 +87,16 @@ Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-m
 ## Styling and theming
 
 - **Style axes:** `size` (3 values, inherited from `InputProps`).
-- **Class-name surfaces:** `className`.
+- **Class-name surfaces:** `className`, `containerClassName`.
 
 Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.
 
 ## Executable examples
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/input-value-accessibility-and-search-slot.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/input-value-accessibility-and-search-slot.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-7-runtime-a11y.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-runtime-a11y.test.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
-- **Additional fixture:** [`apps/showcase/patterns/commerce-social/screens/messages-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/commerce-social/screens/messages-screen.tsx)
 
 ### Addressable examples
 

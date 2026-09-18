@@ -55,9 +55,9 @@ Uncontrolled-by-default text field (same contract as `Input`) with a visibility-
 | --- | --- | --- | --- |
 | `containerClassName` | `string` | — | Extra utility classes for the overlay's container element, merged after the component's own. |
 | `defaultVisible` | `boolean` | `false` | Initial visibility for uncontrolled usage. Defaults to false (masked). |
-| `hideLabel` | `string` | `'Hide password'` | Accessible label for the toggle button when the password is currently visible (pressing it hides it). Defaults to `'Hide password'`. |
+| `hideLabel` | `string` | `'Hide password'` | Both the toggle button's visible text and its accessible name when the password is currently visible (pressing it hides it) — e.g. localize to `'Ẩn'` for a short Vietnamese label. Defaults to `'Hide password'`. |
 | `onVisibleChange` | `(visible: boolean) => void` | — | Called with the next visibility whenever the show/hide toggle is pressed. |
-| `showLabel` | `string` | `'Show password'` | Accessible label for the toggle button when the password is currently masked (pressing it shows it). Defaults to `'Show password'`. |
+| `showLabel` | `string` | `'Show password'` | Both the toggle button's visible text and its accessible name when the password is currently masked (pressing it shows it) — e.g. localize to `'Hiện'` for a short Vietnamese label. Defaults to `'Show password'`. |
 | `toggleClassName` | `string` | — | Applied to the show/hide toggle `Button`, not the input. |
 | `visible` | `boolean` | — | Controls whether the password is shown in plain text (`true`) or masked via `secureTextEntry` (`false`). Passing this switches visibility to controlled mode. |
 
@@ -99,8 +99,8 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-7-hardening.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-hardening.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/password-input-visible-toggle-text.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/password-input-visible-toggle-text.test.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
-- **Additional fixture:** [`apps/showcase/patterns/account-settings/screens/change-password-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/account-settings/screens/change-password-screen.tsx)
 
 ### Addressable examples
 

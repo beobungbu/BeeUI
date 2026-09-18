@@ -96,6 +96,8 @@ Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract 
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `closeOnSelect` | `boolean` | `true` | Closes the menu after this item is activated (pressed or selected via keyboard). Defaults to true. |
+| `description` | `React.ReactNode` | — | Muted secondary line rendered below the primary content (e.g. an address under a store name), mirroring `ListItem`'s `description`. Ignored for custom element `children` (single-line items only). |
+| `descriptionClassName` | `string` | — | Applied to the `description` `Text` when it is a plain string or number; ignored for custom element `description`. |
 | `onPress` | `PressableProps['onPress']` | — | Called on press, before `onSelect` and `closeOnSelect` run. |
 | `onSelect` | `() => void` | — | Called when this item is activated (pressed or selected via keyboard), before `closeOnSelect` runs. |
 | `textClassName` | `string` | — | Applied to string/number children, which are wrapped in a `Text`; ignored for custom element children. |
@@ -209,23 +211,23 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 ## Accessibility
 
 - **Roles this family assigns:** `menu`, `menuitem`, `radiogroup` — set in `dropdown-menu.tsx` by the components themselves, not by the caller.
-- **Accessibility states and properties it sets:** `accessibilityElementsHidden`, `accessible`, `checked`, `controls`, `disabled`, `expanded`, `hidden` — read from `dropdown-menu.tsx`.
+- **Accessibility states and properties it sets:** `accessibilityElementsHidden`, `accessible`, `checked`, `controls`, `disabled`, `expanded`, `haspopup`, `hidden` — read from `dropdown-menu.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
 ## Styling and theming
 
 - **Style axes:** `tone` (8 values, inherited from `TextProps`), `size` (4 values), `variant` (5 values).
-- **Class-name surfaces:** `className`, `labelClassName`, `textClassName`.
+- **Class-name surfaces:** `className`, `descriptionClassName`, `labelClassName`, `textClassName`.
 
 Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/__tests__/issue-141-rtl-overlay-acceptance.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-141-rtl-overlay-acceptance.test.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/dropdown-menu-item-description-slot.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/dropdown-menu-item-description-slot.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/dropdown-menu-trigger-haspopup-hover.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/dropdown-menu-trigger-haspopup-hover.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/issue-141-rtl-overlay-acceptance.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-141-rtl-overlay-acceptance.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-149-reduced-motion-acceptance.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-149-reduced-motion-acceptance.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/issue-36-dropdown-menu.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-36-dropdown-menu.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/issue-68-theme-scope.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-68-theme-scope.test.tsx)
 
 ### Addressable examples
 
