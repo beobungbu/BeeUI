@@ -18,6 +18,7 @@ import {
   type ScrollViewProps,
   type TextProps as RNTextProps,
   type ViewProps,
+  type ViewStyle,
 } from 'react-native';
 import {
   OverlayDismissLayer,
@@ -541,7 +542,19 @@ export const SelectContent = React.forwardRef<
       root;
     const [currentItemId, setCurrentItemId] = React.useState<string | null>(null);
     const [itemLayouts, setItemLayouts] = React.useState<Record<string, ItemLayout>>({});
-    const scrollRef = React.useRef<React.ComponentRef<typeof ScrollView> | null>(null);
+    // Web renders a plain overflow `View` instead of `ScrollView` here (see
+    // the render below and `#612`'s docblock note) — RN's `ScrollView` on Web
+    // still negotiates the touch/pointer responder system a real browser
+    // scroll container never needs, and once the listbox actually overflows,
+    // that negotiation can win the gesture ahead of a `SelectItem`'s own
+    // press, so a real mouse click on an option silently does nothing. A
+    // plain `overflow: scroll` `View` renders as an ordinary scrollable `div`
+    // on Web with no responder involved, so a click always reaches the
+    // pressed option. Both target types support `.scrollTo`-equivalent
+    // access through the ref below.
+    const scrollRef = React.useRef<
+      React.ComponentRef<typeof ScrollView> | React.ComponentRef<typeof View> | null
+    >(null);
     const typeaheadRef = React.useRef({ query: '', timestamp: 0 });
     const renderOrderRef = React.useRef(0);
     renderOrderRef.current = 0;
@@ -606,9 +619,18 @@ export const SelectContent = React.forwardRef<
       if (!open || !currentItemId) return;
       const layout = itemLayouts[currentItemId];
       if (!layout) return;
-      scrollRef.current?.scrollTo({
+      const top = Math.max(0, layout.y - 8);
+      if (Platform.OS === 'web') {
+        // The Web listbox is a plain `View` (an ordinary DOM node), not a
+        // `ScrollView` — scroll it the same way a browser scrolls any
+        // overflow container.
+        (scrollRef.current as unknown as { scrollTo?: (options: { top: number }) => void } | null)
+          ?.scrollTo?.({ top });
+        return;
+      }
+      (scrollRef.current as React.ComponentRef<typeof ScrollView> | null)?.scrollTo({
         animated: false,
-        y: Math.max(0, layout.y - 8),
+        y: top,
       });
     }, [currentItemId, itemLayouts, open]);
 
@@ -758,14 +780,32 @@ export const SelectContent = React.forwardRef<
               pointerEvents={open && position ? 'auto' : 'none'}
               style={resolvedStyle}
             >
-              <ScrollView
-                ref={scrollRef}
-                keyboardShouldPersistTaps="handled"
-                {...scrollViewProps}
-                style={[{ maxHeight: resolvedMaxHeight }, scrollViewProps?.style]}
-              >
-                {children}
-              </ScrollView>
+              {Platform.OS === 'web' ? (
+                // See the `scrollRef` docblock above (#612): a plain overflow
+                // `View` here, not `ScrollView`, so a mouse press on an
+                // option is never swallowed by RN's touch-responder
+                // negotiation once the list actually scrolls.
+                <View
+                  ref={scrollRef as unknown as React.Ref<React.ComponentRef<typeof View>>}
+                  {...(scrollViewProps as unknown as ViewProps)}
+                  style={[
+                    styles.webScroll,
+                    { maxHeight: resolvedMaxHeight },
+                    scrollViewProps?.style as ViewProps['style'],
+                  ]}
+                >
+                  {children}
+                </View>
+              ) : (
+                <ScrollView
+                  ref={scrollRef as React.Ref<React.ComponentRef<typeof ScrollView>>}
+                  keyboardShouldPersistTaps="handled"
+                  {...scrollViewProps}
+                  style={[{ maxHeight: resolvedMaxHeight }, scrollViewProps?.style]}
+                >
+                  {children}
+                </ScrollView>
+              )}
             </View>
           </SelectItemsContext.Provider>
         </SelectRootContext.Provider>
@@ -970,5 +1010,11 @@ const styles = StyleSheet.create({
     left: -10000,
     opacity: 0,
     top: -10000,
+  },
+  // `'scroll'` (not RN's narrower typed 'hidden' | 'visible') so the listbox
+  // scrolls like an ordinary browser overflow container on Web (#612) — see
+  // the `scrollRef` docblock above for why this replaces `ScrollView` here.
+  webScroll: {
+    overflow: 'scroll' as ViewStyle['overflow'],
   },
 });
