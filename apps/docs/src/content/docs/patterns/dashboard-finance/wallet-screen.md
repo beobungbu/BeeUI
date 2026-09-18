@@ -29,6 +29,38 @@ The pattern is a composition recipe rather than a new framework layer. Follow th
 The screen is controlled through `WalletScreenProps`. User intent crosses the application boundary through `onAccountPress`, `onAddMoney`, `onAddPaymentMethod`, `onReceive`, `onSend`, `onTransactionPress`; fetching, routing, persistence and side effects remain application-owned.
 
 ```tsx
+// from apps/showcase/patterns/dashboard-finance/screens/wallet-screen.tsx
+export type WalletData = {
+  accounts: readonly WalletAccount[];
+  available: string;
+  balance: string;
+  recent: readonly TransactionRowData[];
+};
+
+// from apps/showcase/patterns/dashboard-finance/screens/wallet-screen.tsx
+export type WalletAccount = {
+  balance: string;
+  detail: string;
+  id: string;
+  name: string;
+};
+
+// from apps/showcase/patterns/dashboard-finance/components/transaction-row.tsx
+export type TransactionRowData = {
+  amount: string;
+  direction: TransactionDirection;
+  id: string;
+  merchant: string;
+  meta: string;
+  status: TransactionStatus;
+};
+
+// from apps/showcase/patterns/dashboard-finance/components/transaction-row.tsx
+export type TransactionDirection = 'income' | 'expense';
+
+// from apps/showcase/patterns/dashboard-finance/components/transaction-row.tsx
+export type TransactionStatus = 'completed' | 'pending' | 'failed';
+
 export type WalletScreenProps = {
   data: WalletData;
   onAccountPress?: (account: WalletAccount) => void;
@@ -76,7 +108,7 @@ BeeUI does not take ownership of app routing, authentication/business rules, API
 
 ## Source ownership
 
-`WalletScreen` is **Showcase source you copy**, not a package export: it is not shipped from any `@beemvp/beeui-*` package, and the Registry CLI (`pnpm beeui list` / `pnpm beeui add`) does not carry pattern screens. Copy [`apps/showcase/patterns/dashboard-finance/screens/wallet-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/dashboard-finance/screens/wallet-screen.tsx) into your app and adapt it directly. Only the individual BeeUI components it composes (linked above) are available for source ownership through the repository-local Registry workflow; before public CLI publication, use [CLI & source ownership](/docs/guides/cli-source-ownership/) from a BeeUI checkout rather than a public `npx` command.
+`WalletScreen` is **Showcase source you copy**, not a package export: it is not shipped from any `@beemvp/beeui-*` package, and the Registry CLI (`pnpm beeui list` / `pnpm beeui add`) does not carry pattern screens. Copy [`apps/showcase/patterns/dashboard-finance/screens/wallet-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/dashboard-finance/screens/wallet-screen.tsx) into your app and adapt it directly. Only the individual BeeUI components it composes (linked above) are available for source ownership through the repository-local Registry workflow; see [CLI & source ownership](/docs/guides/cli-source-ownership/) for both the published `npx @beemvp/beeui-cli` path and the repository-local checkout path.
 
 ## Related
 
