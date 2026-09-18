@@ -1,6 +1,6 @@
 # Consumer audit fix-all (BeePOS + BeeECOM findings, BeeUI #543–#615)
 
-Status: in progress · Base: origin/development · Integration branch: fix/consumer-audit-batch
+Status: implemented (A–H merged); final status in plans/reports/consumer-audit-260918-1952-fix-all-final-status-report.md · Base: origin/development · Integration branch: fix/consumer-audit-batch
 Source list: plans/reports/consumer-audit-260918-1554-beepos-beeecom-beeui-issues-report.md
 
 ## Workstreams (disjoint file ownership; run in parallel)
@@ -12,6 +12,10 @@ Source list: plans/reports/consumer-audit-260918-1554-beepos-beeecom-beeui-issue
 | C | Dialog, table, visual/dark, button family, list/chip/badge API gaps, toast/date-picker native | phase-C-visual-api.md |
 | D1 | Docs: start, config, styling, theming, tokens, compat pins | phase-D1-docs-setup.md |
 | D2 | Docs: components, props generator, patterns, llms, site structure | phase-D2-docs-components.md |
+| E | Residuals + browser proof | phase-E-residuals-browser-proof.md |
+| F | Approved capability gaps (Tabs, OTP, Table density, Toolbar) | phase-F-new-capabilities.md |
+| G | Scoped theme CSS emission | phase-G-tokens-scoped-theme.md |
+| H | Docs + registry close-out | phase-H-docs-closeout.md |
 
 ## Deferred (owner gate or new component family)
 - #561 npm dist-tag `latest` → needs npm publish rights (owner).
