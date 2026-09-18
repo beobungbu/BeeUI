@@ -139,7 +139,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Switch** is actually used: 10 lines in 2 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Switch** is actually used: 10 lines in 2 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -148,13 +148,13 @@ import { Switch } from '@beemvp/beeui-ui';
 import * as React from 'react';
 ````
 
-Fixture state this block reads (same file, line 459):
+Fixture state this block reads (same file, line 460):
 
 ````tsx
   const [notifications, setNotifications] = React.useState(true);
 ````
 
-[lines 644–648](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L644-L648):
+[lines 645–649](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L645-L649):
 
 ````tsx
                 <Switch
@@ -164,13 +164,13 @@ Fixture state this block reads (same file, line 459):
                 />
 ````
 
-Fixture state this block reads (same file, line 459):
+Fixture state this block reads (same file, line 460):
 
 ````tsx
   const [notifications, setNotifications] = React.useState(true);
 ````
 
-[lines 1045–1049](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1045-L1049):
+[lines 1052–1056](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1052-L1056):
 
 ````tsx
                     <Switch

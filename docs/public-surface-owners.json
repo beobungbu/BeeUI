@@ -38,11 +38,11 @@
     "./lifecycle.json"
   ],
   "acknowledgedSourceBlobs": {
-    "packages/ui/package.json": "5860494881e32c20437c0e0119234fc9d61e659d",
-    "packages/ui/src/index.ts": "8eb5c3ba31906e78c6c7570d723345f59beda82a",
+    "packages/ui/package.json": "67c898cb683f249d8c2bf59c02cc9d6e2c357957",
+    "packages/ui/src/index.ts": "6fc4749698b4536902123b46360d85fd7b685249",
     "packages/tokens/package.json": "190e611cdabef8c5cdd1e181e6a1a784e6696f61",
-    "packages/tokens/tokens.json": "4eb33b6450f5f9347f7f69cb6ca37c8ff559ffc3",
-    "packages/tokens/src/index.ts": "a21a9d3bcc8589c811ca19aaf9d1126b1acf352c",
+    "packages/tokens/tokens.json": "97eab70437a93bca1904059b385dd125499fe09e",
+    "packages/tokens/src/index.ts": "a809c960477ccf23718048afd458b0e86ba19356",
     "packages/tokens/src/registry.ts": "493d3fdbf060764d1ed2c8cf8844c7e8cc491466",
     "packages/tokens/src/theme-overrides.ts": "0df9d73600a65d9c22f7a2dcf17569bd0dd284a5",
     "packages/tokens/src/token-reader.ts": "eb66ebf91b39f518e0c299fca4fe0ea1d48ec555",
@@ -50,7 +50,7 @@
     "packages/core/package.json": "c32b85239769b096973ee030e7500a3092c2a91b",
     "packages/core/src/index.ts": "8bc4dd7cd94583aa191188c52dc6c4ba883ca56a",
     "packages/cli/src/beeui.mjs": "b3d6eccecb6c5ec814b90bcf29083d2e55c0f796",
-    "registry/registry.json": "fb8c1ea6022ed55c6fbf5a16722d9670d57eed1d"
+    "registry/registry.json": "82249d7bf984d7a0f8fd6ce26793a8d23d3bcd42"
   },
   "ignoredExportSubpaths": [
     "./package.json"

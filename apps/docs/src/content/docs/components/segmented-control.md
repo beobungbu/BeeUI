@@ -46,7 +46,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Controlled (`value`/`onValueChange`) mutually exclusive selection with `radiogroup` semantics; enabled usage without `onValueChange` warns in development, and a disabled segment cannot be selected.
+Controlled (`value`/`onValueChange`) mutually exclusive selection with `radiogroup` semantics; enabled usage without `onValueChange` warns in development, and a disabled segment cannot be selected. `accessibilityLabel` names the radiogroup for assistive tech; an explicit value always wins, and absent one it falls back to a wrapping `Field`'s label — the group is never left with the unnamed "radio group" announcement.
 
 ### Props
 
@@ -150,7 +150,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Segmented Control** is actually used: 4 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Segmented Control** is actually used: 4 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -159,13 +159,13 @@ import { SegmentedControl, SegmentedControlItem } from '@beemvp/beeui-ui';
 import * as React from 'react';
 ````
 
-Fixture state this block reads (same file, line 464):
+Fixture state this block reads (same file, line 465):
 
 ````tsx
   const [viewMode, setViewMode] = React.useState('list');
 ````
 
-[lines 898–901](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L898-L901):
+[lines 905–908](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L905-L908):
 
 ````tsx
                 <SegmentedControl onValueChange={setViewMode} value={viewMode}>

@@ -45,7 +45,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Stateless 44px icon-only pressable sharing Button's `disabled`/`loading` semantics; an accessible label (`accessibilityLabel`) is required because there is no visible text to derive one from.
+Stateless icon-only pressable sharing Button's `disabled`/`loading` semantics; an accessible label (`accessibilityLabel`) is required because there is no visible text to derive one from. Button's own size variant (`'sm'`/`'md'`/`'lg'`/`'icon'`, defaulting to `'icon'`) renders a square control at Button's matching control-height token here instead of Button's rectangular label padding. `count` renders a small overlay badge anchored to the top-end corner (e.g. an unread count) and is appended to `accessibilityLabel` so it is announced; omit it for no badge.
 
 ### Props
 
@@ -66,7 +66,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 - No additional provider is required by this family. `BeeUIProvider` remains the recommended application root.
 - **Peer/native dependencies visible to this Registry item:** `react`, `react-native`
-- **Registry dependency closure:** `button`, `theme`
+- **Registry dependency closure:** `button`, `core-cn`, `theme`
 - Safe-area ownership remains explicit: shell surfaces touching system edges opt into `SafeArea`; components do not silently invent app-shell insets.
 - Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).
 
@@ -95,6 +95,7 @@ Colors, spacing and typography come from semantic tokens rather than from values
 ## Executable examples
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/icon-button-size-and-count.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/icon-button-size-and-count.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/table-showcase.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/table-showcase.tsx)
 
@@ -132,7 +133,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Icon Button** is actually used: 15 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Icon Button** is actually used: 15 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -140,7 +141,7 @@ Imports the examples below need (a filtered subset of the fixture's own top-leve
 import { Box, Button, IconButton, Section } from '@beemvp/beeui-ui';
 ````
 
-[lines 528–542](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L528-L542):
+[lines 529–543](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L529-L543):
 
 ````tsx
               <Section
@@ -163,7 +164,7 @@ import { Box, Button, IconButton, Section } from '@beemvp/beeui-ui';
 Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
-A size prop is not accepted: an icon button always renders at Button's icon size, so there is no compact or large variant, and any string child is styled by Button's own label rules with no override hook.
+Any string child is styled by Button's own label rules with no override hook. `count` accepts any node, but only a string/number value renders inside the badge pill and is appended to the accessible name — any other node renders as-is and must carry its own accessible text.
 
 ## Related
 

@@ -45,7 +45,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Stateless label/description/error composition; it wires accessible label/required/error relationships only to a wrapped text-entry control (`Input`/`Textarea`) — never to checkbox/radio/switch, which label themselves explicitly.
+Stateless label/description/error composition; it wires accessible label/required/error relationships only to a wrapped text-entry control (`Input`/`Textarea`) — never to checkbox/radio/switch, which label themselves explicitly. `required` never injects an English word into the wrapped control's accessible name by default; it reaches assistive tech only through the control's own aria-required/accessibility-required state. Pass `requiredLabel` to append localized copy (e.g. `"Bắt buộc"`) to the accessible name instead — there is no built-in English or other-language default.
 
 ### Props
 
@@ -143,7 +143,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Field** is actually used: 34 lines in 4 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Field** is actually used: 34 lines in 4 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -152,7 +152,7 @@ import { Field, Input, OTPInput, PasswordInput, Popover, SearchInput, Sheet, Tex
 import * as React from 'react';
 ````
 
-[lines 159–161](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L159-L161):
+[lines 160–162](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L160-L162):
 
 ````tsx
           <Field label="Note">
@@ -160,14 +160,14 @@ import * as React from 'react';
           </Field>
 ````
 
-Fixture state this block reads (same file, lines 459, 462):
+Fixture state this block reads (same file, lines 460, 463):
 
 ````tsx
   const [notifications, setNotifications] = React.useState(true);
   const [otp, setOtp] = React.useState('');
 ````
 
-[lines 595–619](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L595-L619):
+[lines 596–620](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L596-L620):
 
 ````tsx
               <Field description="Used only for account notifications." label="Email" required testID="component-gallery-field">
@@ -197,7 +197,7 @@ Fixture state this block reads (same file, lines 459, 462):
               </Field>
 ````
 
-[lines 693–695](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L693-L695):
+[lines 700–702](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L700-L702):
 
 ````tsx
                       <Field label="Project name">
@@ -205,7 +205,7 @@ Fixture state this block reads (same file, lines 459, 462):
                       </Field>
 ````
 
-[lines 730–732](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L730-L732):
+[lines 737–739](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L737-L739):
 
 ````tsx
                     <Field label="Search">
@@ -216,7 +216,7 @@ Fixture state this block reads (same file, lines 459, 462):
 Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
-Checkbox/radio/switch labelling stays explicit at the control/group level.
+Checkbox/radio/switch labelling stays explicit at the control/group level. The older `requiredAccessibilityLabel` prop still works if set explicitly, but is deprecated in favor of `requiredLabel`.
 
 ## Related
 

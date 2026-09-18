@@ -46,7 +46,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-`BeeUIProvider` (the application root) supplies safe-area measurement, the Toast runtime/viewport, and the shared anchored-overlay runtime to every descendant; `SafeArea` itself is a stateless surface with caller-owned `edges` selection — BeeUI never adds system insets to other components implicitly.
+`BeeUIProvider` (the application root) supplies safe-area measurement, the Toast runtime/viewport, and the shared anchored-overlay runtime to every descendant; `SafeArea` itself is a stateless surface with caller-owned `edges` selection — BeeUI never adds system insets to other components implicitly. `BeeUIProvider` accepts an optional `toastPlacement` (`'top' | 'bottom'`), forwarded to the Toast runtime; omitting it keeps the existing platform default (bottom on iOS/Android, top on Web).
 
 ### Props
 
@@ -74,7 +74,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 - No additional provider is required by this family. `BeeUIProvider` remains the recommended application root.
 - **Peer/native dependencies visible to this Registry item:** `react`, `react-native`, `react-native-safe-area-context`, `uniwind`
-- **Registry dependency closure:** `overlay-runtime`, `theme`, `toast`
+- **Registry dependency closure:** `core-cn`, `overlay-runtime`, `theme`, `toast`
 - Safe-area ownership remains explicit: shell surfaces touching system edges opt into `SafeArea`; components do not silently invent app-shell insets.
 - Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).
 
@@ -144,7 +144,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Safe Area** is actually used: 28 lines in 2 places, of 3 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Safe Area** is actually used: 28 lines in 2 places, of 3 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -154,7 +154,7 @@ import * as React from 'react';
 import { Uniwind, useUniwind } from 'uniwind';
 ````
 
-Fixture state this block reads (same file, lines 120-136, 457):
+Fixture state this block reads (same file, lines 121-137, 458):
 
 ````tsx
 function ThemeToggle() {
@@ -183,7 +183,7 @@ Placeholder for a prop this fixture receives (not fixture source — substitute 
 const onBack: () => void = () => {};
 ````
 
-[lines 474–495](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L474-L495):
+[lines 475–496](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L475-L496):
 
 ````tsx
       <SafeArea className="bg-surface" edges={['top', 'left', 'right']} testID="component-gallery-safe-area">
@@ -210,7 +210,7 @@ const onBack: () => void = () => {};
       </SafeArea>
 ````
 
-[lines 1065–1070](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1065-L1070):
+[lines 1072–1077](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1072-L1077):
 
 ````tsx
       <SafeArea className="bg-surface" edges={['bottom', 'left', 'right']}>

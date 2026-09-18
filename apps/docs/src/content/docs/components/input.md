@@ -46,7 +46,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Uncontrolled-by-default text field (standard React Native `value`/`onChangeText`); `invalid`/`disabled`/focus state drive semantic styling, while label/required/error metadata come from a wrapping `Field`, not from `Input` itself.
+Uncontrolled-by-default text field (standard React Native `value`/`onChangeText`); `invalid`/`disabled`/focus state drive semantic styling, while label/required/error metadata come from a wrapping `Field`, not from `Input` itself. A wrapping `Field`'s required state reaches this control only through its own `aria-required` prop (`true` when the field is required) — no English word is injected into the accessible name unless the field also sets a localized required label.
 
 ### Props
 
@@ -137,7 +137,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Input** is actually used: 18 lines in 5 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Input** is actually used: 18 lines in 5 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -146,7 +146,7 @@ import { Field, Input, Popover, Sheet } from '@beemvp/beeui-ui';
 import * as React from 'react';
 ````
 
-[lines 159–161](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L159-L161):
+[lines 160–162](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L160-L162):
 
 ````tsx
           <Field label="Note">
@@ -154,13 +154,13 @@ import * as React from 'react';
           </Field>
 ````
 
-Fixture state this block reads (same file, line 459):
+Fixture state this block reads (same file, line 460):
 
 ````tsx
   const [notifications, setNotifications] = React.useState(true);
 ````
 
-[lines 595–597](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L595-L597):
+[lines 596–598](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L596-L598):
 
 ````tsx
               <Field description="Used only for account notifications." label="Email" required testID="component-gallery-field">
@@ -168,7 +168,7 @@ Fixture state this block reads (same file, line 459):
               </Field>
 ````
 
-[lines 611–616](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L611-L616):
+[lines 612–617](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L612-L617):
 
 ````tsx
               <Field error="Enter a valid project name." invalid label="Project name" testID="field-invalid-state">
@@ -179,7 +179,7 @@ Fixture state this block reads (same file, line 459):
               </Field>
 ````
 
-[lines 693–695](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L693-L695):
+[lines 700–702](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L700-L702):
 
 ````tsx
                       <Field label="Project name">
@@ -187,7 +187,7 @@ Fixture state this block reads (same file, line 459):
                       </Field>
 ````
 
-[lines 730–732](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L730-L732):
+[lines 737–739](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L737-L739):
 
 ````tsx
                     <Field label="Search">
@@ -199,6 +199,8 @@ Open the fixture itself for the full surrounding component. For a smaller app-sp
 ## Limitations
 
 An explicit `accessibilityLabel`, or an explicit accessibility hint, replaces the label, description and error a wrapping `Field` supplies — but not the label association, which is forwarded unconditionally, so on Web an input that names itself is still pointed at the field's label as well. `disabled` cannot be undone by the editable flag: that flag can only turn editing off, never back on.
+
+**Implementation note:** On Web, react-native-web's own `TextInput` calls `stopPropagation()` on every `keydown` while it holds focus, so a `document`/`window` `keydown` listener registered in the default bubble phase never fires while an `Input`, `SearchInput`, or `Textarea` is focused. Register app-level keyboard shortcuts in the capture phase instead: `document.addEventListener('keydown', handler, true)`. This is a react-native-web behavior, not something BeeUI opts you out of per-field today.
 
 ## Related
 

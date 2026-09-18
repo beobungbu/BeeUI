@@ -53,7 +53,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Controlled/uncontrolled (`open`/`onOpenChange`/`defaultOpen`) non-modal menu; `DropdownMenuItem`'s `onSelect` closes the menu by default after the handler runs, `DropdownMenuCheckboxItem` stays open by default, and `DropdownMenuRadioGroup` fails safe by disabling every item that shares a duplicate value.
+Controlled/uncontrolled (`open`/`onOpenChange`/`defaultOpen`) non-modal menu; `DropdownMenuItem`'s `onSelect` closes the menu by default after the handler runs, `DropdownMenuCheckboxItem` stays open by default, and `DropdownMenuRadioGroup` fails safe by disabling every item that shares a duplicate value. `DropdownMenuItem` accepts an optional `description` — a muted secondary line rendered below the primary content, mirroring `ListItem`'s own `description` — but only for single-line, plain-text/number `children`; a custom element `children` ignores it.
 
 ### Props
 
@@ -285,7 +285,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Dropdown Menu** is actually used: 70 lines in 5 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Dropdown Menu** is actually used: 70 lines in 5 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -295,7 +295,7 @@ import * as React from 'react';
 import { useUniwind } from 'uniwind';
 ````
 
-Fixture state this block reads (same file, lines 173, 175-177, 189):
+Fixture state this block reads (same file, lines 174, 176-178, 190):
 
 ````tsx
 const OverlayConsumerContext = React.createContext('overlay-context-default');
@@ -305,7 +305,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
   const [menuOpen, setMenuOpen] = React.useState(false);
 ````
 
-[lines 218–226](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L218-L226):
+[lines 219–227](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L219-L227):
 
 ````tsx
           <DropdownMenu onOpenChange={setMenuOpen} open={menuOpen}>
@@ -319,7 +319,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
           </DropdownMenu>
 ````
 
-Fixture state this block reads (same file, lines 173, 175-177):
+Fixture state this block reads (same file, lines 174, 176-178):
 
 ````tsx
 const OverlayConsumerContext = React.createContext('overlay-context-default');
@@ -328,7 +328,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
 }
 ````
 
-[lines 248–256](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L248-L256):
+[lines 249–257](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L249-L257):
 
 ````tsx
         <DropdownMenu>
@@ -342,7 +342,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
         </DropdownMenu>
 ````
 
-Fixture state this block reads (same file, lines 173, 175-177, 234):
+Fixture state this block reads (same file, lines 174, 176-178, 235):
 
 ````tsx
 const OverlayConsumerContext = React.createContext('overlay-context-default');
@@ -352,7 +352,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
   const [dialogMenuAction, setDialogMenuAction] = React.useState('none');
 ````
 
-[lines 289–303](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L289-L303):
+[lines 290–304](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L290-L304):
 
 ````tsx
             <DropdownMenu>
@@ -372,7 +372,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
             </DropdownMenu>
 ````
 
-Fixture state this block reads (same file, line 320-323):
+Fixture state this block reads (same file, line 321-324):
 
 ````tsx
 function ThemeScopeValue({ testID }: { testID: string }) {
@@ -381,7 +381,7 @@ function ThemeScopeValue({ testID }: { testID: string }) {
 }
 ````
 
-[lines 342–350](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L342-L350):
+[lines 343–351](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L343-L351):
 
 ````tsx
           <DropdownMenu>
@@ -395,7 +395,7 @@ function ThemeScopeValue({ testID }: { testID: string }) {
           </DropdownMenu>
 ````
 
-Fixture state this block reads (same file, lines 467, 468, 469):
+Fixture state this block reads (same file, lines 468, 469, 470):
 
 ````tsx
   const [menuToolbar, setMenuToolbar] = React.useState(true);
@@ -403,7 +403,7 @@ Fixture state this block reads (same file, lines 467, 468, 469):
   const [menuAction, setMenuAction] = React.useState('No action yet');
 ````
 
-[lines 763–790](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L763-L790):
+[lines 770–797](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L770-L797):
 
 ````tsx
                   <DropdownMenu>

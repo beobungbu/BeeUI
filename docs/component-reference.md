@@ -2,7 +2,7 @@
 
 # BeeUI component reference
 
-> Per-component documentation contract for the 62 public `@beemvp/beeui-ui` components. Each entry documents the same required sections so a new public component cannot silently ship without docs. Derived from registry/registry.json, packages/ui/src/index.ts, and the @beemvp/beeui-showcase app; enforced by `pnpm docs:contract:check`. The behavior-contract link points at the authoritative [component catalog](components.md); this file is the coverage-enforced per-component index, not a second copy of it.
+> Per-component documentation contract for the 63 public `@beemvp/beeui-ui` components. Each entry documents the same required sections so a new public component cannot silently ship without docs. Derived from registry/registry.json, packages/ui/src/index.ts, and the @beemvp/beeui-showcase app; enforced by `pnpm docs:contract:check`. The behavior-contract link points at the authoritative [component catalog](components.md); this file is the coverage-enforced per-component index, not a second copy of it.
 
 STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm. The install / import lines below are release-ready-but-not-published targets; the working, in-repo path today is the source-ownership CLI (`pnpm beeui add <component>`).
 
@@ -113,7 +113,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Import:** `import { Box } from '@beemvp/beeui-ui';`
 - **API:** `Box` — source [`packages/ui/src/components/box.tsx`](../packages/ui/src/components/box.tsx). Typed props: `BoxProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add box` (copies the source file into your app; see [registry CLI](registry-cli.md)).
-- **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `theme`.
+- **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
@@ -201,7 +201,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/auth/screens/interests-onboarding-screen.tsx`](../apps/showcase/patterns/auth/screens/interests-onboarding-screen.tsx), [`patterns/commerce-social/screens/product-detail-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/product-detail-screen.tsx), [`patterns/commerce-social/screens/product-feed-screen.tsx`](../apps/showcase/patterns/commerce-social/screens/product-feed-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** Inside a `ChipGroup`, a chip's own `selected`, `defaultSelected` and `onSelectedChange` are ignored: selection is read from the group's value and a press is routed to the group instead of the item's callback.
+- **Limitations:** Inside a `ChipGroup`, a chip's own `selected`, `defaultSelected`, `onSelectedChange` and `interactive` are ignored: selection and role are read from the group's value and semantics, and a press is routed to the group instead of the item's callback. `allowDeselect` has no effect in `'multiple'` mode, which can already reach zero selections by unchecking every `Chip`.
 
 ## `collapsible`
 
@@ -298,7 +298,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/screens/change-password-screen.tsx`](../apps/showcase/patterns/account-settings/screens/change-password-screen.tsx), [`patterns/account-settings/screens/edit-profile-screen.tsx`](../apps/showcase/patterns/account-settings/screens/edit-profile-screen.tsx), [`patterns/auth/screens/forgot-password-screen.tsx`](../apps/showcase/patterns/auth/screens/forgot-password-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** Checkbox/radio/switch labelling stays explicit at the control/group level.
+- **Limitations:** Checkbox/radio/switch labelling stays explicit at the control/group level. The older `requiredAccessibilityLabel` prop still works if set explicitly, but is deprecated in favor of `requiredLabel`.
 
 ## `form-group`
 
@@ -334,13 +334,13 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Import:** `import { IconButton } from '@beemvp/beeui-ui';`
 - **API:** `IconButton` — source [`packages/ui/src/components/icon-button.tsx`](../packages/ui/src/components/icon-button.tsx). Typed props: `IconButtonProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add icon-button` (copies the source file into your app; see [registry CLI](registry-cli.md)).
-- **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `button`, `theme`.
+- **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `button`, `core-cn`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`component-gallery/table-showcase.tsx`](../apps/showcase/component-gallery/table-showcase.tsx), [`__tests__/icon-button-size-and-count.test.tsx`](../apps/showcase/__tests__/icon-button-size-and-count.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** A size prop is not accepted: an icon button always renders at Button's icon size, so there is no compact or large variant, and any string child is styled by Button's own label rules with no override hook.
+- **Limitations:** Any string child is styled by Button's own label rules with no override hook. `count` accepts any node, but only a string/number value renders inside the badge pill and is appended to the accessible name — any other node renders as-is and must carry its own accessible text.
 
 ## `input`
 
@@ -355,6 +355,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/screens/edit-profile-screen.tsx`](../apps/showcase/patterns/account-settings/screens/edit-profile-screen.tsx), [`patterns/auth/screens/forgot-password-screen.tsx`](../apps/showcase/patterns/auth/screens/forgot-password-screen.tsx), [`patterns/auth/screens/profile-setup-screen.tsx`](../apps/showcase/patterns/auth/screens/profile-setup-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Limitations:** An explicit `accessibilityLabel`, or an explicit accessibility hint, replaces the label, description and error a wrapping `Field` supplies — but not the label association, which is forwarded unconditionally, so on Web an input that names itself is still pointed at the field's label as well. `disabled` cannot be undone by the editable flag: that flag can only turn editing off, never back on.
+- **Notes:** On Web, react-native-web's own `TextInput` calls `stopPropagation()` on every `keydown` while it holds focus, so a `document`/`window` `keydown` listener registered in the default bubble phase never fires while an `Input`, `SearchInput`, or `Textarea` is focused. Register app-level keyboard shortcuts in the capture phase instead: `document.addEventListener('keydown', handler, true)`. This is a react-native-web behavior, not something BeeUI opts you out of per-field today.
 
 ## `keyboard-aware-screen`
 
@@ -452,7 +453,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/auth/screens/verify-code-screen.tsx`](../apps/showcase/patterns/auth/screens/verify-code-screen.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/component-contracts.test.tsx`](../apps/showcase/__tests__/component-contracts.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** One text field, not one box per digit: there is no per-character slot, caret or focus movement, so a segmented OTP appearance has to be built by the caller. The length limit, keyboard type and change handler are owned here and not accepted from outside.
+- **Limitations:** One text field, not one box per digit: there is no per-character slot, caret or focus movement — `appearance="segmented"` only changes what is drawn, not this input model. The length limit, keyboard type and change handler are owned here and not accepted from outside.
 - **Notes:** `OTPInputProps` omits `onChangeText` from `InputProps`; the only change callback is the inherited React Native `onChange`, which receives a `NativeSyntheticEvent<TextInputChangeEventData>`, not a plain string — read the new value from `event.nativeEvent.text`.
 
 ## `pagination`
@@ -481,7 +482,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/screens/change-password-screen.tsx`](../apps/showcase/patterns/account-settings/screens/change-password-screen.tsx), [`patterns/auth/screens/reset-password-screen.tsx`](../apps/showcase/patterns/auth/screens/reset-password-screen.tsx), [`patterns/auth/screens/sign-in-screen.tsx`](../apps/showcase/patterns/auth/screens/sign-in-screen.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** The toggle's visible text is a hardcoded English Show/Hide inside a fixed-width button: `showLabel` and `hideLabel` change only its accessible name, not what is rendered. Masking follows `visible` alone; the underlying secure-entry flag is not accepted.
+- **Limitations:** Masking follows `visible` alone; the underlying secure-entry flag is not accepted.
 
 ## `popover`
 
@@ -541,7 +542,7 @@ The documentation contract, its required sections, and how it is enforced are de
 
 ## `screen`
 
-- **Purpose:** Base application surface with semantic background and optional spacing; owns no safe-area or scroll behavior.
+- **Purpose:** Base application surface with semantic background and optional spacing; owns no safe-area behavior and offers only an opt-in scroll body.
 - **Import:** `import { Screen } from '@beemvp/beeui-ui';`
 - **API:** `Screen` — source [`packages/ui/src/components/screen.tsx`](../packages/ui/src/components/screen.tsx). Typed props: `ScreenProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add screen` (copies the source file into your app; see [registry CLI](registry-cli.md)).
@@ -551,7 +552,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/components/settings-screen-shell.tsx`](../apps/showcase/patterns/account-settings/components/settings-screen-shell.tsx), [`patterns/commerce-social/components/screen-shell.tsx`](../apps/showcase/patterns/commerce-social/components/screen-shell.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** `padding` is a four-value preset applied to both axes at once: there is no per-axis, per-edge or token-level spacing control, so anything else comes from `className`.
+- **Limitations:** `padding` is a four-value preset applied to both axes at once: there is no per-axis, per-edge or token-level spacing control, so anything else comes from `className`. `scroll`'s keyboard-avoiding wrapper is the same basic case `KeyboardAwareScreen` covers more fully; it does not add safe-area edges of its own.
 
 ## `search-input`
 
@@ -559,7 +560,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Import:** `import { SearchInput } from '@beemvp/beeui-ui';`
 - **API:** `SearchInput` — source [`packages/ui/src/components/search-input.tsx`](../packages/ui/src/components/search-input.tsx). Typed props: `SearchInputProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add search-input` (copies the source file into your app; see [registry CLI](registry-cli.md)).
-- **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `input`, `theme`.
+- **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `input`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
@@ -739,7 +740,7 @@ The documentation contract, its required sections, and how it is enforced are de
 
 - **Purpose:** Semantic data-table primitives that render real table/th scope/aria-sort semantics on Web.
 - **Import:** `import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@beemvp/beeui-ui';`
-- **API:** `Table`, `TableBody`, `TableCaption`, `TableCell`, `TableFooter`, `TableHead`, `TableHeader`, `TableRow` — source [`packages/ui/src/components/table.tsx`](../packages/ui/src/components/table.tsx). Typed props: `TableAlign`, `TableBodyProps`, `TableCaptionProps`, `TableCellProps`, `TableFooterProps`, `TableHeaderProps`, `TableHeadProps`, `TableLayout`, `TableProps`, `TableRowProps`, `TableSortDirection` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
+- **API:** `Table`, `TableBody`, `TableCaption`, `TableCell`, `TableFooter`, `TableHead`, `TableHeader`, `TableRow` — source [`packages/ui/src/components/table.tsx`](../packages/ui/src/components/table.tsx). Typed props: `TableAlign`, `TableBodyProps`, `TableCaptionProps`, `TableCellProps`, `TableDensity`, `TableFooterProps`, `TableHeaderProps`, `TableHeadProps`, `TableLayout`, `TableProps`, `TableRowProps`, `TableSortDirection` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add table` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `text`, `theme`, `use-direction`, `use-required-callback-warning`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
@@ -762,7 +763,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/dashboard-finance/screens/analytics-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/analytics-screen.tsx), [`patterns/dashboard-finance/screens/transactions-screen.tsx`](../apps/showcase/patterns/dashboard-finance/screens/transactions-screen.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** Press handling is owned by the family: a trigger reaches `onValueChange` only when its tab is not already selected, so pressing the active tab does nothing and a trigger cannot carry its own press handler.
+- **Limitations:** Press handling is owned by the family: a trigger reaches `onValueChange` only when its tab is not already selected, so pressing the active tab does nothing and a trigger cannot carry its own press handler. `closable` without `closeAccessibilityLabel` warns in development — the close control has no other way to describe itself.
 
 ## `text`
 
@@ -834,6 +835,21 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`pattern-gallery/domains/account-settings-gallery.tsx`](../apps/showcase/pattern-gallery/domains/account-settings-gallery.tsx), [`pattern-gallery/domains/auth-gallery.tsx`](../apps/showcase/pattern-gallery/domains/auth-gallery.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Limitations:** No Modal/anchored geometry and no arbitrary ReactNode transport; descriptors only.
+
+## `toolbar`
+
+- **Purpose:** Single-row action toolbar that measures its own width and collapses lower-priority items into an overflow menu when they no longer fit.
+- **Import:** `import { Toolbar, ToolbarItem } from '@beemvp/beeui-ui';`
+- **API:** `Toolbar`, `ToolbarItem` — source [`packages/ui/src/components/toolbar.tsx`](../packages/ui/src/components/toolbar.tsx). Typed props: `ToolbarItemProps`, `ToolbarProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
+- **Source ownership:** `pnpm beeui add toolbar` (copies the source file into your app; see [registry CLI](registry-cli.md)).
+- **Dependencies / provider:** Peer dependencies: `react`, `react-native`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `core-cn`, `dropdown-menu`.
+- **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
+- **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
+- **Theme / density:** [theming](theming.md) · [density](density.md).
+- **Behavior contract:** [component catalog](components.md).
+- **Executable examples:** [`__tests__/toolbar-overflow-collapse.test.tsx`](../apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `overflowAccessibilityLabel` is required only once the overflow menu actually renders (i.e. once any prioritized item collapses) — a dev warning fires if it is missing at that point, not before. `ToolbarItem.children` is read for measurement and rendering but never cloned or modified, so it must be a single element (typically an `IconButton`/`Button`).
+- **Notes:** The overflow menu is a `DropdownMenu` composition, so it inherits that family's full keyboard/dismiss behavior and `aria-haspopup="menu"` for free — there is no second, bespoke popover implementation.
 
 ## `tooltip`
 

@@ -201,7 +201,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Tooltip** is actually used: 24 lines in 3 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Tooltip** is actually used: 24 lines in 3 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -210,7 +210,7 @@ import { Text, Tooltip, TooltipContent, TooltipTrigger } from '@beemvp/beeui-ui'
 import * as React from 'react';
 ````
 
-Fixture state this block reads (same file, lines 173, 175-177):
+Fixture state this block reads (same file, lines 174, 176-178):
 
 ````tsx
 const OverlayConsumerContext = React.createContext('overlay-context-default');
@@ -219,7 +219,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
 }
 ````
 
-[lines 258–265](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L258-L265):
+[lines 259–266](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L259-L266):
 
 ````tsx
         <Tooltip>
@@ -232,7 +232,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
         </Tooltip>
 ````
 
-Fixture state this block reads (same file, lines 173, 175-177):
+Fixture state this block reads (same file, lines 174, 176-178):
 
 ````tsx
 const OverlayConsumerContext = React.createContext('overlay-context-default');
@@ -241,7 +241,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
 }
 ````
 
-[lines 280–287](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L280-L287):
+[lines 281–288](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L281-L288):
 
 ````tsx
             <Tooltip>
@@ -254,7 +254,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
             </Tooltip>
 ````
 
-[lines 804–811](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L804-L811):
+[lines 811–818](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L811-L818):
 
 ````tsx
                   <Tooltip>

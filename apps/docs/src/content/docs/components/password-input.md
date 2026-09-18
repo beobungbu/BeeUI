@@ -45,7 +45,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Uncontrolled-by-default text field (same contract as `Input`) with a visibility-toggle affordance; toggling visibility never changes the caller-owned `secureTextEntry`/autofill overrides, which remain authoritative.
+Uncontrolled-by-default text field (same contract as `Input`) with a visibility-toggle affordance; toggling visibility never changes the caller-owned `secureTextEntry`/autofill overrides, which remain authoritative. `showLabel`/`hideLabel` drive both the toggle button's visible text and its accessible name for the masked/visible states respectively (defaulting to the English `'Show password'`/`'Hide password'`) — a localized app passes both to replace the rendered text, not just the announced name.
 
 ### Props
 
@@ -136,7 +136,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Password Input** is actually used: 3 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Password Input** is actually used: 3 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -144,7 +144,7 @@ Imports the examples below need (a filtered subset of the fixture's own top-leve
 import { Field, PasswordInput } from '@beemvp/beeui-ui';
 ````
 
-[lines 601–603](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L601-L603):
+[lines 602–604](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L602-L604):
 
 ````tsx
               <Field label="Password">
@@ -155,7 +155,7 @@ import { Field, PasswordInput } from '@beemvp/beeui-ui';
 Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
-The toggle's visible text is a hardcoded English Show/Hide inside a fixed-width button: `showLabel` and `hideLabel` change only its accessible name, not what is rendered. Masking follows `visible` alone; the underlying secure-entry flag is not accepted.
+Masking follows `visible` alone; the underlying secure-entry flag is not accepted.
 
 ## Related
 

@@ -45,7 +45,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Uncontrolled-by-default search-keyboard field layered on `Input`; clearing a previously non-empty query emits exactly one `onSearch('')` reset call, not one per keystroke of the clear action.
+Uncontrolled-by-default search-keyboard field layered on `Input`; clearing a previously non-empty query emits exactly one `onSearch('')` reset call, not one per keystroke of the clear action. `trailing` renders extra content (e.g. a filter button) after the input inside the same row; omitting it renders the input with no extra wrapper, unchanged.
 
 ### Props
 
@@ -65,7 +65,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 - No additional provider is required by this family. `BeeUIProvider` remains the recommended application root.
 - **Peer/native dependencies visible to this Registry item:** `react`, `react-native`
-- **Registry dependency closure:** `input`, `theme`
+- **Registry dependency closure:** `core-cn`, `input`, `theme`
 - Safe-area ownership remains explicit: shell surfaces touching system edges opt into `SafeArea`; components do not silently invent app-shell insets.
 - Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).
 
@@ -132,7 +132,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Search Input** is actually used: 3 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Search Input** is actually used: 3 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -140,7 +140,7 @@ Imports the examples below need (a filtered subset of the fixture's own top-leve
 import { Field, SearchInput } from '@beemvp/beeui-ui';
 ````
 
-[lines 598–600](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L598-L600):
+[lines 599–601](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L599-L601):
 
 ````tsx
               <Field label="Search">

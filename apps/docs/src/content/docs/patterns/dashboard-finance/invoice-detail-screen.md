@@ -91,7 +91,7 @@ BeeUI does not take ownership of app routing, authentication/business rules, API
 
 ## Source ownership
 
-`InvoiceDetailScreen` is **Showcase source you copy**, not a package export: it is not shipped from any `@beemvp/beeui-*` package, and the Registry CLI (`pnpm beeui list` / `pnpm beeui add`) does not carry pattern screens. Copy [`apps/showcase/patterns/dashboard-finance/screens/invoice-detail-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/dashboard-finance/screens/invoice-detail-screen.tsx) into your app and adapt it directly. Only the individual BeeUI components it composes (linked above) are available for source ownership through the repository-local Registry workflow; see [CLI & source ownership](/docs/guides/cli-source-ownership/) for both the published `npx @beemvp/beeui-cli` path and the repository-local checkout path.
+`InvoiceDetailScreen` is **Showcase source you copy**, not a package export: it is not shipped from any `@beemvp/beeui-*` package, and the Registry CLI (`pnpm beeui list` / `pnpm beeui add`) does not carry pattern screens. Copy [`apps/showcase/patterns/dashboard-finance/screens/invoice-detail-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/dashboard-finance/screens/invoice-detail-screen.tsx) into your app and adapt it directly. Only the individual BeeUI components it composes (linked above) are available for source ownership through the repository-local Registry workflow; see [CLI & source ownership](/docs/guides/cli-source-ownership/) for both the published `npx @beemvp/beeui-cli@next` path and the repository-local checkout path.
 
 ## Related
 

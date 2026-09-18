@@ -98,7 +98,7 @@ Accessibility roles/names/states/focus/keyboard are component correctness, not a
 - [ADR-011 distribution-architecture](docs/decisions/011-distribution-architecture.md): Public distribution model: three scoped packages + source-ownership CLI, public on npm under `next` since 0.86.2-rc.1.
 
 ## Registry / source ownership
-[registry/registry.json](registry/registry.json) is the machine-readable source of 70 items: 62 public components, 1 public theme, and internal utilities (core-cn, core-overlay, field-context, form-group-context, overlay-runtime, use-direction, use-required-callback-warning). Each item declares source files, transforms, registry dependencies, and peer dependencies. Component-to-symbol mapping is verified against [packages/ui/src/index.ts](packages/ui/src/index.ts) at generation time.
+[registry/registry.json](registry/registry.json) is the machine-readable source of 71 items: 63 public components, 1 public theme, and internal utilities (core-cn, core-overlay, field-context, form-group-context, overlay-runtime, use-direction, use-required-callback-warning). Each item declares source files, transforms, registry dependencies, and peer dependencies. Component-to-symbol mapping is verified against [packages/ui/src/index.ts](packages/ui/src/index.ts) at generation time.
 
 ## Documentation map
 - AI-agent contract + prompt cookbook: [docs/ai-agent-cookbook.md](docs/ai-agent-cookbook.md)

@@ -253,7 +253,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Popover** is actually used: 63 lines in 6 places, of 7 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Popover** is actually used: 63 lines in 6 places, of 7 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -269,7 +269,7 @@ Placeholder for a prop this fixture receives (not fixture source — substitute 
 const placement: 'top' | 'right' | 'bottom' | 'left' = undefined as never;
 ````
 
-[lines 149–167](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L149-L167):
+[lines 150–168](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L150-L168):
 
 ````tsx
     <Popover>
@@ -293,7 +293,7 @@ const placement: 'top' | 'right' | 'bottom' | 'left' = undefined as never;
     </Popover>
 ````
 
-Fixture state this block reads (same file, lines 173, 175-177, 190):
+Fixture state this block reads (same file, lines 174, 176-178, 191):
 
 ````tsx
 const OverlayConsumerContext = React.createContext('overlay-context-default');
@@ -303,7 +303,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
   const [rootOpen, setRootOpen] = React.useState(false);
 ````
 
-[lines 205–212](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L205-L212):
+[lines 206–213](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L206-L213):
 
 ````tsx
       <Popover onOpenChange={setRootOpen} open={rootOpen}>
@@ -316,7 +316,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
       </Popover>
 ````
 
-Fixture state this block reads (same file, lines 173, 175-177):
+Fixture state this block reads (same file, lines 174, 176-178):
 
 ````tsx
 const OverlayConsumerContext = React.createContext('overlay-context-default');
@@ -325,7 +325,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
 }
 ````
 
-[lines 238–246](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L238-L246):
+[lines 239–247](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L239-L247):
 
 ````tsx
         <Popover>
@@ -339,7 +339,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
         </Popover>
 ````
 
-Fixture state this block reads (same file, lines 173, 175-177):
+Fixture state this block reads (same file, lines 174, 176-178):
 
 ````tsx
 const OverlayConsumerContext = React.createContext('overlay-context-default');
@@ -348,7 +348,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
 }
 ````
 
-[lines 271–278](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L271-L278):
+[lines 272–279](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L272-L279):
 
 ````tsx
             <Popover>
@@ -361,7 +361,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
             </Popover>
 ````
 
-Fixture state this block reads (same file, line 320-323):
+Fixture state this block reads (same file, line 321-324):
 
 ````tsx
 function ThemeScopeValue({ testID }: { testID: string }) {
@@ -370,7 +370,7 @@ function ThemeScopeValue({ testID }: { testID: string }) {
 }
 ````
 
-[lines 332–340](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L332-L340):
+[lines 333–341](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L333-L341):
 
 ````tsx
           <Popover>
@@ -384,7 +384,7 @@ function ThemeScopeValue({ testID }: { testID: string }) {
           </Popover>
 ````
 
-[lines 849–858](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L849-L858):
+[lines 856–865](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L856-L865):
 
 ````tsx
                   <Popover>

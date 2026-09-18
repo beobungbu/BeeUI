@@ -1,6 +1,6 @@
 # BeeUI — component inventory
 
-> The 62 public component modules exported by `@beemvp/beeui-ui`, derived from registry/registry.json and packages/ui/src/index.ts. Each line lists the module's exported runtime symbols and its source file. Full per-component behavior/accessibility contracts live in [docs/components.md](docs/components.md); this file is the token-efficient map from name to symbols to source.
+> The 63 public component modules exported by `@beemvp/beeui-ui`, derived from registry/registry.json and packages/ui/src/index.ts. Each line lists the module's exported runtime symbols and its source file. Full per-component behavior/accessibility contracts live in [docs/components.md](docs/components.md); this file is the token-efficient map from name to symbols to source.
 
 STATUS: BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. Stable `latest` is not promoted to a non-prerelease version yet, so every release-candidate install should use `@next` or pin the exact version — do not recommend an unqualified, untagged install. `npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next` and `npx @beemvp/beeui-cli@next --help` are live, working registry commands today. The source-ownership CLI (`pnpm beeui add <component>`) remains available from a repository checkout. See [docs/dist-tag-policy.md](docs/dist-tag-policy.md) for the full release/dist-tag mechanics.
 
@@ -16,7 +16,7 @@ STATUS: BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. S
 - Shared anchored kernel: Popover, DropdownMenu, Select, Tooltip share geometry/flip/shift/collision/safe-area/dismiss; RTL via one `useDirection()` resolver (ADR-004).
 - `DatePicker`/`DateTimePicker` are platform-split, not native-only: `date-picker.native.tsx`/`date-time-picker.native.tsx` render the OS system picker (iOS/Android); `date-picker.web.tsx`/`date-time-picker.web.tsx` render `Calendar` in a `Popover` on Web, and work there today (ADR-008). `Calendar` itself is the cross-platform date-grid primitive (native + Web) when a picker's popover chrome is not wanted.
 
-## Public component modules (62)
+## Public component modules (63)
 - `accordion` → exports: Accordion, AccordionContent, AccordionItem, AccordionTrigger — source: [packages/ui/src/components/accordion.tsx](packages/ui/src/components/accordion.tsx) — notable peers: react, react-native
 - `alert-banner` → exports: AlertBanner, alertBannerVariants — source: [packages/ui/src/components/alert-banner.tsx](packages/ui/src/components/alert-banner.tsx) — notable peers: react, react-native
 - `alert-dialog` → exports: AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle, AlertDialogTrigger — source: [packages/ui/src/components/alert-dialog.tsx](packages/ui/src/components/alert-dialog.tsx) — notable peers: react, react-native
@@ -76,6 +76,7 @@ STATUS: BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. S
 - `theme-scope` → exports: BeeThemeScope — source: [packages/ui/src/components/theme-scope.tsx](packages/ui/src/components/theme-scope.tsx) — notable peers: react, uniwind
 - `timeline` → exports: Timeline, TimelineItem — source: [packages/ui/src/components/timeline.tsx](packages/ui/src/components/timeline.tsx) — notable peers: react, react-native
 - `toast` → exports: TOAST_DEFAULT_DURATION, TOAST_MAX_VISIBLE, useToast — source: [packages/ui/src/components/toast.tsx](packages/ui/src/components/toast.tsx) — notable peers: react, react-native, react-native-safe-area-context
+- `toolbar` → exports: Toolbar, ToolbarItem — source: [packages/ui/src/components/toolbar.tsx](packages/ui/src/components/toolbar.tsx) — notable peers: react, react-native
 - `tooltip` → exports: Tooltip, TooltipContent, TooltipTrigger — source: [packages/ui/src/components/tooltip-shared.tsx](packages/ui/src/components/tooltip-shared.tsx) — notable peers: react, react-native
 - `use-bee-token` → exports: getBeeToken, useBeeToken — source: [packages/ui/src/components/use-bee-token.ts](packages/ui/src/components/use-bee-token.ts) — notable peers: react, uniwind
 - `visually-hidden` → exports: VisuallyHidden — source: [packages/ui/src/components/visually-hidden.tsx](packages/ui/src/components/visually-hidden.tsx) — notable peers: react, react-native

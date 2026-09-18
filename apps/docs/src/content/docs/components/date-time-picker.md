@@ -45,7 +45,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Controlled `value`/`onValueChange` (`{ date, time } | null`) field combining date and time entry through the native system pickers; `disabled` blocks opening either sub-picker.
+Controlled `value`/`onValueChange` (`{ date, time } | null`) field combining date and time entry through the native system pickers; `disabled` blocks opening either sub-picker. A wrapping `Field`'s required state no longer injects an English word into the trigger's accessible name — pass the field's own localized-required prop to append copy instead.
 
 ### Props
 

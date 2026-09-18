@@ -50,7 +50,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Provider-scoped imperative API (`useToast().show`/`dismiss`/`dismissAll`) rather than a controlled component; toasts queue FIFO with at most three visible at once, an explicit persistent mode opts a toast out of auto-dismiss, and action-triggered dismissal is deterministic (never racing the auto-dismiss timer).
+Provider-scoped imperative API (`useToast().show`/`dismiss`/`dismissAll`) rather than a controlled component; toasts queue FIFO with at most three visible at once, an explicit persistent mode opts a toast out of auto-dismiss, and action-triggered dismissal is deterministic (never racing the auto-dismiss timer). Stacking position defaults to bottom on iOS/Android and top on Web; override it app-wide with `BeeUIProvider`'s toastPlacement prop (see the SafeArea page).
 
 ### Props
 
@@ -169,7 +169,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Toast** is actually used: 54 lines in 3 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Toast** is actually used: 54 lines in 3 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -178,20 +178,20 @@ import { Button, useToast } from '@beemvp/beeui-ui';
 import * as React from 'react';
 ````
 
-[line 375](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L375-L375):
+[line 376](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L376-L376):
 
 ````tsx
   const toast = useToast();
 ````
 
-Fixture state this block reads (same file, lines 375, 376):
+Fixture state this block reads (same file, lines 376, 377):
 
 ````tsx
   const toast = useToast();
   const [lastAction, setLastAction] = React.useState('No Toast action yet');
 ````
 
-[lines 385–431](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L385-L431):
+[lines 386–432](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L386-L432):
 
 ````tsx
           <Button
@@ -243,13 +243,13 @@ Fixture state this block reads (same file, lines 375, 376):
           </Button>
 ````
 
-Fixture state this block reads (same file, line 375):
+Fixture state this block reads (same file, line 376):
 
 ````tsx
   const toast = useToast();
 ````
 
-[lines 435–440](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L435-L440):
+[lines 436–441](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L436-L441):
 
 ````tsx
                 toast.show({

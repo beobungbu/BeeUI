@@ -135,7 +135,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Section** is actually used: 38 lines in 4 places, of 14 in total — open the fixture for the remaining 10. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Section** is actually used: 38 lines in 4 places, of 14 in total — open the fixture for the remaining 10. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -145,7 +145,7 @@ import * as React from 'react';
 import { Uniwind, useUniwind } from 'uniwind';
 ````
 
-[lines 528–542](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L528-L542):
+[lines 529–543](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L529-L543):
 
 ````tsx
               <Section
@@ -165,7 +165,7 @@ import { Uniwind, useUniwind } from 'uniwind';
               </Section>
 ````
 
-Fixture state this block reads (same file, line 147-169):
+Fixture state this block reads (same file, line 148-170):
 
 ````tsx
 function PlacementPopover({ placement }: { placement: 'top' | 'right' | 'bottom' | 'left' }) {
@@ -193,7 +193,7 @@ function PlacementPopover({ placement }: { placement: 'top' | 'right' | 'bottom'
 }
 ````
 
-[lines 744–754](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L744-L754):
+[lines 751–761](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L751-L761):
 
 ````tsx
               <Section
@@ -209,7 +209,7 @@ function PlacementPopover({ placement }: { placement: 'top' | 'right' | 'bottom'
               </Section>
 ````
 
-Fixture state this block reads (same file, lines 173, 175-177, 187-231, 233-312):
+Fixture state this block reads (same file, lines 174, 176-178, 188-232, 234-313):
 
 ````tsx
 const OverlayConsumerContext = React.createContext('overlay-context-default');
@@ -343,7 +343,7 @@ function ConsumerContextOverlays() {
 }
 ````
 
-[lines 864–869](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L864-L869):
+[lines 871–876](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L871-L876):
 
 ````tsx
               <Section
@@ -354,7 +354,7 @@ function ConsumerContextOverlays() {
               </Section>
 ````
 
-Fixture state this block reads (same file, lines 320-323, 325-372, 457):
+Fixture state this block reads (same file, lines 321-324, 326-373, 458):
 
 ````tsx
 function ThemeScopeValue({ testID }: { testID: string }) {
@@ -412,7 +412,7 @@ function ThemeScopeOverlays() {
   const { theme } = useUniwind();
 ````
 
-[lines 873–878](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L873-L878):
+[lines 880–885](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L880-L885):
 
 ````tsx
               <Section

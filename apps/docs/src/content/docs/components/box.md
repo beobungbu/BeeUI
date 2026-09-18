@@ -63,7 +63,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 - No additional provider is required by this family. `BeeUIProvider` remains the recommended application root.
 - **Peer/native dependencies visible to this Registry item:** `react`, `react-native`
-- **Registry dependency closure:** `theme`
+- **Registry dependency closure:** `core-cn`, `theme`
 - Safe-area ownership remains explicit: shell surfaces touching system edges opt into `SafeArea`; components do not silently invent app-shell insets.
 - Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).
 
@@ -130,7 +130,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Box** is actually used: 51 lines in 5 places, of 6 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Box** is actually used: 51 lines in 5 places, of 6 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -139,7 +139,7 @@ import { Badge, Box, Button, Popover, PopoverClose, PopoverContent, PopoverDescr
 import * as React from 'react';
 ````
 
-[lines 533–541](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L533-L541):
+[lines 534–542](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L534-L542):
 
 ````tsx
                 <Box className="gap-3">
@@ -153,7 +153,7 @@ import * as React from 'react';
                 </Box>
 ````
 
-[lines 547–561](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L547-L561):
+[lines 548–562](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L548-L562):
 
 ````tsx
               <Box className="flex-row flex-wrap gap-2">
@@ -173,7 +173,7 @@ import * as React from 'react';
               </Box>
 ````
 
-[lines 569–575](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L569-L575):
+[lines 570–576](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L570-L576):
 
 ````tsx
               <Box className="flex-row items-center gap-3">
@@ -185,13 +185,13 @@ import * as React from 'react';
               </Box>
 ````
 
-Fixture state this block reads (same file, line 459):
+Fixture state this block reads (same file, line 460):
 
 ````tsx
   const [notifications, setNotifications] = React.useState(true);
 ````
 
-[lines 642–649](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L642-L649):
+[lines 643–650](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L643-L650):
 
 ````tsx
               <Box className="flex-row items-center justify-between gap-4">
@@ -204,7 +204,7 @@ Fixture state this block reads (same file, line 459):
               </Box>
 ````
 
-[lines 848–859](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L848-L859):
+[lines 855–866](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L855-L866):
 
 ````tsx
                 <Box className="items-end">
