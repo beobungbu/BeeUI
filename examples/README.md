@@ -24,15 +24,23 @@ app. Its [`AGENT-BUILD-NOTES.md`](agent-reference-app/AGENT-BUILD-NOTES.md)
 records the doc gaps found along the way. It consumes the same `pnpm pack`
 tarball boundary as the Web starter.
 
-## Unpublished status (read this first)
+## Publication status (read this first)
 
-BeeUI is **not published to npm**. Per ADR-011's owner guard, no package or
-CLI is published until the owner explicitly commands the BeeUI 1.0 release
-(#254). Every starter here therefore consumes BeeUI through real `pnpm pack`
-tarballs — the exact same package boundary `scripts/verify-bare-consumer.sh`
-and `scripts/verify-web-consumer.sh` already prove in CI — never a
-`workspace:*` link and never a hand-copied `dist/` folder. `examples/scripts/pack-beeui-packages.mjs`
-is the small shared helper every starter's `setup.sh` calls to do this.
+BeeUI `0.86.2-rc.1` **is publicly published on npm** under the opt-in `next`
+dist-tag (see the root [`README.md`](../README.md) and
+[`docs/dist-tag-policy.md`](../docs/dist-tag-policy.md), the machine-checked
+authority). A real application should follow [Start](https://beeui.beemvp.com/docs/start/)
+and install `@next` from npm directly.
+
+The starters in this directory intentionally keep consuming BeeUI through
+real `pnpm pack` tarballs instead — not because the package is unavailable,
+but because that is the exact package boundary `scripts/verify-bare-consumer.sh`
+and `scripts/verify-web-consumer.sh` prove in CI: the packed tarball, installed
+with no `workspace:*` link and no hand-copied `dist/` folder, is the strongest
+available proof that a given commit's package output resolves cleanly outside
+the monorepo, independent of and prior to any npm publish step.
+`examples/scripts/pack-beeui-packages.mjs` is the small shared helper every
+starter's `setup.sh` calls to do this.
 
 None of these starters are registered in the root pnpm workspace
 (`pnpm-workspace.yaml` is untouched): each one installs its own dependencies
