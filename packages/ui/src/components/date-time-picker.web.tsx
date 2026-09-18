@@ -366,6 +366,10 @@ export const DateTimePicker = React.forwardRef<
         <PopoverTrigger
           ref={setTriggerRef}
           aria-expanded={effectiveOpen}
+          // `required` reaches the DOM via `aria-required` (RN's compound
+          // `accessibilityState` has no `required` key) — mirrors `Input`'s
+          // identical `aria-required` prop (`input.tsx`).
+          aria-required={field.required || undefined}
           accessibilityHint={field.accessibilityHint}
           accessibilityLabel={field.accessibilityLabel}
           accessibilityLabelledBy={field.accessibilityLabelledBy}

@@ -197,6 +197,22 @@ describe('BeeUI issue #173 DatePicker (Web) rendering contract', () => {
     expect(trigger.props.accessibilityHint).toBe('Required');
   });
 
+  it('stamps aria-required on the trigger when the enclosing Field is required, and omits it otherwise', () => {
+    const requiredScreen = renderDatePicker(
+      <Field label="Birthday" required>
+        <DatePicker testID="date-picker" value={null} />
+      </Field>,
+    );
+    expect(requiredScreen.getByTestId('date-picker-trigger').props['aria-required']).toBe(true);
+
+    const optionalScreen = renderDatePicker(
+      <Field label="Birthday">
+        <DatePicker testID="date-picker" value={null} />
+      </Field>,
+    );
+    expect(optionalScreen.getByTestId('date-picker-trigger').props['aria-required']).toBeUndefined();
+  });
+
   it('appends a caller-localized Field.requiredLabel to the trigger accessible name', () => {
     const screen = renderDatePicker(
       <Field label="Birthday" required requiredLabel="Bắt buộc">
