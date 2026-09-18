@@ -95,6 +95,24 @@ export type TextProps = RNTextProps &
     family?: FontFamily;
   };
 
+/**
+ * `numeric` is typed to `NumericVariant`, but that only stops a TypeScript
+ * caller — a plain JavaScript call site, an `as` escape hatch, or data driving
+ * the prop can still hand this an arbitrary string at runtime. Looking it up
+ * directly in `numericVariantFontVariants`/`numericVariantUtilities` would
+ * then throw (`... is not iterable`) instead of falling back (#590 item 5).
+ */
+function isKnownNumericVariant(value: NumericVariant): value is NumericVariant {
+  return Object.prototype.hasOwnProperty.call(numericVariantFontVariants, value);
+}
+
+function warnUnknownNumericVariant(numeric: NumericVariant) {
+  if (typeof __DEV__ === 'undefined' || !__DEV__) return;
+  console.warn(
+    `BeeUI Text: unknown numeric="${String(numeric)}"; falling back to the default (proportional) figures.`,
+  );
+}
+
 function dataTypographyStyle(
   numeric: NumericVariant | undefined,
   family: FontFamily | undefined,
@@ -106,7 +124,7 @@ function dataTypographyStyle(
   // className mapping, so it resolves the same features through RN style props.
   if (Platform.OS === 'web') return undefined;
   const style: TextStyle = {};
-  if (numeric) {
+  if (numeric && isKnownNumericVariant(numeric)) {
     style.fontVariant = [...numericVariantFontVariants[numeric]] as TextStyle['fontVariant'];
   }
   if (family === 'mono') {
@@ -117,13 +135,15 @@ function dataTypographyStyle(
 
 export const Text = React.forwardRef<React.ComponentRef<typeof RNText>, TextProps>(
   ({ className, variant, tone, numeric, family, style, ...props }, ref) => {
-    const dataStyle = dataTypographyStyle(numeric, family);
+    const resolvedNumeric = numeric && isKnownNumericVariant(numeric) ? numeric : undefined;
+    if (numeric && !resolvedNumeric) warnUnknownNumericVariant(numeric);
+    const dataStyle = dataTypographyStyle(resolvedNumeric, family);
     return (
       <RNText
         ref={ref}
         className={cn(
           textVariants({ variant, tone }),
-          numeric ? numericVariantUtilities[numeric] : undefined,
+          resolvedNumeric ? numericVariantUtilities[resolvedNumeric] : undefined,
           family === 'mono' ? monoFontFamilyUtility : undefined,
           className,
         )}
