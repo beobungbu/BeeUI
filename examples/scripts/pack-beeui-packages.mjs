@@ -3,12 +3,14 @@
 // (examples/expo-package-consumer, examples/bare-rn-consumer,
 // examples/web-consumer, examples/source-ownership-starter).
 //
-// BeeUI is unpublished (docs/decisions/011-distribution-architecture.md
-// "Owner guard": no package is published until the owner commands the 1.0
-// release). Every starter therefore consumes real `pnpm pack` tarballs
-// through the exact same package boundary as
-// scripts/verify-bare-consumer.sh and scripts/verify-web-consumer.sh,
-// instead of a workspace:* link or a hand-copied dist/ folder.
+// BeeUI `0.86.2-rc.1` is publicly published on npm under the `next` dist-tag
+// (see ../../README.md and docs/dist-tag-policy.md), but every starter here
+// still consumes real `pnpm pack` tarballs through the exact same package
+// boundary as scripts/verify-bare-consumer.sh and
+// scripts/verify-web-consumer.sh, instead of a workspace:* link, a
+// hand-copied dist/ folder, or the public registry — proving the packed
+// output of the exact commit under review resolves cleanly outside the
+// monorepo, independent of and prior to any npm publish step.
 //
 // Usage:
 //   node ../scripts/pack-beeui-packages.mjs --out <dir> [--packages core,tokens,ui,cli]
