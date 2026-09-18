@@ -391,7 +391,7 @@ test('every public component resolves a typeDocs model with no thrown errors, an
   // across all 62 families must be parseable (fail loudly, not silently, is
   // enforced by generatePublicComponentPages itself; this asserts it in test).
   const manifest = buildPublicComponentManifest();
-  assert.equal(manifest.length, 62);
+  assert.equal(manifest.length, 63);
   for (const component of manifest) {
     assert.ok(component.behavior.trim().length > 0, `${component.name} has no curated behavior`);
     for (const entry of component.typeDocs) {
