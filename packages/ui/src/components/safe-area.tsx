@@ -8,7 +8,7 @@ import {
 } from 'react-native-safe-area-context';
 import { Uniwind, withUniwind } from 'uniwind';
 import { OverlayRuntimeProvider } from './overlay-runtime';
-import { ToastRuntimeProvider } from './toast';
+import { ToastRuntimeProvider, type ToastPlacement } from './toast';
 
 const StyledSafeAreaView = withUniwind(NativeSafeAreaView);
 
@@ -23,6 +23,11 @@ export type BeeUIProviderProps = Omit<
    * owns that bridge elsewhere.
    */
   syncUniwindInsets?: boolean;
+  /**
+   * Where the transient `useToast()` notification stack docks. Defaults to `'bottom'` on
+   * native (so it clears the bottom tab bar / home indicator) and `'top'` on Web.
+   */
+  toastPlacement?: ToastPlacement;
 };
 
 function UniwindSafeAreaBridge({ children }: { children?: React.ReactNode }) {
@@ -46,11 +51,12 @@ export function BeeUIProvider({
   children,
   initialMetrics = initialWindowMetrics,
   syncUniwindInsets = true,
+  toastPlacement,
   ...props
 }: BeeUIProviderProps) {
   return (
     <NativeSafeAreaProvider initialMetrics={initialMetrics} {...props}>
-      <ToastRuntimeProvider>
+      <ToastRuntimeProvider placement={toastPlacement}>
         <OverlayRuntimeProvider>
           {syncUniwindInsets ? <UniwindSafeAreaBridge>{children}</UniwindSafeAreaBridge> : children}
         </OverlayRuntimeProvider>

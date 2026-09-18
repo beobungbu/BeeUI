@@ -1,7 +1,7 @@
 import { cn } from '@beemvp/beeui-core';
 import { render } from '@testing-library/react-native';
 import * as React from 'react';
-import { AppHeader, SafeArea } from '@beemvp/beeui-ui';
+import { AppHeader, Box, SafeArea } from '@beemvp/beeui-ui';
 
 // #563/#564 — `className={cond ? 'x' : undefined}` (the idiomatic conditional
 // className) reached a real Uniwind-wrapped host as a raw `undefined` and
@@ -71,5 +71,24 @@ describe('AppHeader inside a partial-edge SafeArea never forwards undefined clas
   it('mounts a bare AppHeader without SafeArea the same way (control case)', () => {
     const screen = render(<AppHeader testID="app-header" title="BeeUI" />);
     expect(typeof screen.getByTestId('app-header').props.className).toBe('string');
+  });
+});
+
+describe('Box routes className through cn() instead of forwarding it raw', () => {
+  it('normalizes an explicit undefined className to a plain string, not undefined', () => {
+    const active = false;
+    const screen = render(<Box className={active ? 'bg-accent' : undefined} testID="box" />);
+    expect(typeof screen.getByTestId('box').props.className).toBe('string');
+    expect(screen.getByTestId('box').props.className).toBe('');
+  });
+
+  it('mounts without any className at all without forwarding undefined', () => {
+    const screen = render(<Box testID="box" />);
+    expect(typeof screen.getByTestId('box').props.className).toBe('string');
+  });
+
+  it('still merges conflicting classes last-wins, same as every other cn()-routed component', () => {
+    const screen = render(<Box className="bg-accent" testID="box" />);
+    expect(screen.getByTestId('box').props.className).toBe('bg-accent');
   });
 });

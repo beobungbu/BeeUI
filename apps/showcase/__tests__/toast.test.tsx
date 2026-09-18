@@ -261,6 +261,21 @@ describe('Toast transient notification runtime', () => {
     }
   });
 
+  it('overrides the platform default when BeeUIProvider is given an explicit toastPlacement', () => {
+    let api: ToastApi | null = null;
+    const screen = render(
+      <BeeUIProvider syncUniwindInsets={false} toastPlacement="top">
+        <CaptureToast capture={(value) => { api = value; }} />
+      </BeeUIProvider>,
+    );
+    if (!api) throw new Error('Toast API was not captured');
+    show(api, 'Explicit top placement');
+
+    const style = StyleSheet.flatten(screen.getByTestId('beeui-toast-viewport').props.style);
+    expect(style.top).toBe(TEST_INSETS.top + 12);
+    expect(style.bottom).toBeUndefined();
+  });
+
   it('cleans visible timers when the provider unmounts', () => {
     const { screen, api } = setup();
     show(api, 'Unmount timer');

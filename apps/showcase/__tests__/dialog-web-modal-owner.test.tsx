@@ -97,7 +97,7 @@ describe('Dialog Web modal owner (single role="dialog" node)', () => {
     expect(panel.props.accessibilityLabel).toBe('Project settings');
   });
 
-  it('applies the same Web owner fix to AlertDialog, keeping role="alertdialog" on the panel', () => {
+  it('applies the same Web owner fix to AlertDialog, leaving the panel itself plain', () => {
     setPlatform('web');
     const screen = render(
       <OverlayRuntimeProvider>
@@ -112,15 +112,17 @@ describe('Dialog Web modal owner (single role="dialog" node)', () => {
     const modal = screen.UNSAFE_getByType(Modal);
     expect(modal.props.accessibilityLabel).toBe('Delete this project?');
 
+    // The single `role`/`aria-modal` owner is react-native-web's forced Modal
+    // node — forced to the literal `'dialog'` by react-native-web itself, then
+    // corrected to `'alertdialog'` by a real-DOM `MutationObserver` (this Jest
+    // environment renders `react-native`'s thin `Modal` passthrough, not
+    // react-native-web's real `ModalContent`/DOM, so neither the forced value
+    // nor the correction exist here — see `apps/visual-regression` for the
+    // real-browser proof). The panel itself never restates any role/aria-modal
+    // on Web, for either `dialog` or `alertdialog` — restating it would
+    // recreate a two-nodes-same-role shape.
     const panel = screen.getByTestId('alert-content');
-    // `dialog` (outer, react-native-web-forced) wrapping `alertdialog`
-    // (inner, this panel) are two *different* role values — not the "two
-    // nodes with the same role" shape the Web modal-owner fix removes — so
-    // `getByRole('dialog')`/`getByRole('alertdialog')` each still resolve to
-    // exactly one node.
-    expect(panel.props.role).toBe('alertdialog');
-    // `aria-modal` stays on the single node that already unavoidably carries
-    // it (the react-native-web-forced Modal owner) — not restated here too.
+    expect(panel.props.role).toBeUndefined();
     expect(panel.props['aria-modal']).toBeUndefined();
   });
 
@@ -177,7 +179,7 @@ describe('Dialog Web modal owner (single role="dialog" node)', () => {
     expect(countHostViewsWithRole(screen, 'alertdialog')).toBe(0);
   });
 
-  it('stamps exactly one role="alertdialog" host node, and no role="dialog" host node, in our own tree for AlertDialog on Web', () => {
+  it('never stamps role="dialog" or role="alertdialog" on our own tree for AlertDialog on Web (the corrected role lives on the real DOM Modal owner)', () => {
     setPlatform('web');
     const screen = render(
       <OverlayRuntimeProvider>
@@ -189,12 +191,15 @@ describe('Dialog Web modal owner (single role="dialog" node)', () => {
       </OverlayRuntimeProvider>,
     );
 
-    // `getByRole('dialog')` and `getByRole('alertdialog')` are distinct
-    // queries: react-native-web's forced Modal owner will still separately
-    // carry the generic `dialog` role at runtime (untestable here — see the
-    // note above), so this panel deliberately does not restate it.
+    // `getByRole('alertdialog')` resolving to exactly one node (and
+    // `getByRole('dialog')` to zero) depends on a real DOM `MutationObserver`
+    // correcting react-native-web's forced Modal owner from `'dialog'` to
+    // `'alertdialog'` — untestable in this Jest environment (see the note
+    // above `countHostViewsWithRole`). What this file can prove
+    // deterministically is that BeeUI's own panel never adds a second,
+    // redundant role of either value.
     expect(countHostViewsWithRole(screen, 'dialog')).toBe(0);
-    expect(countHostViewsWithRole(screen, 'alertdialog')).toBe(1);
+    expect(countHostViewsWithRole(screen, 'alertdialog')).toBe(0);
   });
 
   it('clips overflowing content within the rounded panel', () => {

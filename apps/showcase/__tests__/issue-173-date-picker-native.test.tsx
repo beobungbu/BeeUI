@@ -85,15 +85,25 @@ describe('BeeUI issue #173 DatePicker (native) rendering contract', () => {
     expect(notClearable.queryByTestId('date-picker-clear')).toBeNull();
   });
 
-  it('derives disabled/invalid/accessibilityLabel/hint from an enclosing Field', () => {
+  it('derives disabled/invalid/accessibilityLabel/hint from an enclosing Field without injecting English required copy', () => {
     const screen = render(
       <Field error="Required" invalid label="Birthday" required>
         <DatePicker testID="date-picker" value={null} />
       </Field>,
     );
     const trigger = screen.getByTestId('date-picker-trigger');
-    expect(trigger.props.accessibilityLabel).toBe('Birthday, required');
+    expect(trigger.props.accessibilityLabel).toBe('Birthday');
     expect(trigger.props.accessibilityHint).toBe('Required');
+  });
+
+  it('appends a caller-localized Field.requiredLabel to the trigger accessible name', () => {
+    const screen = render(
+      <Field label="Birthday" required requiredLabel="Bắt buộc">
+        <DatePicker testID="date-picker" value={null} />
+      </Field>,
+    );
+    const trigger = screen.getByTestId('date-picker-trigger');
+    expect(trigger.props.accessibilityLabel).toBe('Birthday, Bắt buộc');
   });
 
   it('disabled marks the trigger disabled and blocks opening', () => {

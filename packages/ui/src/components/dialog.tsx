@@ -43,12 +43,58 @@ import { Text, type TextProps } from './text';
 type WebFocusableElement = {
   contains: (other: WebFocusableElement | null) => boolean;
   focus: (options?: { preventScroll?: boolean }) => void;
+  getAttribute: (name: string) => string | null;
   getClientRects: () => ArrayLike<unknown>;
   hasAttribute: (name: string) => boolean;
   querySelectorAll: (selectors: string) => ArrayLike<WebFocusableElement>;
   removeAttribute: (name: string) => void;
   setAttribute: (name: string, value: string) => void;
 };
+
+type WebMutationObserverLike = {
+  disconnect: () => void;
+  observe: (
+    target: WebFocusableElement,
+    options: { attributeFilter?: string[]; attributes?: boolean },
+  ) => void;
+};
+
+type WebMutationObserverConstructor = new (callback: () => void) => WebMutationObserverLike;
+
+function getWebMutationObserverConstructor(): WebMutationObserverConstructor | undefined {
+  if (Platform.OS !== 'web') return undefined;
+  return (globalThis as { MutationObserver?: WebMutationObserverConstructor }).MutationObserver;
+}
+
+/**
+ * Corrects `node`'s `role` attribute to `'alertdialog'` immediately, then keeps
+ * correcting it for as long as the returned cleanup function is not called —
+ * countering react-native-web's `Modal` owner, which recomputes its own forced
+ * `role` (`'dialog'` once open, `null` once closed) from an internal `active`
+ * boolean it flips asynchronously (on the `animationend` DOM event for every
+ * animated `animationType`, not on mount), with no prop this component can
+ * pass to change what that specific node renders instead. A `MutationObserver`
+ * reacts to that write whenever it actually happens, so this stays correct
+ * regardless of `animationType`/timing, instead of racing a fixed delay.
+ * Exported so its wiring (which attribute it watches, how it responds) is
+ * directly unit-testable against a plain mock node/`MutationObserver`, without
+ * needing a real DOM.
+ */
+export function watchAlertDialogRole(
+  node: WebFocusableElement,
+  MutationObserverCtor: WebMutationObserverConstructor,
+): () => void {
+  const enforceAlertDialogRole = () => {
+    if (node.getAttribute('role') !== 'alertdialog') {
+      node.setAttribute('role', 'alertdialog');
+    }
+  };
+
+  enforceAlertDialogRole();
+  const observer = new MutationObserverCtor(enforceAlertDialogRole);
+  observer.observe(node, { attributeFilter: ['role'], attributes: true });
+  return () => observer.disconnect();
+}
 
 type WebFocusKeyboardEvent = {
   key?: string;
@@ -562,9 +608,26 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
     const resolvedAccessibilityLabel = accessibilityLabel ?? titleText;
     const resolvedAccessibilityLabelledBy = accessibilityLabelledBy ?? titleNativeID;
 
+    const modalOwnerRef = React.useRef<WebFocusableElement | null>(null);
+    const setModalOwnerRef = React.useCallback((node: React.ComponentRef<typeof Modal> | null) => {
+      modalOwnerRef.current = node as unknown as WebFocusableElement | null;
+    }, []);
+
+    // Web only, `alertdialog` panels only — see `watchAlertDialogRole`'s
+    // docblock for why this needs a `MutationObserver` rather than a prop or a
+    // fixed-delay correction.
+    React.useEffect(() => {
+      if (!isWeb || role !== 'alertdialog' || !open) return undefined;
+      const MutationObserverCtor = getWebMutationObserverConstructor();
+      const node = modalOwnerRef.current;
+      if (!node || !MutationObserverCtor) return undefined;
+      return watchAlertDialogRole(node, MutationObserverCtor);
+    }, [isWeb, open, role]);
+
     return (
       <Modal
         {...restModalProps}
+        ref={setModalOwnerRef}
         // Web only: react-native-web's own `Modal` (verified against 0.21's
         // `ModalContent` source) unconditionally renders `role="dialog"` +
         // `aria-modal="true"` on its own owner node once open, with no prop this
@@ -581,6 +644,9 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
         // labelled dialog node. Native has no such forced wrapper (`Modal`
         // there is an opaque OS-level container with no injected role/label of
         // its own), so the panel keeps owning `role="dialog"` there unchanged.
+        // `alertdialog` panels correct this same owner's forced `'dialog'`
+        // value to `'alertdialog'` after the fact — see the `MutationObserver`
+        // effect above `ref={setModalOwnerRef}` feeds.
         accessibilityLabel={isWeb ? resolvedAccessibilityLabel : undefined}
         accessibilityLabelledBy={isWeb ? resolvedAccessibilityLabelledBy : undefined}
         animationType={animationType}
@@ -653,21 +719,14 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
                   onAccessibilityEscape?.();
                   requestClose();
                 }}
-                // Web: react-native-web's forced `<Modal>` owner (above) only
-                // ever renders the literal, hardcoded `role: active ? 'dialog'
-                // : null` (verified against its `ModalContent` source) — there
-                // is no way to make that specific node `alertdialog` instead.
-                // `role === 'alertdialog'` still stamps the more specific role
-                // on this panel underneath: `dialog` (outer, generic, RNW-
-                // forced) wrapping `alertdialog` (inner, this panel) uses two
-                // *different* role values, so it is not the "two nodes with
-                // the same role" strict-mode/double-announcement shape #607
-                // fixed — a `getByRole('dialog')`/`getByRole('alertdialog')`
-                // query each still resolve to exactly one node. The plain
-                // `'dialog'` case stays omitted here entirely (unchanged from
-                // the #607 fix): that role is already covered by the outer
-                // owner, so restating it here would recreate the duplicate.
-                role={isWeb ? (role === 'alertdialog' ? 'alertdialog' : undefined) : role}
+                // Web: the one Modal owner node react-native-web renders
+                // (forced `'dialog'`, corrected to `'alertdialog'` by the
+                // `MutationObserver` above when this panel's `role` is
+                // `'alertdialog'`) is the sole `role`/`aria-modal` owner for
+                // both cases — restating either role here would recreate a
+                // two-nodes-same-role shape (the exact bug #607 removed for
+                // `dialog`, and would reintroduce it for `alertdialog` too).
+                role={isWeb ? undefined : role}
               >
                 {children}
               </View>
