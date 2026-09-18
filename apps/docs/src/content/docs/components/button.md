@@ -8,7 +8,7 @@ description: "Accessible pressable with variant/size/loading/disabled states and
 Accessible pressable with variant/size/loading/disabled states and an optional label primitive.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Actions & controls
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/button.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/button.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add button
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -110,9 +111,9 @@ Colors, spacing and typography come from semantic tokens rather than from values
 ## Executable examples
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/app-header-large-text.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/app-header-large-text.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/button-label-variant-inheritance-and-wrap.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/button-label-variant-inheritance-and-wrap.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/dynamic-type-contract.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/dynamic-type-contract.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/issue-21-popover.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-21-popover.test.tsx)
 
 ### Addressable examples
 
@@ -155,9 +156,25 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Button** is actually used: 64 lines in 6 places, of 7 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Button** is actually used: 64 lines in 6 places, of 7 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
-[lines 126–134](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L126-L134):
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { BottomActionBar, Box, Button, Card, EmptyState, ErrorState, Separator, Skeleton, Switch, Text } from '@beemvp/beeui-ui';
+import * as React from 'react';
+import { Uniwind, useUniwind } from 'uniwind';
+````
+
+Fixture state this block reads (same file, lines 122, 123, 124):
+
+````tsx
+  const { hasAdaptiveThemes, theme } = useUniwind();
+  const activeTheme = hasAdaptiveThemes ? 'system' : theme;
+  const nextTheme = activeTheme === 'system' ? 'light' : activeTheme === 'light' ? 'dark' : 'system';
+````
+
+[lines 127–135](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L127-L135):
 
 ````tsx
     <Button
@@ -171,7 +188,15 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
     </Button>
 ````
 
-[lines 193–203](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L193-L203):
+Fixture state this block reads (same file, lines 189, 190, 191):
+
+````tsx
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const [rootOpen, setRootOpen] = React.useState(false);
+````
+
+[lines 194–204](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L194-L204):
 
 ````tsx
       <Button
@@ -187,7 +212,13 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
       </Button>
 ````
 
-[lines 480–488](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L480-L488):
+Placeholder for a prop this fixture receives (not fixture source — substitute your own handler):
+
+````tsx
+const onBack: () => void = () => {};
+````
+
+[lines 481–489](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L481-L489):
 
 ````tsx
               <Button
@@ -201,7 +232,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               </Button>
 ````
 
-[lines 533–541](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L533-L541):
+[lines 534–542](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L534-L542):
 
 ````tsx
                 <Box className="gap-3">
@@ -215,7 +246,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                 </Box>
 ````
 
-[lines 567–588](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L567-L588):
+[lines 568–589](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L568-L589):
 
 ````tsx
             <Card className="gap-4">
@@ -242,7 +273,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
             </Card>
 ````
 
-[lines 1066–1069](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1066-L1069):
+[lines 1073–1076](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1073-L1076):
 
 ````tsx
         <BottomActionBar>
@@ -251,7 +282,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
         </BottomActionBar>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 The accessible name is inferred only when every child is a plain string or number, so a button containing an icon element has no name until `accessibilityLabel` is set — which is why `IconButton` requires one. The button role is fixed and cannot be overridden.

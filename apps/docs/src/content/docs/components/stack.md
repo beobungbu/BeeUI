@@ -8,7 +8,7 @@ description: "Typed direction/gap/alignment/wrap layout over View, with HStack/V
 Typed direction/gap/alignment/wrap layout over View, with HStack/VStack specializations.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Layout & surfaces
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/stack.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/stack.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add stack
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -161,9 +162,22 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Stack** is actually used: 51 lines in 6 places, of 11 in total — open the fixture for the remaining 5. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Stack** is actually used: 51 lines in 6 places, of 11 in total — open the fixture for the remaining 5. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
-[lines 140–143](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L140-L143):
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Avatar, Button, Field, HStack, Input, Link, Popover, PopoverClose, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger, Stack, Stat, StatHelpText, StatLabel, StatValue, Text, Tooltip, TooltipContent, TooltipTrigger, VStack } from '@beemvp/beeui-ui';
+````
+
+Placeholder for a prop this fixture receives (not fixture source — substitute your own handler):
+
+````tsx
+const children: string = undefined as never;
+const description: string = undefined as never;
+````
+
+[lines 141–144](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L141-L144):
 
 ````tsx
     <VStack gap="xs">
@@ -172,7 +186,13 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
     </VStack>
 ````
 
-[lines 479–490](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L479-L490):
+Placeholder for a prop this fixture receives (not fixture source — substitute your own handler):
+
+````tsx
+const onBack: () => void = () => {};
+````
+
+[lines 480–491](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L480-L491):
 
 ````tsx
             <HStack gap="sm">
@@ -189,7 +209,35 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
             </HStack>
 ````
 
-[lines 748–753](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L748-L753):
+Fixture state this block reads (same file, line 148-170):
+
+````tsx
+function PlacementPopover({ placement }: { placement: 'top' | 'right' | 'bottom' | 'left' }) {
+  return (
+    <Popover>
+      <PopoverTrigger size="sm" variant="outline">
+        {placement}
+      </PopoverTrigger>
+      <PopoverContent placement={placement} testID={`popover-${placement}-content`}>
+        <PopoverTitle>{`${placement[0].toUpperCase()}${placement.slice(1)} placement`}</PopoverTitle>
+        <PopoverDescription>
+          This surface is positioned by the shared anchored-overlay geometry kernel.
+        </PopoverDescription>
+        {placement === 'bottom' ? (
+          <Field label="Note">
+            <Input accessibilityLabel="Popover note" testID="popover-demo-input" />
+          </Field>
+        ) : null}
+        <PopoverClose size="sm" variant="ghost">
+          Close
+        </PopoverClose>
+      </PopoverContent>
+    </Popover>
+  );
+}
+````
+
+[lines 755–760](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L755-L760):
 
 ````tsx
                 <HStack gap="sm" wrap>
@@ -200,7 +248,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                 </HStack>
 ````
 
-[lines 803–812](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L803-L812):
+[lines 810–819](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L810-L819):
 
 ````tsx
                 <HStack gap="sm" wrap>
@@ -215,7 +263,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                 </HStack>
 ````
 
-[lines 961–973](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L961-L973):
+[lines 968–980](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L968-L980):
 
 ````tsx
                 <Stack gap="lg">
@@ -233,7 +281,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                   </HStack>
 ````
 
-[lines 1055–1060](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1055-L1060):
+[lines 1062–1067](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1062-L1067):
 
 ````tsx
             <VStack gap="xs">
@@ -244,7 +292,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
             </VStack>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 `HStack` and `VStack` do not accept `direction` — their axis is fixed. `gap` is a six-step token scale, so an arbitrary spacing value has to come through `className`.

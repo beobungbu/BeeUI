@@ -20,8 +20,16 @@ export type FieldProps = Omit<ViewProps, 'children'> & {
   labelNativeID?: string;
   /** Renders the label with a required indicator and exposes it via `requiredAccessibilityLabel`. Defaults to false. */
   required?: boolean;
-  /** Accessible label appended to the field's name when `required` is true (e.g. announced as "Email, required"). Defaults to `'required'`. */
+  /** Accessible label appended to the field's name when `required` is true (e.g. announced as "Email, required"). No default — omit to expose `required` only through `aria-required`/`accessibilityRequired` on field-consuming controls, without injecting English copy. @deprecated Use `requiredLabel` instead. Kept for existing consumers built directly on this prop. */
   requiredAccessibilityLabel?: string;
+  /**
+   * Localized copy appended to the field's accessible name when `required` is
+   * true (e.g. `"Email, Bắt buộc"`). No default — omit it to expose
+   * `required` only through `aria-required`/`accessibilityRequired` on
+   * field-context-aware controls (Checkbox, Radio, Switch), without injecting
+   * any English copy.
+   */
+  requiredLabel?: string;
 };
 
 export const Field = React.forwardRef<React.ComponentRef<typeof View>, FieldProps>(
@@ -36,7 +44,8 @@ export const Field = React.forwardRef<React.ComponentRef<typeof View>, FieldProp
       label,
       labelNativeID,
       required = false,
-      requiredAccessibilityLabel = 'required',
+      requiredAccessibilityLabel,
+      requiredLabel,
       ...props
     },
     ref,
@@ -54,6 +63,7 @@ export const Field = React.forwardRef<React.ComponentRef<typeof View>, FieldProp
         labelNativeID: resolvedLabelNativeID,
         required,
         requiredAccessibilityLabel,
+        requiredLabel,
       }),
       [
         description,
@@ -63,6 +73,7 @@ export const Field = React.forwardRef<React.ComponentRef<typeof View>, FieldProp
         label,
         required,
         requiredAccessibilityLabel,
+        requiredLabel,
         resolvedLabelNativeID,
       ],
     );
@@ -77,8 +88,15 @@ export const Field = React.forwardRef<React.ComponentRef<typeof View>, FieldProp
           className={cn('gap-density-form-gap', className)}
           {...props}
         >
+          {/* This Label never carries its own accessible name (`presentational`) —
+              the child control already derives its accessible name from `FieldContext`
+              (via `accessibilityLabelledBy` pointing at `labelNativeID`, same as the
+              standalone `required` accessible-name text below), so a standards-based
+              "control named X" query (e.g. Playwright `getByLabel`) resolves to exactly
+              one node instead of both this Label and its control. */}
           <Label
             nativeID={resolvedLabelNativeID}
+            presentational
             required={required}
             requiredAccessibilityLabel={requiredAccessibilityLabel}
           >

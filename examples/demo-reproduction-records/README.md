@@ -13,9 +13,10 @@ existing `apps/demo` records source was treated as unseen and compared only at
 the end. The reproducibility verdict and the documentation gap list are in
 [`plans/reports/from-fresh-agent-241-demo-reproduction-eval-report.md`](../../plans/reports/from-fresh-agent-241-demo-reproduction-eval-report.md).
 
-## Unpublished status
+## Packed-tarball consumption
 
-BeeUI is **not published to npm** (ADR-011 owner guard). This app consumes real
+BeeUI `0.86.2-rc.1` is publicly published on npm under the `next` dist-tag
+(see `../../README.md`). This app deliberately keeps consuming real
 `pnpm pack` tarballs of `@beemvp/beeui-core` / `@beemvp/beeui-tokens` /
 `@beemvp/beeui-ui` through the same package boundary CI's `verify-web-consumer.sh`
 uses — never a `workspace:*` link, never a hand-copied `dist/`. It is not

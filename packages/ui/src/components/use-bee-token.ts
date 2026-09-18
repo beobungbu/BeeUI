@@ -142,10 +142,36 @@ import { Uniwind, useCSSVariable } from 'uniwind';
  * };
  * ```
  */
+const SECONDS_DURATION_PATTERN = /^(-?(?:\d+(?:\.\d+)?|\.\d+))s$/;
+
+/**
+ * `@beemvp/beeui-tokens`'s shared `normalizeTokenValue` only accepts a `duration`
+ * value already serialized in `ms` (BeeUI's own `--motion-duration-*` variables
+ * are authored/overridden that way — see `theme-overrides.ts`). Some Web
+ * runtimes' `getComputedStyle`/CSSOM round-trip re-serializes a CSS
+ * `<time>` custom property back out in `s` instead (`.2s`/`0.2s` for `200ms`),
+ * which is a valid, semantically identical CSS time value — Uniwind returning
+ * it is not a BeeUI bug, but the shared reader would otherwise throw on a
+ * value it never actually needed to reject (#549). This is the one place in
+ * the token-read pipeline that actually touches whatever Uniwind returned, so
+ * it normalizes a seconds string to the exact `<number>ms` string shape the
+ * shared reader already knows how to parse, before handing it off — every
+ * other value (a number, an already-`ms` string, a color) passes through
+ * unchanged.
+ */
+function normalizeUniwindDurationSerialization(
+  raw: string | number | undefined,
+): string | number | undefined {
+  if (typeof raw !== 'string') return raw;
+  const match = SECONDS_DURATION_PATTERN.exec(raw.trim());
+  if (!match) return raw;
+  return `${Number(match[1]) * 1000}ms`;
+}
+
 export function useBeeToken<Path extends BeeTokenPath>(path: Path): BeeTokenValue<Path> {
   const variable = beeTokenReader.resolve(path).variable;
   const raw = useCSSVariable(variable);
-  return readTokenValue(beeTokenReader, path, raw);
+  return readTokenValue(beeTokenReader, path, normalizeUniwindDurationSerialization(raw));
 }
 
 /**
@@ -156,5 +182,5 @@ export function useBeeToken<Path extends BeeTokenPath>(path: Path): BeeTokenValu
 export function getBeeToken<Path extends BeeTokenPath>(path: Path): BeeTokenValue<Path> {
   const variable = beeTokenReader.resolve(path).variable;
   const raw = Uniwind.getCSSVariable(variable);
-  return readTokenValue(beeTokenReader, path, raw);
+  return readTokenValue(beeTokenReader, path, normalizeUniwindDurationSerialization(raw));
 }

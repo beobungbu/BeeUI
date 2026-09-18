@@ -3,9 +3,78 @@ import * as React from 'react';
 import { textVariants } from './text';
 import { useDirection } from './use-direction';
 import { useRequiredCallbackWarning } from './use-required-callback-warning';
-import type { TableLayout, TableSortDirection } from './table-shared';
+import { resolveTableDensityRowHeight, type TableAlign, type TableDensity, type TableLayout, type TableSortDirection } from './table-shared';
 
-export type { TableLayout, TableSortDirection } from './table-shared';
+export type { TableAlign, TableDensity, TableLayout, TableSortDirection } from './table-shared';
+
+// `align` drives real CSS `text-align` for plain text flow, matching the
+// documented `className="text-end"` workaround (see `TableAlign`'s own
+// docblock in `table-shared.ts`).
+const textAlignClassName: Record<TableAlign, string> = {
+  start: 'text-start',
+  center: 'text-center',
+  end: 'text-end',
+};
+
+// `align` also drives `justify-content` on the inner flex-row wrapper every
+// `TableCell` renders (see that component below) so non-text content (a
+// `Badge`, an icon) can be aligned the same way, not just plain text.
+const justifyAlignClassName: Record<TableAlign, string> = {
+  start: 'justify-start',
+  center: 'justify-center',
+  end: 'justify-end',
+};
+
+// A package consumer can write cross-platform, RN-shaped accessibility props
+// (`accessibilityLabel`/`accessibilityLabelledBy`) against `Table`'s public
+// typing — the native (`table.tsx`) file is `ViewProps`-based and accepts
+// them natively. This file renders plain HTML directly (ADR-007's platform
+// split — native has no `<table>`/`<tr>`/`<td>`), bypassing react-native-web's
+// automatic RN-prop-to-DOM-attribute bridge, so those same props previously
+// fell through an unrelated `{...props}` spread as a literal, unrecognized,
+// lowercased DOM attribute (`accessibilitylabel="..."`, never `aria-label`) —
+// silently losing the intended accessible name on Web only. Every exported
+// component below that can take a caller-supplied accessible name now
+// destructures both RN-shaped props explicitly and bridges them to their real
+// ARIA equivalent, with an explicit `aria-label`/`aria-labelledby` (the
+// Web-native escape hatch already in each component's own DOM attribute
+// typing) always taking precedence when both are supplied.
+type WebAccessibilityLabelProps = {
+  accessibilityLabel?: string;
+  accessibilityLabelledBy?: string;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
+};
+
+function resolveWebAccessibilityLabelProps({
+  accessibilityLabel,
+  accessibilityLabelledBy,
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledBy,
+}: WebAccessibilityLabelProps): { 'aria-label'?: string; 'aria-labelledby'?: string } {
+  return {
+    'aria-label': ariaLabel ?? accessibilityLabel,
+    'aria-labelledby': ariaLabelledBy ?? accessibilityLabelledBy,
+  };
+}
+
+// Web's accessible "activate with the keyboard" contract for an element that
+// is not natively a button/link — `Table`'s pressable-row opt-in (`TableRow`'s
+// `onPress` below) needs this instead of just an `onClick`, which a
+// keyboard-only user reaching the row via Tab (not a pointer) never fires.
+// The row itself must stay a real `<tr>`/plain `<div role="row">` (not
+// `role="button"`) so it keeps its row semantics inside the table structure —
+// changing that role would break the very grouping this file's `layout`
+// contract depends on. `Enter`/`Space` are the two keys a real `<button>`
+// itself would answer to.
+function handleRowActivationKeyDown(
+  event: React.KeyboardEvent<HTMLElement>,
+  onPress: () => void,
+) {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  onPress();
+}
 
 // ---------------------------------------------------------------------------
 // Internal, subtree-scoped context — see `table.tsx` (native) for the full
@@ -18,6 +87,14 @@ const TableLayoutContext = React.createContext<TableLayout>('scroll');
 
 function useTableLayout(): TableLayout {
   return React.useContext(TableLayoutContext);
+}
+
+// See `table.tsx` (native) for the full rationale — same shape, same "undefined means no
+// override" contract, only the rendered host element (`<tr>`, not a native `View`) differs.
+const TableDensityRowHeightContext = React.createContext<number | undefined>(undefined);
+
+function useTableDensityRowHeight(): number | undefined {
+  return React.useContext(TableDensityRowHeightContext);
 }
 
 type TableColumnLabelRegistry = {
@@ -65,8 +142,19 @@ type TableColumnPositionProps = {
 // ---------------------------------------------------------------------------
 
 export type TableProps = Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> & {
+  /** Cross-platform accessible name, bridged to `aria-label` — see the file header. */
+  accessibilityLabel?: string;
+  /** Cross-platform reference to a labelling element's id, bridged to `aria-labelledby` — see the file header. */
+  accessibilityLabelledBy?: string;
   children?: React.ReactNode;
   className?: string;
+  /**
+   * Per-table row-height override for `layout="scroll"` rows, replacing the ambient global
+   * application-density row height for this one `Table` only — see `TableDensity`. Omitted
+   * (the default) leaves every row following the global density exactly as before this prop
+   * existed; existing tables are unaffected.
+   */
+  density?: TableDensity;
   /**
    * Responsive presentation. Defaults to `'scroll'` (a real `<table>` inside
    * an `overflow-x-auto` container). Set `'stacked'` to render a card/
@@ -79,8 +167,23 @@ export type TableProps = Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> 
 };
 
 export const Table = React.forwardRef<HTMLDivElement, TableProps>(
-  ({ children, className, layout = 'scroll', testID, ...props }, ref) => {
+  (
+    {
+      accessibilityLabel,
+      accessibilityLabelledBy,
+      'aria-label': ariaLabel,
+      'aria-labelledby': ariaLabelledBy,
+      children,
+      className,
+      density,
+      layout = 'scroll',
+      testID,
+      ...props
+    },
+    ref,
+  ) => {
     const direction = useDirection();
+    const densityRowHeight = density === undefined ? undefined : resolveTableDensityRowHeight(density);
     const labelsRef = React.useRef<Map<number, string>>(new Map());
     labelsRef.current.clear();
     const registry = React.useMemo<TableColumnLabelRegistry>(
@@ -98,19 +201,37 @@ export const Table = React.forwardRef<HTMLDivElement, TableProps>(
 
     return (
       <TableLayoutContext.Provider value={layout}>
-        <TableColumnLabelRegistryContext.Provider value={registry}>
-          <div ref={ref} {...props} className={cn('w-full', className)} data-testid={testID}>
-            {layout === 'stacked' ? (
-              children
-            ) : (
-              <div className="w-full overflow-x-auto" dir={direction}>
-                <table className="w-full caption-bottom border-collapse text-start">
-                  {children}
-                </table>
-              </div>
-            )}
-          </div>
-        </TableColumnLabelRegistryContext.Provider>
+        <TableDensityRowHeightContext.Provider value={densityRowHeight}>
+          <TableColumnLabelRegistryContext.Provider value={registry}>
+            <div
+              ref={ref}
+              {...props}
+              {...resolveWebAccessibilityLabelProps({
+                accessibilityLabel,
+                accessibilityLabelledBy,
+                'aria-label': ariaLabel,
+                'aria-labelledby': ariaLabelledBy,
+              })}
+              className={cn('w-full', className)}
+              data-testid={testID}
+              // `layout="stacked"` has no real `<table>` element to supply the
+              // implicit `table` role every `<tr>`'s `row` role (below, in
+              // `TableRow`) depends on for a screen reader/row-scoped query to
+              // recognize it as row grouping rather than an anonymous `<div>`.
+              role={layout === 'stacked' ? 'table' : undefined}
+            >
+              {layout === 'stacked' ? (
+                children
+              ) : (
+                <div className="w-full overflow-x-auto" dir={direction}>
+                  <table className="w-full caption-bottom border-collapse text-start">
+                    {children}
+                  </table>
+                </div>
+              )}
+            </div>
+          </TableColumnLabelRegistryContext.Provider>
+        </TableDensityRowHeightContext.Provider>
       </TableLayoutContext.Provider>
     );
   },
@@ -223,6 +344,7 @@ export const TableBody = React.forwardRef<HTMLElement, TableBodyProps>(
           className={cn('gap-density-row-gap flex flex-col', className)}
           data-testid={testID}
           ref={ref as React.Ref<HTMLDivElement>}
+          role="rowgroup"
           {...props}
         >
           {children}
@@ -261,6 +383,7 @@ export const TableFooter = React.forwardRef<HTMLElement, TableFooterProps>(
           className={cn('gap-density-row-gap flex flex-col', className)}
           data-testid={testID}
           ref={ref as React.Ref<HTMLDivElement>}
+          role="rowgroup"
           {...props}
         >
           {children}
@@ -288,8 +411,22 @@ TableFooter.displayName = 'TableFooter';
 // ---------------------------------------------------------------------------
 
 export type TableRowProps = Omit<React.HTMLAttributes<HTMLElement>, 'children'> & {
+  /** Cross-platform accessible name, bridged to `aria-label` — see the file header. */
+  accessibilityLabel?: string;
+  /** Cross-platform reference to a labelling element's id, bridged to `aria-labelledby` — see the file header. */
+  accessibilityLabelledBy?: string;
   children?: React.ReactNode;
   className?: string;
+  /**
+   * Makes the row itself pressable (e.g. a row-to-detail navigation pattern),
+   * mirroring `ListItem`'s own opt-in `onPress`. The row stays a real
+   * `<tr>`/`role="row"` element (row semantics/grouping are not replaced by a
+   * `button` role — see `handleRowActivationKeyDown`'s docblock) but gains a
+   * pointer cursor, `tabIndex={0}`, and `Enter`/`Space` keyboard activation
+   * alongside the `onClick`. A row with no `onPress` keeps rendering exactly
+   * as before.
+   */
+  onPress?: () => void;
   /**
    * Visual highlight for a caller-selected row. Table owns no selection
    * state (ADR-007) — this only reflects a boolean the caller already tracks.
@@ -299,8 +436,38 @@ export type TableRowProps = Omit<React.HTMLAttributes<HTMLElement>, 'children'> 
 };
 
 export const TableRow = React.forwardRef<HTMLElement, TableRowProps>(
-  ({ children, className, selected = false, testID, ...props }, ref) => {
+  (
+    {
+      accessibilityLabel,
+      accessibilityLabelledBy,
+      'aria-label': ariaLabel,
+      'aria-labelledby': ariaLabelledBy,
+      children,
+      className,
+      onPress,
+      selected = false,
+      style,
+      testID,
+      ...props
+    },
+    ref,
+  ) => {
     const layout = useTableLayout();
+    const densityRowHeight = useTableDensityRowHeight();
+    const interactive = typeof onPress === 'function';
+    const accessibilityLabelProps = resolveWebAccessibilityLabelProps({
+      accessibilityLabel,
+      accessibilityLabelledBy,
+      'aria-label': ariaLabel,
+      'aria-labelledby': ariaLabelledBy,
+    });
+    const interactiveProps = interactive
+      ? {
+          onClick: onPress,
+          onKeyDown: (event: React.KeyboardEvent<HTMLElement>) => handleRowActivationKeyDown(event, onPress),
+          tabIndex: 0,
+        }
+      : {};
 
     let nextColumnIndex = 0;
     const content = React.Children.map(children, (child) => {
@@ -318,38 +485,67 @@ export const TableRow = React.forwardRef<HTMLElement, TableRowProps>(
     if (layout === 'stacked') {
       // `aria-selected` is only an allowed ARIA attribute on elements whose
       // role supports it (option/row/tab/treeitem/gridcell/columnheader/
-      // rowheader — WAI-ARIA 1.2). This card is a plain, roleless `<div>`
-      // (axe-core's `aria-allowed-attr` rule correctly flags `aria-selected`
-      // here as a critical violation — proven by the `component-gallery-table`
-      // a11y scenario), unlike the `scroll` layout's real `<tr>` below, which
-      // has an implicit `row` role from being inside a `<table>` and so
-      // legitimately supports it. The row's selection state is still exposed
-      // to assistive technology correctly via its own `Checkbox`'s
-      // `aria-checked` (ADR-007: Table composes selection from `Checkbox`,
-      // it does not invent a second, invalid selection-state attribute).
+      // rowheader — WAI-ARIA 1.2), which is also why this stays `bg-primary/10`
+      // rather than reintroducing `aria-selected` here now that it has a real
+      // `role="row"` (added below, for row-grouping — see `Table`'s own
+      // `role="table"` docblock): `row` DOES allow `aria-selected` per WAI-ARIA
+      // 1.2, but this card's selection state is already exposed correctly via
+      // its own `Checkbox`'s `aria-checked` (ADR-007: Table composes
+      // selection from `Checkbox`, it does not invent a second signal), so
+      // adding a second one here would be redundant, not a correctness fix.
       return (
         <div
           className={cn(
             'gap-1 rounded-lg border border-border bg-surface p-3',
-            selected && 'border-primary',
+            interactive && 'cursor-pointer web:hover:bg-surface-muted',
+            // `bg-primary/10` (not `bg-surface-raised`): every light theme in
+            // this repo's token set defines `--color-surface-raised` equal to
+            // `--color-surface`, so a "selected" row painted that way computed
+            // to the exact same background as an unselected one in light mode
+            // — a real, currently-reproducible bug, not just a missing class.
+            // `bg-primary/10` is guaranteed distinct from the surface in every
+            // theme because it derives from `--color-primary`.
+            selected && 'border-primary bg-primary/10',
             className,
           )}
           data-testid={testID}
           ref={ref as React.Ref<HTMLDivElement>}
+          role="row"
+          {...accessibilityLabelProps}
+          {...interactiveProps}
           {...props}
+          style={style}
         >
           {content}
         </div>
       );
     }
 
+    // `densityRowHeight` (from the parent `Table`'s `density` prop) sets an explicit `<tr>`
+    // `height` — mirrors `table.tsx`'s (native) `minHeight` override, using `height` here
+    // because an unstyled `<tr>` has no intrinsic min-height class to override on Web (its
+    // row height is normal content flow from each cell's own padding — see the file-level
+    // note on `layout="scroll"` row height). A caller-supplied `style` still wins on any
+    // overlapping key, same precedence `table.tsx` gives its own `style` array.
+    const rowHeightStyle = densityRowHeight === undefined ? undefined : { height: densityRowHeight };
+
     return (
       <tr
         aria-selected={selected}
-        className={cn('border-b border-border last:border-b-0', selected && 'bg-surface-raised', className)}
+        className={cn(
+          'border-b border-border last:border-b-0',
+          interactive && 'cursor-pointer web:hover:bg-surface-muted',
+          // See the stacked branch above for why this is `bg-primary/10`, not
+          // `bg-surface-raised`.
+          selected && 'bg-primary/10',
+          className,
+        )}
         data-testid={testID}
         ref={ref as React.Ref<HTMLTableRowElement>}
+        {...accessibilityLabelProps}
+        {...interactiveProps}
         {...props}
+        style={{ ...rowHeightStyle, ...style }}
       >
         {content}
       </tr>
@@ -363,8 +559,15 @@ TableRow.displayName = 'TableRow';
 // TableHead
 // ---------------------------------------------------------------------------
 
-export type TableHeadProps = Omit<React.ThHTMLAttributes<HTMLElement>, 'children' | 'scope'> &
+export type TableHeadProps = Omit<React.ThHTMLAttributes<HTMLElement>, 'align' | 'children' | 'scope'> &
   TableColumnPositionProps & {
+    /**
+     * Header content alignment — see `table-shared.ts`'s `TableAlign`. Not
+     * the deprecated HTML `align` attribute (`"left"|"center"|"right"|...`,
+     * explicitly excluded above) `React.ThHTMLAttributes` otherwise types
+     * this same prop name as. Defaults to `'start'`.
+     */
+    align?: TableAlign;
     children?: React.ReactNode;
     className?: string;
     /**
@@ -392,7 +595,10 @@ const sortGlyphs: Record<TableSortDirection, string> = {
 };
 
 export const TableHead = React.forwardRef<HTMLElement, TableHeadProps>(
-  ({ children, className, columnIndex, label, onSortChange, sortDirection, testID, ...props }, ref) => {
+  (
+    { align = 'start', children, className, columnIndex, label, onSortChange, sortDirection, testID, ...props },
+    ref,
+  ) => {
     const layout = useTableLayout();
     const registry = React.useContext(TableColumnLabelRegistryContext);
     const isPlainContent = typeof children === 'string' || typeof children === 'number';
@@ -408,7 +614,11 @@ export const TableHead = React.forwardRef<HTMLElement, TableHeadProps>(
     const innerContent = sortable ? (
       <button
         aria-label={resolvedLabel ? `Sort by ${resolvedLabel}` : undefined}
-        className="flex w-full items-center gap-1 rounded-sm bg-transparent text-start font-semibold hover:opacity-80 focus-visible:bee-focus-ring"
+        className={cn(
+          'flex w-full items-center gap-1 rounded-sm bg-transparent font-semibold hover:opacity-80 focus-visible:bee-focus-ring',
+          textAlignClassName[align],
+          justifyAlignClassName[align],
+        )}
         onClick={onSortChange}
         type="button"
       >
@@ -437,7 +647,14 @@ export const TableHead = React.forwardRef<HTMLElement, TableHeadProps>(
     return (
       <th
         aria-sort={sortDirection}
-        className={cn('px-3 py-2 text-start align-middle font-semibold', className)}
+        // `text-foreground`: previously this `<th>` carried no color class at
+        // all, so its text inherited the browser's own document color —
+        // black on a dark `bg-surface`, ~1.1:1 contrast.
+        className={cn(
+          'px-3 py-2 align-middle font-semibold text-foreground',
+          textAlignClassName[align],
+          className,
+        )}
         data-testid={testID}
         ref={ref as React.Ref<HTMLElement>}
         scope="col"
@@ -455,8 +672,21 @@ TableHead.displayName = 'TableHead';
 // TableCell
 // ---------------------------------------------------------------------------
 
-export type TableCellProps = Omit<React.TdHTMLAttributes<HTMLElement>, 'children'> &
+export type TableCellProps = Omit<React.TdHTMLAttributes<HTMLElement>, 'align' | 'children'> &
   TableColumnPositionProps & {
+    /** Cross-platform accessible name, bridged to `aria-label` — see the file header. */
+    accessibilityLabel?: string;
+    /** Cross-platform reference to a labelling element's id, bridged to `aria-labelledby` — see the file header. */
+    accessibilityLabelledBy?: string;
+    /**
+     * Cell content alignment — see `table-shared.ts`'s `TableAlign`. Not the
+     * deprecated HTML `align` attribute `React.TdHTMLAttributes` otherwise
+     * types this same prop name as (explicitly excluded above). Defaults
+     * to `'start'` in `layout="scroll"` and `'end'` in `layout="stacked"`
+     * (the value column's long-standing default, opposite its label —
+     * preserved so existing `layout="stacked"` usage renders unchanged).
+     */
+    align?: TableAlign;
     children?: React.ReactNode;
     className?: string;
     /**
@@ -468,12 +698,35 @@ export type TableCellProps = Omit<React.TdHTMLAttributes<HTMLElement>, 'children
   };
 
 export const TableCell = React.forwardRef<HTMLElement, TableCellProps>(
-  ({ children, className, colSpan, columnIndex, label, testID, ...props }, ref) => {
+  (
+    {
+      accessibilityLabel,
+      accessibilityLabelledBy,
+      'aria-label': ariaLabel,
+      'aria-labelledby': ariaLabelledBy,
+      align,
+      children,
+      className,
+      colSpan,
+      columnIndex,
+      label,
+      testID,
+      ...props
+    },
+    ref,
+  ) => {
     const layout = useTableLayout();
     const registeredLabel = useTableColumnLabel(columnIndex);
     const resolvedLabel = label ?? registeredLabel;
+    const accessibilityLabelProps = resolveWebAccessibilityLabelProps({
+      accessibilityLabel,
+      accessibilityLabelledBy,
+      'aria-label': ariaLabel,
+      'aria-labelledby': ariaLabelledBy,
+    });
 
     if (layout === 'stacked') {
+      const resolvedAlign = align ?? 'end';
       return (
         <div
           className={cn(
@@ -482,6 +735,8 @@ export const TableCell = React.forwardRef<HTMLElement, TableCellProps>(
           )}
           data-testid={testID}
           ref={ref as React.Ref<HTMLDivElement>}
+          role="cell"
+          {...accessibilityLabelProps}
           {...props}
         >
           {resolvedLabel ? (
@@ -489,10 +744,12 @@ export const TableCell = React.forwardRef<HTMLElement, TableCellProps>(
               {resolvedLabel}
             </span>
           ) : null}
-          <div className="min-w-0 flex-1 text-end">{children}</div>
+          <div className={cn('min-w-0 flex-1', textAlignClassName[resolvedAlign])}>{children}</div>
         </div>
       );
     }
+
+    const resolvedAlign = align ?? 'start';
 
     return (
       <td
@@ -500,9 +757,24 @@ export const TableCell = React.forwardRef<HTMLElement, TableCellProps>(
         colSpan={colSpan}
         data-testid={testID}
         ref={ref as React.Ref<HTMLElement>}
+        {...accessibilityLabelProps}
         {...props}
       >
-        {children}
+        {/* `flex flex-row` (not this `<td>`'s own default block flow): a
+            `Badge` (or any other block-level child) placed directly inside a
+            `<td>` previously stretched to the full column width, because a
+            block-level `display:flex` element (`Badge` renders one) still
+            takes its containing block's full auto-width in normal block
+            flow. Making a *child* wrapper the flex row (not the `<td>`
+            itself, which must stay `display:table-cell` to keep
+            participating in the table's own column-width algorithm) turns
+            that same child into a flex item that hugs its own content width
+            instead, and lets `justify-{align}` position it horizontally —
+            the Web half of the `align` contract `table-shared.ts` documents
+            (native's `TableCell` gets the equivalent fix in `table.tsx`). */}
+        <div className={cn('flex min-w-0 flex-row items-center gap-2', justifyAlignClassName[resolvedAlign])}>
+          {children}
+        </div>
       </td>
     );
   },

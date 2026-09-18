@@ -9,6 +9,7 @@ import {
   View,
   type PressableProps,
   type ViewProps,
+  type ViewStyle,
 } from 'react-native';
 import { Button, type ButtonProps } from './button';
 import {
@@ -219,6 +220,33 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export type SheetSnapPoint = `${number}%` | number;
 
 const DEFAULT_SHEET_MAX_HEIGHT: SheetSnapPoint = '90%';
+
+/**
+ * #548 — `BeeUIProvider` installs the root anchored-overlay host as a normal
+ * subtree node, so its `flex-1` container stretches to its own natural
+ * content height, not the browser viewport, whenever the application root is
+ * shorter than the viewport (a route with little content, a short page).
+ * `SheetContent`'s own backdrop/panel wrapper (the very next element it
+ * renders below `ModalOverlayHost`) is a *viewport-class* modal surface — it
+ * must cover and size against the browser viewport regardless of that
+ * ancestor's height. `position: fixed; inset: 0` establishes exactly that
+ * containing block, independent of app-root content height: RN's own
+ * `ViewStyle` type does not include `'fixed'` (a Web-only CSS position value,
+ * unlike `'absolute'`/`'relative'`), which react-native-web's `View` does
+ * support — hence the cast, mirroring this file's own Web-only DOM-shape
+ * casts elsewhere (`WebElementLike`/`WebDocumentLike`). Once this wrapper's
+ * own layout box equals the viewport, the percentage `maxHeight` computed
+ * below for `snapPoints` (e.g. `'55%'`) resolves against that same box, so it
+ * is a viewport-relative percentage too — the same fix covers both reported
+ * geometry symptoms with one change.
+ */
+const VIEWPORT_FIXED_STYLE: ViewStyle = {
+  bottom: 0,
+  left: 0,
+  position: 'fixed' as ViewStyle['position'],
+  right: 0,
+  top: 0,
+};
 
 function resolveSheetPresentationHeight(
   snapPoints: readonly SheetSnapPoint[] | undefined,
@@ -651,6 +679,7 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
           <View
             className={cn('flex-1 justify-end', containerClassName)}
             pointerEvents={open ? 'box-none' : 'none'}
+            style={VIEWPORT_FIXED_STYLE}
           >
             <AnimatedPressable
               {...overlayProps}

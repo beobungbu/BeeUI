@@ -15,7 +15,14 @@ const badgeVariants = cva(
         warning: 'border-warning bg-warning',
         destructive: 'border-destructive bg-destructive',
         info: 'border-info bg-info',
-        outline: 'border-border-strong bg-surface',
+        // A stronger, semi-opaque foreground-derived border than
+        // `border-border-strong` (which a disabled `Input` also uses,
+        // rendering the two visually indistinguishable in a table row):
+        // `border-foreground/40` reads as a deliberate outline at any theme's
+        // contrast level, since it is always derived from that theme's own
+        // foreground rather than a separate border token that can happen to
+        // sit close to it.
+        outline: 'border-foreground/40 bg-surface',
       },
     },
     defaultVariants: {

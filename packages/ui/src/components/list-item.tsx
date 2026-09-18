@@ -5,18 +5,36 @@ import { Box } from './box';
 import { ListGroupMembershipContext } from './list-group';
 import { Text } from './text';
 
-function isPrimitiveAccessibilityContent(value: React.ReactNode) {
-  return value == null || typeof value === 'string' || typeof value === 'number';
+// A `title`/`description`/`trailing` built from a plain string/number always
+// produced an accessible name (below). A two-value row built from a *node*
+// instead (e.g. `title={<View><Text>Wi-Fi</Text><Text>On</Text></View>}`)
+// previously fell through every check here and rendered with no accessible
+// name at all — `role="button"` announced with nothing to act on. Walking
+// each node's own `children` and collecting every string/number leaf
+// recovers the same name a sighted user reads, the same way `Dialog`'s
+// `getPrimitiveText` derives a title from simple children, generalized to
+// arbitrary nesting. An element with no text-bearing descendants (a
+// standalone icon) still yields no name, exactly as before — callers with
+// genuinely non-textual content still need an explicit `accessibilityLabel`.
+function collectAccessibilityText(value: React.ReactNode, parts: string[]) {
+  if (value == null || typeof value === 'boolean') return;
+  if (typeof value === 'string' || typeof value === 'number') {
+    const text = String(value).trim();
+    if (text) parts.push(text);
+    return;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectAccessibilityText(item, parts));
+    return;
+  }
+  if (React.isValidElement(value)) {
+    collectAccessibilityText((value.props as { children?: React.ReactNode }).children, parts);
+  }
 }
 
-function getPrimitiveAccessibilityLabel(...values: React.ReactNode[]) {
-  if (!values.every(isPrimitiveAccessibilityContent)) return undefined;
-
-  const parts = values
-    .filter((value): value is string | number => typeof value === 'string' || typeof value === 'number')
-    .map(String)
-    .filter(Boolean);
-
+function getAccessibilityLabel(...values: React.ReactNode[]): string | undefined {
+  const parts: string[] = [];
+  values.forEach((value) => collectAccessibilityText(value, parts));
   return parts.length > 0 ? parts.join(', ') : undefined;
 }
 
@@ -34,6 +52,14 @@ export type ListItemProps = Omit<
   PressableProps,
   'accessibilityRole' | 'accessibilityState' | 'children' | 'role'
 > & {
+  /**
+   * Marks this row as the current/selected item — e.g. the active sidebar
+   * link, or a selected row in a master/detail list. Adds a tokenized
+   * selected background plus `accessibilityState.selected` (native) and
+   * `aria-current` (Web, since `accessibilityState` is not forwarded to the
+   * DOM there — see the `aria-current` prop below). Defaults to false.
+   */
+  active?: boolean;
   className?: string;
   description?: React.ReactNode;
   /** Applied to the description `Text` when `description` is a plain string or number; ignored if `description` is a custom element. */
@@ -50,6 +76,7 @@ export const ListItem = React.forwardRef<React.ComponentRef<typeof Pressable>, L
   (
     {
       accessibilityLabel,
+      active = false,
       className,
       description,
       descriptionClassName,
@@ -65,7 +92,7 @@ export const ListItem = React.forwardRef<React.ComponentRef<typeof Pressable>, L
   ) => {
     const interactive = typeof onPress === 'function';
     const isDisabled = disabled === true;
-    const inferredLabel = getPrimitiveAccessibilityLabel(title, description, trailing);
+    const inferredLabel = getAccessibilityLabel(title, description, trailing);
     const groupPrimitiveContent = !interactive && inferredLabel !== undefined;
     // WAI-ARIA Required Context Role (5.2.7): `listitem` is only meaningful when owned by
     // a `list`. A standalone ListItem (rendered outside `ListGroup`) has no such owner, so
@@ -79,7 +106,18 @@ export const ListItem = React.forwardRef<React.ComponentRef<typeof Pressable>, L
         {...props}
         accessibilityLabel={accessibilityLabel ?? inferredLabel}
         accessibilityRole={interactive ? 'button' : undefined}
-        accessibilityState={interactive ? { disabled: isDisabled } : undefined}
+        accessibilityState={
+          interactive || active ? { disabled: interactive ? isDisabled : undefined, selected: active || undefined } : undefined
+        }
+        // `accessibilityState.selected` above is native-only-effective (see
+        // Chip/Button: react-native-web never forwards `accessibilityState`
+        // to the DOM). `aria-selected` is not a substitute here — it is only
+        // an ARIA-allowed attribute on roles like `option`/`row`/`tab`, never
+        // on this row's actual `button`/`listitem`/no-role output (the same
+        // constraint `TableRow`'s stacked layout documents). `aria-current`
+        // has no such role restriction, so it is the correct explicit Web
+        // signal for "this is the current item" on a `button`/plain row.
+        aria-current={active ? 'true' : undefined}
         // Non-interactive rows inside a ListGroup are the list's `listitem` themselves
         // (via the web-role `role` prop — `accessibilityRole`'s fixed, native-mask-synced
         // enum doesn't include `listitem`). Outside a ListGroup, no `listitem` role is
@@ -88,7 +126,7 @@ export const ListItem = React.forwardRef<React.ComponentRef<typeof Pressable>, L
         // `listitem`-role wrapper instead (see the wrapped return below), since a single
         // native element can't carry both `button` and `listitem` roles at once.
         role={!interactive && insideListGroup ? 'listitem' : undefined}
-        accessible={interactive || groupPrimitiveContent ? true : undefined}
+        accessible={interactive || groupPrimitiveContent || active ? true : undefined}
         className={cn(
           // Row height/gap come from the #74 application-density axis (`--spacing-density-*`,
           // default = comfortable = the pre-#74 `min-h-14`/`gap-3` literals, pixel-identical).
@@ -96,6 +134,7 @@ export const ListItem = React.forwardRef<React.ComponentRef<typeof Pressable>, L
           // `compact`-density row can never drop below the accepted native hit-target minimum.
           'min-h-density-row-height w-full flex-row items-center gap-density-row-gap rounded-md px-3 py-2 ios:min-h-touch-target android:min-h-touch-target',
           interactive && 'active:bg-surface-muted web:hover:bg-surface-muted',
+          active && 'bg-primary/10',
           isDisabled && 'opacity-60',
           className,
         )}
@@ -161,11 +200,11 @@ export const SettingsItem = React.forwardRef<React.ComponentRef<typeof Pressable
       ) : (
         trailing ?? renderedValue
       );
-    const inferredLabel = getPrimitiveAccessibilityLabel(
-      title,
-      description,
-      value ?? (isPrimitiveAccessibilityContent(trailing) ? trailing : undefined),
-    );
+    // `value ?? trailing` (not both): `value` (the current setting, e.g.
+    // "On") is the meaningful trailing-position content when present;
+    // `trailing` itself is then typically a purely decorative disclosure
+    // chevron that must not leak into the accessible name alongside it.
+    const inferredLabel = getAccessibilityLabel(title, description, value ?? trailing);
 
     return (
       <ListItem

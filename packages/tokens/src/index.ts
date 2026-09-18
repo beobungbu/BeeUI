@@ -225,7 +225,8 @@ export const spacing = {
   "10": 40,
   "12": 48,
   "16": 64,
-  "2.5": 10
+  "2.5": 10,
+  "row-dense": 48
 } as const;
 
 export const radius = {

@@ -29,6 +29,25 @@ The pattern is a composition recipe rather than a new framework layer. Follow th
 The screen is controlled through `MessagesScreenProps`. User intent crosses the application boundary through `onConversationSelect`; fetching, routing, persistence and side effects remain application-owned.
 
 ```tsx
+// from apps/showcase/patterns/commerce-social/fixtures/social-fixtures.ts
+export type Conversation = {
+  id: string;
+  user: SocialUser;
+  lastMessage: string;
+  timestamp: string;
+  unreadCount: number;
+};
+
+// from apps/showcase/patterns/commerce-social/fixtures/social-fixtures.ts
+export type SocialUser = {
+  id: string;
+  name: string;
+  handle: string;
+  avatarUri: string;
+  fallback: string;
+  bio: string;
+};
+
 export type MessagesScreenProps = {
   empty?: boolean;
   onConversationSelect?: (conversation: Conversation) => void;
@@ -70,7 +89,7 @@ BeeUI does not take ownership of app routing, authentication/business rules, API
 
 ## Source ownership
 
-`MessagesScreen` is **Showcase source you copy**, not a package export: it is not shipped from any `@beemvp/beeui-*` package, and the Registry CLI (`pnpm beeui list` / `pnpm beeui add`) does not carry pattern screens. Copy [`apps/showcase/patterns/commerce-social/screens/messages-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/commerce-social/screens/messages-screen.tsx) into your app and adapt it directly. Only the individual BeeUI components it composes (linked above) are available for source ownership through the repository-local Registry workflow; before public CLI publication, use [CLI & source ownership](/docs/guides/cli-source-ownership/) from a BeeUI checkout rather than a public `npx` command.
+`MessagesScreen` is **Showcase source you copy**, not a package export: it is not shipped from any `@beemvp/beeui-*` package, and the Registry CLI (`pnpm beeui list` / `pnpm beeui add`) does not carry pattern screens. Copy [`apps/showcase/patterns/commerce-social/screens/messages-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/commerce-social/screens/messages-screen.tsx) into your app and adapt it directly. Only the individual BeeUI components it composes (linked above) are available for source ownership through the repository-local Registry workflow; see [CLI & source ownership](/docs/guides/cli-source-ownership/) for both the published `npx @beemvp/beeui-cli@next` path and the repository-local checkout path.
 
 ## Related
 

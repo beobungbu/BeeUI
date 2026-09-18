@@ -177,14 +177,52 @@ function resolveKeyofTypeofKeys(typeNode, sourceFile) {
   return keys;
 }
 
-function fieldTypeText(member, sourceFile) {
+// A field can name a `type X = 'a' | 'b'` (or `keyof typeof CONST`) alias that carries its own
+// file-local `export` keyword (so `tryEmbed`/heritage resolution can see it) but is never
+// re-exported from the package barrel `packages/ui/src/index.ts` — `TextProps.family:
+// FontFamily`, `TextProps.numeric: NumericVariant`, `TimelineItemProps.status: TimelineStatus`
+// (not even `export`ed there). A reader following the page cannot look `FontFamily` up anywhere
+// public, and the installed `.d.ts` does not preserve the name either: TypeScript inlines a
+// non-barrel-exported alias at every exported use site, so the type a consumer's editor actually
+// shows is the literal union, not the alias (#569, #580). `publicTypeNames` — the same
+// `component.types` list the page's own "Exported types"/"Related exported types" sections are
+// built from — is the authority for "public" here, not the file-local `export` keyword: a type
+// genuinely in that barrel is deliberately left as its name, since it does mean something outside
+// the file and inlining it here would duplicate the section that already documents it.
+function resolveLocalNonExportedLiteralAlias(typeNode, sourceFile, publicTypeNames) {
+  if (!ts.isTypeReferenceNode(typeNode) || typeNode.typeArguments || !ts.isIdentifier(typeNode.typeName)) return undefined;
+  const name = typeNode.typeName.text;
+  if (publicTypeNames?.has(name)) return undefined;
+  let resolved;
+  walk(sourceFile, (node) => {
+    if (resolved !== undefined || !ts.isTypeAliasDeclaration(node) || node.name.text !== name) return;
+    const keys = resolveKeyofTypeofKeys(node.type, sourceFile);
+    if (keys) {
+      resolved = keys.map((key) => `'${key}'`).join(' | ');
+      return;
+    }
+    const literalMembers = ts.isUnionTypeNode(node.type)
+      ? node.type.types
+      : ts.isLiteralTypeNode(node.type)
+        ? [node.type]
+        : undefined;
+    if (literalMembers?.every((member) => ts.isLiteralTypeNode(member) && ts.isStringLiteral(member.literal))) {
+      resolved = literalMembers.map((member) => `'${member.literal.text}'`).join(' | ');
+    }
+  });
+  return resolved;
+}
+
+function fieldTypeText(member, sourceFile, publicTypeNames) {
   if (!member.type) return 'unknown';
   const keys = resolveKeyofTypeofKeys(member.type, sourceFile);
   if (keys) return keys.map((key) => `'${key}'`).join(' | ');
+  const aliasLiteral = resolveLocalNonExportedLiteralAlias(member.type, sourceFile, publicTypeNames);
+  if (aliasLiteral) return aliasLiteral;
   return member.type.getText(sourceFile);
 }
 
-function extractFields(container, sourceFile) {
+function extractFields(container, sourceFile, ctx) {
   const fields = [];
   for (const member of container.members) {
     if (!ts.isPropertySignature(member) || !member.name) continue;
@@ -193,7 +231,7 @@ function extractFields(container, sourceFile) {
     fields.push({
       name: member.name.getText(sourceFile),
       optional: Boolean(member.questionToken),
-      type: fieldTypeText(member, sourceFile),
+      type: fieldTypeText(member, sourceFile, ctx?.publicTypeNames),
       description,
     });
   }
@@ -243,7 +281,7 @@ function resolveTypeNodeToShape(typeNode, sourceFile, ctx) {
   if (ts.isParenthesizedTypeNode(typeNode)) return resolveTypeNodeToShape(typeNode.type, sourceFile, ctx);
 
   if (ts.isTypeLiteralNode(typeNode)) {
-    return { kind: 'object', bases: [], fields: extractFields(typeNode, sourceFile) };
+    return { kind: 'object', bases: [], fields: extractFields(typeNode, sourceFile, ctx) };
   }
 
   if (ts.isIntersectionTypeNode(typeNode)) {
@@ -254,7 +292,7 @@ function resolveTypeNodeToShape(typeNode, sourceFile, ctx) {
       let member = rawMember;
       while (ts.isParenthesizedTypeNode(member)) member = member.type;
       if (ts.isTypeLiteralNode(member)) {
-        fields.push(...extractFields(member, sourceFile));
+        fields.push(...extractFields(member, sourceFile, ctx));
         continue;
       }
       // `{ common } & ({ brand; appearance } | { theme })` — ThemeScope's whole public API sat
@@ -268,7 +306,7 @@ function resolveTypeNodeToShape(typeNode, sourceFile, ctx) {
         // `theme?: undefined` in the brand/appearance arm exists to forbid `theme` there; it is
         // an exclusion the type checker reads, not a prop a caller sets, so it gets no row.
         discriminated = member.types.map((arm) =>
-          extractFields(arm, sourceFile).filter((field) => field.type !== 'undefined'),
+          extractFields(arm, sourceFile, ctx).filter((field) => field.type !== 'undefined'),
         );
         continue;
       }
@@ -345,7 +383,7 @@ function resolveNamedTypeShape(name, ctx) {
 
   if (ts.isInterfaceDeclaration(resolved.node)) {
     const { bases, fields: embeddedFields } = resolveHeritageBases(resolved.node, sourceFile, nestedCtx);
-    return { kind: 'object', bases, fields: [...embeddedFields, ...extractFields(resolved.node, sourceFile)] };
+    return { kind: 'object', bases, fields: [...embeddedFields, ...extractFields(resolved.node, sourceFile, nestedCtx)] };
   }
   if (ts.isTypeAliasDeclaration(resolved.node)) {
     return resolveTypeNodeToShape(resolved.node.type, sourceFile, nestedCtx);
@@ -395,24 +433,78 @@ function resolveLocalConstantLiteralText(sourceFile, name) {
   return literalText;
 }
 
+// A named default such as `DATE_PICKER_DEFAULT_CLEAR_ACCESSIBILITY_LABEL` is frequently declared
+// in a sibling file and re-exported through a plain relative import (`date-picker.web.tsx`
+// imports it from `./date-picker-shared`) rather than the file that destructures it. Resolving
+// only same-file constants left 14 rows across Calendar/DatePicker/DateTimePicker unpublished —
+// this walks the current file's own `import { NAME } from './relative-module'` declarations (only
+// relative specifiers: a bare package import is an external contract, not something this module
+// tracks) and looks the resolved sibling file up in `fileIndex`, which `extractDefaults` builds
+// once over every file it was given. A name imported under an alias (`import { X as Y }`) is
+// matched by its LOCAL binding name, since that is the identifier the destructuring default
+// actually references.
+function findNamedImportModuleSpecifier(sourceFile, name) {
+  for (const statement of sourceFile.statements) {
+    if (!ts.isImportDeclaration(statement) || !statement.importClause?.namedBindings) continue;
+    const bindings = statement.importClause.namedBindings;
+    if (!ts.isNamedImports(bindings)) continue;
+    for (const element of bindings.elements) {
+      if (element.name.text === name && ts.isStringLiteralLike(statement.moduleSpecifier)) {
+        return statement.moduleSpecifier.text;
+      }
+    }
+  }
+  return undefined;
+}
+
+// Resolves a relative import specifier (`./date-picker-shared`) against the importing file's own
+// path to a key in `fileIndex` — every file this generator was handed lives flat under
+// `packages/ui/src/components/`, so only the `.tsx`/`.ts` extension needs trying. A bare/scoped
+// package specifier (no leading `.`) is never resolved: that is a real external contract, not a
+// BeeUI sibling file.
+function resolveRelativeModulePath(fromPath, specifier, fileIndex) {
+  if (!specifier.startsWith('.')) return undefined;
+  const base = path.posix.join(path.posix.dirname(fromPath), specifier);
+  for (const ext of ['.tsx', '.ts']) {
+    const candidate = `${base}${ext}`;
+    if (fileIndex.has(candidate)) return candidate;
+  }
+  return undefined;
+}
+
+// Resolves a bare identifier to the literal it names: first as a same-file `const`, then — new —
+// as a `const` in the sibling file it is imported from. `fileIndex` is optional so every existing
+// caller/test that only cares about the same-file case keeps working unchanged.
+function resolveIdentifierLiteralText(name, sourceFile, fileIndex) {
+  const local = resolveLocalConstantLiteralText(sourceFile, name);
+  if (local !== undefined) return local;
+  if (!fileIndex) return undefined;
+  const specifier = findNamedImportModuleSpecifier(sourceFile, name);
+  if (!specifier) return undefined;
+  const resolvedPath = resolveRelativeModulePath(sourceFile.fileName, specifier, fileIndex);
+  if (!resolvedPath) return undefined;
+  return resolveLocalConstantLiteralText(fileIndex.get(resolvedPath), name);
+}
+
 // A destructured default that is already a literal (`'md'`, `false`, `1`) is exactly what a
 // reader wants and is returned verbatim. A bare identifier is resolved to the literal it names
 // when that identifier is a local `const` in the same file (`SELECT_DEFAULT_PLACEHOLDER` ->
-// `'Select an option'`) — otherwise (imported from elsewhere, or not a literal) it is
-// unresolved. A call expression (`resolveDirection()`) is computed at render time, not a fixed
-// value a reader can read off the page, so it is always unresolved. `undefined` here means "no
-// documented default", never an unreadable symbol printed into the Default column.
-function resolveDefaultInitializerText(initializer, sourceFile) {
-  if (ts.isIdentifier(initializer)) return resolveLocalConstantLiteralText(sourceFile, initializer.text);
+// `'Select an option'`) or a named import of a `const` in a sibling file this generator also
+// parsed — otherwise (not a literal, or an unresolvable import) it is unresolved. A call
+// expression (`resolveDirection()`) is computed at render time, not a fixed value a reader can
+// read off the page, so it is always unresolved. `undefined` here means "no documented default",
+// never an unreadable symbol printed into the Default column.
+function resolveDefaultInitializerText(initializer, sourceFile, fileIndex) {
+  if (ts.isIdentifier(initializer)) return resolveIdentifierLiteralText(initializer.text, sourceFile, fileIndex);
   if (ts.isCallExpression(initializer)) return undefined;
   return initializer.getText(sourceFile);
 }
 
-function collectDefaultsFromBindingPattern(pattern, sourceFile, defaults) {
+function collectDefaultsFromBindingPattern(pattern, sourceFile, defaults, fileIndex) {
   for (const element of pattern.elements) {
     if (!ts.isBindingElement(element) || !element.initializer || !ts.isIdentifier(element.name)) continue;
     if (defaults.has(element.name.text)) continue;
-    const resolved = resolveDefaultInitializerText(element.initializer, sourceFile);
+    const resolved = resolveDefaultInitializerText(element.initializer, sourceFile, fileIndex);
     if (resolved !== undefined) defaults.set(element.name.text, resolved);
   }
 }
@@ -427,10 +519,10 @@ function collectDefaultsFromBindingPattern(pattern, sourceFile, defaults) {
 // `forwardRef((props, ref) => { const { disabled = false } = props; … })` destructures in the body,
 // not in the parameter. The plain-function branch already read that shape; the forwardRef branch
 // did not, so 15 rows across Calendar, DatePicker and DateTimePicker published no default while a
-// literal one existed in source. (A further 14 rows on those pages still show no default: their
-// value comes from a cross-file identifier rather than a literal, which is deliberately not
-// published.)
-function collectDefaultsFromBodyDestructure(fn, paramName, sourceFile, defaults) {
+// literal one existed in source. (A further 14 rows on those pages published no default because
+// their value came from a cross-file identifier — `resolveIdentifierLiteralText`'s sibling-import
+// resolution above now recovers those that are a plain re-exported `const`, #580.)
+function collectDefaultsFromBodyDestructure(fn, paramName, sourceFile, defaults, fileIndex) {
   // No `isBlock` narrowing: it had no observable effect (removing it changed no output and no
   // test), because the checks that matter are below — a `const { … } = <paramName>` statement.
   if (!fn.body) return;
@@ -443,7 +535,7 @@ function collectDefaultsFromBodyDestructure(fn, paramName, sourceFile, defaults)
         ts.isIdentifier(declaration.initializer) &&
         declaration.initializer.text === paramName
       ) {
-        collectDefaultsFromBindingPattern(declaration.name, sourceFile, defaults);
+        collectDefaultsFromBindingPattern(declaration.name, sourceFile, defaults, fileIndex);
       }
     }
   });
@@ -476,12 +568,93 @@ function collectDefaultsFromForwardedFallbacks(node, sourceFile, defaults) {
   });
 }
 
+// Finds any forwardRef/function in `sourceFile` that destructures `fieldName` with a resolvable
+// default, regardless of which Props type it belongs to. Used only by
+// `collectDefaultsFromVerbatimPassthrough` below, once that function has already established (by
+// tag identity) that `sourceFile` is the exact child component a prop is forwarded to unchanged —
+// this does not scan arbitrary files for a same-named prop on its own, which would risk crediting
+// one component's default to an unrelated component that happens to share a prop name.
+function extractAnyDefaultForField(sourceFile, fieldName, fileIndex) {
+  let result;
+  walk(sourceFile, (node) => {
+    if (result !== undefined) return;
+    let param;
+    let bodyOwner = node;
+    if (ts.isCallExpression(node) && node.typeArguments?.length === 2 && /forwardRef$/.test(node.expression.getText(sourceFile))) {
+      const renderFn = node.arguments[0];
+      if (ts.isArrowFunction(renderFn) || ts.isFunctionExpression(renderFn)) {
+        param = renderFn.parameters[0];
+        bodyOwner = renderFn;
+      }
+    } else if (ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node) || ts.isArrowFunction(node)) {
+      param = node.parameters[0];
+    }
+    if (!param) return;
+    const found = new Map();
+    if (ts.isObjectBindingPattern(param.name)) {
+      collectDefaultsFromBindingPattern(param.name, sourceFile, found, fileIndex);
+    } else if (ts.isIdentifier(param.name)) {
+      collectDefaultsFromBodyDestructure(bodyOwner, param.name.text, sourceFile, found, fileIndex);
+    }
+    if (found.has(fieldName)) result = found.get(fieldName);
+  });
+  return result;
+}
+
+// A prop can flow straight through to a sibling BeeUI component with the exact same name and no
+// transformation at all — `<Calendar nextMonthAccessibilityLabel={nextMonthAccessibilityLabel} />`
+// inside `DatePicker`/`DateTimePicker` — rather than being re-defaulted with `??` (the case
+// `collectDefaultsFromForwardedFallbacks` above already handles) or destructured locally. When the
+// caller omits the prop, `undefined` reaches `Calendar` unchanged and `Calendar`'s own default
+// applies verbatim, so publishing that default here is accurate, not a guess — unlike a forward
+// wrapped in further computation (e.g. `Math.min(maxHeight ?? 320, viewport)`), which this
+// deliberately does not attempt to unpick. The lookup is scoped to the exact JSX tag identity (a
+// `const `/`function ` declaration with that literal name in the candidate file) specifically so a
+// same-named prop on an unrelated component already known to this call is not read.
+function collectDefaultsFromVerbatimPassthrough(node, sourceFile, defaults, fileIndex) {
+  if (!fileIndex) return;
+  walk(node, (inner) => {
+    if (!ts.isJsxAttribute(inner) || !inner.name || !ts.isIdentifier(inner.name)) return;
+    const fieldName = inner.name.text;
+    if (defaults.has(fieldName)) return;
+    const initializer = inner.initializer;
+    if (!initializer || !ts.isJsxExpression(initializer) || !initializer.expression) return;
+    const expression = initializer.expression;
+    if (!ts.isIdentifier(expression) || expression.text !== fieldName) return;
+
+    const opening = inner.parent?.parent;
+    const tagNameNode = opening && ts.isJsxOpeningLikeElement(opening) ? opening.tagName : undefined;
+    if (!tagNameNode || !ts.isIdentifier(tagNameNode)) return;
+    const tagName = tagNameNode.text;
+    const declarationPattern = new RegExp(`\\b(?:const|function)\\s+${tagName}\\b`);
+
+    for (const candidateFile of fileIndex.values()) {
+      if (candidateFile === sourceFile || !declarationPattern.test(candidateFile.text)) continue;
+      const resolved = extractAnyDefaultForField(candidateFile, fieldName, fileIndex);
+      if (resolved !== undefined) {
+        defaults.set(fieldName, resolved);
+        return;
+      }
+    }
+  });
+}
+
 export function extractDefaults(files, candidateNames) {
   const defaults = new Map();
 
-  for (const { path: filePath, source } of files) {
-    const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, scriptKindFor(filePath));
+  // Parsed once up front (rather than per-match inside the walk below) so `resolveIdentifierLiteralText`
+  // can follow a relative import out of the file currently being scanned into any *other* file this
+  // call was given — e.g. `date-picker.web.tsx` destructuring a default that names a `const` declared
+  // in `date-picker-shared.tsx`. Every caller already passes the full family (or, since #580, every
+  // component file), so this index costs one extra parse pass, not an extra read.
+  const fileIndex = new Map(
+    files.map(({ path: filePath, source }) => [
+      filePath,
+      ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, scriptKindFor(filePath)),
+    ]),
+  );
 
+  for (const sourceFile of fileIndex.values()) {
     walk(sourceFile, (node) => {
       if (ts.isCallExpression(node) && node.typeArguments?.length === 2 && /forwardRef$/.test(node.expression.getText(sourceFile))) {
         const propsArgName = getBareTypeReferenceName(node.typeArguments[1]);
@@ -489,11 +662,14 @@ export function extractDefaults(files, candidateNames) {
           const renderFn = node.arguments[0];
           const param = (ts.isArrowFunction(renderFn) || ts.isFunctionExpression(renderFn)) ? renderFn.parameters[0] : undefined;
           if (param && ts.isObjectBindingPattern(param.name)) {
-            collectDefaultsFromBindingPattern(param.name, sourceFile, defaults);
+            collectDefaultsFromBindingPattern(param.name, sourceFile, defaults, fileIndex);
           } else if (param && ts.isIdentifier(param.name)) {
-            collectDefaultsFromBodyDestructure(renderFn, param.name.text, sourceFile, defaults);
+            collectDefaultsFromBodyDestructure(renderFn, param.name.text, sourceFile, defaults, fileIndex);
           }
-          if (renderFn) collectDefaultsFromForwardedFallbacks(renderFn, sourceFile, defaults);
+          if (renderFn) {
+            collectDefaultsFromForwardedFallbacks(renderFn, sourceFile, defaults);
+            collectDefaultsFromVerbatimPassthrough(renderFn, sourceFile, defaults, fileIndex);
+          }
         }
       }
 
@@ -502,10 +678,11 @@ export function extractDefaults(files, candidateNames) {
         const typeName = param ? getBareTypeReferenceName(param.type) : undefined;
         if (!typeName || !candidateNames.has(typeName)) return;
         if (ts.isObjectBindingPattern(param.name)) {
-          collectDefaultsFromBindingPattern(param.name, sourceFile, defaults);
+          collectDefaultsFromBindingPattern(param.name, sourceFile, defaults, fileIndex);
         } else if (ts.isIdentifier(param.name)) {
-          collectDefaultsFromBodyDestructure(node, param.name.text, sourceFile, defaults);
+          collectDefaultsFromBodyDestructure(node, param.name.text, sourceFile, defaults, fileIndex);
         }
+        collectDefaultsFromVerbatimPassthrough(node, sourceFile, defaults, fileIndex);
       }
     });
   }
@@ -1431,7 +1608,7 @@ export function resolveComponentTypeEntry(index, name, opts = {}) {
   // shape is spread in afterwards, so its own `kind` ('object' | 'union')
   // describes the shape without colliding with `docKind`.
   if (/Props$/.test(name)) {
-    const ctx = { index, errorLabel: opts.errorLabel ?? name, names: new Set([name]), resolveOpts: opts };
+    const ctx = { index, errorLabel: opts.errorLabel ?? name, names: new Set([name]), resolveOpts: opts, publicTypeNames: opts.publicTypeNames };
     const shape = resolveNamedTypeShape(name, ctx);
     return { name, docKind: 'props', ...shape, names: ctx.names };
   }
@@ -1454,7 +1631,7 @@ export function resolveComponentTypeEntry(index, name, opts = {}) {
   // type text, so `variant` and its five values reached no table (#506). Promoted to a props
   // entry only in that case: with a `*Props` type present, an object alias is a value type.
   if (opts.promoteObjectAliases && ts.isTypeLiteralNode(typeNode)) {
-    const ctx = { index, errorLabel: opts.errorLabel ?? name, names: new Set([name]), resolveOpts: opts };
+    const ctx = { index, errorLabel: opts.errorLabel ?? name, names: new Set([name]), resolveOpts: opts, publicTypeNames: opts.publicTypeNames };
     const shape = resolveTypeNodeToShape(typeNode, sourceFile, ctx);
     // `useToast(): ToastApi` — a type a function returns is what a caller receives, not what a
     // caller passes, and a table headed "Props" for it contradicts the page. Kept as an object
@@ -1497,6 +1674,19 @@ const cvaCache = new Map();
 function getCvaVariants(rootDir) {
   if (!cvaCache.has(rootDir)) cvaCache.set(rootDir, extractCvaVariants(readComponentSourceFiles(rootDir)));
   return cvaCache.get(rootDir);
+}
+
+// Same rationale as `getCvaVariants` above, for destructured/imported-constant defaults: a
+// `*Trigger`/`*Close`/`*Action`/`*Cancel` type that is a bare alias of `ButtonProps` (Dialog,
+// AlertDialog, DropdownMenu, Popover, Sheet, Tooltip) only has its `loading = false` default
+// destructured in button.tsx's own `forwardRef`, never in the alias's own file — scoping default
+// extraction to the family's own files left those published as "—" despite a real default
+// existing (#580).
+const allComponentFilesCache = new Map();
+
+function getAllComponentSourceFiles(rootDir) {
+  if (!allComponentFilesCache.has(rootDir)) allComponentFilesCache.set(rootDir, readComponentSourceFiles(rootDir));
+  return allComponentFilesCache.get(rootDir);
 }
 
 // A `.web.tsx` file among `allSources` that is not itself the family's primary/native source —
@@ -1591,6 +1781,10 @@ export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
     familyPaths: component.allSources,
     primaryPath: component.source,
     promoteObjectAliases: !component.types.some((typeName) => /Props$/u.test(typeName)),
+    // The barrel-exported type names for this family — the same list "Exported types"/"Related
+    // exported types" render from — is what decides whether a field's own type alias is public
+    // (cited by name) or a private literal-shape detail worth inlining (#569, #580).
+    publicTypeNames: new Set(component.types),
   };
   const webPath = findWebSourcePath(component.allSources, component.source);
   const files = component.allSources.map((relPath) => ({
@@ -1602,7 +1796,7 @@ export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
     const entry = resolveComponentTypeEntry(index, typeName, { ...opts, errorLabel: `${component.name}: ${typeName}` });
     if (entry.docKind === 'props') {
       applyCvaVariants(entry, getCvaVariants(rootDir));
-      applyDefaults(entry, extractDefaults(files, entry.names));
+      applyDefaults(entry, extractDefaults(getAllComponentSourceFiles(rootDir), entry.names));
       applyGlossary(entry, propGlossary(rootDir));
       // A pure alias of an upstream type documents nothing on its own; fall back to the props
       // the implementation actually reads out of it.
@@ -1619,12 +1813,13 @@ export function getComponentTypeDocs(component, rootDir = ROOT_DIR) {
           errorLabel: `${component.name}: ${typeName} (Web)`,
           names: new Set([typeName]),
           resolveOpts: { fromPath: webPath, primaryPath: webPath, familyPaths: component.allSources },
+          publicTypeNames: opts.publicTypeNames,
         };
         const webShape = resolveNamedTypeShape(typeName, webCtx);
         // The Web shape needs the same cva resolution as the native one, or the platform-diff
         // bullets keep naming `VariantProps<typeof buttonVariants>` as an unreproduced contract.
         applyCvaVariants(webShape, getCvaVariants(rootDir));
-        applyDefaults(webShape, extractDefaults(files, webCtx.names));
+        applyDefaults(webShape, extractDefaults(getAllComponentSourceFiles(rootDir), webCtx.names));
         fillConsumedFallback(webShape, files, webCtx.names);
         // A prop the Web implementation destructures into an underscore-prefixed binding is
         // accepted for API parity and deliberately unread. Reporting only that its type differs

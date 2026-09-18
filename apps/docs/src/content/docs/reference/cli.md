@@ -9,7 +9,7 @@ The exact command surface. [CLI and source ownership](/docs/guides/cli-source-ow
 
 The CLI copies component source into your repository and never installs npm packages, fetches remote code, or executes anything it did not ship with. Its registry data is bundled with the package.
 
-Run commands as `pnpm beeui <command>` from a checkout. pnpm forwards `--` to the script as a literal argument, so `pnpm beeui -- <command>` fails on the separator rather than running.
+As a consumer, run commands as `npx @beemvp/beeui-cli@next <command>` (pin `@0.86.2-rc.1` instead of `@next` for an immutable version in automation) — see [CLI and source ownership](/docs/guides/cli-source-ownership/) for the full published-CLI walkthrough. Only when developing BeeUI itself from a checkout does the equivalent become the repository-local `pnpm beeui <command>`; pnpm forwards `--` to the script as a literal argument, so `pnpm beeui -- <command>` fails on the separator rather than running.
 
 ## Commands (9)
 

@@ -97,10 +97,15 @@ type KeyboardAdjustment = {
  * descendant focus. The last field/keyboard-top pair is remembered to suppress
  * duplicate keyboard events without blocking a legitimate A -> B focus move.
  *
- * iOS is unaffected (`KeyboardAvoidingView behavior="padding"` already
- * handles it) — the listener is not attached there. Web has no software
- * keyboard event stream and is skipped the same way, so this degrades to a
- * plain scroll view with no runtime cost.
+ * iOS also runs the scroll-into-view correction below (#588):
+ * `KeyboardAvoidingView behavior="padding"` only pushes the whole screen up by
+ * the keyboard's height, which makes room but does not itself scroll a
+ * specific focused field — already below the fold in a long form — into that
+ * newly visible area. iOS does not get the extra bottom content-padding
+ * compensation (`keyboardInset`) Android needs, since `KeyboardAvoidingView`
+ * already reserves that space there. Web has no software keyboard event
+ * stream and is skipped, so this degrades to a plain scroll view with no
+ * runtime cost.
  *
  * This dynamic path intentionally targets native-`TextInput`-backed fields
  * (BeeUI's `Input`, `Textarea`, `PasswordInput`, `OTPInput`, `SearchInput` all
@@ -156,14 +161,19 @@ function useScrollFocusedInputAboveKeyboard(
   );
 
   React.useEffect(() => {
-    if (Platform.OS !== 'android') {
+    // Web has no software keyboard event stream. iOS and Android both run
+    // the scroll-into-view correction (#588); only Android additionally needs
+    // the temporary bottom content-padding compensation below.
+    if (Platform.OS === 'web') {
       return undefined;
     }
 
     const showSubscription = Keyboard.addListener('keyboardDidShow', (event) => {
       const keyboardTop = event.endCoordinates.screenY;
       keyboardTopRef.current = keyboardTop;
-      setKeyboardInset(Math.max(0, event.endCoordinates.height + margin));
+      if (Platform.OS === 'android') {
+        setKeyboardInset(Math.max(0, event.endCoordinates.height + margin));
+      }
 
       // Apply the temporary scroll range before measuring/scrolling. On a short
       // form this prevents the native ScrollView from clamping the requested
@@ -173,7 +183,9 @@ function useScrollFocusedInputAboveKeyboard(
     const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
       keyboardTopRef.current = null;
       lastAdjustmentRef.current = null;
-      setKeyboardInset(0);
+      if (Platform.OS === 'android') {
+        setKeyboardInset(0);
+      }
     });
 
     return () => {
@@ -183,7 +195,7 @@ function useScrollFocusedInputAboveKeyboard(
   }, [adjustFocusedField, margin]);
 
   const onFocus = React.useCallback(() => {
-    if (Platform.OS !== 'android') {
+    if (Platform.OS === 'web') {
       return;
     }
 

@@ -8,7 +8,7 @@ description: "Semantic data-table primitives that render real table/th scope/ari
 Semantic data-table primitives that render real table/th scope/aria-sort semantics on Web.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Data display
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/table.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/table.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add table
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -46,13 +47,13 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
     - `table`
   - Package export subpath: `@beemvp/beeui-ui/table`
 
-**Exported types:** `TableBodyProps`, `TableCaptionProps`, `TableCellProps`, `TableFooterProps`, `TableHeaderProps`, `TableHeadProps`, `TableLayout`, `TableProps`, `TableRowProps`, `TableSortDirection`
+**Exported types:** `TableAlign`, `TableBodyProps`, `TableCaptionProps`, `TableCellProps`, `TableDensity`, `TableFooterProps`, `TableHeaderProps`, `TableHeadProps`, `TableLayout`, `TableProps`, `TableRowProps`, `TableSortDirection`
 
 The generated API inventory is mechanically joined to `packages/ui/src/index.ts`, Registry metadata, and the component reference contract. Each type's field table below is parsed directly from that source, not a second hand-maintained copy; for the fuller behavior narrative see the [canonical component behavior catalog](https://github.com/beobungbu/BeeUI/blob/main/docs/components.md).
 
 ## State and behavior contract
 
-Composable primitive family with no owned fetching, sort/filter/selection state, or spreadsheet-style cell navigation. `TableHead`'s `sortDirection`/`onSortChange` pair is fully caller-controlled (the presence of `sortDirection` is what marks a column sortable); `TableRow`'s `selected` is a caller-owned boolean reflected only visually/for accessibility. `layout` (`'scroll'` default, or `'stacked'`) is an explicit caller choice — Table never measures viewport width itself.
+Composable primitive family with no owned fetching, sort/filter/selection state, or spreadsheet-style cell navigation. `TableHead`'s `sortDirection`/`onSortChange` pair is fully caller-controlled (the presence of `sortDirection` is what marks a column sortable); `TableRow`'s `selected` is a caller-owned boolean reflected only visually/for accessibility, and its optional `onPress` makes the whole row a real keyboard-reachable pressable. `layout` (`'scroll'` default, or `'stacked'`) is an explicit caller choice — Table never measures viewport width itself. `TableHead`/`TableCell` accept an `align` prop (`'start'` | `'center'` | `'end'`) for numeric/action columns instead of the platform-specific `className="items-end text-end"` combination. `Table`'s `density` overrides the row height for that one table only (`'compact'`/`'comfortable'`/`'spacious'` reuse the global density-axis values; `'dense48'` is a fourth, table-specific 48px step) and is ignored in `layout="stacked"`; omitting it leaves rows following the ambient global density exactly as before.
 
 ### Props
 
@@ -88,6 +89,7 @@ Also carries every prop of `Omit<React.ComponentProps<typeof Text>, 'children'>`
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
+| `align` | `TableAlign` | — | Cell content alignment — see `table-shared.ts`'s `TableAlign`. Defaults to `'start'` in `layout="scroll"` and `'end'` in `layout="stacked"` (the value column's long-standing default, opposite its label — preserved so existing `layout="stacked"` usage renders unchanged). |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `colSpan` | `number` | `1` | Number of columns this cell spans (e.g. a single full-width cell used for an empty/loading/error row — see `Table`'s composition notes). Native has no table-layout engine, so a spanning cell approximates width by growing its flex share proportionally (`flex: colSpan`) rather than measuring sibling column widths. |
@@ -97,9 +99,11 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 
 **Platform differences (native vs. [Web](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/table.web.tsx)):**
 
-- `colSpan` is declared explicitly on native (native default `1`) — on Web it may come from `Omit<React.TdHTMLAttributes<HTMLElement>, 'children'>`, which this table does not reproduce.
+- `colSpan` is declared explicitly on native (native default `1`) — on Web it may come from `Omit<React.TdHTMLAttributes<HTMLElement>, 'align' | 'children'>`, which this table does not reproduce.
+- `accessibilityLabel` is declared explicitly on Web — on native it may come from `Omit<ViewProps, 'children'>`, which this table does not reproduce.
+- `accessibilityLabelledBy` is declared explicitly on Web — on native it may come from `Omit<ViewProps, 'children'>`, which this table does not reproduce.
 - `testID` is declared explicitly on Web — on native it may come from `Omit<ViewProps, 'children'>`, which this table does not reproduce.
-- Base type differs: native carries `Omit<ViewProps, 'children'>`; Web carries `Omit<React.TdHTMLAttributes<HTMLElement>, 'children'>`.
+- Base type differs: native carries `Omit<ViewProps, 'children'>`; Web carries `Omit<React.TdHTMLAttributes<HTMLElement>, 'align' | 'children'>`.
 
 #### `TableFooterProps`
 
@@ -133,6 +137,7 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
+| `align` | `TableAlign` | `'start'` | Header content alignment — see `table-shared.ts`'s `TableAlign`. Defaults to `'start'`. |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `label` | `string` | — | Explicit column label override. Required when this header's content is not plain text/number (e.g. an icon-only header) — inferred from `children` otherwise. Drives both `layout="stacked"`'s visible label-value pairing and the column context folded into each native `TableCell`'s accessible name (RN has no dedicated table/column-header accessibility role to rely on instead — ADR-007). |
@@ -144,7 +149,7 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 **Platform differences (native vs. [Web](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/table.web.tsx)):**
 
 - `testID` is declared explicitly on Web — on native it may come from `Omit<ViewProps, 'children'>`, which this table does not reproduce.
-- Base type differs: native carries `Omit<ViewProps, 'children'>`; Web carries `Omit<React.ThHTMLAttributes<HTMLElement>, 'children' | 'scope'>`.
+- Base type differs: native carries `Omit<ViewProps, 'children'>`; Web carries `Omit<React.ThHTMLAttributes<HTMLElement>, 'align' | 'children' | 'scope'>`.
 
 #### `TableProps`
 
@@ -152,12 +157,15 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `density` | `TableDensity` | — | Per-table row-height override for `layout="scroll"` rows, replacing the ambient global application-density row height for this one `Table` only — see `TableDensity`. Omitted (the default) leaves every row following the global density exactly as before this prop existed; existing tables are unaffected. |
 | `layout` | `TableLayout` | `'scroll'` | Responsive presentation. Defaults to `'scroll'` (horizontal `ScrollView` around the row grid). Set `'stacked'` to render a card/label-value presentation instead — typically driven by the caller's own breakpoint decision (BeeUI does not own viewport/breakpoint policy). |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
 **Platform differences (native vs. [Web](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/table.web.tsx)):**
 
+- `accessibilityLabel` is declared explicitly on Web — on native it may come from `Omit<ViewProps, 'children'>`, which this table does not reproduce.
+- `accessibilityLabelledBy` is declared explicitly on Web — on native it may come from `Omit<ViewProps, 'children'>`, which this table does not reproduce.
 - `testID` is declared explicitly on Web — on native it may come from `Omit<ViewProps, 'children'>`, which this table does not reproduce.
 - Base type differs: native carries `Omit<ViewProps, 'children'>`; Web carries `Omit<React.HTMLAttributes<HTMLDivElement>, 'children'>`.
 
@@ -167,17 +175,22 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `onPress` | `() => void` | — | Makes the row itself pressable (e.g. a row-to-detail navigation pattern: `onPress={() => router.push(...)}`), mirroring `ListItem`'s own opt-in `onPress` contract. Renders the row as a `Pressable` with `accessibilityRole="button"` (keyboard Enter/Space activate it on Web through RN's own Pressable-on-Web keyboard handling) instead of a plain `View` — a row with no `onPress` keeps rendering exactly as before. |
 | `selected` | `boolean` | `false` | Visual highlight for a caller-selected row. Table owns no selection state (ADR-007) — this only reflects a boolean the caller already tracks (e.g. alongside a `Checkbox` in one of the row's cells). |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
 **Platform differences (native vs. [Web](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/table.web.tsx)):**
 
+- `accessibilityLabel` is declared explicitly on Web — on native it may come from `Omit<ViewProps, 'children'>`, which this table does not reproduce.
+- `accessibilityLabelledBy` is declared explicitly on Web — on native it may come from `Omit<ViewProps, 'children'>`, which this table does not reproduce.
 - `testID` is declared explicitly on Web — on native it may come from `Omit<ViewProps, 'children'>`, which this table does not reproduce.
 - Base type differs: native carries `Omit<ViewProps, 'children'>`; Web carries `Omit<React.HTMLAttributes<HTMLElement>, 'children'>`.
 
 **Related exported types:**
 
+- `TableAlign` — one of `'start'`, `'center'`, `'end'`.
+- `TableDensity` — one of `'compact'`, `'comfortable'`, `'spacious'`, `'dense48'`.
 - `TableLayout` — one of `'scroll'`, `'stacked'`.
 - `TableSortDirection` — one of `'ascending'`, `'descending'`, `'none'`.
 
@@ -201,14 +214,14 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 
 ## Accessibility
 
-- **Roles this family assigns:** `button` (iOS and Android) — set in `table.tsx` by the components themselves, not by the caller.
-- **Accessibility states and properties it sets:** `accessibilityLabel` (iOS and Android), `accessible` (iOS and Android), `hidden` (Web), `label` (Web), `selected`, `sort` (Web) — read from `table.tsx`, `table.web.tsx`.
+- **Roles this family assigns:** `button` (iOS and Android), `cell` (Web), `row` (Web), `rowgroup` (Web), `table` (Web) — set in `table.tsx`, `table.web.tsx` by the components themselves, not by the caller.
+- **Accessibility states and properties it sets:** `accessibilityLabel`, `accessibilityLabelledBy` (Web), `accessible` (iOS and Android), `hidden` (Web), `label` (Web), `labelledby` (Web), `selected` (Web), `sort` (Web) — read from `table.tsx`, `table.web.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
 ## Styling and theming
 
-- **Style axes:** none of its own — its appearance comes from tokens and your own classes; it also carries `Omit<React.ComponentProps<typeof Text>, 'children'>`, `Omit<ViewProps, 'children'>`.
+- **Style axes:** `align` (3 values).
 - **Class-name surfaces:** `className`.
 
 Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.
@@ -217,8 +230,8 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/dynamic-type-contract.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/dynamic-type-contract.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/perf-render-commit.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/perf-render-commit.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/table-cell-alignment-and-content-hug.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/table-cell-alignment-and-content-hug.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/table-performance.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/table-performance.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/table.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/table.test.tsx)
 
 ### Addressable examples
 
@@ -256,9 +269,11 @@ device paths.
     - `TableHeader`
     - `TableRow`
   - Exported type surface:
+    - `TableAlign`
     - `TableBodyProps`
     - `TableCaptionProps`
     - `TableCellProps`
+    - `TableDensity`
     - `TableFooterProps`
     - `TableHeaderProps`
     - `TableHeadProps`
@@ -426,7 +441,7 @@ Use the code block's copy affordance to copy the exact fixture. For a smaller ap
 
 `colSpan` is an approximation on native: with no table-layout engine a spanning cell grows its flex share instead of measuring the columns it covers. A `TableHead` whose content is not plain text needs an explicit `label`, because both the stacked layout's visible pairing and each native cell's accessible name are built from it.
 
-**Implementation note:** Platform-split; see docs/data-typography.md for data-cell typography.
+**Implementation note:** Platform-split; see docs/data-typography.md for data-cell typography. Row-to-detail navigation pattern: `TableRow` accepts an opt-in `onPress` (mirroring `ListItem`) to make an entire row navigate to a detail screen, e.g. `<TableRow onPress={() => router.push(`/orders/${order.id}`)}>`. It renders as a real, keyboard-reachable pressable row (native: `accessibilityRole="button"`; Web: the row stays a real `<tr>`/`role="row"` — not `role="button"`, which would break table semantics — and adds `tabIndex={0}` plus `Enter`/`Space` keydown activation alongside the pointer `onClick`) while every row without `onPress` keeps rendering exactly as before. Prefer this over wrapping a whole row in your own `Pressable`, which duplicates row semantics; for a row that only needs one actionable cell (not the whole row), put an `IconButton` in its own `TableCell` instead.
 
 ## Related
 

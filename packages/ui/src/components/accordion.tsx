@@ -124,6 +124,10 @@ export const AccordionTrigger = React.forwardRef<
       accessibilityLabel={accessibilityLabel ?? inferredLabel}
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled, expanded: open }}
+      // `accessibilityState` alone does not reach the DOM on react-native-web (see
+      // Checkbox), so the disclosure trigger needs the web-native `aria-expanded`
+      // prop set explicitly to satisfy the required-attribute contract.
+      aria-expanded={open}
       className={cn(
         'min-h-12 flex-row items-center justify-between py-3 active:opacity-80',
         className,

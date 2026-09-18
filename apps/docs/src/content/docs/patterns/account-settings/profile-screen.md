@@ -26,6 +26,19 @@ The pattern is a composition recipe rather than a new framework layer. Follow th
 The screen is controlled through `ProfileScreenProps`. User intent crosses the application boundary through `onEditProfile`, `onOpenAccount`, `onOpenActivity`; fetching, routing, persistence and side effects remain application-owned.
 
 ```tsx
+// from apps/showcase/patterns/account-settings/fixtures/account-fixtures.ts
+export type AccountProfileFixture = {
+  bio: string;
+  displayName: string;
+  email: string;
+  imageUri?: string;
+  joinedLabel: string;
+  location: string;
+  phone: string;
+  username: string;
+  verified: boolean;
+};
+
 export type ProfileScreenProps = {
   onEditProfile: () => void;
   onOpenAccount?: () => void;
@@ -69,7 +82,7 @@ BeeUI does not take ownership of app routing, authentication/business rules, API
 
 ## Source ownership
 
-`ProfileScreen` is **Showcase source you copy**, not a package export: it is not shipped from any `@beemvp/beeui-*` package, and the Registry CLI (`pnpm beeui list` / `pnpm beeui add`) does not carry pattern screens. Copy [`apps/showcase/patterns/account-settings/screens/profile-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/account-settings/screens/profile-screen.tsx) into your app and adapt it directly. Only the individual BeeUI components it composes (linked above) are available for source ownership through the repository-local Registry workflow; before public CLI publication, use [CLI & source ownership](/docs/guides/cli-source-ownership/) from a BeeUI checkout rather than a public `npx` command.
+`ProfileScreen` is **Showcase source you copy**, not a package export: it is not shipped from any `@beemvp/beeui-*` package, and the Registry CLI (`pnpm beeui list` / `pnpm beeui add`) does not carry pattern screens. Copy [`apps/showcase/patterns/account-settings/screens/profile-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/account-settings/screens/profile-screen.tsx) into your app and adapt it directly. Only the individual BeeUI components it composes (linked above) are available for source ownership through the repository-local Registry workflow; see [CLI & source ownership](/docs/guides/cli-source-ownership/) for both the published `npx @beemvp/beeui-cli@next` path and the repository-local checkout path.
 
 ## Related
 

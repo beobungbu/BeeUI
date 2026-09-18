@@ -45,6 +45,11 @@ import {
   SelectValue,
 } from '@beemvp/beeui-ui';
 
+type CurrencySelectProps = {
+  onValueChange: (value: string) => void;
+  value: string | undefined;
+};
+
 export function CurrencySelect({ onValueChange, value }: CurrencySelectProps) {
   return (
     <Select onValueChange={onValueChange} value={value}>
@@ -68,6 +73,7 @@ export function CurrencySelect({ onValueChange, value }: CurrencySelectProps) {
 4. **The root is the state boundary.** Selection, open state and dismissal belong to the root — see [State model](/docs/learn/state-model/).
 5. **Every part is a public export of `@beemvp/beeui-ui`.** If a part is not exported from the package barrel, it is internal and not part of the contract, even if the file resolves.
 6. **`children` is the extension point.** Adding your own nodes inside a part is expected. Replacing a part with your own component that mimics it is not, because the context contract goes with the part.
+7. **Do not nest one pressable inside another.** A trigger part (`SelectTrigger`, `DropdownMenuTrigger`, `PopoverTrigger`, `TooltipTrigger`, `SheetTrigger`, `DialogTrigger`, `AlertDialogTrigger`) is itself the pressable — it carries the same variant/size/press API as [Button](/docs/components/button/) — so an icon or label goes directly inside it, never wrapped in a second `IconButton`. The same rule holds wherever a family exposes a pressable slot: `ListItem`'s `trailing`, or a `SettingsItem` composed with `AlertDialogTrigger`. On Web, nesting two pressables renders one interactive element inside another, which React flags as invalid DOM nesting; reach for `variant="ghost"` on the outer one instead.
 
 ## Consequences for application code
 

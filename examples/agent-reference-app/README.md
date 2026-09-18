@@ -11,12 +11,11 @@ The friction found along the way — anything the AI docs did not tell us — is
 recorded in [`AGENT-BUILD-NOTES.md`](AGENT-BUILD-NOTES.md), which is the point of
 this example.
 
-## Unpublished status
+## Packed-tarball consumption
 
-BeeUI is **not published to npm** (see [`../../llms.txt`](../../llms.txt) STATUS
-and [ADR-011](../../docs/decisions/011-distribution-architecture.md)). There is no
-`@beemvp/beeui-*` package or `@beemvp/beeui-cli` on any registry. This app therefore
-consumes real `pnpm pack` tarballs through the same package boundary CI's
+BeeUI `0.86.2-rc.1` is publicly published on npm under the `next` dist-tag
+(see `../../README.md`). This app deliberately keeps consuming real
+`pnpm pack` tarballs through the same package boundary CI's
 `scripts/verify-web-consumer.sh` uses — never a `workspace:*` link and never a
 hand-copied `dist/` folder. It is **not** registered in the root pnpm workspace;
 it installs its own dependencies with plain `npm install`.

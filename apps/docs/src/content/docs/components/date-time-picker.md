@@ -8,7 +8,7 @@ description: "Native combined date-and-time picker field backed by @react-native
 Native combined date-and-time picker field backed by @react-native-community/datetimepicker.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Forms & selection
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/date-time-picker.native.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/date-time-picker.native.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add date-time-picker
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -45,7 +46,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Controlled `value`/`onValueChange` (`{ date, time } | null`) field combining date and time entry through the native system pickers; `disabled` blocks opening either sub-picker.
+Controlled `value`/`onValueChange` (`{ date, time } | null`) field combining date and time entry through the native system pickers; `disabled` blocks opening either sub-picker. A wrapping `Field`'s required state no longer injects an English word into the trigger's accessible name — pass the field's own localized-required prop to append copy instead.
 
 ### Props
 
@@ -56,34 +57,34 @@ Controlled `value`/`onValueChange` (`{ date, time } | null`) field combining dat
 | `accessibilityLabel` | `string` | — | Accessible name for the trigger. Falls back to the enclosing `Field`'s label. |
 | `align` | `DateTimePickerAlign` | `'start'` | Web-only: `Popover` content alignment relative to the trigger. Ignored on native. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `clearAccessibilityLabel` | `string` | — | Accessible label for the clear button shown when `clearable` and a value is selected. Defaults to `'Clear date and time'`. |
+| `clearAccessibilityLabel` | `string` | `'Clear date and time'` | Accessible label for the clear button shown when `clearable` and a value is selected. Defaults to `'Clear date and time'`. |
 | `clearable` | `boolean` | `true` | Shows a clear affordance when a value is selected. Defaults to `true`. |
 | `closeOnOutsidePress` | `boolean` | `true` | Web-only: dismiss the `Popover` on an outside press. Ignored on native. |
-| `collisionPadding` | `DateTimePickerCollisionPadding` | — | Web-only: `Popover` collision padding. Ignored on native. |
+| `collisionPadding` | `DateTimePickerCollisionPadding` | `8` | Web-only: `Popover` collision padding. Ignored on native. |
 | `defaultOpen` | `boolean` | — | Uncontrolled initial `open` state. Ignored once `open` is controlled. |
 | `direction` | `DateTimePickerDirection` | — | Web-only: logical direction for the `Popover`/`Calendar`/time content. Ignored on native. |
 | `disabled` | `boolean` | — | Disables the trigger, so it cannot open the picker. Combined with the enclosing `Field`'s own `disabled`. |
-| `flip` | `boolean` | — | Web-only: flips `Popover` placement to stay in the viewport. Ignored on native. |
+| `flip` | `boolean` | `true` | Web-only: flips `Popover` placement to stay in the viewport. Ignored on native. |
 | `formatValue` | `(value: DateTimePickerValue, locale: string) => string` | — | Overrides the default `Intl`-based formatted display. |
-| `hourAccessibilityLabel` | `string` | — | Accessible name for the Web hour digit field. Defaults to `'Hour'`. |
+| `hourAccessibilityLabel` | `string` | `'Hour'` | Accessible name for the Web hour digit field. Defaults to `'Hour'`. |
 | `hour12` | `boolean` | — | Explicit-only 12/24h display override. Defaults to the resolved `locale`'s `Intl.DateTimeFormat(locale, { hour: 'numeric' }).resolvedOptions().hour12` (ADR-008). |
 | `invalid` | `boolean` | — | Marks the trigger as invalid for styling and accessibility. Combined with the enclosing `Field`'s own `invalid`. |
 | `isDateDisabled` | `(date: CalendarDate) => boolean` | — | Marks individual dates as disabled in the `Calendar` grid, without disabling the trigger itself. |
 | `locale` | `string` | — | Explicit-only (ADR-008) — no ambient device/browser locale auto-detection. Defaults to `'en-US'`. |
 | `max` | `CalendarDate` | — | Latest selectable date (inclusive), forwarded to the `Calendar`; later dates render disabled. |
 | `min` | `CalendarDate` | — | Earliest selectable date (inclusive), forwarded to the `Calendar`; earlier dates render disabled. |
-| `minuteAccessibilityLabel` | `string` | — | Accessible name for the Web minute digit field. Defaults to `'Minute'`. |
-| `nextMonthAccessibilityLabel` | `string` | — | Accessible label for the `Calendar`'s "next month" button. Defaults to `'Next month'`. |
+| `minuteAccessibilityLabel` | `string` | `'Minute'` | Accessible name for the Web minute digit field. Defaults to `'Minute'`. |
+| `nextMonthAccessibilityLabel` | `string` | `'Next month'` | Accessible label for the `Calendar`'s "next month" button. Defaults to `'Next month'`. |
 | `onOpenChange` | `(open: boolean) => void` | — | Controlled/uncontrolled open state — BeeUI owns Web presentation (`Popover`). |
 | `onValueChange` | `(value: DateTimePickerValue \| null) => void` | — | `null` signals an explicit clear (see `clearable`). |
 | `open` | `boolean` | — | Controls whether the picker (Web `Popover`, native system picker) is open. Requires `onOpenChange`; otherwise falls back to internal open state with a dev-mode warning. |
-| `periodAccessibilityLabel` | `string` | — | Accessible name for the Web AM/PM control. Defaults to `'AM or PM'`. |
-| `placeholder` | `string` | — | Text shown on the trigger when no value is selected. Defaults to `'Select a date and time'`. |
+| `periodAccessibilityLabel` | `string` | `'AM or PM'` | Accessible name for the Web AM/PM control. Defaults to `'AM or PM'`. |
+| `placeholder` | `string` | `'Select a date and time'` | Text shown on the trigger when no value is selected. Defaults to `'Select a date and time'`. |
 | `placement` | `DateTimePickerPlacement` | `'bottom'` | Web-only: `Popover` placement relative to the trigger. Ignored on native. |
-| `previousMonthAccessibilityLabel` | `string` | — | Accessible label for the `Calendar`'s "previous month" button. Defaults to `'Previous month'`. |
+| `previousMonthAccessibilityLabel` | `string` | `'Previous month'` | Accessible label for the `Calendar`'s "previous month" button. Defaults to `'Previous month'`. |
 | `readOnly` | `boolean` | `false` | Keeps the trigger focusable/announced but blocks opening and clearing. |
-| `shift` | `boolean` | — | Web-only: `Popover` collision-shift. Ignored on native. |
-| `sideOffset` | `number` | — | Web-only: `Popover` offset from the trigger. Ignored on native. |
+| `shift` | `boolean` | `true` | Web-only: `Popover` collision-shift. Ignored on native. |
+| `sideOffset` | `number` | `8` | Web-only: `Popover` offset from the trigger. Ignored on native. |
 | `style` | `StyleProp<ViewStyle>` | — | Forwarded to the trigger's root `View`. |
 | `testID` | `string` | — | Test identifier. Forwarded to the native `testID` and, on Web, emitted as `data-testid`. |
 | `value` **(required)** | `DateTimePickerValue \| null` | — | Controlled selected date+time (ADR-008) — single-date selection only for 1.0. |
@@ -286,6 +287,8 @@ export function DateTimePickerShowcase() {
 
 Use the code block's copy affordance to copy the exact fixture. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
+
+`locale` only affects the embedded `Calendar`'s weekday/month grid and `Intl`-based date formatting — it does not translate the combined trigger's `placeholder` or its month-navigation accessible labels, each a separate string prop with a hardcoded English default. A localized app must pass `placeholder`, `previousMonthAccessibilityLabel` and `nextMonthAccessibilityLabel` explicitly alongside `locale`.
 
 - Passing `open` without `onOpenChange` leaves the value read-only: the component renders what you passed and can never change it. It warns in development builds rather than failing silently in production.
 - Requires `@react-native-community/datetimepicker` to be installed by the consuming app. It is an optional peer of `@beemvp/beeui-ui`, so nothing installs it for you, and a target that never renders this family does not need it.

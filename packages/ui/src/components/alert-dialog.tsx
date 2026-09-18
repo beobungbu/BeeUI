@@ -36,7 +36,7 @@ AlertDialogTrigger.displayName = 'AlertDialogTrigger';
 
 export type AlertDialogContentProps = Omit<
   DialogContentProps,
-  'closeOnBackdropPress' | 'dismissOnEscape' | 'dismissOnRequestClose'
+  'closeOnBackdropPress' | 'dismissOnEscape' | 'dismissOnRequestClose' | 'role'
 > & {
   /**
    * Whether native request-close paths (Android hardware back and accessibility escape)
@@ -61,6 +61,12 @@ export const AlertDialogContent = React.forwardRef<
     // `Escape` keypress (see `dialog.tsx`'s `DialogEscapeBinding`).
     dismissOnEscape={false}
     dismissOnRequestClose={cancelOnRequestClose}
+    // `alertdialog`, not `DialogContent`'s default `dialog` — the more
+    // specific WAI-ARIA role for a dialog that interrupts to demand a
+    // response (an AlertDialog always does). Not caller-overridable: `role`
+    // is excluded from `AlertDialogContentProps` above, so this is the only
+    // value an `AlertDialogContent` ever renders with.
+    role="alertdialog"
   />
 ));
 

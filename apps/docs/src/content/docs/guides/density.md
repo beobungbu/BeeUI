@@ -111,11 +111,16 @@ own code and call `applyDensity` yourself. See [Responsive](/docs/responsive/).
 
 ## Known limitations
 
-- **Global per runtime theme, never per subtree.** There is no `BeeDensityScope`. `Table` is
-  density-aware like `ListItem`, but it reads the same global mode as everything else: a compact
-  table embedded in an otherwise spacious screen is not supported today. The deliberate reason is
-  that subtree density would need a genuinely new propagation mechanism, and no recurring product
-  evidence for nested density exists yet.
+- **Global per runtime theme, never per subtree — except one named escape hatch.** There is no
+  `BeeDensityScope`, and `ListItem`/`FormGroup`/`Field` always read the same global mode as
+  everything else. `Table` is the one exception: its own `density` prop (`'compact'` /
+  `'comfortable'` / `'spacious'`, reusing the exact global values, or a fourth `'dense48'` 48px
+  step) overrides the row height for that one `Table` only — e.g. a `density="dense48"` table
+  embedded in an otherwise `comfortable` screen. This is a local style override on `Table` itself,
+  not a general subtree-propagation mechanism; every other density-aware component still has no
+  per-instance override, and the deliberate reason for not generalizing further stands: a real
+  `BeeDensityScope` would need a genuinely new propagation mechanism, and no recurring product
+  evidence for nested density beyond Table's own case exists yet.
 - **Three metrics only.** Panel/card padding and navigation-item height are explicitly out of
   scope. New metrics require recurring evidence — the same literal repeated across two or more
   components — not a single occurrence.

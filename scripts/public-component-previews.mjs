@@ -113,6 +113,23 @@ export function derivedBindingNames(source, component, fileName = 'fixture.tsx')
   return derived;
 }
 
+// The OUTERMOST enclosing function-like ancestor of a node — the component/hook function whose
+// local scope (state, derived consts) an excerpt of that node may depend on. Deliberately the
+// outermost, not the nearest: `onPress={() => toast.show(...)}` nests the call inside its own
+// inline arrow function first, and stopping there finds that throwaway callback's (empty) scope
+// instead of `ToastPlayground`'s, where `toast`/`lastAction`/`setLastAction` actually live. Every
+// fixture in this file nests inline callbacks inside exactly one real component/hook function,
+// never a second real component inside another, so climbing all the way up stays correct.
+function enclosingFunctionLike(node) {
+  let found;
+  let current = node.parent;
+  while (current) {
+    if (ts.isFunctionDeclaration(current) || ts.isFunctionExpression(current) || ts.isArrowFunction(current)) found = current;
+    current = current.parent;
+  }
+  return found;
+}
+
 export function familyUsageRanges(source, component, fileName = 'fixture.tsx') {
   const lines = source.split('\n');
   const names = new Set(component.values);
@@ -174,6 +191,7 @@ export function familyUsageRanges(source, component, fileName = 'fixture.tsx') {
         start: lineOf(statement.getStart(sourceFile)),
         end: lineOf(statement.getEnd()),
         anchor: statement.getText(sourceFile).split('\n')[0].trim(),
+        scopeNode: enclosingFunctionLike(node),
       });
       return;
     }
@@ -181,6 +199,7 @@ export function familyUsageRanges(source, component, fileName = 'fixture.tsx') {
       const start = lineOf(node.getStart(sourceFile));
       const end = lineOf(node.getEnd());
       const nodeText = node.getText(sourceFile);
+      const scopeNode = enclosingFunctionLike(node);
       if (end - start + 1 <= LARGE_ELEMENT_LINES) {
         // `<Spinner />` on its own is a true but empty example. Show the smallest enclosing JSX
         // element that still reads as an example, so the reader sees the props and the context
@@ -188,7 +207,7 @@ export function familyUsageRanges(source, component, fileName = 'fixture.tsx') {
         const context = end - start + 1 < SUBSTANTIVE_REGION_LINES
           ? enclosingExample(node, start, end)
           : { start, end, anchor: nodeText.split('\n')[0].trim() };
-        ranges.push(context);
+        ranges.push({ ...context, scopeNode });
         return; // Nested uses of the same family are already inside this range.
       }
       // Keep the opening tag, then keep descending: a nested use of the same family further in
@@ -199,6 +218,7 @@ export function familyUsageRanges(source, component, fileName = 'fixture.tsx') {
         end: lineOf(opening.getEnd()),
         openingTagOnly: true,
         anchor: opening.getText(sourceFile).split('\n')[0].trim(),
+        scopeNode,
       });
     }
     if (
@@ -218,6 +238,7 @@ export function familyUsageRanges(source, component, fileName = 'fixture.tsx') {
         start: lineOf(statement.getStart(sourceFile)),
         end: lineOf(statement.getEnd()),
         anchor: statement.getText(sourceFile).split('\n')[0].trim(),
+        scopeNode: enclosingFunctionLike(node),
       });
       return;
     }
@@ -240,6 +261,167 @@ export function familyUsageRanges(source, component, fileName = 'fixture.tsx') {
       }
       return [...merged, { ...range }];
     }, []);
+}
+
+// Word-shaped tokens in a block of source text. Deliberately over-inclusive (JSX tag names,
+// prop names, string contents) — this is only ever used to test "is this real declared/imported
+// name referenced anywhere in this text", so a false-positive token costs nothing (it just never
+// matches a real declaration) and a false negative would silently drop a needed one.
+function wordTokens(text) {
+  return new Set(text.match(/[A-Za-z_$][A-Za-z0-9_$]*/gu) ?? []);
+}
+
+function collectBindingNames(nameNode, out) {
+  if (ts.isIdentifier(nameNode)) {
+    out.push(nameNode.text);
+    return;
+  }
+  if (ts.isObjectBindingPattern(nameNode) || ts.isArrayBindingPattern(nameNode)) {
+    for (const element of nameNode.elements) {
+      if (ts.isBindingElement(element)) collectBindingNames(element.name, out);
+    }
+  }
+}
+
+// A sibling top-level declaration — `function OverlayContextValue({ testID }) { … }` or
+// `const OverlayConsumerContext = React.createContext(…)` — declared next to the fixture's main
+// component, not exported and not part of `@beemvp/beeui-ui`, that an excerpt (or a declaration
+// already collected for it) uses. Its own full text is real, byte-identical fixture source, same
+// as `collectScopeDeclarations` below; found separately because it lives at module scope, not
+// inside `scopeNode`'s body, and — unlike scope-local state — is available regardless of where in
+// the file it is declared relative to the excerpt, so there is no `beforeLine` filter here.
+function collectTopLevelDeclarations(sourceFile, identifiers, lines) {
+  const decls = [];
+  for (const statement of sourceFile.statements) {
+    let name;
+    if (ts.isFunctionDeclaration(statement) && statement.name) {
+      name = statement.name.text;
+    } else if (ts.isVariableStatement(statement)) {
+      const declaredNames = [];
+      for (const declaration of statement.declarationList.declarations) collectBindingNames(declaration.name, declaredNames);
+      name = declaredNames.find((candidate) => identifiers.has(candidate));
+    }
+    if (!name || !identifiers.has(name)) continue;
+    const startLine = sourceFile.getLineAndCharacterOfPosition(statement.getStart(sourceFile)).line + 1;
+    const endLine = sourceFile.getLineAndCharacterOfPosition(statement.getEnd()).line + 1;
+    decls.push({ start: startLine, end: endLine, text: lines.slice(startLine - 1, endLine).join('\n') });
+  }
+  return decls;
+}
+
+// The `const`/`let` declarations inside `scopeNode`'s own body that declare a name the excerpt
+// (or a declaration already collected for it) references, and that appear before the excerpt in
+// source order — the local state/derived values an excerpt like `onPress={() => setTheme(next)}`
+// needs to be runnable rather than a citation the reader must open the fixture to complete
+// (#578). Only ever returns real, byte-identical slices of the same fixture file: nothing here is
+// synthesized.
+function collectScopeDeclarations(scopeNode, sourceFile, beforeLine, identifiers, lines) {
+  if (!scopeNode?.body || !ts.isBlock(scopeNode.body)) return [];
+  const decls = [];
+  for (const statement of scopeNode.body.statements) {
+    const startLine = sourceFile.getLineAndCharacterOfPosition(statement.getStart(sourceFile)).line + 1;
+    if (startLine >= beforeLine) break;
+    if (!ts.isVariableStatement(statement)) continue;
+    const declaredNames = [];
+    for (const declaration of statement.declarationList.declarations) collectBindingNames(declaration.name, declaredNames);
+    if (!declaredNames.some((name) => identifiers.has(name))) continue;
+    const endLine = sourceFile.getLineAndCharacterOfPosition(statement.getEnd()).line + 1;
+    decls.push({ start: startLine, end: endLine, text: lines.slice(startLine - 1, endLine).join('\n') });
+  }
+  return decls;
+}
+
+// A destructured parameter of the enclosing function (`function ComponentGallery({ onBack })`)
+// has no `const` declaration to quote — it is not a value the fixture computes, it is a prop the
+// fixture itself receives. Rather than leave it as an unresolved free identifier (the excerpt
+// then fails to typecheck standalone), this synthesizes one clearly-labeled placeholder from the
+// parameter's own real type annotation, honestly presented as a stand-in, never claimed as
+// verified fixture source the way `contextDecls` is.
+function collectParameterStubs(scopeNode, identifiers, sourceFile) {
+  if (!scopeNode) return [];
+  const stubs = [];
+  for (const param of scopeNode.parameters ?? []) {
+    if (!ts.isObjectBindingPattern(param.name)) continue;
+    for (const element of param.name.elements) {
+      if (!ts.isBindingElement(element) || !ts.isIdentifier(element.name)) continue;
+      const paramName = element.name.text;
+      if (!identifiers.has(paramName)) continue;
+      let typeText = 'unknown';
+      if (param.type && ts.isTypeLiteralNode(param.type)) {
+        const member = param.type.members.find(
+          (m) => ts.isPropertySignature(m) && m.name && m.name.getText(sourceFile) === paramName,
+        );
+        if (member?.type) typeText = member.type.getText(sourceFile);
+      }
+      const value = /=>/u.test(typeText) ? '() => {}' : 'undefined as never';
+      stubs.push(`const ${paramName}: ${typeText} = ${value};`);
+    }
+  }
+  return stubs;
+}
+
+// Fixed-point closure: a collected declaration (`const nextTheme = activeTheme === 'light' ? …`)
+// can itself reference another free identifier (`activeTheme`) declared earlier in the same
+// scope. Re-scans until a pass adds nothing new, capped so a pathological/self-referential file
+// cannot loop forever.
+function resolveScopeContext(range, sourceFile, lines) {
+  if (!range.scopeNode) return { decls: [], paramStubs: [] };
+  const identifiers = wordTokens(range.text);
+  let decls = [];
+  for (let pass = 0; pass < 8; pass += 1) {
+    decls = [
+      ...collectScopeDeclarations(range.scopeNode, sourceFile, range.start, identifiers, lines),
+      ...collectTopLevelDeclarations(sourceFile, identifiers, lines),
+    ];
+    const before = identifiers.size;
+    for (const decl of decls) for (const token of wordTokens(decl.text)) identifiers.add(token);
+    if (identifiers.size === before) break;
+  }
+  return { decls: decls.sort((a, b) => a.start - b.start), paramStubs: collectParameterStubs(range.scopeNode, identifiers, sourceFile) };
+}
+
+function parseImportDeclaration(node) {
+  if (!ts.isImportDeclaration(node) || !node.importClause || !ts.isStringLiteral(node.moduleSpecifier)) return null;
+  const clause = node.importClause;
+  const names = [];
+  if (clause.name) names.push({ kind: 'default', local: clause.name.text });
+  if (clause.namedBindings) {
+    if (ts.isNamespaceImport(clause.namedBindings)) {
+      names.push({ kind: 'namespace', local: clause.namedBindings.name.text });
+    } else if (ts.isNamedImports(clause.namedBindings)) {
+      for (const element of clause.namedBindings.elements) {
+        if (element.isTypeOnly) continue;
+        names.push({ kind: 'named', local: element.name.text, imported: (element.propertyName ?? element.name).text });
+      }
+    }
+  }
+  return { moduleSpecifier: node.moduleSpecifier.text, isTypeOnly: Boolean(clause.isTypeOnly), names };
+}
+
+// Reconstructs the real `import … from '…';` statements the fixture itself declares, filtered to
+// only the specifiers `identifiers` actually names — never a fabricated module or symbol, always
+// a subset of what the fixture already imports at its own top level.
+function relevantImportLines(sourceFile, identifiers) {
+  const lines = [];
+  for (const statement of sourceFile.statements) {
+    const parsed = parseImportDeclaration(statement);
+    if (!parsed || parsed.isTypeOnly) continue;
+    const defaultName = parsed.names.find((n) => n.kind === 'default' && identifiers.has(n.local));
+    const namespaceName = parsed.names.find((n) => n.kind === 'namespace' && identifiers.has(n.local));
+    const named = parsed.names.filter((n) => n.kind === 'named' && identifiers.has(n.local));
+    if (!defaultName && !namespaceName && !named.length) continue;
+    const parts = [];
+    if (defaultName) parts.push(defaultName.local);
+    if (namespaceName) parts.push(`* as ${namespaceName.local}`);
+    if (named.length) {
+      const specifiers = named
+        .map((n) => (n.imported === n.local ? n.local : `${n.imported} as ${n.local}`))
+        .sort((a, b) => a.localeCompare(b));
+      parts.push(`{ ${specifiers.join(', ')} }`);
+    }
+    lines.push(`import ${parts.join(', ')} from '${parsed.moduleSpecifier}';`);
+  }
+  return lines;
 }
 
 // Returns either the whole fixture, or the family's usage regions with the exact line numbers
@@ -290,12 +472,32 @@ export function excerptFixture(source, component, fixturePath) {
   // Printed alongside complete examples it is an unbalanced JSX fragment that reads as noise.
   const complete = kept.filter((range) => !range.openingTagOnly);
   const selected = complete.length ? complete : kept;
+  const orderedSelected = selected.sort((a, b) => a.start - b.start);
+
+  // Each excerpt is a real syntactic unit, but it is not runnable on its own: it references
+  // outer-scope state (`activeTheme`) and imported symbols the citation alone does not show
+  // (#578). Both are recovered here as real, verified subsets of the same fixture file — never
+  // fabricated — so "Verified example source" is an accurate self-contained example, not a
+  // citation the reader must open the fixture to complete.
+  const excerptsWithContext = orderedSelected.map((range) => {
+    const { decls, paramStubs } = range.scopeNode
+      ? resolveScopeContext(range, range.scopeNode.getSourceFile(), lines)
+      : { decls: [], paramStubs: [] };
+    return { ...range, contextDecls: decls, paramStubs };
+  });
+  const importIdentifiers = new Set([
+    ...component.values,
+    ...excerptsWithContext.flatMap((range) => [...wordTokens(range.text), ...range.contextDecls.flatMap((decl) => [...wordTokens(decl.text)])]),
+  ]);
+  const importsSourceFile = ts.createSourceFile(path.basename(fixturePath), source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const importLines = relevantImportLines(importsSourceFile, importIdentifiers);
 
   return {
     whole: false,
-    excerpts: selected.sort((a, b) => a.start - b.start),
+    excerpts: excerptsWithContext,
     omittedRegions: withText.length - selected.length,
     totalRegions: withText.length,
+    importLines,
     source,
   };
 }
@@ -339,7 +541,37 @@ function renderVerifiedSource(descriptor) {
   const blocks = descriptor.excerpt.excerpts.map((part) => {
     const range = part.start === part.end ? `line ${part.start}` : `lines ${part.start}–${part.end}`;
     const anchor = `${descriptor.sourceHref}#L${part.start}-L${part.end}`;
-    return [`[${range}](${anchor}):`, '', '````tsx', part.text, '````', ''].join('\n');
+    // Fixture state the block below reads (e.g. `activeTheme`) is real, byte-identical source
+    // pulled from the same file, but deliberately NOT presented with the same `[lines N](url):`
+    // citation form as the excerpt itself — it answers "what does this need", not "where is this
+    // family used", and `collectExcerptCitationViolations` counts exactly one of the latter per
+    // excerpt.
+    const context = part.contextDecls?.length
+      ? [
+          `Fixture state this block reads (same file, ${
+            part.contextDecls.length === 1 ? 'line' : 'lines'
+          } ${part.contextDecls.map((decl) => (decl.start === decl.end ? `${decl.start}` : `${decl.start}-${decl.end}`)).join(', ')}):`,
+          '',
+          '````tsx',
+          part.contextDecls.map((decl) => decl.text).join('\n'),
+          '````',
+          '',
+        ]
+      : [];
+    // Unlike `contextDecls` above, a param stub is not fixture source — it is a placeholder this
+    // generator writes so a prop the fixture receives (e.g. `onBack`) has some value when the
+    // block is pasted standalone. Labeled differently so neither block is mistaken for the other.
+    const stubs = part.paramStubs?.length
+      ? [
+          'Placeholder for a prop this fixture receives (not fixture source — substitute your own handler):',
+          '',
+          '````tsx',
+          part.paramStubs.join('\n'),
+          '````',
+          '',
+        ]
+      : [];
+    return [...context, ...stubs, `[${range}](${anchor}):`, '', '````tsx', part.text, '````', ''].join('\n');
   });
 
   const places = `${descriptor.excerpt.excerpts.length} ${descriptor.excerpt.excerpts.length === 1 ? 'place' : 'places'}`;
@@ -357,6 +589,20 @@ function renderVerifiedSource(descriptor) {
   const omitted = descriptor.excerpt.omittedRegions
     ? `, of ${descriptor.excerpt.totalRegions} in total — open the fixture for the remaining ${descriptor.excerpt.omittedRegions}`
     : '';
+  // The imports are a real (filtered) subset of the fixture's own top-level imports, not a
+  // retyped guess — see `relevantImportLines`. Printed once, ahead of every block below, so
+  // pasting the imports plus the fixture-state block above each excerpt (where one exists) is
+  // enough to run it, closing the gap `docs/beeui-audit/cleanroom-web-log.md` reported (#578).
+  const importsBlock = descriptor.excerpt.importLines?.length
+    ? [
+        'Imports the examples below need (a filtered subset of the fixture\'s own top-level imports):',
+        '',
+        '````tsx',
+        descriptor.excerpt.importLines.join('\n'),
+        '````',
+        '',
+      ]
+    : [];
   return [
     `These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — ${link}, ` +
     `${descriptor.fixtureLineCount} lines — where **${descriptor.title}** is actually used: ` +
@@ -364,9 +610,10 @@ function renderVerifiedSource(descriptor) {
     `${omitted}. Each block is copied verbatim from the line range named above it, so it is the same executable ` +
     `source, not a retelling of it. ${remainder}`,
     '',
+    ...importsBlock,
     ...blocks,
-    'Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from ' +
-    'the public imports shown above and keep only the state your screen owns.',
+    'Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from ' +
+    'the imports and fixture-state blocks above and keep only the state your screen owns.',
     '',
   ].join('\n');
 }

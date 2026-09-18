@@ -8,7 +8,7 @@ description: "Non-modal action menu on the shared anchored-overlay runtime, with
 Non-modal action menu on the shared anchored-overlay runtime, with items, checkbox items, and radio groups.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Overlays & feedback
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/dropdown-menu.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/dropdown-menu.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add dropdown-menu
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -53,7 +54,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Controlled/uncontrolled (`open`/`onOpenChange`/`defaultOpen`) non-modal menu; `DropdownMenuItem`'s `onSelect` closes the menu by default after the handler runs, `DropdownMenuCheckboxItem` stays open by default, and `DropdownMenuRadioGroup` fails safe by disabling every item that shares a duplicate value.
+Controlled/uncontrolled (`open`/`onOpenChange`/`defaultOpen`) non-modal menu; `DropdownMenuItem`'s `onSelect` closes the menu by default after the handler runs, `DropdownMenuCheckboxItem` stays open by default, and `DropdownMenuRadioGroup` fails safe by disabling every item that shares a duplicate value. `DropdownMenuItem` accepts an optional `description` — a muted secondary line rendered below the primary content, mirroring `ListItem`'s own `description` — but only for single-line, plain-text/number `children`; a custom element `children` ignores it.
 
 ### Props
 
@@ -96,6 +97,8 @@ Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract 
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `closeOnSelect` | `boolean` | `true` | Closes the menu after this item is activated (pressed or selected via keyboard). Defaults to true. |
+| `description` | `React.ReactNode` | — | Muted secondary line rendered below the primary content (e.g. an address under a store name), mirroring `ListItem`'s `description`. Ignored for custom element `children` (single-line items only). |
+| `descriptionClassName` | `string` | — | Applied to the `description` `Text` when it is a plain string or number; ignored for custom element `description`. |
 | `onPress` | `PressableProps['onPress']` | — | Called on press, before `onSelect` and `closeOnSelect` run. |
 | `onSelect` | `() => void` | — | Called when this item is activated (pressed or selected via keyboard), before `closeOnSelect` runs. |
 | `textClassName` | `string` | — | Applied to string/number children, which are wrapped in a `Text`; ignored for custom element children. |
@@ -173,11 +176,13 @@ Also carries every prop of `Omit<ViewProps, 'role'>` — that upstream contract 
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
+| `loading` | `boolean` | `false` | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 | `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Chooses this element's `size` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 | `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'primary'` | Chooses this element's `variant` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` — that upstream contract is not reproduced here.
+
+**This is the pressable itself** — the same variant/size/press API as [Button](/docs/components/button/) — so icon/label children go directly inside it. Do not nest a second pressable (an icon button, or an avatar wrapped for press) inside a `*Trigger`: on Web that renders one interactive element inside another, which React flags as invalid DOM nesting. For an icon-only or avatar trigger, set `variant="ghost"` (and `size`/`className` as needed) on the trigger itself instead of wrapping a second pressable.
 
 **Related exported types:**
 
@@ -207,23 +212,23 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 ## Accessibility
 
 - **Roles this family assigns:** `menu`, `menuitem`, `radiogroup` — set in `dropdown-menu.tsx` by the components themselves, not by the caller.
-- **Accessibility states and properties it sets:** `accessibilityElementsHidden`, `accessible`, `checked`, `controls`, `disabled`, `expanded`, `hidden` — read from `dropdown-menu.tsx`.
+- **Accessibility states and properties it sets:** `accessibilityElementsHidden`, `accessible`, `checked`, `controls`, `disabled`, `expanded`, `haspopup`, `hidden` — read from `dropdown-menu.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
 ## Styling and theming
 
 - **Style axes:** `tone` (8 values, inherited from `TextProps`), `size` (4 values), `variant` (5 values).
-- **Class-name surfaces:** `className`, `labelClassName`, `textClassName`.
+- **Class-name surfaces:** `className`, `descriptionClassName`, `labelClassName`, `textClassName`.
 
 Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/__tests__/issue-141-rtl-overlay-acceptance.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-141-rtl-overlay-acceptance.test.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/dropdown-menu-item-description-slot.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/dropdown-menu-item-description-slot.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/dropdown-menu-trigger-haspopup-hover.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/dropdown-menu-trigger-haspopup-hover.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/issue-141-rtl-overlay-acceptance.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-141-rtl-overlay-acceptance.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-149-reduced-motion-acceptance.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-149-reduced-motion-acceptance.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/issue-36-dropdown-menu.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-36-dropdown-menu.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/issue-68-theme-scope.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-68-theme-scope.test.tsx)
 
 ### Addressable examples
 
@@ -281,9 +286,27 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Dropdown Menu** is actually used: 70 lines in 5 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Dropdown Menu** is actually used: 70 lines in 5 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
-[lines 218–226](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L218-L226):
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { BeeThemeScope, DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger, Text } from '@beemvp/beeui-ui';
+import * as React from 'react';
+import { useUniwind } from 'uniwind';
+````
+
+Fixture state this block reads (same file, lines 174, 176-178, 190):
+
+````tsx
+const OverlayConsumerContext = React.createContext('overlay-context-default');
+function OverlayContextValue({ testID }: { testID: string }) {
+  return <Text testID={testID}>{`context: ${React.useContext(OverlayConsumerContext)}`}</Text>;
+}
+  const [menuOpen, setMenuOpen] = React.useState(false);
+````
+
+[lines 219–227](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L219-L227):
 
 ````tsx
           <DropdownMenu onOpenChange={setMenuOpen} open={menuOpen}>
@@ -297,7 +320,16 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
           </DropdownMenu>
 ````
 
-[lines 248–256](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L248-L256):
+Fixture state this block reads (same file, lines 174, 176-178):
+
+````tsx
+const OverlayConsumerContext = React.createContext('overlay-context-default');
+function OverlayContextValue({ testID }: { testID: string }) {
+  return <Text testID={testID}>{`context: ${React.useContext(OverlayConsumerContext)}`}</Text>;
+}
+````
+
+[lines 249–257](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L249-L257):
 
 ````tsx
         <DropdownMenu>
@@ -311,7 +343,17 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
         </DropdownMenu>
 ````
 
-[lines 289–303](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L289-L303):
+Fixture state this block reads (same file, lines 174, 176-178, 235):
+
+````tsx
+const OverlayConsumerContext = React.createContext('overlay-context-default');
+function OverlayContextValue({ testID }: { testID: string }) {
+  return <Text testID={testID}>{`context: ${React.useContext(OverlayConsumerContext)}`}</Text>;
+}
+  const [dialogMenuAction, setDialogMenuAction] = React.useState('none');
+````
+
+[lines 290–304](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L290-L304):
 
 ````tsx
             <DropdownMenu>
@@ -331,7 +373,16 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
             </DropdownMenu>
 ````
 
-[lines 342–350](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L342-L350):
+Fixture state this block reads (same file, line 321-324):
+
+````tsx
+function ThemeScopeValue({ testID }: { testID: string }) {
+  const { theme } = useUniwind();
+  return <Text testID={testID}>{`theme: ${theme}`}</Text>;
+}
+````
+
+[lines 343–351](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L343-L351):
 
 ````tsx
           <DropdownMenu>
@@ -345,7 +396,15 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
           </DropdownMenu>
 ````
 
-[lines 763–790](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L763-L790):
+Fixture state this block reads (same file, lines 468, 469, 470):
+
+````tsx
+  const [menuToolbar, setMenuToolbar] = React.useState(true);
+  const [menuDensity, setMenuDensity] = React.useState('comfortable');
+  const [menuAction, setMenuAction] = React.useState('No action yet');
+````
+
+[lines 770–797](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L770-L797):
 
 ````tsx
                   <DropdownMenu>
@@ -378,7 +437,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                   </DropdownMenu>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 - Passing `open` without `onOpenChange` leaves the value read-only: the component renders what you passed and can never change it. It warns in development builds rather than failing silently in production.

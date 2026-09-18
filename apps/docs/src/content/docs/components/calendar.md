@@ -8,7 +8,7 @@ description: "Month-grid date-selection surface; owns no field, popover, or inpu
 Month-grid date-selection surface; owns no field, popover, or input chrome.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Forms & selection
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/calendar.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/calendar.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add calendar
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -98,7 +99,7 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 
 ## Accessibility
 
-- **Roles this family assigns:** `cell`, `grid`, `row` — set in `calendar.tsx` by the components themselves, not by the caller.
+- **Roles this family assigns:** `cell`, `grid`, `gridcell`, `row` — set in `calendar.tsx` by the components themselves, not by the caller.
 - **Accessibility states and properties it sets:** `accessibilityElementsHidden`, `accessibilityLabel`, `accessibilityLiveRegion`, `disabled`, `hidden`, `selected` — read from `calendar.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
@@ -112,10 +113,10 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/__tests__/issue-172-calendar.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-172-calendar.test.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/calendar-selected-day-aria-selected.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/calendar-selected-day-aria-selected.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/issue-172-calendar.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-172-calendar.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-175-date-i18n-component-matrix.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-175-date-i18n-component-matrix.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-176-calendar-date-a11y.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-176-calendar-date-a11y.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/perf-render-commit.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/perf-render-commit.test.tsx)
 
 ### Addressable examples
 

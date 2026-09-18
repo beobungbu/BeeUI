@@ -131,11 +131,47 @@ const acmeRegistry = defineThemeRegistry({
 Uniwind.setTheme(acmeRegistry.resolve('acme', 'dark'));
 ```
 
-Registering the CSS/native theme named `acme-dark` with the styling engine stays your
-application's job — the registry only names the mapping. Every brand in one registry must declare
-the same appearance set, and a runtime-theme name may not be reused, or construction throws.
-A registry built this way can also be handed to `BeeThemeScope`, which narrows its `brand` and
-`appearance` props to your own vocabulary.
+**`defineThemeRegistry` only names the mapping — it does not register the theme with the
+styling engine.** Calling `setTheme('acme-dark')` before the styling engine knows about
+`acme-dark` throws `Uniwind: You're trying to setTheme to 'acme-dark', but it was not
+registered.` at runtime, and `tsc` rejects `'acme-dark'` in a full-project build because the
+generated `uniwind-types.d.ts` only accepts the runtime themes the config below actually
+declares. Register every runtime-theme name in your registry as an `extraThemes` entry in the
+Metro/Vite Uniwind config, and give each one a CSS block, **before** calling `setTheme` with
+it:
+
+```js
+// metro.config.js (or the equivalent `uniwind({ ... })` options in vite.config.ts)
+module.exports = withUniwindConfig(getDefaultConfig(__dirname), {
+  cssEntryFile: './global.css',
+  dtsFile: './uniwind-types.d.ts',
+  extraThemes: ['acme-light', 'acme-dark'],
+});
+```
+
+```css
+/* global.css — one @custom-variant + @variant block per extra theme,
+   alongside the base @import lines. Uniwind applies the matching class name
+   for whichever runtime theme is active. */
+@custom-variant acme-light (&:where(.acme-light, .acme-light *));
+@custom-variant acme-dark (&:where(.acme-dark, .acme-dark *));
+
+@theme {
+  @variant acme-light {
+    --color-primary: #7c3aed;
+    /* every semantic color role this app relies on, for this theme */
+  }
+
+  @variant acme-dark {
+    --color-primary: #a78bfa;
+    /* the same roles, for the dark appearance */
+  }
+}
+```
+
+Every brand in one registry must declare the same appearance set, and a runtime-theme name may
+not be reused, or construction throws. A registry built this way can also be handed to
+`BeeThemeScope`, which narrows its `brand` and `appearance` props to your own vocabulary.
 
 ## What the runtime supports today
 
@@ -212,8 +248,6 @@ can never add or drop a role for itself alone.
   *which named theme* a subtree resolves to; it does not scope override *values*.
 - **The non-hook token read is global-only.** Inside a scope, use the `useBeeToken` hook rather
   than the one-shot snapshot form.
-- **The packages are not published to npm yet**, so branding work today happens against a
-  repository checkout or a locally packed artifact — see [Start](/docs/start/).
 
 ## Related
 

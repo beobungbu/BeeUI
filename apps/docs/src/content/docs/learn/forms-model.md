@@ -33,6 +33,10 @@ KeyboardAwareScreen        the screen shell: scrolling, keyboard avoidance, meas
 import * as React from 'react';
 import { Button, Field, Input, KeyboardAwareScreen } from '@beemvp/beeui-ui';
 
+type EmailFormProps = {
+  onSubmit: (email: string) => void;
+};
+
 export function EmailForm({ onSubmit }: EmailFormProps) {
   const [email, setEmail] = React.useState('');
   const [error, setError] = React.useState<string | undefined>();

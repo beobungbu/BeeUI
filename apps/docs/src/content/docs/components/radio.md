@@ -8,7 +8,7 @@ description: "Controlled radio item and RadioGroup coordinator with native radio
 Controlled radio item and RadioGroup coordinator with native radiogroup semantics.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Forms & selection
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/radio.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/radio.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add radio
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -98,7 +99,7 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 ## Accessibility
 
 - **Roles this family assigns:** `radio`, `radiogroup` — set in `radio.tsx` by the components themselves, not by the caller.
-- **Accessibility states and properties it sets:** `accessibilityHint`, `accessibilityLabel`, `accessibilityLabelledBy`, `accessible`, `checked`, `disabled` — read from `radio.tsx`.
+- **Accessibility states and properties it sets:** `accessibilityHint`, `accessibilityLabel`, `accessibilityLabelledBy`, `accessible`, `checked`, `disabled`, `required` — read from `radio.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
@@ -111,10 +112,10 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/checkbox-radio-field-form-group-context.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/checkbox-radio-field-form-group-context.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/field-label-accessible-name-dedup.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/field-label-accessible-name-dedup.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-15-alert-dialog-form-group.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-15-alert-dialog-form-group.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/issue-7-remaining-hardening.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-remaining-hardening.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/selection-control-aria.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/selection-control-aria.test.tsx)
 
 ### Addressable examples
 
@@ -154,9 +155,22 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Radio** is actually used: 7 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Radio** is actually used: 7 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
-[lines 634–640](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L634-L640):
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Radio, RadioGroup } from '@beemvp/beeui-ui';
+import * as React from 'react';
+````
+
+Fixture state this block reads (same file, line 461):
+
+````tsx
+  const [plan, setPlan] = React.useState<'starter' | 'pro'>('starter');
+````
+
+[lines 635–641](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L635-L641):
 
 ````tsx
                 <RadioGroup
@@ -168,7 +182,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                 </RadioGroup>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 Inside a `RadioGroup`, a radio that supplies a `value` ignores its own `checked` and `onCheckedChange` — checked state is derived by comparing that `value` with the group's selection, and only the group's callback fires; a radio with no `value` keeps its own controlled pair even inside the group. A radio does not accept a press handler of its own.

@@ -186,6 +186,12 @@ export const PaginationItem = React.forwardRef<
         accessibilityLabel={accessibilityLabel ?? inferredLabel}
         accessibilityRole="button"
         accessibilityState={{ ...accessibilityState, disabled: isDisabled, selected }}
+        // `accessibilityState` alone does not reach the DOM on react-native-web (see
+        // Checkbox), so the current page needs the web-native `aria-current="page"`
+        // prop set explicitly. Only the current page carries it — WCAG technique
+        // ARIA26 reserves `aria-current` for the single current item, not a boolean
+        // per item, so non-current items get `undefined` (absent), not `"false"`.
+        aria-current={selected ? 'page' : undefined}
         className={cn(
           'min-h-10 min-w-10 items-center justify-center rounded-md border px-3 py-2 active:opacity-80',
           selected

@@ -14,12 +14,14 @@ BeeUI publishes a small family of generated text files for coding-agent context.
 | Select/use components and inspect platform/a11y contracts | [`/llms-components.txt`](/llms-components.txt) |
 | Compose production-oriented screens from accepted patterns | [`/llms-patterns.txt`](/llms-patterns.txt) |
 
+`/llms-components.txt` lists each component's exported symbols and source path only. The full Props table (prop, type, default, description) for a component lives at `/docs/components/<name>/` — for example [`/docs/components/list-item/`](/docs/components/list-item/) — and is not repeated in the txt file; follow the component name through to its docs page before guessing a prop's shape from the source.
+
 Start small and add the larger file only when the task needs it. The files are public static assets; the Worker must serve them as plain text without rewriting them to HTML.
 
 ## Rules an agent must preserve
 
 - BeeUI is UI infrastructure; routing, data fetching, backend, auth, payments and business rules remain application-owned.
-- Public npm packages and the CLI are still unpublished. Do not invent live `npm install` or public `npx` availability.
+- `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet). Always suffix a registry command with `@next` (or the exact RC version) — `npm install @beemvp/beeui-ui@next` and `npx @beemvp/beeui-cli@next` are live, working commands; do not recommend an unqualified, untagged install. See [Start](/docs/start/) and [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
 - Prefer public exports and semantic tokens; do not import private workspace internals.
 - Mobile-first responsive behavior, keyboard/focus, RTL, large text and reduced motion are correctness constraints, not optional polish.
 - Web preview evidence is Web evidence. Native compile/bundle evidence is not native interaction proof.

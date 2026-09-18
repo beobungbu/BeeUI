@@ -390,7 +390,13 @@ export function resolveExportedDeclaration(relPath, name, rootDir = ROOT_DIR, se
   return null;
 }
 
-function renderTsExportSection(heading, rows, rootDir) {
+// `valueDescriptions` (docs/reference.content.json, keyed by export name) fills a Description
+// cell only when the source has no JSDoc to derive one from — JSDoc always wins, matching the
+// component Props glossary's precedence rule. A source file this generator does not own
+// (packages/core/src/** belongs to a different workstream) can go undocumented for a while;
+// a reader should not see a bare "—" in the meantime just because the two dates do not line up
+// (#590 item 4: 12 Reference Core values had no description).
+function renderTsExportSection(heading, rows, rootDir, valueDescriptions) {
   const withClassification = classificationVaries(rows);
   const columns = ['Name', 'Signature', 'Description', ...(withClassification ? ['Classification'] : []), 'Source'];
   const body = rows
@@ -400,7 +406,12 @@ function renderTsExportSection(heading, rows, rootDir) {
       const sourcePath = found?.relPath ?? row.source.split('#')[0];
       const fallbackLocator = !found && row.source.includes('#') ? ` \`${row.source.split('#')[1]}\`` : '';
       const sigCell = described.signature ? codeSpan(formatCodeText(described.signature)) : '—';
-      const descCell = described.description ? formatPlainCell(described.description) : '—';
+      const curatedDescription = valueDescriptions?.[row.name];
+      const descCell = described.description
+        ? formatPlainCell(described.description)
+        : curatedDescription
+          ? formatPlainCell(curatedDescription)
+          : '—';
       const cells = [
         `\`${row.name}\``,
         sigCell,
@@ -665,7 +676,7 @@ export function renderReferencePage(owner, content, rootDir = ROOT_DIR) {
   const entry = content.owners[owner.slug];
   const sections = KIND_SECTIONS.flatMap(([kind, heading, render]) => {
     const rows = owner.rows.filter((row) => row.kind === kind);
-    return rows.length ? [render(heading, rows, rootDir)] : [];
+    return rows.length ? [render(heading, rows, rootDir, entry.valueDescriptions)] : [];
   });
 
   const notes = entry.notes ? `\n${entry.notes}\n` : '';

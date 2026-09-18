@@ -91,7 +91,10 @@ describe('BeeUI issue #15 alert dialog and form grouping', () => {
     );
 
     const content = screen.getByTestId('alert-content');
-    expect(content.props.role).toBe('dialog');
+    // `alertdialog`, not the generic `dialog` role `DialogContent` defaults
+    // to: an AlertDialog always interrupts to demand a response, the more
+    // specific WAI-ARIA role for exactly that.
+    expect(content.props.role).toBe('alertdialog');
     expect(content.props.accessibilityViewIsModal).toBeUndefined(); let a11yBoundary = content.parent; while (a11yBoundary && a11yBoundary.props.accessibilityViewIsModal !== true) { a11yBoundary = a11yBoundary.parent; } expect(a11yBoundary).toBeTruthy();
     expect(content.props.accessibilityLabel).toBe('Delete project');
     expect(content.props.accessibilityHint).toBe('This action cannot be undone.');

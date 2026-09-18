@@ -21,6 +21,7 @@ import { DateTimePickerShowcase } from './date-time-picker-showcase';
 import { PublicDocFixtures } from './public-doc-fixtures';
 import { SelectShowcase } from './select-showcase';
 import { TableShowcase } from './table-showcase';
+import { ToolbarShowcase } from './toolbar-showcase';
 
 /**
  * Registry source paths that are rendered as a standalone fixture rather than as a
@@ -34,6 +35,7 @@ const DEDICATED_FIXTURE_SOURCES = [
   '/date-time-picker-showcase.tsx',
   '/public-doc-fixtures.tsx',
   '/settings-screen-shell.tsx',
+  '/toolbar-showcase.tsx',
 ];
 
 function hasDedicatedFixture(sourcePath: string) {
@@ -45,6 +47,7 @@ function ExactFixture({ sourcePath }: { sourcePath: string }) {
   if (sourcePath.endsWith('/table-showcase.tsx')) return <TableShowcase />;
   if (sourcePath.endsWith('/date-picker-showcase.tsx')) return <DatePickerShowcase />;
   if (sourcePath.endsWith('/date-time-picker-showcase.tsx')) return <DateTimePickerShowcase />;
+  if (sourcePath.endsWith('/toolbar-showcase.tsx')) return <ToolbarShowcase />;
   if (sourcePath.endsWith('/public-doc-fixtures.tsx')) return <PublicDocFixtures />;
   if (sourcePath.endsWith('/settings-screen-shell.tsx')) {
     return (

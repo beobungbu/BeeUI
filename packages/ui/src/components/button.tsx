@@ -41,10 +41,19 @@ const buttonVariants = cva(
         destructive:
           'border-destructive bg-destructive active:bg-destructive-pressed web:hover:bg-destructive-hover',
       },
+      // `min-h-*` (not `h-*`): a fixed height clips a label that wraps onto a
+      // second line at large text scale (`ButtonLabel`'s own `numberOfLines`
+      // is honored — see `buttonLabelVariants`/`Button`'s render below — but a
+      // *fixed*-height flex parent still crops the wrapped second line's
+      // pixels regardless of how many lines the `Text` itself is willing to
+      // lay out). A minimum keeps every previously-audited single-line label
+      // pixel-identical (content already renders shorter than the floor) and
+      // lets the control grow instead of clipping once a label needs two
+      // lines, e.g. a long localized checkout CTA under Dynamic Type.
       size: {
-        sm: 'h-control-compact px-3 ios:min-h-touch-target android:min-h-touch-target',
-        md: 'h-control-default px-4',
-        lg: 'h-control-large px-5',
+        sm: 'min-h-control-compact px-3 ios:min-h-touch-target android:min-h-touch-target',
+        md: 'min-h-control-default px-4',
+        lg: 'min-h-control-large px-5',
         icon: 'h-control-icon w-control-icon px-0',
       },
     },
@@ -183,6 +192,33 @@ export const Button = React.forwardRef<React.ComponentRef<typeof Pressable>, But
                 {child}
               </Text>
             );
+          }
+
+          // An explicit `<ButtonLabel>` child previously passed straight
+          // through unmodified: it never received this `Button`'s own
+          // resolved `variant`/`size`, so it fell back to `ButtonLabel`'s own
+          // cva defaults (`variant: 'primary'`) regardless of what `variant`
+          // was actually passed to `Button` — e.g. `labelClassName` silently
+          // had no effect, and `<DialogTrigger variant="outline">` (which
+          // renders `Button` under the hood) painted a `text-primary-foreground`
+          // label over an `outline` fill instead of `text-foreground`, an
+          // unreadable ~1.1:1 combination in dark. Cloning it with the
+          // resolved variant/size as a fallback (an explicit `variant`/`size`
+          // on the child itself still wins) and merging `labelClassName`
+          // ahead of the child's own `className` (so the child can still
+          // override) makes an explicit `ButtonLabel` child behave exactly
+          // like the string-child case above.
+          if (React.isValidElement<ButtonLabelProps>(child) && child.type === ButtonLabel) {
+            return React.cloneElement(child, {
+              key: `button-label-${index}`,
+              className: cn(
+                isDisabled && 'text-disabled-foreground',
+                labelClassName,
+                child.props.className,
+              ),
+              size: child.props.size ?? size,
+              variant: child.props.variant ?? resolvedVariant,
+            });
           }
 
           return child;

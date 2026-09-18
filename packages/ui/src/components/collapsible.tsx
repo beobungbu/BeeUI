@@ -91,6 +91,10 @@ export const CollapsibleTrigger = React.forwardRef<
       accessibilityLabel={accessibilityLabel ?? inferredLabel}
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled, expanded: context.open }}
+      // `accessibilityState` alone does not reach the DOM on react-native-web (see
+      // Checkbox), so the disclosure trigger needs the web-native `aria-expanded`
+      // prop set explicitly to satisfy the required-attribute contract.
+      aria-expanded={context.open}
       className={cn(
         'min-h-11 flex-row items-center justify-between rounded-md px-3 py-2 active:bg-muted web:hover:bg-surface-muted',
         className,

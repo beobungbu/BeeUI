@@ -8,7 +8,7 @@ description: "Controlled current-step context with finite normalization and dupl
 Controlled current-step context with finite normalization and duplicate-step fail-safe; owns no workflow state.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Navigation & disclosure
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/stepper.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/stepper.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add stepper
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -46,7 +47,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Controlled `currentStep` context shared with every `StepperItem`; step values are normalized to a finite range, and a `StepperItem` sharing a duplicate normalized step value fails safe as disabled — it owns no application workflow state.
+Controlled `currentStep` context shared with every `StepperItem`; step values are normalized to a finite range, and a `StepperItem` sharing a duplicate normalized step value fails safe as disabled — it owns no application workflow state. `orientation` (`'vertical'` default, or `'horizontal'`) is a pure layout switch — it changes the connector line direction only, not the step-normalization or fail-safe behavior above.
 
 ### Props
 
@@ -56,7 +57,7 @@ Controlled `currentStep` context shared with every `StepperItem`; step values ar
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
-| `step` **(required)** | `number` | — | This item's position (1-based); non-finite values are floored and clamped to at least 1. Compared against the parent `Stepper`'s `currentStep` to determine current/complete state. A value duplicated by another item is disabled with a dev-mode warning. |
+| `step` **(required)** | `number` | — | This item's position, 1-based (never 0-based). Non-finite values, and values below 1 (including `0`), are floored and clamp up to `1` with a dev-mode warning. Compared against the parent `Stepper`'s `currentStep` to determine current/complete state. A value duplicated by another item is disabled with a separate dev-mode warning. |
 | `title` **(required)** | `React.ReactNode` | — | The primary heading text for this surface. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'children' | 'role'>` — that upstream contract is not reproduced here.
@@ -67,9 +68,10 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'children
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `currentStep` **(required)** | `number` | — | The active step number (1-based), clamped to `[1, number of StepperItem children]`. Non-finite values fall back to 1. |
+| `currentStep` **(required)** | `number` | — | The active step number, 1-based (never 0-based) and clamped to `[1, number of StepperItem children]`. Non-finite values, and values below 1 (including `0`), fall back to/clamp up to `1` with a dev-mode warning. |
 | `disabled` | `boolean` | `false` | Disables every `StepperItem` inside, overriding each item's own `disabled`. Defaults to false. |
 | `onStepChange` | `(step: number) => void` | — | Called with a step's normalized step number when a non-disabled `StepperItem` is pressed. Also required (alongside a per-item `onPress`) for any item to render as interactive. |
+| `orientation` | `'horizontal' \| 'vertical'` | `'vertical'` | Lays items out as a horizontal row (e.g. a desktop onboarding wizard) instead of the default vertical stack. Defaults to `'vertical'`. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
@@ -94,7 +96,7 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 ## Accessibility
 
 - **Roles this family assigns:** `button` — set in `stepper.tsx` by the components themselves, not by the caller.
-- **Accessibility states and properties it sets:** `accessibilityLabel`, `accessible`, `disabled`, `selected`, `text` — read from `stepper.tsx`.
+- **Accessibility states and properties it sets:** `accessibilityLabel`, `accessible`, `current`, `disabled`, `selected`, `text` — read from `stepper.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
@@ -109,7 +111,8 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/application-primitives.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/application-primitives.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-7-state-edge-cases.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-state-edge-cases.test.tsx)
-- **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/stepper-orientation-and-step-clamp-warning.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/stepper-orientation-and-step-clamp-warning.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/tabs-pagination-stepper-current-aria.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/tabs-pagination-stepper-current-aria.test.tsx)
 
 ### Addressable examples
 
@@ -148,9 +151,22 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Stepper** is actually used: 5 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Stepper** is actually used: 5 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
-[lines 975–979](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L975-L979):
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Stepper, StepperItem } from '@beemvp/beeui-ui';
+import * as React from 'react';
+````
+
+Fixture state this block reads (same file, line 467):
+
+````tsx
+  const [step, setStep] = React.useState(3);
+````
+
+[lines 982–986](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L982-L986):
 
 ````tsx
                   <Stepper currentStep={step} onStepChange={setStep} testID="stepper-showcase">
@@ -160,7 +176,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                   </Stepper>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 The step total each item announces is the number of the stepper's own direct children, so wrapping items in another element miscounts it, and the announced string is an English literal. A `StepperItem` throws when rendered outside a `Stepper`.

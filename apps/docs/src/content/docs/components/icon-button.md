@@ -8,7 +8,7 @@ description: "44px icon-only action; an accessible label is required."
 44px icon-only action; an accessible label is required.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Actions & controls
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/icon-button.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/icon-button.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add icon-button
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -45,7 +46,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Stateless 44px icon-only pressable sharing Button's `disabled`/`loading` semantics; an accessible label (`accessibilityLabel`) is required because there is no visible text to derive one from.
+Stateless icon-only pressable sharing Button's `disabled`/`loading` semantics; an accessible label (`accessibilityLabel`) is required because there is no visible text to derive one from. Button's own size variant (`'sm'`/`'md'`/`'lg'`/`'icon'`, defaulting to `'icon'`) renders a square control at Button's matching control-height token here instead of Button's rectangular label padding. `count` renders a small overlay badge anchored to the top-end corner (e.g. an unread count) and is appended to `accessibilityLabel` so it is announced; omit it for no badge.
 
 ### Props
 
@@ -55,8 +56,10 @@ Stateless 44px icon-only pressable sharing Button's `disabled`/`loading` semanti
 | --- | --- | --- | --- |
 | `accessibilityLabel` **(required)** | `string` | — | Required (unlike `Button`'s optional label): an icon-only button has no text content to infer an accessible name from. |
 | `children` **(required)** | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `count` | `React.ReactNode` | — | A small overlay badge anchored to the top-end corner (e.g. an unread count on a notification bell). A `number`/`string` renders inside a pill and is appended to `accessibilityLabel` so the count is announced; any other node renders as-is and must carry its own accessible text if it needs to be announced. Omit for no badge (the default). |
+| `countClassName` | `string` | — | Applied to the count badge's own container; has no effect when `count` is omitted. |
 
-Also carries every prop of `Omit<ButtonProps, 'accessibilityLabel' | 'children' | 'labelClassName' | 'size'>` — documented on the [Button](/docs/components/button/) page, not reproduced here.
+Also carries every prop of `Omit<ButtonProps, 'accessibilityLabel' | 'children' | 'labelClassName'>` — documented on the [Button](/docs/components/button/) page, not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 
@@ -64,7 +67,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 - No additional provider is required by this family. `BeeUIProvider` remains the recommended application root.
 - **Peer/native dependencies visible to this Registry item:** `react`, `react-native`
-- **Registry dependency closure:** `button`, `theme`
+- **Registry dependency closure:** `button`, `core-cn`, `theme`
 - Safe-area ownership remains explicit: shell surfaces touching system edges opt into `SafeArea`; components do not silently invent app-shell insets.
 - Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).
 
@@ -79,20 +82,22 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 ## Accessibility
 
 - **Roles this family assigns:** none set in `icon-button.tsx`.
-- **Accessibility states and properties it sets:** `accessibilityLabel` — read from `icon-button.tsx`.
+- **Accessibility states and properties it sets:** `accessibilityLabel`, `hidden` — read from `icon-button.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
 ## Styling and theming
 
-- **Style axes:** `variant` (5 values, inherited from `ButtonProps`).
-- **Class-name surfaces:** `className`.
+- **Style axes:** `size` (4 values, inherited from `ButtonProps`), `variant` (5 values, inherited from `ButtonProps`).
+- **Class-name surfaces:** `className`, `countClassName`.
 
 Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/icon-button-size-and-count.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/icon-button-size-and-count.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx)
+- **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/table-showcase.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/table-showcase.tsx)
 
 ### Addressable examples
@@ -129,9 +134,15 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Icon Button** is actually used: 15 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Icon Button** is actually used: 15 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
-[lines 528–542](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L528-L542):
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Box, Button, IconButton, Section } from '@beemvp/beeui-ui';
+````
+
+[lines 529–543](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L529-L543):
 
 ````tsx
               <Section
@@ -151,10 +162,10 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               </Section>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
-A size prop is not accepted: an icon button always renders at Button's icon size, so there is no compact or large variant, and any string child is styled by Button's own label rules with no override hook.
+Any string child is styled by Button's own label rules with no override hook. `count` accepts any node, but only a string/number value renders inside the badge pill and is appended to the accessible name — any other node renders as-is and must carry its own accessible text.
 
 ## Related
 

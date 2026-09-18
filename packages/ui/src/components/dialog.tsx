@@ -10,6 +10,7 @@ import {
   type PressableProps,
   type ViewProps,
 } from 'react-native';
+import { getWebMutationObserverConstructor, watchAlertDialogRole } from './alert-dialog-role-watch';
 import { Button, type ButtonProps } from './button';
 import {
   ModalOverlayHost,
@@ -43,6 +44,7 @@ import { Text, type TextProps } from './text';
 type WebFocusableElement = {
   contains: (other: WebFocusableElement | null) => boolean;
   focus: (options?: { preventScroll?: boolean }) => void;
+  getAttribute: (name: string) => string | null;
   getClientRects: () => ArrayLike<unknown>;
   hasAttribute: (name: string) => boolean;
   querySelectorAll: (selectors: string) => ArrayLike<WebFocusableElement>;
@@ -434,6 +436,14 @@ export type DialogContentProps = Omit<
   overlayProps?: Omit<PressableProps, 'children' | 'onPress'>;
   /** `testID` applied to the backdrop `Pressable`, for targeting it in tests. */
   overlayTestID?: string;
+  /**
+   * @internal Selects this panel's ARIA/accessibility dialog role.
+   * `AlertDialogContent` (`alert-dialog.tsx`) passes `'alertdialog'`; every
+   * other caller keeps the default `'dialog'`. Not meant as a general-purpose
+   * public override — a plain `Dialog` that wants `alertdialog` semantics
+   * should render an `AlertDialog` instead.
+   */
+  role?: 'dialog' | 'alertdialog';
 };
 
 export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, DialogContentProps>(
@@ -454,6 +464,7 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
       overlayClassName,
       overlayProps,
       overlayTestID,
+      role = 'dialog',
       ...props
     },
     ref,
@@ -549,10 +560,51 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
     // formSheet. Only overFullScreen is transparent; native non-fullscreen/fullScreen
     // presentations must be non-transparent so the requested presentationStyle is real.
     const transparent = presentationStyle === 'overFullScreen';
+    const isWeb = Platform.OS === 'web';
+    const resolvedAccessibilityLabel = accessibilityLabel ?? titleText;
+    const resolvedAccessibilityLabelledBy = accessibilityLabelledBy ?? titleNativeID;
+
+    const modalOwnerRef = React.useRef<WebFocusableElement | null>(null);
+    const setModalOwnerRef = React.useCallback((node: React.ComponentRef<typeof Modal> | null) => {
+      modalOwnerRef.current = node as unknown as WebFocusableElement | null;
+    }, []);
+
+    // Web only, `alertdialog` panels only — see `watchAlertDialogRole`'s
+    // docblock for why this needs a `MutationObserver` rather than a prop or a
+    // fixed-delay correction.
+    React.useEffect(() => {
+      if (!isWeb || role !== 'alertdialog' || !open) return undefined;
+      const MutationObserverCtor = getWebMutationObserverConstructor();
+      const node = modalOwnerRef.current;
+      if (!node || !MutationObserverCtor) return undefined;
+      return watchAlertDialogRole(node, MutationObserverCtor);
+    }, [isWeb, open, role]);
 
     return (
       <Modal
         {...restModalProps}
+        ref={setModalOwnerRef}
+        // Web only: react-native-web's own `Modal` (verified against 0.21's
+        // `ModalContent` source) unconditionally renders `role="dialog"` +
+        // `aria-modal="true"` on its own owner node once open, with no prop this
+        // component can pass to opt that wrapper out — the object literal that
+        // sets those two attributes is applied after this component's own props
+        // are spread, so it always wins. Before this, the panel `View` below
+        // ALSO carried `role="dialog"`/`aria-modal`, so an open Dialog produced
+        // two nested `role="dialog"` nodes on Web: a strict-mode violation for
+        // `page.getByRole('dialog')` without a name filter, and two "entered a
+        // dialog" announcements for one screen-reader visit. Forwarding this
+        // dialog's own computed label/labelledby to the one Web owner
+        // react-native-web insists on rendering — instead of also stamping a
+        // second `role="dialog"` on the panel underneath — leaves exactly one
+        // labelled dialog node. Native has no such forced wrapper (`Modal`
+        // there is an opaque OS-level container with no injected role/label of
+        // its own), so the panel keeps owning `role="dialog"` there unchanged.
+        // `alertdialog` panels correct this same owner's forced `'dialog'`
+        // value to `'alertdialog'` after the fact — see the `MutationObserver`
+        // effect above `ref={setModalOwnerRef}` feeds.
+        accessibilityLabel={isWeb ? resolvedAccessibilityLabel : undefined}
+        accessibilityLabelledBy={isWeb ? resolvedAccessibilityLabelledBy : undefined}
         animationType={animationType}
         onRequestClose={handleModalRequestClose}
         presentationStyle={presentationStyle}
@@ -597,22 +649,40 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
                 ref={setPanelRef}
                 {...props}
                 accessibilityHint={accessibilityHint ?? descriptionText}
-                accessibilityLabel={accessibilityLabel ?? titleText}
-                accessibilityLabelledBy={accessibilityLabelledBy ?? titleNativeID}
+                // Web: already forwarded to `<Modal>` above, onto the one owner
+                // node react-native-web actually renders `role="dialog"` on —
+                // see that prop's docblock. Setting it again here would restore
+                // the double-labelled/double-dialog nesting this fix removes.
+                accessibilityLabel={isWeb ? undefined : resolvedAccessibilityLabel}
+                accessibilityLabelledBy={isWeb ? undefined : resolvedAccessibilityLabelledBy}
                 // The iOS accessibility modal boundary lives on the
                 // ModalOverlayHost wrapper so portalled overlays stay inside
                 // it (#60). Do not re-add the flag here: it would prune the
                 // portal outlet subtree from the accessibility tree.
-                aria-modal
+                //
+                // Never re-added on Web for `alertdialog` either: the one
+                // Modal owner react-native-web forces (see `role` below)
+                // already carries `aria-modal="true"` unconditionally,
+                // regardless of `role`/`active` — adding it here too would
+                // reintroduce the exact duplicate-`aria-modal` shape this
+                // fix removes, just for the alert-dialog path instead.
+                aria-modal={isWeb ? undefined : true}
                 className={cn(
-                  'w-full max-w-lg gap-4 rounded-xl border border-border bg-surface p-5',
+                  'w-full max-w-lg gap-4 overflow-hidden rounded-xl border border-border bg-surface p-5',
                   className,
                 )}
                 onAccessibilityEscape={() => {
                   onAccessibilityEscape?.();
                   requestClose();
                 }}
-                role="dialog"
+                // Web: the one Modal owner node react-native-web renders
+                // (forced `'dialog'`, corrected to `'alertdialog'` by the
+                // `MutationObserver` above when this panel's `role` is
+                // `'alertdialog'`) is the sole `role`/`aria-modal` owner for
+                // both cases — restating either role here would recreate a
+                // two-nodes-same-role shape (the exact bug #607 removed for
+                // `dialog`, and would reintroduce it for `alertdialog` too).
+                role={isWeb ? undefined : role}
               >
                 {children}
               </View>

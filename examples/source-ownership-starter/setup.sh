@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # R10.2 (#231) — installs runtime/tooling dependencies (from freshly packed
-# @beemvp/beeui-tokens, since it is unpublished — no @beemvp/beeui-ui/@beemvp/beeui-core package
-# consumption in this starter at all) and then runs the packed,
-# unpublished @beemvp/beeui-cli end-to-end: `beeui init` + `beeui add button popover`
+# @beemvp/beeui-tokens, packed rather than installed from npm — no
+# @beemvp/beeui-ui/@beemvp/beeui-core package consumption in this starter at
+# all) and then runs the packed @beemvp/beeui-cli end-to-end (rather than the
+# published npm CLI): `beeui init` + `beeui add button popover`
 # copy component source directly into src/components/beeui and src/lib/beeui,
 # and copy the canonical theme into src/beeui/theme.css.
 #
