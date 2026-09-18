@@ -116,6 +116,7 @@ import { DatePickerShowcase } from './date-picker-showcase';
 import { DateTimePickerShowcase } from './date-time-picker-showcase';
 import { SelectShowcase } from './select-showcase';
 import { TableShowcase } from './table-showcase';
+import { ToolbarShowcase } from './toolbar-showcase';
 
 function ThemeToggle() {
   const { hasAdaptiveThemes, theme } = useUniwind();
@@ -672,6 +673,12 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
             </PlaygroundHeading>
 
             <DateTimePickerShowcase />
+
+            <PlaygroundHeading description="Single-row toolbar that measures its own width and collapses lower-priority items into an overflow menu once the row no longer fits.">
+              Toolbar
+            </PlaygroundHeading>
+
+            <ToolbarShowcase />
 
             <PlaygroundHeading description="Modal and anchored overlays now have real public APIs you can click through here.">
               Overlay playground
