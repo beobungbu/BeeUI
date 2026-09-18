@@ -862,6 +862,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`__tests__/issue-72-token-reader.test.tsx`](../apps/showcase/__tests__/issue-72-token-reader.test.tsx), [`__tests__/perf-theme-runtime.test.tsx`](../apps/showcase/__tests__/perf-theme-runtime.test.tsx), [`__tests__/theme-tokens-v3-chart.test.tsx`](../apps/showcase/__tests__/theme-tokens-v3-chart.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Limitations:** `getBeeToken` always reads the global theme: it ignores an enclosing theme scope and returns a one-shot snapshot rather than a subscription, where `useBeeToken` is scope-aware and re-reads on change. Both throw when a token is read before the theme has loaded. Only the color, chart, radius and motion categories are readable at runtime — spacing, typography, elevation and the other theme-invariant categories are not exposed here and are imported as constants instead.
+- **Notes:** Category paths are top-level, not nested under `colors`: chart tokens read as `useBeeToken("chart.series-1")` (one of the ten `chartColorTokens` names — see [Design tokens reference](/docs/reference/tokens/)), never `colors.chart-series-1`. Only `colors.*`, `chart.*`, `radius.*` and `motion.*` are readable at runtime; typography (font size/weight/line-height) is not one of them — see the Text component page for how the type scale is actually reached.
 
 ## `visually-hidden`
 
