@@ -209,10 +209,6 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
             // `accessibilityState` object on Web, so `accessibilityState.expanded`
             // (which `PopoverTrigger` already sets) never reaches the DOM here.
             aria-expanded={effectiveOpen}
-            // `required` reaches the DOM via `aria-required` (RN's compound
-            // `accessibilityState` has no `required` key) — mirrors `Input`'s
-            // identical `aria-required` prop (`input.tsx`).
-            aria-required={field.required || undefined}
             accessibilityHint={field.accessibilityHint}
             accessibilityLabel={field.accessibilityLabel}
             accessibilityLabelledBy={field.accessibilityLabelledBy}

@@ -1,6 +1,6 @@
 import { cn } from '@beemvp/beeui-core';
 import * as React from 'react';
-import { View, type LayoutChangeEvent, type ViewProps } from 'react-native';
+import { View, type LayoutChangeEvent, type ViewProps, Platform } from 'react-native';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,6 +49,10 @@ export type ToolbarItemProps = {
  * rendering primitive on its own — `Toolbar` reads each `ToolbarItem`'s props to lay out the
  * row and the overflow menu; a `ToolbarItem` rendered outside a `Toolbar` renders nothing.
  */
+const isWeb = Platform.OS === 'web';
+// react-native-web supports `visibility` even though React Native's ViewStyle type omits it.
+const measurementLayerStyle = { visibility: 'hidden' } as unknown as ViewProps['style'];
+
 export function ToolbarItem(_props: ToolbarItemProps): React.ReactElement | null {
   return null;
 }
@@ -219,6 +223,9 @@ export const Toolbar = React.forwardRef<React.ComponentRef<typeof View>, Toolbar
           aria-hidden
           className="absolute inset-x-0 top-0 flex-row items-center gap-1 opacity-0"
           pointerEvents="none"
+          // Web: `visibility: hidden` keeps the layout box (so `onLayout` still measures)
+          // but makes every descendant unfocusable, which `aria-hidden` alone does not.
+          style={isWeb ? measurementLayerStyle : undefined}
           testID={testID ? `${testID}-measure` : undefined}
         >
           {items.map((item) => (

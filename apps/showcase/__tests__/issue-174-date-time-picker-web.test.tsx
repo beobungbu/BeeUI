@@ -286,13 +286,13 @@ describe('BeeUI issue #174 DateTimePicker (Web) rendering contract', () => {
     expect(trigger.props.accessibilityLabel).toBe('Appointment, Bắt buộc');
   });
 
-  it('stamps aria-required on the trigger when the enclosing Field is required, and omits it otherwise', () => {
+  it('never stamps aria-required on the trigger (not a permitted attribute on role=button), even when the enclosing Field is required', () => {
     const requiredScreen = renderDateTimePicker(
       <Field label="Appointment" required>
         <DateTimePicker testID="date-time-picker" value={null} />
       </Field>,
     );
-    expect(requiredScreen.getByTestId('date-time-picker-trigger').props['aria-required']).toBe(true);
+    expect(requiredScreen.getByTestId('date-time-picker-trigger').props['aria-required']).toBeUndefined();
 
     const optionalScreen = renderDateTimePicker(
       <Field label="Appointment">
