@@ -1,8 +1,10 @@
 import * as React from 'react';
 import { Platform, Switch as RNSwitch, type SwitchProps as RNSwitchProps } from 'react-native';
+import { useFieldContext } from './field-context';
 import { useRequiredCallbackWarning } from './use-required-callback-warning';
 
 type EngineSwitchProps = RNSwitchProps & {
+  'aria-required'?: boolean;
   ios_backgroundColorClassName?: string;
   thumbColorClassName?: string;
   trackColorOffClassName?: string;
@@ -15,8 +17,51 @@ export type SwitchProps = Omit<
 >;
 
 export const Switch = React.forwardRef<React.ComponentRef<typeof RNSwitch>, SwitchProps>(
-  ({ accessibilityState, disabled = false, onValueChange, value = false, ...props }, ref) => {
+  (
+    {
+      accessibilityLabel,
+      accessibilityLabelledBy,
+      accessibilityState,
+      disabled = false,
+      onValueChange,
+      value = false,
+      ...props
+    },
+    ref,
+  ) => {
     useRequiredCallbackWarning('Switch', 'onValueChange', onValueChange, disabled);
+
+    // Inside a `Field`, a Switch with no accessible name of its own (no
+    // caller `accessibilityLabel`/`accessibilityLabelledBy`) falls back to the
+    // Field's own label the same way `Input` already does, so
+    // `<Field label="Notifications"><Switch/></Field>` gets a real accessible
+    // name without the caller repeating the string. An explicit
+    // `accessibilityLabel`/`accessibilityLabelledBy` from the caller always wins.
+    const field = useFieldContext();
+    const resolvedDisabled = disabled || field?.disabled === true;
+    const resolvedAccessibilityLabelledBy = accessibilityLabelledBy ?? field?.labelNativeID;
+    // The real DOM `aria-labelledby` attribute is a single space-separated ID
+    // list string, while the RN-side `accessibilityLabelledBy` prop also
+    // accepts an array of IDs — normalize to that string form for the literal
+    // web prop below.
+    const resolvedAriaLabelledBy = Array.isArray(resolvedAccessibilityLabelledBy)
+      ? resolvedAccessibilityLabelledBy.join(' ')
+      : resolvedAccessibilityLabelledBy;
+    // No hardcoded English "required" copy — only a caller-supplied,
+    // localized `requiredLabel` (via `Field`) is ever appended to the name;
+    // otherwise `required` reaches assistive tech solely through `aria-required`
+    // below.
+    const fallbackFieldLabel =
+      field && field.required && field.requiredLabel
+        ? `${field.label}, ${field.requiredLabel}`
+        : field?.label;
+    // Matches `Input`'s established Field-fallback pattern (input.tsx): both a
+    // resolved literal name and the `labelNativeID` relationship are set
+    // together, never one to the exclusion of the other — `aria-labelledby`
+    // (when present) takes full precedence over `aria-label` in accname
+    // computation on Web, so this never produces a duplicate-name node; it just
+    // keeps native platforms, which read the literal label, correct too.
+    const resolvedAccessibilityLabel = accessibilityLabel ?? fallbackFieldLabel;
 
     // react-native-web's own <Switch> spreads unrecognized props (including
     // `accessibilityRole`/`role`) onto the outer wrapper `<div>`, while it
@@ -35,22 +80,45 @@ export const Switch = React.forwardRef<React.ComponentRef<typeof RNSwitch>, Swit
     const isWeb = Platform.OS === 'web';
     const engineProps: EngineSwitchProps = {
       ...props,
+      accessibilityLabel: resolvedAccessibilityLabel,
+      accessibilityLabelledBy: resolvedAccessibilityLabelledBy,
+      // `required` reaches the DOM via `aria-required` (the RN-side
+      // `accessibilityState` has no `required` key) rather than injected text.
+      'aria-required': field?.required || undefined,
       ...(isWeb
-        ? null
+        ? {
+            // The compound `accessibilityLabelledBy` relationship hits the
+            // same "never reaches the real interactive element" failure mode on
+            // Web that `accessibilityState` does elsewhere in this file's
+            // siblings (BeeECOM axe/Playwright evidence: the relationship lands
+            // on a non-interactive wrapper, not the `<input role="switch">`).
+            // Setting the web-native `aria-labelledby` prop directly, alongside
+            // it, is the same established fix already applied to
+            // `aria-checked`/`aria-busy`/`aria-controls` throughout this
+            // package: the literal `aria-*` prop is what reaches the actual
+            // host element.
+            'aria-labelledby': resolvedAriaLabelledBy,
+          }
         : {
             accessibilityRole: 'switch' as const,
             accessibilityState: {
               ...accessibilityState,
               checked: value,
-              disabled,
+              disabled: resolvedDisabled,
             },
           }),
-      disabled,
-      ios_backgroundColorClassName: disabled ? 'accent-disabled' : 'accent-muted',
+      disabled: resolvedDisabled,
+      ios_backgroundColorClassName: resolvedDisabled ? 'accent-disabled' : 'accent-muted',
       onValueChange,
-      thumbColorClassName: disabled ? 'accent-disabled-foreground' : 'accent-surface',
-      trackColorOffClassName: disabled ? 'accent-disabled' : 'accent-muted',
-      trackColorOnClassName: disabled ? 'accent-disabled' : 'accent-primary',
+      thumbColorClassName: resolvedDisabled ? 'accent-disabled-foreground' : 'accent-surface',
+      trackColorOffClassName: resolvedDisabled ? 'accent-disabled' : 'accent-muted',
+      // A disabled Switch previously collapsed both the on and off track
+      // colors to the flat `accent-disabled` swatch, making the current state
+      // unreadable (e.g. in a locked permissions matrix). Keeping the on-state
+      // at a dimmed primary tone instead — the issue's own suggested fix,
+      // "keep the on/off contrast at reduced opacity" — preserves the on/off
+      // distinction while disabled.
+      trackColorOnClassName: resolvedDisabled ? 'accent-primary/40' : 'accent-primary',
       value,
     };
 
