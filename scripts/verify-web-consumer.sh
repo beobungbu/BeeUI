@@ -351,7 +351,7 @@ await page.getByRole('button', { name: 'Dismiss' }).first().click();
 await page.waitForSelector('text=Representative Sheet', { state: 'hidden' });
 
 // Calendar — select a day by its full accessible date name.
-const dayCell = page.getByRole('cell', { name: /15, \d{4}/ });
+const dayCell = page.getByRole('gridcell', { name: /15, \d{4}/ });
 await dayCell.waitFor({ state: 'visible', timeout: 5000 });
 await dayCell.click();
 

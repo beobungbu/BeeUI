@@ -41,7 +41,7 @@ test('Calendar grid exposes real grid/row/cell ARIA roles and announced day stat
   await expect(grid).toHaveAttribute('role', 'grid');
 
   const selectedDay = page.getByTestId('date-picker-showcase-controlled-calendar-day-2026-01-15');
-  await expect(selectedDay).toHaveAttribute('role', 'cell');
+  await expect(selectedDay).toHaveAttribute('role', 'gridcell');
   await expect(selectedDay).toHaveAttribute('aria-label', /Selected/);
   await expect(selectedDay).toHaveAttribute('aria-label', /Thursday, January 15, 2026/);
 
