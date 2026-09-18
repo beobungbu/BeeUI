@@ -171,7 +171,7 @@ function findUnknownBehaviorPropReferences(component, rootDir, field = 'behavior
 // A ratchet rather than a pass/fail threshold: failing on any blank would fail today and teach
 // nothing, and a silent percentage would drift back down the way it drifted here. The floor is
 // the measured value at the time it was written, so coverage can only go up.
-export const PROP_DESCRIPTION_FLOOR = 640;
+export const PROP_DESCRIPTION_FLOOR = 648;
 
 // Two floors, because coverage alone is satisfiable by boilerplate: 22 props were added to the
 // total by one repeated sentence and 100% never moved.
@@ -183,7 +183,7 @@ export const PROP_DESCRIPTION_FLOOR = 640;
 // justify (0.44), and measuring what it was actually rejecting showed the real defect is one
 // sentence reused across props with *different names*, which `sharedAcrossProps` states directly
 // and a ratio only approximates.
-export const PROP_DISTINCT_DESCRIPTION_FLOOR = 302;
+export const PROP_DISTINCT_DESCRIPTION_FLOOR = 310;
 
 // Walks a resolved type entry the same way `applyGlossary` and the renderer do:
 // a `union` entry carries no `fields` of its own, only `variants`, each of which is
@@ -368,7 +368,7 @@ const KNOWN_ACCESSIBILITY_ROLES = new Set([
   'progressbar', 'radio', 'radiogroup', 'scrollbar', 'search', 'spinbutton', 'summary', 'switch',
   'tab', 'tablist', 'text', 'timer', 'togglebutton', 'toolbar',
   // WAI-ARIA roles used on Web
-  'application', 'article', 'banner', 'cell', 'columnheader', 'complementary', 'contentinfo',
+  'alertdialog', 'application', 'article', 'banner', 'cell', 'columnheader', 'complementary', 'contentinfo',
   'definition', 'dialog', 'document', 'feed', 'figure', 'form', 'group', 'heading', 'listbox',
   'listitem', 'log', 'main', 'marquee', 'math', 'menuitemcheckbox', 'menuitemradio', 'meter',
   'navigation', 'note', 'option', 'presentation', 'region', 'row', 'rowgroup', 'rowheader',
