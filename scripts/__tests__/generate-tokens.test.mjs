@@ -531,8 +531,8 @@ test('one primitive change propagates to every semantic token that aliases it', 
   const mutated = structuredClone(source);
   mutated.primitives.danger.default.$value = colorValue('#123456');
   const css = generateTokenArtifacts(mutated).get('packages/tokens/src/theme.css');
-  const lightDestructive = css.match(/@variant light \{([\s\S]*?)\n {4}\}/)[1];
-  const violetLightDestructive = css.match(/@variant violet-light \{([\s\S]*?)\n {4}\}/)[1];
+  const lightDestructive = css.match(/\n {2}\.light \{([\s\S]*?)\n {2}\}/)[1];
+  const violetLightDestructive = css.match(/\n {2}\.violet-light \{([\s\S]*?)\n {2}\}/)[1];
   assert.match(lightDestructive, /--color-destructive: #123456;/);
   assert.match(violetLightDestructive, /--color-destructive: #123456;/);
   // A destructive state that aliases a different primitive is unaffected.
@@ -683,14 +683,94 @@ test('theme.css registers a custom variant and complete color block for every ac
   const css = generateTokenArtifacts(source).get('packages/tokens/src/theme.css');
   for (const theme of beeMetadata().accessibilityRuntimeThemeNames) {
     assert.match(css, new RegExp(`@custom-variant ${theme} \\(&:where\\(\\.${theme}, \\.${theme} \\*\\)\\);`));
-    assert.match(css, new RegExp(`@variant ${theme} \\{`));
+    assert.match(css, new RegExp(`\\n {2}\\.${theme} \\{`));
   }
-  // Custom-variant registration precedes its @variant block, matching every other
+  // Custom-variant registration precedes its color block, matching every other
   // custom (non-built-in) theme (#67).
   assert.ok(
-    css.indexOf('@custom-variant high-contrast-light') < css.indexOf('@variant high-contrast-light {'),
+    css.indexOf('@custom-variant high-contrast-light') < css.indexOf('.high-contrast-light {'),
   );
 });
+
+test('theme colors resolve via a plain class selector that inherits at any depth, with an @variant registration block per theme for Uniwind/Tailwind scanning', () => {
+  const css = generateTokenArtifacts(source).get('packages/tokens/src/theme.css');
+
+  // Regression for #550/#552: `:root { @variant name { ... } }` used to compile
+  // to `:root:where(.name, .name *)`, which can only ever match the document's
+  // real `<html>` element — a `BeeThemeScope`-applied class on a nested element
+  // could never satisfy it. Every theme's color block must instead sit at the
+  // top level of `@layer theme`, sibling to (not inside) any `:root`-anchored
+  // selector.
+  assert.doesNotMatch(css, /:root\s*\{[^}]*@variant/);
+
+  // Exactly one `@variant` registration block per runtime theme survives —
+  // verified empirically against this project's exact toolchain. Two
+  // independent scanners need it: Uniwind's own Metro bundler
+  // (`generateCSSForThemes`) walks every `@variant <themeName> { ... }`
+  // at-rule to build each theme's declared-variable set and errors
+  // ("theme X is missing variable Y") the moment any theme is only
+  // represented by a plain class selector; and, once every theme is fully
+  // represented, Uniwind emits a synthetic `@theme { --color-x: unset; ... }`
+  // block that is the *only* reason Tailwind (via the same
+  // `@tailwindcss/node` + `@tailwindcss/oxide` engine `@tailwindcss/vite`
+  // uses) generates `bg-primary`/`text-foreground`/etc. as utilities at all
+  // — a plain class selector alone is invisible to both scans. These blocks
+  // are registration-only: every theme's real cascade values come from its
+  // `.themeName { ... }` block instead, asserted below.
+  const variantMatches = [...css.matchAll(/@variant ([\w-]+) \{/g)];
+  assert.deepEqual(
+    variantMatches.map((match) => match[1]),
+    allRuntimeThemeNamesFor(source),
+  );
+
+  // Scope the "no `.name, .name *` selector" check to the theme color blocks
+  // themselves (from `@layer theme {` onward) — the `@custom-variant name
+  // (&:where(.name, .name *));` declarations above legitimately still contain
+  // that exact substring, for `name:`-prefixed utility classes, unrelated to
+  // how the color blocks below select their own element.
+  const themeLayer = css.slice(css.indexOf('@layer theme {'));
+  for (const theme of allRuntimeThemeNamesFor(source)) {
+    // Exactly 2-space indent means direct child of `@layer theme { ... }`, not
+    // nested one level deeper inside a `:root { ... }` wrapper.
+    assert.match(themeLayer, new RegExp(`\\n {2}\\.${theme} \\{`));
+
+    // Deliberately a plain `.themeName` selector, never `:where(.themeName,
+    // .themeName *)`: the `*` alternative would match every descendant of a
+    // themed element *directly*, so two nested scopes' blocks would both match
+    // the same innermost element and the cascade would pick whichever theme
+    // happens to sit later in this file (source order) instead of the nearer
+    // scope. Relying on plain CSS custom-property inheritance from a
+    // single-element selector always resolves to the nearest declaring
+    // ancestor, which is the correct "nearest scope wins" semantics.
+    assert.doesNotMatch(themeLayer, new RegExp(`\\.${theme}, \\.${theme} \\*`));
+  }
+
+  // The default runtime theme's fallback lives in a zero-specificity
+  // `:where(:root)` block (so it never outranks a themed `.themeName` class
+  // selector on the cascade), never a bare, higher-specificity `:root { ... }`.
+  assert.match(css, /@layer theme \{\n {2}:where\(:root\) \{/);
+
+  // Every `@variant` registration block declares the exact same set of
+  // `--color-*`/`--chart-*` custom-property names — mirroring Uniwind's own
+  // build-time consistency check (`generateCSSForThemes` in its Metro
+  // bundler), which errors the build the moment any theme's registration
+  // block is missing a variable another theme declares.
+  const declaredNamesPerVariant = variantMatches.map((match) => {
+    const blockStart = match.index + match[0].length;
+    const blockEnd = css.indexOf('\n  }', blockStart);
+    return [...css.slice(blockStart, blockEnd).matchAll(/(--[\w-]+):/g)]
+      .map((declaration) => declaration[1])
+      .sort();
+  });
+  for (const declaredNames of declaredNamesPerVariant) {
+    assert.deepEqual(declaredNames, declaredNamesPerVariant[0]);
+  }
+});
+
+function allRuntimeThemeNamesFor(canonicalSource) {
+  const meta = beeMetadata(canonicalSource);
+  return [...meta.runtimeThemeNames, ...(meta.accessibilityRuntimeThemeNames ?? [])];
+}
 
 test('index.ts exposes a second registry built from the same defineThemeRegistry primitive, scoped to opted-in brands', () => {
   const index = generateTokenArtifacts(source).get('packages/tokens/src/index.ts');
