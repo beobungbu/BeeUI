@@ -95,6 +95,8 @@ export type ResolvedDatePickerField = {
   accessibilityLabelledBy?: string;
   disabled: boolean;
   invalid: boolean;
+  /** Mirrors `field?.required`; the trigger should also expose this via a literal `aria-required`/`accessibilityRequired` prop (RN's compound `accessibilityState` has no `required` key). */
+  required: boolean;
 };
 
 /**
@@ -111,15 +113,21 @@ export function useDatePickerFieldIntegration(props: {
   const disabled = props.disabled === true || field?.disabled === true;
   const invalid = props.invalid === true || field?.invalid === true;
   const accessibilityHint = invalid ? field?.error : field?.description;
+  // No hardcoded English "required" copy — only a caller-supplied, localized
+  // `Field.requiredLabel` (or the deprecated `Field.requiredAccessibilityLabel`,
+  // when a caller sets it explicitly) is ever appended to the fallback name.
+  const requiredSuffix = field?.required
+    ? (field.requiredLabel ?? field.requiredAccessibilityLabel)
+    : undefined;
   const accessibilityLabel =
-    props.accessibilityLabel ??
-    (field?.required ? `${field.label}, ${field.requiredAccessibilityLabel}` : field?.label);
+    props.accessibilityLabel ?? (requiredSuffix ? `${field?.label}, ${requiredSuffix}` : field?.label);
   return {
     accessibilityHint,
     accessibilityLabel,
     accessibilityLabelledBy: field?.labelNativeID,
     disabled,
     invalid,
+    required: field?.required === true,
   };
 }
 

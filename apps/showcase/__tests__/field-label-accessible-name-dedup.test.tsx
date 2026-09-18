@@ -20,7 +20,8 @@ describe('BeeUI Field composes a Label with no accessible name of its own', () =
     expect(label.props.accessibilityLabel).toBeUndefined();
 
     const input = screen.getByTestId('store-input');
-    expect(input.props.accessibilityLabel).toBe('Cửa hàng nhận, required');
+    expect(input.props.accessibilityLabel).toBe('Cửa hàng nhận');
+    expect(input.props['aria-required']).toBe(true);
     expect(input.props.accessibilityLabelledBy).toBe('store-field-label');
   });
 

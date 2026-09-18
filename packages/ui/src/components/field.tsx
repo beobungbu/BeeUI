@@ -20,7 +20,7 @@ export type FieldProps = Omit<ViewProps, 'children'> & {
   labelNativeID?: string;
   /** Renders the label with a required indicator and exposes it via `requiredAccessibilityLabel`. Defaults to false. */
   required?: boolean;
-  /** Accessible label appended to the field's name when `required` is true (e.g. announced as "Email, required"). Defaults to `'required'`. @deprecated Use `requiredLabel` instead — this always injects the untranslated English literal `'required'` by default. Kept for existing consumers built directly on this prop. */
+  /** Accessible label appended to the field's name when `required` is true (e.g. announced as "Email, required"). No default — omit to expose `required` only through `aria-required`/`accessibilityRequired` on field-consuming controls, without injecting English copy. @deprecated Use `requiredLabel` instead. Kept for existing consumers built directly on this prop. */
   requiredAccessibilityLabel?: string;
   /**
    * Localized copy appended to the field's accessible name when `required` is
@@ -44,7 +44,7 @@ export const Field = React.forwardRef<React.ComponentRef<typeof View>, FieldProp
       label,
       labelNativeID,
       required = false,
-      requiredAccessibilityLabel = 'required',
+      requiredAccessibilityLabel,
       requiredLabel,
       ...props
     },

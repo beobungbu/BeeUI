@@ -36,6 +36,7 @@ const inputVariants = cva(
 );
 
 type EngineTextInputProps = TextInputProps & {
+  'aria-required'?: boolean;
   cursorColorClassName?: string;
   placeholderTextColorClassName?: string;
   selectionColorClassName?: string;
@@ -83,11 +84,16 @@ export const Input = React.forwardRef<React.ComponentRef<typeof TextInput>, Inpu
     const resolvedInvalid = invalid === true || field?.invalid === true;
     const resolvedHint =
       accessibilityHint ?? (resolvedInvalid ? field?.error : field?.description);
+    // No hardcoded English "required" copy — only a caller-supplied, localized
+    // `Field.requiredLabel` (or the deprecated `Field.requiredAccessibilityLabel`,
+    // when a caller sets it explicitly) is ever appended to the fallback name;
+    // otherwise `required` reaches assistive tech solely through `aria-required`
+    // below.
+    const requiredSuffix = field?.required
+      ? (field.requiredLabel ?? field.requiredAccessibilityLabel)
+      : undefined;
     const resolvedAccessibilityLabel =
-      accessibilityLabel ??
-      (field?.required
-        ? `${field.label}, ${field.requiredAccessibilityLabel}`
-        : field?.label);
+      accessibilityLabel ?? (requiredSuffix ? `${field?.label}, ${requiredSuffix}` : field?.label);
 
     // #614 — once an `accessibilityLabel` is present, iOS VoiceOver stops
     // announcing a plain TextInput's own typed value (the label replaces
@@ -116,6 +122,9 @@ export const Input = React.forwardRef<React.ComponentRef<typeof TextInput>, Inpu
         accessibilityLabelledBy={accessibilityLabelledBy ?? field?.labelNativeID}
         accessibilityState={{ ...accessibilityState, disabled: resolvedDisabled }}
         accessibilityValue={resolvedAccessibilityValue}
+        // `required` reaches the DOM via `aria-required` (RN's compound
+        // `accessibilityState` has no `required` key) rather than injected text.
+        aria-required={field?.required || undefined}
         className={cn(
           inputVariants({ invalid: resolvedInvalid, size }),
           resolvedDisabled &&
