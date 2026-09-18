@@ -159,7 +159,7 @@ Also carries every prop of `Omit<TextProps, 'accessibilityRole' | 'role' | 'vari
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` — that upstream contract is not reproduced here.
 
-**This is the pressable itself.** It accepts every `Button` prop (`variant`, `size`, `loading`, `onPress`, …) — put icon/label children directly inside it. Do not nest another pressable (`Button`, `IconButton`, `Avatar` wrapped for press) inside a `*Trigger`: on Web that renders `<button>` inside `<button>`, which React flags as invalid DOM nesting. For an icon-only or avatar trigger, set `variant="ghost"` (and `size`/`className` as needed) on the trigger directly instead of wrapping a second pressable in it.
+**This is the pressable itself** — the same variant/size/press API as [Button](/docs/components/button/) — so icon/label children go directly inside it. Do not nest a second pressable (an icon button, or an avatar wrapped for press) inside a `*Trigger`: on Web that renders one interactive element inside another, which React flags as invalid DOM nesting. For an icon-only or avatar trigger, set `variant="ghost"` (and `size`/`className` as needed) on the trigger itself instead of wrapping a second pressable.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 
