@@ -1,0 +1,12 @@
+# WS-G · scoped theme CSS emission (#550/#552) + DatePicker web aria-required residual
+
+Root cause (proven by WS-E, see reports/ws-e-report.md section 6): `scripts/generate-tokens.mjs` emits every brand/appearance `@variant` block nested inside a single `:root { }` wrapper in `packages/tokens/src/theme.css`. Tailwind v4 compiles that to `:root:where(.violet-dark, .violet-dark *) { … }`, which can only match `<html>`. A `BeeThemeScope` that puts `.violet-dark` on a nested div therefore never overrides any semantic variable; `useBeeToken` inside the scope reads the global value.
+
+Owned files: scripts/generate-tokens.mjs (and any helper it imports), scripts/__tests__/** for it, packages/tokens/src/theme.css (regenerated only, never hand-edited), packages/tokens/src/** if the generator template lives there, apps/visual-regression/** (add a scoped-theme browser spec), examples/web-consumer/** (packed repro only, revert scaffolding), packages/ui/src/components/{date-picker.web,date-time-picker.web}.tsx. Do NOT edit apps/docs; do NOT edit the density section of the tokens scale (another workstream is adding a density step there right now — keep your generator change orthogonal to density emission).
+
+Items:
+1. Restructure the generator so per-brand/appearance blocks are emitted at the top level (or with a selector strategy that matches the class at any depth), keeping the global `<html>`-class case working and keeping `:root` defaults for the default theme. Regenerate theme.css; `pnpm tokens:generate && pnpm tokens:check && pnpm tokens:test && pnpm tokens:consumption-check` must pass. Add a scripts/__tests__ case asserting no `@variant` block is nested under `:root`.
+2. Prove the fix two ways: (a) a Playwright spec in apps/visual-regression rendering a `BeeThemeScope` with a different brand/appearance and asserting `getComputedStyle` of a semantic variable and `useBeeToken` output differ inside vs outside the scope; (b) re-run WS-E's packed-consumer repro commands from reports/ws-e-report.md section 6 and record the new observed values.
+3. #601 residual: DatePicker/DateTimePicker Web triggers must expose `aria-required` when the enclosing Field is required (WS-E wired shared/native; web platform files were unowned). Jest test.
+
+Gates: `pnpm lint`, tokens gates above, `pnpm --filter @beemvp/beeui-ui typecheck`, `pnpm --filter @beemvp/beeui-showcase typecheck`, full `pnpm --filter @beemvp/beeui-showcase test`, `pnpm --filter @beemvp/beeui-visual-regression typecheck`, the Playwright spec you add, `node --test` for the generator test.
