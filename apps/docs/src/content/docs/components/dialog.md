@@ -42,7 +42,6 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
    `DialogTitle`
    `DialogTrigger`
   - Also routed here, outside the Registry family:
-    - `watchAlertDialogRole`
     - `dialog`
   - Package export subpath: `@beemvp/beeui-ui/dialog`
 

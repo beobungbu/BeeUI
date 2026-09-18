@@ -6649,17 +6649,6 @@
       "ownerStatus": "published"
     },
     {
-      "id": "@beemvp/beeui-ui:value:watchAlertDialogRole",
-      "package": "@beemvp/beeui-ui",
-      "kind": "ui-value",
-      "name": "watchAlertDialogRole",
-      "subpath": "./dialog",
-      "source": "packages/ui/src/components/dialog.tsx",
-      "classification": "consumer",
-      "primaryDocsOwner": "/docs/components/dialog/",
-      "ownerStatus": "published"
-    },
-    {
       "id": "registry:component:accordion",
       "package": "@beemvp/beeui-cli",
       "kind": "registry-item",

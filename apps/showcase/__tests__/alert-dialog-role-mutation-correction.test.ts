@@ -1,4 +1,4 @@
-import { watchAlertDialogRole } from '../../../packages/ui/src/components/dialog';
+import { watchAlertDialogRole } from '../../../packages/ui/src/components/alert-dialog-role-watch';
 
 // A minimal structural stand-in for the DOM node `watchAlertDialogRole`
 // corrects, and for the global `MutationObserver` it feeds — this repo's Jest
