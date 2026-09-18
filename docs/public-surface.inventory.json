@@ -4504,6 +4504,17 @@
       "ownerStatus": "published"
     },
     {
+      "id": "@beemvp/beeui-ui:type:TableAlign",
+      "package": "@beemvp/beeui-ui",
+      "kind": "ui-type",
+      "name": "TableAlign",
+      "family": "table",
+      "source": "packages/ui/src/components/table.tsx",
+      "classification": "consumer-type",
+      "primaryDocsOwner": "/docs/components/table/",
+      "ownerStatus": "published"
+    },
+    {
       "id": "@beemvp/beeui-ui:type:TableBodyProps",
       "package": "@beemvp/beeui-ui",
       "kind": "ui-type",
@@ -4751,6 +4762,17 @@
       "kind": "ui-type",
       "name": "ToastOptions",
       "family": "toast",
+      "source": "packages/ui/src/components/toast.tsx",
+      "classification": "consumer-type",
+      "primaryDocsOwner": "/docs/components/toast/",
+      "ownerStatus": "published"
+    },
+    {
+      "id": "@beemvp/beeui-ui:type:ToastPlacement",
+      "package": "@beemvp/beeui-ui",
+      "kind": "ui-type",
+      "name": "ToastPlacement",
+      "subpath": "./toast",
       "source": "packages/ui/src/components/toast.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/toast/",
@@ -6624,6 +6646,17 @@
       "source": "packages/ui/src/components/stack.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/stack/",
+      "ownerStatus": "published"
+    },
+    {
+      "id": "@beemvp/beeui-ui:value:watchAlertDialogRole",
+      "package": "@beemvp/beeui-ui",
+      "kind": "ui-value",
+      "name": "watchAlertDialogRole",
+      "subpath": "./dialog",
+      "source": "packages/ui/src/components/dialog.tsx",
+      "classification": "consumer",
+      "primaryDocsOwner": "/docs/components/dialog/",
       "ownerStatus": "published"
     },
     {
