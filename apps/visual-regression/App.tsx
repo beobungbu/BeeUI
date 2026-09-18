@@ -56,6 +56,10 @@ import {
   RadioGroup,
   Separator,
   SettingsItem,
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
   Skeleton,
   Spinner,
   Stepper,
@@ -130,7 +134,9 @@ type FixtureId =
   | 'high-contrast-focus'
   | 'tooltip'
   | 'table'
-  | 'date';
+  | 'date'
+  | 'sheet-short-root'
+  | 'keydown-bubble';
 
 const fixtureIds: readonly FixtureId[] = [
   'density',
@@ -140,6 +146,8 @@ const fixtureIds: readonly FixtureId[] = [
   'tooltip',
   'table',
   'date',
+  'sheet-short-root',
+  'keydown-bubble',
 ];
 
 function isFixtureId(value: string | null): value is FixtureId {
@@ -1370,6 +1378,48 @@ function TooltipFixture() {
   );
 }
 
+/**
+ * BeeUI issue #548 — the app root here renders far shorter than the browser
+ * viewport (one line of text and a trigger button, no `min-h-screen`), the
+ * exact shape the issue's external consumer reported: a `Sheet` backdrop/panel
+ * that measures itself from document/app-root content height instead of the
+ * real viewport leaves part of the viewport uncovered and can render partly
+ * above it. `SheetContent`'s Web wrapper uses `position: fixed; inset: 0`
+ * precisely so it anchors to the viewport regardless of this short root —
+ * `tests/sheet-backdrop-covers-viewport-with-short-root.spec.ts` measures the
+ * backdrop's real bounding box against `page.viewportSize()` to prove it.
+ */
+function SheetShortRootFixture() {
+  return (
+    <Box testID="sheet-short-root-fixture">
+      <Text testID="sheet-short-root-content">Short app root</Text>
+      <Sheet>
+        <SheetTrigger testID="sheet-short-root-trigger">Open cart</SheetTrigger>
+        <SheetContent overlayTestID="sheet-short-root-overlay" testID="sheet-short-root-content-panel">
+          <SheetTitle>Cart</SheetTitle>
+          <Text>Deterministic short-root Sheet content.</Text>
+        </SheetContent>
+      </Sheet>
+    </Box>
+  );
+}
+
+/**
+ * BeeUI issue #606 — a single, minimal, unambiguous `Input` to focus and press
+ * a key against. `tests/input-keydown-bubble.spec.ts` asserts whether a
+ * bubble-phase `document.addEventListener('keydown', ...)` listener (the
+ * consumer's own reported workaround needs a capture-phase one instead) still
+ * fires while this Input holds focus.
+ */
+function KeydownBubbleFixture() {
+  return (
+    <Box className="gap-4 p-6" testID="keydown-bubble-fixture">
+      <Text>Focus the field below and press a key.</Text>
+      <Input accessibilityLabel="Keydown bubble target" testID="keydown-bubble-input" />
+    </Box>
+  );
+}
+
 function Scenario({ scenario }: { scenario: VisualScenarioId }) {
   switch (scenario) {
     case 'foundation':
@@ -1425,6 +1475,10 @@ export default function App() {
         <TableProductionFixture density={densityMode} state={tableState} theme={theme} />
       ) : fixture === 'date' ? (
         <DateProductionFixture locale={dateLocale} />
+      ) : fixture === 'sheet-short-root' ? (
+        <SheetShortRootFixture />
+      ) : fixture === 'keydown-bubble' ? (
+        <KeydownBubbleFixture />
       ) : (
         <Scenario scenario={scenario} />
       )}
