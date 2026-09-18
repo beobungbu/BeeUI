@@ -78,11 +78,13 @@
     "date-picker": {
       "purpose": "Native system date-picker field backed by @react-native-community/datetimepicker.",
       "behavior": "Controlled `value`/`onValueChange` (`CalendarDate | null`) field wrapping the native system date picker; `disabled` blocks opening the picker, and `clearable` opts in an explicit clear affordance rather than allowing an implicit empty selection. A wrapping `Field`'s required state no longer injects an English word into the trigger's accessible name — pass the field's own localized-required prop to append copy instead.",
+      "limitations": "`locale` only affects `Calendar`'s own weekday/month grid and `Intl`-based date formatting — it does not translate the date trigger's own `placeholder` or its month-navigation accessible labels, which are separate string props with hardcoded English defaults. A localized app must pass `placeholder`, `previousMonthAccessibilityLabel` and `nextMonthAccessibilityLabel` explicitly alongside `locale`.",
       "notes": "Platform-split: resolves date-picker.native.tsx / date-picker.web.tsx at build time."
     },
     "date-time-picker": {
       "purpose": "Native combined date-and-time picker field backed by @react-native-community/datetimepicker.",
       "behavior": "Controlled `value`/`onValueChange` (`{ date, time } | null`) field combining date and time entry through the native system pickers; `disabled` blocks opening either sub-picker. A wrapping `Field`'s required state no longer injects an English word into the trigger's accessible name — pass the field's own localized-required prop to append copy instead.",
+      "limitations": "`locale` only affects the embedded `Calendar`'s weekday/month grid and `Intl`-based date formatting — it does not translate the combined trigger's `placeholder` or its month-navigation accessible labels, each a separate string prop with a hardcoded English default. A localized app must pass `placeholder`, `previousMonthAccessibilityLabel` and `nextMonthAccessibilityLabel` explicitly alongside `locale`.",
       "notes": "Platform-split module; segmented date/time entry on native."
     },
     "description-list": {

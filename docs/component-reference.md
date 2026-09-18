@@ -229,6 +229,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/date-picker-showcase.tsx`](../apps/showcase/component-gallery/date-picker-showcase.tsx), [`runtime-smoke/l10n-stress-acceptance.tsx`](../apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `locale` only affects `Calendar`'s own weekday/month grid and `Intl`-based date formatting — it does not translate the date trigger's own `placeholder` or its month-navigation accessible labels, which are separate string props with hardcoded English defaults. A localized app must pass `placeholder`, `previousMonthAccessibilityLabel` and `nextMonthAccessibilityLabel` explicitly alongside `locale`.
 - **Notes:** Platform-split: resolves date-picker.native.tsx / date-picker.web.tsx at build time.
 
 ## `date-time-picker`
@@ -243,6 +244,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/date-time-picker-showcase.tsx`](../apps/showcase/component-gallery/date-time-picker-showcase.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `locale` only affects the embedded `Calendar`'s weekday/month grid and `Intl`-based date formatting — it does not translate the combined trigger's `placeholder` or its month-navigation accessible labels, each a separate string prop with a hardcoded English default. A localized app must pass `placeholder`, `previousMonthAccessibilityLabel` and `nextMonthAccessibilityLabel` explicitly alongside `locale`.
 - **Notes:** Platform-split module; segmented date/time entry on native.
 
 ## `description-list`
