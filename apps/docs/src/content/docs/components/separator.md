@@ -94,9 +94,9 @@ Colors, spacing and typography come from semantic tokens rather than from values
 ## Executable examples
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/issue-7-runtime-a11y.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-runtime-a11y.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/separator-vertical-stretch.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/separator-vertical-stretch.test.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/select-showcase.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/select-showcase.tsx)
-- **Additional fixture:** [`apps/showcase/patterns/account-settings/screens/account-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/account-settings/screens/account-screen.tsx)
 
 ### Addressable examples
 

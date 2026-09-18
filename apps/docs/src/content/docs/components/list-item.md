@@ -54,6 +54,7 @@ Press behavior is opt-in (`onPress` makes the row interactive); an interactive r
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
+| `active` | `boolean` | `false` | Marks this row as the current/selected item — e.g. the active sidebar link, or a selected row in a master/detail list. Adds a tokenized selected background plus `accessibilityState.selected` (native) and `aria-current` (Web, since `accessibilityState` is not forwarded to the DOM there — see the `aria-current` prop below). Defaults to false. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
 | `descriptionClassName` | `string` | — | Applied to the description `Text` when `description` is a plain string or number; ignored if `description` is a custom element. |
@@ -94,7 +95,7 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 ## Accessibility
 
 - **Roles this family assigns:** `button`, `listitem` — set in `list-item.tsx` by the components themselves, not by the caller.
-- **Accessibility states and properties it sets:** `accessibilityLabel`, `accessible`, `disabled` — read from `list-item.tsx`.
+- **Accessibility states and properties it sets:** `accessibilityLabel`, `accessible`, `current`, `disabled`, `selected` — read from `list-item.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 

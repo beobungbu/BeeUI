@@ -92,7 +92,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 
 | --- | --- | --- | --- |
 | `cancelOnRequestClose` | `boolean` | `true` | Whether native request-close paths (Android hardware back and accessibility escape) should behave like cancellation. Backdrop presses never dismiss an AlertDialog. |
 
-Also carries every prop of `Omit<DialogContentProps, 'closeOnBackdropPress' | 'dismissOnEscape' | 'dismissOnRequestClose'>` — documented on the [Dialog](/docs/components/dialog/) page, not reproduced here.
+Also carries every prop of `Omit<DialogContentProps, 'closeOnBackdropPress' | 'dismissOnEscape' | 'dismissOnRequestClose' | 'role'>` — documented on the [Dialog](/docs/components/dialog/) page, not reproduced here.
 
 #### `AlertDialogDescriptionProps`
 
@@ -177,7 +177,7 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 
 ## Accessibility
 
-- **Roles this family assigns:** none set in `alert-dialog.tsx`.
+- **Roles this family assigns:** `alertdialog` — set in `alert-dialog.tsx` by the components themselves, not by the caller.
 - **Accessibility states and properties it sets:** none set in `alert-dialog.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
@@ -191,10 +191,10 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/__tests__/issue-15-alert-dialog-form-group.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-15-alert-dialog-form-group.test.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/dialog-web-modal-owner.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/dialog-web-modal-owner.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/issue-15-alert-dialog-form-group.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-15-alert-dialog-form-group.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/overlay-scope.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/overlay-scope.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/overlay-transport.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/overlay-transport.test.tsx)
-- **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
 
 ### Addressable examples
 

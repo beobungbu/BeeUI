@@ -96,10 +96,10 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/__tests__/perf-render-commit.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/perf-render-commit.test.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/badge-outline-contrast.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/badge-outline-contrast.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/perf-render-commit.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/perf-render-commit.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/table-cell-alignment-and-content-hug.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/table-cell-alignment-and-content-hug.test.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
-- **Additional fixture:** [`apps/showcase/component-gallery/table-showcase.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/table-showcase.tsx)
-- **Additional fixture:** [`apps/showcase/pattern-gallery/pattern-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/pattern-gallery/pattern-gallery.tsx)
 
 ### Addressable examples
 

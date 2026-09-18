@@ -55,8 +55,10 @@ Stateless 44px icon-only pressable sharing Button's `disabled`/`loading` semanti
 | --- | --- | --- | --- |
 | `accessibilityLabel` **(required)** | `string` | — | Required (unlike `Button`'s optional label): an icon-only button has no text content to infer an accessible name from. |
 | `children` **(required)** | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+| `count` | `React.ReactNode` | — | A small overlay badge anchored to the top-end corner (e.g. an unread count on a notification bell). A `number`/`string` renders inside a pill and is appended to `accessibilityLabel` so the count is announced; any other node renders as-is and must carry its own accessible text if it needs to be announced. Omit for no badge (the default). |
+| `countClassName` | `string` | — | Applied to the count badge's own container; has no effect when `count` is omitted. |
 
-Also carries every prop of `Omit<ButtonProps, 'accessibilityLabel' | 'children' | 'labelClassName' | 'size'>` — documented on the [Button](/docs/components/button/) page, not reproduced here.
+Also carries every prop of `Omit<ButtonProps, 'accessibilityLabel' | 'children' | 'labelClassName'>` — documented on the [Button](/docs/components/button/) page, not reproduced here.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 
@@ -79,20 +81,21 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 ## Accessibility
 
 - **Roles this family assigns:** none set in `icon-button.tsx`.
-- **Accessibility states and properties it sets:** `accessibilityLabel` — read from `icon-button.tsx`.
+- **Accessibility states and properties it sets:** `accessibilityLabel`, `hidden` — read from `icon-button.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
 ## Styling and theming
 
-- **Style axes:** `variant` (5 values, inherited from `ButtonProps`).
-- **Class-name surfaces:** `className`.
+- **Style axes:** `size` (4 values, inherited from `ButtonProps`), `variant` (5 values, inherited from `ButtonProps`).
+- **Class-name surfaces:** `className`, `countClassName`.
 
 Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/icon-button-size-and-count.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/icon-button-size-and-count.test.tsx)
+- **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/table-showcase.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/table-showcase.tsx)
 
 ### Addressable examples

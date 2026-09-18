@@ -47,7 +47,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`runtime-smoke/runtime-acceptance.tsx`](../apps/showcase/runtime-smoke/runtime-acceptance.tsx), [`__tests__/issue-15-alert-dialog-form-group.test.tsx`](../apps/showcase/__tests__/issue-15-alert-dialog-form-group.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`runtime-smoke/runtime-acceptance.tsx`](../apps/showcase/runtime-smoke/runtime-acceptance.tsx), [`__tests__/dialog-web-modal-owner.test.tsx`](../apps/showcase/__tests__/dialog-web-modal-owner.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Limitations:** Never dismisses from backdrop press or Escape, but native request-close — Android hardware back and accessibility escape — does dismiss it unless `cancelOnRequestClose` is `false`; not a general-purpose modal (use Dialog).
 
 ## `app-header`
@@ -338,7 +338,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`component-gallery/table-showcase.tsx`](../apps/showcase/component-gallery/table-showcase.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`component-gallery/table-showcase.tsx`](../apps/showcase/component-gallery/table-showcase.tsx), [`__tests__/icon-button-size-and-count.test.tsx`](../apps/showcase/__tests__/icon-button-size-and-count.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Limitations:** A size prop is not accepted: an icon button always renders at Button's icon size, so there is no compact or large variant, and any string child is styled by Button's own label rules with no override hook.
 
 ## `input`
@@ -736,7 +736,7 @@ The documentation contract, its required sections, and how it is enforced are de
 
 - **Purpose:** Semantic data-table primitives that render real table/th scope/aria-sort semantics on Web.
 - **Import:** `import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@beemvp/beeui-ui';`
-- **API:** `Table`, `TableBody`, `TableCaption`, `TableCell`, `TableFooter`, `TableHead`, `TableHeader`, `TableRow` — source [`packages/ui/src/components/table.tsx`](../packages/ui/src/components/table.tsx). Typed props: `TableBodyProps`, `TableCaptionProps`, `TableCellProps`, `TableFooterProps`, `TableHeaderProps`, `TableHeadProps`, `TableLayout`, `TableProps`, `TableRowProps`, `TableSortDirection` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
+- **API:** `Table`, `TableBody`, `TableCaption`, `TableCell`, `TableFooter`, `TableHead`, `TableHeader`, `TableRow` — source [`packages/ui/src/components/table.tsx`](../packages/ui/src/components/table.tsx). Typed props: `TableAlign`, `TableBodyProps`, `TableCaptionProps`, `TableCellProps`, `TableFooterProps`, `TableHeaderProps`, `TableHeadProps`, `TableLayout`, `TableProps`, `TableRowProps`, `TableSortDirection` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add table` (copies the source file into your app; see [registry CLI](registry-cli.md)).
 - **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `core-cn`, `text`, `theme`, `use-direction`, `use-required-callback-warning`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
@@ -745,7 +745,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/table-showcase.tsx`](../apps/showcase/component-gallery/table-showcase.tsx), [`runtime-smoke/l10n-stress-acceptance.tsx`](../apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx), [`__tests__/dynamic-type-contract.test.tsx`](../apps/showcase/__tests__/dynamic-type-contract.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Limitations:** `colSpan` is an approximation on native: with no table-layout engine a spanning cell grows its flex share instead of measuring the columns it covers. A `TableHead` whose content is not plain text needs an explicit `label`, because both the stacked layout's visible pairing and each native cell's accessible name are built from it.
-- **Notes:** Platform-split; see docs/data-typography.md for data-cell typography.
+- **Notes:** Platform-split; see docs/data-typography.md for data-cell typography. Row-to-detail navigation pattern: `TableRow` accepts an opt-in `onPress` (mirroring `ListItem`) to make an entire row navigate to a detail screen, e.g. `<TableRow onPress={() => router.push(`/orders/${order.id}`)}>`. It renders as a real, keyboard-reachable pressable row (native: `accessibilityRole="button"`; Web: the row stays a real `<tr>`/`role="row"` — not `role="button"`, which would break table semantics — and adds `tabIndex={0}` plus `Enter`/`Space` keydown activation alongside the pointer `onClick`) while every row without `onPress` keeps rendering exactly as before. Prefer this over wrapping a whole row in your own `Pressable`, which duplicates row semantics; for a row that only needs one actionable cell (not the whole row), put an `IconButton` in its own `TableCell` instead.
 
 ## `tabs`
 
