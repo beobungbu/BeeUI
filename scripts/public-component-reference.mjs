@@ -364,7 +364,8 @@ const NEGATIVE_CLAIM_ORACLES = [
 // all of them — and the whole point of the set is that adding a role is a deliberate edit here.
 const KNOWN_ACCESSIBILITY_ROLES = new Set([
   // React Native AccessibilityRole
-  'adjustable', 'alert', 'button', 'checkbox', 'combobox', 'grid', 'header', 'image',
+  'adjustable', 'alert', 'button', 'checkbox', 'combobox', 'grid',
+  'gridcell', 'header', 'image',
   'imagebutton', 'keyboardkey', 'link', 'list', 'menu', 'menubar', 'menuitem', 'none',
   'progressbar', 'radio', 'radiogroup', 'scrollbar', 'search', 'spinbutton', 'summary', 'switch',
   'tab', 'tablist', 'text', 'timer', 'togglebutton', 'toolbar',
