@@ -248,6 +248,19 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/select-showcase.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/select-showcase.tsx), 311 lines — where **Select** is actually used: 64 lines in 6 places, of 10 in total — open the fixture for the remaining 4. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Dialog, Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue, Text } from '@beemvp/beeui-ui';
+import * as React from 'react';
+````
+
+Fixture state this block reads (same file, line 41):
+
+````tsx
+  const [rootSelectOpen, setRootSelectOpen] = React.useState(false);
+````
+
 [lines 57–64](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/select-showcase.tsx#L57-L64):
 
 ````tsx
@@ -259,6 +272,12 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
           <SelectItem value="root">Root option</SelectItem>
         </SelectContent>
       </Select>
+````
+
+Fixture state this block reads (same file, line 40):
+
+````tsx
+  const [dialogSelectOpen, setDialogSelectOpen] = React.useState(false);
 ````
 
 [lines 73–80](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/select-showcase.tsx#L73-L80):
@@ -310,6 +329,15 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                 </Select>
 ````
 
+Fixture state this block reads (same file, lines 27, 29-31):
+
+````tsx
+const SelectConsumerContext = React.createContext('select-context-default');
+function SelectContextProbe({ testID }: { testID: string }) {
+  return <Text testID={testID}>{`context: ${React.useContext(SelectConsumerContext)}`}</Text>;
+}
+````
+
 [lines 202–212](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/select-showcase.tsx#L202-L212):
 
 ````tsx
@@ -342,7 +370,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                 </Select>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 - Passing `open` without `onOpenChange` leaves the value read-only: the component renders what you passed and can never change it. It warns in development builds rather than failing silently in production.

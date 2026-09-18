@@ -137,6 +137,14 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Card** is actually used: 96 lines in 3 places, of 7 in total — open the fixture for the remaining 4. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Badge, Box, Button, Card, DescriptionItem, DescriptionList, EmptyState, ErrorState, IconButton, ListItem, Progress, Section, Separator, SettingsItem, Skeleton, Spinner, Switch, Text } from '@beemvp/beeui-ui';
+import * as React from 'react';
+import { Uniwind, useUniwind } from 'uniwind';
+````
+
 [lines 527–563](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L527-L563):
 
 ````tsx
@@ -206,6 +214,13 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
             </Card>
 ````
 
+Fixture state this block reads (same file, lines 457, 459):
+
+````tsx
+  const { theme } = useUniwind();
+  const [notifications, setNotifications] = React.useState(true);
+````
+
 [lines 1017–1053](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1017-L1053):
 
 ````tsx
@@ -248,7 +263,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
             </Card>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 `Card` is one styled view with a `variant` and a `padding` step: there are no header/footer parts and no press handling, because its props extend React Native's view props rather than its pressable props. A tappable card has to be composed by wrapping it.

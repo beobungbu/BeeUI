@@ -142,6 +142,20 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Text** is actually used: 59 lines in 6 places, of 11 in total — open the fixture for the remaining 5. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Badge, Box, Button, Card, EmptyState, ErrorState, Progress, Separator, Skeleton, Spinner, Switch, Text, VStack } from '@beemvp/beeui-ui';
+import * as React from 'react';
+````
+
+Placeholder for a prop this fixture receives (not fixture source — substitute your own handler):
+
+````tsx
+const children: string = undefined as never;
+const description: string = undefined as never;
+````
+
 [lines 140–143](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L140-L143):
 
 ````tsx
@@ -202,6 +216,12 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
             </Card>
 ````
 
+Fixture state this block reads (same file, line 459):
+
+````tsx
+  const [notifications, setNotifications] = React.useState(true);
+````
+
 [lines 642–649](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L642-L649):
 
 ````tsx
@@ -213,6 +233,14 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                   value={notifications}
                 />
               </Box>
+````
+
+Fixture state this block reads (same file, lines 467, 468, 469):
+
+````tsx
+  const [menuToolbar, setMenuToolbar] = React.useState(true);
+  const [menuDensity, setMenuDensity] = React.useState('comfortable');
+  const [menuAction, setMenuAction] = React.useState('No action yet');
 ````
 
 [lines 791–793](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L791-L793):
@@ -231,7 +259,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               </Text>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 `family` accepts only the monospace value — there is no sans value that would reset an inherited font family — and `numeric` only the tabular one. Both resolve through utility classes on Web and through React Native style props on native, so no inline font style is emitted on Web.

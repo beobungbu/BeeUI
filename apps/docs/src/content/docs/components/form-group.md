@@ -141,6 +141,19 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Form Group** is actually used: 13 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { FormGroup, Radio, RadioGroup } from '@beemvp/beeui-ui';
+import * as React from 'react';
+````
+
+Fixture state this block reads (same file, line 460):
+
+````tsx
+  const [plan, setPlan] = React.useState<'starter' | 'pro'>('starter');
+````
+
 [lines 629–641](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L629-L641):
 
 ````tsx
@@ -159,7 +172,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               </FormGroup>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 `RadioGroup` is the only component in the package that reads this group's context, so its `disabled`, `invalid` and legend link reach a radio group and nothing else: a checkbox, switch or input nested in a form group is unaffected and has to be wired by hand. The group is deliberately not one accessible element and accepts no role override.

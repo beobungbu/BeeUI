@@ -150,6 +150,14 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Description List** is actually used: 9 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { DescriptionItem, DescriptionList } from '@beemvp/beeui-ui';
+import * as React from 'react';
+import { Uniwind } from 'uniwind';
+````
+
 [lines 1019–1027](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1019-L1027):
 
 ````tsx
@@ -164,7 +172,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                 </DescriptionList>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 The list is a plain container with no description-list or list semantics — the label-to-value association is visual only. Each `DescriptionItem` is a metadata row, so its value column is capped at 60% of the row width and a long value wraps inside that cap rather than widening it.

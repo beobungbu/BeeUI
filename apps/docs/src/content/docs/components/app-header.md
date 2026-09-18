@@ -139,6 +139,43 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **App Header** is actually used: 20 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { AppHeader, Avatar, Button, HStack, Switch } from '@beemvp/beeui-ui';
+import * as React from 'react';
+import { Uniwind, useUniwind } from 'uniwind';
+````
+
+Fixture state this block reads (same file, lines 120-136, 457):
+
+````tsx
+function ThemeToggle() {
+  const { hasAdaptiveThemes, theme } = useUniwind();
+  const activeTheme = hasAdaptiveThemes ? 'system' : theme;
+  const nextTheme = activeTheme === 'system' ? 'light' : activeTheme === 'light' ? 'dark' : 'system';
+
+  return (
+    <Button
+      accessibilityLabel={`Theme ${activeTheme}. Switch to ${nextTheme}`}
+      onPress={() => Uniwind.setTheme(nextTheme)}
+      size="sm"
+      testID="component-gallery-theme-toggle"
+      variant="outline"
+    >
+      {`Theme: ${activeTheme}`}
+    </Button>
+  );
+}
+  const { theme } = useUniwind();
+````
+
+Placeholder for a prop this fixture receives (not fixture source — substitute your own handler):
+
+````tsx
+const onBack: () => void = () => {};
+````
+
 [lines 475–494](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L475-L494):
 
 ````tsx
@@ -164,7 +201,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
         />
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 `title` is required, and `titleClassName`/`descriptionClassName` reach the rendered text only when the corresponding prop is a plain string or number; pass an element and the class name is dropped along with the automatic header semantics.

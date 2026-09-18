@@ -144,12 +144,26 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Field** is actually used: 34 lines in 4 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Field, Input, OTPInput, PasswordInput, Popover, SearchInput, Sheet, Textarea } from '@beemvp/beeui-ui';
+import * as React from 'react';
+````
+
 [lines 159–161](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L159-L161):
 
 ````tsx
           <Field label="Note">
             <Input accessibilityLabel="Popover note" testID="popover-demo-input" />
           </Field>
+````
+
+Fixture state this block reads (same file, lines 459, 462):
+
+````tsx
+  const [notifications, setNotifications] = React.useState(true);
+  const [otp, setOtp] = React.useState('');
 ````
 
 [lines 595–619](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L595-L619):
@@ -198,7 +212,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                     </Field>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 Checkbox/radio/switch labelling stays explicit at the control/group level.

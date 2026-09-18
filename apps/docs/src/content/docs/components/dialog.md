@@ -249,6 +249,25 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Dialog** is actually used: 81 lines in 4 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { BeeThemeScope, Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle, DialogTrigger, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, Field, Input, Popover, PopoverContent, PopoverTrigger, Text, Tooltip, TooltipContent, TooltipTrigger } from '@beemvp/beeui-ui';
+import * as React from 'react';
+import { useUniwind } from 'uniwind';
+````
+
+Fixture state this block reads (same file, lines 173, 175-177, 188, 189):
+
+````tsx
+const OverlayConsumerContext = React.createContext('overlay-context-default');
+function OverlayContextValue({ testID }: { testID: string }) {
+  return <Text testID={testID}>{`context: ${React.useContext(OverlayConsumerContext)}`}</Text>;
+}
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+````
+
 [lines 214–228](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L214-L228):
 
 ````tsx
@@ -267,6 +286,16 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
           </DropdownMenu>
         </DialogContent>
       </Dialog>
+````
+
+Fixture state this block reads (same file, lines 173, 175-177, 234):
+
+````tsx
+const OverlayConsumerContext = React.createContext('overlay-context-default');
+function OverlayContextValue({ testID }: { testID: string }) {
+  return <Text testID={testID}>{`context: ${React.useContext(OverlayConsumerContext)}`}</Text>;
+}
+  const [dialogMenuAction, setDialogMenuAction] = React.useState('none');
 ````
 
 [lines 267–306](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L267-L306):
@@ -314,6 +343,15 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
         </Dialog>
 ````
 
+Fixture state this block reads (same file, line 320-323):
+
+````tsx
+function ThemeScopeValue({ testID }: { testID: string }) {
+  const { theme } = useUniwind();
+  return <Text testID={testID}>{`theme: ${theme}`}</Text>;
+}
+````
+
 [lines 352–361](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L352-L361):
 
 ````tsx
@@ -350,7 +388,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                   </Dialog>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 Controlled open requires onOpenChange.
