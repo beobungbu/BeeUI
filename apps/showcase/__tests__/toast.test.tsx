@@ -233,11 +233,32 @@ describe('Toast transient notification runtime', () => {
     expect(screen.getByLabelText('Dismiss Accessible').props.accessibilityRole).toBe('button');
   });
 
-  it('positions the viewport below the measured top safe-area inset', () => {
+  it('anchors the viewport above the measured bottom safe-area inset by default on native', () => {
+    // Native's toast viewport now anchors to the bottom safe-area edge by
+    // default (near the home indicator/tab bar) instead of the top (directly
+    // under the header) — a top anchor on iOS previously docked every toast
+    // right under the header, not where a native app's transient feedback is
+    // expected. `Platform.OS` here resolves through jest-expo's default
+    // native platform, so this exercises that native default directly.
     const { screen } = setup();
     const style = StyleSheet.flatten(screen.getByTestId('beeui-toast-viewport').props.style);
 
-    expect(style.top).toBe(TEST_INSETS.top + 12);
+    expect(style.bottom).toBe(TEST_INSETS.bottom + 12);
+    expect(style.top).toBeUndefined();
+  });
+
+  it('keeps the top safe-area anchor as the default on Web', () => {
+    const originalOS = Platform.OS;
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
+    try {
+      const { screen } = setup();
+      const style = StyleSheet.flatten(screen.getByTestId('beeui-toast-viewport').props.style);
+
+      expect(style.top).toBe(TEST_INSETS.top + 12);
+      expect(style.bottom).toBeUndefined();
+    } finally {
+      Object.defineProperty(Platform, 'OS', { configurable: true, value: originalOS });
+    }
   });
 
   it('cleans visible timers when the provider unmounts', () => {
