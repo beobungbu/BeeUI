@@ -248,12 +248,35 @@ function ToastCard({ toast, dismiss }: { toast: NormalizedToast; dismiss: (id: T
   );
 }
 
+export type ToastPlacement = 'top' | 'bottom';
+
 export type ToastRuntimeProviderProps = {
   children?: React.ReactNode;
+  /**
+   * Which safe-area edge the toast viewport anchors to. Defaults to
+   * `'bottom'` on native (iOS/Android) and `'top'` on Web. Native's default
+   * used to be an unconditional top anchor — on iOS that docks a toast
+   * directly under the header instead of near the bottom tab bar/home
+   * indicator, where most native apps (and every previously-audited BeePOS
+   * screen) expect transient feedback to appear.
+   */
+  placement?: ToastPlacement;
 };
 
+// Read inside the component (not a module-level constant): `Platform.OS` on
+// Web can only be asserted correctly once react-native-web itself has set it,
+// and every other platform-conditional default in this file/its siblings
+// (e.g. `dialog.tsx`'s `isWeb`) is likewise resolved at render time rather
+// than cached at import time.
+function getDefaultToastPlacement(): ToastPlacement {
+  return Platform.OS === 'web' ? 'top' : 'bottom';
+}
+
 /** Internal application-root runtime. BeeUIProvider owns this provider. */
-export function ToastRuntimeProvider({ children }: ToastRuntimeProviderProps) {
+export function ToastRuntimeProvider({
+  children,
+  placement = getDefaultToastPlacement(),
+}: ToastRuntimeProviderProps) {
   const [state, dispatch] = React.useReducer(toastReducer, EMPTY_TOAST_STATE);
   const runtimeId = React.useId().replace(/:/g, '');
   const nextIdRef = React.useRef(0);
@@ -276,9 +299,16 @@ export function ToastRuntimeProvider({ children }: ToastRuntimeProviderProps) {
 
   const api = React.useMemo<ToastApi>(() => ({ show, dismiss, dismissAll }), [dismiss, dismissAll, show]);
   const viewportStyle = React.useMemo<ViewStyle>(
-    () => ({ top: insets.top + 12 }),
-    [insets.top],
+    () =>
+      placement === 'bottom' ? { bottom: insets.bottom + 12 } : { top: insets.top + 12 },
+    [insets.bottom, insets.top, placement],
   );
+  // A `top`-anchored viewport grows downward, so the newest toast needs to
+  // render *first* (closest to the anchored top edge) to be the most
+  // prominent one. A `bottom`-anchored viewport grows upward from its fixed
+  // bottom edge, so the newest toast needs to render *last* (closest to that
+  // bottom edge) for the same "newest is most prominent" contract.
+  const orderedToasts = placement === 'bottom' ? state.visible : [...state.visible].reverse();
 
   return (
     <ToastContext.Provider value={api}>
@@ -290,7 +320,7 @@ export function ToastRuntimeProvider({ children }: ToastRuntimeProviderProps) {
         testID="beeui-toast-viewport"
       >
         <View className="w-full items-center gap-2" pointerEvents="box-none">
-          {[...state.visible].reverse().map((toast) => (
+          {orderedToasts.map((toast) => (
             <ToastCard dismiss={dismiss} key={toast.id} toast={toast} />
           ))}
         </View>

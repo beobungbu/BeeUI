@@ -20,3 +20,14 @@ export type TableLayout = 'scroll' | 'stacked';
  * value vocabulary directly, so no translation layer is needed on Web.
  */
 export type TableSortDirection = 'ascending' | 'descending' | 'none';
+
+/**
+ * Content alignment for `TableHead`/`TableCell`. On Web this drives real
+ * `text-align`; on native (no CSS text-align-for-block-content engine) it
+ * drives the cross-axis `align-items` of the cell's own row-direction flex
+ * layout — a `className="items-end text-end"` combination consumers
+ * previously had to write by hand for a right-aligned numeric column (`text-*`
+ * has no effect on a Web `<td>`'s cross-axis layout; `items-*` has no effect
+ * on Web `text-align` inside a table cell). Defaults to `'start'`.
+ */
+export type TableAlign = 'start' | 'center' | 'end';

@@ -38,6 +38,7 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
    `TOAST_MAX_VISIBLE`
    `useToast`
   - Also routed here, outside the Registry family:
+    - `ToastPlacement`
     - `ToastRuntimeProviderProps`
     - `ToastRuntimeProvider`
     - `toast`

@@ -5,12 +5,11 @@ import { Calendar } from './calendar';
 import { resolveCalendarLocale } from './calendar-locale';
 import {
   DATE_PICKER_DEFAULT_CLEAR_ACCESSIBILITY_LABEL,
-  DATE_PICKER_DEFAULT_PLACEHOLDER,
   useDatePickerFieldIntegration,
   useDatePickerOpenState,
   type DatePickerProps,
 } from './date-picker-shared';
-import { getDatePickerFormattedValue } from './date-picker-locale';
+import { getDatePickerDefaultPlaceholder, getDatePickerFormattedValue } from './date-picker-locale';
 import { IconButton } from './icon-button';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 import { Text } from './text';
@@ -57,7 +56,7 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
       onOpenChange,
       onValueChange,
       open,
-      placeholder = DATE_PICKER_DEFAULT_PLACEHOLDER,
+      placeholder,
       placement = 'bottom',
       previousMonthAccessibilityLabel,
       readOnly = false,
@@ -81,6 +80,7 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
       open,
     });
     const locale = resolveCalendarLocale(localeProp);
+    const resolvedPlaceholder = placeholder ?? getDatePickerDefaultPlaceholder(locale);
 
     const anchorRef = React.useRef<React.ComponentRef<typeof Pressable> | null>(null);
     const setTriggerRef = React.useCallback(
@@ -223,7 +223,7 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
               testID={testID ? `${testID}-value` : undefined}
               variant="body"
             >
-              {hasValue ? formattedValue : placeholder}
+              {hasValue ? formattedValue : resolvedPlaceholder}
             </Text>
           </PopoverTrigger>
           {showClear ? (

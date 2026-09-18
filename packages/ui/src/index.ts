@@ -323,6 +323,7 @@ export {
   type TableCellProps,
   type TableFooterProps,
   type TableHeadProps,
+  type TableAlign,
   type TableHeaderProps,
   type TableLayout,
   type TableProps,

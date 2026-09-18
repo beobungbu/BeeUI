@@ -54,6 +54,7 @@ Standalone toggle (`selected`/`onSelectedChange`) or, nested in `ChipGroup`, a v
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
+| `allowDeselect` | `boolean` | `false` | `'single'` mode only: pressing the already-selected `Chip` again clears the selection (reported as `''`, the same empty-string sentinel the group already starts from) instead of doing nothing. Off by default — existing single-select filter bars keep their current "always one selected" behavior unless they opt in. Ignored in `'multiple'` mode, which can already reach zero selections by unchecking every `Chip`. |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `defaultValue` | `ChipGroupValue` | — | Initial selection for uncontrolled usage: a string in `'single'` mode, an array in `'multiple'` mode. Defaults to no selection. |
@@ -71,6 +72,7 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `defaultSelected` | `boolean` | `false` | Initial selected state when this Chip is standalone (not inside a `ChipGroup`) and uncontrolled. Defaults to false. |
+| `interactive` | `boolean` | `true` | Set `false` for a read-only tag with no interactive role (`button`/ `radio`/`checkbox`) and no press handling — e.g. a list of stores a staff member belongs to, where `button`/`checkbox` semantics would be wrong. Defaults to `true`. Always treated as `true` inside a `ChipGroup`, whose selection semantics require an interactive member. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `onSelectedChange` | `(selected: boolean) => void` | — | Called with the next selected state when pressed, if this Chip is standalone (not inside a `ChipGroup`). |
 | `selected` | `boolean` | — | Controls whether this standalone Chip is selected. Ignored inside a `ChipGroup`, which derives selection from `value` instead. |
@@ -117,10 +119,10 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/chip-static-tag-and-group-deselect.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/chip-static-tag-and-group-deselect.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/dynamic-type-contract.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/dynamic-type-contract.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-7-state-edge-cases.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-state-edge-cases.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/selection-control-aria.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/selection-control-aria.test.tsx)
 
 ### Addressable examples
 

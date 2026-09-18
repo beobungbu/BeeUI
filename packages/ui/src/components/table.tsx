@@ -4,9 +4,20 @@ import { Pressable, ScrollView, View, type ViewProps } from 'react-native';
 import { Text } from './text';
 import { useDirection } from './use-direction';
 import { useRequiredCallbackWarning } from './use-required-callback-warning';
-import type { TableLayout, TableSortDirection } from './table-shared';
+import type { TableAlign, TableLayout, TableSortDirection } from './table-shared';
 
-export type { TableLayout, TableSortDirection } from './table-shared';
+export type { TableAlign, TableLayout, TableSortDirection } from './table-shared';
+
+// Native has no CSS text-align-for-block-content engine, so `align` drives
+// the cross-axis `align-items` of each header/cell's own row-direction flex
+// layout instead — the native half of the `align` contract `table-shared.ts`
+// documents. A literal, static record (never a template-built class name),
+// matching this repo's "no dynamically constructed utility classes" rule.
+const alignItemsClassName: Record<TableAlign, string> = {
+  start: 'items-start',
+  center: 'items-center',
+  end: 'items-end',
+};
 
 // ---------------------------------------------------------------------------
 // Internal, subtree-scoped context (not exported from the package barrel).
@@ -231,6 +242,15 @@ export type TableRowProps = Omit<ViewProps, 'children'> & {
   children?: React.ReactNode;
   className?: string;
   /**
+   * Makes the row itself pressable (e.g. a row-to-detail navigation pattern:
+   * `onPress={() => router.push(...)}`), mirroring `ListItem`'s own opt-in
+   * `onPress` contract. Renders the row as a `Pressable` with
+   * `accessibilityRole="button"` (keyboard Enter/Space activate it on Web
+   * through RN's own Pressable-on-Web keyboard handling) instead of a plain
+   * `View` — a row with no `onPress` keeps rendering exactly as before.
+   */
+  onPress?: () => void;
+  /**
    * Visual highlight for a caller-selected row. Table owns no selection
    * state (ADR-007) — this only reflects a boolean the caller already tracks
    * (e.g. alongside a `Checkbox` in one of the row's cells).
@@ -239,9 +259,11 @@ export type TableRowProps = Omit<ViewProps, 'children'> & {
 };
 
 export const TableRow = React.forwardRef<React.ComponentRef<typeof View>, TableRowProps>(
-  ({ accessibilityState, children, className, selected = false, ...props }, ref) => {
+  ({ accessibilityState, children, className, onPress, selected = false, ...props }, ref) => {
     const layout = useTableLayout();
     const direction = useDirection();
+    const interactive = typeof onPress === 'function';
+    const resolvedAccessibilityState = { ...accessibilityState, selected };
 
     let nextColumnIndex = 0;
     const content = React.Children.map(children, (child) => {
@@ -257,47 +279,85 @@ export const TableRow = React.forwardRef<React.ComponentRef<typeof View>, TableR
     });
 
     if (layout === 'stacked') {
-      return (
-        <View
-          accessibilityState={{ ...accessibilityState, selected }}
+      const stackedClassName = cn(
+        'gap-1 rounded-lg border border-border bg-surface p-3',
+        interactive && 'active:opacity-80 web:hover:bg-surface-muted',
+        // `bg-primary/10` (not `bg-surface-raised`): several themes define
+        // `--color-surface-raised` equal to `--color-surface` (e.g. every
+        // light theme in this repo's token set), so a "selected" row painted
+        // that way computed to the exact same background as an unselected
+        // one — a real, currently-reproducible bug, not just a missing
+        // class. `bg-primary/10` is guaranteed distinct from the surface in
+        // every theme because it derives from `--color-primary`, never the
+        // surface token itself.
+        selected && 'border-primary bg-primary/10',
+        className,
+      );
+
+      return interactive ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={resolvedAccessibilityState}
+          onPress={onPress}
           ref={ref}
           {...props}
-          className={cn(
-            'gap-1 rounded-lg border border-border bg-surface p-3',
-            selected && 'border-primary',
-            className,
-          )}
+          className={stackedClassName}
+        >
+          {content}
+        </Pressable>
+      ) : (
+        <View
+          accessibilityState={resolvedAccessibilityState}
+          ref={ref}
+          {...props}
+          className={stackedClassName}
         >
           {content}
         </View>
       );
     }
 
-    return (
-      <View
-        accessibilityState={{ ...accessibilityState, selected }}
+    const scrollClassName = cn(
+      // No `last:` pseudo-class variant here (unlike the Web file): CSS
+      // pseudo-class selectors have no native equivalent, so every row
+      // keeps its bottom border rather than assuming an unverified
+      // Uniwind capability (`TimelineItem` computes "last" in JS for the
+      // same reason).
+      //
+      // `ios:min-h-touch-target android:min-h-touch-target` mirrors
+      // `ListItem`'s unconditional guard (`list-item.tsx`): rows are the
+      // layout space embedded interactive controls (a sort trigger, a
+      // selection `Checkbox`) render into, so a `compact`-density row must
+      // never drop the tappable region below the accepted native
+      // hit-target floor (ADR-007 "embedded row/cell actions keep >=44dp
+      // touch targets"), on top of `--spacing-density-row-height`'s own
+      // build-time 44px floor (`docs/density.md`).
+      'min-h-density-row-height flex-row items-stretch border-b border-border ios:min-h-touch-target android:min-h-touch-target',
+      direction === 'rtl' && 'flex-row-reverse',
+      interactive && 'active:bg-surface-muted web:hover:bg-surface-muted',
+      // See the stacked branch above for why this is `bg-primary/10`, not
+      // `bg-surface-raised`.
+      selected && 'bg-primary/10',
+      className,
+    );
+
+    return interactive ? (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={resolvedAccessibilityState}
+        onPress={onPress}
         ref={ref}
         {...props}
-        className={cn(
-          // No `last:` pseudo-class variant here (unlike the Web file): CSS
-          // pseudo-class selectors have no native equivalent, so every row
-          // keeps its bottom border rather than assuming an unverified
-          // Uniwind capability (`TimelineItem` computes "last" in JS for the
-          // same reason).
-          //
-          // `ios:min-h-touch-target android:min-h-touch-target` mirrors
-          // `ListItem`'s unconditional guard (`list-item.tsx`): rows are the
-          // layout space embedded interactive controls (a sort trigger, a
-          // selection `Checkbox`) render into, so a `compact`-density row must
-          // never drop the tappable region below the accepted native
-          // hit-target floor (ADR-007 "embedded row/cell actions keep >=44dp
-          // touch targets"), on top of `--spacing-density-row-height`'s own
-          // build-time 44px floor (`docs/density.md`).
-          'min-h-density-row-height flex-row items-stretch border-b border-border ios:min-h-touch-target android:min-h-touch-target',
-          direction === 'rtl' && 'flex-row-reverse',
-          selected && 'bg-surface-raised',
-          className,
-        )}
+        className={scrollClassName}
+      >
+        {content}
+      </Pressable>
+    ) : (
+      <View
+        accessibilityState={resolvedAccessibilityState}
+        ref={ref}
+        {...props}
+        className={scrollClassName}
       >
         {content}
       </View>
@@ -313,6 +373,8 @@ TableRow.displayName = 'TableRow';
 
 export type TableHeadProps = Omit<ViewProps, 'children'> &
   TableColumnPositionProps & {
+    /** Header content alignment — see `table-shared.ts`'s `TableAlign`. Defaults to `'start'`. */
+    align?: TableAlign;
     children?: React.ReactNode;
     className?: string;
     /**
@@ -344,6 +406,7 @@ export const TableHead = React.forwardRef<React.ComponentRef<typeof View>, Table
   (
     {
       accessibilityLabel,
+      align = 'start',
       children,
       className,
       columnIndex,
@@ -427,7 +490,11 @@ export const TableHead = React.forwardRef<React.ComponentRef<typeof View>, Table
       <View
         ref={ref}
         {...props}
-        className={cn('min-w-0 flex-1 justify-center px-3 py-2', className)}
+        className={cn(
+          'min-w-0 flex-1 justify-center px-3 py-2',
+          alignItemsClassName[align],
+          className,
+        )}
       >
         {innerContent}
       </View>
@@ -443,6 +510,13 @@ TableHead.displayName = 'TableHead';
 
 export type TableCellProps = Omit<ViewProps, 'children'> &
   TableColumnPositionProps & {
+    /**
+     * Cell content alignment — see `table-shared.ts`'s `TableAlign`. Defaults
+     * to `'start'` in `layout="scroll"` and `'end'` in `layout="stacked"`
+     * (the value column's long-standing default, opposite its label —
+     * preserved so existing `layout="stacked"` usage renders unchanged).
+     */
+    align?: TableAlign;
     children?: React.ReactNode;
     className?: string;
     /**
@@ -461,9 +535,15 @@ export type TableCellProps = Omit<ViewProps, 'children'> &
     label?: string;
   };
 
+const justifyClassName: Record<TableAlign, string> = {
+  start: 'justify-start',
+  center: 'justify-center',
+  end: 'justify-end',
+};
+
 export const TableCell = React.forwardRef<React.ComponentRef<typeof View>, TableCellProps>(
   (
-    { accessibilityLabel, children, className, colSpan = 1, columnIndex, label, style, ...props },
+    { accessibilityLabel, align, children, className, colSpan = 1, columnIndex, label, style, ...props },
     ref,
   ) => {
     const layout = useTableLayout();
@@ -473,6 +553,7 @@ export const TableCell = React.forwardRef<React.ComponentRef<typeof View>, Table
     const span = Number.isFinite(colSpan) ? Math.max(1, Math.floor(colSpan)) : 1;
 
     if (layout === 'stacked') {
+      const resolvedAlign = align ?? 'end';
       return (
         <View
           ref={ref}
@@ -488,7 +569,7 @@ export const TableCell = React.forwardRef<React.ComponentRef<typeof View>, Table
               {resolvedLabel}
             </Text>
           ) : null}
-          <View className="min-w-0 flex-1 items-end">
+          <View className={cn('min-w-0 flex-1', alignItemsClassName[resolvedAlign])}>
             {isPlainContent ? (
               <Text className="text-end" variant="body">
                 {children}
@@ -508,6 +589,7 @@ export const TableCell = React.forwardRef<React.ComponentRef<typeof View>, Table
     // own accessibility contract is never swallowed by a synthetic label.
     const computedAccessibilityLabel =
       accessibilityLabel ?? (resolvedLabel && isPlainContent ? `${resolvedLabel}: ${children}` : undefined);
+    const resolvedAlign = align ?? 'start';
 
     return (
       <View
@@ -515,10 +597,38 @@ export const TableCell = React.forwardRef<React.ComponentRef<typeof View>, Table
         accessible={computedAccessibilityLabel ? true : undefined}
         ref={ref}
         {...props}
-        className={cn('min-w-0 justify-center px-3 py-2', className)}
+        // `flex-row items-center` (not the previous default column direction):
+        // a `View`'s cross-axis `alignItems` default is `'stretch'`, so a
+        // block child (a `Badge`, itself a flex `View`) placed directly here
+        // stretched to the cell's full column width with no way to opt out.
+        // Row direction's own default `flex` sizing (`flex: 0 1 auto`, hug
+        // content) removes the stretch without this cell needing to special-
+        // case any particular child type — the same fix `table.web.tsx`'s Web
+        // counterpart applies for its own reason (`display:flex` block
+        // children fill a block container's width by default there too).
+        // `justify-{align}` then positions that content horizontally within
+        // the cell's own `flex: colSpan` width.
+        className={cn(
+          'min-w-0 flex-row items-center px-3 py-2',
+          justifyClassName[resolvedAlign],
+          className,
+        )}
         style={[{ flex: span }, style]}
       >
-        {isPlainContent ? <Text variant="body">{children}</Text> : children}
+        {isPlainContent ? (
+          // `shrink` (Yoga's default `flexShrink: 0` in a row container would
+          // otherwise size this `Text` to its own unwrapped content width
+          // instead of wrapping within the cell — the same reason
+          // `TableHead`'s own plain-text node carries it): a long value must
+          // still wrap onto multiple lines rather than push a neighboring
+          // cell/row action off-screen, unaffected by the row-direction cell
+          // layout above.
+          <Text className="shrink" variant="body">
+            {children}
+          </Text>
+        ) : (
+          children
+        )}
       </View>
     );
   },

@@ -99,10 +99,10 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/__tests__/issue-7-hardening.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-hardening.test.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/avatar-fallback-contrast.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/avatar-fallback-contrast.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/issue-7-hardening.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-hardening.test.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
 - **Additional fixture:** [`apps/showcase/patterns/account-settings/components/profile-header.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/account-settings/components/profile-header.tsx)
-- **Additional fixture:** [`apps/showcase/patterns/account-settings/screens/edit-profile-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/account-settings/screens/edit-profile-screen.tsx)
 
 ### Addressable examples
 
