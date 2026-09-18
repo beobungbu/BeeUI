@@ -7,6 +7,11 @@ BeeUI starts from the **smallest supported logical phone width** and adds layout
 as width becomes available. Desktop is an enhancement, not the default design that gets
 shrunk later.
 
+This page is the short task-level summary. For the full model — why compact-first, the
+`breakpoint`/`contentWidth`/`controlSize` token vocabulary, rules and invariants, and worked
+code — see [Learn → Responsive model](/docs/learn/responsive-model/), the authority this
+page summarizes.
+
 ## Use the shared breakpoints
 
 Read BeeUI breakpoint tokens instead of inventing a second screen taxonomy. On native,

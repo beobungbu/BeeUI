@@ -12,7 +12,22 @@
       "title": "Core reference",
       "description": "Public values and types exported by @beemvp/beeui-core.",
       "intro": "`@beemvp/beeui-core` holds the platform-free logic the components are built on: calendar-date arithmetic, anchored-overlay positioning, and the overlay-runtime primitives. It has no React dependency and renders nothing.\n\nMost applications never import it directly — the components already do. Reach for it when you are building a surface BeeUI does not provide and you want the same date semantics or positioning maths behind it, which is why most of this surface is classified `advanced-consumer` rather than `consumer`.",
-      "notes": "The **Classification** column carries exactly two values on this page. `advanced-consumer` means public and supported, but intended for building a surface BeeUI does not provide — not something a typical application imports. `normal-consumer` means ordinary application API. `cn` is the only entry in the second group: it merges class strings. The calendar-date utilities are the same ones [Dates and times](/docs/guides/date-time/) documents behaviourally."
+      "notes": "The **Classification** column carries exactly two values on this page. `advanced-consumer` means public and supported, but intended for building a surface BeeUI does not provide — not something a typical application imports. `normal-consumer` means ordinary application API. `cn` is the only entry in the second group: it merges class strings. The calendar-date utilities are the same ones [Dates and times](/docs/guides/date-time/) documents behaviourally.",
+      "valueDescriptions": {
+        "clampCalendarDate": "Clamps a date into an inclusive [min, max] range, returning the nearer bound when the date falls outside it and the date unchanged otherwise.",
+        "cn": "Merges class-name inputs (strings, arrays, conditional objects) into one deduplicated Tailwind/Uniwind class string, later classes winning on conflict.",
+        "constrainOverlayViewportToKeyboard": "Shrinks the usable viewport rect to exclude the area the on-screen keyboard covers, so an anchored overlay repositions above it instead of behind it.",
+        "createOverlayDismissStack": "Creates an empty, mutable dismiss stack an application-root overlay runtime pushes/pops open overlay scopes onto, so global dismissal (Escape/outside-press) always targets the topmost one.",
+        "getSafeAreaCollisionPadding": "Combines a host rect, the window rect and the platform safe-area insets into the collision padding the anchored-overlay kernel needs to keep clear of notches, home indicators and status bars.",
+        "isCalendarDateDisabled": "Reports whether a date falls outside the supplied min/max range or matches a disabled-dates predicate.",
+        "isCalendarDateWithinRange": "Reports whether a date falls within an inclusive [min, max] range; a missing bound is treated as unbounded on that side.",
+        "isLeapYear": "Reports whether the given year is a leap year using the standard Gregorian rule (divisible by 4, not by 100 unless also by 400).",
+        "isSameCalendarDate": "Reports whether two calendar dates (or null/undefined) represent the exact same day; two null/undefined values are not considered the same date.",
+        "isValidCalendarDate": "Reports whether a value is a structurally valid CalendarDate (real year/month/day combination, not just the right shape).",
+        "mergeOverlayCollisionPadding": "Merges two partial collision-padding objects, the second overriding the first per edge, with an default of 0 for an edge neither one sets.",
+        "resolveAnchoredOverlayPosition": "Computes the anchored overlay’s final placement (side, alignment, coordinates) from the anchor rect, viewport, and collision/flip/shift options passed in.",
+        "windowRectToHostRect": "Converts a rect expressed in window coordinates into one expressed relative to the given host element’s rect, for overlays rendered inside a scrollable or transformed host."
+      }
     },
     "cli": {
       "title": "CLI reference",

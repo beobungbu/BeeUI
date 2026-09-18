@@ -8,7 +8,7 @@ description: "Accessible pressable with variant/size/loading/disabled states and
 Accessible pressable with variant/size/loading/disabled states and an optional label primitive.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -157,6 +157,22 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Button** is actually used: 64 lines in 6 places, of 7 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { BottomActionBar, Box, Button, Card, EmptyState, ErrorState, Separator, Skeleton, Switch, Text } from '@beemvp/beeui-ui';
+import * as React from 'react';
+import { Uniwind, useUniwind } from 'uniwind';
+````
+
+Fixture state this block reads (same file, lines 121, 122, 123):
+
+````tsx
+  const { hasAdaptiveThemes, theme } = useUniwind();
+  const activeTheme = hasAdaptiveThemes ? 'system' : theme;
+  const nextTheme = activeTheme === 'system' ? 'light' : activeTheme === 'light' ? 'dark' : 'system';
+````
+
 [lines 126–134](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L126-L134):
 
 ````tsx
@@ -169,6 +185,14 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
     >
       {`Theme: ${activeTheme}`}
     </Button>
+````
+
+Fixture state this block reads (same file, lines 188, 189, 190):
+
+````tsx
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const [rootOpen, setRootOpen] = React.useState(false);
 ````
 
 [lines 193–203](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L193-L203):
@@ -185,6 +209,12 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
       >
         Open CASE C
       </Button>
+````
+
+Placeholder for a prop this fixture receives (not fixture source — substitute your own handler):
+
+````tsx
+const onBack: () => void = () => {};
 ````
 
 [lines 480–488](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L480-L488):
@@ -251,7 +281,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
         </BottomActionBar>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 The accessible name is inferred only when every child is a plain string or number, so a button containing an icon element has no name until `accessibilityLabel` is set — which is why `IconButton` requires one. The button role is fixed and cannot be overridden.

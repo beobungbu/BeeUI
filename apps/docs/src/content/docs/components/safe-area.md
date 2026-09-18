@@ -8,7 +8,7 @@ description: "BeeUIProvider application root plus an explicit SafeArea surface w
 BeeUIProvider application root plus an explicit SafeArea surface with caller-owned edge selection.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -145,6 +145,43 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Safe Area** is actually used: 28 lines in 2 places, of 3 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { AppHeader, Avatar, BottomActionBar, Button, HStack, SafeArea, Switch } from '@beemvp/beeui-ui';
+import * as React from 'react';
+import { Uniwind, useUniwind } from 'uniwind';
+````
+
+Fixture state this block reads (same file, lines 120-136, 457):
+
+````tsx
+function ThemeToggle() {
+  const { hasAdaptiveThemes, theme } = useUniwind();
+  const activeTheme = hasAdaptiveThemes ? 'system' : theme;
+  const nextTheme = activeTheme === 'system' ? 'light' : activeTheme === 'light' ? 'dark' : 'system';
+
+  return (
+    <Button
+      accessibilityLabel={`Theme ${activeTheme}. Switch to ${nextTheme}`}
+      onPress={() => Uniwind.setTheme(nextTheme)}
+      size="sm"
+      testID="component-gallery-theme-toggle"
+      variant="outline"
+    >
+      {`Theme: ${activeTheme}`}
+    </Button>
+  );
+}
+  const { theme } = useUniwind();
+````
+
+Placeholder for a prop this fixture receives (not fixture source — substitute your own handler):
+
+````tsx
+const onBack: () => void = () => {};
+````
+
 [lines 474–495](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L474-L495):
 
 ````tsx
@@ -183,7 +220,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
       </SafeArea>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 `SafeArea` is a pass-through to `react-native-safe-area-context`'s own view: BeeUI adds no `edges` default and no inset arithmetic of its own, so which edges a surface pads is the caller's to state. Uniwind's safe-area utilities are fed only by the provider's `syncUniwindInsets` bridge; turning it off leaves the application to push insets into Uniwind itself.

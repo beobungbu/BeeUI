@@ -8,7 +8,7 @@ description: "Native combined date-and-time picker field backed by @react-native
 Native combined date-and-time picker field backed by @react-native-community/datetimepicker.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -56,34 +56,34 @@ Controlled `value`/`onValueChange` (`{ date, time } | null`) field combining dat
 | `accessibilityLabel` | `string` | — | Accessible name for the trigger. Falls back to the enclosing `Field`'s label. |
 | `align` | `DateTimePickerAlign` | `'start'` | Web-only: `Popover` content alignment relative to the trigger. Ignored on native. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `clearAccessibilityLabel` | `string` | — | Accessible label for the clear button shown when `clearable` and a value is selected. Defaults to `'Clear date and time'`. |
+| `clearAccessibilityLabel` | `string` | `'Clear date and time'` | Accessible label for the clear button shown when `clearable` and a value is selected. Defaults to `'Clear date and time'`. |
 | `clearable` | `boolean` | `true` | Shows a clear affordance when a value is selected. Defaults to `true`. |
 | `closeOnOutsidePress` | `boolean` | `true` | Web-only: dismiss the `Popover` on an outside press. Ignored on native. |
-| `collisionPadding` | `DateTimePickerCollisionPadding` | — | Web-only: `Popover` collision padding. Ignored on native. |
+| `collisionPadding` | `DateTimePickerCollisionPadding` | `8` | Web-only: `Popover` collision padding. Ignored on native. |
 | `defaultOpen` | `boolean` | — | Uncontrolled initial `open` state. Ignored once `open` is controlled. |
 | `direction` | `DateTimePickerDirection` | — | Web-only: logical direction for the `Popover`/`Calendar`/time content. Ignored on native. |
 | `disabled` | `boolean` | — | Disables the trigger, so it cannot open the picker. Combined with the enclosing `Field`'s own `disabled`. |
-| `flip` | `boolean` | — | Web-only: flips `Popover` placement to stay in the viewport. Ignored on native. |
+| `flip` | `boolean` | `true` | Web-only: flips `Popover` placement to stay in the viewport. Ignored on native. |
 | `formatValue` | `(value: DateTimePickerValue, locale: string) => string` | — | Overrides the default `Intl`-based formatted display. |
-| `hourAccessibilityLabel` | `string` | — | Accessible name for the Web hour digit field. Defaults to `'Hour'`. |
+| `hourAccessibilityLabel` | `string` | `'Hour'` | Accessible name for the Web hour digit field. Defaults to `'Hour'`. |
 | `hour12` | `boolean` | — | Explicit-only 12/24h display override. Defaults to the resolved `locale`'s `Intl.DateTimeFormat(locale, { hour: 'numeric' }).resolvedOptions().hour12` (ADR-008). |
 | `invalid` | `boolean` | — | Marks the trigger as invalid for styling and accessibility. Combined with the enclosing `Field`'s own `invalid`. |
 | `isDateDisabled` | `(date: CalendarDate) => boolean` | — | Marks individual dates as disabled in the `Calendar` grid, without disabling the trigger itself. |
 | `locale` | `string` | — | Explicit-only (ADR-008) — no ambient device/browser locale auto-detection. Defaults to `'en-US'`. |
 | `max` | `CalendarDate` | — | Latest selectable date (inclusive), forwarded to the `Calendar`; later dates render disabled. |
 | `min` | `CalendarDate` | — | Earliest selectable date (inclusive), forwarded to the `Calendar`; earlier dates render disabled. |
-| `minuteAccessibilityLabel` | `string` | — | Accessible name for the Web minute digit field. Defaults to `'Minute'`. |
-| `nextMonthAccessibilityLabel` | `string` | — | Accessible label for the `Calendar`'s "next month" button. Defaults to `'Next month'`. |
+| `minuteAccessibilityLabel` | `string` | `'Minute'` | Accessible name for the Web minute digit field. Defaults to `'Minute'`. |
+| `nextMonthAccessibilityLabel` | `string` | `'Next month'` | Accessible label for the `Calendar`'s "next month" button. Defaults to `'Next month'`. |
 | `onOpenChange` | `(open: boolean) => void` | — | Controlled/uncontrolled open state — BeeUI owns Web presentation (`Popover`). |
 | `onValueChange` | `(value: DateTimePickerValue \| null) => void` | — | `null` signals an explicit clear (see `clearable`). |
 | `open` | `boolean` | — | Controls whether the picker (Web `Popover`, native system picker) is open. Requires `onOpenChange`; otherwise falls back to internal open state with a dev-mode warning. |
-| `periodAccessibilityLabel` | `string` | — | Accessible name for the Web AM/PM control. Defaults to `'AM or PM'`. |
-| `placeholder` | `string` | — | Text shown on the trigger when no value is selected. Defaults to `'Select a date and time'`. |
+| `periodAccessibilityLabel` | `string` | `'AM or PM'` | Accessible name for the Web AM/PM control. Defaults to `'AM or PM'`. |
+| `placeholder` | `string` | `'Select a date and time'` | Text shown on the trigger when no value is selected. Defaults to `'Select a date and time'`. |
 | `placement` | `DateTimePickerPlacement` | `'bottom'` | Web-only: `Popover` placement relative to the trigger. Ignored on native. |
-| `previousMonthAccessibilityLabel` | `string` | — | Accessible label for the `Calendar`'s "previous month" button. Defaults to `'Previous month'`. |
+| `previousMonthAccessibilityLabel` | `string` | `'Previous month'` | Accessible label for the `Calendar`'s "previous month" button. Defaults to `'Previous month'`. |
 | `readOnly` | `boolean` | `false` | Keeps the trigger focusable/announced but blocks opening and clearing. |
-| `shift` | `boolean` | — | Web-only: `Popover` collision-shift. Ignored on native. |
-| `sideOffset` | `number` | — | Web-only: `Popover` offset from the trigger. Ignored on native. |
+| `shift` | `boolean` | `true` | Web-only: `Popover` collision-shift. Ignored on native. |
+| `sideOffset` | `number` | `8` | Web-only: `Popover` offset from the trigger. Ignored on native. |
 | `style` | `StyleProp<ViewStyle>` | — | Forwarded to the trigger's root `View`. |
 | `testID` | `string` | — | Test identifier. Forwarded to the native `testID` and, on Web, emitted as `data-testid`. |
 | `value` **(required)** | `DateTimePickerValue \| null` | — | Controlled selected date+time (ADR-008) — single-date selection only for 1.0. |

@@ -1072,15 +1072,119 @@ export function extractPropsTypeSource(source, typeName) {
   return match;
 }
 
+// TS keywords/utility types/React namespace members that can appear capitalized in a props type
+// (`React.ReactNode`, `Record<string, X>`) without naming a domain fixture type this block needs
+// to declare — deliberately excludes nothing that would hide a genuine unresolved reference.
+const BUILT_IN_TYPE_NAMES = new Set([
+  'Array', 'Date', 'Error', 'Map', 'Set', 'Promise', 'Record', 'Partial', 'Required', 'Readonly',
+  'ReadonlyArray', 'Pick', 'Omit', 'Exclude', 'Extract', 'NonNullable', 'Parameters', 'ReturnType',
+  'React',
+]);
+
+// The capitalized, type-position-shaped identifiers a props-type source text references that are
+// not already declared inside it — candidates for #582's "undefined domain type" gap
+// (`Order`, `ProfileSetupFieldErrors`, …). Regex-based like the rest of this generator's
+// extraction helpers: over-inclusive is fine because the caller only acts on a name once it
+// resolves to a real declaration.
+function candidateDomainTypeNames(propsSource) {
+  const declaredHere = new Set([...propsSource.matchAll(/\b(?:type|interface)\s+([A-Za-z_$][\w$]*)/gu)].map((m) => m[1]));
+  const referenced = new Set(
+    [...propsSource.matchAll(/\b([A-Z][\w$]*)\b/gu)].map((m) => m[1]).filter((name) => !BUILT_IN_TYPE_NAMES.has(name)),
+  );
+  return [...referenced].filter((name) => !declaredHere.has(name));
+}
+
+// Resolves a relative import specifier (`../fixtures/commerce-fixtures`) against the importing
+// file's own path to a real file on disk — same shape as the docs-generator's other import
+// resolvers, restricted to relative specifiers because those are the only ones naming a fixture
+// file this block can usefully inline.
+function resolveRelativeSpecifier(fromFile, specifier, rootDir) {
+  if (!specifier.startsWith('.')) return undefined;
+  const base = path.join(path.dirname(fromFile), specifier);
+  for (const ext of ['.tsx', '.ts']) {
+    const candidate = `${base}${ext}`;
+    if (fs.existsSync(path.join(rootDir, candidate))) return candidate;
+  }
+  return undefined;
+}
+
+// Finds a `type`/`interface` declaration named `typeName` in `filePath`, either declared there
+// directly or re-exported via a relative `import`. Returns the declaration's own byte-identical
+// text plus the repo-relative path it actually came from (for the citation comment), or
+// `undefined` when it cannot be resolved locally (an external package type, which stays cited by
+// name rather than guessed at).
+function resolveDomainTypeDeclaration(filePath, typeName, rootDir, seen = new Set()) {
+  if (seen.has(`${filePath}#${typeName}`)) return undefined;
+  seen.add(`${filePath}#${typeName}`);
+  const absPath = path.join(rootDir, filePath);
+  if (!fs.existsSync(absPath)) return undefined;
+  const source = fs.readFileSync(absPath, 'utf8');
+  const sourceFile = ts.createSourceFile(path.basename(filePath), source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+
+  let ownText;
+  let importSpecifier;
+  for (const statement of sourceFile.statements) {
+    if (
+      (ts.isTypeAliasDeclaration(statement) || ts.isInterfaceDeclaration(statement) || ts.isEnumDeclaration(statement)) &&
+      statement.name.text === typeName
+    ) {
+      ownText = source.slice(statement.getStart(sourceFile), statement.getEnd());
+      break;
+    }
+    if (ts.isImportDeclaration(statement) && ts.isStringLiteralLike(statement.moduleSpecifier) && statement.importClause?.namedBindings && ts.isNamedImports(statement.importClause.namedBindings)) {
+      const named = statement.importClause.namedBindings.elements.find((el) => el.name.text === typeName);
+      if (named) importSpecifier = statement.moduleSpecifier.text;
+    }
+  }
+  if (ownText) return { file: filePath, text: ownText };
+  if (importSpecifier) {
+    const resolvedPath = resolveRelativeSpecifier(filePath, importSpecifier, rootDir);
+    if (resolvedPath) return resolveDomainTypeDeclaration(resolvedPath, typeName, rootDir, seen);
+  }
+  return undefined;
+}
+
 // The fenced-code rendering of a pattern's *ScreenProps type. Falls back to a plain
 // notice (never a fabricated second copy of the fields) when no props type or no
 // matching declaration can be derived from the showcase source.
-function renderPropsBlock(pattern, rootDir) {
+//
+// #582: 30 of 37 pages referenced a domain fixture type (`Order`, `ProfileSetupFieldErrors`, …)
+// this block never declared or imported, so it failed `tsc` as pasted. Every capitalized,
+// type-shaped identifier the props type references is now resolved — same file first, then one
+// hop through a relative import — and its real declaration is inlined above the props type, each
+// prefixed with a comment naming its actual source file. A name that does not resolve locally
+// (an external package type) is left exactly as the source wrote it, never guessed at.
+export function renderPropsBlock(pattern, rootDir) {
   if (!pattern.propsType) return '_No exported props type was found in the screen source._';
   const source = fs.readFileSync(path.join(rootDir, pattern.source), 'utf8');
   const propsSource = extractPropsTypeSource(source, pattern.propsType);
   if (!propsSource) return '_No exported props type was found in the screen source._';
-  return `\`\`\`tsx\n${propsSource}\n\`\`\``;
+
+  const domainDecls = [];
+  const seenNames = new Set([pattern.propsType]);
+  // Each candidate carries the file to resolve it FROM. A type referenced inside an
+  // already-resolved declaration (`Order` naming `OrderStatus`) is looked up starting from
+  // `Order`'s own file, not back at the screen file — `orders-screen.tsx` only imports `Order`,
+  // so restarting from it left `OrderStatus`/`CartItem` (declared in the same fixtures file as
+  // `Order`, not imported by the screen at all) unresolved every pass.
+  let frontier = candidateDomainTypeNames(propsSource).map((name) => ({ name, fromFile: pattern.source }));
+  for (let pass = 0; pass < 4 && frontier.length; pass += 1) {
+    const nextFrontier = [];
+    for (const { name, fromFile } of frontier) {
+      if (seenNames.has(name)) continue;
+      seenNames.add(name);
+      const resolved = resolveDomainTypeDeclaration(fromFile, name, rootDir);
+      if (!resolved) continue;
+      domainDecls.push(resolved);
+      nextFrontier.push(...candidateDomainTypeNames(resolved.text).map((n) => ({ name: n, fromFile: resolved.file })));
+    }
+    frontier = nextFrontier;
+  }
+
+  const domainBlock = domainDecls.length
+    ? domainDecls.map((decl) => `// from ${decl.file}\n${decl.text}`).join('\n\n') + '\n\n'
+    : '';
+  return `\`\`\`tsx\n${domainBlock}${propsSource}\n\`\`\``;
 }
 
 // The BeeUI symbols imported anywhere in the read set, and the files importing them. Wider than
@@ -1839,7 +1943,7 @@ export function renderPublicPatternPage(pattern, rootDir = ROOT_DIR) {
   const routes = symbolRouteMap(rootDir);
   const composition = linkedComposition(pattern, routes);
   const sourceFiles = collectPatternSourceFiles(pattern.source, rootDir);
-  return `---\ntitle: ${JSON.stringify(pattern.title)}\ndescription: ${JSON.stringify(pattern.purpose)}\n---\n\n<!-- Generated by scripts/public-pattern-reference.mjs. Do not hand-edit. -->\n\n${pattern.purpose}\n\n## Preview\n\n[Open the exact pattern in the real BeeUI Web Showcase](${pattern.showcaseHref}). This is a Web runtime preview, not native-device evidence.\n\n${renderStateTargets(pattern)}\n\nThe same source is available at [\`${pattern.source}\`](${pattern.sourceHref}).\n\n## Composition\n\nPrincipal public BeeUI exports used by this screen: ${composition}.\n\nThe pattern is a composition recipe rather than a new framework layer. Follow the linked component contracts for state, provider, platform and accessibility details.\n\n## State and callback contract\n\n${renderState(pattern)}\n\n${renderPropsBlock(pattern, rootDir)}\n\nCommon product states such as loading, success, empty, error, permission-like recovery, filtering/search/selection or pagination are represented only where the actual screen source exposes them. The pattern docs do not invent backend states that the fixture does not render.\n\n## Responsive contract\n\n${renderResponsiveFacts(sourceFiles, rootDir)}\n\nBeeUI's [mobile-first responsive contract](/docs/responsive/) is the framework-level document; the list above states only what this screen's own files declare, and says nothing about how the composed components behave internally.\n\n## Accessibility\n\n${renderPatternAccessibilityFacts(sourceFiles, routes)}\n\nTouch-target size, focus order, announcements, RTL, large-text and reduced-motion behavior are not derived from this source — see the [Accessibility guide](/docs/accessibility/) for what is and is not covered by evidence. A Web preview does not substitute for VoiceOver/TalkBack runtime evidence.\n\n## Application ownership boundary\n\n**Intentionally excluded:** ${pattern.excluded}\n\nBeeUI does not take ownership of app routing, authentication/business rules, APIs/data fetching, persistence, form/state frameworks, chart frameworks or backend logic merely because a pattern visually composes those product concepts.\n\n## Source ownership\n\n\`${pattern.componentName}\` is **Showcase source you copy**, not a package export: it is not shipped from any \`@beemvp/beeui-*\` package, and the Registry CLI (\`pnpm beeui list\` / \`pnpm beeui add\`) does not carry pattern screens. Copy [\`${pattern.source}\`](${pattern.sourceHref}) into your app and adapt it directly. Only the individual BeeUI components it composes (linked above) are available for source ownership through the repository-local Registry workflow; before public CLI publication, use [CLI & source ownership](/docs/guides/cli-source-ownership/) from a BeeUI checkout rather than a public \`npx\` command.\n\n## Related\n\n- [All production patterns](/docs/patterns/)\n- [Component reference](/docs/components/)\n- [Showcase](/showcase/)\n- [Production reference app](/demo/)\n- [Source](${pattern.sourceHref})\n`;
+  return `---\ntitle: ${JSON.stringify(pattern.title)}\ndescription: ${JSON.stringify(pattern.purpose)}\n---\n\n<!-- Generated by scripts/public-pattern-reference.mjs. Do not hand-edit. -->\n\n${pattern.purpose}\n\n## Preview\n\n[Open the exact pattern in the real BeeUI Web Showcase](${pattern.showcaseHref}). This is a Web runtime preview, not native-device evidence.\n\n${renderStateTargets(pattern)}\n\nThe same source is available at [\`${pattern.source}\`](${pattern.sourceHref}).\n\n## Composition\n\nPrincipal public BeeUI exports used by this screen: ${composition}.\n\nThe pattern is a composition recipe rather than a new framework layer. Follow the linked component contracts for state, provider, platform and accessibility details.\n\n## State and callback contract\n\n${renderState(pattern)}\n\n${renderPropsBlock(pattern, rootDir)}\n\nCommon product states such as loading, success, empty, error, permission-like recovery, filtering/search/selection or pagination are represented only where the actual screen source exposes them. The pattern docs do not invent backend states that the fixture does not render.\n\n## Responsive contract\n\n${renderResponsiveFacts(sourceFiles, rootDir)}\n\nBeeUI's [mobile-first responsive contract](/docs/responsive/) is the framework-level document; the list above states only what this screen's own files declare, and says nothing about how the composed components behave internally.\n\n## Accessibility\n\n${renderPatternAccessibilityFacts(sourceFiles, routes)}\n\nTouch-target size, focus order, announcements, RTL, large-text and reduced-motion behavior are not derived from this source — see the [Accessibility guide](/docs/accessibility/) for what is and is not covered by evidence. A Web preview does not substitute for VoiceOver/TalkBack runtime evidence.\n\n## Application ownership boundary\n\n**Intentionally excluded:** ${pattern.excluded}\n\nBeeUI does not take ownership of app routing, authentication/business rules, APIs/data fetching, persistence, form/state frameworks, chart frameworks or backend logic merely because a pattern visually composes those product concepts.\n\n## Source ownership\n\n\`${pattern.componentName}\` is **Showcase source you copy**, not a package export: it is not shipped from any \`@beemvp/beeui-*\` package, and the Registry CLI (\`pnpm beeui list\` / \`pnpm beeui add\`) does not carry pattern screens. Copy [\`${pattern.source}\`](${pattern.sourceHref}) into your app and adapt it directly. Only the individual BeeUI components it composes (linked above) are available for source ownership through the repository-local Registry workflow; see [CLI & source ownership](/docs/guides/cli-source-ownership/) for both the published \`npx @beemvp/beeui-cli\` path and the repository-local checkout path.\n\n## Related\n\n- [All production patterns](/docs/patterns/)\n- [Component reference](/docs/components/)\n- [Showcase](/showcase/)\n- [Production reference app](/demo/)\n- [Source](${pattern.sourceHref})\n`;
 }
 
 export function renderPublicPatternIndex(manifest) {

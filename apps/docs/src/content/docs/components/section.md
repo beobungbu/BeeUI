@@ -8,7 +8,7 @@ description: "Title/description/action/content composition for screen sections."
 Title/description/action/content composition for screen sections.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -137,6 +137,14 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Section** is actually used: 38 lines in 4 places, of 14 in total — open the fixture for the remaining 10. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { BeeThemeScope, Box, Button, Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, Field, HStack, IconButton, Input, Popover, PopoverClose, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger, Section, Text, Tooltip, TooltipContent, TooltipTrigger, VStack } from '@beemvp/beeui-ui';
+import * as React from 'react';
+import { Uniwind, useUniwind } from 'uniwind';
+````
+
 [lines 528–542](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L528-L542):
 
 ````tsx
@@ -157,6 +165,34 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               </Section>
 ````
 
+Fixture state this block reads (same file, line 147-169):
+
+````tsx
+function PlacementPopover({ placement }: { placement: 'top' | 'right' | 'bottom' | 'left' }) {
+  return (
+    <Popover>
+      <PopoverTrigger size="sm" variant="outline">
+        {placement}
+      </PopoverTrigger>
+      <PopoverContent placement={placement} testID={`popover-${placement}-content`}>
+        <PopoverTitle>{`${placement[0].toUpperCase()}${placement.slice(1)} placement`}</PopoverTitle>
+        <PopoverDescription>
+          This surface is positioned by the shared anchored-overlay geometry kernel.
+        </PopoverDescription>
+        {placement === 'bottom' ? (
+          <Field label="Note">
+            <Input accessibilityLabel="Popover note" testID="popover-demo-input" />
+          </Field>
+        ) : null}
+        <PopoverClose size="sm" variant="ghost">
+          Close
+        </PopoverClose>
+      </PopoverContent>
+    </Popover>
+  );
+}
+````
+
 [lines 744–754](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L744-L754):
 
 ````tsx
@@ -173,6 +209,140 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               </Section>
 ````
 
+Fixture state this block reads (same file, lines 173, 175-177, 187-231, 233-312):
+
+````tsx
+const OverlayConsumerContext = React.createContext('overlay-context-default');
+function OverlayContextValue({ testID }: { testID: string }) {
+  return <Text testID={testID}>{`context: ${React.useContext(OverlayConsumerContext)}`}</Text>;
+}
+function CaseCScopeOrdering() {
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const [rootOpen, setRootOpen] = React.useState(false);
+  return (
+    <>
+      <Button
+        onPress={() => {
+          setDialogOpen(true);
+          setMenuOpen(true);
+          setRootOpen(true);
+        }}
+        testID="overlay-context-casec-open"
+        variant="outline"
+      >
+        Open CASE C
+      </Button>
+
+      <Popover onOpenChange={setRootOpen} open={rootOpen}>
+        <PopoverTrigger testID="overlay-context-casec-root-trigger" variant="outline">
+          CASE C root
+        </PopoverTrigger>
+        <PopoverContent placement="bottom">
+          <OverlayContextValue testID="overlay-context-casec-root-value" />
+        </PopoverContent>
+      </Popover>
+
+      <Dialog onOpenChange={setDialogOpen} open={dialogOpen}>
+        <DialogTrigger testID="overlay-context-casec-dialog-trigger">CASE C dialog</DialogTrigger>
+        <DialogContent>
+          <DialogTitle>CASE C dialog</DialogTitle>
+          <DropdownMenu onOpenChange={setMenuOpen} open={menuOpen}>
+            <DropdownMenuTrigger testID="overlay-context-casec-menu-trigger" variant="outline">
+              CASE C menu
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>CASE C menu</DropdownMenuLabel>
+              <OverlayContextValue testID="overlay-context-casec-menu-value" />
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+function ConsumerContextOverlays() {
+  const [dialogMenuAction, setDialogMenuAction] = React.useState('none');
+  return (
+    <OverlayConsumerContext.Provider value="preserved">
+      <VStack gap="sm">
+        <Popover>
+          <PopoverTrigger testID="overlay-context-popover-trigger" variant="outline">
+            Popover context
+          </PopoverTrigger>
+          <PopoverContent placement="bottom">
+            <PopoverTitle>Popover consumer context</PopoverTitle>
+            <OverlayContextValue testID="overlay-context-popover-value" />
+          </PopoverContent>
+        </Popover>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger testID="overlay-context-menu-trigger" variant="outline">
+            Menu context
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuLabel>Menu consumer context</DropdownMenuLabel>
+            <OverlayContextValue testID="overlay-context-menu-value" />
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Tooltip>
+          <TooltipTrigger testID="overlay-context-tooltip-trigger" variant="outline">
+            Tooltip context
+          </TooltipTrigger>
+          <TooltipContent>
+            <OverlayContextValue testID="overlay-context-tooltip-value" />
+          </TooltipContent>
+        </Tooltip>
+
+        <Dialog>
+          <DialogTrigger testID="overlay-context-dialog-trigger">Dialog context</DialogTrigger>
+          <DialogContent>
+            <DialogTitle>Dialog with a nested overlay</DialogTitle>
+            <Popover>
+              <PopoverTrigger testID="overlay-context-dialog-popover-trigger" variant="outline">
+                Popover in dialog
+              </PopoverTrigger>
+              <PopoverContent placement="bottom">
+                <OverlayContextValue testID="overlay-context-dialog-popover-value" />
+              </PopoverContent>
+            </Popover>
+
+            <Tooltip>
+              <TooltipTrigger testID="overlay-context-dialog-tooltip-trigger" variant="outline">
+                Tooltip in dialog
+              </TooltipTrigger>
+              <TooltipContent>
+                <OverlayContextValue testID="overlay-context-dialog-tooltip-value" />
+              </TooltipContent>
+            </Tooltip>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger testID="overlay-context-dialog-menu-trigger" variant="outline">
+                Menu in dialog
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuLabel>Menu in dialog</DropdownMenuLabel>
+                <OverlayContextValue testID="overlay-context-dialog-menu-value" />
+                <DropdownMenuItem
+                  onSelect={() => setDialogMenuAction('selected')}
+                  testID="overlay-context-dialog-menu-item"
+                >
+                  Select in dialog
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Text testID="overlay-context-dialog-menu-action">{`menu action: ${dialogMenuAction}`}</Text>
+          </DialogContent>
+        </Dialog>
+
+        <CaseCScopeOrdering />
+      </VStack>
+    </OverlayConsumerContext.Provider>
+  );
+}
+````
+
 [lines 864–869](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L864-L869):
 
 ````tsx
@@ -182,6 +352,64 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               >
                 <ConsumerContextOverlays />
               </Section>
+````
+
+Fixture state this block reads (same file, lines 320-323, 325-372, 457):
+
+````tsx
+function ThemeScopeValue({ testID }: { testID: string }) {
+  const { theme } = useUniwind();
+  return <Text testID={testID}>{`theme: ${theme}`}</Text>;
+}
+function ThemeScopeOverlays() {
+  return (
+    <VStack gap="sm">
+      <BeeThemeScope appearance="dark" brand="violet">
+        <VStack gap="sm">
+          <ThemeScopeValue testID="theme-scope-root-value" />
+
+          <Popover>
+            <PopoverTrigger testID="theme-scope-popover-trigger" variant="outline">
+              Popover in scope
+            </PopoverTrigger>
+            <PopoverContent placement="bottom">
+              <PopoverTitle>Popover in a BeeThemeScope</PopoverTitle>
+              <ThemeScopeValue testID="theme-scope-popover-value" />
+            </PopoverContent>
+          </Popover>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger testID="theme-scope-menu-trigger" variant="outline">
+              Menu in scope
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Menu in a BeeThemeScope</DropdownMenuLabel>
+              <ThemeScopeValue testID="theme-scope-menu-value" />
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Dialog>
+            <DialogTrigger testID="theme-scope-dialog-trigger">Dialog in scope</DialogTrigger>
+            <DialogContent>
+              <DialogTitle>Dialog inside a BeeThemeScope</DialogTitle>
+              <ThemeScopeValue testID="theme-scope-dialog-value" />
+              <DialogClose size="sm" variant="ghost">
+                Close
+              </DialogClose>
+            </DialogContent>
+          </Dialog>
+
+          <BeeThemeScope appearance="light" brand="bee">
+            <ThemeScopeValue testID="theme-scope-nested-value" />
+          </BeeThemeScope>
+        </VStack>
+      </BeeThemeScope>
+
+      <ThemeScopeValue testID="theme-scope-sibling-value" />
+    </VStack>
+  );
+}
+  const { theme } = useUniwind();
 ````
 
 [lines 873–878](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L873-L878):
@@ -195,7 +423,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               </Section>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 `titleClassName` and `descriptionClassName` are dropped when the corresponding prop is an element rather than a plain string or number. The header row, including `action`, renders only when at least one of `title`, `description` or `action` is set.

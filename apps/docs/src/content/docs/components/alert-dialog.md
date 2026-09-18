@@ -8,7 +8,7 @@ description: "Confirmation/destructive modal built on the Dialog kernel; a backd
 Confirmation/destructive modal built on the Dialog kernel; a backdrop press or Escape never closes it.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -65,7 +65,7 @@ Confirmation/destructive modal sharing Dialog's controlled (`open`+`onOpenChange
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
+| `loading` | `boolean` | `false` | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 | `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Chooses this element's `size` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 | `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'destructive'` | Chooses this element's `variant` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 
@@ -80,7 +80,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
+| `loading` | `boolean` | `false` | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 | `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Chooses this element's `size` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 | `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'outline'` | Chooses this element's `variant` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 
@@ -121,7 +121,7 @@ Also carries every prop of `ViewProps` — that upstream contract is not reprodu
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
-| `defaultOpen` | `never` | — | Not accepted in the controlled variant, where `open` already owns the state. Pass `defaultOpen` on its own, without `open`, to use the uncontrolled variant. |
+| `defaultOpen` | `never` | `false` | Not accepted in the controlled variant, where `open` already owns the state. Pass `defaultOpen` on its own, without `open`, to use the uncontrolled variant. |
 | `onOpenChange` **(required)** | `(open: boolean) => void` | — | Applies a requested open state, and is required here because the controlled variant never updates its own visibility. If this does not change `open`, nothing does. |
 | `open` **(required)** | `boolean` | — | Current open state, owned by the caller; supplying a defined value alongside `onOpenChange` is what selects the controlled variant. Passing `open` without an `onOpenChange` function warns in development and falls back to uncontrolled behavior. |
 
@@ -130,7 +130,7 @@ Also carries every prop of `ViewProps` — that upstream contract is not reprodu
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
-| `defaultOpen` | `boolean` | — | Open state to start from, read once when the component mounts, so later changes to it are ignored. Defaults to false; drive visibility with `open` + `onOpenChange` instead when it needs to change. |
+| `defaultOpen` | `boolean` | `false` | Open state to start from, read once when the component mounts, so later changes to it are ignored. Defaults to false; drive visibility with `open` + `onOpenChange` instead when it needs to change. |
 | `onOpenChange` | `(open: boolean) => void` | — | Notified after the open state changes, and optional here because the uncontrolled variant updates its own state either way. |
 | `open` | `undefined` | — | Must be left undefined in the uncontrolled variant, because a defined `open` together with `onOpenChange` selects the controlled variant instead. |
 
@@ -151,11 +151,13 @@ Also carries every prop of `Omit<TextProps, 'accessibilityRole' | 'role' | 'vari
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
+| `loading` | `boolean` | `false` | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 | `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Chooses this element's `size` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 | `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'primary'` | Chooses this element's `variant` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` — that upstream contract is not reproduced here.
+
+**This is the pressable itself** — the same variant/size/press API as [Button](/docs/components/button/) — so icon/label children go directly inside it. Do not nest a second pressable (an icon button, or an avatar wrapped for press) inside a `*Trigger`: on Web that renders one interactive element inside another, which React flags as invalid DOM nesting. For an icon-only or avatar trigger, set `variant="ghost"` (and `size`/`className` as needed) on the trigger itself instead of wrapping a second pressable.
 
 The executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.
 
@@ -247,6 +249,12 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Alert Dialog** is actually used: 13 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle, AlertDialogTrigger } from '@beemvp/beeui-ui';
+````
+
 [lines 703–715](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L703-L715):
 
 ````tsx
@@ -265,7 +273,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                   </AlertDialog>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 Never dismisses from backdrop press or Escape, but native request-close — Android hardware back and accessibility escape — does dismiss it unless `cancelOnRequestClose` is `false`; not a general-purpose modal (use Dialog).

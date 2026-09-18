@@ -8,7 +8,7 @@ description: "Decorative-by-default divider (semantic when requested); vertical 
 Decorative-by-default divider (semantic when requested); vertical orientation stretches across the cross axis.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -134,6 +134,14 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Separator** is actually used: 114 lines in 6 places, of 13 in total — open the fixture for the remaining 7. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, Badge, Box, Button, Card, Collapsible, CollapsibleContent, CollapsibleTrigger, DescriptionItem, DescriptionList, EmptyState, ErrorState, ListItem, Progress, Section, Separator, SettingsItem, Skeleton, Spinner, Switch, Tabs, TabsContent, TabsList, TabsTrigger, Text } from '@beemvp/beeui-ui';
+import * as React from 'react';
+import { Uniwind, useUniwind } from 'uniwind';
+````
+
 [lines 545–563](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L545-L563):
 
 ````tsx
@@ -197,6 +205,12 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               <Separator />
 ````
 
+Fixture state this block reads (same file, line 461):
+
+````tsx
+  const [tab, setTab] = React.useState('overview');
+````
+
 [lines 914–949](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L914-L949):
 
 ````tsx
@@ -236,6 +250,13 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                 </AccordionItem>
               </Accordion>
             </Card>
+````
+
+Fixture state this block reads (same file, lines 457, 459):
+
+````tsx
+  const { theme } = useUniwind();
+  const [notifications, setNotifications] = React.useState(true);
 ````
 
 [lines 1018–1052](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1018-L1052):
@@ -278,7 +299,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               </Section>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 The role is owned here and omitted from the prop type: the component sets the separator role only when `decorative` is false, and while `decorative` is at its default the view is also marked as not an accessibility element of its own. Thickness is fixed at one pixel with no thickness, length or inset prop; anything else comes from `className`.

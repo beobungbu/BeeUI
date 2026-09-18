@@ -8,7 +8,7 @@ description: "Typed direction/gap/alignment/wrap layout over View, with HStack/V
 Typed direction/gap/alignment/wrap layout over View, with HStack/VStack specializations.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -163,6 +163,19 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Stack** is actually used: 51 lines in 6 places, of 11 in total — open the fixture for the remaining 5. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Avatar, Button, Field, HStack, Input, Link, Popover, PopoverClose, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger, Stack, Stat, StatHelpText, StatLabel, StatValue, Text, Tooltip, TooltipContent, TooltipTrigger, VStack } from '@beemvp/beeui-ui';
+````
+
+Placeholder for a prop this fixture receives (not fixture source — substitute your own handler):
+
+````tsx
+const children: string = undefined as never;
+const description: string = undefined as never;
+````
+
 [lines 140–143](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L140-L143):
 
 ````tsx
@@ -170,6 +183,12 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
       <Text variant="heading">{children}</Text>
       <Text tone="muted">{description}</Text>
     </VStack>
+````
+
+Placeholder for a prop this fixture receives (not fixture source — substitute your own handler):
+
+````tsx
+const onBack: () => void = () => {};
 ````
 
 [lines 479–490](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L479-L490):
@@ -187,6 +206,34 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               </Button>
               <Avatar accessibilityLabel="BeeUI" fallback="BU" />
             </HStack>
+````
+
+Fixture state this block reads (same file, line 147-169):
+
+````tsx
+function PlacementPopover({ placement }: { placement: 'top' | 'right' | 'bottom' | 'left' }) {
+  return (
+    <Popover>
+      <PopoverTrigger size="sm" variant="outline">
+        {placement}
+      </PopoverTrigger>
+      <PopoverContent placement={placement} testID={`popover-${placement}-content`}>
+        <PopoverTitle>{`${placement[0].toUpperCase()}${placement.slice(1)} placement`}</PopoverTitle>
+        <PopoverDescription>
+          This surface is positioned by the shared anchored-overlay geometry kernel.
+        </PopoverDescription>
+        {placement === 'bottom' ? (
+          <Field label="Note">
+            <Input accessibilityLabel="Popover note" testID="popover-demo-input" />
+          </Field>
+        ) : null}
+        <PopoverClose size="sm" variant="ghost">
+          Close
+        </PopoverClose>
+      </PopoverContent>
+    </Popover>
+  );
+}
 ````
 
 [lines 748–753](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L748-L753):
@@ -244,7 +291,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
             </VStack>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 `HStack` and `VStack` do not accept `direction` — their axis is fixed. `gap` is a six-step token scale, so an arbitrary spacing value has to come through `className`.

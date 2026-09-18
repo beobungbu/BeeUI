@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { extractPublicationPolicy } from '../check-public-doc-truth.mjs';
 import {
   BEEUI_SUBCOMMANDS,
   LLMS_FAMILY,
@@ -96,12 +97,22 @@ test('the cookbook cross-links the whole llms.txt family', () => {
   assert.deepEqual(notLinked, []);
 });
 
-// Guards against a false "published/available on npm" claim slipping into the contract.
-test('the cookbook states UNPUBLISHED status and never claims npm availability', () => {
+// Guards against the cookbook's distribution-status prose drifting from `docs/dist-tag-policy.md`
+// (#543, #574): once published, it must say so accurately and drop the stale UNPUBLISHED claim;
+// while unpublished, it must carry the unpublished-status rules and never claim npm availability.
+test('the cookbook states a distribution status that matches docs/dist-tag-policy.md', () => {
   const text = readCookbook();
-  assert.match(text, /UNPUBLISHED/);
   assert.match(text, /pnpm beeui add/);
-  assert.doesNotMatch(text, /available on npm/i);
+  const policy = extractPublicationPolicy();
+  if (policy.published) {
+    const tag = policy.prereleaseDistTag ?? 'next';
+    assert.match(text, /public on npm/);
+    assert.match(text, new RegExp('`' + tag + '`'));
+    assert.doesNotMatch(text, /\bUNPUBLISHED\b/);
+  } else {
+    assert.match(text, /UNPUBLISHED/);
+    assert.doesNotMatch(text, /available on npm/i);
+  }
 });
 
 // The aggregate runner used by the CLI / CI must pass on the committed cookbook.

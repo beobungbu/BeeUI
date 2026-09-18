@@ -26,6 +26,12 @@ The pattern is a composition recipe rather than a new framework layer. Follow th
 The screen is controlled through `InterestsOnboardingScreenProps`. User intent crosses the application boundary through `onContinue`, `onSelectionChange`, `onSkip`; fetching, routing, persistence and side effects remain application-owned.
 
 ```tsx
+// from apps/showcase/patterns/auth/screens/interests-onboarding-screen.tsx
+export type InterestOption = {
+  id: string;
+  label: string;
+};
+
 export type InterestsOnboardingScreenProps = {
   currentStep?: number;
   disabled?: boolean;
@@ -74,7 +80,7 @@ BeeUI does not take ownership of app routing, authentication/business rules, API
 
 ## Source ownership
 
-`InterestsOnboardingScreen` is **Showcase source you copy**, not a package export: it is not shipped from any `@beemvp/beeui-*` package, and the Registry CLI (`pnpm beeui list` / `pnpm beeui add`) does not carry pattern screens. Copy [`apps/showcase/patterns/auth/screens/interests-onboarding-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/auth/screens/interests-onboarding-screen.tsx) into your app and adapt it directly. Only the individual BeeUI components it composes (linked above) are available for source ownership through the repository-local Registry workflow; before public CLI publication, use [CLI & source ownership](/docs/guides/cli-source-ownership/) from a BeeUI checkout rather than a public `npx` command.
+`InterestsOnboardingScreen` is **Showcase source you copy**, not a package export: it is not shipped from any `@beemvp/beeui-*` package, and the Registry CLI (`pnpm beeui list` / `pnpm beeui add`) does not carry pattern screens. Copy [`apps/showcase/patterns/auth/screens/interests-onboarding-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/auth/screens/interests-onboarding-screen.tsx) into your app and adapt it directly. Only the individual BeeUI components it composes (linked above) are available for source ownership through the repository-local Registry workflow; see [CLI & source ownership](/docs/guides/cli-source-ownership/) for both the published `npx @beemvp/beeui-cli` path and the repository-local checkout path.
 
 ## Related
 
