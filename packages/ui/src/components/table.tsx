@@ -4,9 +4,9 @@ import { Pressable, ScrollView, View, type ViewProps } from 'react-native';
 import { Text } from './text';
 import { useDirection } from './use-direction';
 import { useRequiredCallbackWarning } from './use-required-callback-warning';
-import type { TableAlign, TableLayout, TableSortDirection } from './table-shared';
+import { resolveTableDensityRowHeight, type TableAlign, type TableDensity, type TableLayout, type TableSortDirection } from './table-shared';
 
-export type { TableAlign, TableLayout, TableSortDirection } from './table-shared';
+export type { TableAlign, TableDensity, TableLayout, TableSortDirection } from './table-shared';
 
 // Native has no CSS text-align-for-block-content engine, so `align` drives
 // the cross-axis `align-items` of each header/cell's own row-direction flex
@@ -33,6 +33,18 @@ const TableLayoutContext = React.createContext<TableLayout>('scroll');
 
 function useTableLayout(): TableLayout {
   return React.useContext(TableLayoutContext);
+}
+
+// `density` resolves to a row-height pixel number here (rather than re-exposing the
+// `TableDensity` string itself) so `TableRow` never needs to re-import
+// `resolveTableDensityRowHeight` or re-derive the mapping — one Table renders one resolved
+// value for its whole subtree. `undefined` means "no override": rows keep following the
+// ambient `min-h-density-row-height` global-density class exactly as before this prop
+// existed (`layout="stacked"` rows ignore this entirely — see `TableRow` below).
+const TableDensityRowHeightContext = React.createContext<number | undefined>(undefined);
+
+function useTableDensityRowHeight(): number | undefined {
+  return React.useContext(TableDensityRowHeightContext);
 }
 
 // `TableHead` cells register their column's label text here as they render;
@@ -71,6 +83,13 @@ export type TableProps = Omit<ViewProps, 'children'> & {
   children?: React.ReactNode;
   className?: string;
   /**
+   * Per-table row-height override for `layout="scroll"` rows, replacing the ambient global
+   * application-density row height for this one `Table` only — see `TableDensity`. Omitted
+   * (the default) leaves every row following the global density exactly as before this prop
+   * existed; existing tables are unaffected.
+   */
+  density?: TableDensity;
+  /**
    * Responsive presentation. Defaults to `'scroll'` (horizontal `ScrollView`
    * around the row grid). Set `'stacked'` to render a card/label-value
    * presentation instead — typically driven by the caller's own breakpoint
@@ -80,7 +99,8 @@ export type TableProps = Omit<ViewProps, 'children'> & {
 };
 
 export const Table = React.forwardRef<React.ComponentRef<typeof View>, TableProps>(
-  ({ children, className, layout = 'scroll', ...props }, ref) => {
+  ({ children, className, density, layout = 'scroll', ...props }, ref) => {
+    const densityRowHeight = density === undefined ? undefined : resolveTableDensityRowHeight(density);
     const labelsRef = React.useRef<Map<number, string>>(new Map());
     // Fresh registry contents every render — see `TableColumnLabelRegistry` above.
     labelsRef.current.clear();
@@ -112,18 +132,20 @@ export const Table = React.forwardRef<React.ComponentRef<typeof View>, TableProp
 
     return (
       <TableLayoutContext.Provider value={layout}>
-        <TableColumnLabelRegistryContext.Provider value={registry}>
-          <View ref={ref} {...props} className={cn('w-full', className)}>
-            {layout === 'stacked' ? (
-              <View className="gap-density-row-gap">{gridChildren}</View>
-            ) : (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View className="min-w-full">{gridChildren}</View>
-              </ScrollView>
-            )}
-            {captionChildren}
-          </View>
-        </TableColumnLabelRegistryContext.Provider>
+        <TableDensityRowHeightContext.Provider value={densityRowHeight}>
+          <TableColumnLabelRegistryContext.Provider value={registry}>
+            <View ref={ref} {...props} className={cn('w-full', className)}>
+              {layout === 'stacked' ? (
+                <View className="gap-density-row-gap">{gridChildren}</View>
+              ) : (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View className="min-w-full">{gridChildren}</View>
+                </ScrollView>
+              )}
+              {captionChildren}
+            </View>
+          </TableColumnLabelRegistryContext.Provider>
+        </TableDensityRowHeightContext.Provider>
       </TableLayoutContext.Provider>
     );
   },
@@ -259,9 +281,10 @@ export type TableRowProps = Omit<ViewProps, 'children'> & {
 };
 
 export const TableRow = React.forwardRef<React.ComponentRef<typeof View>, TableRowProps>(
-  ({ accessibilityState, children, className, onPress, selected = false, ...props }, ref) => {
+  ({ accessibilityState, children, className, onPress, selected = false, style, ...props }, ref) => {
     const layout = useTableLayout();
     const direction = useDirection();
+    const densityRowHeight = useTableDensityRowHeight();
     const interactive = typeof onPress === 'function';
     const resolvedAccessibilityState = { ...accessibilityState, selected };
 
@@ -294,6 +317,9 @@ export const TableRow = React.forwardRef<React.ComponentRef<typeof View>, TableR
         className,
       );
 
+      // `density` is a `layout="scroll"` row-height override — `layout="stacked"` renders a
+      // card, not a fixed-height row, so it ignores `densityRowHeight` and forwards `style`
+      // unchanged.
       return interactive ? (
         <Pressable
           accessibilityRole="button"
@@ -302,6 +328,7 @@ export const TableRow = React.forwardRef<React.ComponentRef<typeof View>, TableR
           ref={ref}
           {...props}
           className={stackedClassName}
+          style={style}
         >
           {content}
         </Pressable>
@@ -311,11 +338,20 @@ export const TableRow = React.forwardRef<React.ComponentRef<typeof View>, TableR
           ref={ref}
           {...props}
           className={stackedClassName}
+          style={style}
         >
           {content}
         </View>
       );
     }
+
+    // `densityRowHeight` (from the parent `Table`'s `density` prop) overrides the ambient
+    // `min-h-density-row-height` class via an explicit `minHeight` style — the same
+    // className-plus-computed-style-override pattern `Textarea` already uses for its own
+    // per-instance height. `style` comes last in the array so a caller-supplied `style`
+    // still wins over both, exactly as `{...props}` would already let it win over
+    // `className` alone.
+    const rowHeightStyle = densityRowHeight === undefined ? undefined : { minHeight: densityRowHeight };
 
     const scrollClassName = cn(
       // No `last:` pseudo-class variant here (unlike the Web file): CSS
@@ -349,6 +385,7 @@ export const TableRow = React.forwardRef<React.ComponentRef<typeof View>, TableR
         ref={ref}
         {...props}
         className={scrollClassName}
+        style={[rowHeightStyle, style]}
       >
         {content}
       </Pressable>
@@ -358,6 +395,7 @@ export const TableRow = React.forwardRef<React.ComponentRef<typeof View>, TableR
         ref={ref}
         {...props}
         className={scrollClassName}
+        style={[rowHeightStyle, style]}
       >
         {content}
       </View>

@@ -3,9 +3,9 @@ import * as React from 'react';
 import { textVariants } from './text';
 import { useDirection } from './use-direction';
 import { useRequiredCallbackWarning } from './use-required-callback-warning';
-import type { TableAlign, TableLayout, TableSortDirection } from './table-shared';
+import { resolveTableDensityRowHeight, type TableAlign, type TableDensity, type TableLayout, type TableSortDirection } from './table-shared';
 
-export type { TableAlign, TableLayout, TableSortDirection } from './table-shared';
+export type { TableAlign, TableDensity, TableLayout, TableSortDirection } from './table-shared';
 
 // `align` drives real CSS `text-align` for plain text flow, matching the
 // documented `className="text-end"` workaround (see `TableAlign`'s own
@@ -89,6 +89,14 @@ function useTableLayout(): TableLayout {
   return React.useContext(TableLayoutContext);
 }
 
+// See `table.tsx` (native) for the full rationale — same shape, same "undefined means no
+// override" contract, only the rendered host element (`<tr>`, not a native `View`) differs.
+const TableDensityRowHeightContext = React.createContext<number | undefined>(undefined);
+
+function useTableDensityRowHeight(): number | undefined {
+  return React.useContext(TableDensityRowHeightContext);
+}
+
 type TableColumnLabelRegistry = {
   getLabel: (columnIndex: number | undefined) => string | undefined;
   setLabel: (columnIndex: number | undefined, label: string | undefined) => void;
@@ -141,6 +149,13 @@ export type TableProps = Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> 
   children?: React.ReactNode;
   className?: string;
   /**
+   * Per-table row-height override for `layout="scroll"` rows, replacing the ambient global
+   * application-density row height for this one `Table` only — see `TableDensity`. Omitted
+   * (the default) leaves every row following the global density exactly as before this prop
+   * existed; existing tables are unaffected.
+   */
+  density?: TableDensity;
+  /**
    * Responsive presentation. Defaults to `'scroll'` (a real `<table>` inside
    * an `overflow-x-auto` container). Set `'stacked'` to render a card/
    * label-value presentation instead.
@@ -160,6 +175,7 @@ export const Table = React.forwardRef<HTMLDivElement, TableProps>(
       'aria-labelledby': ariaLabelledBy,
       children,
       className,
+      density,
       layout = 'scroll',
       testID,
       ...props
@@ -167,6 +183,7 @@ export const Table = React.forwardRef<HTMLDivElement, TableProps>(
     ref,
   ) => {
     const direction = useDirection();
+    const densityRowHeight = density === undefined ? undefined : resolveTableDensityRowHeight(density);
     const labelsRef = React.useRef<Map<number, string>>(new Map());
     labelsRef.current.clear();
     const registry = React.useMemo<TableColumnLabelRegistry>(
@@ -184,35 +201,37 @@ export const Table = React.forwardRef<HTMLDivElement, TableProps>(
 
     return (
       <TableLayoutContext.Provider value={layout}>
-        <TableColumnLabelRegistryContext.Provider value={registry}>
-          <div
-            ref={ref}
-            {...props}
-            {...resolveWebAccessibilityLabelProps({
-              accessibilityLabel,
-              accessibilityLabelledBy,
-              'aria-label': ariaLabel,
-              'aria-labelledby': ariaLabelledBy,
-            })}
-            className={cn('w-full', className)}
-            data-testid={testID}
-            // `layout="stacked"` has no real `<table>` element to supply the
-            // implicit `table` role every `<tr>`'s `row` role (below, in
-            // `TableRow`) depends on for a screen reader/row-scoped query to
-            // recognize it as row grouping rather than an anonymous `<div>`.
-            role={layout === 'stacked' ? 'table' : undefined}
-          >
-            {layout === 'stacked' ? (
-              children
-            ) : (
-              <div className="w-full overflow-x-auto" dir={direction}>
-                <table className="w-full caption-bottom border-collapse text-start">
-                  {children}
-                </table>
-              </div>
-            )}
-          </div>
-        </TableColumnLabelRegistryContext.Provider>
+        <TableDensityRowHeightContext.Provider value={densityRowHeight}>
+          <TableColumnLabelRegistryContext.Provider value={registry}>
+            <div
+              ref={ref}
+              {...props}
+              {...resolveWebAccessibilityLabelProps({
+                accessibilityLabel,
+                accessibilityLabelledBy,
+                'aria-label': ariaLabel,
+                'aria-labelledby': ariaLabelledBy,
+              })}
+              className={cn('w-full', className)}
+              data-testid={testID}
+              // `layout="stacked"` has no real `<table>` element to supply the
+              // implicit `table` role every `<tr>`'s `row` role (below, in
+              // `TableRow`) depends on for a screen reader/row-scoped query to
+              // recognize it as row grouping rather than an anonymous `<div>`.
+              role={layout === 'stacked' ? 'table' : undefined}
+            >
+              {layout === 'stacked' ? (
+                children
+              ) : (
+                <div className="w-full overflow-x-auto" dir={direction}>
+                  <table className="w-full caption-bottom border-collapse text-start">
+                    {children}
+                  </table>
+                </div>
+              )}
+            </div>
+          </TableColumnLabelRegistryContext.Provider>
+        </TableDensityRowHeightContext.Provider>
       </TableLayoutContext.Provider>
     );
   },
@@ -427,12 +446,14 @@ export const TableRow = React.forwardRef<HTMLElement, TableRowProps>(
       className,
       onPress,
       selected = false,
+      style,
       testID,
       ...props
     },
     ref,
   ) => {
     const layout = useTableLayout();
+    const densityRowHeight = useTableDensityRowHeight();
     const interactive = typeof onPress === 'function';
     const accessibilityLabelProps = resolveWebAccessibilityLabelProps({
       accessibilityLabel,
@@ -493,11 +514,20 @@ export const TableRow = React.forwardRef<HTMLElement, TableRowProps>(
           {...accessibilityLabelProps}
           {...interactiveProps}
           {...props}
+          style={style}
         >
           {content}
         </div>
       );
     }
+
+    // `densityRowHeight` (from the parent `Table`'s `density` prop) sets an explicit `<tr>`
+    // `height` — mirrors `table.tsx`'s (native) `minHeight` override, using `height` here
+    // because an unstyled `<tr>` has no intrinsic min-height class to override on Web (its
+    // row height is normal content flow from each cell's own padding — see the file-level
+    // note on `layout="scroll"` row height). A caller-supplied `style` still wins on any
+    // overlapping key, same precedence `table.tsx` gives its own `style` array.
+    const rowHeightStyle = densityRowHeight === undefined ? undefined : { height: densityRowHeight };
 
     return (
       <tr
@@ -515,6 +545,7 @@ export const TableRow = React.forwardRef<HTMLElement, TableRowProps>(
         {...accessibilityLabelProps}
         {...interactiveProps}
         {...props}
+        style={{ ...rowHeightStyle, ...style }}
       >
         {content}
       </tr>

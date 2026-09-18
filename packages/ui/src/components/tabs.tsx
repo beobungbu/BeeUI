@@ -1,6 +1,13 @@
 import { cn } from '@beemvp/beeui-core';
 import * as React from 'react';
-import { Pressable, View, type PressableProps, type ViewProps } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  View,
+  type LayoutChangeEvent,
+  type PressableProps,
+  type ViewProps,
+} from 'react-native';
 import { Text } from './text';
 import { useRequiredCallbackWarning } from './use-required-callback-warning';
 
@@ -21,6 +28,29 @@ function useTabsContext(component: string) {
 
   return context;
 }
+
+// Ordered `value`s of every `TabsTrigger` a `TabsList` currently renders, computed straight
+// from its own `children` (a static, synchronously-inspectable React tree — unlike
+// `Table`'s dynamically-labeled columns, no separate registration-during-render pass is
+// needed). `TabsTrigger`'s close control uses this to find the previous/next sibling to
+// select when the currently-selected tab is closed.
+const TabsOrderContext = React.createContext<readonly string[]>([]);
+
+type TabsTriggerLayout = { width: number; x: number };
+
+type TabsListLayoutContextValue = {
+  register: (value: string, layout: TabsTriggerLayout) => void;
+  /** Whether the owning `TabsList` renders inside a horizontal scroll container. Read by
+   * `TabsTrigger` to decide whether it should stretch (`flex-1`, the pre-scrollable default)
+   * or size to its own content (`scrollable`). */
+  scrollable: boolean;
+  unregister: (value: string) => void;
+};
+
+// `null` (not just an unregistered default) so `TabsTrigger` can tell "not inside a
+// `TabsList` that tracks layout at all" apart from "inside one, not scrollable" — the same
+// shape distinction `TabsColumnLabelRegistryContext` uses in `table.tsx`.
+const TabsListLayoutContext = React.createContext<TabsListLayoutContextValue | null>(null);
 
 export type TabsProps = Omit<ViewProps, 'children'> & {
   children: React.ReactNode;
@@ -55,18 +85,84 @@ export const Tabs = React.forwardRef<React.ComponentRef<typeof View>, TabsProps>
 Tabs.displayName = 'Tabs';
 
 export type TabsListProps = Omit<ViewProps, 'accessibilityRole' | 'role'> & {
+  /**
+   * Extra content rendered after the tab strip (e.g. a pinned "+ new order" action). Stays
+   * fixed in place even when `scrollable` is true and the strip itself scrolls underneath
+   * it — it is never part of the horizontally-scrollable region.
+   */
+  addon?: React.ReactNode;
   className?: string;
+  /**
+   * Renders the strip inside a horizontal scroll container instead of an equal-width flex
+   * row — each `TabsTrigger` sizes to its own content instead of stretching — and scrolls
+   * the selected `TabsTrigger` into view whenever the parent `Tabs`'s `value` changes.
+   * Existing (non-scrollable) tab strips are unaffected. Defaults to false.
+   */
+  scrollable?: boolean;
 };
 
 export const TabsList = React.forwardRef<React.ComponentRef<typeof View>, TabsListProps>(
-  ({ className, ...props }, ref) => (
-    <View
-      ref={ref}
-      {...props}
-      accessibilityRole="tablist"
-      className={cn('flex-row gap-1 rounded-md bg-muted p-1', className)}
-    />
-  ),
+  ({ addon, children, className, scrollable = false, ...props }, ref) => {
+    const tabs = useTabsContext('TabsList');
+    const scrollViewRef = React.useRef<React.ComponentRef<typeof ScrollView>>(null);
+    const layoutsRef = React.useRef<Map<string, TabsTriggerLayout>>(new Map());
+
+    const order = React.useMemo(
+      () =>
+        React.Children.toArray(children)
+          .filter(
+            (child): child is React.ReactElement<TabsTriggerProps> =>
+              React.isValidElement(child) && child.type === TabsTrigger,
+          )
+          .map((child) => child.props.value),
+      [children],
+    );
+
+    const layoutContext = React.useMemo<TabsListLayoutContextValue>(
+      () => ({
+        register: (value, layout) => {
+          layoutsRef.current.set(value, layout);
+        },
+        scrollable,
+        unregister: (value) => {
+          layoutsRef.current.delete(value);
+        },
+      }),
+      [scrollable],
+    );
+
+    React.useEffect(() => {
+      if (!scrollable) return;
+      const layout = layoutsRef.current.get(tabs.value);
+      if (!layout) return;
+      // Brings the selected tab's leading edge into view with a little leading breathing
+      // room; RN's `ScrollView` clamps an out-of-range offset itself, so no extra
+      // viewport-width bookkeeping is needed here.
+      scrollViewRef.current?.scrollTo({ animated: true, x: Math.max(0, layout.x - 16) });
+    }, [scrollable, tabs.value]);
+
+    return (
+      <TabsOrderContext.Provider value={order}>
+        <TabsListLayoutContext.Provider value={layoutContext}>
+          <View
+            ref={ref}
+            {...props}
+            accessibilityRole="tablist"
+            className={cn('flex-row items-center gap-1 rounded-md bg-muted p-1', className)}
+          >
+            {scrollable ? (
+              <ScrollView horizontal ref={scrollViewRef} showsHorizontalScrollIndicator={false}>
+                <View className="flex-row gap-1">{children}</View>
+              </ScrollView>
+            ) : (
+              children
+            )}
+            {addon}
+          </View>
+        </TabsListLayoutContext.Provider>
+      </TabsOrderContext.Provider>
+    );
+  },
 );
 
 TabsList.displayName = 'TabsList';
@@ -77,7 +173,30 @@ export type TabsTriggerProps = Omit<
 > & {
   children?: React.ReactNode;
   className?: string;
+  /**
+   * Renders an accessible close control as a **sibling** of this tab's own pressable, never
+   * nested inside it (a `Pressable`-in-`Pressable`/`<button>`-in-`<button>` composition is
+   * the same anti-pattern flagged for `DropdownMenuTrigger` wrapping `IconButton` — nesting
+   * interactive elements breaks Web's DOM validity and native's hit-testing). Requires
+   * `closeAccessibilityLabel`. Defaults to false.
+   */
+  closable?: boolean;
+  /**
+   * Accessible name for the close control, e.g. `` `Close ${label}` ``. Required whenever
+   * `closable` is true — BeeUI does not synthesize an English default from the tab's own
+   * label, since that would hardcode a locale. A dev warning fires if `closable` is set
+   * without it.
+   */
+  closeAccessibilityLabel?: string;
   labelClassName?: string;
+  /**
+   * Called with this tab's `value` when its close control is pressed. If this tab is
+   * currently selected, `Tabs`'s `onValueChange` is also called — with the previous
+   * sibling's `value` if one exists, else the next sibling's — moving selection away from
+   * the tab being closed. No-op (besides `onClose` itself) when a non-selected tab closes,
+   * or when the closing tab has no remaining sibling.
+   */
+  onClose?: (value: string) => void;
   /** Identifies this tab; compared against the parent `Tabs`'s `value` to determine whether it is selected. */
   value: string;
 };
@@ -92,14 +211,20 @@ export const TabsTrigger = React.forwardRef<
       accessibilityState,
       children,
       className,
+      closable = false,
+      closeAccessibilityLabel,
       disabled = false,
       labelClassName,
+      onClose,
+      onLayout,
       value,
       ...props
     },
     ref,
   ) => {
     const tabs = useTabsContext('TabsTrigger');
+    const order = React.useContext(TabsOrderContext);
+    const listLayout = React.useContext(TabsListLayoutContext);
     const selected = tabs.value === value;
     const isDisabled = disabled === true || tabs.disabled;
     const childArray = React.Children.toArray(children);
@@ -109,55 +234,148 @@ export const TabsTrigger = React.forwardRef<
       ? childArray.map(String).join('')
       : undefined;
 
+    React.useEffect(() => {
+      if (
+        closable &&
+        !closeAccessibilityLabel &&
+        typeof __DEV__ !== 'undefined' &&
+        __DEV__
+      ) {
+        console.warn(
+          `BeeUI TabsTrigger: "closable" requires "closeAccessibilityLabel" (e.g. ` +
+            `"Close ${inferredLabel ?? value}") — a locale-correct name cannot be inferred, ` +
+            'and the close control renders with no accessible name without it.',
+        );
+      }
+    }, [closable, closeAccessibilityLabel, inferredLabel, value]);
+
+    React.useEffect(() => () => listLayout?.unregister(value), [listLayout, value]);
+
+    const handleLayout = (event: LayoutChangeEvent) => {
+      listLayout?.register(value, {
+        width: event.nativeEvent.layout.width,
+        x: event.nativeEvent.layout.x,
+      });
+      onLayout?.(event);
+    };
+
+    const handlePress = () => {
+      if (!selected) {
+        tabs.onValueChange?.(value);
+      }
+    };
+
+    const handleClose = () => {
+      onClose?.(value);
+      if (selected) {
+        const index = order.indexOf(value);
+        const neighbour = order[index - 1] ?? order[index + 1];
+        if (neighbour !== undefined) {
+          tabs.onValueChange?.(neighbour);
+        }
+      }
+    };
+
+    const labelNode = childArray.map((child, index) =>
+      typeof child === 'string' || typeof child === 'number' ? (
+        <Text
+          key={`tab-label-${index}`}
+          className={cn(selected ? 'text-foreground' : 'text-muted-foreground', labelClassName)}
+          variant="label"
+        >
+          {child}
+        </Text>
+      ) : (
+        child
+      ),
+    );
+
+    // `flex-1` (equal-width tabs, the pre-`scrollable` default) makes no sense once a
+    // `TabsList` sizes its strip to content and scrolls it — a scrollable trigger sizes to
+    // its own content (`flex-none`) instead. Outside any layout-tracking `TabsList`
+    // (`listLayout` is `null`) or inside a non-`scrollable` one, behavior is unchanged.
+    const sizingClassName = listLayout?.scrollable ? 'flex-none' : 'flex-1';
+
+    if (!closable) {
+      return (
+        <Pressable
+          ref={ref}
+          {...props}
+          accessibilityLabel={accessibilityLabel ?? inferredLabel}
+          accessibilityRole="tab"
+          accessibilityState={{
+            ...accessibilityState,
+            disabled: isDisabled,
+            selected,
+          }}
+          // `accessibilityState` alone does not reach the DOM on react-native-web (it is
+          // not in its forwarded-props allowlist — see Checkbox), so `role="tab"` would
+          // otherwise render without the required `aria-selected`. Setting the web-native
+          // `aria-selected` prop directly keeps native platforms (which read
+          // `accessibilityState`) and Web (which reads `aria-*`) both correct.
+          aria-selected={selected}
+          className={cn(
+            'min-h-9 items-center justify-center rounded-sm border px-3 py-2 active:opacity-80 web:focus-visible:bee-focus-ring',
+            sizingClassName,
+            selected
+              ? 'border-border bg-surface-raised'
+              : 'border-transparent bg-transparent',
+            isDisabled && 'opacity-50',
+            className,
+          )}
+          disabled={isDisabled}
+          onLayout={handleLayout}
+          onPress={handlePress}
+        >
+          {labelNode}
+        </Pressable>
+      );
+    }
+
+    // `closable`: the pill (border/background/selected state) moves to this wrapping
+    // `View` so it can visually enclose both the tab and its close control, which render
+    // as siblings inside it — never one `Pressable` nested inside another (see
+    // `closable`'s own docblock above).
     return (
-      <Pressable
-        ref={ref}
-        {...props}
-        accessibilityLabel={accessibilityLabel ?? inferredLabel}
-        accessibilityRole="tab"
-        accessibilityState={{
-          ...accessibilityState,
-          disabled: isDisabled,
-          selected,
-        }}
-        // `accessibilityState` alone does not reach the DOM on react-native-web (it is
-        // not in its forwarded-props allowlist — see Checkbox), so `role="tab"` would
-        // otherwise render without the required `aria-selected`. Setting the web-native
-        // `aria-selected` prop directly keeps native platforms (which read
-        // `accessibilityState`) and Web (which reads `aria-*`) both correct.
-        aria-selected={selected}
+      <View
         className={cn(
-          'min-h-9 flex-1 items-center justify-center rounded-sm border px-3 py-2 active:opacity-80 web:focus-visible:bee-focus-ring',
-          selected
-            ? 'border-border bg-surface-raised'
-            : 'border-transparent bg-transparent',
+          'min-h-9 flex-row items-stretch overflow-hidden rounded-sm border',
+          sizingClassName,
+          selected ? 'border-border bg-surface-raised' : 'border-transparent bg-transparent',
           isDisabled && 'opacity-50',
           className,
         )}
-        disabled={isDisabled}
-        onPress={() => {
-          if (!selected) {
-            tabs.onValueChange?.(value);
-          }
-        }}
+        onLayout={handleLayout}
       >
-        {childArray.map((child, index) =>
-          typeof child === 'string' || typeof child === 'number' ? (
-            <Text
-              key={`tab-label-${index}`}
-              className={cn(
-                selected ? 'text-foreground' : 'text-muted-foreground',
-                labelClassName,
-              )}
-              variant="label"
-            >
-              {child}
-            </Text>
-          ) : (
-            child
-          ),
-        )}
-      </Pressable>
+        <Pressable
+          ref={ref}
+          {...props}
+          accessibilityLabel={accessibilityLabel ?? inferredLabel}
+          accessibilityRole="tab"
+          accessibilityState={{
+            ...accessibilityState,
+            disabled: isDisabled,
+            selected,
+          }}
+          aria-selected={selected}
+          className="min-w-0 flex-1 items-center justify-center px-3 py-2 active:opacity-80 web:focus-visible:bee-focus-ring"
+          disabled={isDisabled}
+          onPress={handlePress}
+        >
+          {labelNode}
+        </Pressable>
+        <Pressable
+          accessibilityLabel={closeAccessibilityLabel}
+          accessibilityRole="button"
+          className="items-center justify-center pe-3 ps-1 active:opacity-60 web:focus-visible:bee-focus-ring"
+          disabled={isDisabled}
+          onPress={handleClose}
+        >
+          <Text tone="muted" variant="label">
+            ×
+          </Text>
+        </Pressable>
+      </View>
     );
   },
 );

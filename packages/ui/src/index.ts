@@ -321,6 +321,7 @@ export {
   type TableBodyProps,
   type TableCaptionProps,
   type TableCellProps,
+  type TableDensity,
   type TableFooterProps,
   type TableHeadProps,
   type TableAlign,
@@ -361,6 +362,7 @@ export {
   type ToastOptions,
   type ToastVariant,
 } from './components/toast';
+export { Toolbar, ToolbarItem, type ToolbarItemProps, type ToolbarProps } from './components/toolbar';
 export {
   Tooltip,
   TooltipContent,
