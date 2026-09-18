@@ -49,6 +49,10 @@ BeeUI documents tested points, not unlimited compatibility promises. The authori
 
 Check [Compatibility](/docs/compatibility/) for peer ranges and optional native peers before changing versions.
 
+## Versioning policy
+
+The published npm version, the repository's `package.json` version, and the React Native version it pins are all `0.86.x` today, and that is a deliberate but coincidental alignment, not a rule: BeeUI's package version tracks its own release history (prereleases are `0.86.2-rc.N`; the stable release is `0.86.2`), independently of whichever React Native version happens to share the same number. Do not assume BeeUI's version implies a specific React Native version or vice versa — always check [Compatibility](/docs/compatibility/) for the actual pinned/tested peer versions. See [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md) for the release/dist-tag mechanics.
+
 ## Pick a platform
 
 | Platform | Guide | Maintained executable authority | Evidence |
