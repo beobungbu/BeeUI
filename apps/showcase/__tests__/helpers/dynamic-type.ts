@@ -151,11 +151,6 @@ export const FIXED_HEIGHT_ALLOWLIST: Record<
     classes: { 'h-px': 1 },
     rationale: 'Decorative separator line (DropdownMenuSeparator); carries no text.',
   },
-  'input.tsx': {
-    classes: { 'h-control-compact': 1, 'h-control-default': 1, 'h-control-large': 1 },
-    rationale:
-      "Input mirrors the native single-line text-field convention (UITextField/EditText) and shares Button's density-invariant controlSize scale. The ios/android touch-target guard on the sm size keeps the tappable region floor at >=44px regardless of scale; multi-line growth is Textarea's contract, not Input's.",
-  },
   'progress.tsx': {
     classes: { 'h-1': 1, 'h-2': 1, 'h-3': 1, 'h-full': 1 },
     rationale: 'Progress bar track/fill geometry; carries no caller text.',
