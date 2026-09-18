@@ -8,7 +8,7 @@ description: "Native activity indicator with semantic tone mapping."
 Native activity indicator with semantic tone mapping.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -54,7 +54,7 @@ Stateless native activity indicator with semantic tone mapping; no controlled pr
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `tone` | `SpinnerTone` | `'primary'` | Semantic color the spinner renders in (e.g. `'destructive'` for an inline error-state spinner). Defaults to `'primary'`. |
+| `tone` | `'foreground' \| 'muted' \| 'primary' \| 'success' \| 'warning' \| 'destructive' \| 'info'` | `'primary'` | Semantic color the spinner renders in (e.g. `'destructive'` for an inline error-state spinner). Defaults to `'primary'`. |
 
 Also carries every prop of `Omit<ActivityIndicatorProps, 'color'>` — that upstream contract is not reproduced here.
 

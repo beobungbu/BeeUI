@@ -8,7 +8,7 @@ description: "Single-value controlled/uncontrolled disclosure group where one it
 Single-value controlled/uncontrolled disclosure group where one item expands at a time.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -199,6 +199,8 @@ Open the fixture itself for the surrounding imports and state. For a smaller app
 ## Limitations
 
 `AccordionTrigger` and `AccordionContent` throw when rendered outside `Accordion`/`AccordionItem` rather than degrading, so the parts cannot be lifted out of the family's own tree; and because a closed item's content is unmounted rather than hidden, any state its children hold is discarded on every collapse.
+
+**Implementation note:** Coming from shadcn/ui: this Accordion does not accept a `type="single" | "multiple"` prop. BeeUI models the single-expand behavior this family implements as the only mode — pass `value`/`onValueChange` (or `defaultValue`) the same way you would for shadcn's `type="single"`. Multi-expand (`type="multiple"`) is not implemented; compose independent `Collapsible` instances instead if every item must be able to stay open simultaneously.
 
 ## Related
 

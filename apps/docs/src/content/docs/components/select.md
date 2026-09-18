@@ -8,7 +8,7 @@ description: "Persistent single string-value selection with anchored option surf
 Persistent single string-value selection with anchored option surface and listbox semantics on Web.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -346,6 +346,8 @@ Open the fixture itself for the surrounding imports and state. For a smaller app
 ## Limitations
 
 - Passing `open` without `onOpenChange` leaves the value read-only: the component renders what you passed and can never change it. It warns in development builds rather than failing silently in production.
+
+**Implementation note:** Rendering a `Select` inside a `Popover` is supported: the two share the same anchored-overlay runtime and dismiss/collision handling, so the listbox opens above the popover rather than being clipped or hidden behind it.
 
 ## Related
 

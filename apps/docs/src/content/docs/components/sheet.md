@@ -8,7 +8,7 @@ description: "Gesture-driven bottom sheet with detents on the shared overlay run
 Gesture-driven bottom sheet with detents on the shared overlay runtime.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -65,7 +65,7 @@ Controlled (`open`+`onOpenChange`) or uncontrolled (`defaultOpen`) gesture-drive
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
+| `loading` | `boolean` | `false` | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 | `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Chooses this element's `size` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 | `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'primary'` | Chooses this element's `variant` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 
@@ -176,11 +176,13 @@ Also carries every prop of `Omit<TextProps, 'accessibilityRole' | 'role' | 'vari
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
+| `loading` | `boolean` | `false` | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 | `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Chooses this element's `size` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 | `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'primary'` | Chooses this element's `variant` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` — that upstream contract is not reproduced here.
+
+**This is the pressable itself.** It accepts every `Button` prop (`variant`, `size`, `loading`, `onPress`, …) — put icon/label children directly inside it. Do not nest another pressable (`Button`, `IconButton`, `Avatar` wrapped for press) inside a `*Trigger`: on Web that renders `<button>` inside `<button>`, which React flags as invalid DOM nesting. For an icon-only or avatar trigger, set `variant="ghost"` (and `size`/`className` as needed) on the trigger directly instead of wrapping a second pressable in it.
 
 **Related exported types:**
 

@@ -8,7 +8,7 @@ description: "Controlled/uncontrolled one-time-code input with numeric normaliza
 Controlled/uncontrolled one-time-code input with numeric normalization and per-value completion callbacks.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -151,6 +151,8 @@ Open the fixture itself for the surrounding imports and state. For a smaller app
 ## Limitations
 
 One text field, not one box per digit: there is no per-character slot, caret or focus movement, so a segmented OTP appearance has to be built by the caller. The length limit, keyboard type and change handler are owned here and not accepted from outside.
+
+**Implementation note:** `OTPInputProps` omits `onChangeText` from `InputProps`; the only change callback is the inherited React Native `onChange`, which receives a `NativeSyntheticEvent<TextInputChangeEventData>`, not a plain string — read the new value from `event.nativeEvent.text`.
 
 ## Related
 

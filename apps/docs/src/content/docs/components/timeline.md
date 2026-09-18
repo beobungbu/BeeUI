@@ -8,7 +8,7 @@ description: "Read-only ordered history composition with semantic marker states;
 Read-only ordered history composition with semantic marker states; owns no workflow state.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -58,7 +58,7 @@ Stateless read-only ordered history composition; terminal connector placement is
 | `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
 | `marker` | `React.ReactNode` | — | Replaces the default status-colored dot in the rail. The rail column is hidden from accessibility regardless. |
 | `meta` | `React.ReactNode` | — | Rendered below `description` in a smaller, subtler style (e.g. a timestamp or actor). |
-| `status` | `TimelineStatus` | `'default'` | Sets the default marker dot's color. Ignored when a custom `marker` is provided. Defaults to `'default'`. |
+| `status` | `'default' \| 'primary' \| 'success' \| 'destructive'` | `'default'` | Sets the default marker dot's color. Ignored when a custom `marker` is provided. Defaults to `'default'`. |
 | `title` **(required)** | `React.ReactNode` | — | The primary heading text for this surface. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.

@@ -8,7 +8,7 @@ description: "Semantic typography primitive with variant/tone styling that honor
 Semantic typography primitive with variant/tone styling that honors OS/browser font scaling.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -58,8 +58,8 @@ Stateless semantic typography primitive; `variant`/`tone` apply typed styling, a
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `family` | `FontFamily` | — | `'mono'` renders the text in the system-monospace fallback stack (e.g. for reference codes/IDs). Opt-in only — omitting it preserves the inherited sans/system font. |
-| `numeric` | `NumericVariant` | — | `'tabular'` opts numeric content into equal-width figures so columns of amounts/KPIs/timers align. Omit for normal proportional figures. |
+| `family` | `'mono'` | — | `'mono'` renders the text in the system-monospace fallback stack (e.g. for reference codes/IDs). Opt-in only — omitting it preserves the inherited sans/system font. |
+| `numeric` | `'tabular'` | — | `'tabular'` opts numeric content into equal-width figures so columns of amounts/KPIs/timers align. Omit for normal proportional figures. |
 | `tone` | `'default' \| 'muted' \| 'subtle' \| 'primary' \| 'destructive' \| 'success' \| 'warning' \| 'info'` | `'default'` | Chooses this element's `tone` from `textVariants`'s presets, declared in `packages/ui/src/components/text.tsx` — the classes each value applies are there. |
 | `variant` | `'display' \| 'title' \| 'heading' \| 'body' \| 'label' \| 'caption'` | `'body'` | Chooses this element's `variant` from `textVariants`'s presets, declared in `packages/ui/src/components/text.tsx` — the classes each value applies are there. |
 

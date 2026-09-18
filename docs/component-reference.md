@@ -21,6 +21,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/component-contracts.test.tsx`](../apps/showcase/__tests__/component-contracts.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Limitations:** `AccordionTrigger` and `AccordionContent` throw when rendered outside `Accordion`/`AccordionItem` rather than degrading, so the parts cannot be lifted out of the family's own tree; and because a closed item's content is unmounted rather than hidden, any state its children hold is discarded on every collapse.
+- **Notes:** Coming from shadcn/ui: this Accordion does not accept a `type="single" | "multiple"` prop. BeeUI models the single-expand behavior this family implements as the only mode — pass `value`/`onValueChange` (or `defaultValue`) the same way you would for shadcn's `type="single"`. Multi-expand (`type="multiple"`) is not implemented; compose independent `Collapsible` instances instead if every item must be able to stay open simultaneously.
 
 ## `alert-banner`
 
@@ -452,6 +453,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/auth/screens/verify-code-screen.tsx`](../apps/showcase/patterns/auth/screens/verify-code-screen.tsx), [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/component-contracts.test.tsx`](../apps/showcase/__tests__/component-contracts.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Limitations:** One text field, not one box per digit: there is no per-character slot, caret or focus movement, so a segmented OTP appearance has to be built by the caller. The length limit, keyboard type and change handler are owned here and not accepted from outside.
+- **Notes:** `OTPInputProps` omits `onChangeText` from `InputProps`; the only change callback is the inherited React Native `onChange`, which receives a `NativeSyntheticEvent<TextInputChangeEventData>`, not a plain string — read the new value from `event.nativeEvent.text`.
 
 ## `pagination`
 
@@ -605,6 +607,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/select-showcase.tsx`](../apps/showcase/component-gallery/select-showcase.tsx), [`runtime-smoke/dynamic-type-acceptance.tsx`](../apps/showcase/runtime-smoke/dynamic-type-acceptance.tsx), [`runtime-smoke/runtime-stress-acceptance.tsx`](../apps/showcase/runtime-smoke/runtime-stress-acceptance.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Notes:** Rendering a `Select` inside a `Popover` is supported: the two share the same anchored-overlay runtime and dismiss/collision handling, so the listbox opens above the popover rather than being clipped or hidden behind it.
 
 ## `separator`
 
