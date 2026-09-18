@@ -36,6 +36,8 @@ const mockDismiss = jest.fn();
 let latestOnDismiss: (() => void) | undefined;
 let latestBackdropComponent: ((props: MockBackdropProps) => React.ReactNode) | undefined;
 let latestHandleComponent: ((props: MockHandleProps) => React.ReactNode) | null | undefined;
+let latestEnableDynamicSizing: boolean | undefined;
+let latestSnapPoints: readonly unknown[] | undefined;
 
 jest.mock('@gorhom/bottom-sheet', () => {
   const ReactActual = require('react');
@@ -46,14 +48,18 @@ jest.mock('@gorhom/bottom-sheet', () => {
       props: {
         backdropComponent?: (p: MockBackdropProps) => React.ReactNode;
         children?: React.ReactNode;
+        enableDynamicSizing?: boolean;
         handleComponent?: ((p: MockHandleProps) => React.ReactNode) | null;
         onDismiss?: () => void;
+        snapPoints?: readonly unknown[];
       },
       ref: unknown,
     ) => {
       latestOnDismiss = props.onDismiss;
       latestBackdropComponent = props.backdropComponent;
       latestHandleComponent = props.handleComponent;
+      latestEnableDynamicSizing = props.enableDynamicSizing;
+      latestSnapPoints = props.snapPoints;
       ReactActual.useImperativeHandle(ref, () => ({ present: mockPresent, dismiss: mockDismiss }));
       return ReactActual.createElement(
         View,
@@ -154,6 +160,42 @@ describe('BeeUI issue #158 Sheet (native/@gorhom/bottom-sheet adapter) contract'
 
     fireEvent.press(screen.getByRole('button', { name: 'Done' }));
     expect(mockDismiss).toHaveBeenCalledTimes(2);
+  });
+
+  // #584 — gorhom v5's `enableDynamicSizing` defaults to `true`, which
+  // measures `BottomSheetView`'s own `flex: 1` content (unbounded, so it
+  // measures 0) as the first snap point instead of respecting the explicit
+  // `snapPoints` BeeUI already always supplies. A real-device report showed
+  // `present()` called with no visible sheet and no `onChange` at all;
+  // real-device confirmation of the fix remains an owner gate (see
+  // `plans/260918-1559-consumer-audit-fix-all/reports/ws-b-sheet-584.md`),
+  // but this locks in the deterministic part: the prop is always passed.
+  it('always disables gorhom dynamic sizing, since snapPoints is always explicit (#584)', () => {
+    render(
+      <Sheet>
+        <SheetTrigger>Open sheet</SheetTrigger>
+        <SheetContent testID="sheet-content">
+          <SheetTitle>Filters</SheetTitle>
+        </SheetContent>
+      </Sheet>,
+    );
+
+    expect(latestEnableDynamicSizing).toBe(false);
+    expect(latestSnapPoints).toEqual(['90%']);
+  });
+
+  it('disables dynamic sizing the same way when the caller supplies explicit snapPoints', () => {
+    render(
+      <Sheet>
+        <SheetTrigger>Open sheet</SheetTrigger>
+        <SheetContent snapPoints={['50%', '90%']} testID="sheet-content">
+          <SheetTitle>Filters</SheetTitle>
+        </SheetContent>
+      </Sheet>,
+    );
+
+    expect(latestEnableDynamicSizing).toBe(false);
+    expect(latestSnapPoints).toEqual(['50%', '90%']);
   });
 
   it('honors the controlled open/onOpenChange contract via the custom backdrop press', () => {
