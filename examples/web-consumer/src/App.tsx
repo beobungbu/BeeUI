@@ -50,7 +50,7 @@ import * as React from 'react';
  * path (no Expo, no Showcase internals): provider/theme wiring, forms,
  * anchored overlays (Popover/Select/Tooltip/Dialog), the Web Sheet path,
  * Table, and Calendar all render and interact correctly in a plain browser
- * build. See ../README.md for the unpublished-package setup this depends on.
+ * build. See ../README.md for the packed-tarball setup this depends on.
  */
 export function App() {
   const [checked, setChecked] = React.useState(false);

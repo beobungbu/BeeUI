@@ -1,6 +1,6 @@
 # BeeUI source-ownership starter (#231)
 
-R10.2 — proves the packed, unpublished `@beemvp/beeui-cli` engine end-to-end:
+R10.2 — proves the packed `@beemvp/beeui-cli` engine end-to-end:
 `beeui init` + `beeui add button popover` copy component source directly
 into this app. `popover` is the representative anchored-overlay slice that
 declares a resolvable `@beemvp/beeui-tokens` runtime dependency (the
@@ -10,9 +10,13 @@ declares a resolvable `@beemvp/beeui-tokens` runtime dependency (the
 `@beemvp/beeui-ui`/`@beemvp/beeui-core` dependency anywhere in this app: all component
 source is local, editable, and committed.
 
-## Unpublished status
+## Packed-artifact consumption
 
-`@beemvp/beeui-cli` is not published to npm ([docs/registry-cli.md](../../docs/registry-cli.md)).
+`@beemvp/beeui-cli` is publicly published on npm under the `next` dist-tag
+(see `../../README.md`); a real project should run `npx @beemvp/beeui-cli@next`
+directly — see [CLI & source ownership](https://beeui.beemvp.com/docs/guides/cli-source-ownership/).
+This starter deliberately keeps consuming the packed, locally built CLI
+artifact instead ([docs/registry-cli.md](../../docs/registry-cli.md)):
 `setup.sh` builds the packed artifact (`pnpm --filter @beemvp/beeui-cli run build`,
 producing `packages/cli/dist/beeui.mjs`) and runs that built binary directly
 — the same packed-artifact verification method `pnpm cli:smoke` already

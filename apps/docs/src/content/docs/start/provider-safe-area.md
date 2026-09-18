@@ -31,6 +31,8 @@ What it does **not** own: which surface in your shell consumes which system inse
 
 ## Root setup
 
+This is the canonical safe-area composition for **Expo and bare React Native**, where the OS reports real notch/status-bar/home-indicator insets. On **Web**, browsers report no system safe-area insets by default, so the maintained Web starter's root uses ordinary layout with no `SafeArea` at all — see [Web: Application root](/docs/start/web/#application-root) for that exact composition, and add `SafeArea` there only around a surface that genuinely consumes browser safe-area insets (for example a PWA installed to a notched device).
+
 ```tsx
 import {
   AppHeader,

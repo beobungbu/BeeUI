@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "R10.12 (#241) — fresh-agent reproduction of the production demo's searchable/filterable records Table flow (#260), built from BeeUI's AI-agent context only and consumed through real @beemvp/beeui-* pnpm pack tarballs (BeeUI is unpublished).",
+  "description": "R10.12 (#241) — fresh-agent reproduction of the production demo's searchable/filterable records Table flow (#260), built from BeeUI's AI-agent context only and consumed through real @beemvp/beeui-* pnpm pack tarballs (see README.md for why this app packs instead of installing the published npm RC).",
   "scripts": {
     "setup": "bash ./setup.sh",
     "dev": "vite",

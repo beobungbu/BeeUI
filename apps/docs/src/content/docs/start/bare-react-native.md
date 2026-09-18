@@ -7,9 +7,11 @@ Use this path for a React Native application that does not use the Expo runtime.
 
 ## Install
 
+Install BeeUI and every runtime peer it declares in one command — installing `@beemvp/beeui-ui` alone first and the React Native peers afterward, in two separate commands, is the ordering that produces an `ERESOLVE` on `react-native`:
+
 ```bash
-npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next
-npm install react@19.2.3 react-dom@19.2.3 react-native@0.86.2 \
+npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next \
+  react@19.2.3 react-dom@19.2.3 react-native@0.86.2 \
   react-native-safe-area-context@5.7.0 react-native-teleport@1.1.13 \
   tailwindcss@4.3.3 uniwind@1.10.1
 ```
@@ -19,6 +21,9 @@ Pin `@0.86.2-rc.1` instead of `@next` when you need an immutable RC dependency.
 Optional native peers for `Sheet`, `DatePicker` and `DateTimePicker` are listed in [Compatibility](/docs/compatibility/).
 
 ## Styling entry
+
+Create `global.css` at the project root, matching the `cssEntryFile` path your Metro/Uniwind
+config points at. `@source` paths are relative to this file:
 
 ```css
 @import 'tailwindcss';

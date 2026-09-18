@@ -56,6 +56,30 @@ to judge whether that promise is justified.
 | `react-native-gesture-handler` | `2.32.0` exact (`packages/ui` devDependency), `~2.32.0` (Showcase); matches Expo SDK 57's own bundled pin | Deterministic contract evidence plus CI `ios-showcase` bundle/compile evidence; `@gorhom/bottom-sheet`'s own required peer, no direct BeeUI API usage | `>=2.32 <3`, `optional: true` | **Narrow/unverified beyond compile**: real gesture-arbitration runtime proof (pan-down-to-close, nested `ScrollView`/`FlatList` inside the sheet) is owed to #160. | [ADR-006](decisions/006-sheet-gesture-engine.md), [#160](https://github.com/beobungbu/BeeUI/issues/160) |
 | `react-native-worklets` | `0.10.1` exact (`packages/ui` devDependency), `~0.10.1` (Showcase); Reanimated v4's own required peer (its worklets runtime split out of `react-native-reanimated` starting with v4), not an independent BeeUI dependency decision — matches Expo SDK 57's own bundled pin | Deterministic contract evidence plus CI `ios-showcase` bundle/compile evidence; no direct BeeUI API usage | `>=0.10 <1`, `optional: true` | **Narrow/unverified beyond compile**: transitively required by `react-native-reanimated`; carries the same runtime-proof gap owed to #160. | [ADR-006](decisions/006-sheet-gesture-engine.md), [#160](https://github.com/beobungbu/BeeUI/issues/160) |
 
+## Expo consumer-starter pins vs. the repo-tested pin
+
+`examples/expo-package-consumer` intentionally pins `react-native@0.86.3` and
+`@expo/metro-runtime@~57.0.16`, one patch ahead of this matrix's repo-tested
+`reactNative: "0.86.2"` snapshot value above. This is a deliberate, narrow
+exception, not drift:
+
+- the monorepo itself — `packages/ui/package.json`'s devDependency, `apps/showcase`, and
+  every native-compile/runtime CI lane — stays pinned to the exact tested `0.86.2`, which
+  is what this file's machine-checked snapshot guards;
+- a fresh `expo install`/`npm install` under the current `expo@57.0.18` resolves
+  `@expo/cli@57.0.23` → `@expo/router-server@57.0.9`, which declares a peer floor of
+  `@expo/metro-runtime@^57.0.15` — one minor ahead of the `~57.0.12` this matrix's Expo SDK
+  row states — and separately resolves `react-native@0.86.3` through Expo's own dependency
+  graph, not `0.86.2`;
+- both `0.86.2` (this repo's tested pin) and `0.86.3` (the starter's pin) satisfy
+  `@beemvp/beeui-ui`'s declared `react-native` peer range (`>=0.86.0 <0.87.0`), so neither
+  pin violates the public promise — the starter pin only removes an avoidable peer-version
+  warning a clean `expo install` would otherwise report against this repo's older pins.
+
+Do not read the starter's `0.86.3`/`~57.0.16` pins as widening this matrix's tested-version
+claim: the `0.86.2` row above remains the only React Native patch this repository's own CI
+compiles and runs native-runtime smoke against.
+
 ## Explicitly out of scope for this lock (deferred, not silently promised)
 
 - **Web/browser engine matrix.** `web-a11y.yml`, `visual-web.yml`, and `web-consumer.yml`

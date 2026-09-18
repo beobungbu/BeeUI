@@ -30,3 +30,25 @@ The tested point and the declared peer range are different concepts. BeeUI narro
 support when a combination lacks evidence rather than assuming semver compatibility. RN
 0.86.x is the current stable native line; historical/excluded rows remain in the full
 [compatibility authority](https://github.com/beobungbu/BeeUI/blob/main/docs/compatibility-matrix.md).
+
+## Declared peer dependencies
+
+This is the complete `peerDependencies` set `@beemvp/beeui-ui` declares (`npm view @beemvp/beeui-ui peerDependencies`) — every one of these, not only the toolchain/runtime rows above:
+
+| Peer | Range | Required or optional |
+| --- | --- | --- |
+| `react` | `>=19 <20` | Required |
+| `react-native` | `>=0.86.0 <0.87.0` | Required |
+| `tailwindcss` | `>=4 <5` | Required |
+| `uniwind` | `>=1.10.1 <2` | Required |
+| `react-native-safe-area-context` | `>=5 <6` | Required |
+| `react-native-teleport` | `>=1.1 <2` | Required |
+| `react-dom` | `>=19 <20` | Optional — Web only |
+| `@gorhom/bottom-sheet` | `>=5.2 <6` | Optional — native `Sheet` |
+| `react-native-gesture-handler` | `>=2.32 <3` | Optional — native `Sheet` |
+| `react-native-reanimated` | `>=4.5 <5` | Optional — native `Sheet` |
+| `react-native-worklets` | `>=0.10 <1` | Optional — native `Sheet` (Reanimated v4's own peer) |
+| `@react-native-community/datetimepicker` | `>=9.1 <10` | Optional — native `DatePicker`/`DateTimePicker` |
+
+Install only the optional peers your application actually uses; a missing optional peer only
+breaks the specific component it backs, not the rest of BeeUI.
