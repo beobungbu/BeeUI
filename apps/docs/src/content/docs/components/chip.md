@@ -16,6 +16,7 @@ BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `l
 - **Category:** Data display
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/chip.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/chip.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add chip
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -46,7 +47,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Standalone toggle (`selected`/`onSelectedChange`) or, nested in `ChipGroup`, a value-scoped selection item; a grouped `Chip` rendered without a `value` fails safe as disabled and warns in development, and `ChipGroup` supports controlled/uncontrolled single- or multiple-selection.
+Standalone toggle (`selected`/`onSelectedChange`) or, nested in `ChipGroup`, a value-scoped selection item; a grouped `Chip` rendered without a `value` fails safe as disabled and warns in development, and `ChipGroup` supports controlled/uncontrolled single- or multiple-selection. A standalone `Chip` set to `interactive={false}` renders as a static, read-only tag with no button/radio/checkbox role and no press handling; `ChipGroup`'s `allowDeselect` lets pressing the already-selected `Chip` again clear the `'single'`-mode selection instead of leaving it always-one-selected.
 
 ### Props
 
@@ -163,7 +164,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Chip** is actually used: 9 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Chip** is actually used: 9 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -172,13 +173,13 @@ import { Chip, ChipGroup } from '@beemvp/beeui-ui';
 import * as React from 'react';
 ````
 
-Fixture state this block reads (same file, line 463):
+Fixture state this block reads (same file, line 464):
 
 ````tsx
   const [filters, setFilters] = React.useState<string[]>(['mobile']);
 ````
 
-[lines 888–896](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L888-L896):
+[lines 895–903](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L895-L903):
 
 ````tsx
                 <ChipGroup
@@ -195,7 +196,7 @@ Fixture state this block reads (same file, line 463):
 Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
-Inside a `ChipGroup`, a chip's own `selected`, `defaultSelected` and `onSelectedChange` are ignored: selection is read from the group's value and a press is routed to the group instead of the item's callback.
+Inside a `ChipGroup`, a chip's own `selected`, `defaultSelected`, `onSelectedChange` and `interactive` are ignored: selection and role are read from the group's value and semantics, and a press is routed to the group instead of the item's callback. `allowDeselect` has no effect in `'multiple'` mode, which can already reach zero selections by unchecking every `Chip`.
 
 ## Related
 

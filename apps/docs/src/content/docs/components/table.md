@@ -16,6 +16,7 @@ BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `l
 - **Category:** Data display
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/table.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/table.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add table
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -46,13 +47,13 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
     - `table`
   - Package export subpath: `@beemvp/beeui-ui/table`
 
-**Exported types:** `TableAlign`, `TableBodyProps`, `TableCaptionProps`, `TableCellProps`, `TableFooterProps`, `TableHeaderProps`, `TableHeadProps`, `TableLayout`, `TableProps`, `TableRowProps`, `TableSortDirection`
+**Exported types:** `TableAlign`, `TableBodyProps`, `TableCaptionProps`, `TableCellProps`, `TableDensity`, `TableFooterProps`, `TableHeaderProps`, `TableHeadProps`, `TableLayout`, `TableProps`, `TableRowProps`, `TableSortDirection`
 
 The generated API inventory is mechanically joined to `packages/ui/src/index.ts`, Registry metadata, and the component reference contract. Each type's field table below is parsed directly from that source, not a second hand-maintained copy; for the fuller behavior narrative see the [canonical component behavior catalog](https://github.com/beobungbu/BeeUI/blob/main/docs/components.md).
 
 ## State and behavior contract
 
-Composable primitive family with no owned fetching, sort/filter/selection state, or spreadsheet-style cell navigation. `TableHead`'s `sortDirection`/`onSortChange` pair is fully caller-controlled (the presence of `sortDirection` is what marks a column sortable); `TableRow`'s `selected` is a caller-owned boolean reflected only visually/for accessibility. `layout` (`'scroll'` default, or `'stacked'`) is an explicit caller choice — Table never measures viewport width itself. `TableHead`/`TableCell` accept an `align` prop (`'start'` | `'center'` | `'end'`) for numeric/action columns instead of the platform-specific `className="items-end text-end"` combination.
+Composable primitive family with no owned fetching, sort/filter/selection state, or spreadsheet-style cell navigation. `TableHead`'s `sortDirection`/`onSortChange` pair is fully caller-controlled (the presence of `sortDirection` is what marks a column sortable); `TableRow`'s `selected` is a caller-owned boolean reflected only visually/for accessibility, and its optional `onPress` makes the whole row a real keyboard-reachable pressable. `layout` (`'scroll'` default, or `'stacked'`) is an explicit caller choice — Table never measures viewport width itself. `TableHead`/`TableCell` accept an `align` prop (`'start'` | `'center'` | `'end'`) for numeric/action columns instead of the platform-specific `className="items-end text-end"` combination. `Table`'s `density` overrides the row height for that one table only (`'compact'`/`'comfortable'`/`'spacious'` reuse the global density-axis values; `'dense48'` is a fourth, table-specific 48px step) and is ignored in `layout="stacked"`; omitting it leaves rows following the ambient global density exactly as before.
 
 ### Props
 
@@ -156,6 +157,7 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `density` | `TableDensity` | — | Per-table row-height override for `layout="scroll"` rows, replacing the ambient global application-density row height for this one `Table` only — see `TableDensity`. Omitted (the default) leaves every row following the global density exactly as before this prop existed; existing tables are unaffected. |
 | `layout` | `TableLayout` | `'scroll'` | Responsive presentation. Defaults to `'scroll'` (horizontal `ScrollView` around the row grid). Set `'stacked'` to render a card/label-value presentation instead — typically driven by the caller's own breakpoint decision (BeeUI does not own viewport/breakpoint policy). |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
@@ -188,6 +190,7 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 **Related exported types:**
 
 - `TableAlign` — one of `'start'`, `'center'`, `'end'`.
+- `TableDensity` — one of `'compact'`, `'comfortable'`, `'spacious'`, `'dense48'`.
 - `TableLayout` — one of `'scroll'`, `'stacked'`.
 - `TableSortDirection` — one of `'ascending'`, `'descending'`, `'none'`.
 
@@ -270,6 +273,7 @@ device paths.
     - `TableBodyProps`
     - `TableCaptionProps`
     - `TableCellProps`
+    - `TableDensity`
     - `TableFooterProps`
     - `TableHeaderProps`
     - `TableHeadProps`

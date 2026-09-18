@@ -11,6 +11,21 @@ Token **groups** are the design values themselves, generated from `tokens.json` 
 
 Only `colors`, `radius` and `motionDuration` are runtime-overridable. Everything else is a build-time contract — see the customizable-versus-contractual table in [Branding](/docs/guides/branding/).
 
+### Typography scale ↔ Text variant
+
+`fontSize`/`lineHeight` are keyed by the same six names [Text](/docs/components/text/)'s `variant` prop accepts — there is no separate numeric scale to look up. The applied font weight is a `Text`-owned styling decision, not a token value.
+
+| `Text` `variant` | `fontSize` | `lineHeight` | Applied weight |
+| --- | --- | --- | --- |
+| `display` | 32px | 40px | bold (700) |
+| `title` | 24px | 32px | bold (700) |
+| `heading` | 18px | 24px | semibold (600) |
+| `body` (default) | 16px | 24px | regular (400, inherited) |
+| `label` | 14px | 20px | semibold (600) |
+| `caption` | 12px | 16px | regular (400, inherited) |
+
+There is no runtime accessor for this scale outside of `Text`'s own `variant` prop — `useBeeToken`/`getBeeToken` do not expose `fontSize`/`lineHeight` as a readable category (they are build-time-only, per the table above).
+
 ## Token groups (21)
 
 | Group | Values | Source |
@@ -35,7 +50,7 @@ Only `colors`, `radius` and `motionDuration` are runtime-overridable. Everything
 | `radius` | `2xl`: 24px, `full`: 9999px, `lg`: 14px, `md`: 10px, `sm`: 6px, `xl`: 18px, `xs`: 4px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.radius` |
 | `rowGap` | `comfortable`: 12px, `compact`: 8px, `spacious`: 16px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.rowGap` |
 | `rowHeight` | `comfortable`: 56px, `compact`: 44px, `spacious`: 64px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.rowHeight` |
-| `spacing` | `0`: 0px, `1`: 4px, `10`: 40px, `12`: 48px, `16`: 64px, `2`: 8px, `2.5`: 10px, `3`: 12px, `4`: 16px, `5`: 20px, `6`: 24px, `8`: 32px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.spacing` |
+| `spacing` | `0`: 0px, `1`: 4px, `10`: 40px, `12`: 48px, `16`: 64px, `2`: 8px, `2.5`: 10px, `3`: 12px, `4`: 16px, `5`: 20px, `6`: 24px, `8`: 32px, `row-dense`: 48px | [`packages/tokens/tokens.json`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/tokens.json) `tokens.spacing` |
 
 ## Runtime values (67)
 
@@ -106,7 +121,7 @@ Only `colors`, `radius` and `motionDuration` are runtime-overridable. Everything
 | `responsiveLayoutClassification` | ` { "breakpoint": { "layer": "web-responsive", "binding": "build-time-constant", "runtimeOverridable": false, "engine": "tailwind-uniwind" }, "pageGutter": { "layer": "cross-platform", "binding": "value", "runtimeOverridable": false }, "cont… ` | Build-time vs runtime classification for the responsive-layout token groups. | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
 | `semanticColorTokens` | ` [ "background", "foreground", "surface", "surface-muted", "surface-raised", "muted", "muted-foreground", "subtle-foreground", "primary", "primary-foreground", "primary-hover", "primary-pressed", "secondary", "secondary-foreground", "second… ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
 | `semanticColorVariable` | ` (token: SemanticColorToken): SemanticColorVariableName ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
-| `spacing` | ` { "0": 0, "1": 4, "2": 8, "3": 12, "4": 16, "5": 20, "6": 24, "8": 32, "10": 40, "12": 48, "16": 64, "2.5": 10 } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
+| `spacing` | ` { "0": 0, "1": 4, "2": 8, "3": 12, "4": 16, "5": 20, "6": 24, "8": 32, "10": 40, "12": 48, "16": 64, "2.5": 10, "row-dense": 48 } ` | — | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
 | `themeOverrideClassification` | ` { "spacing": { "runtimeOverridable": false }, "radius": { "layer": "cross-platform", "binding": "value", "runtimeOverridable": true, "engine": "tailwind-uniwind" }, "fontFamily": { "runtimeOverridable": false }, "fontSize": { "runtimeOverr… ` | Runtime-override safety classification for every canonical token group, generated straight from each group's `$extensions.com.beeui` metadata (see tokens.json). | [`packages/tokens/src/index.ts`](https://github.com/beobungbu/BeeUI/blob/main/packages/tokens/src/index.ts) |
 
 ## Runtime types (63)

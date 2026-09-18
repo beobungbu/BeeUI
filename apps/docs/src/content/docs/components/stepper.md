@@ -16,6 +16,7 @@ BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `l
 - **Category:** Navigation & disclosure
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/stepper.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/stepper.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add stepper
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -46,7 +47,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Controlled `currentStep` context shared with every `StepperItem`; step values are normalized to a finite range, and a `StepperItem` sharing a duplicate normalized step value fails safe as disabled — it owns no application workflow state.
+Controlled `currentStep` context shared with every `StepperItem`; step values are normalized to a finite range, and a `StepperItem` sharing a duplicate normalized step value fails safe as disabled — it owns no application workflow state. `orientation` (`'vertical'` default, or `'horizontal'`) is a pure layout switch — it changes the connector line direction only, not the step-normalization or fail-safe behavior above.
 
 ### Props
 
@@ -150,7 +151,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Stepper** is actually used: 5 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Stepper** is actually used: 5 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -159,13 +160,13 @@ import { Stepper, StepperItem } from '@beemvp/beeui-ui';
 import * as React from 'react';
 ````
 
-Fixture state this block reads (same file, line 466):
+Fixture state this block reads (same file, line 467):
 
 ````tsx
   const [step, setStep] = React.useState(3);
 ````
 
-[lines 975–979](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L975-L979):
+[lines 982–986](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L982-L986):
 
 ````tsx
                   <Stepper currentStep={step} onStepChange={setStep} testID="stepper-showcase">

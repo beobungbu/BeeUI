@@ -16,6 +16,7 @@ BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `l
 - **Category:** Overlays & feedback
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/dialog.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/dialog.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add dialog
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -247,7 +248,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Dialog** is actually used: 81 lines in 4 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Dialog** is actually used: 81 lines in 4 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -257,7 +258,7 @@ import * as React from 'react';
 import { useUniwind } from 'uniwind';
 ````
 
-Fixture state this block reads (same file, lines 173, 175-177, 188, 189):
+Fixture state this block reads (same file, lines 174, 176-178, 189, 190):
 
 ````tsx
 const OverlayConsumerContext = React.createContext('overlay-context-default');
@@ -268,7 +269,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
   const [menuOpen, setMenuOpen] = React.useState(false);
 ````
 
-[lines 214–228](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L214-L228):
+[lines 215–229](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L215-L229):
 
 ````tsx
       <Dialog onOpenChange={setDialogOpen} open={dialogOpen}>
@@ -288,7 +289,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
       </Dialog>
 ````
 
-Fixture state this block reads (same file, lines 173, 175-177, 234):
+Fixture state this block reads (same file, lines 174, 176-178, 235):
 
 ````tsx
 const OverlayConsumerContext = React.createContext('overlay-context-default');
@@ -298,7 +299,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
   const [dialogMenuAction, setDialogMenuAction] = React.useState('none');
 ````
 
-[lines 267–306](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L267-L306):
+[lines 268–307](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L268-L307):
 
 ````tsx
         <Dialog>
@@ -343,7 +344,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
         </Dialog>
 ````
 
-Fixture state this block reads (same file, line 320-323):
+Fixture state this block reads (same file, line 321-324):
 
 ````tsx
 function ThemeScopeValue({ testID }: { testID: string }) {
@@ -352,7 +353,7 @@ function ThemeScopeValue({ testID }: { testID: string }) {
 }
 ````
 
-[lines 352–361](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L352-L361):
+[lines 353–362](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L353-L362):
 
 ````tsx
           <Dialog>
@@ -367,7 +368,7 @@ function ThemeScopeValue({ testID }: { testID: string }) {
           </Dialog>
 ````
 
-[lines 686–701](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L686-L701):
+[lines 693–708](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L693-L708):
 
 ````tsx
                   <Dialog>

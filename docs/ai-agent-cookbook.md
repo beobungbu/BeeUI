@@ -123,7 +123,7 @@ design-token contract. It intentionally does **not** own routers, data fetching,
 auth, payment, a form-management library, or a chart framework. Do not add those into
 `@beemvp/beeui-ui`, and do not expect BeeUI to provide them. See [docs/architecture.md](architecture.md).
 
-The public surface is **62 public component modules** exported from `@beemvp/beeui-ui`, plus
+The public surface is **63 public component modules** exported from `@beemvp/beeui-ui`, plus
 `@beemvp/beeui-core` (engine-neutral helpers) and `@beemvp/beeui-tokens` (semantic tokens + theme CSS).
 The authoritative inventory is [llms-components.txt](../llms-components.txt), generated from
 [packages/ui/src/index.ts](../packages/ui/src/index.ts) and

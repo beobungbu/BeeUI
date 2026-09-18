@@ -16,6 +16,7 @@ BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `l
 - **Category:** Forms & selection
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/date-picker.native.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/date-picker.native.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add date-picker
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -45,7 +46,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Controlled `value`/`onValueChange` (`CalendarDate | null`) field wrapping the native system date picker; `disabled` blocks opening the picker, and `clearable` opts in an explicit clear affordance rather than allowing an implicit empty selection.
+Controlled `value`/`onValueChange` (`CalendarDate | null`) field wrapping the native system date picker; `disabled` blocks opening the picker, and `clearable` opts in an explicit clear affordance rather than allowing an implicit empty selection. A wrapping `Field`'s required state no longer injects an English word into the trigger's accessible name — pass the field's own localized-required prop to append copy instead.
 
 ### Props
 
@@ -266,6 +267,8 @@ export function DatePickerShowcase() {
 
 Use the code block's copy affordance to copy the exact fixture. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
+
+`locale` only affects `Calendar`'s own weekday/month grid and `Intl`-based date formatting — it does not translate the date trigger's own `placeholder` or its month-navigation accessible labels, which are separate string props with hardcoded English defaults. A localized app must pass `placeholder`, `previousMonthAccessibilityLabel` and `nextMonthAccessibilityLabel` explicitly alongside `locale`.
 
 - Passing `open` without `onOpenChange` leaves the value read-only: the component renders what you passed and can never change it. It warns in development builds rather than failing silently in production.
 - Requires `@react-native-community/datetimepicker` to be installed by the consuming app. It is an optional peer of `@beemvp/beeui-ui`, so nothing installs it for you, and a target that never renders this family does not need it.

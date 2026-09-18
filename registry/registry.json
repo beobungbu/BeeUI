@@ -205,10 +205,13 @@
             "root": "components",
             "path": "box.tsx"
           },
-          "transforms": []
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
         }
       ],
       "registryDependencies": [
+        "core-cn",
         "theme"
       ],
       "dependencies": {},
@@ -847,11 +850,14 @@
             "root": "components",
             "path": "icon-button.tsx"
           },
-          "transforms": []
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
         }
       ],
       "registryDependencies": [
         "button",
+        "core-cn",
         "theme"
       ],
       "dependencies": {},
@@ -1330,10 +1336,13 @@
             "root": "components",
             "path": "safe-area.tsx"
           },
-          "transforms": []
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
         }
       ],
       "registryDependencies": [
+        "core-cn",
         "overlay-runtime",
         "theme",
         "toast"
@@ -1383,10 +1392,13 @@
             "root": "components",
             "path": "search-input.tsx"
           },
-          "transforms": []
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
         }
       ],
       "registryDependencies": [
+        "core-cn",
         "input",
         "theme"
       ],
@@ -1978,6 +1990,32 @@
         "react": ">=19 <20",
         "react-native": ">=0.86.0 <0.87.0",
         "react-native-safe-area-context": ">=5 <6"
+      }
+    },
+    {
+      "name": "toolbar",
+      "type": "component",
+      "public": true,
+      "files": [
+        {
+          "source": "packages/ui/src/components/toolbar.tsx",
+          "target": {
+            "root": "components",
+            "path": "toolbar.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-cn"
+          ]
+        }
+      ],
+      "registryDependencies": [
+        "core-cn",
+        "dropdown-menu"
+      ],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19 <20",
+        "react-native": ">=0.86.0 <0.87.0"
       }
     },
     {

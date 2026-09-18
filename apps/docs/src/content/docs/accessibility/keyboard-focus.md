@@ -16,4 +16,21 @@ actual Tab/Shift+Tab and Escape, not only pointer clicks.
 Native hardware keyboard/focus behavior is platform runtime behavior; compile success alone
 is insufficient evidence.
 
+## Task: verify one screen's keyboard/focus path
+
+1. Load the screen in a desktop browser (Web target) with the mouse unplugged or ignored.
+2. Press Tab repeatedly from the top of the page. Confirm the order matches the screen's
+   visual reading order — every interactive control (buttons, inputs, `DropdownMenu`/
+   `Select` triggers, `Sheet`/`Dialog` triggers) must be reachable, and nothing focusable is
+   skipped or reachable twice.
+3. At each stop, confirm a visible focus indicator is present — if you cannot tell which
+   element has focus by looking at the screen alone, that is a failure.
+4. Open one overlay (`Dialog`, `Sheet`, `Popover`, `DropdownMenu`, or `Select`) via keyboard
+   (Enter/Space on its trigger). Confirm focus moves inside the overlay, Escape closes it, and
+   focus returns to the trigger that opened it — not to the top of the page.
+5. For a screen with a form, Tab through every field and confirm each field's label,
+   description and error (if any) are announced together, not just the bare input.
+6. Repeat steps 2–4 with a real hardware keyboard on an iOS/Android device or simulator if the
+   screen ships natively — Web keyboard behavior does not prove native keyboard behavior.
+
 See [keyboard/focus acceptance](https://github.com/beobungbu/BeeUI/blob/main/docs/keyboard-focus-acceptance-matrix.md), [anchored overlays](https://github.com/beobungbu/BeeUI/blob/main/docs/anchored-overlays.md), and [Component reference](/docs/components/).
