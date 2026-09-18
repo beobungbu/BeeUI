@@ -275,7 +275,8 @@
     "text": {
       "purpose": "Semantic typography primitive with variant/tone styling that honors OS/browser font scaling.",
       "behavior": "Stateless semantic typography primitive; `variant`/`tone` apply typed styling, and text always honors OS/browser font scaling — BeeUI never sets `allowFontScaling={false}`.",
-      "limitations": "`family` accepts only the monospace value — there is no sans value that would reset an inherited font family — and `numeric` only the tabular one. Both resolve through utility classes on Web and through React Native style props on native, so no inline font style is emitted on Web."
+      "limitations": "`family` accepts only the monospace value — there is no sans value that would reset an inherited font family — and `numeric` only the tabular one. Both resolve through utility classes on Web and through React Native style props on native, so no inline font style is emitted on Web.",
+      "notes": "Each `variant` maps to a fixed `fontSize`/`lineHeight` step from the token scale — see the [typography scale table](/docs/reference/tokens/) for the full `variant` ↔ size/line-height/weight mapping. There is no separate numeric scale to read at runtime; `variant` is the only entry point."
     },
     "textarea": {
       "purpose": "Multiline text input using the same semantic contract as Input.",

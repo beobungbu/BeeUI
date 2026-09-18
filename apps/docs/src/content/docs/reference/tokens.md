@@ -11,6 +11,21 @@ Token **groups** are the design values themselves, generated from `tokens.json` 
 
 Only `colors`, `radius` and `motionDuration` are runtime-overridable. Everything else is a build-time contract — see the customizable-versus-contractual table in [Branding](/docs/guides/branding/).
 
+### Typography scale ↔ Text variant
+
+`fontSize`/`lineHeight` are keyed by the same six names [Text](/docs/components/text/)'s `variant` prop accepts — there is no separate numeric scale to look up. The applied font weight is a `Text`-owned styling decision, not a token value.
+
+| `Text` `variant` | `fontSize` | `lineHeight` | Applied weight |
+| --- | --- | --- | --- |
+| `display` | 32px | 40px | bold (700) |
+| `title` | 24px | 32px | bold (700) |
+| `heading` | 18px | 24px | semibold (600) |
+| `body` (default) | 16px | 24px | regular (400, inherited) |
+| `label` | 14px | 20px | semibold (600) |
+| `caption` | 12px | 16px | regular (400, inherited) |
+
+There is no runtime accessor for this scale outside of `Text`'s own `variant` prop — `useBeeToken`/`getBeeToken` do not expose `fontSize`/`lineHeight` as a readable category (they are build-time-only, per the table above).
+
 ## Token groups (21)
 
 | Group | Values | Source |

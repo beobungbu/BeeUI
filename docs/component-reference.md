@@ -339,7 +339,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`component-gallery/table-showcase.tsx`](../apps/showcase/component-gallery/table-showcase.tsx), [`__tests__/icon-button-size-and-count.test.tsx`](../apps/showcase/__tests__/icon-button-size-and-count.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`component-gallery/table-showcase.tsx`](../apps/showcase/component-gallery/table-showcase.tsx), [`component-gallery/toolbar-showcase.tsx`](../apps/showcase/component-gallery/toolbar-showcase.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Limitations:** Any string child is styled by Button's own label rules with no override hook. `count` accepts any node, but only a string/number value renders inside the badge pill and is appended to the accessible name — any other node renders as-is and must carry its own accessible text.
 
 ## `input`
@@ -778,6 +778,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`patterns/account-settings/components/danger-zone.tsx`](../apps/showcase/patterns/account-settings/components/danger-zone.tsx), [`patterns/account-settings/components/profile-header.tsx`](../apps/showcase/patterns/account-settings/components/profile-header.tsx), [`patterns/account-settings/components/settings-screen-shell.tsx`](../apps/showcase/patterns/account-settings/components/settings-screen-shell.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Limitations:** `family` accepts only the monospace value — there is no sans value that would reset an inherited font family — and `numeric` only the tabular one. Both resolve through utility classes on Web and through React Native style props on native, so no inline font style is emitted on Web.
+- **Notes:** Each `variant` maps to a fixed `fontSize`/`lineHeight` step from the token scale — see the [typography scale table](/docs/reference/tokens/) for the full `variant` ↔ size/line-height/weight mapping. There is no separate numeric scale to read at runtime; `variant` is the only entry point.
 
 ## `textarea`
 
@@ -847,7 +848,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`__tests__/toolbar-overflow-collapse.test.tsx`](../apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Executable examples:** [`component-gallery/toolbar-showcase.tsx`](../apps/showcase/component-gallery/toolbar-showcase.tsx), [`__tests__/toolbar-overflow-collapse.test.tsx`](../apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Limitations:** `overflowAccessibilityLabel` is required only once the overflow menu actually renders (i.e. once any prioritized item collapses) — a dev warning fires if it is missing at that point, not before. `ToolbarItem.children` is read for measurement and rendering but never cloned or modified, so it must be a single element (typically an `IconButton`/`Button`).
 - **Notes:** The overflow menu is a `DropdownMenu` composition, so it inherits that family's full keyboard/dismiss behavior and `aria-haspopup="menu"` for free — there is no second, bespoke popover implementation.
 

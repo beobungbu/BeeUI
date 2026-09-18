@@ -264,6 +264,8 @@ Open the fixture itself for the full surrounding component. For a smaller app-sp
 
 `family` accepts only the monospace value — there is no sans value that would reset an inherited font family — and `numeric` only the tabular one. Both resolve through utility classes on Web and through React Native style props on native, so no inline font style is emitted on Web.
 
+**Implementation note:** Each `variant` maps to a fixed `fontSize`/`lineHeight` step from the token scale — see the [typography scale table](/docs/reference/tokens/) for the full `variant` ↔ size/line-height/weight mapping. There is no separate numeric scale to read at runtime; `variant` is the only entry point.
+
 ## Related
 
 - [All components](/docs/components/)

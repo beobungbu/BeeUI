@@ -133,6 +133,14 @@ accepted density contract; it does not reduce accessibility touch-target obligat
 High-contrast variants exist in the current token runtime and are treated as explicit
 supported theme variants, not a claim that every device accessibility setting is simulated.
 
+On Web, `BeeThemeScope` correctly overriding semantic tokens for a nested subtree (and
+`useBeeToken` reading the scoped value inside it) depends on `@beemvp/beeui-tokens`'
+generated theme CSS emitting each runtime theme as its own plain, un-anchored class
+selector rather than nesting it under a single shared root selector — only a plain class
+selector resolves per subtree via ordinary CSS custom-property inheritance, including
+correctly for a scope nested inside another scope. Consume a `@beemvp/beeui-tokens`
+release built with that contract for scoped theming to take effect.
+
 ## Stable API vs escape hatch
 
 Semantic token names, typed component variants and behavior contracts are the reusable
