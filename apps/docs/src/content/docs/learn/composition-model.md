@@ -45,6 +45,11 @@ import {
   SelectValue,
 } from '@beemvp/beeui-ui';
 
+type CurrencySelectProps = {
+  onValueChange: (value: string) => void;
+  value: string | undefined;
+};
+
 export function CurrencySelect({ onValueChange, value }: CurrencySelectProps) {
   return (
     <Select onValueChange={onValueChange} value={value}>

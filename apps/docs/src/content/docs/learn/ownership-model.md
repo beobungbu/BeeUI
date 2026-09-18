@@ -65,6 +65,7 @@ The interface between the two halves is ordinary React: props in, callbacks out,
 A correctly owned shell reads like this — BeeUI surfaces, application decisions:
 
 ```tsx
+import * as React from 'react';
 import {
   AppHeader,
   BeeUIProvider,
@@ -73,6 +74,12 @@ import {
   SafeArea,
   Screen,
 } from '@beemvp/beeui-ui';
+
+type AppShellProps = {
+  children: React.ReactNode;
+  onSave: () => void;
+  title: string;
+};
 
 export function AppShell({ children, onSave, title }: AppShellProps) {
   return (

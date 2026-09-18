@@ -1,6 +1,7 @@
 ---
 title: Accessibility
 description: Consumer-facing semantics, keyboard, large-text, localization, motion and native assistive-technology expectations.
+prev: false
 ---
 
 Accessibility is part of BeeUI's component behavior contract, not a visual add-on. Use

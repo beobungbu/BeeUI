@@ -59,6 +59,20 @@ test('the real repository satisfies the reference contract', () => {
   assert.deepEqual(collectPublicReferenceViolations(ROOT_DIR), []);
 });
 
+// #590 item 4: a value with no JSDoc (packages/core/src/** is a different workstream's file
+// ownership) fell back to a bare "—" Description cell. docs/reference.content.json's
+// `valueDescriptions` now fills that gap without touching the source file — JSDoc still wins
+// whenever it exists, matching the component Props glossary's precedence rule.
+test('a curated valueDescriptions entry fills a Description cell that has no JSDoc', () => {
+  const core = buildReferenceManifest(ROOT_DIR).find((owner) => owner.slug === 'core');
+  const page = renderReferencePage(core, CONTENT, ROOT_DIR);
+  const curated = CONTENT.owners.core.valueDescriptions;
+  assert.ok(curated && Object.keys(curated).length > 0, 'expected docs/reference.content.json to curate Core value descriptions');
+  for (const [name, description] of Object.entries(curated)) {
+    assert.ok(page.includes(description), `${name}'s curated description is missing from the rendered page`);
+  }
+});
+
 // A reference owner without prose would publish a bare table of symbol names — technically
 // complete and useless, which is exactly what #474's G2 gate rejects.
 test('a reference owner with no curated entry is rejected', () => {
