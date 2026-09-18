@@ -362,6 +362,7 @@ export {
   type ToastOptions,
   type ToastVariant,
 } from './components/toast';
+export { Toolbar, ToolbarItem, type ToolbarItemProps, type ToolbarProps } from './components/toolbar';
 export {
   Tooltip,
   TooltipContent,
