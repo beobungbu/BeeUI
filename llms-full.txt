@@ -62,6 +62,7 @@ This three-state preference is a single small piece of app state deciding *which
 - Tailwind/Uniwind utilities must be statically discoverable — never construct `bg-${x}` dynamically.
 - Controlled primitives (Checkbox, Radio, RadioGroup, Switch, Tabs, SegmentedControl, and others) require their change callback; enabled usage without it warns in development.
 - Accessibility, RTL/logical direction, large text, high contrast, and reduced motion are part of component correctness.
+- Never nest one pressable inside another. A `*Trigger` (DropdownMenuTrigger, PopoverTrigger, TooltipTrigger, SheetTrigger, DialogTrigger, AlertDialogTrigger) is itself a full Button-shaped pressable — put icon/label children directly inside it, do not wrap an IconButton/Avatar in one. The same rule applies wherever a family exposes a pressable slot: `ListItem`'s `trailing` (an IconButton there is still a second nested pressable), `SettingsItem` composed with `AlertDialogTrigger`, and any other pressable-inside-pressable composition. On Web this renders one interactive element inside another, which React flags as invalid DOM nesting; use `variant="ghost"` on the outer pressable instead of nesting a second one.
 See [AGENTS.md](AGENTS.md) and [docs/architecture.md](docs/architecture.md).
 
 ## Non-goals (explicit)
