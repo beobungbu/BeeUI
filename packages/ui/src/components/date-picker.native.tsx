@@ -2,19 +2,18 @@ import { cn, fromLocalDate, toLocalDate, type CalendarDate } from '@beemvp/beeui
 import * as React from 'react';
 import DateTimePicker, {
   DateTimePickerAndroid,
-  type DateTimePickerEvent,
+  type DateTimePickerChangeEvent,
 } from '@react-native-community/datetimepicker';
 import { Platform, Pressable, View } from 'react-native';
 import { Button } from './button';
 import { resolveCalendarLocale } from './calendar-locale';
 import {
   DATE_PICKER_DEFAULT_CLEAR_ACCESSIBILITY_LABEL,
-  DATE_PICKER_DEFAULT_PLACEHOLDER,
   useDatePickerFieldIntegration,
   useDatePickerOpenState,
   type DatePickerProps,
 } from './date-picker-shared';
-import { getDatePickerFormattedValue } from './date-picker-locale';
+import { getDatePickerDefaultPlaceholder, getDatePickerFormattedValue } from './date-picker-locale';
 import { Dialog, DialogContent, DialogFooter } from './dialog';
 import { IconButton } from './icon-button';
 import { Text } from './text';
@@ -63,7 +62,7 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
       onOpenChange,
       onValueChange,
       open,
-      placeholder = DATE_PICKER_DEFAULT_PLACEHOLDER,
+      placeholder,
       readOnly = false,
       style,
       testID,
@@ -82,6 +81,7 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
       open,
     });
     const locale = resolveCalendarLocale(localeProp);
+    const resolvedPlaceholder = placeholder ?? getDatePickerDefaultPlaceholder(locale);
     const minimumDate = min ? toLocalDate(min) : undefined;
     const maximumDate = max ? toLocalDate(max) : undefined;
 
@@ -91,27 +91,41 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
     const hasValue = formattedValue !== undefined;
     const showClear = clearable && hasValue && !field.disabled && !readOnly;
 
-    const handleAndroidChange = React.useCallback(
-      (event: DateTimePickerEvent, selectedDate?: Date) => {
+    // `onValueChange`/`onDismiss` (not the deprecated `onChange`) — passing
+    // `onChange` to either the imperative Android API or the iOS component
+    // trips `@react-native-community/datetimepicker`'s own dev-mode
+    // deprecation warning (`warnIfOnChangeIsUsed`, verified against 9.1's
+    // source) even though the picker still works. `onValueChange` only fires
+    // for an actual selection (`date: Date`, never `undefined`), so there is
+    // no `event.type === 'set'` check to make anymore; a plain dismiss
+    // (Android back/outside-tap, or the iOS Dialog's own close paths) is
+    // handled by `onDismiss`/`setOpen(false)` instead.
+    const handleAndroidValueChange = React.useCallback(
+      (_event: DateTimePickerChangeEvent, selectedDate: Date) => {
         setOpen(false);
-        if (event.type === 'set' && selectedDate) onValueChange?.(fromLocalDate(selectedDate));
+        onValueChange?.(fromLocalDate(selectedDate));
       },
       [onValueChange, setOpen],
     );
+
+    const handleAndroidDismiss = React.useCallback(() => {
+      setOpen(false);
+    }, [setOpen]);
 
     const openAndroidPicker = React.useCallback(() => {
       DateTimePickerAndroid.open({
         maximumDate,
         minimumDate,
         mode: 'date',
-        onChange: handleAndroidChange,
+        onDismiss: handleAndroidDismiss,
+        onValueChange: handleAndroidValueChange,
         value: toNativeDate(value),
       });
-    }, [handleAndroidChange, maximumDate, minimumDate, value]);
+    }, [handleAndroidDismiss, handleAndroidValueChange, maximumDate, minimumDate, value]);
 
-    const handleIOSChange = React.useCallback(
-      (_event: DateTimePickerEvent, selectedDate?: Date) => {
-        if (selectedDate) onValueChange?.(fromLocalDate(selectedDate));
+    const handleIOSValueChange = React.useCallback(
+      (_event: DateTimePickerChangeEvent, selectedDate: Date) => {
+        onValueChange?.(fromLocalDate(selectedDate));
       },
       [onValueChange],
     );
@@ -157,7 +171,7 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
               testID={testID ? `${testID}-value` : undefined}
               variant="body"
             >
-              {hasValue ? formattedValue : placeholder}
+              {hasValue ? formattedValue : resolvedPlaceholder}
             </Text>
           </Pressable>
           {showClear ? (
@@ -181,16 +195,16 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
         {Platform.OS === 'ios' ? (
           <Dialog onOpenChange={setOpen} open={resolvedOpen}>
             <DialogContent
-              accessibilityLabel={field.accessibilityLabel ?? placeholder}
+              accessibilityLabel={field.accessibilityLabel ?? resolvedPlaceholder}
               testID={testID ? `${testID}-content` : undefined}
             >
               <DateTimePicker
-                accessibilityLabel={field.accessibilityLabel ?? placeholder}
+                accessibilityLabel={field.accessibilityLabel ?? resolvedPlaceholder}
                 display="inline"
                 maximumDate={maximumDate}
                 minimumDate={minimumDate}
                 mode="date"
-                onChange={handleIOSChange}
+                onValueChange={handleIOSValueChange}
                 value={toNativeDate(value)}
               />
               <DialogFooter>
