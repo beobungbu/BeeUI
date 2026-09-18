@@ -79,4 +79,69 @@ describe('BeeUI safe-area foundation', () => {
 
     expect(updateInsets).not.toHaveBeenCalled();
   });
+
+  // #563/#564: a `className={undefined}` (the common `cond ? "x" : undefined`
+  // idiom) forwarded raw to the underlying Uniwind-wrapped host crashes real
+  // styleq with "typeof undefined is not \"string\" or \"null\"" — this mock
+  // cannot execute styleq itself (it stands in for the whole `uniwind`
+  // package), so this asserts the exact invariant that avoids it: BeeUI never
+  // hands the host a raw `undefined` `className`, always a string.
+  it('never forwards a raw `undefined` className to the underlying host (#563/#564)', () => {
+    const screen = render(<SafeArea testID="safe-area" />);
+    expect(typeof screen.getByTestId('safe-area').props.className).toBe('string');
+  });
+
+  it('still forwards a defined className unchanged', () => {
+    const screen = render(<SafeArea className="bg-surface" testID="safe-area" />);
+    expect(screen.getByTestId('safe-area').props.className).toBe('bg-surface');
+  });
+
+  // #598: the library's own inset padding is a native inline style, which
+  // otherwise always beats a class regardless of source order, silently
+  // dropping a caller's `className` padding despite the documented "wins on
+  // conflict" `cn()` contract. BeeUI resolves this by excluding exactly the
+  // edges the caller's own className already pads, so the library sets no
+  // competing style there and the class applies untouched.
+  describe('className padding wins over the edge inset it conflicts with (#598)', () => {
+    it('drops both horizontal edges for `px-4`', () => {
+      const screen = render(
+        <SafeArea className="px-4" edges={['top', 'right', 'bottom', 'left']} testID="safe-area" />,
+      );
+      expect(screen.getByTestId('safe-area').props.edges).toEqual(['top', 'bottom']);
+    });
+
+    it('drops only `top` for `pt-6`, keeping the other three edges inset', () => {
+      const screen = render(
+        <SafeArea className="pt-6" edges={['top', 'right', 'bottom', 'left']} testID="safe-area" />,
+      );
+      expect(screen.getByTestId('safe-area').props.edges).toEqual(['right', 'bottom', 'left']);
+    });
+
+    it('drops every edge for the catch-all `p-4`', () => {
+      const screen = render(
+        <SafeArea className="p-4" edges={['top', 'right', 'bottom', 'left']} testID="safe-area" />,
+      );
+      expect(screen.getByTestId('safe-area').props.edges).toEqual([]);
+    });
+
+    it('applies the same resolution to the library default edge set when `edges` is omitted', () => {
+      const screen = render(<SafeArea className="py-6" testID="safe-area" />);
+      expect(screen.getByTestId('safe-area').props.edges).toEqual(['right', 'left']);
+    });
+
+    it('keeps every edge inset when className sets no padding', () => {
+      const screen = render(
+        <SafeArea className="bg-surface" edges={['top', 'right', 'bottom', 'left']} testID="safe-area" />,
+      );
+      expect(screen.getByTestId('safe-area').props.edges).toEqual(['top', 'right', 'bottom', 'left']);
+    });
+
+    it('forwards the per-edge object form of `edges` unchanged', () => {
+      const objectEdges = { bottom: 'off', top: 'padding' } as const;
+      const screen = render(
+        <SafeArea className="pt-4" edges={objectEdges} testID="safe-area" />,
+      );
+      expect(screen.getByTestId('safe-area').props.edges).toEqual(objectEdges);
+    });
+  });
 });

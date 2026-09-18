@@ -44,7 +44,11 @@ import {
 //      sync with the actual source);
 //   3. every fixed-height, non-`min-h-*` row is either decorative/glyph-only
 //      (documented, exempt) or has been corrected to grow with content
-//      (SelectTrigger, PaginationItem — this issue's fix);
+//      (SelectTrigger, PaginationItem, and — per real iOS Dynamic Type
+//      evidence in #589 disproving this file's own prior "Input mirrors the
+//      native single-line text-field convention" exemption rationale —
+//      Input/SearchInput, which no longer appear in `FIXED_HEIGHT_ALLOWLIST`
+//      at all now that they render `min-h-control-*`);
 //   4. the native minimum-hit-target guard is present regardless of a
 //      component reading a different font-scale value;
 //   5. representative text-bearing rows render their full given content
@@ -181,6 +185,21 @@ describe('Dynamic Type / font-scaling contract (#143)', () => {
     const item = paginationScreen.getByTestId('pagination-item-1');
     expect(item.props.className).toContain('min-h-10');
     expect(item.props.className).not.toMatch(/(?<!min-)h-10\b/);
+  });
+
+  // #589 — real iOS Dynamic Type evidence (accessibility-large) showed Input's
+  // value/placeholder text clipping inside its then-fixed `h-control-*` row,
+  // disproving this file's own prior allow-list rationale for it. Fixed the
+  // same way SelectTrigger/PaginationItem already were above: `min-h-*`
+  // instead of `h-*`, so `input.tsx` no longer needs (or has) a
+  // `FIXED_HEIGHT_ALLOWLIST` entry at all.
+  it('fixes Input to grow instead of clipping at scale, for every size (#589)', () => {
+    for (const size of ['sm', 'md', 'lg'] as const) {
+      const screen = render(<Input size={size} testID={`input-${size}`} />);
+      const input = screen.getByTestId(`input-${size}`);
+      expect(input.props.className).toContain(`min-h-control-${size === 'sm' ? 'compact' : size === 'md' ? 'default' : 'large'}`);
+      expect(input.props.className).not.toMatch(/(?<!min-)h-control-/);
+    }
   });
 
   it('keeps the documented single-line SelectValue truncation exact (no more, no less)', () => {

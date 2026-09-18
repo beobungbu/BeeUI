@@ -542,7 +542,22 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
         android_keyboardInputMode="adjustResize"
         backdropComponent={backdropComponent}
         backgroundComponent={null}
+        // #584 — gorhom v5's `enableDynamicSizing` defaults to `true`. With
+        // an explicit `snapPoints` array (BeeUI always supplies one — see
+        // `resolveSheetSnapPoints`'s default below), dynamic sizing instead
+        // measures `BottomSheetView`'s own content height to insert as the
+        // *first* snap point. `BottomSheetView` below is given `flex: 1`
+        // (`styles.contentFill`) with no bounding parent height, which
+        // measures to 0 in an unbounded container, producing a zero-height
+        // snap point the sheet then targets — explaining the real-device
+        // report of `present()` being called with no visible sheet and no
+        // `onChange`. `snapPoints` already IS the explicit sizing contract
+        // here, so dynamic sizing is off, matching gorhom's own documented
+        // recommendation for a fixed/percentage `snapPoints` array. Real
+        // on-device confirmation remains an owner gate — see
+        // `plans/260918-1559-consumer-audit-fix-all/reports/ws-b-sheet-584.md`.
         enableDismissOnClose
+        enableDynamicSizing={false}
         enablePanDownToClose={enableSwipeToDismiss}
         handleComponent={showHandle ? handleComponent : null}
         index={clampedInitialIndex}
