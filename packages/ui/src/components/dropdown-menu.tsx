@@ -15,6 +15,7 @@ import {
   type PressableProps,
   type ViewProps,
 } from 'react-native';
+import { Box } from './box';
 import { Button, type ButtonProps } from './button';
 import { resolveDirection } from './use-direction';
 import {
@@ -226,8 +227,16 @@ export const DropdownMenuTrigger = React.forwardRef<
     <Button
       ref={setTriggerRef}
       {...props}
+      // WAI-ARIA APG Menu Button Pattern: a button that opens `role="menu"` content
+      // must expose `aria-haspopup="menu"` (or `"true"`) so assistive tech announces
+      // it as a menu button before it is activated.
+      aria-haspopup="menu"
       aria-controls={open ? contentNativeID : undefined}
       accessibilityState={{ ...accessibilityState, expanded: open }}
+      // Gives the trigger a visible pointer-hover affordance regardless of which
+      // `variant` the caller picks (a caller composing it as a bare chip/icon
+      // trigger otherwise has no visual cue it is interactive on Web).
+      className={cn('web:hover:opacity-80', props.className)}
       onPress={(event) => {
         onPress?.(event);
         setOpen(!open);
@@ -498,6 +507,10 @@ type DropdownMenuItemBaseProps = Omit<
   className?: string;
   /** Closes the menu after this item is activated (pressed or selected via keyboard). Defaults to true. */
   closeOnSelect?: boolean;
+  /** Muted secondary line rendered below the primary content (e.g. an address under a store name), mirroring `ListItem`'s `description`. Ignored for custom element `children` (single-line items only). */
+  description?: React.ReactNode;
+  /** Applied to the `description` `Text` when it is a plain string or number; ignored for custom element `description`. */
+  descriptionClassName?: string;
   /** Called on press, before `onSelect` and `closeOnSelect` run. */
   onPress?: PressableProps['onPress'];
   /** Called when this item is activated (pressed or selected via keyboard), before `closeOnSelect` runs. */
@@ -505,6 +518,30 @@ type DropdownMenuItemBaseProps = Omit<
   /** Applied to string/number children, which are wrapped in a `Text`; ignored for custom element children. */
   textClassName?: string;
 };
+
+function renderMenuItemContent(
+  children: React.ReactNode,
+  description: React.ReactNode | undefined,
+  descriptionClassName: string | undefined,
+  textClassName: string | undefined,
+) {
+  if (description === undefined) {
+    return renderMenuChildren(children, cn('text-foreground', textClassName));
+  }
+
+  return (
+    <Box className="min-w-0 flex-1 gap-0.5">
+      {renderMenuChildren(children, cn('text-foreground', textClassName))}
+      {typeof description === 'string' || typeof description === 'number' ? (
+        <Text className={descriptionClassName} tone="muted" variant="caption">
+          {description}
+        </Text>
+      ) : (
+        description
+      )}
+    </Box>
+  );
+}
 
 function useRegisteredMenuItem({
   activate,
@@ -562,6 +599,8 @@ export const DropdownMenuItem = React.forwardRef<
       children,
       className,
       closeOnSelect = true,
+      description,
+      descriptionClassName,
       disabled = false,
       onFocus,
       onHoverIn,
@@ -615,7 +654,7 @@ export const DropdownMenuItem = React.forwardRef<
         role="menuitem"
         tabIndex={registration.current ? 0 : -1}
       >
-        {renderMenuChildren(children, cn('text-foreground', textClassName))}
+        {renderMenuItemContent(children, description, descriptionClassName, textClassName)}
       </Pressable>
     );
   },
