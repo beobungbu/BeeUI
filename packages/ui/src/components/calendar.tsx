@@ -408,6 +408,10 @@ export const Calendar = React.forwardRef<React.ComponentRef<typeof View>, Calend
                       selected,
                     })}
                     accessibilityState={{ disabled: cellDisabled, selected }}
+                    // `accessibilityState` alone does not reach the DOM on react-native-web
+                    // (see Checkbox), so the selected day needs the web-native
+                    // `aria-selected` prop set explicitly.
+                    aria-selected={selected}
                     className={cn(
                       'min-h-touch-target min-w-touch-target flex-1 items-center justify-center rounded-md web:focus-visible:bee-focus-ring',
                       selected && 'bg-primary',

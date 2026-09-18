@@ -9,11 +9,11 @@ export type PasswordInputProps = Omit<InputProps, 'secureTextEntry'> & {
   containerClassName?: string;
   /** Initial visibility for uncontrolled usage. Defaults to false (masked). */
   defaultVisible?: boolean;
-  /** Accessible label for the toggle button when the password is currently visible (pressing it hides it). Defaults to `'Hide password'`. */
+  /** Both the toggle button's visible text and its accessible name when the password is currently visible (pressing it hides it) — e.g. localize to `'Ẩn'` for a short Vietnamese label. Defaults to `'Hide password'`. */
   hideLabel?: string;
   /** Called with the next visibility whenever the show/hide toggle is pressed. */
   onVisibleChange?: (visible: boolean) => void;
-  /** Accessible label for the toggle button when the password is currently masked (pressing it shows it). Defaults to `'Show password'`. */
+  /** Both the toggle button's visible text and its accessible name when the password is currently masked (pressing it shows it) — e.g. localize to `'Hiện'` for a short Vietnamese label. Defaults to `'Show password'`. */
   showLabel?: string;
   /** Applied to the show/hide toggle `Button`, not the input. */
   toggleClassName?: string;
@@ -76,7 +76,10 @@ export const PasswordInput = React.forwardRef<
           size="md"
           variant="outline"
         >
-          {resolvedVisible ? 'Hide' : 'Show'}
+          {/* `showLabel`/`hideLabel` now drive the visible text too, not just the
+              accessible name — a caller localizing the toggle (e.g. Vietnamese "Hiện"/"Ẩn")
+              previously still saw a hardcoded English "Show"/"Hide" on screen. */}
+          {toggleLabel}
         </Button>
       </Box>
     );
