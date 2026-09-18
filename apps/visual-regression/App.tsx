@@ -131,6 +131,7 @@ type FixtureId =
   | 'density'
   | 'dataviz-brands'
   | 'scoped-preview'
+  | 'theme-scope-tokens'
   | 'high-contrast-focus'
   | 'tooltip'
   | 'table'
@@ -142,6 +143,7 @@ const fixtureIds: readonly FixtureId[] = [
   'density',
   'dataviz-brands',
   'scoped-preview',
+  'theme-scope-tokens',
   'high-contrast-focus',
   'tooltip',
   'table',
@@ -1196,6 +1198,61 @@ function ScopedPreviewFixture({ theme }: { theme: VisualTheme }) {
   );
 }
 
+// BeeThemeScope must actually scope semantic CSS variables (a computed
+// `bg-primary` background) *and* the `useBeeToken` runtime-token-read hook to
+// the nearest scope on Web, in a real rendered DOM — not only Uniwind's mock
+// test runtime. `ThemeScopeTokensReader` renders both proofs at once: the
+// visible `useBeeToken('colors.primary')` text and a `bg-primary` swatch
+// `tests/theme-scope-tokens.spec.ts` reads with `getComputedStyle`. `primary`
+// (not `background`) is the token under test deliberately — Bee and Violet
+// happen to share the same `background` hex at the `light` appearance, but
+// every runtime theme's `primary` is unique, so any leak from an enclosing
+// scope is guaranteed to show up as a false equality here.
+function ThemeScopeTokensReader({ label, testID }: { label: string; testID: string }) {
+  const primary = useBeeToken('colors.primary');
+
+  return (
+    <Box className="gap-2 bg-primary p-4" testID={testID}>
+      <Text className="text-primary-foreground" testID={`${testID}-label`} variant="heading">
+        {label}
+      </Text>
+      <Text className="text-primary-foreground" testID={`${testID}-token-primary`} variant="caption">
+        {primary}
+      </Text>
+    </Box>
+  );
+}
+
+// Global theme stays whichever `theme` this project runs under; the outer
+// scope deliberately picks Violet at the *opposite* appearance, and the
+// nested scope picks Violet at the *global*'s appearance — so every one of
+// global/scoped/nested is guaranteed to differ from its neighbors under every
+// `theme` this fixture runs at, without needing an interactive toggle.
+function ThemeScopeTokensFixture({ theme }: { theme: VisualTheme }) {
+  const globalAppearance = appearanceForVisualTheme(theme);
+  const scopedAppearance: 'light' | 'dark' = globalAppearance === 'dark' ? 'light' : 'dark';
+
+  return (
+    <ScenarioShell title="Theme scope: CSS variables + useBeeToken">
+      <Box className="gap-4" testID="theme-scope-tokens-fixture">
+        <ThemeScopeTokensReader label="Global" testID="theme-scope-tokens-global" />
+        <BeeThemeScope appearance={scopedAppearance} brand="violet">
+          <ThemeScopeTokensReader
+            label={`Scoped (violet ${scopedAppearance})`}
+            testID="theme-scope-tokens-scoped"
+          />
+          <BeeThemeScope appearance={globalAppearance} brand="violet">
+            <ThemeScopeTokensReader
+              label={`Nested (violet ${globalAppearance})`}
+              testID="theme-scope-tokens-nested"
+            />
+          </BeeThemeScope>
+        </BeeThemeScope>
+      </Box>
+    </ScenarioShell>
+  );
+}
+
 // #77 finalization — active keyboard-focus proof for the high-contrast
 // themes. A Button on the plain background, an Input inside a raised Card, and
 // a Link on a muted surface — one representative placement per surface, tabbed
@@ -1467,6 +1524,8 @@ export default function App() {
         <DataVizBrandsFixture theme={theme} />
       ) : fixture === 'scoped-preview' ? (
         <ScopedPreviewFixture theme={theme} />
+      ) : fixture === 'theme-scope-tokens' ? (
+        <ThemeScopeTokensFixture theme={theme} />
       ) : fixture === 'high-contrast-focus' ? (
         <HighContrastFocusFixture />
       ) : fixture === 'tooltip' ? (

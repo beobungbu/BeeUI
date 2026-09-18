@@ -1799,30 +1799,119 @@ function renderThemeCss(source) {
     lines.push(`  ${variant.cssProperty}: ${variant.cssValue};`);
     lines.push('}');
   }
-  lines.push('', '@layer theme {', '  :root {');
-  for (const [themeIndex, themeName] of renderedRuntimeThemeNames.entries()) {
-    lines.push(`    @variant ${themeName} {`);
+  // Emits one runtime theme's `--color-*`/`--chart-*` declarations at the given
+  // indent (spaces). Shared by the unconditional `:where(:root)` default block
+  // and every scoped `@variant` block below so both stay byte-for-byte
+  // consistent for the same theme.
+  function semanticColorDeclarationLines(themeName, indent) {
+    const pad = ' '.repeat(indent);
+    const declarationLines = [];
     for (const name of semantics) {
-    const deprecatedColor = deprecatedColors.get(name);
-    if (deprecatedColor && deprecatedColor.replacement && deprecatedColor.compatibilityAlias) {
-      const replacementName = deprecatedColor.replacement.slice('color.'.length);
-      lines.push(`      /* @deprecated: use --color-${replacementName} */`);
-      lines.push(`      --color-${name}: var(--color-${replacementName});`);
-    } else {
-      lines.push(`      --color-${name}: ${dtcgColorToHex(themes[themeName].colors[name].$value)};`);
+      const deprecatedColor = deprecatedColors.get(name);
+      if (deprecatedColor && deprecatedColor.replacement && deprecatedColor.compatibilityAlias) {
+        const replacementName = deprecatedColor.replacement.slice('color.'.length);
+        declarationLines.push(`${pad}/* @deprecated: use --color-${replacementName} */`);
+        declarationLines.push(`${pad}--color-${name}: var(--color-${replacementName});`);
+      } else {
+        declarationLines.push(`${pad}--color-${name}: ${dtcgColorToHex(themes[themeName].colors[name].$value)};`);
+      }
     }
-  }
     // #78 — data-visualization chart color tokens, deliberately a distinct `--chart-*`
     // CSS custom-property namespace from `--color-*` above (never `--color-chart-*`),
     // so the chart and semantic-color domains stay structurally separate in shipped CSS,
     // not just by naming convention.
     for (const name of chartSemantics) {
-      lines.push(`      --chart-${name}: ${dtcgColorToHex(themes[themeName].chart[name].$value)};`);
+      declarationLines.push(`${pad}--chart-${name}: ${dtcgColorToHex(themes[themeName].chart[name].$value)};`);
     }
-    lines.push('    }');
+    return declarationLines;
+  }
+
+  // #550/#552 — every runtime theme's block is now a literal `.themeName {
+  // ... }` rule (a single, ordinary class selector — see below for why not
+  // `:where(.themeName, .themeName *)`) at the top level of `@layer theme`.
+  // Previously every block was written as `@variant themeName { ... }` nested
+  // inside a shared `:root { }` wrapper, which compiled to
+  // `:root:where(.themeName, .themeName *)` — a compound selector that can
+  // only ever match the document's actual `<html>` element, so a
+  // `BeeThemeScope`-applied class on a nested element could never match (see
+  // reports/ws-e-report.md section 6 for the full repro).
+  //
+  // Deliberately literal CSS here, not `@variant themeName { ... }`: with no
+  // enclosing selector, CSS nesting's implicit parent for a bare `&` is
+  // `:scope`, which — absent an `@scope` at-rule — matches only the document
+  // root exactly like `:root` does, silently reproducing the same bug one
+  // level removed. Writing the selector out directly sidesteps that
+  // nesting-substitution pitfall entirely.
+  //
+  // Deliberately `.themeName` alone, not `:where(.themeName, .themeName *)`
+  // (the pattern each theme's own `@custom-variant` still declares, unchanged,
+  // for `themeName:`-prefixed *utility* classes like `violet-dark:bg-...`,
+  // where "any descendant" is exactly the intended match): the `, .themeName
+  // *` alternative would make this rule match every descendant *directly*,
+  // not just inherit into it. Two nested scopes (e.g. an outer `violet-dark`
+  // wrapping an inner `violet-light`) both have their `*` alternative match
+  // the same innermost element, and since both compile to the same zero
+  // specificity, the cascade would then pick whichever theme's block happens
+  // to sit later in this generated file — source order, not DOM proximity —
+  // silently breaking "the nearest scope wins" for nested scopes. Setting the
+  // properties only on the classed element itself and letting CSS custom
+  // properties inherit naturally always resolves to the *nearest* ancestor
+  // that actually declares them, which is the correct "nearest scope wins"
+  // semantics `BeeThemeScope` promises.
+  //
+  // The first runtime theme (`renderedRuntimeThemeNames[0]`, BeeUI's canonical
+  // default) additionally gets a `:where(:root)` block ahead of every themed
+  // block: an unconditional fallback so the document still has real color
+  // values before any theme class is applied (e.g. before hydration sets
+  // one). Wrapping it in `:where()` keeps its specificity at zero, strictly
+  // lower than any themed `.themeName` selector above, so a theme class on
+  // `<html>` always overrides this default regardless of source order.
+  //
+  // Every theme's declarations are *also* duplicated once more into an
+  // `@variant themeName { ... }` "registration" block, verified empirically
+  // against this project's exact toolchain — two independent consumers of
+  // this file both specifically scan for the literal `@variant` at-rule, not
+  // a plain class selector:
+  //
+  // 1. Uniwind's own Metro bundler (`uniwind/src/bundler/artifacts/css/
+  //    themes.ts`, `generateCSSForThemes`) walks the raw, *unexpanded*
+  //    `@variant <themeName> { ... }` at-rule for every configured theme,
+  //    collects each declared `--custom-property` name, verifies every theme
+  //    declares the *same* set (erroring "theme X is missing variable Y"
+  //    otherwise), and — this is the part that matters here — only then
+  //    emits a synthetic `@theme { --color-x: unset; ... }` block from
+  //    whichever theme it scanned first. That synthetic block is what makes
+  //    Tailwind treat `--color-*`/`--chart-*` as real theme colors at all;
+  //    without at least one theme fully represented via `@variant`, no
+  //    semantic-color utility (`bg-primary`, `text-foreground`,
+  //    `border-border`, ...) generates for *any* component, and skipping
+  //    even one theme here reproduces the "is missing variable" build error
+  //    against every other theme's declared set.
+  // 2. Uniwind's Web bundler additionally compiles through the same
+  //    `@tailwindcss/node` `compile()` + `@tailwindcss/oxide` `Scanner`
+  //    pipeline `@tailwindcss/vite` (a real npm consumer's build) uses, which
+  //    independently needs the same `@theme`-registered keys to generate
+  //    those utilities at all.
+  //
+  // Each registration block's *compiled* selector is inert for scoping
+  // purposes — with no enclosing selector, `@variant`'s implicit parent is
+  // `:scope`, which (absent an `@scope` at-rule) matches only the document
+  // root exactly like `:root`, the same restrictive match this generator
+  // moved away from above — but neither consumer above ever applies that
+  // compiled selector; both only inspect the raw declaration list inside the
+  // at-rule. It carries the identical values as the real `.themeName { ... }`
+  // block beside it and never overrides a scoped `BeeThemeScope`; it exists
+  // purely so both scanners see every theme's properties, not to supply
+  // values by itself.
+  lines.push('', '@layer theme {', '  :where(:root) {', ...semanticColorDeclarationLines(renderedRuntimeThemeNames[0], 4), '  }', '');
+  for (const themeName of renderedRuntimeThemeNames) {
+    lines.push(`  @variant ${themeName} {`, ...semanticColorDeclarationLines(themeName, 4), '  }', '');
+  }
+  for (const [themeIndex, themeName] of renderedRuntimeThemeNames.entries()) {
+    lines.push(`  .${themeName} {`, ...semanticColorDeclarationLines(themeName, 4), '  }');
     if (themeIndex < renderedRuntimeThemeNames.length - 1) lines.push('');
   }
-  lines.push('  }', '}', '');
+  lines.push('}', '');
   const reducedMotionLines = [];
   for (const [name, spec] of Object.entries(motionSpecs)) {
     if (spec.reducedMotion === 'immediate') {
