@@ -1,5 +1,5 @@
 import { AlertDialog, AlertDialogContent, AlertDialogTitle, Dialog, DialogContent, DialogTitle } from '@beemvp/beeui-ui';
-import { render } from '@testing-library/react-native';
+import { act, render } from '@testing-library/react-native';
 import * as React from 'react';
 import { AccessibilityInfo, Modal, Platform, View } from 'react-native';
 import { OverlayRuntimeProvider } from '../../../packages/ui/src/components/overlay-runtime';
@@ -200,6 +200,120 @@ describe('Dialog Web modal owner (single role="dialog" node)', () => {
     // redundant role of either value.
     expect(countHostViewsWithRole(screen, 'dialog')).toBe(0);
     expect(countHostViewsWithRole(screen, 'alertdialog')).toBe(0);
+  });
+
+  describe('animationType under prefers-reduced-motion on Web', () => {
+    // react-native-web's `ModalAnimation` only ever activates a Modal opened
+    // with `animationType="none"` through a manual `onShow` call that fires
+    // when `visible` changes with `none` already in place; a Modal that opens
+    // with `fade` and switches to `none` while visible never activates and
+    // never receives `role="dialog"` (the reduced-motion Dialog failure in
+    // `reduced-motion-acceptance-showcase.spec.ts`). So the open render
+    // itself must already carry `none` — no async settle allowed. This Jest
+    // harness has no `matchMedia`; a stub stands in for the browser's live
+    // query, and the `AccessibilityInfo` spies at the top of this file keep
+    // reporting `false` so a passing test proves the synchronous Web read is
+    // what decides, not the Promise-based signal it used to wait for.
+    type MatchMediaStub = (query: string) => { matches: boolean };
+    const globalWithMatchMedia = globalThis as { matchMedia?: MatchMediaStub };
+    let reducedMotionMatches = false;
+
+    beforeEach(() => {
+      reducedMotionMatches = false;
+      globalWithMatchMedia.matchMedia = (query) => ({
+        matches: query === '(prefers-reduced-motion: reduce)' && reducedMotionMatches,
+      });
+    });
+
+    afterEach(() => {
+      delete globalWithMatchMedia.matchMedia;
+    });
+
+    it('opens with animationType="none" on the very first render when reduced motion is on', () => {
+      setPlatform('web');
+      reducedMotionMatches = true;
+      const screen = render(
+        <OverlayRuntimeProvider>
+          <Dialog defaultOpen>
+            <DialogContent>
+              <DialogTitle>Project settings</DialogTitle>
+            </DialogContent>
+          </Dialog>
+        </OverlayRuntimeProvider>,
+      );
+
+      expect(screen.UNSAFE_getByType(Modal).props.animationType).toBe('none');
+    });
+
+    it('keeps animationType="none" after the Promise-based signal settles (no fade-to-none flip while visible)', async () => {
+      setPlatform('web');
+      reducedMotionMatches = true;
+      const screen = render(
+        <OverlayRuntimeProvider>
+          <Dialog defaultOpen>
+            <DialogContent>
+              <DialogTitle>Project settings</DialogTitle>
+            </DialogContent>
+          </Dialog>
+        </OverlayRuntimeProvider>,
+      );
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(screen.UNSAFE_getByType(Modal).props.animationType).toBe('none');
+    });
+
+    it('opens with animationType="fade" when the browser reports no preference', () => {
+      setPlatform('web');
+      const screen = render(
+        <OverlayRuntimeProvider>
+          <Dialog defaultOpen>
+            <DialogContent>
+              <DialogTitle>Project settings</DialogTitle>
+            </DialogContent>
+          </Dialog>
+        </OverlayRuntimeProvider>,
+      );
+
+      expect(screen.UNSAFE_getByType(Modal).props.animationType).toBe('fade');
+    });
+
+    it('picks up a preference that changed while closed on the reopen render itself', () => {
+      setPlatform('web');
+      const ui = (open: boolean) => (
+        <OverlayRuntimeProvider>
+          <Dialog onOpenChange={() => undefined} open={open}>
+            <DialogContent>
+              <DialogTitle>Project settings</DialogTitle>
+            </DialogContent>
+          </Dialog>
+        </OverlayRuntimeProvider>
+      );
+      const screen = render(ui(false));
+      expect(screen.UNSAFE_getByType(Modal).props.animationType).toBe('fade');
+
+      reducedMotionMatches = true;
+      screen.rerender(ui(true));
+
+      expect(screen.UNSAFE_getByType(Modal).props.animationType).toBe('none');
+    });
+
+    it('still honors an explicit modalProps.animationType over the browser preference', () => {
+      setPlatform('web');
+      reducedMotionMatches = true;
+      const screen = render(
+        <OverlayRuntimeProvider>
+          <Dialog defaultOpen>
+            <DialogContent modalProps={{ animationType: 'slide' }}>
+              <DialogTitle>Project settings</DialogTitle>
+            </DialogContent>
+          </Dialog>
+        </OverlayRuntimeProvider>,
+      );
+
+      expect(screen.UNSAFE_getByType(Modal).props.animationType).toBe('slide');
+    });
   });
 
   it('clips overflowing content within the rounded panel', () => {
