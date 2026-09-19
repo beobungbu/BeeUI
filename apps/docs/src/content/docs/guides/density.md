@@ -8,6 +8,9 @@ BeeUI ships exactly three density modes — **`compact`**, **`comfortable`** (th
 form-field gap. Density is an *application* intent, not a component size prop and not a global
 spacing multiplier.
 
+**Prerequisites:** `@beemvp/beeui-tokens` installed and the Web theme CSS or native token
+provider already wired (see [Start](/docs/start/)).
+
 ## Do it
 
 ```ts

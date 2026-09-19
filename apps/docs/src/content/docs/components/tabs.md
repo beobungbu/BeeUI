@@ -8,7 +8,7 @@ description: "Controlled tab set sharing state across list/triggers/content; ina
 Controlled tab set sharing state across list/triggers/content; inactive panels are not mounted.
 
 :::note[Distribution status]
-BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. Stable `latest` currently resolves to the same RC too — npm's automatic first-publish default, not a deliberate promotion; it moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -111,7 +111,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 ## Platform behavior
 
-This family ships no platform-specific file, and its own source takes no `Platform` branch.
+This family ships no platform-specific file, but its source branches on `Platform`, so some behavior differs by target.
 
 The same public family is exposed across the supported target matrix; meaningful platform differences remain governed by the compatibility contract.
 

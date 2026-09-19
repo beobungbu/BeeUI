@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './dropdown-menu';
+import { useDirection } from './use-direction';
 
 // A trailing space reserved once at least one item collapses, so the
 // remaining visible items plus the overflow trigger button itself never
@@ -16,11 +17,34 @@ import {
 // estimate for the icon-only overflow trigger's own footprint.
 const OVERFLOW_TRIGGER_WIDTH_RESERVATION = 36;
 
+// Sentinel id for the overflow trigger's own slot in the roving-tabindex sequence — see
+// `ToolbarSequenceEntry`. Distinguishable from every `item-<index>` id.
+const OVERFLOW_SEQUENCE_ID = '__toolbar-overflow__';
+
+type WebKeyboardEvent = {
+  key?: string;
+  preventDefault?: () => void;
+};
+
+type ToolbarFocusableNode = { focus?: () => void };
+
+function assignRef<T>(ref: React.Ref<T> | undefined, value: T | null) {
+  if (typeof ref === 'function') {
+    ref(value);
+    return;
+  }
+  if (ref && typeof ref === 'object' && 'current' in ref) {
+    (ref as React.RefObject<T | null>).current = value;
+  }
+}
+
 export type ToolbarItemProps = {
   /**
    * Rendered in the toolbar row while this item fits. A single element is expected — an
    * `IconButton`/`Button` is the common case — since `Toolbar` reads its rendered width to
-   * decide what fits; it is never cloned or otherwise modified.
+   * decide what fits, and (on Web) clones it to wire `ref`/`tabIndex`/`onFocus` for
+   * arrow-key roving-tabindex navigation, preserving any `ref`/`onFocus` the element
+   * already carries. Content and every other prop are left untouched.
    */
   children: React.ReactNode;
   className?: string;
@@ -64,21 +88,33 @@ type ResolvedToolbarItem = ToolbarItemProps & { index: number };
 type ToolbarOverflowMenuProps = {
   accessibilityLabel?: string;
   items: ResolvedToolbarItem[];
+  /** Roving-tabindex `onFocus` (see `Toolbar`'s own roving-focus section) — updates the roving "current" slot when the trigger receives focus by any means (Tab, mouse). */
+  onFocus?: (event: unknown) => void;
   /** Base `testID` (Toolbar's own `testID`, when given) — derives the trigger's and each menu row's own `testID` for targeting them in tests. */
   testID?: string;
+  /** Roving-tabindex value (see `Toolbar`'s own roving-focus section): `0` when this trigger is the sequence's "current" slot, `-1` otherwise. `undefined` outside Web. */
+  tabIndex?: 0 | -1;
 };
 
 // Internal — not exported from the package barrel. A thin `DropdownMenu` composition so the
 // overflow trigger gets `aria-haspopup="menu"` and full keyboard/dismiss behavior for free
-// from the existing family, rather than a second bespoke popover implementation.
-function ToolbarOverflowMenu({ accessibilityLabel, items, testID }: ToolbarOverflowMenuProps) {
+// from the existing family, rather than a second bespoke popover implementation. Forwards its
+// ref to the trigger so `Toolbar`'s roving-tabindex sequence can call `.focus()` on it, the
+// same as every row item.
+const ToolbarOverflowMenu = React.forwardRef<
+  React.ComponentRef<typeof DropdownMenuTrigger>,
+  ToolbarOverflowMenuProps
+>(({ accessibilityLabel, items, onFocus, tabIndex, testID }, ref) => {
   const [open, setOpen] = React.useState(false);
 
   return (
     <DropdownMenu onOpenChange={setOpen} open={open}>
       <DropdownMenuTrigger
+        ref={ref}
         accessibilityLabel={accessibilityLabel}
+        onFocus={onFocus}
         size="icon"
+        tabIndex={tabIndex}
         testID={testID ? `${testID}-overflow-trigger` : undefined}
         variant="ghost"
       >
@@ -99,7 +135,7 @@ function ToolbarOverflowMenu({ accessibilityLabel, items, testID }: ToolbarOverf
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+});
 
 ToolbarOverflowMenu.displayName = 'ToolbarOverflowMenu';
 
@@ -199,11 +235,135 @@ export const Toolbar = React.forwardRef<React.ComponentRef<typeof View>, Toolbar
     };
 
     const overflowItems = items.filter((item) => collapsedIndices.has(item.index));
+    const visibleItems = items.filter((item) => !collapsedIndices.has(item.index));
+
+    // --- Web roving-tabindex (WAI-ARIA Toolbar Pattern) -----------------------------------
+    // One item is Tab-reachable at a time; ArrowLeft/ArrowRight move the roving "current"
+    // slot with wrap-around (RTL-aware), Home/End jump to the first/last. Applies to every
+    // visible row item plus the overflow trigger, which is always the sequence's last stop —
+    // a collapsed item itself is only reachable by opening that menu, never directly.
+    const direction = useDirection();
+    const focusablesRef = React.useRef<Map<string, () => void>>(new Map());
+    const [currentId, setCurrentIdState] = React.useState<string | null>(null);
+
+    const sequence = React.useMemo(() => {
+      const visibleEntries = visibleItems.map((item) => ({
+        disabled: item.disabled === true,
+        id: `item-${item.index}`,
+      }));
+      return overflowItems.length > 0
+        ? [...visibleEntries, { disabled: false, id: OVERFLOW_SEQUENCE_ID }]
+        : visibleEntries;
+    }, [overflowItems.length, visibleItems]);
+
+    // The roving-tabindex "current" slot: the last one explicitly focused/navigated to,
+    // falling back to the first enabled slot. Computed at render time (not in an effect) so
+    // the very first render already has exactly one `tabIndex={0}` control.
+    const resolvedCurrentId = React.useMemo(() => {
+      if (currentId && sequence.some((entry) => entry.id === currentId && !entry.disabled)) {
+        return currentId;
+      }
+      return sequence.find((entry) => !entry.disabled)?.id ?? null;
+    }, [currentId, sequence]);
+
+    const registerItemFocus = React.useCallback((id: string, focus: (() => void) | null) => {
+      if (focus) focusablesRef.current.set(id, focus);
+      else focusablesRef.current.delete(id);
+    }, []);
+
+    const handleItemFocus = React.useCallback((id: string) => {
+      setCurrentIdState(id);
+    }, []);
+
+    const focusEntry = React.useCallback((id: string | undefined) => {
+      if (id === undefined) return;
+      focusablesRef.current.get(id)?.();
+      setCurrentIdState(id);
+    }, []);
+
+    const moveCurrent = React.useCallback(
+      (delta: 1 | -1) => {
+        const enabled = sequence.filter((entry) => !entry.disabled);
+        if (!enabled.length) return;
+        const index = enabled.findIndex((entry) => entry.id === resolvedCurrentId);
+        const baseIndex = index >= 0 ? index : delta > 0 ? -1 : 0;
+        const nextIndex = (baseIndex + delta + enabled.length) % enabled.length;
+        focusEntry(enabled[nextIndex]?.id);
+      },
+      [focusEntry, resolvedCurrentId, sequence],
+    );
+
+    const handleWebKeyDown = React.useCallback(
+      (event: WebKeyboardEvent) => {
+        const enabled = sequence.filter((entry) => !entry.disabled);
+        // RTL flips which arrow key means "next"/"previous" (ADR-004 direction precedence).
+        const forwardKey = direction === 'rtl' ? 'ArrowLeft' : 'ArrowRight';
+        const backwardKey = direction === 'rtl' ? 'ArrowRight' : 'ArrowLeft';
+        switch (event.key) {
+          case forwardKey:
+            event.preventDefault?.();
+            moveCurrent(1);
+            break;
+          case backwardKey:
+            event.preventDefault?.();
+            moveCurrent(-1);
+            break;
+          case 'Home':
+            event.preventDefault?.();
+            focusEntry(enabled[0]?.id);
+            break;
+          case 'End':
+            event.preventDefault?.();
+            focusEntry(enabled[enabled.length - 1]?.id);
+            break;
+          default:
+            break;
+        }
+      },
+      [direction, focusEntry, moveCurrent, sequence],
+    );
+
+    // `item.children` is a caller-supplied `React.ReactNode` (typically an `IconButton`/
+    // `Button` — see `ToolbarItemProps.children`'s own docblock), so its concrete prop
+    // shape is unknown to this generic wrapper. The cast only asserts the narrow
+    // `ref`/`onFocus`/`tabIndex` triple every BeeUI-owned focusable control already
+    // accepts (the same contract `Button`'s own `...props` passthrough documents).
+    function withRovingFocus(item: ResolvedToolbarItem): React.ReactNode {
+      const child = item.children;
+      if (!React.isValidElement(child)) return child;
+      const id = `item-${item.index}`;
+      const tabIndexValue = Platform.OS === 'web' ? (id === resolvedCurrentId ? 0 : -1) : undefined;
+      const element = child as React.ReactElement<{
+        onFocus?: (event: unknown) => void;
+        ref?: React.Ref<ToolbarFocusableNode>;
+        tabIndex?: 0 | -1;
+      }> & { ref?: React.Ref<ToolbarFocusableNode> };
+      // React 19 exposes `ref` via `props.ref`; older element shapes still carry it on the
+      // element itself — read whichever is present so a caller-supplied `ref` on the
+      // child is preserved instead of silently overwritten.
+      const originalRef = element.props.ref ?? element.ref;
+      const originalOnFocus = element.props.onFocus;
+      return React.cloneElement(element, {
+        onFocus: (event: unknown) => {
+          handleItemFocus(id);
+          originalOnFocus?.(event);
+        },
+        ref: (node: ToolbarFocusableNode | null) => {
+          assignRef(originalRef, node);
+          registerItemFocus(id, node ? () => node.focus?.() : null);
+        },
+        tabIndex: tabIndexValue,
+      });
+    }
+
+    const webKeyboardProps =
+      Platform.OS === 'web' ? ({ onKeyDown: handleWebKeyDown } as unknown as ViewProps) : ({} as ViewProps);
 
     return (
       <View
         ref={ref}
         {...props}
+        {...webKeyboardProps}
         accessibilityRole="toolbar"
         className={cn('relative w-full flex-row items-center gap-1', className)}
         onLayout={handleContainerLayout}
@@ -238,15 +398,23 @@ export const Toolbar = React.forwardRef<React.ComponentRef<typeof View>, Toolbar
             </View>
           ))}
         </View>
-        {items
-          .filter((item) => !collapsedIndices.has(item.index))
-          .map((item) => (
-            <React.Fragment key={item.index}>{item.children}</React.Fragment>
-          ))}
+        {visibleItems.map((item) => (
+          <React.Fragment key={item.index}>{withRovingFocus(item)}</React.Fragment>
+        ))}
         {overflowItems.length > 0 ? (
           <ToolbarOverflowMenu
+            ref={(node) =>
+              registerItemFocus(
+                OVERFLOW_SEQUENCE_ID,
+                node ? () => (node as ToolbarFocusableNode).focus?.() : null,
+              )
+            }
             accessibilityLabel={overflowAccessibilityLabel}
             items={overflowItems}
+            onFocus={() => handleItemFocus(OVERFLOW_SEQUENCE_ID)}
+            tabIndex={
+              Platform.OS === 'web' ? (OVERFLOW_SEQUENCE_ID === resolvedCurrentId ? 0 : -1) : undefined
+            }
             testID={testID}
           />
         ) : null}

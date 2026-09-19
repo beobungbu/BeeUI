@@ -9,13 +9,17 @@ import { Button } from './button';
 import { resolveCalendarLocale } from './calendar-locale';
 import {
   DATE_TIME_PICKER_DEFAULT_CLEAR_ACCESSIBILITY_LABEL,
-  DATE_TIME_PICKER_DEFAULT_PLACEHOLDER,
   useDateTimePickerFieldIntegration,
   useDateTimePickerOpenState,
   type DateTimePickerProps,
   type DateTimePickerValue,
 } from './date-time-picker-shared';
-import { getDateTimePickerFormattedValue, resolveDateTimePickerHour12 } from './date-time-picker-locale';
+import {
+  getDateTimePickerDefaultPlaceholder,
+  getDateTimePickerDoneLabel,
+  getDateTimePickerFormattedValue,
+  resolveDateTimePickerHour12,
+} from './date-time-picker-locale';
 import { Dialog, DialogContent, DialogFooter } from './dialog';
 import { IconButton } from './icon-button';
 import { Text } from './text';
@@ -78,7 +82,7 @@ export const DateTimePicker = React.forwardRef<
     onOpenChange,
     onValueChange,
     open,
-    placeholder = DATE_TIME_PICKER_DEFAULT_PLACEHOLDER,
+    placeholder,
     readOnly = false,
     style,
     testID,
@@ -98,6 +102,8 @@ export const DateTimePicker = React.forwardRef<
   });
   const locale = resolveCalendarLocale(localeProp);
   const hour12 = resolveDateTimePickerHour12(hour12Prop, locale);
+  const resolvedPlaceholder = placeholder ?? getDateTimePickerDefaultPlaceholder(locale);
+  const doneLabel = getDateTimePickerDoneLabel(locale);
   const minimumDate = min ? toLocalDate(min) : undefined;
   const maximumDate = max ? toLocalDate(max) : undefined;
 
@@ -186,7 +192,7 @@ export const DateTimePicker = React.forwardRef<
             testID={testID ? `${testID}-value` : undefined}
             variant="body"
           >
-            {hasValue ? formattedValue : placeholder}
+            {hasValue ? formattedValue : resolvedPlaceholder}
           </Text>
         </Pressable>
         {showClear ? (
@@ -210,11 +216,11 @@ export const DateTimePicker = React.forwardRef<
       {Platform.OS === 'ios' ? (
         <Dialog onOpenChange={setOpen} open={resolvedOpen}>
           <DialogContent
-            accessibilityLabel={field.accessibilityLabel ?? placeholder}
+            accessibilityLabel={field.accessibilityLabel ?? resolvedPlaceholder}
             testID={testID ? `${testID}-content` : undefined}
           >
             <NativeDateTimePicker
-              accessibilityLabel={field.accessibilityLabel ?? placeholder}
+              accessibilityLabel={field.accessibilityLabel ?? resolvedPlaceholder}
               display="inline"
               locale={localeProp}
               maximumDate={maximumDate}
@@ -240,7 +246,7 @@ export const DateTimePicker = React.forwardRef<
                 onPress={() => setOpen(false)}
                 testID={testID ? `${testID}-content-done` : undefined}
               >
-                Done
+                {doneLabel}
               </Button>
             </DialogFooter>
           </DialogContent>

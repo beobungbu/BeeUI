@@ -14,6 +14,78 @@ appId: com.beeui.showcase
 - assertVisible:
     id: "runtime-safe-area-nonzero"
 
+# #584 — BeeUI Sheet on the native gorhom engine. Its content was invisible on
+# iOS while every compile and Jest gate stayed green, so presentation is
+# proven by the rendered content, not by the trigger tap or `onOpenChange`;
+# both dismiss paths BeeUI owns (SheetClose and the backdrop) are covered, and
+# the sheet is presented again afterwards because a dismissed modal that can
+# no longer present was the original failure shape.
+- scrollUntilVisible:
+    element:
+      id: "runtime-sheet-trigger"
+    direction: DOWN
+    visibilityPercentage: 100
+    centerElement: true
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-sheet-trigger"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-sheet-content"
+          timeout: 10000
+- assertVisible:
+    text: "Presents through the native bottom-sheet engine."
+- takeScreenshot: ".artifacts/runtime-smoke/ios/sheet-present"
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-sheet-close"
+      - extendedWaitUntil:
+          notVisible:
+            id: "runtime-sheet-content"
+          timeout: 10000
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-sheet-trigger"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-sheet-content"
+          timeout: 10000
+- waitForAnimationToEnd
+# The fixture snaps to 50%, so the upper quarter of the screen is backdrop.
+- tapOn:
+    point: "50%, 25%"
+- extendedWaitUntil:
+    notVisible:
+      id: "runtime-sheet-content"
+    timeout: 10000
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-sheet-trigger"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-sheet-content"
+          timeout: 10000
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-sheet-close"
+      - extendedWaitUntil:
+          notVisible:
+            id: "runtime-sheet-content"
+          timeout: 10000
+
 # I2 — regular Dialog + DropdownMenu child remains above the Dialog and
 # selecting the child does not dismiss the parent Dialog.
 - scrollUntilVisible:

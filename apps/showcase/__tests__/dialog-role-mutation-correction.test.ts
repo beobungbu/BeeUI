@@ -1,7 +1,7 @@
-import { watchAlertDialogRole } from '../../../packages/ui/src/components/alert-dialog-role-watch';
+import { watchDialogOwnerRole } from '../../../packages/ui/src/components/dialog-role-watch';
 
-// A minimal structural stand-in for the DOM node `watchAlertDialogRole`
-// corrects, and for the global `MutationObserver` it feeds — this repo's Jest
+// A minimal structural stand-in for the DOM node `watchDialogOwnerRole`
+// stamps, and for the global `MutationObserver` it feeds — this repo's Jest
 // harness (`jest-expo`, `react-test-renderer`) has no real DOM/browser
 // `MutationObserver`, so this proves the wiring logic itself (which
 // attribute it watches, how it reacts) in isolation from React rendering and
@@ -40,21 +40,21 @@ function createFakeMutationObserverCtor() {
   return { FakeMutationObserver, instances };
 }
 
-describe('watchAlertDialogRole', () => {
-  it('corrects the role to "alertdialog" immediately, even if the node currently has none', () => {
+describe.each(['dialog', 'alertdialog'] as const)('watchDialogOwnerRole(%s)', (role) => {
+  it('stamps the role immediately, even if the node currently has none (react-native-web has not activated yet)', () => {
     const node = createFakeRoleNode(null);
     const { FakeMutationObserver } = createFakeMutationObserverCtor();
 
-    watchAlertDialogRole(node, FakeMutationObserver);
+    watchDialogOwnerRole(node, role, FakeMutationObserver);
 
-    expect(node.getAttribute('role')).toBe('alertdialog');
+    expect(node.getAttribute('role')).toBe(role);
   });
 
   it('observes only the "role" attribute on the given node', () => {
     const node = createFakeRoleNode(null);
     const { FakeMutationObserver, instances } = createFakeMutationObserverCtor();
 
-    watchAlertDialogRole(node, FakeMutationObserver);
+    watchDialogOwnerRole(node, role, FakeMutationObserver);
 
     expect(instances).toHaveLength(1);
     expect(instances[0].observeArgs).toEqual([
@@ -63,38 +63,44 @@ describe('watchAlertDialogRole', () => {
     ]);
   });
 
-  it('re-corrects the role back to "alertdialog" whenever react-native-web overwrites it (simulating its own re-render)', () => {
+  it('re-stamps the role whenever react-native-web overwrites it (its own activate/deactivate re-render)', () => {
     const node = createFakeRoleNode(null);
     const { FakeMutationObserver, instances } = createFakeMutationObserverCtor();
 
-    watchAlertDialogRole(node, FakeMutationObserver);
-    expect(node.getAttribute('role')).toBe('alertdialog');
+    watchDialogOwnerRole(node, role, FakeMutationObserver);
+    expect(node.getAttribute('role')).toBe(role);
 
-    // Simulate react-native-web's own forced re-render overwriting the
-    // attribute back to "dialog", then firing the MutationObserver callback
-    // the same way a real DOM mutation would.
+    // react-native-web's forced value once "active" is the literal 'dialog';
+    // once it deactivates (another Modal stacked on top) it writes null. Both
+    // land as attribute mutations the observer callback reacts to.
     node.setAttribute('role', 'dialog');
     instances[0].callback();
+    expect(node.getAttribute('role')).toBe(role);
 
-    expect(node.getAttribute('role')).toBe('alertdialog');
+    (node as { setAttribute: (name: string, value: string | null) => void }).setAttribute(
+      'role',
+      null,
+    );
+    instances[0].callback();
+    expect(node.getAttribute('role')).toBe(role);
   });
 
-  it('does not call setAttribute again once the role already reads "alertdialog" (no redundant writes)', () => {
-    const node = createFakeRoleNode('alertdialog');
+  it('does not call setAttribute again once the role already matches (no redundant writes)', () => {
+    const node = createFakeRoleNode(role);
     const setAttributeSpy = jest.spyOn(node, 'setAttribute');
     const { FakeMutationObserver, instances } = createFakeMutationObserverCtor();
 
-    watchAlertDialogRole(node, FakeMutationObserver);
+    watchDialogOwnerRole(node, role, FakeMutationObserver);
     instances[0].callback();
 
     expect(setAttributeSpy).not.toHaveBeenCalled();
   });
 
-  it('stops correcting once the returned cleanup disconnects the observer', () => {
+  it('stops enforcing once the returned cleanup disconnects the observer', () => {
     const node = createFakeRoleNode(null);
     const { FakeMutationObserver, instances } = createFakeMutationObserverCtor();
 
-    const stop = watchAlertDialogRole(node, FakeMutationObserver);
+    const stop = watchDialogOwnerRole(node, role, FakeMutationObserver);
     stop();
 
     expect(instances[0].disconnect).toHaveBeenCalledTimes(1);

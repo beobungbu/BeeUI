@@ -1,6 +1,7 @@
 import { cn } from '@beemvp/beeui-core';
 import * as React from 'react';
 import {
+  Platform,
   Pressable,
   ScrollView,
   View,
@@ -9,7 +10,21 @@ import {
   type ViewProps,
 } from 'react-native';
 import { Text } from './text';
+import { useDirection } from './use-direction';
 import { useRequiredCallbackWarning } from './use-required-callback-warning';
+
+type WebKeyboardEvent = {
+  key?: string;
+  preventDefault?: () => void;
+};
+
+function assignRef<T>(ref: React.ForwardedRef<T>, value: T | null) {
+  if (typeof ref === 'function') {
+    ref(value);
+    return;
+  }
+  if (ref) ref.current = value;
+}
 
 type TabsContextValue = {
   disabled: boolean;
@@ -38,19 +53,47 @@ const TabsOrderContext = React.createContext<readonly string[]>([]);
 
 type TabsTriggerLayout = { width: number; x: number };
 
+type TabsFocusableNode = { focus?: () => void };
+
 type TabsListLayoutContextValue = {
   register: (value: string, layout: TabsTriggerLayout) => void;
+  /** Registers a `TabsTrigger`'s `focus()` function for arrow-key roving (see `TabsRovingFocusContextValue`); disabled state is read directly from `children` in `TabsList`, not stored here. Only consulted when `scrollable` is true. */
+  registerFocusable: (value: string, focus: () => void) => void;
   /** Whether the owning `TabsList` renders inside a horizontal scroll container. Read by
    * `TabsTrigger` to decide whether it should stretch (`flex-1`, the pre-scrollable default)
-   * or size to its own content (`scrollable`). */
+   * or size to its own content (`scrollable`), and whether it participates in Web
+   * arrow-key roving-tabindex navigation. */
   scrollable: boolean;
   unregister: (value: string) => void;
+  unregisterFocusable: (value: string) => void;
 };
 
 // `null` (not just an unregistered default) so `TabsTrigger` can tell "not inside a
 // `TabsList` that tracks layout at all" apart from "inside one, not scrollable" — the same
 // shape distinction `TabsColumnLabelRegistryContext` uses in `table.tsx`.
 const TabsListLayoutContext = React.createContext<TabsListLayoutContextValue | null>(null);
+
+type TabsRovingFocusContextValue = {
+  /**
+   * The `value` of the roving-tabindex "current" trigger — the one with `tabIndex={0}`
+   * on Web, reached by Tab; every other trigger has `tabIndex={-1}`. Only meaningful
+   * (and only read) when `scrollable` is true — see `TabsTrigger`'s own tabIndex
+   * computation. `null` before any `TabsTrigger` has registered.
+   */
+  currentValue: string | null;
+  /** Moves the roving-tabindex "current" trigger without changing `Tabs`'s own selection — mirrors `onFocus` naturally updating it when focus moves by any other means (Tab, mouse). */
+  setCurrentValue: (value: string) => void;
+};
+
+// Deliberately a *separate* context from `TabsListLayoutContext`: `currentValue` changes on
+// every arrow-key/Home/End/focus interaction, but `TabsTrigger`'s register/unregister
+// cleanup effects key their dependency array on `TabsListLayoutContext`'s own object
+// identity (see that effect's comment). Folding a frequently-changing value into that same
+// object would recreate it on every roving-focus interaction, which would fire that
+// cleanup's stale-closure `unregister` on every keystroke and silently drop a still-mounted
+// trigger's tracked layout/focus registration — a real, reproduced regression this split
+// exists specifically to prevent.
+const TabsRovingFocusContext = React.createContext<TabsRovingFocusContextValue | null>(null);
 
 export type TabsProps = Omit<ViewProps, 'children'> & {
   children: React.ReactNode;
@@ -104,8 +147,11 @@ export type TabsListProps = Omit<ViewProps, 'accessibilityRole' | 'role'> & {
 export const TabsList = React.forwardRef<React.ComponentRef<typeof View>, TabsListProps>(
   ({ addon, children, className, scrollable = false, ...props }, ref) => {
     const tabs = useTabsContext('TabsList');
+    const direction = useDirection();
     const scrollViewRef = React.useRef<React.ComponentRef<typeof ScrollView>>(null);
     const layoutsRef = React.useRef<Map<string, TabsTriggerLayout>>(new Map());
+    const focusablesRef = React.useRef<Map<string, () => void>>(new Map());
+    const [currentValue, setCurrentValueState] = React.useState<string | null>(null);
 
     const order = React.useMemo(
       () =>
@@ -118,19 +164,118 @@ export const TabsList = React.forwardRef<React.ComponentRef<typeof View>, TabsLi
       [children],
     );
 
+    // Keyboard order + each trigger's own disabled state (its `disabled` prop OR the
+    // parent `Tabs`'s own `disabled`), used only by the arrow-key roving logic below —
+    // separate from `order` (plain values, `TabsOrderContext`'s existing contract for
+    // `TabsTrigger`'s close-neighbour lookup). Read directly from `children` (always
+    // in sync with this render pass) rather than `focusablesRef`'s registration
+    // effects, which commit one tick later.
+    const keyboardOrder = React.useMemo(
+      () =>
+        React.Children.toArray(children)
+          .filter(
+            (child): child is React.ReactElement<TabsTriggerProps> =>
+              React.isValidElement(child) && child.type === TabsTrigger,
+          )
+          .map((child) => ({
+            disabled: child.props.disabled === true || tabs.disabled,
+            value: child.props.value,
+          })),
+      [children, tabs.disabled],
+    );
+
+    // The roving-tabindex "current" trigger: the last one explicitly focused/navigated
+    // to, falling back to the currently *selected* tab (WAI-ARIA Tabs Pattern's usual
+    // starting point), falling back to the first enabled trigger. Computed at render
+    // time (not in an effect) so the very first render already has exactly one
+    // `tabIndex={0}` trigger instead of a Tab-unreachable strip.
+    const resolvedCurrentValue = React.useMemo(() => {
+      if (currentValue && keyboardOrder.some((entry) => entry.value === currentValue && !entry.disabled)) {
+        return currentValue;
+      }
+      if (keyboardOrder.some((entry) => entry.value === tabs.value && !entry.disabled)) {
+        return tabs.value;
+      }
+      return keyboardOrder.find((entry) => !entry.disabled)?.value ?? null;
+    }, [currentValue, keyboardOrder, tabs.value]);
+
+    const focusValue = React.useCallback((value: string | undefined) => {
+      if (value === undefined) return;
+      focusablesRef.current.get(value)?.();
+      setCurrentValueState(value);
+    }, []);
+
+    const moveCurrent = React.useCallback(
+      (delta: 1 | -1) => {
+        const enabled = keyboardOrder.filter((entry) => !entry.disabled);
+        if (!enabled.length) return;
+        const index = enabled.findIndex((entry) => entry.value === resolvedCurrentValue);
+        const baseIndex = index >= 0 ? index : delta > 0 ? -1 : 0;
+        const nextIndex = (baseIndex + delta + enabled.length) % enabled.length;
+        focusValue(enabled[nextIndex]?.value);
+      },
+      [focusValue, keyboardOrder, resolvedCurrentValue],
+    );
+
+    const handleWebKeyDown = React.useCallback(
+      (event: WebKeyboardEvent) => {
+        const enabled = keyboardOrder.filter((entry) => !entry.disabled);
+        // RTL flips which arrow key means "next"/"previous" (ADR-004 direction precedence).
+        const forwardKey = direction === 'rtl' ? 'ArrowLeft' : 'ArrowRight';
+        const backwardKey = direction === 'rtl' ? 'ArrowRight' : 'ArrowLeft';
+        switch (event.key) {
+          case forwardKey:
+            event.preventDefault?.();
+            moveCurrent(1);
+            break;
+          case backwardKey:
+            event.preventDefault?.();
+            moveCurrent(-1);
+            break;
+          case 'Home':
+            event.preventDefault?.();
+            focusValue(enabled[0]?.value);
+            break;
+          case 'End':
+            event.preventDefault?.();
+            focusValue(enabled[enabled.length - 1]?.value);
+            break;
+          default:
+            break;
+        }
+      },
+      [direction, focusValue, keyboardOrder, moveCurrent],
+    );
+
+    // Deliberately excludes `resolvedCurrentValue`/`setCurrentValueState` (see
+    // `TabsRovingFocusContext`'s own header comment) — this object's identity must stay
+    // stable across roving-focus interactions, since `TabsTrigger`'s register/unregister
+    // cleanup effects key their dependency array on it.
     const layoutContext = React.useMemo<TabsListLayoutContextValue>(
       () => ({
         register: (value, layout) => {
           layoutsRef.current.set(value, layout);
         },
+        registerFocusable: (value, focus) => {
+          focusablesRef.current.set(value, focus);
+        },
         scrollable,
         unregister: (value) => {
           layoutsRef.current.delete(value);
+        },
+        unregisterFocusable: (value) => {
+          focusablesRef.current.delete(value);
         },
       }),
       [scrollable],
     );
 
+    const rovingFocusContext = React.useMemo<TabsRovingFocusContextValue>(
+      () => ({ currentValue: resolvedCurrentValue, setCurrentValue: setCurrentValueState }),
+      [resolvedCurrentValue],
+    );
+
+    // Selection changes scroll the newly-selected tab into view.
     React.useEffect(() => {
       if (!scrollable) return;
       const layout = layoutsRef.current.get(tabs.value);
@@ -138,27 +283,48 @@ export const TabsList = React.forwardRef<React.ComponentRef<typeof View>, TabsLi
       // Brings the selected tab's leading edge into view with a little leading breathing
       // room; RN's `ScrollView` clamps an out-of-range offset itself, so no extra
       // viewport-width bookkeeping is needed here.
-      scrollViewRef.current?.scrollTo({ animated: true, x: Math.max(0, layout.x - 16) });
+      // Keyboard-driven focus moves must land instantly: an animated scroll leaves the
+      // trigger clipped for a few frames, which is what a screen-magnifier user sees.
+      scrollViewRef.current?.scrollTo({ animated: false, x: Math.max(0, layout.x - 16) });
     }, [scrollable, tabs.value]);
+
+    // Arrow-key/Home/End roving focus also scrolls the newly-focused trigger into view,
+    // independent of selection (manual-activation model: moving focus does not select).
+    React.useEffect(() => {
+      if (!scrollable || currentValue === null) return;
+      const layout = layoutsRef.current.get(currentValue);
+      if (!layout) return;
+      // Keyboard-driven focus moves must land instantly: an animated scroll leaves the
+      // trigger clipped for a few frames, which is what a screen-magnifier user sees.
+      scrollViewRef.current?.scrollTo({ animated: false, x: Math.max(0, layout.x - 16) });
+    }, [currentValue, scrollable]);
+
+    const webKeyboardProps =
+      Platform.OS === 'web' && scrollable
+        ? ({ onKeyDown: handleWebKeyDown } as unknown as ViewProps)
+        : ({} as ViewProps);
 
     return (
       <TabsOrderContext.Provider value={order}>
         <TabsListLayoutContext.Provider value={layoutContext}>
-          <View
-            ref={ref}
-            {...props}
-            accessibilityRole="tablist"
-            className={cn('flex-row items-center gap-1 rounded-md bg-muted p-1', className)}
-          >
-            {scrollable ? (
-              <ScrollView horizontal ref={scrollViewRef} showsHorizontalScrollIndicator={false}>
-                <View className="flex-row gap-1">{children}</View>
-              </ScrollView>
-            ) : (
-              children
-            )}
-            {addon}
-          </View>
+          <TabsRovingFocusContext.Provider value={rovingFocusContext}>
+            <View
+              ref={ref}
+              {...props}
+              {...webKeyboardProps}
+              accessibilityRole="tablist"
+              className={cn('flex-row items-center gap-1 rounded-md bg-muted p-1', className)}
+            >
+              {scrollable ? (
+                <ScrollView horizontal ref={scrollViewRef} showsHorizontalScrollIndicator={false}>
+                  <View className="flex-row gap-1">{children}</View>
+                </ScrollView>
+              ) : (
+                children
+              )}
+              {addon}
+            </View>
+          </TabsRovingFocusContext.Provider>
         </TabsListLayoutContext.Provider>
       </TabsOrderContext.Provider>
     );
@@ -216,6 +382,7 @@ export const TabsTrigger = React.forwardRef<
       disabled = false,
       labelClassName,
       onClose,
+      onFocus,
       onLayout,
       value,
       ...props
@@ -225,6 +392,7 @@ export const TabsTrigger = React.forwardRef<
     const tabs = useTabsContext('TabsTrigger');
     const order = React.useContext(TabsOrderContext);
     const listLayout = React.useContext(TabsListLayoutContext);
+    const rovingFocus = React.useContext(TabsRovingFocusContext);
     const selected = tabs.value === value;
     const isDisabled = disabled === true || tabs.disabled;
     const childArray = React.Children.toArray(children);
@@ -233,6 +401,15 @@ export const TabsTrigger = React.forwardRef<
     )
       ? childArray.map(String).join('')
       : undefined;
+
+    const internalRef = React.useRef<TabsFocusableNode | null>(null);
+    const setRef = React.useCallback(
+      (node: React.ComponentRef<typeof Pressable> | null) => {
+        internalRef.current = node as TabsFocusableNode | null;
+        assignRef(ref, node);
+      },
+      [ref],
+    );
 
     React.useEffect(() => {
       if (
@@ -251,12 +428,30 @@ export const TabsTrigger = React.forwardRef<
 
     React.useEffect(() => () => listLayout?.unregister(value), [listLayout, value]);
 
+    // Web arrow-key roving-tabindex (only meaningful inside a `scrollable` `TabsList` —
+    // see `TabsListLayoutContextValue.currentValue`'s own docblock). Re-registers on
+    // every render so `TabsList`'s roving logic always calls the latest closure.
+    React.useEffect(() => {
+      if (!listLayout?.scrollable) return;
+      listLayout.registerFocusable(value, () => internalRef.current?.focus?.());
+    }, [listLayout, value]);
+
+    React.useEffect(() => {
+      if (!listLayout?.scrollable) return;
+      return () => listLayout.unregisterFocusable(value);
+    }, [listLayout, value]);
+
     const handleLayout = (event: LayoutChangeEvent) => {
       listLayout?.register(value, {
         width: event.nativeEvent.layout.width,
         x: event.nativeEvent.layout.x,
       });
       onLayout?.(event);
+    };
+
+    const handleFocus = (event: Parameters<NonNullable<PressableProps['onFocus']>>[0]) => {
+      if (listLayout?.scrollable) rovingFocus?.setCurrentValue(value);
+      onFocus?.(event);
     };
 
     const handlePress = () => {
@@ -296,10 +491,21 @@ export const TabsTrigger = React.forwardRef<
     // (`listLayout` is `null`) or inside a non-`scrollable` one, behavior is unchanged.
     const sizingClassName = listLayout?.scrollable ? 'flex-none' : 'flex-1';
 
+    // Roving tabindex (Web, `scrollable` `TabsList` only — see
+    // `TabsRovingFocusContextValue.currentValue`'s own docblock): exactly one trigger is
+    // Tab-reachable at a time, matching the WAI-ARIA Tabs Pattern. A non-`scrollable`
+    // `TabsList` (or `listLayout` being `null` outside one entirely) leaves `tabIndex`
+    // untouched — every trigger keeps ordinary Tab-key reachability, unchanged from
+    // before this feature existed.
+    const rovingTabIndex =
+      Platform.OS === 'web' && listLayout?.scrollable
+        ? (value === rovingFocus?.currentValue ? 0 : -1)
+        : undefined;
+
     if (!closable) {
       return (
         <Pressable
-          ref={ref}
+          ref={setRef}
           {...props}
           accessibilityLabel={accessibilityLabel ?? inferredLabel}
           accessibilityRole="tab"
@@ -324,8 +530,10 @@ export const TabsTrigger = React.forwardRef<
             className,
           )}
           disabled={isDisabled}
+          onFocus={handleFocus}
           onLayout={handleLayout}
           onPress={handlePress}
+          tabIndex={rovingTabIndex}
         >
           {labelNode}
         </Pressable>
@@ -348,7 +556,7 @@ export const TabsTrigger = React.forwardRef<
         onLayout={handleLayout}
       >
         <Pressable
-          ref={ref}
+          ref={setRef}
           {...props}
           accessibilityLabel={accessibilityLabel ?? inferredLabel}
           accessibilityRole="tab"
@@ -360,7 +568,9 @@ export const TabsTrigger = React.forwardRef<
           aria-selected={selected}
           className="min-w-0 flex-1 items-center justify-center px-3 py-2 active:opacity-80 web:focus-visible:bee-focus-ring"
           disabled={isDisabled}
+          onFocus={handleFocus}
           onPress={handlePress}
+          tabIndex={rovingTabIndex}
         >
           {labelNode}
         </Pressable>

@@ -8,6 +8,10 @@ Accessibility is part of BeeUI's component behavior contract, not a visual add-o
 semantic labels/descriptions/states, preserve focus order, keep touch targets usable, and
 let text/control surfaces grow under Dynamic Type or Web zoom.
 
+**Prerequisites:** a BeeUI app with `BeeUIProvider` mounted (see [Start](/docs/start/)) and
+access to a real device/browser or assistive-technology tool — these pages describe behavior
+you verify by interacting with running components, not by reading source.
+
 ## Task guides
 
 - [Keyboard & focus](/docs/accessibility/keyboard-focus/)

@@ -8,6 +8,8 @@ generated from BeeUI's machine-checked compatibility snapshot, so its Node/React
 RNW/Uniwind/Tailwind/native-infrastructure pins cannot drift independently from the
 canonical contract.
 
+**Prerequisites:** none — check this page before you pin dependency versions, not after.
+
 - [Native (RN / Expo)](/docs/compatibility/native/)
 - [Web](/docs/compatibility/web/)
 

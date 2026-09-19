@@ -1,0 +1,9 @@
+# WS-K · iOS Simulator evidence for #584 and #609
+
+Goal: run the showcase (or a minimal Expo 57 consumer) on the local iOS Simulator and record whether, with the code on this branch: (a) #584 — a BeeUI `Sheet` presents when `present()` is called (gorhom bottom-sheet path, reanimated 4.x, worklets 0.10.x); (b) #609 — after `Uniwind.setTheme('dark')` then `Uniwind.setTheme('system')`, the app follows the simulator's appearance toggle again.
+
+Read first: `gh issue view 584 --repo beobungbu/BeeUI` (isolation steps + evidence files), `gh issue view 609 --repo beobungbu/BeeUI`, plans/260918-1559-consumer-audit-fix-all/reports/ws-b-sheet-584.md, and apps/showcase/README.md for how to run on iOS. Known local build gotchas (from earlier sessions): export a UTF-8 locale (`export LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8`), use Node 24.13.1 from `~/.nvm/versions/node/v24.13.1/bin`, and run `expo prebuild --clean` before `expo run:ios` if the ios/ folder is stale. Use the iOS Simulator MCP tool (`attach` first, then `launch`, `screenshot`, `inspect`, `tap`) for driving and evidence.
+
+Deliverables: screenshots saved under plans/260919-1258-consumer-audit-followups/reports/ios-evidence/ (sheet-before-present.png, sheet-after-present.png, theme-dark.png, theme-system-after-toggle-light.png, theme-system-after-toggle-dark.png), plus ws-k-report.md stating device/OS versions, exact steps, PASS/FAIL per item, and Metro console lines for the Sheet (`onChange` index) — the issue says gorhom fired no onChange. If the Sheet does not present, capture the full Metro log around present() and do NOT change component code; report the finding. If the showcase does not already have a screen that lets you call setTheme('dark') then ('system'), add a minimal dev-only toggle to the showcase (apps/showcase only, not packages/ui) and commit it.
+
+Owned: apps/showcase/** (dev-only additions), plans/260919-1258-consumer-audit-followups/reports/**. Do NOT edit packages/**.

@@ -7,6 +7,10 @@ You brand BeeUI by changing **token values**, never token names and never compon
 Every reusable component consumes semantic roles (`primary`, `surface`, `focus-ring`, …), so
 re-pointing those roles at your palette re-brands every screen at once.
 
+**Prerequisites:** a BeeUI app with the Web theme CSS or native token provider already wired
+(see [Start](/docs/start/)); this guide changes token values, it does not set up theming from
+scratch — see [Theming](/docs/theming/) for that model first if you have not done it yet.
+
 Pick the path that matches how far your brand diverges:
 
 | Path | Use it when | Mechanism | Scope |

@@ -8,7 +8,7 @@ description: "44px icon-only action; an accessible label is required."
 44px icon-only action; an accessible label is required.
 
 :::note[Distribution status]
-BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. Stable `latest` currently resolves to the same RC too — npm's automatic first-publish default, not a deliberate promotion; it moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -96,9 +96,9 @@ Colors, spacing and typography come from semantic tokens rather than from values
 ## Executable examples
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/icon-button-size-and-count.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/icon-button-size-and-count.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/toolbar-arrow-key-roving-focus.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/toolbar-arrow-key-roving-focus.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
-- **Additional fixture:** [`apps/showcase/component-gallery/table-showcase.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/table-showcase.tsx)
 
 ### Addressable examples
 

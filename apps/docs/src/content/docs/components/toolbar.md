@@ -8,7 +8,7 @@ description: "Single-row action toolbar that measures its own width and collapse
 Single-row action toolbar that measures its own width and collapses lower-priority items into an overflow menu when they no longer fit.
 
 :::note[Distribution status]
-BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. Stable `latest` currently resolves to the same RC too — npm's automatic first-publish default, not a deliberate promotion; it moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -55,7 +55,7 @@ Stateless layout primitive with no owned selection state. `Toolbar` measures its
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` **(required)** | `React.ReactNode` | — | Rendered in the toolbar row while this item fits. A single element is expected — an `IconButton`/`Button` is the common case — since `Toolbar` reads its rendered width to decide what fits; it is never cloned or otherwise modified. |
+| `children` **(required)** | `React.ReactNode` | — | Rendered in the toolbar row while this item fits. A single element is expected — an `IconButton`/`Button` is the common case — since `Toolbar` reads its rendered width to decide what fits, and (on Web) clones it to wire `ref`/`tabIndex`/`onFocus` for arrow-key roving-tabindex navigation, preserving any `ref`/`onFocus` the element already carries. Content and every other prop are left untouched. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `disabled` | `boolean` | — | Disables this item everywhere it renders: in the toolbar row and inside the overflow menu. Defaults to false. |
 | `icon` | `React.ReactNode` | — | Icon shown next to `label` when this item renders inside the overflow menu instead of the row. |
@@ -107,7 +107,8 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/toolbar-arrow-key-roving-focus.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/toolbar-arrow-key-roving-focus.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/toolbar-showcase.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/toolbar-showcase.tsx)
 
 ### Addressable examples

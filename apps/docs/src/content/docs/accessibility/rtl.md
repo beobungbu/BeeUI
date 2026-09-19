@@ -7,6 +7,10 @@ BeeUI supports **right to left** (RTL) layout through one shared, stateless dire
 
 If you are adding **right to left** support to an application, set the host platform's direction authority and let BeeUI read it; BeeUI does not create a second RTL state system.
 
+**Prerequisites:** control over your app's direction authority (`I18nManager.forceRTL` on
+native, the document `dir` attribute on Web) and an RTL locale or manual override to test
+against.
+
 ## How direction is resolved
 
 For every direction-aware component, the effective direction is:
