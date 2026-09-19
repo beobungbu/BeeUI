@@ -1,7 +1,10 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import * as React from 'react';
-import { Platform } from 'react-native';
+import { Platform, StyleSheet, Text as RNText, View } from 'react-native';
+import { SafeAreaInsetsContext, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Input } from '../../../packages/ui/src/components/input';
+import { useOverlayRuntimeSnapshot } from '../../../packages/ui/src/components/overlay-runtime';
+import { BeeUIProvider } from '../../../packages/ui/src/components/safe-area';
 // Explicit `.native` suffix (mirrors `issue-173-date-picker-native.test.tsx`):
 // forces the native presentation regardless of Jest's default platform
 // resolution, and is the only way to exercise the file that imports
@@ -38,6 +41,24 @@ let latestBackdropComponent: ((props: MockBackdropProps) => React.ReactNode) | u
 let latestHandleComponent: ((props: MockHandleProps) => React.ReactNode) | null | undefined;
 let latestEnableDynamicSizing: boolean | undefined;
 let latestSnapPoints: readonly unknown[] | undefined;
+let latestAccessible: boolean | undefined;
+let bottomSheetViewRenders = 0;
+
+// gorhom's real `BottomSheetModal` does not mount its children where it is
+// rendered: it hands them to its own store-backed portal, which mounts them
+// under `BottomSheetModalProvider`, outside the `Sheet` tree and outside any
+// provider declared below the gorhom provider. `mockDetachChildren` makes the
+// mock do the same — children are published to `mockDetachedStore` and only
+// `MockDetachedHost` (rendered by the test, outside `Sheet`) mounts them.
+let mockDetachChildren = false;
+const mockDetachedStore = {
+  children: null as React.ReactNode,
+  listeners: new Set<() => void>(),
+  publish(children: React.ReactNode) {
+    mockDetachedStore.children = children;
+    mockDetachedStore.listeners.forEach((listener) => listener());
+  },
+};
 
 jest.mock('@gorhom/bottom-sheet', () => {
   const ReactActual = require('react');
@@ -46,6 +67,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
   const BottomSheetModal = ReactActual.forwardRef(
     (
       props: {
+        accessible?: boolean;
         backdropComponent?: (p: MockBackdropProps) => React.ReactNode;
         children?: React.ReactNode;
         enableDynamicSizing?: boolean;
@@ -60,7 +82,14 @@ jest.mock('@gorhom/bottom-sheet', () => {
       latestHandleComponent = props.handleComponent;
       latestEnableDynamicSizing = props.enableDynamicSizing;
       latestSnapPoints = props.snapPoints;
+      latestAccessible = props.accessible;
       ReactActual.useImperativeHandle(ref, () => ({ present: mockPresent, dismiss: mockDismiss }));
+      const detached = mockDetachChildren;
+      ReactActual.useEffect(() => {
+        if (!detached) return undefined;
+        mockDetachedStore.publish(props.children);
+        return () => mockDetachedStore.publish(null);
+      });
       return ReactActual.createElement(
         View,
         { testID: 'mock-bottom-sheet-modal' },
@@ -68,13 +97,15 @@ jest.mock('@gorhom/bottom-sheet', () => {
           ? props.backdropComponent({ animatedIndex: { value: 0 } })
           : null,
         props.handleComponent ? props.handleComponent({}) : null,
-        props.children,
+        detached ? null : props.children,
       );
     },
   );
 
-  const BottomSheetView = ({ children }: { children?: React.ReactNode }) =>
-    ReactActual.createElement(View, null, children);
+  const BottomSheetView = ({ children }: { children?: React.ReactNode }) => {
+    bottomSheetViewRenders += 1;
+    return ReactActual.createElement(View, null, children);
+  };
 
   return {
     __esModule: true,
@@ -82,6 +113,19 @@ jest.mock('@gorhom/bottom-sheet', () => {
     BottomSheetView,
   };
 });
+
+function MockDetachedHost() {
+  const [, rerender] = React.useReducer((count: number) => count + 1, 0);
+  React.useEffect(() => {
+    mockDetachedStore.listeners.add(rerender);
+    // The modal's effect may have published before this host subscribed.
+    rerender();
+    return () => {
+      mockDetachedStore.listeners.delete(rerender);
+    };
+  }, []);
+  return <View testID="mock-detached-host">{mockDetachedStore.children}</View>;
+}
 
 let androidBackListener: (() => boolean) | undefined;
 
@@ -110,15 +154,22 @@ jest.mock('react-native-safe-area-context', () => {
   const ReactActual = require('react');
   const { View } = require('react-native');
 
+  const frame = { x: 0, y: 0, width: 300, height: 600 };
+  const SafeAreaInsetsContext = ReactActual.createContext(SAFE_AREA_INSETS);
+  const SafeAreaFrameContext = ReactActual.createContext(frame);
+
   return {
-    initialWindowMetrics: { frame: { x: 0, y: 0, width: 300, height: 600 }, insets: SAFE_AREA_INSETS },
+    initialWindowMetrics: { frame, insets: SAFE_AREA_INSETS },
+    SafeAreaFrameContext,
+    SafeAreaInsetsContext,
     SafeAreaProvider: ({ children }: { children?: React.ReactNode }) => children,
     SafeAreaListener: ({ children }: { children?: React.ReactNode }) => children,
     SafeAreaView: ReactActual.forwardRef(
       ({ children, ...props }: { children?: React.ReactNode }, ref: React.Ref<typeof View>) =>
         ReactActual.createElement(View, { ref, ...props }, children),
     ),
-    useSafeAreaInsets: () => SAFE_AREA_INSETS,
+    useSafeAreaFrame: () => ReactActual.useContext(SafeAreaFrameContext),
+    useSafeAreaInsets: () => ReactActual.useContext(SafeAreaInsetsContext),
   };
 });
 
@@ -134,6 +185,10 @@ beforeEach(() => {
   latestOnDismiss = undefined;
   latestBackdropComponent = undefined;
   latestHandleComponent = undefined;
+  latestAccessible = undefined;
+  bottomSheetViewRenders = 0;
+  mockDetachChildren = false;
+  mockDetachedStore.children = null;
 });
 
 afterEach(() => {
@@ -152,14 +207,17 @@ describe('BeeUI issue #158 Sheet (native/@gorhom/bottom-sheet adapter) contract'
       </Sheet>,
     );
 
-    expect(mockDismiss).toHaveBeenCalledTimes(1);
+    // A closed sheet that was never presented sends gorhom nothing: a
+    // mount-time `dismiss()` unmounts a modal that never mounted and the
+    // later `present()` then renders nothing on device (#584).
+    expect(mockDismiss).not.toHaveBeenCalled();
     expect(mockPresent).not.toHaveBeenCalled();
 
     fireEvent.press(screen.getByRole('button', { name: 'Open sheet' }));
     expect(mockPresent).toHaveBeenCalledTimes(1);
 
     fireEvent.press(screen.getByRole('button', { name: 'Done' }));
-    expect(mockDismiss).toHaveBeenCalledTimes(2);
+    expect(mockDismiss).toHaveBeenCalledTimes(1);
   });
 
   // #584 — gorhom v5's `enableDynamicSizing` defaults to `true`, which
@@ -378,5 +436,160 @@ describe('BeeUI issue #158 Sheet (native/@gorhom/bottom-sheet adapter) contract'
 
     fireEvent.changeText(screen.getByLabelText('Note'), 'Follow up tomorrow');
     expect(onChangeText).toHaveBeenCalledWith('Follow up tomorrow');
+  });
+});
+
+// #584 — a real Expo 57 consumer on iPhone 16 Pro / iOS 18.6 called
+// `present()` on a mounted `BottomSheetModal` and nothing rendered: no error,
+// no `onChange`. Two things had to be true for that, and both are pinned here.
+describe('BeeUI issue #584 Sheet presents on the native gorhom engine', () => {
+  it('sends dismiss() only for a sheet it presented, never on mount and never after gorhom dismissed it', () => {
+    const onOpenChange = jest.fn();
+    const { rerender } = render(
+      <Sheet onOpenChange={onOpenChange} open={false}>
+        <SheetContent testID="sheet-content">
+          <SheetTitle>Filters</SheetTitle>
+        </SheetContent>
+      </Sheet>,
+    );
+    // A closed, never-presented modal must not be told to dismiss: gorhom's
+    // closed-state early exit then unmounts a portal that never mounted and
+    // the following `present()` mounts nothing.
+    expect(mockDismiss).not.toHaveBeenCalled();
+
+    rerender(
+      <Sheet onOpenChange={onOpenChange} open>
+        <SheetContent testID="sheet-content">
+          <SheetTitle>Filters</SheetTitle>
+        </SheetContent>
+      </Sheet>,
+    );
+    expect(mockPresent).toHaveBeenCalledTimes(1);
+
+    // gorhom closed itself (swipe, backdrop): it has already unmounted, so
+    // the caller's matching `open={false}` has nothing left to dismiss.
+    act(() => latestOnDismiss?.());
+    expect(onOpenChange).toHaveBeenLastCalledWith(false);
+    rerender(
+      <Sheet onOpenChange={onOpenChange} open={false}>
+        <SheetContent testID="sheet-content">
+          <SheetTitle>Filters</SheetTitle>
+        </SheetContent>
+      </Sheet>,
+    );
+    expect(mockDismiss).not.toHaveBeenCalled();
+
+    // A sheet BeeUI presented and the caller closes is dismissed once.
+    rerender(
+      <Sheet onOpenChange={onOpenChange} open>
+        <SheetContent testID="sheet-content">
+          <SheetTitle>Filters</SheetTitle>
+        </SheetContent>
+      </Sheet>,
+    );
+    expect(mockPresent).toHaveBeenCalledTimes(2);
+    rerender(
+      <Sheet onOpenChange={onOpenChange} open={false}>
+        <SheetContent testID="sheet-content">
+          <SheetTitle>Filters</SheetTitle>
+        </SheetContent>
+      </Sheet>,
+    );
+    expect(mockDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the Sheet root, safe-area, and overlay runtime contexts reachable when the engine mounts the content elsewhere', () => {
+    mockDetachChildren = true;
+    const onOpenChange = jest.fn();
+    const bridgedInsets = { top: 0, right: 0, bottom: 44, left: 0 };
+
+    function ContextProbe() {
+      const insets = useSafeAreaInsets();
+      const overlay = useOverlayRuntimeSnapshot();
+      return (
+        <RNText testID="context-probe">
+          {`inset-bottom:${insets.bottom} runtime:${overlay.runtime ? 'yes' : 'no'} transport:${
+            overlay.transport?.mode ?? 'none'
+          }`}
+        </RNText>
+      );
+    }
+
+    render(
+      <>
+        <BeeUIProvider>
+          <SafeAreaInsetsContext.Provider value={bridgedInsets}>
+            <Sheet onOpenChange={onOpenChange} open>
+              <SheetContent testID="sheet-content">
+                <SheetTitle>Filters</SheetTitle>
+                <ContextProbe />
+                <SheetClose testID="sheet-close">Done</SheetClose>
+              </SheetContent>
+            </Sheet>
+          </SafeAreaInsetsContext.Provider>
+        </BeeUIProvider>
+        <MockDetachedHost />
+      </>,
+    );
+
+    // The content really mounted under the detached host, not under `Sheet`.
+    const content = screen.getByTestId('sheet-content');
+    let ancestor = content.parent;
+    let underDetachedHost = false;
+    while (ancestor) {
+      if (ancestor.props?.testID === 'mock-detached-host') underDetachedHost = true;
+      ancestor = ancestor.parent;
+    }
+    expect(underDetachedHost).toBe(true);
+    expect(screen.queryByTestId('mock-detached-host')).toBeTruthy();
+
+    // Without the bridge `SheetClose` throws "Sheet components must be used
+    // inside Sheet." on the device; with it, the close reaches the root.
+    fireEvent.press(screen.getByTestId('sheet-close'));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+
+    // The insets declared above the Sheet (not the mock default) and the
+    // overlay runtime from `BeeUIProvider` both reach the detached content.
+    expect(screen.getByTestId('context-probe').props.children).toBe(
+      'inset-bottom:44 runtime:yes transport:legacy',
+    );
+  });
+
+  it('renders the content in an in-flow flex box directly under the modal, with the modal not claiming accessibility for it', () => {
+    render(
+      <Sheet defaultOpen>
+        <SheetContent testID="sheet-content">
+          <SheetTitle>Filters</SheetTitle>
+        </SheetContent>
+      </Sheet>,
+    );
+
+    // gorhom's `BottomSheetView` is absolutely positioned and content-sized
+    // for its dynamic sizing, which BeeUI turns off; wrapping the content in
+    // it left the sheet content-sized at the top of a transparent sheet.
+    expect(bottomSheetViewRenders).toBe(0);
+
+    // modal > flex:1 View (in flow) > absolute-fill a11y boundary > content.
+    const modal = screen.getByTestId('mock-bottom-sheet-modal');
+    const content = screen.getByTestId('sheet-content');
+    const chain: Array<{ props: Record<string, unknown> }> = [];
+    let node = content.parent;
+    while (node && node !== modal) {
+      if (typeof node.type === 'string') chain.push(node);
+      node = node.parent;
+    }
+    expect(node).toBe(modal);
+    const hostViews = chain.map((view) => StyleSheet.flatten(view.props.style as never) ?? {});
+    const fillBox = hostViews[hostViews.length - 1];
+    expect(fillBox).toMatchObject({ flex: 1 });
+    expect(fillBox.position).toBeUndefined();
+    const boundary = chain.find((view) => view.props.accessibilityViewIsModal === true);
+    expect(boundary).toBeTruthy();
+    expect(hostViews.filter((style) => style.position === 'absolute')).toHaveLength(1);
+
+    // gorhom's default `accessible` container would fold the whole subtree
+    // into one "Bottom Sheet" element, hiding the dialog content from
+    // VoiceOver and from the native smoke flow.
+    expect(latestAccessible).toBe(false);
   });
 });
