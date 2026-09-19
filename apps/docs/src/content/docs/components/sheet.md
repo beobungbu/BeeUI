@@ -226,6 +226,7 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 - **Primary executable fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
 - **Additional fixture:** [`apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx)
+- **Additional fixture:** [`apps/showcase/runtime-smoke/runtime-acceptance.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/runtime-smoke/runtime-acceptance.tsx)
 
 ### Addressable examples
 

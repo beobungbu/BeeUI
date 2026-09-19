@@ -79,7 +79,7 @@ Controlled `value`/`onValueChange` (`{ date, time } | null`) field combining dat
 | `onValueChange` | `(value: DateTimePickerValue \| null) => void` | — | `null` signals an explicit clear (see `clearable`). |
 | `open` | `boolean` | — | Controls whether the picker (Web `Popover`, native system picker) is open. Requires `onOpenChange`; otherwise falls back to internal open state with a dev-mode warning. |
 | `periodAccessibilityLabel` | `string` | `'AM or PM'` | Accessible name for the Web AM/PM control. Defaults to `'AM or PM'`. |
-| `placeholder` | `string` | `'Select a date and time'` | Text shown on the trigger when no value is selected. Defaults to `'Select a date and time'`. |
+| `placeholder` | `string` | — | Text shown on the trigger when no value is selected. Defaults to `'Select a date and time'`. |
 | `placement` | `DateTimePickerPlacement` | `'bottom'` | Web-only: `Popover` placement relative to the trigger. Ignored on native. |
 | `previousMonthAccessibilityLabel` | `string` | `'Previous month'` | Accessible label for the `Calendar`'s "previous month" button. Defaults to `'Previous month'`. |
 | `readOnly` | `boolean` | `false` | Keeps the trigger focusable/announced but blocks opening and clearing. |
