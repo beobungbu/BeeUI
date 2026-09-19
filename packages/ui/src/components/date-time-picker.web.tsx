@@ -303,10 +303,13 @@ export const DateTimePicker = React.forwardRef<
       if (cancelled) return;
       const target = (
         calendarRef.current as unknown as
-          | { querySelector?: (selector: string) => { focus?: () => void } | null }
+          | { querySelector?: (selector: string) => { focus?: (options?: { preventScroll?: boolean }) => void } | null }
           | null
       )?.querySelector?.('[role="gridcell"][tabindex="0"]');
-      target?.focus?.();
+      // `preventScroll`: a plain focus() on a day cell that sits inside a still-measuring
+        // popover makes the browser scroll the document to the panel's off-screen
+        // position, detaching the popover from a below-the-fold trigger.
+        target?.focus?.({ preventScroll: true });
       const globalDocument = (globalThis as { document?: { activeElement?: unknown } }).document;
       const focused = globalDocument !== undefined && globalDocument.activeElement === target;
       if (focused || attemptsLeft <= 0) return;

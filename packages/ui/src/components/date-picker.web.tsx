@@ -148,10 +148,13 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
         // intended roving day cell.
         const target = (
           calendarRef.current as unknown as
-            | { querySelector?: (selector: string) => { focus?: () => void } | null }
+            | { querySelector?: (selector: string) => { focus?: (options?: { preventScroll?: boolean }) => void } | null }
             | null
         )?.querySelector?.('[role="gridcell"][tabindex="0"]');
-        target?.focus?.();
+        // `preventScroll`: a plain focus() on a day cell that sits inside a still-measuring
+        // popover makes the browser scroll the document to the panel's off-screen
+        // position, detaching the popover from a below-the-fold trigger.
+        target?.focus?.({ preventScroll: true });
         // `document` is a DOM-only global not declared in this package's `lib`
         // (`tsconfig.base.json` intentionally omits `dom` — `@beemvp/beeui-ui` is RN-first);
         // reading it through `globalThis` keeps this Web-only check type-safe without

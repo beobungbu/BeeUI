@@ -59,7 +59,7 @@ test('AlertDialog opens and its explicit action dismisses it under prefers-reduc
   const trigger = page.getByRole('button', { name: 'Delete project' });
   await trigger.click();
 
-  const dialog = page.getByRole('dialog', { name: 'Delete this project?' });
+  const dialog = page.getByRole('alertdialog', { name: 'Delete this project?' });
   await expect(dialog).toBeVisible();
 
   // AlertDialog never dismisses via Escape by design (destructive
