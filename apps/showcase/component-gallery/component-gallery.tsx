@@ -109,8 +109,9 @@ import {
   useToast,
   VStack,
 } from '@beemvp/beeui-ui';
+import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { ScrollView, StatusBar } from 'react-native';
+import { ScrollView, StatusBar, StyleSheet, Text as RNText, View } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
 import { DatePickerShowcase } from './date-picker-showcase';
 import { DateTimePickerShowcase } from './date-time-picker-showcase';
@@ -454,6 +455,77 @@ function ToastPlayground() {
   );
 }
 
+// Dev-only controls for the #584 iOS evidence (WS-K, see
+// plans/260919-1258-consumer-audit-followups/reports/ws-k-report.md). Two raw
+// gorhom `BottomSheetModal`s with the same explicit snap points BeeUI's native
+// Sheet uses and `enableDynamicSizing={false}`:
+//   - "control": plain content inside `BottomSheetView style={{ flex: 1 }}` —
+//     presents and renders on iPhone 16 Pro / iOS 18.6 (proves the app-root
+//     GestureHandlerRootView + BottomSheetModalProvider wiring, reanimated and
+//     worklets are functional);
+//   - "absoluteFill repro": identical, but the content is wrapped in a
+//     `StyleSheet.absoluteFill` View — the shape `ModalOverlayHost` gives
+//     BeeUI's `SheetContent` — and nothing renders, reproducing #584 from a
+//     raw modal. Not rendered in production builds.
+function RawGorhomSheetControls() {
+  const controlRef = React.useRef<BottomSheetModal>(null);
+  const reproRef = React.useRef<BottomSheetModal>(null);
+  const snapPoints = React.useMemo(() => ['90%'], []);
+  return (
+    <>
+      <Button
+        onPress={() => {
+          console.log('[showcase] raw gorhom control present()');
+          controlRef.current?.present();
+        }}
+        testID="sheet-raw-gorhom-trigger"
+        variant="outline"
+      >
+        Open raw gorhom sheet (dev control)
+      </Button>
+      <Button
+        onPress={() => {
+          console.log('[showcase] raw gorhom absoluteFill repro present()');
+          reproRef.current?.present();
+        }}
+        testID="sheet-raw-gorhom-absolutefill-trigger"
+        variant="outline"
+      >
+        Open raw gorhom sheet (dev absoluteFill repro)
+      </Button>
+      <BottomSheetModal
+        enableDynamicSizing={false}
+        onChange={(index) => console.log(`[showcase] raw gorhom control onChange index=${index}`)}
+        ref={controlRef}
+        snapPoints={snapPoints}
+      >
+        <BottomSheetView style={{ flex: 1 }}>
+          <View style={{ backgroundColor: '#ff3b30', height: 200, padding: 24 }} testID="sheet-raw-gorhom-content">
+            <RNText style={{ color: '#ffffff', fontSize: 24 }}>Raw gorhom sheet (control)</RNText>
+          </View>
+        </BottomSheetView>
+      </BottomSheetModal>
+      <BottomSheetModal
+        enableDynamicSizing={false}
+        onChange={(index) => console.log(`[showcase] raw gorhom absoluteFill repro onChange index=${index}`)}
+        ref={reproRef}
+        snapPoints={snapPoints}
+      >
+        <BottomSheetView style={{ flex: 1 }}>
+          <View style={StyleSheet.absoluteFill}>
+            <View
+              style={{ backgroundColor: '#ff3b30', height: 200, padding: 24 }}
+              testID="sheet-raw-gorhom-absolutefill-content"
+            >
+              <RNText style={{ color: '#ffffff', fontSize: 24 }}>Raw gorhom sheet (absoluteFill repro)</RNText>
+            </View>
+          </View>
+        </BottomSheetView>
+      </BottomSheetModal>
+    </>
+  );
+}
+
 export function ComponentGallery({ onBack }: { onBack: () => void }) {
   const { theme } = useUniwind();
   const [accepted, setAccepted] = React.useState(false);
@@ -729,8 +801,21 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
                 description="Bottom-sheet surface (#159): BeeUI's own Web overlay/focus primitives — Escape, backdrop press, Tab focus-trap, and focus restoration — with no native Modal and no gorhom on Web (ADR-006)."
                 title="Sheet"
               >
-                <Sheet>
-                  <SheetTrigger testID="sheet-demo-trigger">Open Sheet</SheetTrigger>
+                <Sheet
+                  onOpenChange={(nextOpen) => {
+                    // Dev-only Metro anchor for the native Sheet evidence (#584): BeeUI's
+                    // native SheetContent calls gorhom present()/dismiss() from this state.
+                    if (__DEV__) console.log(`[showcase] Sheet onOpenChange open=${nextOpen}`);
+                  }}
+                >
+                  <SheetTrigger
+                    onPress={() => {
+                      if (__DEV__) console.log('[showcase] SheetTrigger onPress');
+                    }}
+                    testID="sheet-demo-trigger"
+                  >
+                    Open Sheet
+                  </SheetTrigger>
                   <SheetContent overlayTestID="sheet-demo-overlay" testID="sheet-demo-content">
                     <SheetTitle>Filters</SheetTitle>
                     <SheetDescription>Refine results by category and price.</SheetDescription>
@@ -744,6 +829,7 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
                     </SheetFooter>
                   </SheetContent>
                 </Sheet>
+                {__DEV__ ? <RawGorhomSheetControls /> : null}
               </Section>
 
               <Separator />
