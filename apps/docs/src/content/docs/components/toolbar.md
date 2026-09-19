@@ -55,7 +55,7 @@ Stateless layout primitive with no owned selection state. `Toolbar` measures its
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` **(required)** | `React.ReactNode` | — | Rendered in the toolbar row while this item fits. A single element is expected — an `IconButton`/`Button` is the common case — since `Toolbar` reads its rendered width to decide what fits; it is never cloned or otherwise modified. |
+| `children` **(required)** | `React.ReactNode` | — | Rendered in the toolbar row while this item fits. A single element is expected — an `IconButton`/`Button` is the common case — since `Toolbar` reads its rendered width to decide what fits, and (on Web) clones it to wire `ref`/`tabIndex`/`onFocus` for arrow-key roving-tabindex navigation, preserving any `ref`/`onFocus` the element already carries. Content and every other prop are left untouched. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `disabled` | `boolean` | — | Disables this item everywhere it renders: in the toolbar row and inside the overflow menu. Defaults to false. |
 | `icon` | `React.ReactNode` | — | Icon shown next to `label` when this item renders inside the overflow menu instead of the row. |
@@ -107,7 +107,8 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/toolbar-arrow-key-roving-focus.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/toolbar-arrow-key-roving-focus.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/toolbar-showcase.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/toolbar-showcase.tsx)
 
 ### Addressable examples

@@ -637,7 +637,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md). Platform-split module (native/web files resolve at build time).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`runtime-smoke/l10n-stress-acceptance.tsx`](../apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`runtime-smoke/l10n-stress-acceptance.tsx`](../apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx), [`runtime-smoke/runtime-acceptance.tsx`](../apps/showcase/runtime-smoke/runtime-acceptance.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Notes:** Native gesture engine uses @gorhom/bottom-sheet + reanimated/gesture-handler; platform-split module.
 
 ## `skeleton`
@@ -850,7 +850,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`component-gallery/toolbar-showcase.tsx`](../apps/showcase/component-gallery/toolbar-showcase.tsx), [`__tests__/toolbar-overflow-collapse.test.tsx`](../apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Executable examples:** [`component-gallery/toolbar-showcase.tsx`](../apps/showcase/component-gallery/toolbar-showcase.tsx), [`__tests__/toolbar-arrow-key-roving-focus.test.tsx`](../apps/showcase/__tests__/toolbar-arrow-key-roving-focus.test.tsx), [`__tests__/toolbar-overflow-collapse.test.tsx`](../apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Limitations:** `overflowAccessibilityLabel` is required only once the overflow menu actually renders (i.e. once any prioritized item collapses) — a dev warning fires if it is missing at that point, not before. `ToolbarItem.children` is read for measurement and rendering but never cloned or modified, so it must be a single element (typically an `IconButton`/`Button`).
 - **Notes:** The overflow menu is a `DropdownMenu` composition, so it inherits that family's full keyboard/dismiss behavior and `aria-haspopup="menu"` for free — there is no second, bespoke popover implementation.
 
