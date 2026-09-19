@@ -145,7 +145,7 @@ describe('TabsList scrollable arrow-key roving focus (Web)', () => {
 
     pressKey(screen, 'ArrowRight');
 
-    expect(scrollTo).toHaveBeenCalledWith({ animated: true, x: 32 });
+    expect(scrollTo).toHaveBeenCalledWith({ animated: false, x: 32 });
     scrollTo.mockRestore();
   });
 });

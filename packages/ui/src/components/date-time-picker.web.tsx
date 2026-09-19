@@ -294,7 +294,7 @@ export const DateTimePicker = React.forwardRef<
   // Moves focus into the Calendar's roving-tabindex target when the popover opens
   // (WAI-ARIA Date Picker Dialog pattern) — the exact pattern `DatePicker.web.tsx`
   // uses (see that file's own comment for the full "why" of the bounded
-  // retry-across-animation-frames approach and the `[role="cell"]` scoping).
+  // retry-across-animation-frames approach and the `[role="gridcell"]` scoping).
   React.useEffect(() => {
     if (!effectiveOpen) return;
     let frame = 0;
@@ -305,7 +305,7 @@ export const DateTimePicker = React.forwardRef<
         calendarRef.current as unknown as
           | { querySelector?: (selector: string) => { focus?: () => void } | null }
           | null
-      )?.querySelector?.('[role="cell"][tabindex="0"]');
+      )?.querySelector?.('[role="gridcell"][tabindex="0"]');
       target?.focus?.();
       const globalDocument = (globalThis as { document?: { activeElement?: unknown } }).document;
       const focused = globalDocument !== undefined && globalDocument.activeElement === target;

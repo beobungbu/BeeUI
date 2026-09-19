@@ -283,7 +283,9 @@ export const TabsList = React.forwardRef<React.ComponentRef<typeof View>, TabsLi
       // Brings the selected tab's leading edge into view with a little leading breathing
       // room; RN's `ScrollView` clamps an out-of-range offset itself, so no extra
       // viewport-width bookkeeping is needed here.
-      scrollViewRef.current?.scrollTo({ animated: true, x: Math.max(0, layout.x - 16) });
+      // Keyboard-driven focus moves must land instantly: an animated scroll leaves the
+      // trigger clipped for a few frames, which is what a screen-magnifier user sees.
+      scrollViewRef.current?.scrollTo({ animated: false, x: Math.max(0, layout.x - 16) });
     }, [scrollable, tabs.value]);
 
     // Arrow-key/Home/End roving focus also scrolls the newly-focused trigger into view,
@@ -292,7 +294,9 @@ export const TabsList = React.forwardRef<React.ComponentRef<typeof View>, TabsLi
       if (!scrollable || currentValue === null) return;
       const layout = layoutsRef.current.get(currentValue);
       if (!layout) return;
-      scrollViewRef.current?.scrollTo({ animated: true, x: Math.max(0, layout.x - 16) });
+      // Keyboard-driven focus moves must land instantly: an animated scroll leaves the
+      // trigger clipped for a few frames, which is what a screen-magnifier user sees.
+      scrollViewRef.current?.scrollTo({ animated: false, x: Math.max(0, layout.x - 16) });
     }, [currentValue, scrollable]);
 
     const webKeyboardProps =

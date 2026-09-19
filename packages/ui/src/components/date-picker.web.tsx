@@ -141,7 +141,7 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
       let cancelled = false;
       const tryFocus = (attemptsLeft: number) => {
         if (cancelled) return;
-        // Scoped to `[role="cell"]` (`calendar.tsx`'s day-cell `Pressable`): the
+        // Scoped to `[role="gridcell"]` (`calendar.tsx`'s day-cell `Pressable`): the
         // Calendar's month-navigation `IconButton`s are also real focusable
         // `<button>`s with `tabindex="0"` and precede the grid in document order, so
         // an unscoped `[tabindex="0"]` query matches "previous month" instead of the
@@ -150,7 +150,7 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
           calendarRef.current as unknown as
             | { querySelector?: (selector: string) => { focus?: () => void } | null }
             | null
-        )?.querySelector?.('[role="cell"][tabindex="0"]');
+        )?.querySelector?.('[role="gridcell"][tabindex="0"]');
         target?.focus?.();
         // `document` is a DOM-only global not declared in this package's `lib`
         // (`tsconfig.base.json` intentionally omits `dom` — `@beemvp/beeui-ui` is RN-first);

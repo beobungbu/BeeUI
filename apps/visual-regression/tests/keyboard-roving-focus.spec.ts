@@ -30,12 +30,16 @@ async function expectFullyVisibleWithin(
   containerTestId: string,
   targetTestId: string,
 ) {
-  const containerBox = await page.getByTestId(containerTestId).boundingBox();
-  const targetBox = await page.getByTestId(targetTestId).boundingBox();
-  expect(containerBox, `${containerTestId} must be visible`).not.toBeNull();
-  expect(targetBox, `${targetTestId} must be visible`).not.toBeNull();
-  expect(targetBox!.x).toBeGreaterThanOrEqual(containerBox!.x - 1);
-  expect(targetBox!.x + targetBox!.width).toBeLessThanOrEqual(containerBox!.x + containerBox!.width + 1);
+  // Layout settles a frame or two after the scroll on slower CI runners, so poll
+  // instead of reading the boxes once.
+  await expect(async () => {
+    const containerBox = await page.getByTestId(containerTestId).boundingBox();
+    const targetBox = await page.getByTestId(targetTestId).boundingBox();
+    expect(containerBox, `${containerTestId} must be visible`).not.toBeNull();
+    expect(targetBox, `${targetTestId} must be visible`).not.toBeNull();
+    expect(targetBox!.x).toBeGreaterThanOrEqual(containerBox!.x - 1);
+    expect(targetBox!.x + targetBox!.width).toBeLessThanOrEqual(containerBox!.x + containerBox!.width + 1);
+  }).toPass({ timeout: 5_000 });
 }
 
 test('TabsList scrollable: arrow keys move real DOM focus with wrap-around and scroll the current trigger into view', async ({

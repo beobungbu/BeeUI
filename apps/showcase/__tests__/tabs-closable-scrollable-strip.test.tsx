@@ -142,7 +142,7 @@ describe('Tabs scrollable tab strip', () => {
 
     screenResult.rerender(<Example value="c" />);
 
-    expect(scrollTo).toHaveBeenCalledWith({ animated: true, x: 80 });
+    expect(scrollTo).toHaveBeenCalledWith({ animated: false, x: 80 });
   });
 
   it('renders an addon pinned outside the scrollable region', () => {
