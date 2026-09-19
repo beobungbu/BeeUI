@@ -5,6 +5,8 @@ description: Which decisions belong to BeeUI, which belong to your application, 
 
 Every responsibility in a BeeUI screen belongs to exactly one owner: **BeeUI owns component behavior, semantic tokens and the provider/overlay runtime; your application owns routing, data, domain state and product policy.**
 
+**Prerequisites:** read [Foundations](/docs/learn/foundations/) first — this page assumes the contract-stack framing it establishes.
+
 ## Why the concept exists
 
 Almost every hard bug people hit with a UI system is an ownership bug rather than a rendering bug: two safe-area layers both claiming the top inset, a second global toast store mirroring BeeUI's, an application state machine fighting a component's internal open state. None of those produce a clean error. They produce a screen that is *slightly* wrong, on one platform, sometimes.

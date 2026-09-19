@@ -8,6 +8,10 @@ scaling is entirely owned by the platform — iOS/Android Dynamic Type on native
 zoom and OS/browser text-size preferences on Web. This is [`docs/dynamic-type.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dynamic-type.md) in the
 source repository (BeeUI issue [#143](https://github.com/beobungbu/BeeUI/issues/143)).
 
+**Prerequisites:** a device or OS with an adjustable text-size/Dynamic Type setting for the
+native checks, and a desktop browser for the 200% zoom check — this page is verified by
+changing platform settings, not by reading component source.
+
 ## The model
 
 - **Native.** React Native's `Text`/`TextInput` scale automatically against the OS

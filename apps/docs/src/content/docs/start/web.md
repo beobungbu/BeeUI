@@ -3,7 +3,9 @@ title: Web
 description: Install the BeeUI release candidate in a Vite + React Native Web application and verify it with a production build.
 ---
 
-Use this path for a browser-first product built with Vite and React Native Web. BeeUI `0.86.2-rc.1` is public under the npm `next` dist-tag; stable `latest` is not promoted yet.
+Use this path for a browser-first product built with Vite and React Native Web. BeeUI `0.86.2-rc.1` is public under the npm `next` dist-tag; `latest` currently resolves to the same RC by npm's first-publish default (not a stable promotion — see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)), so keep using `@next` in the commands below.
+
+**Prerequisites:** Node.js and npm/npx available locally; see the [tested version table](/docs/start/#prerequisites) for the exact React/React DOM/`react-native-web` pins this path expects.
 
 ## Create the project
 

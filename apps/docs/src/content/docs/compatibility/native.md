@@ -7,6 +7,9 @@ Full detail lives in `docs/native-verification.md` in the repository; this page 
 published summary. It mirrors the rigor `docs/web-support-contract.md` established for
 the [Web contract](/docs/compatibility/web/).
 
+**Prerequisites:** none — this page is evidence you read before choosing a React Native/Expo
+version, not a setup step.
+
 ## Two consumer paths, both proved by CI
 
 1. **Expo Showcase** (`apps/showcase`) — the app BeeUI itself ships and dogfoods.

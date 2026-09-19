@@ -10,6 +10,9 @@ your sort state, and your selection set; BeeUI owns the semantic markup, the den
 the accessibility, and the responsive presentation. There is no `columns` prop and no
 `data` prop, and there never will be.
 
+**Prerequisites:** `@beemvp/beeui-ui` installed and your row data already available as a plain
+array — this guide composes `Table`'s primitives, it does not fetch or shape data for you.
+
 That single decision explains almost everything else on this page: you write the `.map()`
 loop, so you also control memoization; BeeUI stores nothing, so sorting and selection are
 plain React state you already know how to test.

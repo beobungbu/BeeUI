@@ -7,6 +7,9 @@ Source ownership means BeeUI component source lives in **your** repository: you 
 review its diffs, and decide when to take upstream changes. The public CLI is
 `@beemvp/beeui-cli` and the current release candidate is `0.86.2-rc.1` on npm tag `next`.
 
+**Prerequisites:** a Node.js project with `npx`/`pnpm dlx` available, and `@beemvp/beeui-core`
+installed for the copied imports to resolve against (see [Start](/docs/start/)).
+
 ## Run the public RC CLI
 
 ```bash
@@ -85,6 +88,6 @@ That repository-local path is a maintainer/development convenience. External con
 
 ## Release channel
 
-`0.86.2-rc.1` is a prerelease. Stable `latest` is not promoted yet, so documentation and automation must keep using `@next` or the exact RC until the stable release flow completes.
+`0.86.2-rc.1` is a prerelease. Stable `latest` currently resolves to the same RC too — npm's automatic first-publish default, not a deliberate promotion (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)) — so documentation and automation must keep using `@next` or the exact RC until the stable release flow completes and `latest` is deliberately moved.
 
 See the repository authority `docs/dist-tag-policy.md` for channel rules and `docs/registry-cli.md` for the full Registry/source-ownership contract.

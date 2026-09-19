@@ -5,6 +5,8 @@ description: What BeeUI is, what it deliberately is not, and the layered model e
 
 BeeUI is a mobile-first React Native + TypeScript UI system whose public product is **component behavior contracts and semantic tokens** — not an application framework.
 
+**Prerequisites:** none — this is the starting page of [Learn](/docs/learn/); every other Learn page assumes the boundary it establishes.
+
 ## Why the concept exists
 
 Most UI libraries are read as "a box of widgets". BeeUI is easier to use correctly if you read it as a **contract stack**: a small set of engine-neutral utilities, a semantic token vocabulary, and React Native components that render that vocabulary with a stable behavior and accessibility contract. Everything BeeUI promises lives in those contracts. Everything it does not promise — your router, your data layer, your auth — is left to you on purpose, so that BeeUI can stay upgradable without owning your product decisions.

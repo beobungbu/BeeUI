@@ -12,6 +12,8 @@ This page is the short task-level summary. For the full model — why compact-fi
 code — see [Learn → Responsive model](/docs/learn/responsive-model/), the authority this
 page summarizes.
 
+**Prerequisites:** BeeUI installed per [Start](/docs/start/) for your platform.
+
 ## Use the shared breakpoints
 
 Read BeeUI breakpoint tokens instead of inventing a second screen taxonomy. On native,

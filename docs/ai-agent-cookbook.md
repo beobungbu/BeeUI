@@ -3,8 +3,10 @@
 This document tells a coding agent (Claude, Codex, or any other) how to reason about,
 build applications with, and contribute to BeeUI **without relying on hidden maintainer
 knowledge**. It is truthful to the current repository state: BeeUI is pre-1.0, and
-**`0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag** (stable `latest` is not
-promoted to a non-prerelease version yet — see
+**`0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag**. Because this is each
+package's first-ever npm publish, `latest` currently resolves to the same RC too — npm's
+automatic first-publish default, not a deliberate stable promotion; `latest` moves to a real
+stable version at the first `0.86.2` release (see
 [docs/dist-tag-policy.md](dist-tag-policy.md)). Everything an agent needs is in canonical,
 in-repo, machine-checkable context.
 
@@ -40,8 +42,10 @@ BeeUI is **pre-1.0**, and **`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beem
 and `@beemvp/beeui-cli` are public on npm at `0.86.2-rc.1`** under the opt-in `next` dist-tag.
 This is the single most important fact for an agent, because it flips the instinct from the
 pre-RC era — "install the library from npm" is now correct, but only with the `@next` suffix
-(or an exact pinned version); stable `latest` has **not** been promoted to a non-prerelease
-version yet.
+(or an exact pinned version). `latest` currently resolves to the same RC too — that is npm's
+automatic first-publish default, not a deliberate stable promotion, and it stops being true at
+the first `0.86.2` stable release — so always suffix commands with `@next` rather than relying
+on today's coincidence.
 
 - `npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next` and
   `npx @beemvp/beeui-cli@next --help` are **live, working commands today**. There is still
@@ -77,7 +81,7 @@ BeeUI deliberately supports two models. Pick per the consumer's needs.
 | Consumer gets | a dependency on `@beemvp/beeui-*` | copied component **source files it now owns** |
 | Import | `import { Button } from '@beemvp/beeui-ui'` | imports rewritten to consumer-local copies (e.g. `@beemvp/beeui-core` → copied `cn`) |
 | Upgrades | bump the package (or `@next` tracks the latest RC) | re-run `add`, or hand-maintain the owned copy |
-| Available now | yes, under `@next` (stable `@latest` not promoted yet) | yes |
+| Available now | yes, under `@next` (`@latest` also resolves to this RC today, incidentally — see dist-tag-policy) | yes |
 
 Details: [docs/registry-cli.md](registry-cli.md), [docs/distribution-names.md](distribution-names.md),
 [ADR-011](decisions/011-distribution-architecture.md),
@@ -254,7 +258,9 @@ The canonical dispatcher prompt these align with is
 > Read [llms.txt](../llms.txt) first, then the specific docs it links. BeeUI is pre-1.0;
 > `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (always suffix
 > `npm install @beemvp/beeui-*` / `npx @beemvp/beeui-cli` with `@next` or the exact version —
-> stable `latest` is not promoted yet). The no-registry-required alternative is
+> `latest` also resolves to this RC today by npm's first-publish default, not a deliberate
+> promotion, and that changes at the first `0.86.2` stable release). The no-registry-required
+> alternative is
 > `pnpm beeui add <component>`. Derive the current base with `git fetch` + record the
 > `origin/main` SHA. Prefer semantic tokens; keep domain composition in the app. Stop and
 > report `BLOCKED_BY_DEPENDENCY` or `OWNER_ACTION_REQUIRED` rather than guessing.

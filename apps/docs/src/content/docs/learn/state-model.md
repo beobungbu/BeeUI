@@ -5,6 +5,8 @@ description: Which BeeUI components hold their own state, which require yours, a
 
 BeeUI components are **state-transparent by default**: a component holds internal state only for the interaction it owns, and any value your product cares about is passed in and reported back through a callback.
 
+**Prerequisites:** read [Composition model](/docs/learn/composition-model/) first — this page assumes you already know how a compound component's root and parts share context.
+
 ## Why the concept exists
 
 Controlled vs uncontrolled sounds like an API detail until it decides whether a user's half-filled form survives a re-render. BeeUI does not apply one blanket policy, because the right answer differs by component: whether a checkbox is ticked is almost always product state, while whether a tooltip is showing almost never is.

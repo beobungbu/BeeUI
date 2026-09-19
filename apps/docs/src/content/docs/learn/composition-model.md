@@ -5,6 +5,8 @@ description: How BeeUI compound components share context, why the parts are sepa
 
 A BeeUI compound component is **one root that owns state and context, plus named part components that read it** — so the parts stay in your markup where you can style and reorder them, while the behavior stays in one place.
 
+**Prerequisites:** read [Ownership model](/docs/learn/ownership-model/) first — this page assumes you already know which decisions belong to BeeUI.
+
 ## Why the concept exists
 
 A `Select` needs a trigger, a value display, a surface, groups, labels and items. There are two ways to expose that. A configuration API takes an `options` array and renders everything for you: easy at first, then a wall of escape-hatch props the moment a real product needs an icon in an item or a section header in the middle. A composition API hands you the parts.
