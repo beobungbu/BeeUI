@@ -80,6 +80,8 @@ import {
   Textarea,
   Timeline,
   TimelineItem,
+  Toolbar,
+  ToolbarItem,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -137,7 +139,8 @@ type FixtureId =
   | 'table'
   | 'date'
   | 'sheet-short-root'
-  | 'keydown-bubble';
+  | 'keydown-bubble'
+  | 'keyboard-roving-focus';
 
 const fixtureIds: readonly FixtureId[] = [
   'density',
@@ -150,6 +153,7 @@ const fixtureIds: readonly FixtureId[] = [
   'date',
   'sheet-short-root',
   'keydown-bubble',
+  'keyboard-roving-focus',
 ];
 
 function isFixtureId(value: string | null): value is FixtureId {
@@ -1477,6 +1481,58 @@ function KeydownBubbleFixture() {
   );
 }
 
+/**
+ * WS-I — Web arrow-key roving-tabindex evidence for `TabsList scrollable` (#591) and
+ * `Toolbar` (#611 item 1). Deliberately narrow (`w-56`/`w-28`) containers force real
+ * browser layout to overflow the Tabs strip and collapse a Toolbar item, so
+ * scroll-into-view and the overflow-trigger roving stop are proven against real DOM
+ * `document.activeElement`, not the jest `onLayout`+`fireEvent` approximation
+ * `tabs-scrollable-arrow-key-roving-focus.test.tsx`/`toolbar-arrow-key-roving-focus.test.tsx`
+ * already cover.
+ */
+function KeyboardRovingFocusFixture() {
+  const [selectedOrder, setSelectedOrder] = React.useState('order-1');
+  const orders = ['order-1', 'order-2', 'order-3', 'order-4', 'order-5', 'order-6'];
+
+  return (
+    <Box className="min-h-screen gap-8 bg-surface p-6" testID="keyboard-roving-focus-fixture">
+      <Box className="w-56 gap-2">
+        <Text variant="title">Scrollable Tabs</Text>
+        <Tabs onValueChange={setSelectedOrder} testID="roving-tabs" value={selectedOrder}>
+          <TabsList scrollable testID="roving-tabs-list">
+            {orders.map((value, index) => (
+              <TabsTrigger key={value} testID={`roving-tabs-trigger-${index + 1}`} value={value}>
+                Order {index + 1}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </Box>
+
+      <Box className="w-28 gap-2">
+        <Text variant="title">Toolbar</Text>
+        <Toolbar overflowAccessibilityLabel="More actions" testID="roving-toolbar">
+          <ToolbarItem label="Search" onPress={() => undefined}>
+            <IconButton accessibilityLabel="Search" onPress={() => undefined} testID="roving-toolbar-search">
+              🔍
+            </IconButton>
+          </ToolbarItem>
+          <ToolbarItem label="Filter" onPress={() => undefined} priority={2}>
+            <IconButton accessibilityLabel="Filter" onPress={() => undefined} testID="roving-toolbar-filter">
+              ⚙
+            </IconButton>
+          </ToolbarItem>
+          <ToolbarItem label="Export" onPress={() => undefined} priority={1}>
+            <IconButton accessibilityLabel="Export" onPress={() => undefined} testID="roving-toolbar-export">
+              ⬇
+            </IconButton>
+          </ToolbarItem>
+        </Toolbar>
+      </Box>
+    </Box>
+  );
+}
+
 function Scenario({ scenario }: { scenario: VisualScenarioId }) {
   switch (scenario) {
     case 'foundation':
@@ -1538,6 +1594,8 @@ export default function App() {
         <SheetShortRootFixture />
       ) : fixture === 'keydown-bubble' ? (
         <KeydownBubbleFixture />
+      ) : fixture === 'keyboard-roving-focus' ? (
+        <KeyboardRovingFocusFixture />
       ) : (
         <Scenario scenario={scenario} />
       )}

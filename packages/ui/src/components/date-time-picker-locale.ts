@@ -83,6 +83,56 @@ export function getDateTimePickerPeriodLabels(
   };
 }
 
+// `DateTimePicker`'s own copy — the empty-state placeholder and the "Done" footer
+// button, neither of which had a `formatValue`-style caller override — never
+// localized with `locale`: setting `locale="vi-VN"` with no value still showed the
+// English "Select a date and time" placeholder and the "Done" button stayed English
+// regardless of `locale` (#573 item 3, fixed for `DatePicker` in `date-picker-locale.ts`;
+// this mirrors that exact fix for `DateTimePicker`). Explicit accessibility-label props
+// (`hourAccessibilityLabel`, `minuteAccessibilityLabel`, `periodAccessibilityLabel`,
+// `clearAccessibilityLabel`) intentionally stay separate, unlocalized-by-default props —
+// the same scope boundary `DatePicker`'s month-nav accessibility labels kept. Neither
+// dictionary's strings coincide with `date-picker-locale.ts`'s own (different sentences),
+// so nothing is imported from there; the architecture — small built-in dictionary,
+// `en-US` fallback for an unknown `locale` — is deliberately identical.
+const DATE_TIME_PICKER_PLACEHOLDER_BY_LOCALE: Record<string, string> = {
+  'en-US': 'Select a date and time',
+  'vi-VN': 'Chọn ngày và giờ',
+};
+
+/**
+ * Locale-appropriate default for `DateTimePicker`'s `placeholder` prop, used only
+ * when the caller omits `placeholder` entirely. Falls back to the `'en-US'` copy for
+ * a `locale` this built-in dictionary does not cover.
+ */
+export function getDateTimePickerDefaultPlaceholder(
+  locale: string = DEFAULT_CALENDAR_LOCALE,
+): string {
+  return (
+    DATE_TIME_PICKER_PLACEHOLDER_BY_LOCALE[locale] ??
+    DATE_TIME_PICKER_PLACEHOLDER_BY_LOCALE[DEFAULT_CALENDAR_LOCALE]
+  );
+}
+
+const DATE_TIME_PICKER_DONE_LABEL_BY_LOCALE: Record<string, string> = {
+  'en-US': 'Done',
+  'vi-VN': 'Xong',
+};
+
+/**
+ * Locale-appropriate copy for the "Done" button that closes the Web `Popover`
+ * content / native iOS `Dialog` footer. There is no caller-facing override prop for
+ * this label (unlike the accessibility-label props above) — it is always derived
+ * from `locale`, falling back to the `'en-US'` copy for a `locale` this built-in
+ * dictionary does not cover.
+ */
+export function getDateTimePickerDoneLabel(locale: string = DEFAULT_CALENDAR_LOCALE): string {
+  return (
+    DATE_TIME_PICKER_DONE_LABEL_BY_LOCALE[locale] ??
+    DATE_TIME_PICKER_DONE_LABEL_BY_LOCALE[DEFAULT_CALENDAR_LOCALE]
+  );
+}
+
 export type DateTimePickerPeriod = 'AM' | 'PM';
 
 /** Converts a 24h `ClockTime` hour to a 12h display hour (1–12) + AM/PM period. */
