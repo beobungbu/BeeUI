@@ -9,7 +9,6 @@ import {
   DATE_TIME_PICKER_DEFAULT_HOUR_ACCESSIBILITY_LABEL,
   DATE_TIME_PICKER_DEFAULT_MINUTE_ACCESSIBILITY_LABEL,
   DATE_TIME_PICKER_DEFAULT_PERIOD_ACCESSIBILITY_LABEL,
-  DATE_TIME_PICKER_DEFAULT_PLACEHOLDER,
   useDateTimePickerFieldIntegration,
   useDateTimePickerOpenState,
   type DateTimePickerProps,
@@ -17,6 +16,8 @@ import {
 } from './date-time-picker-shared';
 import {
   fromDisplayHour,
+  getDateTimePickerDefaultPlaceholder,
+  getDateTimePickerDoneLabel,
   getDateTimePickerFormattedValue,
   getDateTimePickerPeriodLabels,
   resolveDateTimePickerHour12,
@@ -233,7 +234,7 @@ export const DateTimePicker = React.forwardRef<
     onValueChange,
     open,
     periodAccessibilityLabel = DATE_TIME_PICKER_DEFAULT_PERIOD_ACCESSIBILITY_LABEL,
-    placeholder = DATE_TIME_PICKER_DEFAULT_PLACEHOLDER,
+    placeholder,
     placement = 'bottom',
     previousMonthAccessibilityLabel,
     readOnly = false,
@@ -259,6 +260,8 @@ export const DateTimePicker = React.forwardRef<
   const locale = resolveCalendarLocale(localeProp);
   const hour12 = resolveDateTimePickerHour12(hour12Prop, locale);
   const periodLabels = React.useMemo(() => getDateTimePickerPeriodLabels(locale), [locale]);
+  const resolvedPlaceholder = placeholder ?? getDateTimePickerDefaultPlaceholder(locale);
+  const doneLabel = getDateTimePickerDoneLabel(locale);
 
   const anchorRef = React.useRef<React.ComponentRef<typeof Pressable> | null>(null);
   const setTriggerRef = React.useCallback(
@@ -380,7 +383,7 @@ export const DateTimePicker = React.forwardRef<
             testID={testID ? `${testID}-value` : undefined}
             variant="body"
           >
-            {hasValue ? formattedValue : placeholder}
+            {hasValue ? formattedValue : resolvedPlaceholder}
           </Text>
         </PopoverTrigger>
         {showClear ? (
@@ -458,7 +461,7 @@ export const DateTimePicker = React.forwardRef<
             onPress={handleDone}
             testID={testID ? `${testID}-content-done` : undefined}
           >
-            Done
+            {doneLabel}
           </Button>
         </HStack>
       </PopoverContent>
