@@ -225,7 +225,12 @@ function useDialogFocusTrap(
  * against the Showcase: `aria-modal`/`aria-labelledby` present, `role`
  * absent, one second after opening). Reading synchronously means the open
  * render already carries the current preference, and a preference change
- * while closed is picked up on reopen without any transient value.
+ * while closed is picked up on reopen without any transient value. A
+ * preference toggled *while* a Dialog is open still changes `animationType`
+ * mid-presentation, and react-native-web's internal "active" flag then stays
+ * unset for that cycle; nothing user-visible depends on it — the owner
+ * node's `role` is stamped by `watchDialogOwnerRole` regardless, and this
+ * component owns its own Web focus trap and Escape handling.
  * `readWebReducedMotionPreference` returns `undefined` off Web and where
  * `matchMedia` is unavailable (SSR, this repo's Jest harness), which keeps
  * the async native path — and the existing deterministic tests that mock
