@@ -5,6 +5,8 @@ description: What BeeUI's accessibility contract covers, what it hands to the pl
 
 Accessibility in BeeUI is a **behavior contract at the component level plus a deliberate hand-off to the platform** — it is not a certification, and it never covers the composition decisions you make on top.
 
+**Prerequisites:** read [Cross-platform model](/docs/learn/cross-platform-model/) first — the platform hand-offs described here (text scaling, direction) follow the same shared-contract/per-platform-evidence split.
+
 ## Why the concept exists
 
 "Is this library accessible?" is unanswerable as asked. A component can expose a perfect role, label and state and still land in a screen with three `<h1>`-equivalent headings, an unlabelled icon button and a modal that returns focus to nowhere. Conversely, a great deal of accessibility is not the library's to implement at all: text scaling belongs to the OS, and layout direction belongs to the host application.

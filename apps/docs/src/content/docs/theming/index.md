@@ -7,6 +7,9 @@ BeeUI components consume **semantic tokens** such as background, surface, foregr
 border and intent roles. Your application chooses theme/brand/density; reusable component
 behavior should not depend on literal brand colors.
 
+**Prerequisites:** BeeUI installed per [Start](/docs/start/) for your platform — this page
+assumes the Web theme CSS import or native token provider from that path is already in place.
+
 ## Choose light, dark or system
 
 Your application owns exactly one preference state — BeeUI/Uniwind does not store or persist

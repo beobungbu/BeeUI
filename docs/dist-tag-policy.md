@@ -2,7 +2,15 @@
 
 This document is the machine-checked authority for BeeUI npm versioning, staging and dist-tag behavior.
 
-BeeUI 1.0 is the product milestone name. The stable npm package line starts at **`0.86.2`** per ADR-015. The first public release candidate, **`0.86.2-rc.1`**, is published on npm under the opt-in **`next`** dist-tag. Stable **`latest`** must not point to this prerelease.
+BeeUI 1.0 is the product milestone name. The stable npm package line starts at **`0.86.2`** per ADR-015. The first public release candidate, **`0.86.2-rc.1`**, is published on npm under the opt-in **`next`** dist-tag.
+
+## Real current dist-tag state: `latest` also resolves to the RC
+
+Verified against the live registry (`npm view <package> dist-tags`): `next` and `latest` both currently resolve to `0.86.2-rc.1` for all four packages (`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`, `@beemvp/beeui-cli`). This is expected npm first-publish behavior, not a release-process error: npm always points a package's first-ever published version at `latest` regardless of the `--tag` flag used at publish time, and there is no supported way to unpoint `latest` from a package's only published version while it remains the only version. Every one of these four packages has exactly one published version today, so `latest` has nowhere else to point.
+
+This means a bare, unqualified `npm install @beemvp/beeui-ui` currently installs the same `0.86.2-rc.1` artifact as `npm install @beemvp/beeui-ui@next`. Documentation must keep recommending the explicit `@next` tag (or an exact pinned version) anyway, never a bare install — that recommendation is what stays correct across the transition described below, not what is true only today.
+
+**What changes at the first stable `0.86.2` publish:** once the stable release group publishes, `latest` is deliberately moved to point at `0.86.2` (a real, owner-authorized dist-tag operation — see "Stable `0.86.2` publication" below), and it never points at a prerelease again. `next` keeps tracking whatever prerelease is newest (`0.86.2-rc.N`, then later release lines). From that point on, a bare `npm install @beemvp/beeui-ui` installs stable `latest`, and `@next` is required to opt into a prerelease — the behavior the pre-first-publish version of this document assumed applied from day one.
 
 ## Current public distribution state
 
@@ -22,7 +30,7 @@ npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@n
 npx @beemvp/beeui-cli@next --help
 ```
 
-Do **not** document a bare `npm install @beemvp/beeui-ui` as the recommended RC command, because unqualified installation follows `latest` rather than `next`.
+Do **not** document a bare `npm install @beemvp/beeui-ui` as the recommended RC command. Today an unqualified install happens to resolve to the same RC as `@next` (see "Real current dist-tag state" above), but that coincidence ends the moment stable `0.86.2` publishes and `latest` moves off the prerelease — an explicit `@next` tag or exact pinned version stays correct on both sides of that transition, a bare install does not.
 
 ## Owner guard
 
@@ -40,10 +48,10 @@ BeeUI uses exactly two persistent public dist-tags:
 
 | Tag | Meaning |
 | --- | --- |
-| `latest` | default-install stable channel; never points to a prerelease |
-| `next` | opt-in release-candidate/safety channel; currently points to `0.86.2-rc.1` |
+| `latest` | default-install channel. Today it resolves to `0.86.2-rc.1` only because npm's first-publish default points it there — not because `latest` was deliberately promoted. Once the stable release group publishes, `latest` moves to the stable version and never points to a prerelease again. |
+| `next` | opt-in release-candidate/safety channel; currently points to `0.86.2-rc.1`, same target as `latest` today; keeps tracking future prereleases after the first stable publish. |
 
-`latest` is the consumer commit point. Default consumers must not see a stable release until the full stable release group has been published and verified.
+`latest` is the intended long-term consumer commit point for stable releases. Default consumers must not see a *deliberately promoted* stable release until the full stable release group has been published and verified — the current first-publish default is a separate, incidental state, not an early promotion.
 
 ## First-ever package bootstrap — completed
 
@@ -74,7 +82,7 @@ Stable publication deliberately separates upload from the default-install `lates
 1. freeze exact stable `0.86.2` source on `main` and require all release gates to pass;
 2. publish/stage the full stable release group under the safe non-default channel according to the release workflow;
 3. verify all real registry packages and clean-consumer behavior;
-4. only after stable verification is green, move `latest` for the full release group in one coordinated owner-controlled operation;
+4. only after stable verification is green, move `latest` for the full release group in one coordinated owner-controlled operation — this is the first *deliberate* `latest` dist-tag operation for these packages; the RC-era `latest` value was npm's automatic first-publish default, never an explicit promotion;
 5. verify all `latest` tags resolve to the same stable version.
 
 ## Failure handling

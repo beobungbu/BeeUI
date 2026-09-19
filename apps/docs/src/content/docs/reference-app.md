@@ -13,6 +13,9 @@ This is intentionally different from two other surfaces:
 - **Pattern Gallery** demonstrates reusable controlled screen compositions.
 - **Production demo** owns application routing and feature orchestration to show how those pieces fit together.
 
+**Prerequisites:** none to browse `/demo/`; a BeeUI checkout and Node.js/pnpm are needed only
+for the `pnpm --filter @beemvp/beeui-demo ...` build command below.
+
 ## Product flow
 
 The current app includes Dashboard, Records, Record Detail/Edit, Schedule and Settings.

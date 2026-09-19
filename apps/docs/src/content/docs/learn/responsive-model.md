@@ -5,6 +5,8 @@ description: BeeUI's compact-first width model — who owns breakpoints, who own
 
 BeeUI is **compact-first**: every component is designed to work at the narrowest supported width, and extra width is treated as capability your *layout* opts into — not as a different design that gets shrunk.
 
+**Prerequisites:** read [Cross-platform model](/docs/learn/cross-platform-model/) first — this page assumes you already distinguish shared behavior contracts from per-platform evidence.
+
 ## Why the concept exists
 
 Two different responsive decisions get confused constantly. "Should this text wrap or truncate?" is a component decision, and BeeUI owns it. "Should navigation be a bottom tab bar or a side rail?" is an application decision, and BeeUI must not own it — the answer depends on your information architecture, not on a pixel count.

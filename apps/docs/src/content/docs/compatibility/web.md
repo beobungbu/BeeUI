@@ -10,6 +10,9 @@ Full detail lives in `docs/web-support-contract.md` in the repository
 summary. It mirrors the rigor `docs/native-verification.md` established for the
 [Native contract](/docs/compatibility/native/).
 
+**Prerequisites:** none — this page is evidence you read before choosing a bundler/Web setup,
+not a setup step.
+
 ## Two independently wired Web paths
 
 1. **Expo's Metro Web export** (`apps/showcase`, `expo export --platform web`) — the Web

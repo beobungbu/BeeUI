@@ -7,6 +7,9 @@ BeeUI measures repeatable component operations and package/bundle footprint so r
 can be detected against a controlled baseline. Benchmark classes include representative
 Table work, overlay open/close/positioning, theme/token operations and package footprint.
 
+**Prerequisites:** none — this page is evidence you read before relying on a performance
+claim, not a setup step.
+
 ## How to read a result
 
 A benchmark is meaningful only with its environment, warmup/sampling method and variance.

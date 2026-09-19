@@ -12,6 +12,9 @@ parsed it as UTC midnight.
 Everything else follows from that. You control the value. You control the timezone, if you
 need one. BeeUI controls the grid, the keyboard, the labels, and the platform presentation.
 
+**Prerequisites:** `@beemvp/beeui-ui` installed and any existing date/time values in your
+application converted to `CalendarDate`/`ClockTime` shapes before wiring these components.
+
 Three components:
 
 | Component | Value type | Presentation |

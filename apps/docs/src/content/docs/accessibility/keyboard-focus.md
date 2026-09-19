@@ -18,6 +18,10 @@ is insufficient evidence.
 
 ## Task: verify one screen's keyboard/focus path
 
+**Prerequisites:** a running BeeUI screen with an overlay-class component (Dialog, Popover,
+Select, DropdownMenu or Sheet) mounted, a physical/external keyboard for native, and a
+desktop browser for the checks below.
+
 1. Load the screen in a desktop browser (Web target) with the mouse unplugged or ignored.
 2. Press Tab repeatedly from the top of the page. Confirm the order matches the screen's
    visual reading order — every interactive control (buttons, inputs, `DropdownMenu`/

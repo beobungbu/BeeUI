@@ -5,6 +5,8 @@ description: What shared source guarantees across Web, iOS and Android — and t
 
 Shared source means **one component API and one behavior contract across Web, iOS and Android** — it does not mean one implementation, and it never means that evidence gathered on one target transfers to another.
 
+**Prerequisites:** read [Ownership model](/docs/learn/ownership-model/) first — this page assumes the same BeeUI-vs-application boundary applied per platform.
+
 ## Why the concept exists
 
 "Write once, run anywhere" quietly turns into "test once, ship anywhere", and that is where cross-platform projects lose weeks. A `Select` that opens correctly in Chromium tells you nothing about whether the Android back button dismisses it. A green iOS compile tells you nothing about whether the sheet swipes closed.
