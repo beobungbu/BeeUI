@@ -35,6 +35,12 @@ import {
   Screen,
   Section,
   Separator,
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
   Text,
   useToast,
   VStack,
@@ -202,6 +208,23 @@ export function RuntimeAcceptance({ onBack }: { onBack: () => void }) {
                     <DialogClose testID="runtime-dialog-close">Close root Dialog</DialogClose>
                   </DialogContent>
                 </Dialog>
+
+                {/* #584: the native Sheet is a gorhom BottomSheetModal whose
+                    content stayed invisible on iOS while compile and Jest
+                    gates were green, so its presentation is proven here by
+                    the rendered content, on a real runtime. */}
+                <Sheet>
+                  <SheetTrigger testID="runtime-sheet-trigger">Open root Sheet</SheetTrigger>
+                  <SheetContent
+                    overlayTestID="runtime-sheet-overlay"
+                    snapPoints={['50%']}
+                    testID="runtime-sheet-content"
+                  >
+                    <SheetTitle>Runtime root Sheet</SheetTitle>
+                    <SheetDescription>Presents through the native bottom-sheet engine.</SheetDescription>
+                    <SheetClose testID="runtime-sheet-close">Close root Sheet</SheetClose>
+                  </SheetContent>
+                </Sheet>
 
                 <AlertDialog>
                   <AlertDialogTrigger testID="runtime-alert-trigger" variant="destructive">
