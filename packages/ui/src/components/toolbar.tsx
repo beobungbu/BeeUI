@@ -239,22 +239,31 @@ export const Toolbar = React.forwardRef<React.ComponentRef<typeof View>, Toolbar
 
     // --- Web roving-tabindex (WAI-ARIA Toolbar Pattern) -----------------------------------
     // One item is Tab-reachable at a time; ArrowLeft/ArrowRight move the roving "current"
-    // slot with wrap-around (RTL-aware), Home/End jump to the first/last. Applies to every
-    // visible row item plus the overflow trigger, which is always the sequence's last stop —
-    // a collapsed item itself is only reachable by opening that menu, never directly.
+    // slot with wrap-around (RTL-aware), Home/End jump to the first/last. Applies only to
+    // visible row items whose cloned child actually mounted and registered a focus function
+    // (see `registerItemFocus`/`focusableIds` below) plus the overflow trigger, which is
+    // always the sequence's last stop once anything has collapsed — a collapsed item itself
+    // is only reachable by opening that menu, never directly. An item whose child rendered
+    // null/text/a `Fragment` (or any element that never attaches a ref) never occupies a
+    // sequence slot, so the single `tabIndex=0` never lands on a dead control.
     const direction = useDirection();
     const focusablesRef = React.useRef<Map<string, () => void>>(new Map());
+    const focusableIdsSnapshotRef = React.useRef<ReadonlySet<string>>(new Set());
+    const [focusableIds, setFocusableIds] = React.useState<ReadonlySet<string>>(() => new Set());
+    const warnedNonFocusableIdsRef = React.useRef<Set<string>>(new Set());
     const [currentId, setCurrentIdState] = React.useState<string | null>(null);
 
     const sequence = React.useMemo(() => {
-      const visibleEntries = visibleItems.map((item) => ({
-        disabled: item.disabled === true,
-        id: `item-${item.index}`,
-      }));
+      const visibleEntries = visibleItems
+        .filter((item) => focusableIds.has(`item-${item.index}`))
+        .map((item) => ({
+          disabled: item.disabled === true,
+          id: `item-${item.index}`,
+        }));
       return overflowItems.length > 0
         ? [...visibleEntries, { disabled: false, id: OVERFLOW_SEQUENCE_ID }]
         : visibleEntries;
-    }, [overflowItems.length, visibleItems]);
+    }, [focusableIds, overflowItems.length, visibleItems]);
 
     // The roving-tabindex "current" slot: the last one explicitly focused/navigated to,
     // falling back to the first enabled slot. Computed at render time (not in an effect) so
@@ -269,6 +278,36 @@ export const Toolbar = React.forwardRef<React.ComponentRef<typeof View>, Toolbar
     const registerItemFocus = React.useCallback((id: string, focus: (() => void) | null) => {
       if (focus) focusablesRef.current.set(id, focus);
       else focusablesRef.current.delete(id);
+    }, []);
+
+    // `withRovingFocus` recreates its `ref` callback on every render (it closes over
+    // per-render values like `resolvedCurrentId`), so React detaches/reattaches every
+    // cloned child's ref on every commit — `registerItemFocus` above runs far more often
+    // than "an item actually became (non-)focusable". Deliberately no dependency array:
+    // this must re-check `focusablesRef` after *every* commit (there is no prop/state this
+    // effect could depend on that would fire exactly when a ref actually changes), and only
+    // calling `setFocusableIds` when the resolved id set actually changed — not on every
+    // run — is what keeps that per-render ref churn from ever becoming a render loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    React.useLayoutEffect(() => {
+      const next = new Set(focusablesRef.current.keys());
+      const previous = focusableIdsSnapshotRef.current;
+      const unchanged =
+        next.size === previous.size && Array.from(next).every((id) => previous.has(id));
+      if (unchanged) return;
+      focusableIdsSnapshotRef.current = next;
+      setFocusableIds(next);
+    });
+
+    const warnNonFocusableChildOnce = React.useCallback((id: string, label: string) => {
+      if (typeof __DEV__ === 'undefined' || !__DEV__) return;
+      if (warnedNonFocusableIdsRef.current.has(id)) return;
+      warnedNonFocusableIdsRef.current.add(id);
+      console.warn(
+        `BeeUI Toolbar: the "${label}" item's children did not render a focusable control ` +
+          '(a Fragment or other non-element child) — it is skipped in keyboard/roving-tabindex ' +
+          'navigation.',
+      );
     }, []);
 
     const handleItemFocus = React.useCallback((id: string) => {
@@ -330,8 +369,18 @@ export const Toolbar = React.forwardRef<React.ComponentRef<typeof View>, Toolbar
     // accepts (the same contract `Button`'s own `...props` passthrough documents).
     function withRovingFocus(item: ResolvedToolbarItem): React.ReactNode {
       const child = item.children;
-      if (!React.isValidElement(child)) return child;
       const id = `item-${item.index}`;
+      // `null`/`undefined`/`false` is the normal "conditionally hide this item" pattern (e.g.
+      // `condition && <IconButton .../>`) — silently skip it. A `Fragment` (React never
+      // attaches a `ref` to one) or any other non-element value (text/number) is unlikely to
+      // be intentional, so warn once in dev; either way, the item is skipped and never claims
+      // a roving-tabindex slot (see `sequence`'s `focusableIds` filter above).
+      if (!React.isValidElement(child) || child.type === React.Fragment) {
+        if (child !== null && child !== undefined && child !== false) {
+          warnNonFocusableChildOnce(id, item.label);
+        }
+        return child;
+      }
       const tabIndexValue = Platform.OS === 'web' ? (id === resolvedCurrentId ? 0 : -1) : undefined;
       const element = child as React.ReactElement<{
         onFocus?: (event: unknown) => void;
