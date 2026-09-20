@@ -104,13 +104,22 @@ export const Input = React.forwardRef<React.ComponentRef<typeof TextInput>, Inpu
     // Scoped to the exact labelled case the issue reports: an unlabelled
     // input already exposes its value correctly and is left untouched. A
     // caller's own `accessibilityValue.text` always wins.
+    // Never auto-publish the raw text while `secureTextEntry` is set — that
+    // would hand a masked password's plaintext straight to assistive tech, the
+    // exact thing masking exists to prevent. A caller-supplied
+    // `accessibilityValue.text` still wins in every case, masked or not.
     const isControlledValue = typeof value === 'string';
     const [trackedValue, setTrackedValue] = React.useState(
       isControlledValue ? value : typeof defaultValue === 'string' ? defaultValue : '',
     );
     const resolvedValue = isControlledValue ? value : trackedValue;
+    const autoAccessibilityText = props.secureTextEntry ? undefined : resolvedValue;
     const resolvedAccessibilityValue = resolvedAccessibilityLabel
-      ? { ...accessibilityValue, text: accessibilityValue?.text ?? resolvedValue }
+      ? accessibilityValue?.text !== undefined
+        ? accessibilityValue
+        : autoAccessibilityText !== undefined
+          ? { ...accessibilityValue, text: autoAccessibilityText }
+          : accessibilityValue
       : accessibilityValue;
 
     return (

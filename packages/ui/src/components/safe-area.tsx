@@ -1,5 +1,6 @@
 import { cn } from '@beemvp/beeui-core';
 import * as React from 'react';
+import { View } from 'react-native';
 import {
   SafeAreaListener,
   SafeAreaProvider as NativeSafeAreaProvider,
@@ -71,64 +72,75 @@ export type SafeAreaProps = React.ComponentProps<typeof NativeSafeAreaView> & {
   className?: string;
 };
 
-// react-native-safe-area-context's own documented default when `edges` is
-// omitted — encoded here only so a caller-supplied padding conflict (below)
-// can compute the exact resulting edge set; BeeUI adds no default of its own.
-const DEFAULT_SAFE_AREA_EDGES = ['top', 'right', 'bottom', 'left'] as const;
-
-type SafeAreaEdge = (typeof DEFAULT_SAFE_AREA_EDGES)[number];
-
 // Matches one Tailwind/Uniwind padding utility token (`p-4`, `pt-6`,
-// `py-[10px]`, an optional leading variant chain like `md:pt-6`, etc.) and
-// captures its property prefix (`p`, `pt`, `pr`, `pb`, `pl`, `px`, `py`).
-const PADDING_TOKEN_PATTERN = /(?:^|:)(p|pt|pr|pb|pl|px|py)-/;
+// `py-[10px]`, an optional leading variant chain like `md:pt-6`, etc.).
+// Only used to decide whether an inner wrapper is needed to hold the
+// caller's own padding — never to guess, strip, or reassign a specific
+// safe-area edge.
+const PADDING_CLASS_PATTERN = /(?:^|:)(?:p|pt|pr|pb|pl|px|py)-/;
 
-const PADDING_PREFIXES_BY_EDGE: Record<SafeAreaEdge, readonly string[]> = {
-  top: ['p', 'pt', 'py'],
-  right: ['p', 'pr', 'px'],
-  bottom: ['p', 'pb', 'py'],
-  left: ['p', 'pl', 'px'],
-};
+const PADDING_STYLE_KEYS = [
+  'padding',
+  'paddingHorizontal',
+  'paddingVertical',
+  'paddingTop',
+  'paddingRight',
+  'paddingBottom',
+  'paddingLeft',
+  'paddingStart',
+  'paddingEnd',
+] as const;
 
-/**
- * Whether `className` already carries a padding utility for `edge`. Only
- * inspects the caller-provided string for known literal prefixes — it never
- * builds or guesses a new class name, so it stays compatible with Uniwind's
- * static-class-discovery requirement.
- */
-function classNameSetsPadding(className: string | undefined, edge: SafeAreaEdge): boolean {
+function classNameHasPadding(className: string | undefined): boolean {
   if (!className) return false;
-  const prefixes = PADDING_PREFIXES_BY_EDGE[edge];
-  return className.split(/\s+/).some((token) => {
-    const match = PADDING_TOKEN_PATTERN.exec(token);
-    return match !== null && prefixes.includes(match[1]);
-  });
+  return className.split(/\s+/).some((token) => PADDING_CLASS_PATTERN.test(token));
+}
+
+function styleHasPadding(style: SafeAreaProps['style']): boolean {
+  if (!style) return false;
+  const styles = Array.isArray(style) ? style : [style];
+  return styles.some(
+    (entry) =>
+      !!entry &&
+      typeof entry === 'object' &&
+      PADDING_STYLE_KEYS.some((key) => (entry as Record<string, unknown>)[key] !== undefined),
+  );
 }
 
 /**
- * Explicit safe-area surface: a pass-through to react-native-safe-area-context's own view, with
- * no `edges` default and no inset arithmetic added here — whichever edges that library pads by
- * default are what a caller who omits `edges` gets.
- * Use `edges` to assign ownership to the exact shell element that touches a system edge.
+ * Explicit safe-area surface: a pass-through to react-native-safe-area-context's own view.
+ * `edges` (and the resulting inset) are always fully owned by that library and forwarded
+ * unchanged — BeeUI adds no default and no per-edge arithmetic of its own. Use `edges` to
+ * assign ownership to the exact shell element that touches a system edge.
  *
- * `className`'s own padding utilities win on conflict (per the documented `cn()` contract): the
- * library's own inset padding is a native inline style, which otherwise always beats a CSS class
- * regardless of source order (#598). BeeUI resolves that by dropping insetting for exactly the
- * edges where the caller's own `className` already sets padding — the library then applies no
- * competing style for that edge and the caller's class wins cleanly; every other edge keeps its
- * normal safe-area inset. Only the documented array form of `edges` (`['top', ...]`) is resolved
- * this way; the newer per-edge object form is forwarded unchanged.
+ * A caller's own `className`/`style` padding used to fight the library's own inset padding:
+ * an inline style always beats a CSS class regardless of source order, so a naive merge silently
+ * dropped the caller's padding (#598); stripping the conflicting edge instead silently dropped
+ * the device inset on that edge (#617 regression). Both now compose instead of competing: when
+ * the caller supplies padding (via `className` or `style`), it renders on an inner wrapper `View`
+ * that fills the safe box, while the outer element keeps only the safe-area inset — a caller's
+ * `pt-6` then sits *inside* the device's own top inset rather than replacing or fighting it. When
+ * the caller supplies no padding, everything still renders on the single node it always has, with
+ * no extra wrapper.
  */
 export const SafeArea = React.forwardRef<
   React.ComponentRef<typeof NativeSafeAreaView>,
   SafeAreaProps
->(({ className, edges, ...props }, ref) => {
-  const resolvedEdges = Array.isArray(edges)
-    ? (edges as readonly SafeAreaEdge[]).filter((edge) => !classNameSetsPadding(className, edge))
-    : (edges ?? DEFAULT_SAFE_AREA_EDGES.filter((edge) => !classNameSetsPadding(className, edge)));
+>(({ className, style, ...props }, ref) => {
+  const hasCallerPadding = classNameHasPadding(className) || styleHasPadding(style);
+
+  if (!hasCallerPadding) {
+    return <StyledSafeAreaView ref={ref} className={cn(className)} style={style} {...props} />;
+  }
+
+  const { children, ...outerProps } = props;
 
   return (
-    <StyledSafeAreaView ref={ref} className={cn(className)} edges={resolvedEdges} {...props} />
+    <StyledSafeAreaView ref={ref} {...outerProps}>
+      <View className={cn('flex-1', className)} style={style}>
+        {children}
+      </View>
+    </StyledSafeAreaView>
   );
 });
 
