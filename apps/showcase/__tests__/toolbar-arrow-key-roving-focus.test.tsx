@@ -81,19 +81,13 @@ function ExampleToolbar({ onPress }: { onPress: (label: string) => void }) {
   return (
     <Toolbar overflowAccessibilityLabel="More actions" testID="toolbar">
       <ToolbarItem label="Search" onPress={() => onPress('Search')}>
-        <IconButton accessibilityLabel="Search" onPress={() => onPress('Search')}>
-          🔍
-        </IconButton>
+        <IconButton accessibilityLabel="Search">🔍</IconButton>
       </ToolbarItem>
       <ToolbarItem disabled label="Filter" onPress={() => onPress('Filter')}>
-        <IconButton accessibilityLabel="Filter" disabled onPress={() => onPress('Filter')}>
-          ⚙
-        </IconButton>
+        <IconButton accessibilityLabel="Filter">⚙</IconButton>
       </ToolbarItem>
       <ToolbarItem label="Export" onPress={() => onPress('Export')} priority={1}>
-        <IconButton accessibilityLabel="Export" onPress={() => onPress('Export')}>
-          ⬇
-        </IconButton>
+        <IconButton accessibilityLabel="Export">⬇</IconButton>
       </ToolbarItem>
     </Toolbar>
   );
