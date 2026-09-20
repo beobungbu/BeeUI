@@ -268,7 +268,7 @@ export function DatePickerShowcase() {
 Use the code block's copy affordance to copy the exact fixture. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-`locale` only affects `Calendar`'s own weekday/month grid and `Intl`-based date formatting — it does not translate the date trigger's own `placeholder` or its month-navigation accessible labels, which are separate string props with hardcoded English defaults. A localized app must pass `placeholder`, `previousMonthAccessibilityLabel` and `nextMonthAccessibilityLabel` explicitly alongside `locale`.
+`locale` affects `Calendar`'s own weekday/month grid, `Intl`-based date formatting, and — when the caller omits `placeholder` — the trigger's own default placeholder text, drawn from a small built-in dictionary (`en-US`/`vi-VN` today) that falls back to the English copy for any other locale. It does not translate the month-navigation accessible labels, which stay separate string props with hardcoded English defaults. A localized app must pass `previousMonthAccessibilityLabel` and `nextMonthAccessibilityLabel` explicitly alongside `locale`.
 
 - Passing `open` without `onOpenChange` leaves the value read-only: the component renders what you passed and can never change it. It warns in development builds rather than failing silently in production.
 - Requires `@react-native-community/datetimepicker` to be installed by the consuming app. It is an optional peer of `@beemvp/beeui-ui`, so nothing installs it for you, and a target that never renders this family does not need it.

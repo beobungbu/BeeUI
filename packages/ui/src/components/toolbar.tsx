@@ -1,4 +1,5 @@
 import { cn } from '@beemvp/beeui-core';
+import { controlSize, spacing } from '@beemvp/beeui-tokens';
 import * as React from 'react';
 import { View, type LayoutChangeEvent, type ViewProps, Platform } from 'react-native';
 import {
@@ -9,13 +10,21 @@ import {
 } from './dropdown-menu';
 import { useDirection } from './use-direction';
 
-// A trailing space reserved once at least one item collapses, so the
-// remaining visible items plus the overflow trigger button itself never
-// overflow the measured container width. `control-compact`'s own 36px
-// (`--spacing-control-compact`) is the smallest control height/width BeeUI
-// ships (`icon-button.tsx`'s `sm` size), reused here as a conservative
-// estimate for the icon-only overflow trigger's own footprint.
-const OVERFLOW_TRIGGER_WIDTH_RESERVATION = 36;
+// Reserved for the trailing overflow trigger's own footprint before `Toolbar` has measured
+// the real trigger's rendered width at least once (see `handleTriggerLayout` below) —
+// `controlSize.icon` (44px) is the exact `size="icon"` control-height/width token
+// `ToolbarOverflowMenu`'s `DropdownMenuTrigger` itself renders at, so the fallback already
+// matches the real value in the common case and only ever gets replaced by a measurement,
+// never the other way around.
+const OVERFLOW_TRIGGER_FALLBACK_WIDTH = controlSize.icon;
+
+// The row gap between every rendered child (visible items and, once anything collapses, the
+// trailing overflow trigger) — the same token the row's own `gap-1` utility resolves to (4px).
+// Read once here and applied via `style` (not the `gap-1` class) on both the visible row and
+// the hidden measurement row below, so the overflow-fit math below and the actual rendered
+// gap share this one literal and can never drift apart.
+const TOOLBAR_ROW_GAP = spacing['1'];
+const toolbarRowGapStyle = { gap: TOOLBAR_ROW_GAP };
 
 // Sentinel id for the overflow trigger's own slot in the roving-tabindex sequence — see
 // `ToolbarSequenceEntry`. Distinguishable from every `item-<index>` id.
@@ -43,12 +52,19 @@ export type ToolbarItemProps = {
    * Rendered in the toolbar row while this item fits. A single element is expected — an
    * `IconButton`/`Button` is the common case — since `Toolbar` reads its rendered width to
    * decide what fits, and (on Web) clones it to wire `ref`/`tabIndex`/`onFocus` for
-   * arrow-key roving-tabindex navigation, preserving any `ref`/`onFocus` the element
-   * already carries. Content and every other prop are left untouched.
+   * arrow-key roving-tabindex navigation, preserving any `ref`/`onFocus` the element already
+   * carries. Also clones `disabled`/`onPress` onto it per this item's own metadata — see
+   * `ToolbarItemProps.disabled`/`.onPress`. Every other prop is left untouched.
    */
   children: React.ReactNode;
+  /** Applied to this item's own wrapper in the toolbar row. Has no effect on the overflow menu row (which has no equivalent wrapper) or on the child element itself — compose a class directly on the child for that. */
   className?: string;
-  /** Disables this item everywhere it renders: in the toolbar row and inside the overflow menu. Defaults to false. */
+  /**
+   * Disables this item everywhere it renders: cloned onto the child in the toolbar row
+   * (overriding whatever `disabled` the child element itself declares) and passed to the
+   * overflow menu row when this item is collapsed. Defaults to false — omitting it (or
+   * passing `false`) never clears a `disabled` the child sets on itself.
+   */
   disabled?: boolean;
   /** Icon shown next to `label` when this item renders inside the overflow menu instead of the row. */
   icon?: React.ReactNode;
@@ -57,7 +73,13 @@ export type ToolbarItemProps = {
    * has no other way to describe a collapsed item's action.
    */
   label: string;
-  /** Called when this item is activated, whether it currently renders in the toolbar row or the overflow menu. */
+  /**
+   * Called when this item is activated. In the overflow menu this is always the row's own
+   * activation handler. In the toolbar row it is cloned onto the child only when the child
+   * does not already declare its own `onPress` — an `onPress` the child element sets itself
+   * always wins there instead (a dev warning fires once if both are set to different
+   * functions, since that combination is otherwise silently ambiguous about which one runs).
+   */
   onPress?: () => void;
   /**
    * Collapse priority: an item with a **lower** number collapses first when the row does
@@ -90,6 +112,8 @@ type ToolbarOverflowMenuProps = {
   items: ResolvedToolbarItem[];
   /** Roving-tabindex `onFocus` (see `Toolbar`'s own roving-focus section) — updates the roving "current" slot when the trigger receives focus by any means (Tab, mouse). */
   onFocus?: (event: unknown) => void;
+  /** Reports the trigger's own rendered width once mounted — see `Toolbar`'s `handleTriggerLayout`/`OVERFLOW_TRIGGER_FALLBACK_WIDTH`. */
+  onLayout?: (event: LayoutChangeEvent) => void;
   /** Base `testID` (Toolbar's own `testID`, when given) — derives the trigger's and each menu row's own `testID` for targeting them in tests. */
   testID?: string;
   /** Roving-tabindex value (see `Toolbar`'s own roving-focus section): `0` when this trigger is the sequence's "current" slot, `-1` otherwise. `undefined` outside Web. */
@@ -104,7 +128,7 @@ type ToolbarOverflowMenuProps = {
 const ToolbarOverflowMenu = React.forwardRef<
   React.ComponentRef<typeof DropdownMenuTrigger>,
   ToolbarOverflowMenuProps
->(({ accessibilityLabel, items, onFocus, tabIndex, testID }, ref) => {
+>(({ accessibilityLabel, items, onFocus, onLayout, tabIndex, testID }, ref) => {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -113,6 +137,7 @@ const ToolbarOverflowMenu = React.forwardRef<
         ref={ref}
         accessibilityLabel={accessibilityLabel}
         onFocus={onFocus}
+        onLayout={onLayout}
         size="icon"
         tabIndex={tabIndex}
         testID={testID ? `${testID}-overflow-trigger` : undefined}
@@ -143,11 +168,15 @@ function computeCollapsedIndices(
   items: ResolvedToolbarItem[],
   itemWidths: Readonly<Record<number, number>>,
   containerWidth: number | null,
+  triggerWidth: number,
+  gap: number,
 ): ReadonlySet<number> {
   if (containerWidth === null) return new Set();
 
-  const total = items.reduce((sum, item) => sum + (itemWidths[item.index] ?? 0), 0);
-  if (total <= containerWidth) return new Set();
+  const totalWidth = items.reduce((sum, item) => sum + (itemWidths[item.index] ?? 0), 0);
+  // No trigger renders while nothing has collapsed — `items.length - 1` gaps between them.
+  const gapsWithNoTrigger = items.length > 1 ? (items.length - 1) * gap : 0;
+  if (totalWidth + gapsWithNoTrigger <= containerWidth) return new Set();
 
   // Lower `priority` collapses first; a tie collapses in trailing-to-leading (higher
   // `index`) order — see `ToolbarItemProps.priority`'s own docblock.
@@ -159,13 +188,18 @@ function computeCollapsedIndices(
     });
 
   const collapsed = new Set<number>();
-  let remaining = total;
-  const budget = containerWidth - OVERFLOW_TRIGGER_WIDTH_RESERVATION;
+  let remainingWidth = totalWidth;
+  let remainingCount = items.length;
 
   for (const item of collapsible) {
-    if (remaining <= budget) break;
+    // Once the trigger renders, every one of the `remainingCount` still-visible items is
+    // followed by exactly one `gap` — `remainingCount - 1` gaps between them plus one more
+    // before the trigger itself, i.e. `remainingCount` gaps total.
+    const needed = remainingWidth + remainingCount * gap + triggerWidth;
+    if (needed <= containerWidth) break;
     collapsed.add(item.index);
-    remaining -= itemWidths[item.index] ?? 0;
+    remainingWidth -= itemWidths[item.index] ?? 0;
+    remainingCount -= 1;
   }
 
   return collapsed;
@@ -191,9 +225,13 @@ export type ToolbarProps = Omit<ViewProps, 'children' | 'role'> & {
  * needed. A collapsed item keeps its `onPress`/`label`/`icon` in the overflow menu.
  */
 export const Toolbar = React.forwardRef<React.ComponentRef<typeof View>, ToolbarProps>(
-  ({ children, className, onLayout, overflowAccessibilityLabel, testID, ...props }, ref) => {
+  ({ children, className, onLayout, overflowAccessibilityLabel, style, testID, ...props }, ref) => {
     const [containerWidth, setContainerWidth] = React.useState<number | null>(null);
     const [itemWidths, setItemWidths] = React.useState<Record<number, number>>({});
+    // `null` until the overflow trigger itself has actually laid out once — see
+    // `OVERFLOW_TRIGGER_FALLBACK_WIDTH`/`handleTriggerLayout`.
+    const [measuredTriggerWidth, setMeasuredTriggerWidth] = React.useState<number | null>(null);
+    const triggerWidth = measuredTriggerWidth ?? OVERFLOW_TRIGGER_FALLBACK_WIDTH;
 
     const items = React.useMemo<ResolvedToolbarItem[]>(
       () =>
@@ -207,9 +245,14 @@ export const Toolbar = React.forwardRef<React.ComponentRef<typeof View>, Toolbar
     );
 
     const collapsedIndices = React.useMemo(
-      () => computeCollapsedIndices(items, itemWidths, containerWidth),
-      [containerWidth, itemWidths, items],
+      () => computeCollapsedIndices(items, itemWidths, containerWidth, triggerWidth, TOOLBAR_ROW_GAP),
+      [containerWidth, itemWidths, items, triggerWidth],
     );
+
+    const handleTriggerLayout = React.useCallback((event: LayoutChangeEvent) => {
+      const width = event.nativeEvent.layout.width;
+      setMeasuredTriggerWidth((current) => (current === width ? current : width));
+    }, []);
 
     React.useEffect(() => {
       if (
@@ -251,6 +294,7 @@ export const Toolbar = React.forwardRef<React.ComponentRef<typeof View>, Toolbar
     const focusableIdsSnapshotRef = React.useRef<ReadonlySet<string>>(new Set());
     const [focusableIds, setFocusableIds] = React.useState<ReadonlySet<string>>(() => new Set());
     const warnedNonFocusableIdsRef = React.useRef<Set<string>>(new Set());
+    const warnedOnPressMismatchIdsRef = React.useRef<Set<string>>(new Set());
     const [currentId, setCurrentIdState] = React.useState<string | null>(null);
 
     const sequence = React.useMemo(() => {
@@ -307,6 +351,17 @@ export const Toolbar = React.forwardRef<React.ComponentRef<typeof View>, Toolbar
         `BeeUI Toolbar: the "${label}" item's children did not render a focusable control ` +
           '(a Fragment or other non-element child) — it is skipped in keyboard/roving-tabindex ' +
           'navigation.',
+      );
+    }, []);
+
+    const warnOnPressMismatchOnce = React.useCallback((id: string, label: string) => {
+      if (typeof __DEV__ === 'undefined' || !__DEV__) return;
+      if (warnedOnPressMismatchIdsRef.current.has(id)) return;
+      warnedOnPressMismatchIdsRef.current.add(id);
+      console.warn(
+        `BeeUI Toolbar: the "${label}" item's \`onPress\` and its child's own \`onPress\` are ` +
+          'both set to different functions — the child\'s `onPress` wins in the toolbar row; ' +
+          "the item's `onPress` still runs once this item collapses into the overflow menu.",
       );
     }, []);
 
@@ -383,7 +438,9 @@ export const Toolbar = React.forwardRef<React.ComponentRef<typeof View>, Toolbar
       }
       const tabIndexValue = Platform.OS === 'web' ? (id === resolvedCurrentId ? 0 : -1) : undefined;
       const element = child as React.ReactElement<{
+        disabled?: boolean;
         onFocus?: (event: unknown) => void;
+        onPress?: () => void;
         ref?: React.Ref<ToolbarFocusableNode>;
         tabIndex?: 0 | -1;
       }> & { ref?: React.Ref<ToolbarFocusableNode> };
@@ -392,7 +449,19 @@ export const Toolbar = React.forwardRef<React.ComponentRef<typeof View>, Toolbar
       // child is preserved instead of silently overwritten.
       const originalRef = element.props.ref ?? element.ref;
       const originalOnFocus = element.props.onFocus;
+      // `ToolbarItem` metadata is authoritative in both the row and the overflow menu (see
+      // `ToolbarItemProps.disabled`/`.onPress`): `disabled` overrides the child's own only
+      // when this item declares it; `onPress` only fills in when the child has none of its
+      // own, since an explicit child `onPress` always wins.
+      const childOnPress = element.props.onPress;
+      const onPressOverride =
+        childOnPress === undefined && item.onPress !== undefined ? item.onPress : undefined;
+      if (childOnPress !== undefined && item.onPress !== undefined && item.onPress !== childOnPress) {
+        warnOnPressMismatchOnce(id, item.label);
+      }
       return React.cloneElement(element, {
+        ...(item.disabled === true ? { disabled: true } : null),
+        ...(onPressOverride !== undefined ? { onPress: onPressOverride } : null),
         onFocus: (event: unknown) => {
           handleItemFocus(id);
           originalOnFocus?.(event);
@@ -414,8 +483,9 @@ export const Toolbar = React.forwardRef<React.ComponentRef<typeof View>, Toolbar
         {...props}
         {...webKeyboardProps}
         accessibilityRole="toolbar"
-        className={cn('relative w-full flex-row items-center gap-1', className)}
+        className={cn('relative w-full flex-row items-center', className)}
         onLayout={handleContainerLayout}
+        style={[toolbarRowGapStyle, style]}
         testID={testID}
       >
         {/*
@@ -430,11 +500,11 @@ export const Toolbar = React.forwardRef<React.ComponentRef<typeof View>, Toolbar
         <View
           accessibilityElementsHidden
           aria-hidden
-          className="absolute inset-x-0 top-0 flex-row items-center gap-1 opacity-0"
+          className="absolute inset-x-0 top-0 flex-row items-center opacity-0"
           pointerEvents="none"
           // Web: `visibility: hidden` keeps the layout box (so `onLayout` still measures)
           // but makes every descendant unfocusable, which `aria-hidden` alone does not.
-          style={isWeb ? measurementLayerStyle : undefined}
+          style={isWeb ? [toolbarRowGapStyle, measurementLayerStyle] : toolbarRowGapStyle}
           testID={testID ? `${testID}-measure` : undefined}
         >
           {items.map((item) => (
@@ -448,7 +518,9 @@ export const Toolbar = React.forwardRef<React.ComponentRef<typeof View>, Toolbar
           ))}
         </View>
         {visibleItems.map((item) => (
-          <React.Fragment key={item.index}>{withRovingFocus(item)}</React.Fragment>
+          <View key={item.index} className={item.className}>
+            {withRovingFocus(item)}
+          </View>
         ))}
         {overflowItems.length > 0 ? (
           <ToolbarOverflowMenu
@@ -461,6 +533,7 @@ export const Toolbar = React.forwardRef<React.ComponentRef<typeof View>, Toolbar
             accessibilityLabel={overflowAccessibilityLabel}
             items={overflowItems}
             onFocus={() => handleItemFocus(OVERFLOW_SEQUENCE_ID)}
+            onLayout={handleTriggerLayout}
             tabIndex={
               Platform.OS === 'web' ? (OVERFLOW_SEQUENCE_ID === resolvedCurrentId ? 0 : -1) : undefined
             }

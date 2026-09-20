@@ -489,6 +489,13 @@ export type SelectContentProps = Omit<ViewProps, 'nativeID' | 'role'> & {
   direction?: SelectDirection;
   /** Flips `placement` to the opposite side of the trigger when there is not enough room. Defaults to true. */
   flip?: boolean;
+  /**
+   * Forwarded to the internal `View` that wraps the options on Web — a plain overflow `View`
+   * there, not a `ScrollView` (see `#612` and `scrollViewProps` below), so this is typed to
+   * what a `View` actually honours. Excludes `children`, which this component owns. No effect
+   * on native — see `scrollViewProps` for that host.
+   */
+  listProps?: Omit<ViewProps, 'children'>;
   /** Caps the listbox's height; clamped to at least 96 and to the available viewport space. Defaults to 320. */
   maxHeight?: number;
   /** Forwarded to the outside-press dismiss layer, excluding `children`/`onPress`/`style`, which this component owns. */
@@ -497,7 +504,13 @@ export type SelectContentProps = Omit<ViewProps, 'nativeID' | 'role'> & {
   outsidePressTestID?: string;
   /** Which side of the trigger the listbox opens on. Defaults to `'bottom'`. */
   placement?: SelectPlacement;
-  /** Forwarded to the internal `ScrollView` that wraps the options, excluding `children`, which this component owns. */
+  /**
+   * Forwarded to the internal `ScrollView` that wraps the options on native, excluding
+   * `children`, which this component owns. No effect on Web, where the options render inside
+   * a plain overflow `View` instead (`#612` — RN's `ScrollView` on Web still negotiates the
+   * touch/pointer responder system, which can win a real mouse click ahead of a `SelectItem`'s
+   * own press once the list overflows) — use `listProps` for that host instead.
+   */
   scrollViewProps?: Omit<ScrollViewProps, 'children'>;
   /** Shifts the listbox along the trigger's edge to stay within the viewport instead of overflowing. Defaults to true. */
   shift?: boolean;
@@ -523,6 +536,7 @@ export const SelectContent = React.forwardRef<
       direction = resolveDirection(),
       flip = true,
       importantForAccessibility,
+      listProps,
       maxHeight,
       onAccessibilityEscape,
       onLayout,
@@ -784,15 +798,13 @@ export const SelectContent = React.forwardRef<
                 // See the `scrollRef` docblock above (#612): a plain overflow
                 // `View` here, not `ScrollView`, so a mouse press on an
                 // option is never swallowed by RN's touch-responder
-                // negotiation once the list actually scrolls.
+                // negotiation once the list actually scrolls. `listProps`
+                // (not `scrollViewProps`, which only ever reaches the native
+                // `ScrollView` below) is this host's own forwarded-props hook.
                 <View
                   ref={scrollRef as unknown as React.Ref<React.ComponentRef<typeof View>>}
-                  {...(scrollViewProps as unknown as ViewProps)}
-                  style={[
-                    styles.webScroll,
-                    { maxHeight: resolvedMaxHeight },
-                    scrollViewProps?.style as ViewProps['style'],
-                  ]}
+                  {...listProps}
+                  style={[styles.webScroll, { maxHeight: resolvedMaxHeight }, listProps?.style]}
                 >
                   {children}
                 </View>
