@@ -54,6 +54,11 @@ import {
   PopoverTrigger,
   Radio,
   RadioGroup,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Separator,
   SettingsItem,
   Sheet,
@@ -140,7 +145,8 @@ type FixtureId =
   | 'date'
   | 'sheet-short-root'
   | 'keydown-bubble'
-  | 'keyboard-roving-focus';
+  | 'keyboard-roving-focus'
+  | 'table-row-interactive-descendants';
 
 const fixtureIds: readonly FixtureId[] = [
   'density',
@@ -154,6 +160,7 @@ const fixtureIds: readonly FixtureId[] = [
   'sheet-short-root',
   'keydown-bubble',
   'keyboard-roving-focus',
+  'table-row-interactive-descendants',
 ];
 
 function isFixtureId(value: string | null): value is FixtureId {
@@ -1533,6 +1540,91 @@ function KeyboardRovingFocusFixture() {
   );
 }
 
+// #618 (Astra review #2, item 6): `table.web`'s interactive-descendant exclusion selector
+// used to miss most of BeeUI's own interactive roles (radio, combobox, tab, option,
+// menuitemcheckbox/radio, slider, spinbutton, textbox, searchbox, listbox) — activating one
+// of those inside a pressable `TableRow` also fired the row's own `onPress`. A jsdom-free real
+// DOM is required to prove this (the exclusion reads real ancestor DOM nodes via
+// `Element.closest`), so this fixture mounts one pressable row with a `Button` (`role="button"`,
+// already excluded before this fix), a `Checkbox` (`role="checkbox"`, already excluded), a
+// `Radio` (`role="radio"`, new), a `SelectTrigger` (`role="combobox"`, new), and a `Link`
+// (`role="link"`, already excluded), plus one plain cell with no interactive descendant. The
+// row's own press count renders as text so Playwright can assert it stays put while each
+// embedded control activates, and only advances for the plain cell.
+function TableRowInteractiveDescendantsFixture() {
+  const [rowPressCount, setRowPressCount] = React.useState(0);
+  const [checked, setChecked] = React.useState(false);
+  const [radioValue, setRadioValue] = React.useState('one');
+  const [selectValue, setSelectValue] = React.useState('alpha');
+
+  return (
+    <Box className="min-h-screen gap-6 bg-surface p-6" testID="table-row-interactive-descendants-fixture">
+      <Text variant="title">Table: row interactive-descendant exclusion</Text>
+      <Text testID="interactive-descendants-row-press-count" tone="muted" variant="caption">
+        {`Row press count: ${rowPressCount}`}
+      </Text>
+      <Table testID="interactive-descendants-table">
+        <TableHeader>
+          <TableRow>
+            <TableHead>Button</TableHead>
+            <TableHead>Checkbox</TableHead>
+            <TableHead>Radio</TableHead>
+            <TableHead>Select</TableHead>
+            <TableHead>Link</TableHead>
+            <TableHead>Plain</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow
+            onPress={() => setRowPressCount((count) => count + 1)}
+            testID="interactive-descendants-row"
+          >
+            <TableCell label="Button">
+              <Button onPress={() => undefined} testID="interactive-descendants-button">
+                Edit
+              </Button>
+            </TableCell>
+            <TableCell label="Checkbox">
+              <Checkbox
+                accessibilityLabel="Select row"
+                checked={checked}
+                onCheckedChange={setChecked}
+                testID="interactive-descendants-checkbox"
+              />
+            </TableCell>
+            <TableCell label="Radio">
+              <RadioGroup accessibilityLabel="Priority" onValueChange={setRadioValue} value={radioValue}>
+                <Radio label="One" testID="interactive-descendants-radio" value="one" />
+              </RadioGroup>
+            </TableCell>
+            <TableCell label="Select">
+              <Select onValueChange={setSelectValue} value={selectValue}>
+                <SelectTrigger accessibilityLabel="Status" testID="interactive-descendants-select-trigger">
+                  <SelectValue placeholder="Choose" testID="interactive-descendants-select-value" />
+                </SelectTrigger>
+                <SelectContent testID="interactive-descendants-select-content">
+                  <SelectItem testID="interactive-descendants-select-alpha" value="alpha">
+                    Alpha
+                  </SelectItem>
+                  <SelectItem testID="interactive-descendants-select-beta" value="beta">
+                    Beta
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </TableCell>
+            <TableCell label="Link">
+              <Link testID="interactive-descendants-link">Details</Link>
+            </TableCell>
+            <TableCell label="Plain" testID="interactive-descendants-plain-cell">
+              Row 1
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </Box>
+  );
+}
+
 function Scenario({ scenario }: { scenario: VisualScenarioId }) {
   switch (scenario) {
     case 'foundation':
@@ -1596,6 +1688,8 @@ export default function App() {
         <KeydownBubbleFixture />
       ) : fixture === 'keyboard-roving-focus' ? (
         <KeyboardRovingFocusFixture />
+      ) : fixture === 'table-row-interactive-descendants' ? (
+        <TableRowInteractiveDescendantsFixture />
       ) : (
         <Scenario scenario={scenario} />
       )}

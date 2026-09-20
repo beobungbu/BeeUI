@@ -79,13 +79,46 @@ function handleRowActivationKeyDown(
 
 // A pressable `TableRow`'s own `onClick`/keydown handlers fire for a click/keypress
 // originating anywhere inside the row, including an embedded cell action (a `Button`,
-// `Checkbox`, link, etc.) — without this guard, tapping/activating that control also
-// activates the whole row (e.g. navigating away mid-checkbox-toggle). Bounded to a real
-// `Element`-shaped `target`/`currentTarget` pair (a DOM `MouseEvent`/`KeyboardEvent` at
-// runtime; a plain stub object in unit tests) so it degrades to "not embedded" rather than
-// throwing when either is absent.
+// `Checkbox`, `SegmentedControlItem`, `SelectTrigger`, link, etc.) — without this guard,
+// tapping/activating that control also activates the whole row (e.g. navigating away
+// mid-checkbox-toggle). Bounded to a real `Element`-shaped `target`/`currentTarget` pair (a
+// DOM `MouseEvent`/`KeyboardEvent` at runtime; a plain stub object in unit tests) so it
+// degrades to "not embedded" rather than throwing when either is absent. Covers every native
+// interactive element/attribute BeeUI's own controls render as on Web, plus the full
+// WAI-ARIA widget-role vocabulary those controls expose (`role="radio"`/`"combobox"`/
+// `"slider"`/etc.) — not just the small subset BeeUI happened to ship first. `[tabindex]:
+// not([tabindex="-1"])` catches any other Tab-reachable custom control a consumer embeds;
+// `isEmbeddedInteractiveActivation`'s own `interactiveAncestor === currentTarget` check
+// below is what excludes the row itself when the row's own pressable wrapper also carries a
+// `tabIndex`, so this selector does not need to exclude the row separately.
 const INTERACTIVE_DESCENDANT_SELECTOR =
-  'button, a[href], input, select, textarea, [role="button"], [role="checkbox"], [role="link"], [role="switch"], [role="menuitem"], [contenteditable]';
+  [
+    'button',
+    'a[href]',
+    'input',
+    'select',
+    'textarea',
+    'summary',
+    '[contenteditable]',
+    '[tabindex]:not([tabindex="-1"])',
+    '[role="button"]',
+    '[role="link"]',
+    '[role="checkbox"]',
+    '[role="radio"]',
+    '[role="switch"]',
+    '[role="menuitem"]',
+    '[role="menuitemcheckbox"]',
+    '[role="menuitemradio"]',
+    '[role="tab"]',
+    '[role="option"]',
+    '[role="combobox"]',
+    '[role="listbox"]',
+    '[role="textbox"]',
+    '[role="searchbox"]',
+    '[role="slider"]',
+    '[role="spinbutton"]',
+    '[role="scrollbar"]',
+  ].join(', ');
 
 type ClosestCapable = { closest?: (selector: string) => unknown };
 type ContainsCapable = { contains?: (node: unknown) => boolean };
