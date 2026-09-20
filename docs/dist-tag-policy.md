@@ -6,7 +6,7 @@ BeeUI 1.0 is the product milestone name. The stable npm package line starts at *
 
 ## Real current dist-tag state: `latest` also resolves to the RC
 
-Verified against the live registry (`npm view <package> dist-tags`): `next` and `latest` both currently resolve to `0.86.2-rc.1` for all four packages (`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`, `@beemvp/beeui-cli`). This is expected npm first-publish behavior, not a release-process error: npm always points a package's first-ever published version at `latest` regardless of the `--tag` flag used at publish time, and there is no supported way to unpoint `latest` from a package's only published version while it remains the only version. Every one of these four packages has exactly one published version today, so `latest` has nowhere else to point.
+Verified against the live registry (`npm view <package> dist-tags`): `next` and `latest` both currently resolve to `0.86.2-rc.1` for all four packages (`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`, `@beemvp/beeui-cli`). This is not a release-process error. The bootstrap publish ran `npm publish --tag next --provenance` for every package (GitHub Actions run 34294238899, 2026-09-09, job `bootstrap-rc`, log line `npm notice Publishing to https://registry.npmjs.org/ with tag next and public access`), and the registry still attached `latest` to that first version alongside `next`: the npm registry requires every package to carry a `latest` tag, so when no earlier version exists it is set on the first publish whatever `--tag` asked for. This document does not rely on removing that tag (whether `npm dist-tag rm <package> latest` is accepted for a package's only version is unverified); `latest` is only ever re-pointed by the deliberate stable publish/promotion described below. Every one of these four packages has exactly one published version today.
 
 This means a bare, unqualified `npm install @beemvp/beeui-ui` currently installs the same `0.86.2-rc.1` artifact as `npm install @beemvp/beeui-ui@next`. Documentation must keep recommending the explicit `@next` tag (or an exact pinned version) anyway, never a bare install — that recommendation is what stays correct across the transition described below, not what is true only today.
 
@@ -48,7 +48,7 @@ BeeUI uses exactly two persistent public dist-tags:
 
 | Tag | Meaning |
 | --- | --- |
-| `latest` | default-install channel. Today it resolves to `0.86.2-rc.1` only because npm's first-publish default points it there — not because `latest` was deliberately promoted. Once the stable release group publishes, `latest` moves to the stable version and never points to a prerelease again. |
+| `latest` | default-install channel. Today it resolves to `0.86.2-rc.1` because the registry attached `latest` to the first publish alongside the requested `next` tag (evidence above) — not because `latest` was deliberately promoted. Once the stable release group publishes, `latest` moves to the stable version and never points to a prerelease again. |
 | `next` | opt-in release-candidate/safety channel; currently points to `0.86.2-rc.1`, same target as `latest` today; keeps tracking future prereleases after the first stable publish. |
 
 `latest` is the intended long-term consumer commit point for stable releases. Default consumers must not see a *deliberately promoted* stable release until the full stable release group has been published and verified — the current first-publish default is a separate, incidental state, not an early promotion.
