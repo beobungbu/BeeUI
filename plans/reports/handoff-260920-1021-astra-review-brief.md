@@ -1,6 +1,6 @@
 # Review brief for Astra — BeeUI consumer-audit batch (PR #617, PR #618, issue #619)
 
-You are an independent reviewer. Nothing below is pre-approved; your job is to find what the authors missed. Report in writing; do not merge, do not push to the reviewed branches, do not close issues.
+You are an independent external reviewer (no write access assumed). Nothing below is pre-approved; your job is to find what the authors missed. Work from the public GitHub repository; if you cannot run code, review by reading diffs, tests, CI logs and the authors' evidence, and say explicitly which claims you could only assess statically. Return your report as text.
 
 ## 1. Scope
 
@@ -12,19 +12,20 @@ Repository: https://github.com/beobungbu/BeeUI (integration branch `development`
 | PR #618 `fix/consumer-audit-followups` → stacked on #617 | Real root-cause fix for #584 (iOS Sheet), reduced-motion Dialog role fix, date-picker focus scroll fix, arrow-key roving focus for scrollable Tabs and Toolbar, DateTimePicker locale copy, #585 items 2–3, dist-tag policy rewritten to match npm reality (#561 option b), complete visual baseline refresh. CI green at f36f344. |
 | Issue #619 | Design proposal (four layers A–D) for React context + overlay z-order loss across gorhom's portal inside `Sheet` on native. Not implemented. Needs a design verdict. |
 
-Evidence written by the authors (read these, then verify them; they are claims, not proof):
+Evidence written by the authors (all on branch `fix/consumer-audit-followups`, browse at https://github.com/beobungbu/BeeUI/tree/fix/consumer-audit-followups/plans ; read these, then verify them; they are claims, not proof):
 - `plans/reports/consumer-audit-260918-1952-fix-all-final-status-report.md` — per-issue verdict table for #617.
 - `plans/260918-1559-consumer-audit-fix-all/reports/ws-{a,b,c,d1,d2,e,f,g,h}-report.md` — per-workstream reports for #617 (file lists, tests, gates, residuals).
 - `plans/260919-1258-consumer-audit-followups/reports/ws-{i,j,k,l,m,n}-report.md` and `reports/ios-evidence/*.png` — #618. WS-K's absolute-fill theory for #584 was later disproven by WS-L; read both to see how.
 - `.changeset/consumer-audit-batch.md` — the declared public-surface change.
 
-## 2. Environment
+## 2. Environment (only if you can run code)
 
-- Node 24.13.1 exactly (`.npmrc` has `engine-strict=true`; on this Mac: `export PATH="$HOME/.nvm/versions/node/v24.13.1/bin:$PATH"`), pnpm 10.15.0 via `corepack pnpm`.
+- Node 24.13.1 exactly (`.npmrc` has `engine-strict=true`), pnpm 10.15.0 via `corepack pnpm`.
 - `corepack pnpm install --frozen-lockfile && corepack pnpm build` before any typecheck (`packages/ui` needs core/tokens dist).
-- Full gate: `corepack pnpm typecheck && corepack pnpm test` (30+ min). Targeted: `corepack pnpm --filter @beemvp/beeui-showcase test -- <pattern>`, Playwright in `apps/visual-regression` (`build:web` first; the webServer also builds the docs portal and can time out locally — serve the export yourself if so).
+- Full gate: `corepack pnpm typecheck && corepack pnpm test` (30+ min). Targeted: `corepack pnpm --filter @beemvp/beeui-showcase test -- <pattern>`, Playwright in `apps/visual-regression` (`build:web` first).
+- CI logs: https://github.com/beobungbu/BeeUI/actions (workflows `ci`, `web-consumer`, `web-a11y`, `visual-web`, `expo-consumer`); PR check lists on the PR pages.
 - Generated outputs (component pages, `docs/component-reference.md`, `docs/public-surface.inventory.json`, `llms*.txt`, `packages/tokens/src/theme.css`) must only be regenerated through the pnpm scripts (`docs:portal-pages:generate`, `docs:contract:generate`, `docs:surface:generate`, `llms:generate`, `tokens:generate`). Running one generator script directly rewrites 63 pages destructively.
-- iOS Simulator evidence for #584 was captured with a Maestro tap; the Simulator MCP `tap` did not reach the Sheet trigger.
+- iOS Simulator evidence for #584 was captured with a Maestro tap on iPhone 16 Pro / iOS 18.6; PNGs are committed under `plans/260919-1258-consumer-audit-followups/reports/ios-evidence/`.
 
 ## 3. What to review, in priority order
 
@@ -55,7 +56,7 @@ Give a verdict on each layer: A (BeeUIProvider owns `BottomSheetModalProvider`),
 
 ## 4. Deliverable
 
-Write `plans/reports/from-astra-260920-consumer-audit-review-report.md` (or post as PR review comments if you have write access; then still leave the file). Structure:
+Return a Markdown report (it will be committed by the owner as `plans/reports/from-astra-260920-consumer-audit-review-report.md`). Structure:
 
 1. **Verdict per PR**: APPROVE / REQUEST CHANGES / BLOCK, one paragraph each.
 2. **Findings table**: severity (blocker / major / minor / nit), file:line or issue number, what is wrong, how you verified it (command + result), suggested fix. Most severe first. Confirmed findings only; label anything unverified as "plausible".
