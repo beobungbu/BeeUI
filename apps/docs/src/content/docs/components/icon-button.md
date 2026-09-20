@@ -97,8 +97,8 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/icon-button-size-and-count.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/icon-button-size-and-count.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/toolbar-arrow-key-roving-focus.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/toolbar-arrow-key-roving-focus.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/toolbar-non-focusable-children-roving-focus.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/toolbar-non-focusable-children-roving-focus.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx)
-- **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
 
 ### Addressable examples
 
