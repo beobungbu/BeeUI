@@ -182,7 +182,10 @@ adb_for_device reverse tcp:8081 tcp:8081
 
 (
   cd "$SHOWCASE"
-  NODE_OPTIONS=--dns-result-order=ipv4first CI=1 pnpm exec expo start --localhost --port 8081 > "$ARTIFACT_DIR/metro.log" 2>&1
+  # Expo CLI uses EXPO_UNSTABLE_HEADLESS for its own E2E/headless operation; among
+  # other things this prevents the standalone React Native DevTools/Fusebox shell from
+  # installing/launching in the background while a CI smoke test only needs Metro.
+  EXPO_UNSTABLE_HEADLESS=1 NODE_OPTIONS=--dns-result-order=ipv4first CI=1 pnpm exec expo start --localhost --port 8081 > "$ARTIFACT_DIR/metro.log" 2>&1
 ) &
 METRO_PID=$!
 
