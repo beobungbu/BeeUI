@@ -166,7 +166,8 @@ test('preserves Sheet provider context and nested Popover/Select parity on Web',
   await page.getByTestId('sheet-context-select-trigger').click();
   await expect(page.getByTestId('sheet-context-select-content')).toBeVisible();
   await page.getByTestId('sheet-context-select-item-alpha').click();
-  await expect(page.getByTestId('sheet-context-select-content')).toHaveCount(0);
+  await expect(page.getByTestId('sheet-context-select-content')).toBeHidden();
+  await expect(page.getByTestId('sheet-context-select-trigger')).toHaveAttribute('aria-expanded', 'false');
   await expect(page.getByTestId('sheet-context-select-selection')).toHaveText('select: alpha');
   await expect(sheet).toBeVisible();
 

@@ -267,7 +267,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Import:** `import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle, DialogTrigger } from '@beemvp/beeui-ui';`
 - **API:** `Dialog`, `DialogClose`, `DialogContent`, `DialogDescription`, `DialogFooter`, `DialogTitle`, `DialogTrigger` — source [`packages/ui/src/components/dialog.tsx`](../packages/ui/src/components/dialog.tsx). Typed props: `DialogCloseProps`, `DialogContentProps`, `DialogDescriptionProps`, `DialogFooterProps`, `DialogProps`, `DialogTitleProps`, `DialogTriggerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add dialog` (copies the source file into your app; see [registry CLI](registry-cli.md)).
-- **Dependencies / provider:** Peer dependencies: `react`, `react-native`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `button`, `core-cn`, `overlay-runtime`, `text`, `theme`.
+- **Dependencies / provider:** Peer dependencies: `react`, `react-native`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `button`, `core-cn`, `overlay-runtime`, `sheet-context-bridge`, `text`, `theme`, `theme-scope-bridge`, `toast-runtime-bridge`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
@@ -660,7 +660,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Import:** `import { Spinner } from '@beemvp/beeui-ui';`
 - **API:** `Spinner` — source [`packages/ui/src/components/spinner.tsx`](../packages/ui/src/components/spinner.tsx). Typed props: `SpinnerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add spinner` (copies the source file into your app; see [registry CLI](registry-cli.md)).
-- **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `theme`.
+- **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `theme`, `theme-scope-bridge`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
@@ -831,7 +831,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Import:** `import { TOAST_DEFAULT_DURATION, TOAST_MAX_VISIBLE, useToast } from '@beemvp/beeui-ui';`
 - **API:** `TOAST_DEFAULT_DURATION`, `TOAST_MAX_VISIBLE`, `useToast` — source [`packages/ui/src/components/toast.tsx`](../packages/ui/src/components/toast.tsx). Typed props: `ToastAction`, `ToastApi`, `ToastDuration`, `ToastId`, `ToastOptions`, `ToastVariant` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add toast` (copies the source file into your app; see [registry CLI](registry-cli.md)).
-- **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `react-native-safe-area-context`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `text`, `theme`.
+- **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `react-native-safe-area-context`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `text`, `theme`, `toast-runtime-bridge`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
