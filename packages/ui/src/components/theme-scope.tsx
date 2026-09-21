@@ -87,9 +87,11 @@ import { BeeThemeScopeMirrorProvider } from './theme-scope-bridge';
  *   `BeeUIProvider`, outside any subtree-level `BeeThemeScope`. **On this path a
  *   scoped theme does not reach portaled overlay content**; the overlay renders
  *   under whatever theme is active at the application root instead. This is an
- *   existing, pre-#68 constraint of the overlay transport itself (see
- *   `overlay-host-mode.ts`), not something this component special-cases —
- *   `BeeThemeScope` does not add a second propagation path to work around it.
+ *   existing, pre-#68 constraint of the generic overlay transport itself (see
+ *   `overlay-host-mode.ts`). Native `Sheet` is the deliberate exception: because
+ *   @gorhom/bottom-sheet reparents through its own store portal, Sheet captures this
+ *   scope's resolved runtime-theme name and re-applies the same Uniwind `ScopedTheme`
+ *   inside that portal. Other legacy anchored overlays keep the generic limitation.
  *
  * This component never modifies focus-trap, dismissal, or event-routing
  * behavior; it only supplies the `theme` value Uniwind's `ScopedTheme` already
@@ -105,8 +107,8 @@ import { BeeThemeScopeMirrorProvider } from './theme-scope-bridge';
  *
  * ## SSR / web / native
  *
- * `BeeThemeScope` itself renders nothing platform-specific — it is a pure
- * pass-through to Uniwind's own `ScopedTheme`, whose web/native/SSR behavior
+ * `BeeThemeScope` keeps Uniwind's `ScopedTheme` as the sole styling authority and
+ * adds only a value mirror used by native Sheet's portal bridge. Uniwind's web/native/SSR behavior
  * (including that library's own DOM/host requirements) is documented by Uniwind,
  * not by BeeUI. BeeUI adds no additional SSR constraint beyond what Uniwind
  * itself requires (see the platform notes above for the one known constraint

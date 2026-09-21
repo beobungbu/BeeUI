@@ -344,7 +344,9 @@ export type TabsTriggerProps = Omit<
    * nested inside it (a `Pressable`-in-`Pressable`/`<button>`-in-`<button>` composition is
    * the same anti-pattern flagged for `DropdownMenuTrigger` wrapping `IconButton` — nesting
    * interactive elements breaks Web's DOM validity and native's hit-testing). Requires
-   * `closeAccessibilityLabel`. Defaults to false.
+   * `closeAccessibilityLabel`. In a Web `scrollable` tablist the close sibling stays out of
+   * sequential Tab order so the tablist remains one roving composite; pressing Delete on the
+   * focused closable tab invokes the same close path. Defaults to false.
    */
   closable?: boolean;
   /**

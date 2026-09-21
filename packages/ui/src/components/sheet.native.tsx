@@ -436,8 +436,10 @@ type SheetPortalContextBridgeProps = {
  * root itself, and a `BeeUIProvider` rendered inside the gorhom provider, as
  * the module docblock's required root wiring allows) is therefore invisible
  * to the sheet's content. This re-provides what `SheetContent` captured in
- * place. Consumer-declared context below `BeeUIProvider` is not bridged;
- * declare it above `BottomSheetModalProvider` or pass values as props.
+ * place: BeeUI's Sheet/safe-area/overlay/toast/theme state automatically, plus
+ * consumer-owned contexts explicitly named in `bridgeContexts`. BeeUI cannot
+ * enumerate application authorities such as React Query/i18n/navigation/store
+ * contexts, so those opt in through that prop rather than being silently lost.
  */
 function SheetPortalContextBridge({
   bridgeContexts,

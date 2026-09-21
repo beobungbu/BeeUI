@@ -132,11 +132,12 @@ plain `React.Context.Provider`:
   `apps/showcase/__tests__/issue-68-theme-scope.test.tsx`
   ("legacy transport does not cross the portal").
 
-If a subtree's overlay content must stay themed on the legacy path, follow the
-same guidance `docs/anchored-overlays.md` already gives for arbitrary consumer
-context: put the value above `BeeUIProvider` (i.e. apply it as the
-application-level theme instead of a subtree scope), or pass the resolved
-runtime-theme name explicitly into the portaled content.
+If a subtree's generic anchored-overlay content must stay themed on the legacy
+path, use a context-preserving transport, render the surface outside that legacy
+portal boundary, or use the application-level theme. Native Sheet is handled
+separately: Sheet captures the resolved scope and re-applies it inside
+@gorhom/bottom-sheet's store-backed portal, so BeeThemeScope around a Sheet is
+preserved while arbitrary generic legacy overlays keep the limitation.
 
 `BeeThemeScope` never modifies focus-trap, dismissal, or event-routing
 behavior — it only supplies the `theme` value Uniwind's `ScopedTheme` already
@@ -190,14 +191,14 @@ not by BeeUI. BeeUI adds exactly one platform-shaped constraint beyond what
 Uniwind itself requires, and it is the one documented above: which overlay
 transport mode is active determines whether a scope reaches portaled content.
 
-## No new theme store/provider
+## No second theme authority
 
-`BeeThemeScope` introduces no `React.createContext`, no module-level mutable
-state, and no subscription mechanism of its own. It is a stateless function
-component that resolves a name through a `@beemvp/beeui-tokens` registry and renders
-Uniwind's `ScopedTheme`. `apps/showcase/__tests__/issue-68-theme-scope.test.tsx`
-asserts the package export surface is exactly `{ BeeThemeScope }` — no
-accompanying provider or hook.
+Uniwind remains the only theme authority. BeeUI now keeps one internal
+React-context mirror of the resolved runtime-theme name so native Sheet can
+re-apply the same `ScopedTheme` after @gorhom/bottom-sheet reparents content.
+That mirror owns no theme mutations, subscriptions, registry resolution, or
+fallback logic. The public package export remains `BeeThemeScope`; the bridge
+context/provider/hooks are internal implementation details, not consumer APIs.
 
 ## Out of scope (see issue #68)
 
