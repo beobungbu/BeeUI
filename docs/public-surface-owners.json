@@ -50,7 +50,7 @@
     "packages/core/package.json": "c32b85239769b096973ee030e7500a3092c2a91b",
     "packages/core/src/index.ts": "8bc4dd7cd94583aa191188c52dc6c4ba883ca56a",
     "packages/cli/src/beeui.mjs": "b3d6eccecb6c5ec814b90bcf29083d2e55c0f796",
-    "registry/registry.json": "82249d7bf984d7a0f8fd6ce26793a8d23d3bcd42"
+    "registry/registry.json": "d23d70bf7f94faa3f23dcc5b857036a291f03dd0"
   },
   "ignoredExportSubpaths": [
     "./package.json"

@@ -369,7 +369,7 @@ export function ToastRuntimeProvider({
 }
 
 export function useToast(): ToastApi {
-  const context = useToastApiContext();
+  const context = useToastApiContext() as ToastApi | null;
   if (!context) {
     throw new Error('BeeUI toast APIs require BeeUIProvider at the application root.');
   }

@@ -1,13 +1,14 @@
 import * as React from 'react';
-import type { ToastApi } from './toast';
-
 export type ToastRuntimeSnapshot = {
-  api: ToastApi;
+  // Kept opaque here so this internal bridge has no dependency back on the public
+  // toast module. ToastRuntimeProvider is the sole writer and useToast() casts the
+  // value back to ToastApi at the public boundary.
+  api: unknown;
   registerLocalViewport: () => () => void;
   renderViewport: (testID: string) => React.ReactNode;
 };
 
-const ToastApiContext = React.createContext<ToastApi | null>(null);
+const ToastApiContext = React.createContext<unknown>(null);
 const ToastRuntimeContext = React.createContext<ToastRuntimeSnapshot | null>(null);
 
 export function ToastRuntimeBoundary({
@@ -24,7 +25,7 @@ export function ToastRuntimeBoundary({
   );
 }
 
-export function useToastApiContext(): ToastApi | null {
+export function useToastApiContext(): unknown {
   return React.useContext(ToastApiContext);
 }
 
