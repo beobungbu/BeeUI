@@ -267,7 +267,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Import:** `import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle, DialogTrigger } from '@beemvp/beeui-ui';`
 - **API:** `Dialog`, `DialogClose`, `DialogContent`, `DialogDescription`, `DialogFooter`, `DialogTitle`, `DialogTrigger` — source [`packages/ui/src/components/dialog.tsx`](../packages/ui/src/components/dialog.tsx). Typed props: `DialogCloseProps`, `DialogContentProps`, `DialogDescriptionProps`, `DialogFooterProps`, `DialogProps`, `DialogTitleProps`, `DialogTriggerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add dialog` (copies the source file into your app; see [registry CLI](registry-cli.md)).
-- **Dependencies / provider:** Peer dependencies: `react`, `react-native`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `button`, `core-cn`, `overlay-runtime`, `sheet-context-bridge`, `text`, `theme`, `theme-scope-bridge`, `toast-runtime-bridge`.
+- **Dependencies / provider:** Peer dependencies: `react`, `react-native`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `button`, `core-cn`, `overlay-runtime`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
@@ -632,7 +632,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Import:** `import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHandle, SheetProvider, SheetTitle, SheetTrigger } from '@beemvp/beeui-ui';`
 - **API:** `Sheet`, `SheetClose`, `SheetContent`, `SheetDescription`, `SheetFooter`, `SheetHandle`, `SheetProvider`, `SheetTitle`, `SheetTrigger` — source [`packages/ui/src/components/sheet.tsx`](../packages/ui/src/components/sheet.tsx). Typed props: `SheetCloseProps`, `SheetContentProps`, `SheetDescriptionProps`, `SheetFooterProps`, `SheetHandleProps`, `SheetProps`, `SheetProviderProps`, `SheetSnapPoint`, `SheetTitleProps`, `SheetTriggerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add sheet` (copies the source file into your app; see [registry CLI](registry-cli.md)).
-- **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `@gorhom/bottom-sheet`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets`. Requires [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) above `SheetProvider`; native `SheetProvider` owns gorhom's modal/gesture root so its portal stays below BeeUI runtime contexts. Source-ownership pulls in registry dependencies: `button`, `core-cn`, `overlay-runtime`, `text`, `theme`.
+- **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `@gorhom/bottom-sheet`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets`. Requires [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) above `SheetProvider`; native `SheetProvider` owns gorhom's modal/gesture root so its portal stays below BeeUI runtime contexts. Source-ownership pulls in registry dependencies: `button`, `core-cn`, `overlay-runtime`, `sheet-context-bridge`, `text`, `theme`, `theme-scope-bridge`, `toast-runtime-bridge`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md). Platform-split module (native/web files resolve at build time).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
@@ -660,7 +660,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Import:** `import { Spinner } from '@beemvp/beeui-ui';`
 - **API:** `Spinner` — source [`packages/ui/src/components/spinner.tsx`](../packages/ui/src/components/spinner.tsx). Typed props: `SpinnerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add spinner` (copies the source file into your app; see [registry CLI](registry-cli.md)).
-- **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `theme`, `theme-scope-bridge`.
+- **Dependencies / provider:** Peer dependencies: `react`, `react-native`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
@@ -802,7 +802,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Import:** `import { BeeThemeScope } from '@beemvp/beeui-ui';`
 - **API:** `BeeThemeScope` — source [`packages/ui/src/components/theme-scope.tsx`](../packages/ui/src/components/theme-scope.tsx). Typed props: `BeeThemeScopeProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add theme-scope` (copies the source file into your app; see [registry CLI](registry-cli.md)).
-- **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `uniwind`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `theme`.
+- **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `uniwind`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `theme`, `theme-scope-bridge`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
