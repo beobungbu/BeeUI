@@ -114,10 +114,26 @@ appId: com.beeui.showcase
       - assertNotVisible:
           id: "runtime-dialog-content"
 
-- tapOn:
-    id: "runtime-alert-trigger"
-- assertVisible:
-    id: "runtime-alert-content"
+# The AlertDialog trigger sits below Dialog/Sheet inside the same tall card. On
+# iOS Maestro can resolve and "tap" its accessibility node while the native hit
+# target is still below the viewport, producing a delivered tap with no dialog.
+# Center the real trigger and prove the destination inside the same retry.
+- scrollUntilVisible:
+    element:
+      id: "runtime-alert-trigger"
+    direction: DOWN
+    visibilityPercentage: 100
+    centerElement: true
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-alert-trigger"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-alert-content"
+          timeout: 15000
 - waitForAnimationToEnd
 - retry:
     maxRetries: 3

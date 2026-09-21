@@ -286,10 +286,23 @@ run_inline_maestro reset <<'EOF_FLOW'
 EOF_FLOW
 
 run_inline_maestro a1-open <<'EOF_FLOW'
-- tapOn:
-    id: "runtime-popover-trigger"
-- assertVisible:
-    id: "runtime-popover-content"
+- scrollUntilVisible:
+    element:
+      id: "runtime-popover-trigger"
+    direction: DOWN
+    timeout: 30000
+    visibilityPercentage: 100
+    centerElement: true
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-popover-trigger"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-popover-content"
+          timeout: 15000
 EOF_FLOW
 real_back "A1 root Popover"
 run_inline_maestro a1-assert <<'EOF_FLOW'
@@ -301,10 +314,26 @@ run_inline_maestro a1-assert <<'EOF_FLOW'
 EOF_FLOW
 
 run_inline_maestro a2-open <<'EOF_FLOW'
-- tapOn:
-    id: "runtime-menu-trigger"
-- assertVisible:
-    id: "runtime-menu-content"
+# A1 leaves the Root overlays card near its Popover row. The Menu row is just
+# below it and can fall completely outside Android's accessibility viewport;
+# direct tapOn then fails before any component behavior is exercised.
+- scrollUntilVisible:
+    element:
+      id: "runtime-menu-trigger"
+    direction: DOWN
+    timeout: 30000
+    visibilityPercentage: 100
+    centerElement: true
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-menu-trigger"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-menu-content"
+          timeout: 15000
 EOF_FLOW
 real_back "A2 root DropdownMenu"
 run_inline_maestro a2-assert <<'EOF_FLOW'
