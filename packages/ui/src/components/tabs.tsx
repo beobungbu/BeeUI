@@ -465,11 +465,20 @@ export const TabsTrigger = React.forwardRef<
       if (selected) {
         const index = order.indexOf(value);
         const neighbour = order[index - 1] ?? order[index + 1];
-        if (neighbour !== undefined) {
-          tabs.onValueChange?.(neighbour);
-        }
+        if (neighbour !== undefined) tabs.onValueChange?.(neighbour);
       }
     };
+
+    const webClosableTabKeyboardProps =
+      Platform.OS === 'web' && listLayout?.scrollable && closable
+        ? ({
+            onKeyDown: (event: WebKeyboardEvent) => {
+              if (event.key !== 'Delete' || isDisabled) return;
+              event.preventDefault?.();
+              handleClose();
+            },
+          } as unknown as PressableProps)
+        : ({} as PressableProps);
 
     const labelNode = childArray.map((child, index) =>
       typeof child === 'string' || typeof child === 'number' ? (
@@ -501,16 +510,18 @@ export const TabsTrigger = React.forwardRef<
       Platform.OS === 'web' && listLayout?.scrollable
         ? (value === rovingFocus?.currentValue ? 0 : -1)
         : undefined;
+    // Scrollable TabsList is one composite: only the tab is in page Tab order.
+    // The sibling close button stays accessible but sequentially untabbable; Delete closes
+    // the focused closable tab, matching the WAI-ARIA tabs interaction model.
     const rovingCloseTabIndex =
-      Platform.OS === 'web' && listLayout?.scrollable
-        ? (value === rovingFocus?.currentValue ? 0 : -1)
-        : undefined;
+      Platform.OS === 'web' && listLayout?.scrollable ? -1 : undefined;
 
     if (!closable) {
       return (
         <Pressable
           ref={setRef}
           {...props}
+          {...webClosableTabKeyboardProps}
           accessibilityLabel={accessibilityLabel ?? inferredLabel}
           accessibilityRole="tab"
           accessibilityState={{
@@ -562,6 +573,7 @@ export const TabsTrigger = React.forwardRef<
         <Pressable
           ref={setRef}
           {...props}
+          {...webClosableTabKeyboardProps}
           accessibilityLabel={accessibilityLabel ?? inferredLabel}
           accessibilityRole="tab"
           accessibilityState={{

@@ -131,23 +131,28 @@ describe('TabsList scrollable arrow-key roving focus (Web)', () => {
     expect(tabIndices(screen)).toEqual({ a: 0, b: -1, c: -1, d: -1 });
   });
 
-  it('keeps only the current closable tab\'s close action in Tab order', () => {
+  it('keeps close buttons out of the composite Tab order and closes the focused tab with Delete', () => {
+    const onClose = jest.fn();
     const screen = render(
       <Tabs onValueChange={() => {}} value="a">
         <TabsList scrollable testID="tabs-list">
-          <TabsTrigger closable closeAccessibilityLabel="Close A" testID="tab-a" value="a">A</TabsTrigger>
-          <TabsTrigger closable closeAccessibilityLabel="Close B" testID="tab-b" value="b">B</TabsTrigger>
+          <TabsTrigger closable closeAccessibilityLabel="Close A" onClose={onClose} testID="tab-a" value="a">A</TabsTrigger>
+          <TabsTrigger closable closeAccessibilityLabel="Close B" onClose={onClose} testID="tab-b" value="b">B</TabsTrigger>
         </TabsList>
       </Tabs>,
     );
 
-    expect(screen.getByLabelText('Close A').props.tabIndex).toBe(0);
+    expect(screen.getByTestId('tab-a').props.tabIndex).toBe(0);
+    expect(screen.getByLabelText('Close A').props.tabIndex).toBe(-1);
     expect(screen.getByLabelText('Close B').props.tabIndex).toBe(-1);
 
     pressKey(screen, 'ArrowRight');
+    expect(screen.getByTestId('tab-b').props.tabIndex).toBe(0);
 
-    expect(screen.getByLabelText('Close A').props.tabIndex).toBe(-1);
-    expect(screen.getByLabelText('Close B').props.tabIndex).toBe(0);
+    const preventDefault = jest.fn();
+    act(() => screen.getByTestId('tab-b').props.onKeyDown?.({ key: 'Delete', preventDefault }));
+    expect(preventDefault).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledWith('b');
   });
 
   it('scrolls the newly-focused trigger into view', () => {

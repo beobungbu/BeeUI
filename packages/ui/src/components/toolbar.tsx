@@ -498,7 +498,8 @@ export const Toolbar = React.forwardRef<React.ComponentRef<typeof View>, Toolbar
         accessibilityRole="toolbar"
         className={cn('relative w-full flex-row items-center', className)}
         onLayout={handleContainerLayout}
-        style={[toolbarRowGapStyle, style]}
+        // Gap participates in fit math, so caller style cannot override it.
+        style={[style, toolbarRowGapStyle]}
         testID={testID}
       >
         {items.map((item) => {

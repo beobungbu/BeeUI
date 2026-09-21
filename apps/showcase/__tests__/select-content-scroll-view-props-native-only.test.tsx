@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react-native';
 import * as React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@beemvp/beeui-ui';
+import { Platform } from 'react-native';
 import { OverlayRuntimeProvider } from '../../../packages/ui/src/components/overlay-runtime';
 
 // Astra review #2, item 9: `SelectContent.scrollViewProps` was typed as `ScrollViewProps`
@@ -38,6 +39,9 @@ function renderSelect(children: React.ReactNode) {
 }
 
 describe('SelectContent scrollViewProps/listProps type split', () => {
+  const originalPlatformOS = Platform.OS;
+  afterEach(() => Object.defineProperty(Platform, 'OS', { configurable: true, value: originalPlatformOS }));
+
   it('accepts a ScrollView-only prop through scrollViewProps', () => {
     expect(() =>
       renderSelect(
@@ -65,6 +69,22 @@ describe('SelectContent scrollViewProps/listProps type split', () => {
         </Select>,
       ),
     ).not.toThrow();
+  });
+
+  it('keeps legacy Web View-compatible scrollViewProps non-silent during migration', () => {
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const screen = renderSelect(
+      <Select defaultOpen>
+        <SelectTrigger accessibilityLabel="Choose" />
+        <SelectContent listProps={{ testID: 'new-select-list' }} scrollViewProps={{ testID: 'legacy-select-list' }}>
+          <SelectItem value="a">A</SelectItem>
+        </SelectContent>
+      </Select>,
+    );
+    expect(screen.getByTestId('new-select-list')).toBeTruthy();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('scrollViewProps'));
+    warn.mockRestore();
   });
 
   it('accepts a plain View prop through listProps', () => {

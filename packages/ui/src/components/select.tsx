@@ -506,10 +506,10 @@ export type SelectContentProps = Omit<ViewProps, 'nativeID' | 'role'> & {
   placement?: SelectPlacement;
   /**
    * Forwarded to the internal `ScrollView` that wraps the options on native, excluding
-   * `children`, which this component owns. No effect on Web, where the options render inside
-   * a plain overflow `View` instead (`#612` — RN's `ScrollView` on Web still negotiates the
-   * touch/pointer responder system, which can win a real mouse click ahead of a `SelectItem`'s
-   * own press once the list overflows) — use `listProps` for that host instead.
+   * `children`, which this component owns. On Web the host is a plain overflow `View`
+   * (#612); for migration compatibility View-compatible fields are still forwarded there,
+   * with `listProps` winning conflicts. A dev warning asks Web consumers to migrate;
+   * ScrollView-only fields have no Web meaning.
    */
   scrollViewProps?: Omit<ScrollViewProps, 'children'>;
   /** Shifts the listbox along the trigger's edge to stay within the viewport instead of overflowing. Defaults to true. */
@@ -555,6 +555,21 @@ export const SelectContent = React.forwardRef<
     const { anchorRef, contentNativeID, duplicateValues, items, open, overlayId, selectedItem, setOpen } =
       root;
     const [currentItemId, setCurrentItemId] = React.useState<string | null>(null);
+    const warnedLegacyWebScrollPropsRef = React.useRef(false);
+    React.useEffect(() => {
+      if (
+        Platform.OS !== 'web' ||
+        !scrollViewProps ||
+        warnedLegacyWebScrollPropsRef.current ||
+        typeof __DEV__ === 'undefined' ||
+        !__DEV__
+      ) return;
+      warnedLegacyWebScrollPropsRef.current = true;
+      console.warn(
+        'BeeUI SelectContent: `scrollViewProps` on Web is deprecated because the Web list host is a plain View (#612). ' +
+          'View-compatible props are still forwarded for migration; move them to `listProps`. ScrollView-only props have no Web effect.',
+      );
+    }, [scrollViewProps]);
     const [itemLayouts, setItemLayouts] = React.useState<Record<string, ItemLayout>>({});
     // Web renders a plain overflow `View` instead of `ScrollView` here (see
     // the render below and `#612`'s docblock note) — RN's `ScrollView` on Web
@@ -803,8 +818,14 @@ export const SelectContent = React.forwardRef<
                 // `ScrollView` below) is this host's own forwarded-props hook.
                 <View
                   ref={scrollRef as unknown as React.Ref<React.ComponentRef<typeof View>>}
+                  {...(scrollViewProps as unknown as ViewProps)}
                   {...listProps}
-                  style={[styles.webScroll, { maxHeight: resolvedMaxHeight }, listProps?.style]}
+                  style={[
+                    styles.webScroll,
+                    { maxHeight: resolvedMaxHeight },
+                    scrollViewProps?.style as ViewProps['style'],
+                    listProps?.style,
+                  ]}
                 >
                   {children}
                 </View>

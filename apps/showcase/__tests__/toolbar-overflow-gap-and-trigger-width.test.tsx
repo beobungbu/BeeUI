@@ -1,7 +1,7 @@
 import { IconButton, Toolbar, ToolbarItem } from '@beemvp/beeui-ui';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import * as React from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { OverlayRuntimeProvider } from '../../../packages/ui/src/components/overlay-runtime';
 
 // Astra review #2, item 4: the overflow-fit budget used to reserve a flat 36px for the
@@ -83,6 +83,19 @@ describe('Toolbar overflow fit math: row gap + measured trigger width', () => {
     layoutToolbar('toolbar', 104, [50, 50]);
 
     expect(screen.getByLabelText('Search')).toBeTruthy();
+    expect(screen.getByLabelText('Export')).toBeTruthy();
+    expect(screen.queryByLabelText('More actions')).toBeNull();
+  });
+
+  it('keeps the algorithm-owned gap authoritative when caller style tries to override it', () => {
+    renderToolbar(
+      <Toolbar overflowAccessibilityLabel="More actions" style={{ gap: 12 }} testID="toolbar">
+        <ToolbarItem label="Search" onPress={() => {}}><IconButton accessibilityLabel="Search">🔍</IconButton></ToolbarItem>
+        <ToolbarItem label="Export" onPress={() => {}} priority={1}><IconButton accessibilityLabel="Export">⬇</IconButton></ToolbarItem>
+      </Toolbar>,
+    );
+    layoutToolbar('toolbar', 104, [50, 50]);
+    expect(StyleSheet.flatten(screen.getByTestId('toolbar').props.style)?.gap).toBe(4);
     expect(screen.getByLabelText('Export')).toBeTruthy();
     expect(screen.queryByLabelText('More actions')).toBeNull();
   });

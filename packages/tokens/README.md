@@ -4,13 +4,13 @@ The shared design-token runtime for BeeUI: DTCG-derived color/typography/spacing
 
 ## Distribution state
 
-**Unpublished:** `@beemvp/beeui-tokens` is not currently available from the public npm registry. Publication remains owner-gated by BeeUI release issue #254. Evaluate the current code from this repository/source-ownership workflow instead of treating the command below as available today.
-
-After publication is explicitly authorized, the intended install shape is:
+**Public release candidate:** `@beemvp/beeui-tokens@0.86.2-rc.1` is published on npm. During RC use the explicit `@next` channel (or pin the exact version):
 
 ```bash
-npm install @beemvp/beeui-tokens
+npm install @beemvp/beeui-tokens@next
 ```
+
+The live registry currently also resolves `latest` to this RC, but the bootstrap publish used `--tag next` and the mechanism that also created the observed `latest` value has not been established. BeeUI therefore documents `@next` as the RC contract; a bare install is not the recommended RC path because `latest` moves to stable at the first deliberate stable promotion.
 
 ## Usage
 
