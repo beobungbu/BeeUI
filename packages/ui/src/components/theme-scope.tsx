@@ -10,6 +10,29 @@ import {
 import * as React from 'react';
 import { ScopedTheme, type ThemeName } from 'uniwind';
 
+export type BeeThemeScopeSnapshot = ThemeName | null;
+const BeeThemeScopeContext = React.createContext<BeeThemeScopeSnapshot>(null);
+
+/** Internal portal bridge: mirrors the resolved ScopedTheme name; Uniwind remains authoritative. */
+export function useBeeThemeScopeSnapshot(): BeeThemeScopeSnapshot {
+  return React.useContext(BeeThemeScopeContext);
+}
+
+export function BeeThemeScopeBridge({
+  children,
+  snapshot,
+}: {
+  children?: React.ReactNode;
+  snapshot: BeeThemeScopeSnapshot;
+}) {
+  if (!snapshot) return <>{children}</>;
+  return (
+    <BeeThemeScopeContext.Provider value={snapshot}>
+      <ScopedTheme theme={snapshot}>{children}</ScopedTheme>
+    </BeeThemeScopeContext.Provider>
+  );
+}
+
 /**
  * `BeeThemeScope` is a thin typed wrapper around Uniwind's own `ScopedTheme`
  * component. Uniwind remains the sole runtime theme authority: this component
@@ -111,11 +134,12 @@ import { ScopedTheme, type ThemeName } from 'uniwind';
  * itself requires (see the platform notes above for the one known constraint
  * that does originate here: portal/overlay transport mode).
  *
- * ## No new theme store/provider
+ * ## No second theme authority
  *
- * `BeeThemeScope` introduces no `React.createContext`, no module-level mutable
- * state, and no subscription mechanism of its own. It is a stateless function
- * component that resolves a name and renders Uniwind's `ScopedTheme`.
+ * Uniwind remains the only theme authority. BeeUI keeps one tiny React-context mirror of
+ * the resolved runtime-theme name solely so native Sheet can re-apply the same ScopedTheme
+ * after @gorhom/bottom-sheet reparents content through its store portal. The mirror owns
+ * no theme mutations, subscriptions, or fallback logic.
  */
 export type BeeThemeScopeProps<Def extends ThemeRegistryDefinition = typeof beeRuntimeThemeByBrand> = {
   /**
@@ -187,7 +211,12 @@ export function BeeThemeScope<Def extends ThemeRegistryDefinition = typeof beeRu
   // component authored once in `@beemvp/beeui-ui` cannot know that app-specific union
   // ahead of time. This mirrors the same, already-established bridge the
   // Showcase's `ThemeInspector` uses for `Uniwind.setTheme(...)`.
-  return <ScopedTheme theme={runtimeTheme as ThemeName}>{props.children}</ScopedTheme>;
+  const resolvedTheme = runtimeTheme as ThemeName;
+  return (
+    <BeeThemeScopeContext.Provider value={resolvedTheme}>
+      <ScopedTheme theme={resolvedTheme}>{props.children}</ScopedTheme>
+    </BeeThemeScopeContext.Provider>
+  );
 }
 
 BeeThemeScope.displayName = 'BeeThemeScope';

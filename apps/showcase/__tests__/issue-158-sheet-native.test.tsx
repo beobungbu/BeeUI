@@ -2,9 +2,15 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import * as React from 'react';
 import { Platform, StyleSheet, Text as RNText, View } from 'react-native';
 import { SafeAreaInsetsContext, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Button } from '../../../packages/ui/src/components/button';
 import { Input } from '../../../packages/ui/src/components/input';
 import { useOverlayRuntimeSnapshot } from '../../../packages/ui/src/components/overlay-runtime';
 import { BeeUIProvider } from '../../../packages/ui/src/components/safe-area';
+import {
+  BeeThemeScope,
+  useBeeThemeScopeSnapshot,
+} from '../../../packages/ui/src/components/theme-scope';
+import { useToast } from '../../../packages/ui/src/components/toast';
 // Explicit `.native` suffix (mirrors `issue-173-date-picker-native.test.tsx`):
 // forces the native presentation regardless of Jest's default platform
 // resolution, and is the only way to exercise the file that imports
@@ -149,6 +155,7 @@ jest.mock('react-native/Libraries/Utilities/BackHandler', () => ({
 }));
 
 const SAFE_AREA_INSETS = { top: 20, right: 0, bottom: 30, left: 0 };
+const ConsumerContext = React.createContext('missing-consumer-context');
 
 jest.mock('react-native-safe-area-context', () => {
   const ReactActual = require('react');
@@ -506,12 +513,20 @@ describe('BeeUI issue #584 Sheet presents on the native gorhom engine', () => {
     function ContextProbe() {
       const insets = useSafeAreaInsets();
       const overlay = useOverlayRuntimeSnapshot();
+      const consumer = React.useContext(ConsumerContext);
+      const theme = useBeeThemeScopeSnapshot();
+      const toast = useToast();
       return (
-        <RNText testID="context-probe">
-          {`inset-bottom:${insets.bottom} runtime:${overlay.runtime ? 'yes' : 'no'} transport:${
-            overlay.transport?.mode ?? 'none'
-          }`}
-        </RNText>
+        <>
+          <RNText testID="context-probe">
+            {`inset-bottom:${insets.bottom} runtime:${overlay.runtime ? 'yes' : 'no'} transport:${
+              overlay.transport?.mode ?? 'none'
+            } consumer:${consumer} theme:${theme ?? 'none'}`}
+          </RNText>
+          <Button testID="sheet-toast" onPress={() => toast.show({ title: 'Inside sheet toast' })}>
+            Toast
+          </Button>
+        </>
       );
     }
 
@@ -519,13 +534,17 @@ describe('BeeUI issue #584 Sheet presents on the native gorhom engine', () => {
       <>
         <BeeUIProvider>
           <SafeAreaInsetsContext.Provider value={bridgedInsets}>
-            <Sheet onOpenChange={onOpenChange} open>
-              <SheetContent testID="sheet-content">
-                <SheetTitle>Filters</SheetTitle>
-                <ContextProbe />
-                <SheetClose testID="sheet-close">Done</SheetClose>
-              </SheetContent>
-            </Sheet>
+            <ConsumerContext.Provider value="consumer-ok">
+              <BeeThemeScope appearance="dark" brand="violet">
+                <Sheet onOpenChange={onOpenChange} open>
+                  <SheetContent bridgeContexts={[ConsumerContext]} testID="sheet-content">
+                    <SheetTitle>Filters</SheetTitle>
+                    <ContextProbe />
+                    <SheetClose testID="sheet-close">Done</SheetClose>
+                  </SheetContent>
+                </Sheet>
+              </BeeThemeScope>
+            </ConsumerContext.Provider>
           </SafeAreaInsetsContext.Provider>
         </BeeUIProvider>
         <MockDetachedHost />
@@ -551,8 +570,20 @@ describe('BeeUI issue #584 Sheet presents on the native gorhom engine', () => {
     // The insets declared above the Sheet (not the mock default) and the
     // overlay runtime from `BeeUIProvider` both reach the detached content.
     expect(screen.getByTestId('context-probe').props.children).toBe(
-      'inset-bottom:44 runtime:yes transport:legacy',
+      'inset-bottom:44 runtime:yes transport:legacy consumer:consumer-ok theme:violet-dark',
     );
+
+    fireEvent.press(screen.getByTestId('sheet-toast'));
+    expect(screen.getByText('Inside sheet toast')).toBeTruthy();
+    const localViewport = screen.getByTestId('beeui-toast-local-viewport');
+    let viewportAncestor = localViewport.parent;
+    let viewportUnderDetachedHost = false;
+    while (viewportAncestor) {
+      if (viewportAncestor.props?.testID === 'mock-detached-host') viewportUnderDetachedHost = true;
+      viewportAncestor = viewportAncestor.parent;
+    }
+    expect(viewportUnderDetachedHost).toBe(true);
+    expect(screen.queryByTestId('beeui-toast-viewport')).toBeNull();
   });
 
   it('renders the content in an in-flow flex box directly under the modal, with the modal not claiming accessibility for it', () => {

@@ -272,23 +272,54 @@ function getDefaultToastPlacement(): ToastPlacement {
   return Platform.OS === 'web' ? 'top' : 'bottom';
 }
 
+export type ToastRuntimeSnapshot = {
+  api: ToastApi;
+  dismiss: (id: ToastId) => void;
+  placement: ToastPlacement;
+  registerLocalViewport: () => () => void;
+  state: ToastState;
+};
+
+const ToastRuntimeContext = React.createContext<ToastRuntimeSnapshot | null>(null);
+
+function ToastViewport({ snapshot, testID }: { snapshot: ToastRuntimeSnapshot; testID: string }) {
+  const insets = useSafeAreaInsets();
+  const viewportStyle = React.useMemo<ViewStyle>(
+    () =>
+      snapshot.placement === 'bottom'
+        ? { bottom: insets.bottom + 12 }
+        : { top: insets.top + 12 },
+    [insets.bottom, insets.top, snapshot.placement],
+  );
+  const orderedToasts =
+    snapshot.placement === 'bottom' ? snapshot.state.visible : [...snapshot.state.visible].reverse();
+
+  return (
+    <View accessible={false} pointerEvents="box-none" style={[styles.viewport, viewportStyle]} testID={testID}>
+      <View className="w-full items-center gap-2" pointerEvents="box-none">
+        {orderedToasts.map((toast) => (
+          <ToastCard dismiss={snapshot.dismiss} key={toast.id} toast={toast} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
 /** Internal application-root runtime. BeeUIProvider owns this provider. */
 export function ToastRuntimeProvider({
   children,
   placement = getDefaultToastPlacement(),
 }: ToastRuntimeProviderProps) {
   const [state, dispatch] = React.useReducer(toastReducer, EMPTY_TOAST_STATE);
+  const [localViewportCount, setLocalViewportCount] = React.useState(0);
   const runtimeId = React.useId().replace(/:/g, '');
   const nextIdRef = React.useRef(0);
-  const insets = useSafeAreaInsets();
 
   const dismiss = React.useCallback((id: ToastId) => {
     if (typeof id !== 'string' || !id) return;
     dispatch({ type: 'dismiss', id });
   }, []);
-
   const dismissAll = React.useCallback(() => dispatch({ type: 'dismiss-all' }), []);
-
   const show = React.useCallback((options: ToastOptions) => {
     const normalized = normalizeToastOptions(options);
     nextIdRef.current += 1;
@@ -296,37 +327,61 @@ export function ToastRuntimeProvider({
     dispatch({ type: 'show', toast: { id, ...normalized } });
     return id;
   }, [runtimeId]);
-
   const api = React.useMemo<ToastApi>(() => ({ show, dismiss, dismissAll }), [dismiss, dismissAll, show]);
-  const viewportStyle = React.useMemo<ViewStyle>(
-    () =>
-      placement === 'bottom' ? { bottom: insets.bottom + 12 } : { top: insets.top + 12 },
-    [insets.bottom, insets.top, placement],
+
+  const registerLocalViewport = React.useCallback(() => {
+    let active = true;
+    setLocalViewportCount((count) => count + 1);
+    return () => {
+      if (!active) return;
+      active = false;
+      setLocalViewportCount((count) => Math.max(0, count - 1));
+    };
+  }, []);
+
+  const snapshot = React.useMemo<ToastRuntimeSnapshot>(
+    () => ({ api, dismiss, placement, registerLocalViewport, state }),
+    [api, dismiss, placement, registerLocalViewport, state],
   );
-  // A `top`-anchored viewport grows downward, so the newest toast needs to
-  // render *first* (closest to the anchored top edge) to be the most
-  // prominent one. A `bottom`-anchored viewport grows upward from its fixed
-  // bottom edge, so the newest toast needs to render *last* (closest to that
-  // bottom edge) for the same "newest is most prominent" contract.
-  const orderedToasts = placement === 'bottom' ? state.visible : [...state.visible].reverse();
 
   return (
     <ToastContext.Provider value={api}>
-      {children}
-      <View
-        accessible={false}
-        pointerEvents="box-none"
-        style={[styles.viewport, viewportStyle]}
-        testID="beeui-toast-viewport"
-      >
-        <View className="w-full items-center gap-2" pointerEvents="box-none">
-          {orderedToasts.map((toast) => (
-            <ToastCard dismiss={dismiss} key={toast.id} toast={toast} />
-          ))}
-        </View>
-      </View>
+      <ToastRuntimeContext.Provider value={snapshot}>
+        {children}
+        {localViewportCount === 0 ? (
+          <ToastViewport snapshot={snapshot} testID="beeui-toast-viewport" />
+        ) : null}
+      </ToastRuntimeContext.Provider>
     </ToastContext.Provider>
   );
+}
+
+/** Internal Sheet/modal bridge seam; not re-exported from the package barrel. */
+export function useToastRuntimeSnapshot(): ToastRuntimeSnapshot | null {
+  return React.useContext(ToastRuntimeContext);
+}
+
+export function ToastRuntimeBridge({
+  children,
+  snapshot,
+}: {
+  children?: React.ReactNode;
+  snapshot: ToastRuntimeSnapshot | null;
+}) {
+  if (!snapshot) return <>{children}</>;
+  return (
+    <ToastContext.Provider value={snapshot.api}>
+      <ToastRuntimeContext.Provider value={snapshot}>{children}</ToastRuntimeContext.Provider>
+    </ToastContext.Provider>
+  );
+}
+
+/** Renders the shared toast store in the current modal layer and suppresses the root viewport. */
+export function ToastRuntimeLocalViewport({ snapshot }: { snapshot: ToastRuntimeSnapshot | null }) {
+  const registerLocalViewport = snapshot?.registerLocalViewport;
+  React.useLayoutEffect(() => registerLocalViewport?.(), [registerLocalViewport]);
+  if (!snapshot) return null;
+  return <ToastViewport snapshot={snapshot} testID="beeui-toast-local-viewport" />;
 }
 
 export function useToast(): ToastApi {

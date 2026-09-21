@@ -24,12 +24,23 @@ import {
 } from 'react-native-safe-area-context';
 import { Button, type ButtonProps } from './button';
 import {
+  BeeThemeScopeBridge,
+  useBeeThemeScopeSnapshot,
+  type BeeThemeScopeSnapshot,
+} from './theme-scope';
+import {
   ModalOverlayHost,
   OverlayRuntimeBridge,
   useOverlayRuntimeSnapshot,
   type ModalOverlayDismissScope,
 } from './overlay-runtime';
 import { Text, type TextProps } from './text';
+import {
+  ToastRuntimeBridge,
+  ToastRuntimeLocalViewport,
+  useToastRuntimeSnapshot,
+  type ToastRuntimeSnapshot,
+} from './toast';
 
 /**
  * BeeUI 1.0 Sheet — native implementation (#158, per accepted ADR-006
@@ -334,12 +345,78 @@ function SheetBackdrop({
   );
 }
 
+// React.Context is intentionally type-erased here: Sheet only captures/re-provides
+// the exact context object/value pair and never interprets the value.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type SheetBridgeContext = React.Context<any>;
+
+const EMPTY_SHEET_BRIDGE_CONTEXTS: readonly SheetBridgeContext[] = [];
+
+type SheetBridgeCaptureProps = {
+  children: (values: readonly unknown[]) => React.ReactNode;
+  contexts: readonly SheetBridgeContext[];
+  index?: number;
+  values?: readonly unknown[];
+};
+
+function SheetBridgeContextCapture({
+  children,
+  contexts,
+  index = 0,
+  values = [],
+}: SheetBridgeCaptureProps): React.ReactElement {
+  const context = contexts[index];
+  if (!context) return <>{children(values)}</>;
+  return (
+    <SheetBridgeContextValueCapture context={context} contexts={contexts} index={index} values={values}>
+      {children}
+    </SheetBridgeContextValueCapture>
+  );
+}
+
+function SheetBridgeContextValueCapture({
+  children,
+  context,
+  contexts,
+  index,
+  values,
+}: SheetBridgeCaptureProps & { context: SheetBridgeContext; index: number }): React.ReactElement {
+  const value = React.useContext(context);
+  return (
+    <SheetBridgeContextCapture contexts={contexts} index={index + 1} values={[...values, value]}>
+      {children}
+    </SheetBridgeContextCapture>
+  );
+}
+
+function SheetConsumerContextBridge({
+  bridgeContexts,
+  bridgeValues,
+  children,
+}: {
+  bridgeContexts: readonly SheetBridgeContext[];
+  bridgeValues: readonly unknown[];
+  children?: React.ReactNode;
+}) {
+  let node = children;
+  for (let index = bridgeContexts.length - 1; index >= 0; index -= 1) {
+    const Context = bridgeContexts[index];
+    if (!Context) continue;
+    node = React.createElement(Context.Provider, { value: bridgeValues[index] }, node);
+  }
+  return <>{node}</>;
+}
+
 type SheetModalProps = Record<string, unknown>;
 
 export type SheetContentProps = Omit<
   ViewProps,
   'accessibilityRole' | 'accessibilityViewIsModal' | 'role'
 > & {
+  /**
+   * Consumer-owned contexts that must survive gorhom's store-backed portal. BeeUI automatically bridges its own Sheet/safe-area/overlay/toast/theme state; pass app contexts here only for authorities BeeUI cannot enumerate (query, i18n, navigation, app stores).
+   */
+  bridgeContexts?: readonly SheetBridgeContext[];
   /**
    * Keyboard-interaction contract (#157). Maps to gorhom's own
    * `keyboardBehavior`; see this file's module docblock for the honest
@@ -397,11 +474,15 @@ function SheetHandleSlot({
 }
 
 type SheetPortalContextBridgeProps = {
+  bridgeContexts: readonly SheetBridgeContext[];
+  bridgeValues: readonly unknown[];
   children?: React.ReactNode;
   frame: ReturnType<typeof useSafeAreaFrame>;
   insets: ReturnType<typeof useSafeAreaInsets>;
   overlayRuntime: ReturnType<typeof useOverlayRuntimeSnapshot>;
   sheetContext: SheetContextValue;
+  themeScope: BeeThemeScopeSnapshot;
+  toastRuntime: ToastRuntimeSnapshot | null;
 };
 
 /**
@@ -415,20 +496,30 @@ type SheetPortalContextBridgeProps = {
  * declare it above `BottomSheetModalProvider` or pass values as props.
  */
 function SheetPortalContextBridge({
+  bridgeContexts,
+  bridgeValues,
   children,
   frame,
   insets,
   overlayRuntime,
   sheetContext,
+  themeScope,
+  toastRuntime,
 }: SheetPortalContextBridgeProps) {
   return (
-    <SheetContext.Provider value={sheetContext}>
-      <SafeAreaFrameContext.Provider value={frame}>
-        <SafeAreaInsetsContext.Provider value={insets}>
-          <OverlayRuntimeBridge snapshot={overlayRuntime}>{children}</OverlayRuntimeBridge>
-        </SafeAreaInsetsContext.Provider>
-      </SafeAreaFrameContext.Provider>
-    </SheetContext.Provider>
+    <SheetConsumerContextBridge bridgeContexts={bridgeContexts} bridgeValues={bridgeValues}>
+      <SheetContext.Provider value={sheetContext}>
+        <SafeAreaFrameContext.Provider value={frame}>
+          <SafeAreaInsetsContext.Provider value={insets}>
+            <BeeThemeScopeBridge snapshot={themeScope}>
+              <ToastRuntimeBridge snapshot={toastRuntime}>
+                <OverlayRuntimeBridge snapshot={overlayRuntime}>{children}</OverlayRuntimeBridge>
+              </ToastRuntimeBridge>
+            </BeeThemeScopeBridge>
+          </SafeAreaInsetsContext.Provider>
+        </SafeAreaFrameContext.Provider>
+      </SheetContext.Provider>
+    </SheetConsumerContextBridge>
   );
 }
 
@@ -442,6 +533,7 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
       accessibilityLabel,
       accessibilityLabelledBy,
       avoidKeyboard = true,
+      bridgeContexts = EMPTY_SHEET_BRIDGE_CONTEXTS,
       children,
       className,
       closeOnBackdropPress = true,
@@ -468,6 +560,8 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
     const insets = useSafeAreaInsets();
     const frame = useSafeAreaFrame();
     const overlayRuntime = useOverlayRuntimeSnapshot();
+    const toastRuntime = useToastRuntimeSnapshot();
+    const themeScope = useBeeThemeScopeSnapshot();
     const reducedMotion = useReducedMotionPreference();
     const reactID = React.useId().replace(/:/g, '');
     const defaultTitleNativeID = `beeui-sheet-title-${reactID}`;
@@ -602,7 +696,9 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
     );
 
     return (
-      <BottomSheetModal
+      <SheetBridgeContextCapture contexts={bridgeContexts}>
+        {(bridgeValues) => (
+          <BottomSheetModal
         // gorhom's content container defaults to `accessible` with its own
         // "Bottom Sheet" label, which makes iOS fold the whole subtree into
         // that one element: VoiceOver (and XCTest-driven smoke flows) can
@@ -649,10 +745,14 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
             `useSafeAreaInsets`, and nested BeeUI overlays inside the sheet
             resolve exactly what they would have resolved in place. */}
         <SheetPortalContextBridge
+          bridgeContexts={bridgeContexts}
+          bridgeValues={bridgeValues}
           frame={frame}
           insets={insets}
           overlayRuntime={overlayRuntime}
           sheetContext={sheetContext}
+          themeScope={themeScope}
+          toastRuntime={toastRuntime}
         >
           {/* A plain in-flow `flex: 1` View, the same box gorhom's own
               scrollables use, fills the content area gorhom sizes from the
@@ -688,10 +788,13 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
                   {children}
                 </View>
               </SheetContentAccessibilityContext.Provider>
+              <ToastRuntimeLocalViewport snapshot={toastRuntime} />
             </ModalOverlayHost>
           </View>
         </SheetPortalContextBridge>
-      </BottomSheetModal>
+          </BottomSheetModal>
+        )}
+      </SheetBridgeContextCapture>
     );
   },
 );

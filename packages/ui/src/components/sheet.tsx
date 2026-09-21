@@ -199,6 +199,11 @@ function resolveSheetPresentationHeight(
   return snapPoints[clampedIndex];
 }
 
+// React.Context is intentionally type-erased here: Sheet only captures/re-provides
+// the exact context object/value pair and never interprets the value.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type SheetBridgeContext = React.Context<any>;
+
 type SheetModalProps = Omit<
   ModalProps,
   'children' | 'onRequestClose' | 'presentationStyle' | 'transparent' | 'visible'
@@ -208,6 +213,12 @@ export type SheetContentProps = Omit<
   ViewProps,
   'accessibilityRole' | 'accessibilityViewIsModal' | 'role'
 > & {
+  /**
+   * Consumer-owned React contexts that need bridging only on native gorhom portals.
+   * Web and the fallback RN Modal preserve context already, so they accept this for
+   * signature parity and ignore it.
+   */
+  bridgeContexts?: readonly SheetBridgeContext[];
   /**
    * Declares the keyboard-interaction contract, but this cross-platform skeleton does not
    * itself read the flag: it relies on the platform's own default Modal keyboard behavior.
@@ -261,6 +272,7 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
       accessibilityLabel,
       accessibilityLabelledBy,
       avoidKeyboard: _avoidKeyboard,
+      bridgeContexts: _bridgeContexts,
       children,
       className,
       closeOnBackdropPress = true,
