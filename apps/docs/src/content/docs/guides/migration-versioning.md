@@ -3,7 +3,7 @@ title: Migration & versioning
 description: Understand BeeUI's public RC channel, version authority, and the migration rules that will govern later upgrades.
 ---
 
-BeeUI now has its first public npm release: **`0.86.2-rc.1`** under the opt-in **`next`** dist-tag. Stable **`latest`** currently resolves to the same RC too — npm's automatic first-publish default, not a deliberate promotion (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)) — and moves to a real stable version at the first `0.86.2` release.
+BeeUI now has its first public npm release: **`0.86.2-rc.1`** under the opt-in **`next`** dist-tag. The live registry currently resolves **`latest`** to the same RC too; BeeUI's bootstrap publish used `--tag next`, and the mechanism that also produced `latest` has not been established (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)). `latest` moves to a real stable version at the first `0.86.2` release.
 
 Because this is the first public package release, there is still no older public BeeUI version to migrate from. The migration work today is primarily for repository/internal consumers moving onto the public package boundary.
 
@@ -17,7 +17,7 @@ Canonical source: https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-pol
 | Channel | Exists today | What it means |
 | --- | --- | --- |
 | **Prerelease (`next`)** | Yes | Public opt-in release-candidate channel; currently `0.86.2-rc.1`. |
-| **Stable (`latest`)** | Not deliberately promoted yet | Currently resolves to `0.86.2-rc.1` too, by npm's first-publish default. Reserved to be deliberately moved to a fully verified stable version and never returns to a prerelease after that. |
+| **Stable (`latest`)** | Not deliberately promoted yet | Currently resolves to `0.86.2-rc.1` too as an observed registry state; the bootstrap used `--tag next` and the mechanism that also produced `latest` is not established. Reserved to be deliberately moved to a fully verified stable version and never returns to a prerelease after that. |
 | **Repository source** | Yes | Development/evaluation path for exact commits and unpublished work. |
 
 Install the current RC explicitly:

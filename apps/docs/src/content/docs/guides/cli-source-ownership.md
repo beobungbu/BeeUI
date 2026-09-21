@@ -88,6 +88,6 @@ That repository-local path is a maintainer/development convenience. External con
 
 ## Release channel
 
-`0.86.2-rc.1` is a prerelease. Stable `latest` currently resolves to the same RC too — npm's automatic first-publish default, not a deliberate promotion (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)) — so documentation and automation must keep using `@next` or the exact RC until the stable release flow completes and `latest` is deliberately moved.
+`0.86.2-rc.1` is a prerelease. The live registry currently resolves `latest` to the same RC too; BeeUI's bootstrap publish used `--tag next`, and the mechanism that also produced `latest` has not been established (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)). Documentation and automation must therefore keep using `@next` or the exact RC until the stable release flow completes and `latest` is deliberately moved.
 
 See the repository authority `docs/dist-tag-policy.md` for channel rules and `docs/registry-cli.md` for the full Registry/source-ownership contract.
