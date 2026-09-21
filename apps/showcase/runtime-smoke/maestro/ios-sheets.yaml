@@ -59,7 +59,7 @@ appId: com.beeui.showcase
             id: "runtime-sheet-content"
           timeout: 10000
 - waitForAnimationToEnd
-# The fixture snaps to 50%, so the upper quarter of the screen is backdrop.
+# The fixture snaps to 70%, so the upper 30% of the screen is backdrop; 25% is safely outside the Sheet.
 - tapOn:
     point: "50%, 25%"
 - extendedWaitUntil:
