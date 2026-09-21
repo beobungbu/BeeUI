@@ -3,6 +3,8 @@ import { spacing } from '@beemvp/beeui-tokens';
 import * as React from 'react';
 import {
   BottomSheetModal,
+  BottomSheetModalProvider,
+  useBottomSheetModalInternal,
   type BottomSheetBackdropProps,
   type BottomSheetHandleProps,
 } from '@gorhom/bottom-sheet';
@@ -15,6 +17,7 @@ import {
   type PressableProps,
   type ViewProps,
 } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { Extrapolation, interpolate, ReduceMotion, useAnimatedStyle } from 'react-native-reanimated';
 import {
   SafeAreaFrameContext,
@@ -65,14 +68,15 @@ import {
  * real native "portal to top + Android back interception" surface) standing
  * in for RN's `<Modal>`.
  *
- * **Required native root wiring** (unavoidable, upstream-mandated integration
- * cost of `@gorhom/bottom-sheet`'s modal API, not a BeeUI invention): any app
- * that renders `Sheet` must wrap its root in both `GestureHandlerRootView`
- * (from `react-native-gesture-handler`) and `BottomSheetModalProvider` (from
- * `@gorhom/bottom-sheet`) — see `apps/showcase/App.tsx` for the reference
- * wiring. Without it, `BottomSheetModal`'s portal has nowhere correct to
- * render above the rest of the app. This is intentionally **not** routed
- * through BeeUI's own `react-native-teleport` transport
+ * **Required native root wiring** is owned by BeeUI's public `SheetProvider`.
+ * Mount it below `BeeUIProvider`: on native it installs the required
+ * `GestureHandlerRootView` + `BottomSheetModalProvider`, so gorhom's portal host
+ * is constructed below BeeUI's runtime contexts instead of above them (#619).
+ * `SheetProvider` deliberately does not reuse an already-present outer gorhom
+ * provider: that topology is the context-loss bug this boundary fixes, so an outer
+ * provider is reported as a dev-time misconfiguration while BeeUI still mounts its
+ * own inner provider. This is intentionally **not** routed through BeeUI's own
+ * `react-native-teleport` transport
  * (`overlay-transport.native.tsx`): `BottomSheetModalProvider` owns its own
  * portal/stacking coordination (`push`/`switch`/`replace` between multiple
  * concurrently-mounted sheets) that BeeUI does not reimplement, matching
@@ -193,6 +197,47 @@ type SheetUncontrolledProps = SheetBaseProps & {
 
 /** Controlled/uncontrolled root contract, identical shape to `sheet.tsx`/`sheet.web.tsx`. */
 export type SheetProps = SheetControlledProps | SheetUncontrolledProps;
+
+export type SheetProviderProps = {
+  children?: React.ReactNode;
+};
+
+/**
+ * Native Sheet integration boundary (#619).
+ *
+ * This component intentionally mounts its own gorhom modal provider even when
+ * an outer one exists. Reusing an outer `BottomSheetModalProvider` would put
+ * gorhom's store-backed portal above BeeUI's runtime contexts and recreate the
+ * context/z-order bug this boundary exists to prevent.
+ */
+export function SheetProvider({ children }: SheetProviderProps) {
+  const outerModalProvider = useBottomSheetModalInternal(true);
+  const warnedOuterProviderRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (
+      typeof __DEV__ !== 'undefined' &&
+      __DEV__ &&
+      outerModalProvider &&
+      !warnedOuterProviderRef.current
+    ) {
+      warnedOuterProviderRef.current = true;
+      console.error(
+        'BeeUI SheetProvider detected an outer @gorhom/bottom-sheet BottomSheetModalProvider. ' +
+          'That boundary sits above BeeUI Sheet integration and creates a split modal-provider topology; ' +
+          'BeeUI will use its own inner provider for Sheet.',
+      );
+    }
+  }, [outerModalProvider]);
+
+  return (
+    <GestureHandlerRootView style={styles.providerRoot}>
+      <BottomSheetModalProvider>{children}</BottomSheetModalProvider>
+    </GestureHandlerRootView>
+  );
+}
+
+SheetProvider.displayName = 'SheetProvider';
 
 export function Sheet(props: SheetProps) {
   const { children, defaultOpen = false, onOpenChange, open } = props;
@@ -749,6 +794,7 @@ SheetContent.displayName = 'SheetContent';
 
 const styles = {
   contentFill: { flex: 1 },
+  providerRoot: { flex: 1 },
 } as const;
 
 export type SheetHandleProps = Omit<ViewProps, 'accessibilityRole' | 'role'>;

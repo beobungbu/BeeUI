@@ -137,6 +137,21 @@ type SheetUncontrolledProps = SheetBaseProps & {
 
 export type SheetProps = SheetControlledProps | SheetUncontrolledProps;
 
+export type SheetProviderProps = {
+  children?: React.ReactNode;
+};
+
+/**
+ * Cross-platform Sheet integration boundary. Native installs gorhom's required
+ * root providers; this implementation is intentionally a pass-through because
+ * it does not use the gorhom engine.
+ */
+export function SheetProvider({ children }: SheetProviderProps) {
+  return <>{children}</>;
+}
+
+SheetProvider.displayName = 'SheetProvider';
+
 export function Sheet(props: SheetProps) {
   const { children, defaultOpen = false, onOpenChange, open } = props;
   const hasOpenProp = open !== undefined;
