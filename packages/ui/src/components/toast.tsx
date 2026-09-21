@@ -315,7 +315,7 @@ export function ToastRuntimeProvider({
   placement = getDefaultToastPlacement(),
 }: ToastRuntimeProviderProps) {
   const [state, dispatch] = React.useReducer(toastReducer, EMPTY_TOAST_STATE);
-  const [localViewportCount, setLocalViewportCount] = React.useState(0);
+  const [localViewportIds, setLocalViewportIds] = React.useState<readonly string[]>([]);
   const runtimeId = React.useId().replace(/:/g, '');
   const nextIdRef = React.useRef(0);
 
@@ -333,15 +333,17 @@ export function ToastRuntimeProvider({
   }, [runtimeId]);
   const api = React.useMemo<ToastApi>(() => ({ show, dismiss, dismissAll }), [dismiss, dismissAll, show]);
 
-  const registerLocalViewport = React.useCallback(() => {
-    let active = true;
-    setLocalViewportCount((count) => count + 1);
+  const registerLocalViewport = React.useCallback((id: string) => {
+    let registered = true;
+    setLocalViewportIds((current) => [...current.filter((entry) => entry !== id), id]);
     return () => {
-      if (!active) return;
-      active = false;
-      setLocalViewportCount((count) => Math.max(0, count - 1));
+      if (!registered) return;
+      registered = false;
+      setLocalViewportIds((current) => current.filter((entry) => entry !== id));
     };
   }, []);
+
+  const topLocalViewportId = localViewportIds[localViewportIds.length - 1] ?? null;
 
   const renderViewport = React.useCallback(
     (testID: string) => (
@@ -356,14 +358,14 @@ export function ToastRuntimeProvider({
   );
 
   const snapshot = React.useMemo<ToastRuntimeSnapshot>(
-    () => ({ api, registerLocalViewport, renderViewport }),
-    [api, registerLocalViewport, renderViewport],
+    () => ({ api, registerLocalViewport, renderViewport, topLocalViewportId }),
+    [api, registerLocalViewport, renderViewport, topLocalViewportId],
   );
 
   return (
     <ToastRuntimeBoundary snapshot={snapshot}>
       {children}
-      {localViewportCount === 0 ? renderViewport('beeui-toast-viewport') : null}
+      {topLocalViewportId === null ? renderViewport('beeui-toast-viewport') : null}
     </ToastRuntimeBoundary>
   );
 }

@@ -4,8 +4,9 @@ export type ToastRuntimeSnapshot = {
   // toast module. ToastRuntimeProvider is the sole writer and useToast() casts the
   // value back to ToastApi at the public boundary.
   api: unknown;
-  registerLocalViewport: () => () => void;
+  registerLocalViewport: (id: string) => () => void;
   renderViewport: (testID: string) => React.ReactNode;
+  topLocalViewportId: string | null;
 };
 
 const ToastApiContext = React.createContext<unknown>(null);
@@ -44,8 +45,21 @@ export function ToastRuntimeBridge({
   return <ToastRuntimeBoundary snapshot={snapshot}>{children}</ToastRuntimeBoundary>;
 }
 
-export function ToastRuntimeLocalViewport({ snapshot }: { snapshot: ToastRuntimeSnapshot | null }) {
+export function ToastRuntimeLocalViewport({
+  active = true,
+  snapshot,
+}: {
+  active?: boolean;
+  snapshot: ToastRuntimeSnapshot | null;
+}) {
+  const viewportId = React.useId().replace(/:/g, '');
   const registerLocalViewport = snapshot?.registerLocalViewport;
-  React.useLayoutEffect(() => registerLocalViewport?.(), [registerLocalViewport]);
-  return snapshot ? <>{snapshot.renderViewport('beeui-toast-local-viewport')}</> : null;
+
+  React.useLayoutEffect(() => {
+    if (!active || !registerLocalViewport) return undefined;
+    return registerLocalViewport(viewportId);
+  }, [active, registerLocalViewport, viewportId]);
+
+  if (!active || !snapshot || snapshot.topLocalViewportId !== viewportId) return null;
+  return <>{snapshot.renderViewport('beeui-toast-local-viewport')}</>;
 }

@@ -734,7 +734,7 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
                   {children}
                 </View>
               </SheetContentAccessibilityContext.Provider>
-              <ToastRuntimeLocalViewport snapshot={toastRuntime} />
+              <ToastRuntimeLocalViewport active={open} snapshot={toastRuntime} />
             </ModalOverlayHost>
           </View>
         </SheetPortalContextBridge>

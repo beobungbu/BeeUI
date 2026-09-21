@@ -1,9 +1,20 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
 import { Platform, StyleSheet, Text as RNText, View } from 'react-native';
 import { SafeAreaInsetsContext, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../../../packages/ui/src/components/button';
 import { Input } from '../../../packages/ui/src/components/input';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '../../../packages/ui/src/components/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from '../../../packages/ui/src/components/select';
 import { useOverlayRuntimeSnapshot } from '../../../packages/ui/src/components/overlay-runtime';
 import { BeeUIProvider } from '../../../packages/ui/src/components/safe-area';
 import { BeeThemeScope } from '../../../packages/ui/src/components/theme-scope';
@@ -586,6 +597,105 @@ describe('BeeUI issue #584 Sheet presents on the native gorhom engine', () => {
     expect(
       screen.queryByTestId('beeui-toast-viewport', { includeHiddenElements: true }),
     ).toBeNull();
+  });
+
+  it('keeps the root toast viewport when a mounted Sheet is closed', () => {
+    render(
+      <BeeUIProvider>
+        <Sheet onOpenChange={() => {}} open={false}>
+          <SheetContent testID="closed-sheet-content">
+            <SheetTitle>Closed sheet</SheetTitle>
+          </SheetContent>
+        </Sheet>
+      </BeeUIProvider>,
+    );
+
+    expect(screen.getByTestId('beeui-toast-viewport')).toBeTruthy();
+    expect(
+      screen.queryByTestId('beeui-toast-local-viewport', { includeHiddenElements: true }),
+    ).toBeNull();
+  });
+
+  it('renders the shared toast store only in the topmost active Sheet viewport', async () => {
+    render(
+      <BeeUIProvider>
+        <Sheet onOpenChange={() => {}} open>
+          <SheetContent testID="first-sheet-content">
+            <SheetTitle>First</SheetTitle>
+          </SheetContent>
+        </Sheet>
+        <Sheet onOpenChange={() => {}} open>
+          <SheetContent testID="second-sheet-content">
+            <SheetTitle>Second</SheetTitle>
+          </SheetContent>
+        </Sheet>
+      </BeeUIProvider>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getAllByTestId('beeui-toast-local-viewport', { includeHiddenElements: true }),
+      ).toHaveLength(1);
+    });
+    expect(
+      screen.queryByTestId('beeui-toast-viewport', { includeHiddenElements: true }),
+    ).toBeNull();
+  });
+
+  it('routes Popover and Select opened inside a detached Sheet to its modal-local overlay host', async () => {
+    mockDetachChildren = true;
+    const node = {
+      focus: jest.fn(),
+      measureInWindow: (
+        callback: (x: number, y: number, width: number, height: number) => void,
+      ) => callback(80, 100, 120, 44),
+    };
+
+    render(
+      <>
+        <BeeUIProvider>
+          <Sheet onOpenChange={() => {}} open>
+            <SheetContent testID="overlay-sheet-content">
+              <SheetTitle>Overlay sheet</SheetTitle>
+              <Popover defaultOpen>
+                <PopoverTrigger testID="sheet-popover-trigger">Popover</PopoverTrigger>
+                <PopoverContent avoidSafeArea={false} testID="sheet-popover-content">
+                  <RNText>Popover inside sheet</RNText>
+                </PopoverContent>
+              </Popover>
+              <Select defaultOpen>
+                <SelectTrigger accessibilityLabel="Choose option" testID="sheet-select-trigger" />
+                <SelectContent avoidSafeArea={false} testID="sheet-select-content">
+                  <SelectItem value="a">A</SelectItem>
+                </SelectContent>
+              </Select>
+            </SheetContent>
+          </Sheet>
+        </BeeUIProvider>
+        <MockDetachedHost />
+      </>,
+      {
+        createNodeMock: (element) =>
+          element.props?.testID === 'sheet-popover-trigger' ||
+          element.props?.testID === 'sheet-select-trigger'
+            ? node
+            : null,
+      },
+    );
+
+    for (const testID of ['sheet-popover-content', 'sheet-select-content']) {
+      await waitFor(() => {
+        expect(screen.getByTestId(testID, { includeHiddenElements: true })).toBeTruthy();
+      });
+      const overlay = screen.getByTestId(testID, { includeHiddenElements: true });
+      let ancestor = overlay.parent;
+      let underDetachedHost = false;
+      while (ancestor) {
+        if (ancestor.props?.testID === 'mock-detached-host') underDetachedHost = true;
+        ancestor = ancestor.parent;
+      }
+      expect(underDetachedHost).toBe(true);
+    }
   });
 
   it('renders the content in an in-flow flex box directly under the modal, with the modal not claiming accessibility for it', () => {
