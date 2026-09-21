@@ -6,10 +6,8 @@ import { Button } from '../../../packages/ui/src/components/button';
 import { Input } from '../../../packages/ui/src/components/input';
 import { useOverlayRuntimeSnapshot } from '../../../packages/ui/src/components/overlay-runtime';
 import { BeeUIProvider } from '../../../packages/ui/src/components/safe-area';
-import {
-  BeeThemeScope,
-  useBeeThemeScopeSnapshot,
-} from '../../../packages/ui/src/components/theme-scope';
+import { BeeThemeScope } from '../../../packages/ui/src/components/theme-scope';
+import { useBeeThemeScopeSnapshot } from '../../../packages/ui/src/components/theme-scope-bridge';
 import { useToast } from '../../../packages/ui/src/components/toast';
 // Explicit `.native` suffix (mirrors `issue-173-date-picker-native.test.tsx`):
 // forces the native presentation regardless of Jest's default platform
