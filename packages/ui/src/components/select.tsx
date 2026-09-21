@@ -566,7 +566,7 @@ export const SelectContent = React.forwardRef<
       ) return;
       warnedLegacyWebScrollPropsRef.current = true;
       console.warn(
-        'BeeUI SelectContent: `scrollViewProps` on Web is deprecated because the Web list host is a plain View (#612). ' +
+        'BeeUI SelectContent: `scrollViewProps` on Web is deprecated because the Web list host is a plain View (issue 612). ' +
           'View-compatible props are still forwarded for migration; move them to `listProps`. ScrollView-only props have no Web effect.',
       );
     }, [scrollViewProps]);
