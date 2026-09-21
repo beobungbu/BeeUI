@@ -29,6 +29,7 @@ import {
   SheetClose,
   SheetContent,
   SheetDescription,
+  SheetProvider,
   SheetTitle,
   SheetTrigger,
 } from '../../../packages/ui/src/components/sheet.native';
@@ -79,6 +80,16 @@ jest.mock('@gorhom/bottom-sheet', () => {
   const ReactActual = require('react');
   const { View } = require('react-native');
 
+  const BottomSheetModalInternalContext = ReactActual.createContext(null);
+  const BottomSheetModalProvider = ({ children }: { children?: React.ReactNode }) =>
+    ReactActual.createElement(
+      BottomSheetModalInternalContext.Provider,
+      { value: { hostName: 'mock-bottom-sheet-host' } },
+      children,
+    );
+  const useBottomSheetModalInternal = (_unsafe?: boolean) =>
+    ReactActual.useContext(BottomSheetModalInternalContext);
+
   const BottomSheetModal = ReactActual.forwardRef(
     (
       props: {
@@ -125,7 +136,21 @@ jest.mock('@gorhom/bottom-sheet', () => {
   return {
     __esModule: true,
     BottomSheetModal,
+    BottomSheetModalProvider,
     BottomSheetView,
+    useBottomSheetModalInternal,
+  };
+});
+
+jest.mock('react-native-gesture-handler', () => {
+  const ReactActual = require('react');
+  const { View } = require('react-native');
+  return {
+    __esModule: true,
+    GestureHandlerRootView: ReactActual.forwardRef(
+      ({ children, ...props }: { children?: React.ReactNode }, ref: React.Ref<typeof View>) =>
+        ReactActual.createElement(View, { ref, ...props }, children),
+    ),
   };
 });
 
@@ -209,6 +234,51 @@ beforeEach(() => {
 
 afterEach(() => {
   Object.defineProperty(Platform, 'OS', { configurable: true, value: originalPlatformOS });
+});
+
+describe('BeeUI issue #619 SheetProvider native ownership contract', () => {
+  it('mounts a BeeUI-owned gorhom provider for descendants', () => {
+    const { useBottomSheetModalInternal } = require('@gorhom/bottom-sheet');
+
+    function ProviderProbe() {
+      const context = useBottomSheetModalInternal(true);
+      return <RNText testID="sheet-provider-probe">{context ? 'provider:yes' : 'provider:no'}</RNText>;
+    }
+
+    render(
+      <SheetProvider>
+        <ProviderProbe />
+      </SheetProvider>,
+    );
+
+    expect(screen.getByTestId('sheet-provider-probe').props.children).toBe('provider:yes');
+  });
+
+  it('reports an outer gorhom provider as a dev misconfiguration and still owns an inner provider', () => {
+    const { BottomSheetModalProvider, useBottomSheetModalInternal } = require('@gorhom/bottom-sheet');
+    const error = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    function ProviderProbe() {
+      const context = useBottomSheetModalInternal(true);
+      return <RNText testID="nested-sheet-provider-probe">{context ? 'provider:yes' : 'provider:no'}</RNText>;
+    }
+
+    render(
+      <BottomSheetModalProvider>
+        <SheetProvider>
+          <ProviderProbe />
+        </SheetProvider>
+      </BottomSheetModalProvider>,
+    );
+
+    expect(screen.getByTestId('nested-sheet-provider-probe').props.children).toBe('provider:yes');
+    expect(error).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'SheetProvider detected an outer @gorhom/bottom-sheet BottomSheetModalProvider',
+      ),
+    );
+    error.mockRestore();
+  });
 });
 
 describe('BeeUI issue #158 Sheet (native/@gorhom/bottom-sheet adapter) contract', () => {
