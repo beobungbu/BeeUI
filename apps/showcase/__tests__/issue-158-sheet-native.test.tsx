@@ -572,8 +572,10 @@ describe('BeeUI issue #584 Sheet presents on the native gorhom engine', () => {
     );
 
     fireEvent.press(screen.getByTestId('sheet-toast'));
-    expect(screen.getByText('Inside sheet toast')).toBeTruthy();
-    const localViewport = screen.getByTestId('beeui-toast-local-viewport');
+    expect(screen.getByText('Inside sheet toast', { includeHiddenElements: true })).toBeTruthy();
+    const localViewport = screen.getByTestId('beeui-toast-local-viewport', {
+      includeHiddenElements: true,
+    });
     let viewportAncestor = localViewport.parent;
     let viewportUnderDetachedHost = false;
     while (viewportAncestor) {
@@ -581,7 +583,9 @@ describe('BeeUI issue #584 Sheet presents on the native gorhom engine', () => {
       viewportAncestor = viewportAncestor.parent;
     }
     expect(viewportUnderDetachedHost).toBe(true);
-    expect(screen.queryByTestId('beeui-toast-viewport')).toBeNull();
+    expect(
+      screen.queryByTestId('beeui-toast-viewport', { includeHiddenElements: true }),
+    ).toBeNull();
   });
 
   it('renders the content in an in-flow flex box directly under the modal, with the modal not claiming accessibility for it', () => {

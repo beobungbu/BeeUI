@@ -82,7 +82,9 @@ describe('SelectContent scrollViewProps/listProps type split', () => {
         </SelectContent>
       </Select>,
     );
-    expect(screen.getByTestId('new-select-list')).toBeTruthy();
+    expect(
+      screen.getByTestId('new-select-list', { includeHiddenElements: true }),
+    ).toBeTruthy();
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('scrollViewProps'));
     warn.mockRestore();
   });
