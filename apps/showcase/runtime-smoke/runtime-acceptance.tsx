@@ -34,6 +34,13 @@ import {
   SafeArea,
   Screen,
   Section,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
   Separator,
   Sheet,
   SheetClose,
@@ -133,6 +140,7 @@ function ControlledPresentationDialog({
 
 function SheetRuntimeActions() {
   const toast = useToast();
+  const [selectValue, setSelectValue] = React.useState<string | undefined>();
 
   return (
     <VStack gap="sm">
@@ -171,6 +179,24 @@ function SheetRuntimeActions() {
           </PopoverClose>
         </PopoverContent>
       </Popover>
+
+      <Select onValueChange={setSelectValue} value={selectValue}>
+        <SelectTrigger testID="runtime-sheet-select-trigger">
+          <SelectValue placeholder="Open Sheet child Select" />
+        </SelectTrigger>
+        <SelectContent placement="top" testID="runtime-sheet-select-content">
+          <SelectGroup>
+            <SelectLabel>Sheet child Select</SelectLabel>
+            <SelectItem testID="runtime-sheet-select-item-alpha" value="alpha">
+              Alpha
+            </SelectItem>
+            <SelectItem testID="runtime-sheet-select-item-beta" value="beta">
+              Beta
+            </SelectItem>
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      <Text testID="runtime-sheet-select-selection">{`sheet select: ${selectValue ?? 'none'}`}</Text>
     </VStack>
   );
 }

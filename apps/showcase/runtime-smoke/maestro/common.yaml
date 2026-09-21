@@ -165,6 +165,20 @@ appId: com.beeui.showcase
 - assertVisible:
     id: "runtime-sheet-content"
 - tapOn:
+    id: "runtime-sheet-select-trigger"
+- extendedWaitUntil:
+    visible:
+      id: "runtime-sheet-select-content"
+    timeout: 15000
+- tapOn:
+    id: "runtime-sheet-select-item-alpha"
+- assertNotVisible:
+    id: "runtime-sheet-select-content"
+- assertVisible:
+    text: "sheet select: alpha"
+- assertVisible:
+    id: "runtime-sheet-content"
+- tapOn:
     id: "runtime-sheet-close"
 - extendedWaitUntil:
     notVisible:

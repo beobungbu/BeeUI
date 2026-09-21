@@ -138,6 +138,40 @@ test('remains operable when the document direction is RTL', async ({ page }) => 
   await expect(trigger).toBeFocused();
 });
 
+test('preserves Sheet provider context and nested Popover/Select parity on Web', async ({ page }) => {
+  test.setTimeout(90_000);
+  await openComponentGallery(page);
+
+  const sheet = page.getByTestId('sheet-context-content');
+  await page.getByTestId('sheet-context-trigger').click();
+  await expect(sheet).toBeVisible();
+
+  await page.getByTestId('sheet-context-toast-show').click();
+  await expect(page.getByText('Sheet parity toast visible')).toBeVisible();
+  await expect(sheet).toBeVisible();
+  await page.getByTestId('sheet-context-toast-dismiss').click();
+  await expect(page.getByText('Sheet parity toast visible')).toHaveCount(0);
+
+  await page.getByTestId('sheet-context-popover-trigger').click();
+  await expect(page.getByTestId('sheet-context-popover-content')).toBeVisible();
+  await expect(page.getByTestId('sheet-context-popover-copy')).toHaveText(
+    'Web nested overlay remains above its parent Sheet.',
+  );
+  await expect(sheet).toBeVisible();
+  await page.getByTestId('sheet-context-popover-close').click();
+  await expect(page.getByTestId('sheet-context-popover-content')).toHaveCount(0);
+
+  await page.getByTestId('sheet-context-select-trigger').click();
+  await expect(page.getByTestId('sheet-context-select-content')).toBeVisible();
+  await page.getByTestId('sheet-context-select-item-alpha').click();
+  await expect(page.getByTestId('sheet-context-select-content')).toHaveCount(0);
+  await expect(page.getByTestId('sheet-context-select-selection')).toHaveText('select: alpha');
+  await expect(sheet).toBeVisible();
+
+  await page.getByTestId('sheet-context-close').click();
+  await expect(sheet).toBeHidden();
+});
+
 test('closes under prefers-reduced-motion: reduce without breaking dismissal', async ({ page }) => {
   test.setTimeout(90_000);
   await page.emulateMedia({ reducedMotion: 'reduce' });

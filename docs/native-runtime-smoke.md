@@ -48,7 +48,9 @@ BeeUI-owned Sheet provider boundary at runtime, not only in Jest:
   asserts that the persistent toast is visible while the Sheet remains open;
 - the same component opens a child `Popover`, whose content must be visible
   above the Sheet while the parent remains open;
-- the child surface closes first, then the Sheet closes.
+- it then opens a child `Select`, selects an item, and proves the Select closes
+  while the parent Sheet remains open;
+- each child surface closes before the Sheet closes.
 
 This is the runtime evidence for the context/z-order regression class tracked
 by #619.
