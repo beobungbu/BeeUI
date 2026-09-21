@@ -14,7 +14,7 @@ const PUBLIC_ROOTS = [
 ];
 const NEGATED_COMMAND_CONTEXT = /\b(?:do not|don't|not available|unavailable|unpublished|not published|must not|never)\b/i;
 const FALSE_DIST_TAG_CAUSAL_CLAIMS = [
-  /npm(?:'s)? automatic first-publish default/iu,
+  /npm(?:'s)?(?:\s+automatic)?\s+first-publish default/iu,
 ];
 
 const REGISTRY_COMMANDS = [

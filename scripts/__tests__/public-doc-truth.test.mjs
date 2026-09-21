@@ -72,7 +72,7 @@ test('rejects unsupported automatic first-publish dist-tag claims', () => {
   const root = fixture({
     ...baseFiles({ published: true }),
     'apps/docs/src/content/docs/start.md':
-      "latest matches next because this is npm's automatic first-publish default.\n",
+      "latest matches next because this is npm's first-publish default.\n",
   });
   const violations = collectPublicTruthViolations(root);
   assert.ok(violations.some((v) => /unsupported npm dist-tag causal claim/.test(v)));
