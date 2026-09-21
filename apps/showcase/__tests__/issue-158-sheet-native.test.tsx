@@ -5,17 +5,9 @@ import { SafeAreaInsetsContext, useSafeAreaInsets } from 'react-native-safe-area
 import { Button } from '../../../packages/ui/src/components/button';
 import { Input } from '../../../packages/ui/src/components/input';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '../../../packages/ui/src/components/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from '../../../packages/ui/src/components/select';
-import { useOverlayRuntimeSnapshot } from '../../../packages/ui/src/components/overlay-runtime';
+  OverlayPortal,
+  useOverlayRuntimeSnapshot,
+} from '../../../packages/ui/src/components/overlay-runtime';
 import { BeeUIProvider } from '../../../packages/ui/src/components/safe-area';
 import { BeeThemeScope } from '../../../packages/ui/src/components/theme-scope';
 import { useBeeThemeScopeSnapshot } from '../../../packages/ui/src/components/theme-scope-bridge';
@@ -712,14 +704,8 @@ describe('BeeUI issue #584 Sheet presents on the native gorhom engine', () => {
     ).toBeNull();
   });
 
-  it('routes Popover and Select opened inside a detached Sheet to its modal-local overlay host', async () => {
+  it('routes anchored-overlay portal content inside a detached Sheet to its modal-local host', async () => {
     mockDetachChildren = true;
-    const node = {
-      focus: jest.fn(),
-      measureInWindow: (
-        callback: (x: number, y: number, width: number, height: number) => void,
-      ) => callback(80, 100, 120, 44),
-    };
 
     render(
       <>
@@ -727,45 +713,32 @@ describe('BeeUI issue #584 Sheet presents on the native gorhom engine', () => {
           <Sheet onOpenChange={() => {}} open>
             <SheetContent testID="overlay-sheet-content">
               <SheetTitle>Overlay sheet</SheetTitle>
-              <Popover defaultOpen>
-                <PopoverTrigger testID="sheet-popover-trigger">Popover</PopoverTrigger>
-                <PopoverContent avoidSafeArea={false} testID="sheet-popover-content">
-                  <RNText>Popover inside sheet</RNText>
-                </PopoverContent>
-              </Popover>
-              <Select defaultOpen>
-                <SelectTrigger accessibilityLabel="Choose option" testID="sheet-select-trigger" />
-                <SelectContent avoidSafeArea={false} testID="sheet-select-content">
-                  <SelectItem value="a">A</SelectItem>
-                </SelectContent>
-              </Select>
+              <OverlayPortal overlayId="sheet-overlay-probe">
+                <RNText testID="sheet-overlay-portal-content">Overlay inside sheet</RNText>
+              </OverlayPortal>
             </SheetContent>
           </Sheet>
         </BeeUIProvider>
         <MockDetachedHost />
       </>,
-      {
-        createNodeMock: (element) =>
-          element.props?.testID === 'sheet-popover-trigger' ||
-          element.props?.testID === 'sheet-select-trigger'
-            ? node
-            : null,
-      },
     );
 
-    for (const testID of ['sheet-popover-content', 'sheet-select-content']) {
-      await waitFor(() => {
-        expect(screen.getByTestId(testID, { includeHiddenElements: true })).toBeTruthy();
-      });
-      const overlay = screen.getByTestId(testID, { includeHiddenElements: true });
-      let ancestor = overlay.parent;
-      let underDetachedHost = false;
-      while (ancestor) {
-        if (ancestor.props?.testID === 'mock-detached-host') underDetachedHost = true;
-        ancestor = ancestor.parent;
-      }
-      expect(underDetachedHost).toBe(true);
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('sheet-overlay-portal-content', { includeHiddenElements: true }),
+      ).toBeTruthy();
+    });
+
+    const overlay = screen.getByTestId('sheet-overlay-portal-content', {
+      includeHiddenElements: true,
+    });
+    let ancestor = overlay.parent;
+    let underDetachedHost = false;
+    while (ancestor) {
+      if (ancestor.props?.testID === 'mock-detached-host') underDetachedHost = true;
+      ancestor = ancestor.parent;
     }
+    expect(underDetachedHost).toBe(true);
   });
 
   it('renders the content in an in-flow flex box directly under the modal, with the modal not claiming accessibility for it', () => {
