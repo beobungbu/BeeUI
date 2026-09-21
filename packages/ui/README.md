@@ -16,7 +16,7 @@ The live registry currently also resolves `latest` to this RC, but the bootstrap
 
 ## Usage
 
-The imports below describe the release-ready API and are exercised by repository/packed-consumer tests; they do not imply public npm availability.
+The imports below describe the public RC API and are exercised by repository, packed-consumer, and registry-consumer verification.
 
 ```tsx
 import { BeeUIProvider, Button, Card, Text } from '@beemvp/beeui-ui';

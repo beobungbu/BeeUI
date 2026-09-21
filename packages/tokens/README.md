@@ -14,7 +14,7 @@ The live registry currently also resolves `latest` to this RC, but the bootstrap
 
 ## Usage
 
-The following imports describe the release-ready module contract and work in repository/packed-consumer verification; they do not imply public npm availability.
+The following imports describe the public RC module contract and are exercised by repository, packed-consumer, and registry-consumer verification.
 
 ```ts
 import { spacing, resolveMotion, layer } from '@beemvp/beeui-tokens';
