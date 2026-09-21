@@ -56,13 +56,17 @@ import {
   RadioGroup,
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
   Separator,
   SettingsItem,
   Sheet,
+  SheetClose,
   SheetContent,
+  SheetDescription,
   SheetTitle,
   SheetTrigger,
   Skeleton,
@@ -91,6 +95,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   useBeeToken,
+  useToast,
 } from '@beemvp/beeui-ui';
 import { applyDensity, defaultDensityMode, densityModes, type DensityMode } from '@beemvp/beeui-tokens';
 import * as React from 'react';
@@ -143,6 +148,7 @@ type FixtureId =
   | 'tooltip'
   | 'table'
   | 'date'
+  | 'sheet-context-parity'
   | 'sheet-short-root'
   | 'keydown-bubble'
   | 'keyboard-roving-focus'
@@ -157,6 +163,7 @@ const fixtureIds: readonly FixtureId[] = [
   'tooltip',
   'table',
   'date',
+  'sheet-context-parity',
   'sheet-short-root',
   'keydown-bubble',
   'keyboard-roving-focus',
@@ -1447,6 +1454,83 @@ function TooltipFixture() {
 }
 
 /**
+ * BeeUI issue #619 — Web parity for the native Sheet context/z-order
+ * acceptance. This lives in the visual-regression app rather than Component
+ * Gallery so QA-only imports do not perturb the generated public component
+ * example inventory.
+ */
+function SheetContextParityFixture() {
+  const toast = useToast();
+  const [selectValue, setSelectValue] = React.useState<string | undefined>();
+
+  return (
+    <Box className="gap-4 p-6" testID="sheet-context-parity-fixture">
+      <Sheet>
+        <SheetTrigger testID="sheet-context-trigger" variant="outline">
+          Open Sheet context parity
+        </SheetTrigger>
+        <SheetContent testID="sheet-context-content">
+          <SheetTitle>Sheet context parity</SheetTitle>
+          <SheetDescription>
+            Toast and anchored overlays must remain usable while this Sheet is open.
+          </SheetDescription>
+
+          <Button
+            onPress={() =>
+              toast.show({
+                title: 'Sheet parity toast visible',
+                description: 'Provider context survives inside the Web Sheet.',
+                duration: 'persistent',
+              })
+            }
+            testID="sheet-context-toast-show"
+            variant="outline"
+          >
+            Show Sheet parity Toast
+          </Button>
+          <Button onPress={toast.dismissAll} testID="sheet-context-toast-dismiss" variant="ghost">
+            Dismiss Sheet parity Toast
+          </Button>
+
+          <Popover>
+            <PopoverTrigger testID="sheet-context-popover-trigger" variant="outline">
+              Open Sheet parity Popover
+            </PopoverTrigger>
+            <PopoverContent placement="top" testID="sheet-context-popover-content">
+              <PopoverTitle>Sheet parity Popover</PopoverTitle>
+              <PopoverDescription testID="sheet-context-popover-copy">
+                Web nested overlay remains above its parent Sheet.
+              </PopoverDescription>
+              <PopoverClose testID="sheet-context-popover-close">Close parity Popover</PopoverClose>
+            </PopoverContent>
+          </Popover>
+
+          <Select onValueChange={setSelectValue} value={selectValue}>
+            <SelectTrigger testID="sheet-context-select-trigger">
+              <SelectValue placeholder="Open Sheet parity Select" />
+            </SelectTrigger>
+            <SelectContent placement="top" testID="sheet-context-select-content">
+              <SelectGroup>
+                <SelectLabel>Sheet parity Select</SelectLabel>
+                <SelectItem testID="sheet-context-select-item-alpha" value="alpha">
+                  Alpha
+                </SelectItem>
+                <SelectItem value="beta">Beta</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <Text testID="sheet-context-select-selection">{`select: ${selectValue ?? 'none'}`}</Text>
+
+          <SheetClose testID="sheet-context-close" variant="outline">
+            Close parity Sheet
+          </SheetClose>
+        </SheetContent>
+      </Sheet>
+    </Box>
+  );
+}
+
+/**
  * BeeUI issue #548 — the app root here renders far shorter than the browser
  * viewport (one line of text and a trigger button, no `min-h-screen`), the
  * exact shape the issue's external consumer reported: a `Sheet` backdrop/panel
@@ -1682,6 +1766,8 @@ export default function App() {
         <TableProductionFixture density={densityMode} state={tableState} theme={theme} />
       ) : fixture === 'date' ? (
         <DateProductionFixture locale={dateLocale} />
+      ) : fixture === 'sheet-context-parity' ? (
+        <SheetContextParityFixture />
       ) : fixture === 'sheet-short-root' ? (
         <SheetShortRootFixture />
       ) : fixture === 'keydown-bubble' ? (

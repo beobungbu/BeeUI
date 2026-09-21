@@ -74,13 +74,6 @@ import {
   Screen,
   SearchInput,
   Section,
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
   SegmentedControl,
   SegmentedControlItem,
   Separator,
@@ -376,75 +369,6 @@ function ThemeScopeOverlays() {
 
       <ThemeScopeValue testID="theme-scope-sibling-value" />
     </VStack>
-  );
-}
-
-function SheetContextParityFixture() {
-  const toast = useToast();
-  const [selectValue, setSelectValue] = React.useState<string | undefined>();
-
-  return (
-    <Sheet>
-      <SheetTrigger testID="sheet-context-trigger" variant="outline">
-        Open Sheet context parity
-      </SheetTrigger>
-      <SheetContent testID="sheet-context-content">
-        <SheetTitle>Sheet context parity</SheetTitle>
-        <SheetDescription>
-          Toast and anchored overlays must remain usable while this Sheet is open.
-        </SheetDescription>
-
-        <Button
-          onPress={() =>
-            toast.show({
-              title: 'Sheet parity toast visible',
-              description: 'Provider context survives inside the Web Sheet.',
-              duration: 'persistent',
-            })
-          }
-          testID="sheet-context-toast-show"
-          variant="outline"
-        >
-          Show Sheet parity Toast
-        </Button>
-        <Button onPress={toast.dismissAll} testID="sheet-context-toast-dismiss" variant="ghost">
-          Dismiss Sheet parity Toast
-        </Button>
-
-        <Popover>
-          <PopoverTrigger testID="sheet-context-popover-trigger" variant="outline">
-            Open Sheet parity Popover
-          </PopoverTrigger>
-          <PopoverContent placement="top" testID="sheet-context-popover-content">
-            <PopoverTitle>Sheet parity Popover</PopoverTitle>
-            <PopoverDescription testID="sheet-context-popover-copy">
-              Web nested overlay remains above its parent Sheet.
-            </PopoverDescription>
-            <PopoverClose testID="sheet-context-popover-close">Close parity Popover</PopoverClose>
-          </PopoverContent>
-        </Popover>
-
-        <Select onValueChange={setSelectValue} value={selectValue}>
-          <SelectTrigger testID="sheet-context-select-trigger">
-            <SelectValue placeholder="Open Sheet parity Select" />
-          </SelectTrigger>
-          <SelectContent placement="top" testID="sheet-context-select-content">
-            <SelectGroup>
-              <SelectLabel>Sheet parity Select</SelectLabel>
-              <SelectItem testID="sheet-context-select-item-alpha" value="alpha">
-                Alpha
-              </SelectItem>
-              <SelectItem value="beta">Beta</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-        <Text testID="sheet-context-select-selection">{`select: ${selectValue ?? 'none'}`}</Text>
-
-        <SheetClose testID="sheet-context-close" variant="outline">
-          Close parity Sheet
-        </SheetClose>
-      </SheetContent>
-    </Sheet>
   );
 }
 
@@ -805,24 +729,21 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
                 description="Bottom-sheet surface (#159): BeeUI's own Web overlay/focus primitives — Escape, backdrop press, Tab focus-trap, and focus restoration — with no native Modal and no gorhom on Web (ADR-006)."
                 title="Sheet"
               >
-                <VStack gap="sm">
-                  <Sheet>
-                    <SheetTrigger testID="sheet-demo-trigger">Open Sheet</SheetTrigger>
-                    <SheetContent overlayTestID="sheet-demo-overlay" testID="sheet-demo-content">
-                      <SheetTitle>Filters</SheetTitle>
-                      <SheetDescription>Refine results by category and price.</SheetDescription>
-                      <Field label="Search">
-                        <Input accessibilityLabel="Sheet search" testID="sheet-demo-input" />
-                      </Field>
-                      <SheetFooter>
-                        <SheetClose testID="sheet-demo-close" variant="outline">
-                          Close
-                        </SheetClose>
-                      </SheetFooter>
-                    </SheetContent>
-                  </Sheet>
-                  <SheetContextParityFixture />
-                </VStack>
+                <Sheet>
+                  <SheetTrigger testID="sheet-demo-trigger">Open Sheet</SheetTrigger>
+                  <SheetContent overlayTestID="sheet-demo-overlay" testID="sheet-demo-content">
+                    <SheetTitle>Filters</SheetTitle>
+                    <SheetDescription>Refine results by category and price.</SheetDescription>
+                    <Field label="Search">
+                      <Input accessibilityLabel="Sheet search" testID="sheet-demo-input" />
+                    </Field>
+                    <SheetFooter>
+                      <SheetClose testID="sheet-demo-close" variant="outline">
+                        Close
+                      </SheetClose>
+                    </SheetFooter>
+                  </SheetContent>
+                </Sheet>
               </Section>
 
               <Separator />

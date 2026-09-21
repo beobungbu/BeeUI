@@ -140,7 +140,9 @@ test('remains operable when the document direction is RTL', async ({ page }) => 
 
 test('preserves Sheet provider context and nested Popover/Select parity on Web', async ({ page }) => {
   test.setTimeout(90_000);
-  await openComponentGallery(page);
+  await page.goto('http://127.0.0.1:4173/?fixture=sheet-context-parity', {
+    waitUntil: 'domcontentloaded',
+  });
 
   const sheet = page.getByTestId('sheet-context-content');
   await page.getByTestId('sheet-context-trigger').click();
