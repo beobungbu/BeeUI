@@ -90,6 +90,9 @@ STATUS: BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. T
 - `field-context`
 - `form-group-context`
 - `overlay-runtime`
+- `sheet-context-bridge`
+- `theme-scope-bridge`
+- `toast-runtime-bridge`
 - `use-direction`
 - `use-required-callback-warning`
 
