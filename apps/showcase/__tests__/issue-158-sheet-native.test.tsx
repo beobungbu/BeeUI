@@ -708,19 +708,21 @@ describe('BeeUI issue #584 Sheet presents on the native gorhom engine', () => {
     mockDetachChildren = true;
 
     render(
-      <>
-        <BeeUIProvider>
-          <Sheet onOpenChange={() => {}} open>
-            <SheetContent testID="overlay-sheet-content">
-              <SheetTitle>Overlay sheet</SheetTitle>
-              <OverlayPortal overlayId="sheet-overlay-probe">
-                <RNText testID="sheet-overlay-portal-content">Overlay inside sheet</RNText>
-              </OverlayPortal>
-            </SheetContent>
-          </Sheet>
-        </BeeUIProvider>
+      <BeeUIProvider>
+        <Sheet onOpenChange={() => {}} open>
+          <SheetContent testID="overlay-sheet-content">
+            <SheetTitle>Overlay sheet</SheetTitle>
+            <OverlayPortal overlayId="sheet-overlay-probe">
+              <RNText testID="sheet-overlay-portal-content">Overlay inside sheet</RNText>
+            </OverlayPortal>
+          </SheetContent>
+        </Sheet>
+        {/* #619 A: the real BeeUI-owned SheetProvider mounts gorhom's portal host
+            below BeeUIProvider. Keep the detached test host inside that same
+            runtime boundary so transport-private provider state (legacy store in
+            Jest, native-teleport provider on device) remains reachable. */}
         <MockDetachedHost />
-      </>,
+      </BeeUIProvider>,
     );
 
     await waitFor(() => {
