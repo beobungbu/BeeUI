@@ -133,7 +133,15 @@ describe('IconButton layout root', () => {
 
   it('preserves Pressable style callbacks when count is present', () => {
     const style = jest.fn(({ pressed }: { pressed: boolean }) => ({ opacity: pressed ? 0.5 : 1 }));
-    const screen = render(<IconButton accessibilityLabel="Notifications" count={3} style={style} testID="icon-button"><Text>Bell</Text></IconButton>);
-    expect(screen.getByTestId('icon-button').props.style).toBe(style);
+    render(
+      <IconButton accessibilityLabel="Notifications" count={3} style={style} testID="icon-button">
+        <Text>Bell</Text>
+      </IconButton>,
+    );
+
+    // RNTL exposes the host View after Pressable has resolved the style callback, so the host
+    // receives the returned style object rather than the original function reference. Prove the
+    // caller callback survived by asserting Pressable actually invoked it with its state.
+    expect(style).toHaveBeenCalledWith(expect.objectContaining({ pressed: false }));
   });
 });
