@@ -3,7 +3,7 @@ title: Expo
 description: Install the BeeUI release candidate in Expo SDK 57 and verify Android, iOS and Web through Metro.
 ---
 
-Use this path for an Expo SDK 57 application. BeeUI `0.86.2-rc.1` is public under the npm `next` dist-tag; `latest` currently resolves to the same RC by npm's first-publish default (not a stable promotion — see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)), so keep using `@next` in the commands below.
+Use this path for an Expo SDK 57 application. BeeUI `0.86.2-rc.1` is public under the npm `next` dist-tag. The live registry currently also resolves `latest` to the same RC; BeeUI's bootstrap publish used `--tag next`, and the mechanism that also produced `latest` has not been established (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)), so keep using `@next` in the commands below.
 
 **Prerequisites:** Node.js and npm/npx available locally, and the [tested version table](/docs/start/#prerequisites) if you already have an Expo project instead of creating a new one below.
 

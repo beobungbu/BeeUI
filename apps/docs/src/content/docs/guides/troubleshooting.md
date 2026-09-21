@@ -489,8 +489,9 @@ Related usage errors: `'add --all' does not accept explicit item names`,
 - **Likely cause:** a page showed a registry-install or public-CLI command for a BeeUI
   package with no `@next`/exact-version tag — must not be left bare/unqualified — or one
   that does not match the current dist-tag policy. BeeUI `0.86.2-rc.1` is
-  published under the opt-in `next` dist-tag; `latest` also currently resolves to the same
-  RC (npm's first-publish default, not a promotion — see `docs/dist-tag-policy.md`), but
+  published under the opt-in `next` dist-tag; the live registry also currently resolves
+  `latest` to the same RC. The bootstrap publish used `--tag next`, and the mechanism that
+  also produced `latest` has not been established (see `docs/dist-tag-policy.md`), but
   `scripts/check-public-doc-truth.mjs` still rejects a bare, unqualified install because that
   coincidence ends at the first stable `0.86.2` release, unless the same line explicitly
   negates the command (for example, "do not install unqualified").
