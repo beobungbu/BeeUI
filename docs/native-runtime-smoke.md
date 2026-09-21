@@ -38,6 +38,21 @@ The fixture covers:
 - child Popover/DropdownMenu inside each iOS presentation;
 - controlled sheet open state and `onRequestClose` counters for native swipe dismissal.
 
+### Sheet provider/context acceptance (#619)
+
+The shared `common.yaml` flow runs on both iOS and Android and proves the
+BeeUI-owned Sheet provider boundary at runtime, not only in Jest:
+
+- it opens the real gorhom-backed native `Sheet`;
+- a component rendered inside Sheet content calls `useToast()`, and the flow
+  asserts that the persistent toast is visible while the Sheet remains open;
+- the same component opens a child `Popover`, whose content must be visible
+  above the Sheet while the parent remains open;
+- the child surface closes first, then the Sheet closes.
+
+This is the runtime evidence for the context/z-order regression class tracked
+by #619.
+
 ### Isolated movement/scroll/keyboard stress (#126)
 
 `apps/showcase/runtime-smoke/runtime-stress-acceptance.tsx` is a separate QA-only surface reached through `showcase-open-runtime-stress`. It must stay isolated from `runtime-acceptance.tsx`: an earlier #126 revision added stress controls to the shared screen and shifted the existing Toast path enough to break the baseline runtime flow.
