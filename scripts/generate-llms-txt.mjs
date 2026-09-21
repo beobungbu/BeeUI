@@ -230,7 +230,7 @@ const UNPUBLISHED_NOTE =
 // Mirrors the wording `apps/docs/src/content/docs/start/index.md` already carries (WS-D1,
 // consumer-audit #543/#574) so the human site and the agent-facing llms.txt family state the
 // identical publication truth instead of drifting again the next time a dist-tag changes.
-function buildStatusNote(policy) {
+export function buildStatusNote(policy, policyHref = 'docs/dist-tag-policy.md') {
   if (!policy.published) return UNPUBLISHED_NOTE;
   const tag = policy.prereleaseDistTag ?? 'next';
   return (
@@ -242,7 +242,7 @@ function buildStatusNote(policy) {
     `once \`latest\` moves. \`npm install @beemvp/beeui-ui@${tag} @beemvp/beeui-core@${tag} @beemvp/beeui-tokens@${tag}\` and ` +
     `\`npx @beemvp/beeui-cli@${tag} --help\` are live, working registry commands today. The source-ownership CLI ` +
     '(`pnpm beeui add <component>`) remains available from a repository checkout. See ' +
-    '[docs/dist-tag-policy.md](docs/dist-tag-policy.md) for the full release/dist-tag mechanics.'
+    `[docs/dist-tag-policy.md](${policyHref}) for the full release/dist-tag mechanics.`
   );
 }
 

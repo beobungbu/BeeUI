@@ -6,7 +6,12 @@ import { fileURLToPath } from 'node:url';
 
 export const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-const PUBLIC_ROOTS = ['README.md', 'apps/demo/README.md', 'apps/docs/src/content/docs'];
+const PUBLIC_ROOTS = [
+  'README.md',
+  'apps/demo/README.md',
+  'apps/docs/src/content/docs',
+  'docs/component-reference.md',
+];
 const NEGATED_COMMAND_CONTEXT = /\b(?:do not|don't|not available|unavailable|unpublished|not published|must not|never)\b/i;
 
 const REGISTRY_COMMANDS = [

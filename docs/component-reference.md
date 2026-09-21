@@ -4,7 +4,7 @@
 
 > Per-component documentation contract for the 63 public `@beemvp/beeui-ui` components. Each entry documents the same required sections so a new public component cannot silently ship without docs. Derived from registry/registry.json, packages/ui/src/index.ts, and the @beemvp/beeui-showcase app; enforced by `pnpm docs:contract:check`. The behavior-contract link points at the authoritative [component catalog](components.md); this file is the coverage-enforced per-component index, not a second copy of it.
 
-STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm. The install / import lines below are release-ready-but-not-published targets; the working, in-repo path today is the source-ownership CLI (`pnpm beeui add <component>`).
+STATUS: BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. The live registry currently resolves both `next` and `latest` to the same RC. The bootstrap workflow published with `--tag next`; the mechanism that also produced `latest` has not been established, so this is recorded as observed registry state rather than an npm rule. `latest` moves to a real stable version at the first stable release. Every release-candidate install should still use `@next` or pin the exact version — do not recommend an unqualified, untagged install, since that stops matching the RC once `latest` moves. `npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next` and `npx @beemvp/beeui-cli@next --help` are live, working registry commands today. The source-ownership CLI (`pnpm beeui add <component>`) remains available from a repository checkout. See [docs/dist-tag-policy.md](dist-tag-policy.md) for the full release/dist-tag mechanics.
 
 The documentation contract, its required sections, and how it is enforced are defined in [component-documentation-contract.md](component-documentation-contract.md). For the token-efficient name→symbol→source map see [llms-components.txt](../llms-components.txt); for composed screens see the [pattern library](pattern-library.md).
 
@@ -609,7 +609,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`component-gallery/select-showcase.tsx`](../apps/showcase/component-gallery/select-showcase.tsx), [`runtime-smoke/dynamic-type-acceptance.tsx`](../apps/showcase/runtime-smoke/dynamic-type-acceptance.tsx), [`runtime-smoke/runtime-stress-acceptance.tsx`](../apps/showcase/runtime-smoke/runtime-stress-acceptance.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Executable examples:** [`component-gallery/select-showcase.tsx`](../apps/showcase/component-gallery/select-showcase.tsx), [`runtime-smoke/dynamic-type-acceptance.tsx`](../apps/showcase/runtime-smoke/dynamic-type-acceptance.tsx), [`runtime-smoke/runtime-acceptance.tsx`](../apps/showcase/runtime-smoke/runtime-acceptance.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Notes:** Rendering a `Select` inside a `Popover` is supported: the two share the same anchored-overlay runtime and dismiss/collision handling, so the listbox opens above the popover rather than being clipped or hidden behind it.
 
 ## `separator`
