@@ -379,7 +379,7 @@ function SheetBridgeContextValueCapture({
   context,
   contexts,
   index,
-  values,
+  values = [],
 }: SheetBridgeCaptureProps & { context: SheetBridgeContext; index: number }): React.ReactElement {
   const value = React.useContext(context);
   return (
