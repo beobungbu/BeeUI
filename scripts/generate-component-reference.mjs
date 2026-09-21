@@ -85,9 +85,11 @@ function providerLine(component) {
   }
   const peers = ['react', 'react-native', ...component.peerDependencies.filter((p) => p !== 'react' && p !== 'react-native')];
   const peerText = `Peer dependencies: ${peers.map((p) => `\`${p}\``).join(', ')}.`;
-  const providerText = component.providerRequired
-    ? ' Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime).'
-    : ' No provider required; `BeeUIProvider` is still the recommended application root.';
+  const providerText = component.name === 'sheet'
+    ? ' Requires [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) above `SheetProvider`; native `SheetProvider` owns gorhom\'s modal/gesture root so its portal stays below BeeUI runtime contexts.'
+    : component.providerRequired
+      ? ' Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime).'
+      : ' No provider required; `BeeUIProvider` is still the recommended application root.';
   const rd = component.registryDependencies.length
     ? ` Source-ownership pulls in registry dependencies: ${component.registryDependencies.map((d) => `\`${d}\``).join(', ')}.`
     : '';

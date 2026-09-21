@@ -22,7 +22,7 @@ BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. Stable `l
 ## Import
 
 ```tsx
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHandle, SheetTitle, SheetTrigger } from '@beemvp/beeui-ui';
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHandle, SheetProvider, SheetTitle, SheetTrigger } from '@beemvp/beeui-ui';
 ```
 
 There is no documented deep/private source import. For source ownership from a BeeUI checkout:
@@ -41,13 +41,14 @@ pnpm beeui add sheet
    `SheetDescription`
    `SheetFooter`
    `SheetHandle`
+   `SheetProvider`
    `SheetTitle`
    `SheetTrigger`
   - Also routed here, outside the Registry family:
     - `sheet`
   - Package export subpath: `@beemvp/beeui-ui/sheet`
 
-**Exported types:** `SheetCloseProps`, `SheetContentProps`, `SheetDescriptionProps`, `SheetFooterProps`, `SheetHandleProps`, `SheetProps`, `SheetSnapPoint`, `SheetTitleProps`, `SheetTriggerProps`
+**Exported types:** `SheetCloseProps`, `SheetContentProps`, `SheetDescriptionProps`, `SheetFooterProps`, `SheetHandleProps`, `SheetProps`, `SheetProviderProps`, `SheetSnapPoint`, `SheetTitleProps`, `SheetTriggerProps`
 
 The generated API inventory is mechanically joined to `packages/ui/src/index.ts`, Registry metadata, and the component reference contract. Each type's field table below is parsed directly from that source, not a second hand-maintained copy; for the fuller behavior narrative see the [canonical component behavior catalog](https://github.com/beobungbu/BeeUI/blob/main/docs/components.md).
 
@@ -154,6 +155,12 @@ one of the following mutually exclusive variants:
 | `onOpenChange` | `(open: boolean) => void` | — | Notified after the open state changes, and optional here because the uncontrolled variant updates its own state either way. |
 | `open` | `undefined` | — | Must be left undefined in the uncontrolled variant, because a defined `open` together with `onOpenChange` selects the controlled variant instead. |
 
+#### `SheetProviderProps`
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+
 #### `SheetTitleProps`
 
 This type adds no fields of its own. These are the props the implementation reads from the base type below; everything else is passed straight through.
@@ -193,7 +200,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 ## Provider and dependencies
 
-- `BeeUIProvider` is required above this family because it participates in shared overlay/toast runtime infrastructure.
+- `BeeUIProvider` must wrap `SheetProvider`. On native, `SheetProvider` owns gorhom's gesture/modal provider boundary so the store-backed portal is created below BeeUI runtime contexts; Web/fallback `SheetProvider` is a pass-through.
 - **Peer/native dependencies visible to this Registry item:** `@gorhom/bottom-sheet`, `react`, `react-native`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets`
 - **Registry dependency closure:** `button`, `core-cn`, `overlay-runtime`, `text`, `theme`
 - On Web this family renders from `sheet.web.tsx`, which does not import `@gorhom/bottom-sheet`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets`: those peers serve the native implementation.
@@ -225,8 +232,8 @@ Colors, spacing and typography come from semantic tokens rather than from values
 ## Executable examples
 
 - **Primary executable fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
+- **Additional fixture:** [`apps/showcase/app-providers.native.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/app-providers.native.tsx)
 - **Additional fixture:** [`apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx)
-- **Additional fixture:** [`apps/showcase/runtime-smoke/runtime-acceptance.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/runtime-smoke/runtime-acceptance.tsx)
 
 ### Addressable examples
 
@@ -313,7 +320,7 @@ Open the fixture itself for the full surrounding component. For a smaller app-sp
 - Requires `@gorhom/bottom-sheet`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets` to be installed by the consuming app. They are optional peers of `@beemvp/beeui-ui`, so nothing installs them for you, and a target that never renders this family does not need it.
 - On Web, `avoidKeyboard`, `enableSwipeToDismiss`, `modalProps` are accepted for API parity and read by nothing: setting them changes no behavior there.
 
-**Implementation note:** Native gesture engine uses @gorhom/bottom-sheet + reanimated/gesture-handler; platform-split module.
+**Implementation note:** Native apps mount `SheetProvider` below `BeeUIProvider`; it owns @gorhom/bottom-sheet + gesture-handler root wiring, while Web/fallback is pass-through. The family remains platform-split.
 
 ## Related
 

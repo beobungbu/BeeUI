@@ -4372,6 +4372,17 @@
       "ownerStatus": "published"
     },
     {
+      "id": "@beemvp/beeui-ui:type:SheetProviderProps",
+      "package": "@beemvp/beeui-ui",
+      "kind": "ui-type",
+      "name": "SheetProviderProps",
+      "family": "sheet",
+      "source": "packages/ui/src/components/sheet.tsx",
+      "classification": "consumer-type",
+      "primaryDocsOwner": "/docs/components/sheet/",
+      "ownerStatus": "published"
+    },
+    {
       "id": "@beemvp/beeui-ui:type:SheetSnapPoint",
       "package": "@beemvp/beeui-ui",
       "kind": "ui-type",
@@ -6235,6 +6246,17 @@
       "package": "@beemvp/beeui-ui",
       "kind": "ui-value",
       "name": "SheetHandle",
+      "family": "sheet",
+      "source": "packages/ui/src/components/sheet.tsx",
+      "classification": "consumer",
+      "primaryDocsOwner": "/docs/components/sheet/",
+      "ownerStatus": "published"
+    },
+    {
+      "id": "@beemvp/beeui-ui:value:SheetProvider",
+      "package": "@beemvp/beeui-ui",
+      "kind": "ui-value",
+      "name": "SheetProvider",
       "family": "sheet",
       "source": "packages/ui/src/components/sheet.tsx",
       "classification": "consumer",

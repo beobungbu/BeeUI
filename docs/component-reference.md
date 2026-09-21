@@ -629,16 +629,16 @@ The documentation contract, its required sections, and how it is enforced are de
 ## `sheet`
 
 - **Purpose:** Gesture-driven bottom sheet with detents on the shared overlay runtime.
-- **Import:** `import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHandle, SheetTitle, SheetTrigger } from '@beemvp/beeui-ui';`
-- **API:** `Sheet`, `SheetClose`, `SheetContent`, `SheetDescription`, `SheetFooter`, `SheetHandle`, `SheetTitle`, `SheetTrigger` — source [`packages/ui/src/components/sheet.tsx`](../packages/ui/src/components/sheet.tsx). Typed props: `SheetCloseProps`, `SheetContentProps`, `SheetDescriptionProps`, `SheetFooterProps`, `SheetHandleProps`, `SheetProps`, `SheetSnapPoint`, `SheetTitleProps`, `SheetTriggerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
+- **Import:** `import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHandle, SheetProvider, SheetTitle, SheetTrigger } from '@beemvp/beeui-ui';`
+- **API:** `Sheet`, `SheetClose`, `SheetContent`, `SheetDescription`, `SheetFooter`, `SheetHandle`, `SheetProvider`, `SheetTitle`, `SheetTrigger` — source [`packages/ui/src/components/sheet.tsx`](../packages/ui/src/components/sheet.tsx). Typed props: `SheetCloseProps`, `SheetContentProps`, `SheetDescriptionProps`, `SheetFooterProps`, `SheetHandleProps`, `SheetProps`, `SheetProviderProps`, `SheetSnapPoint`, `SheetTitleProps`, `SheetTriggerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add sheet` (copies the source file into your app; see [registry CLI](registry-cli.md)).
-- **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `@gorhom/bottom-sheet`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `button`, `core-cn`, `overlay-runtime`, `text`, `theme`.
+- **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `@gorhom/bottom-sheet`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets`. Requires [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) above `SheetProvider`; native `SheetProvider` owns gorhom's modal/gesture root so its portal stays below BeeUI runtime contexts. Source-ownership pulls in registry dependencies: `button`, `core-cn`, `overlay-runtime`, `text`, `theme`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md). Platform-split module (native/web files resolve at build time).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`runtime-smoke/l10n-stress-acceptance.tsx`](../apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx), [`runtime-smoke/runtime-acceptance.tsx`](../apps/showcase/runtime-smoke/runtime-acceptance.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Notes:** Native gesture engine uses @gorhom/bottom-sheet + reanimated/gesture-handler; platform-split module.
+- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`app-providers.native.tsx`](../apps/showcase/app-providers.native.tsx), [`runtime-smoke/l10n-stress-acceptance.tsx`](../apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Notes:** Native apps mount `SheetProvider` below `BeeUIProvider`; it owns @gorhom/bottom-sheet + gesture-handler root wiring, while Web/fallback is pass-through. The family remains platform-split.
 
 ## `skeleton`
 

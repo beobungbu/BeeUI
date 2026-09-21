@@ -226,7 +226,7 @@
     "sheet": {
       "purpose": "Gesture-driven bottom sheet with detents on the shared overlay runtime.",
       "behavior": "Controlled (`open`+`onOpenChange`) or uncontrolled (`defaultOpen`) gesture-driven bottom sheet on the shared overlay runtime; dismissal (backdrop press, swipe, Web Escape, Android hardware back) routes through the same `dismissOnRequestClose`/`onRequestClose` contract Dialog uses.",
-      "notes": "Native gesture engine uses @gorhom/bottom-sheet + reanimated/gesture-handler; platform-split module."
+      "notes": "Native apps mount `SheetProvider` below `BeeUIProvider`; it owns @gorhom/bottom-sheet + gesture-handler root wiring, while Web/fallback is pass-through. The family remains platform-split."
     },
     "skeleton": {
       "purpose": "Decorative static loading placeholder surface.",
