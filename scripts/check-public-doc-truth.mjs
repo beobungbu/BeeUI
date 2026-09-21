@@ -13,6 +13,9 @@ const PUBLIC_ROOTS = [
   'docs/component-reference.md',
 ];
 const NEGATED_COMMAND_CONTEXT = /\b(?:do not|don't|not available|unavailable|unpublished|not published|must not|never)\b/i;
+const FALSE_DIST_TAG_CAUSAL_CLAIMS = [
+  /npm(?:'s)? automatic first-publish default/iu,
+];
 
 const REGISTRY_COMMANDS = [
   { kind: 'package', pattern: /\bnpm\s+(?:install|i)\s+(@beemvp\/beeui-[a-z0-9-]+(?:@[^\s]+)?)/ig },
@@ -127,8 +130,17 @@ export function collectPublicTruthViolations(rootDir = ROOT_DIR) {
 
   for (const file of files) {
     const relative = path.relative(rootDir, file).replaceAll(path.sep, '/');
-    const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
+    const text = fs.readFileSync(file, 'utf8');
+    const lines = text.split(/\r?\n/);
     violations.push(...collectRegistryCommandViolations(relative, lines, policy));
+    for (const pattern of FALSE_DIST_TAG_CAUSAL_CLAIMS) {
+      const match = pattern.exec(text);
+      if (match) {
+        violations.push(
+          `${relative}: unsupported npm dist-tag causal claim ${JSON.stringify(match[0])}; record the observed registry state and the verified publish command instead.`,
+        );
+      }
+    }
   }
 
   const manifestPath = path.join(rootDir, 'package.json');
