@@ -2,7 +2,6 @@ import * as React from 'react';
 
 // Context is intentionally type-erased: the bridge preserves exact object/value identity
 // and never interprets consumer-owned values.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type SheetBridgeContext = React.Context<any>;
 
 export const EMPTY_SHEET_BRIDGE_CONTEXTS: readonly SheetBridgeContext[] = [];
