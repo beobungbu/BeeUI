@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, type ButtonProps } from './button';
 import { ModalOverlayHost, type ModalOverlayDismissScope } from './overlay-runtime';
 import { Text, type TextProps } from './text';
+import type { SheetBridgeContext } from './sheet-context-bridge';
 
 /**
  * BeeUI 1.0 Sheet public API/contract (#157, per accepted ADR-006
@@ -198,11 +199,6 @@ function resolveSheetPresentationHeight(
   const clampedIndex = Math.min(Math.max(initialSnapIndex, 0), snapPoints.length - 1);
   return snapPoints[clampedIndex];
 }
-
-// React.Context is intentionally type-erased here: Sheet only captures/re-provides
-// the exact context object/value pair and never interprets the value.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type SheetBridgeContext = React.Context<any>;
 
 type SheetModalProps = Omit<
   ModalProps,

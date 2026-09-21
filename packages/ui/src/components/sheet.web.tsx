@@ -20,6 +20,7 @@ import {
   useOverlayId,
 } from './overlay-runtime';
 import { Text, type TextProps } from './text';
+import type { SheetBridgeContext } from './sheet-context-bridge';
 
 /**
  * BeeUI 1.0 Sheet — Web implementation (#159, per accepted ADR-006
@@ -256,11 +257,6 @@ function resolveSheetPresentationHeight(
   const clampedIndex = Math.min(Math.max(initialSnapIndex, 0), snapPoints.length - 1);
   return snapPoints[clampedIndex];
 }
-
-// React.Context is intentionally type-erased here: Sheet only captures/re-provides
-// the exact context object/value pair and never interprets the value.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type SheetBridgeContext = React.Context<any>;
 
 export type SheetContentProps = Omit<
   ViewProps,

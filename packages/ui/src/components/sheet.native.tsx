@@ -27,7 +27,7 @@ import {
   BeeThemeScopeBridge,
   useBeeThemeScopeSnapshot,
   type BeeThemeScopeSnapshot,
-} from './theme-scope';
+} from './theme-scope-bridge';
 import {
   ModalOverlayHost,
   OverlayRuntimeBridge,
@@ -40,7 +40,13 @@ import {
   ToastRuntimeLocalViewport,
   useToastRuntimeSnapshot,
   type ToastRuntimeSnapshot,
-} from './toast';
+} from './toast-runtime-bridge';
+import {
+  EMPTY_SHEET_BRIDGE_CONTEXTS,
+  SheetBridgeContextCapture,
+  SheetConsumerContextBridge,
+  type SheetBridgeContext,
+} from './sheet-context-bridge';
 
 /**
  * BeeUI 1.0 Sheet — native implementation (#158, per accepted ADR-006
@@ -343,68 +349,6 @@ function SheetBackdrop({
       testID={stateRef.current?.overlayTestID}
     />
   );
-}
-
-// React.Context is intentionally type-erased here: Sheet only captures/re-provides
-// the exact context object/value pair and never interprets the value.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type SheetBridgeContext = React.Context<any>;
-
-const EMPTY_SHEET_BRIDGE_CONTEXTS: readonly SheetBridgeContext[] = [];
-
-type SheetBridgeCaptureProps = {
-  children: (values: readonly unknown[]) => React.ReactNode;
-  contexts: readonly SheetBridgeContext[];
-  index?: number;
-  values?: readonly unknown[];
-};
-
-function SheetBridgeContextCapture({
-  children,
-  contexts,
-  index = 0,
-  values = [],
-}: SheetBridgeCaptureProps): React.ReactElement {
-  const context = contexts[index];
-  if (!context) return <>{children(values)}</>;
-  return (
-    <SheetBridgeContextValueCapture context={context} contexts={contexts} index={index} values={values}>
-      {children}
-    </SheetBridgeContextValueCapture>
-  );
-}
-
-function SheetBridgeContextValueCapture({
-  children,
-  context,
-  contexts,
-  index,
-  values = [],
-}: SheetBridgeCaptureProps & { context: SheetBridgeContext; index: number }): React.ReactElement {
-  const value = React.useContext(context);
-  return (
-    <SheetBridgeContextCapture contexts={contexts} index={index + 1} values={[...values, value]}>
-      {children}
-    </SheetBridgeContextCapture>
-  );
-}
-
-function SheetConsumerContextBridge({
-  bridgeContexts,
-  bridgeValues,
-  children,
-}: {
-  bridgeContexts: readonly SheetBridgeContext[];
-  bridgeValues: readonly unknown[];
-  children?: React.ReactNode;
-}) {
-  let node = children;
-  for (let index = bridgeContexts.length - 1; index >= 0; index -= 1) {
-    const Context = bridgeContexts[index];
-    if (!Context) continue;
-    node = React.createElement(Context.Provider, { value: bridgeValues[index] }, node);
-  }
-  return <>{node}</>;
 }
 
 type SheetModalProps = Record<string, unknown>;

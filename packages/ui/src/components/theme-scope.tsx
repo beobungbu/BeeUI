@@ -9,29 +9,7 @@ import {
 } from '@beemvp/beeui-tokens';
 import * as React from 'react';
 import { ScopedTheme, type ThemeName } from 'uniwind';
-
-export type BeeThemeScopeSnapshot = ThemeName | null;
-const BeeThemeScopeContext = React.createContext<BeeThemeScopeSnapshot>(null);
-
-/** Internal portal bridge: mirrors the resolved ScopedTheme name; Uniwind remains authoritative. */
-export function useBeeThemeScopeSnapshot(): BeeThemeScopeSnapshot {
-  return React.useContext(BeeThemeScopeContext);
-}
-
-export function BeeThemeScopeBridge({
-  children,
-  snapshot,
-}: {
-  children?: React.ReactNode;
-  snapshot: BeeThemeScopeSnapshot;
-}) {
-  if (!snapshot) return <>{children}</>;
-  return (
-    <BeeThemeScopeContext.Provider value={snapshot}>
-      <ScopedTheme theme={snapshot}>{children}</ScopedTheme>
-    </BeeThemeScopeContext.Provider>
-  );
-}
+import { BeeThemeScopeMirrorProvider } from './theme-scope-bridge';
 
 /**
  * `BeeThemeScope` is a thin typed wrapper around Uniwind's own `ScopedTheme`
@@ -213,9 +191,9 @@ export function BeeThemeScope<Def extends ThemeRegistryDefinition = typeof beeRu
   // Showcase's `ThemeInspector` uses for `Uniwind.setTheme(...)`.
   const resolvedTheme = runtimeTheme as ThemeName;
   return (
-    <BeeThemeScopeContext.Provider value={resolvedTheme}>
+    <BeeThemeScopeMirrorProvider theme={resolvedTheme}>
       <ScopedTheme theme={resolvedTheme}>{props.children}</ScopedTheme>
-    </BeeThemeScopeContext.Provider>
+    </BeeThemeScopeMirrorProvider>
   );
 }
 
