@@ -139,12 +139,11 @@ function splitPaddingStyle(style: SafeAreaProps['style']): {
  * A caller's own `className`/`style` padding used to fight the library's own inset padding:
  * an inline style always beats a CSS class regardless of source order, so a naive merge silently
  * dropped the caller's padding (#598); stripping the conflicting edge instead silently dropped
- * the device inset on that edge (#617 regression). Both now compose instead of competing: when
- * the caller supplies padding (via `className` or `style`), it renders on an inner wrapper `View`
- * that fills the safe box, while the outer element keeps only the safe-area inset — a caller's
- * `pt-6` then sits *inside* the device's own top inset rather than replacing or fighting it. When
- * the caller supplies no padding, everything still renders on the single node it always has, with
- * no extra wrapper.
+ * the device inset on that edge (#617 regression). Both now compose instead of competing: only
+ * caller padding moves to an inner wrapper. Non-padding layout/style (flex sizing, background,
+ * margin, positioning, etc.) stays on the public outer SafeArea root, so a caller's `pt-6` sits
+ * inside the device inset without changing which node the parent lays out. When caller padding is
+ * absent, everything stays on the single node it always had.
  */
 export const SafeArea = React.forwardRef<
   React.ComponentRef<typeof NativeSafeAreaView>,
