@@ -487,38 +487,21 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
     // `onOpenChange`.
     const openRef = React.useRef(open);
     // Whether BeeUI has presented this modal and gorhom has not yet reported
-    // it dismissed. `dismiss()` is only ever sent for a sheet BeeUI presented:
-    // calling it on a never-presented `BottomSheetModal` (the mount-time
-    // `open={false}` case) runs gorhom's closed-state early exit, which
-    // unmounts a portal and sheet that were never mounted, and the next
-    // `present()` then mounts nothing — no error, no `onChange`, no sheet
-    // (#584, reproduced on iPhone 16 Pro / iOS 18.6 with gorhom 5.2.14).
+    // it dismissed. Never dismiss a never-presented modal (#584).
     const presentedRef = React.useRef(false);
-    // Monotonic counter bumped every time BeeUI calls gorhom's own `present()` — identifies
-    // which presentation is currently live. Each BeeUI-issued `dismiss()` call snapshots this
-    // value into `pendingDismissGenerationsRef` below, so `handleDismiss` can later tell a
-    // *stale* completion (a reopen already bumped the generation since that particular
-    // `dismiss()` went out) from the one presentation it is actually still relevant to.
-    const presentationGenerationRef = React.useRef(0);
-    // Every generation BeeUI has called gorhom's `dismiss()` for and not yet heard
-    // `onDismiss` back about — a `Set`, not one scalar, because a rapid close→reopen→
-    // close→reopen leaves *two* outstanding `dismiss()` calls in flight at once (#618 review
-    // #2: a single scalar here aliases the two, so whichever `onDismiss` arrived first wiped
-    // the record the second one needed and got treated as a live, current-generation
-    // completion instead of the stale leftover it actually was). An empty set means no
-    // BeeUI-issued `dismiss()` is outstanding — every gorhom-initiated close (swipe, backdrop,
-    // Android back) reaches `handleDismiss` this way and must always run in full.
-    const pendingDismissGenerationsRef = React.useRef<Set<number>>(new Set());
+    // gorhom exposes one shared, tokenless onDismiss callback. Serialize engine transitions so
+    // an old dismissal and a new presentation are never awaiting the same callback at once.
+    const dismissInFlightRef = React.useRef(false);
 
     React.useEffect(() => {
       openRef.current = open;
       if (open) {
-        presentedRef.current = true;
-        presentationGenerationRef.current += 1;
-        sheetRef.current?.present();
-      } else if (presentedRef.current) {
-        presentedRef.current = false;
-        pendingDismissGenerationsRef.current.add(presentationGenerationRef.current);
+        if (!presentedRef.current && !dismissInFlightRef.current) {
+          presentedRef.current = true;
+          sheetRef.current?.present();
+        }
+      } else if (presentedRef.current && !dismissInFlightRef.current) {
+        dismissInFlightRef.current = true;
         sheetRef.current?.dismiss();
       }
     }, [open]);
@@ -529,45 +512,24 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
     }, [dismissOnRequestClose, onRequestClose, setOpen]);
 
     const handleDismiss = React.useCallback(() => {
-      const pending = pendingDismissGenerationsRef.current;
-      if (pending.size > 0) {
-        const currentGeneration = presentationGenerationRef.current;
-        if (pending.has(currentGeneration)) {
-          // The one outstanding `dismiss()` call still relevant to the presentation that is
-          // (still) actually live — gorhom's completion for it, real regardless of whether
-          // other, older outstanding calls answer before or after this one.
-          pending.delete(currentGeneration);
-        } else {
-          // Stale: this answers one of BeeUI's own `dismiss()` calls for a presentation a
-          // later `present()` has already superseded (the reopen leg of a rapid
-          // close→reopen race) — the sheet is already back up, and neither `presentedRef`
-          // nor the caller's `open` state should be touched for a close that no longer
-          // reflects reality. Which specific outstanding generation this answers cannot be
-          // known (gorhom's callback carries no per-call token), but every entry still in
-          // `pending` here is, by construction, older than `currentGeneration` (each
-          // `dismiss()` requires `presentedRef` to have been true, which a `dismiss()` call
-          // itself immediately clears — so two can never be issued without an intervening,
-          // generation-bumping `present()` between them) — consuming the oldest one keeps
-          // the set from growing unbounded across repeated stale answers.
-          const oldest = Math.min(...pending);
-          pending.delete(oldest);
-          return;
-        }
-      }
-      // gorhom has unmounted the sheet, whatever closed it; there is nothing
-      // left for the `open={false}` effect to dismiss.
+      const completedBeeUIDismiss = dismissInFlightRef.current;
+      dismissInFlightRef.current = false;
       presentedRef.current = false;
+
+      if (completedBeeUIDismiss) {
+        if (openRef.current) {
+          presentedRef.current = true;
+          sheetRef.current?.present();
+        }
+        return;
+      }
+
       if (!openRef.current) return;
       onRequestClose?.();
       if (dismissOnRequestClose) {
         setOpen(false);
       } else {
-        // gorhom already animated closed and unmounted; the caller vetoed
-        // the close (`dismissOnRequestClose={false}`), so re-present to
-        // honor that policy. A native gesture/back completion cannot be
-        // "cancelled" mid-flight, so this re-opens rather than blocking it.
         presentedRef.current = true;
-        presentationGenerationRef.current += 1;
         sheetRef.current?.present();
       }
     }, [dismissOnRequestClose, onRequestClose, setOpen]);

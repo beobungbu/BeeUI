@@ -163,6 +163,27 @@ describe('ToolbarItem visible-mode contract', () => {
     expect(screen.UNSAFE_getByProps({ className: 'item-wrapper-mark' })).toBeTruthy();
   });
 
+  it("measures the same wrapper className that the visible item uses", () => {
+    renderToolbar(
+      <Toolbar overflowAccessibilityLabel="More actions" testID="toolbar">
+        <ToolbarItem className="px-3 item-wrapper-mark" label="Archive" onPress={() => {}}><IconButton accessibilityLabel="Archive">🗄</IconButton></ToolbarItem>
+      </Toolbar>,
+    );
+    expect(screen.getByTestId('toolbar-measure-0', { includeHiddenElements: true }).props.className).toContain('px-3');
+  });
+
+  it('mounts caller-owned item content only once while measuring and collapsing', () => {
+    const mounted = jest.fn();
+    function EffectfulAction() {
+      React.useEffect(() => { mounted(); }, []);
+      return <IconButton accessibilityLabel="Effectful">E</IconButton>;
+    }
+    renderToolbar(<Toolbar overflowAccessibilityLabel="More actions" testID="toolbar"><ToolbarItem label="Effectful" onPress={() => {}} priority={1}><EffectfulAction /></ToolbarItem></Toolbar>);
+    expect(mounted).toHaveBeenCalledTimes(1);
+    layoutToolbar('toolbar', 10, [40]);
+    expect(mounted).toHaveBeenCalledTimes(1);
+  });
+
   it('disables the overflow menu entry once the same item collapses', async () => {
     renderToolbar(
       <Toolbar overflowAccessibilityLabel="More actions" testID="toolbar">

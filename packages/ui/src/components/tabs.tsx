@@ -501,6 +501,10 @@ export const TabsTrigger = React.forwardRef<
       Platform.OS === 'web' && listLayout?.scrollable
         ? (value === rovingFocus?.currentValue ? 0 : -1)
         : undefined;
+    const rovingCloseTabIndex =
+      Platform.OS === 'web' && listLayout?.scrollable
+        ? (value === rovingFocus?.currentValue ? 0 : -1)
+        : undefined;
 
     if (!closable) {
       return (
@@ -580,6 +584,7 @@ export const TabsTrigger = React.forwardRef<
           className="items-center justify-center pe-3 ps-1 active:opacity-60 web:focus-visible:bee-focus-ring"
           disabled={isDisabled}
           onPress={handleClose}
+          tabIndex={rovingCloseTabIndex}
         >
           <Text tone="muted" variant="label">
             ×

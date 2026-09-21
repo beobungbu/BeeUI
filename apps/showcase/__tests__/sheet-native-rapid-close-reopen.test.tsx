@@ -80,12 +80,10 @@ function renderSheet(onOpenChange: (open: boolean) => void, open: boolean) {
 }
 
 describe('Sheet (native) rapid close→reopen race', () => {
-  it('ends presented and does not fire onOpenChange(false) when a stale dismiss arrives after a reopen', () => {
+  it('queues reopen until the in-flight dismiss completes', () => {
     const onOpenChange = jest.fn();
     const { rerender } = renderSheet(onOpenChange, true);
-    expect(mockPresent).toHaveBeenCalledTimes(1);
 
-    // Rapid close...
     rerender(
       <Sheet onOpenChange={onOpenChange} open={false}>
         <SheetContent testID="sheet-content">
@@ -94,9 +92,8 @@ describe('Sheet (native) rapid close→reopen race', () => {
       </Sheet>,
     );
     expect(mockDismiss).toHaveBeenCalledTimes(1);
-    const pendingOnDismiss = latestOnDismiss;
+    const pending = latestOnDismiss;
 
-    // ...then reopen before gorhom's dismiss animation for the close above ever completes.
     rerender(
       <Sheet onOpenChange={onOpenChange} open>
         <SheetContent testID="sheet-content">
@@ -104,30 +101,25 @@ describe('Sheet (native) rapid close→reopen race', () => {
         </SheetContent>
       </Sheet>,
     );
-    expect(mockPresent).toHaveBeenCalledTimes(2);
+    expect(mockPresent).toHaveBeenCalledTimes(1);
+
     onOpenChange.mockClear();
-
-    // The stale onDismiss for the superseded close finally arrives.
-    act(() => pendingOnDismiss?.());
-
+    act(() => pending?.());
     expect(onOpenChange).not.toHaveBeenCalled();
+    expect(mockPresent).toHaveBeenCalledTimes(2);
 
-    // The sheet must still behave as presented: a real gorhom-initiated dismiss fired *now*
-    // (the current, non-stale one) still closes it and notifies the caller.
     act(() => latestOnDismiss?.());
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it('still treats a non-racing dismiss as a real close (no regression on the common path)', () => {
+  it('still treats a non-racing gorhom dismiss as a real close', () => {
     const onOpenChange = jest.fn();
     renderSheet(onOpenChange, true);
-
     act(() => latestOnDismiss?.());
-
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it('still no-ops for our own effect-driven dismiss() when no reopen races it', () => {
+  it('no-ops for our own effect-driven dismiss when no reopen races it', () => {
     const onOpenChange = jest.fn();
     const { rerender } = renderSheet(onOpenChange, true);
 
@@ -138,11 +130,10 @@ describe('Sheet (native) rapid close→reopen race', () => {
         </SheetContent>
       </Sheet>,
     );
-    expect(mockDismiss).toHaveBeenCalledTimes(1);
-
     onOpenChange.mockClear();
     act(() => latestOnDismiss?.());
 
     expect(onOpenChange).not.toHaveBeenCalled();
+    expect(mockPresent).toHaveBeenCalledTimes(1);
   });
 });

@@ -234,10 +234,10 @@ function buildStatusNote(policy) {
   if (!policy.published) return UNPUBLISHED_NOTE;
   const tag = policy.prereleaseDistTag ?? 'next';
   return (
-    `STATUS: BeeUI \`${policy.currentVersion}\` is public on npm under the opt-in \`${tag}\` dist-tag. Because ` +
-    "this is each package's first-ever npm publish, stable `latest` currently resolves to the same RC too — " +
-    "npm's automatic first-publish default, not a deliberate stable promotion; `latest` moves to a real stable " +
-    `version at the first stable release. Every release-candidate install should still use \`@${tag}\` or pin ` +
+    `STATUS: BeeUI \`${policy.currentVersion}\` is public on npm under the opt-in \`${tag}\` dist-tag. The live ` +
+    "registry currently resolves both `next` and `latest` to the same RC. The bootstrap workflow published " +
+    "with `--tag next`; the mechanism that also produced `latest` has not been established, so this is " +
+    `recorded as observed registry state rather than an npm rule. \`latest\` moves to a real stable version at the first stable release. Every release-candidate install should still use \`@${tag}\` or pin ` +
     'the exact version — do not recommend an unqualified, untagged install, since that stops matching the RC ' +
     `once \`latest\` moves. \`npm install @beemvp/beeui-ui@${tag} @beemvp/beeui-core@${tag} @beemvp/beeui-tokens@${tag}\` and ` +
     `\`npx @beemvp/beeui-cli@${tag} --help\` are live, working registry commands today. The source-ownership CLI ` +
@@ -324,7 +324,7 @@ function buildFull(model) {
 
   const packagesHeading = policy.published ? `## Packages (public on npm under \`${tag}\`, one lockstep version)` : '## Packages (all unpublished / pre-1.0, one lockstep version)';
   const packagesNote = policy.published
-    ? `\`@beemvp/beeui-core\`, \`@beemvp/beeui-tokens\`, and \`@beemvp/beeui-ui\` share one lockstep version and are released together (ADR-011 D6). All three are public on npm at \`${policy.currentVersion}\` under the \`${tag}\` dist-tag (stable \`latest\` currently resolves to the same RC too, by npm's first-publish default — not a deliberate promotion; see docs/dist-tag-policy.md); \`exports\` maps ship dual ESM+CJS with \`.d.ts\`, a \`react-native\` condition for Metro, \`browser\`/\`default\` for Web, and \`@beemvp/beeui-tokens/theme.css\` for the Web theme.`
+    ? `\`@beemvp/beeui-core\`, \`@beemvp/beeui-tokens\`, and \`@beemvp/beeui-ui\` share one lockstep version and are released together (ADR-011 D6). All three are public on npm at \`${policy.currentVersion}\` under the \`${tag}\` dist-tag (stable \`latest\` currently resolves to the same RC too; the bootstrap used \`--tag next\` and the mechanism that also produced \`latest\` is not established — see docs/dist-tag-policy.md); \`exports\` maps ship dual ESM+CJS with \`.d.ts\`, a \`react-native\` condition for Metro, \`browser\`/\`default\` for Web, and \`@beemvp/beeui-tokens/theme.css\` for the Web theme.`
     : '`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` share one lockstep version and are released together (ADR-011 D6). Package manifests declare `publishConfig.access=public` + provenance but remain unpublished; `exports` maps ship dual ESM+CJS with `.d.ts`, a `react-native` condition for Metro, `browser`/`default` for Web, and `@beemvp/beeui-tokens/theme.css` for the Web theme.';
   const centralizedModel = policy.published
     ? `1. Centralized packages (public RC, opt in with \`@${tag}\`): \`npm i @beemvp/beeui-ui@${tag}\` pulls \`@beemvp/beeui-core\` + \`@beemvp/beeui-tokens\`; import components from \`@beemvp/beeui-ui\`; wire Web theme with \`@import '@beemvp/beeui-tokens/theme.css'\`. Pin \`@${policy.currentVersion}\` for an immutable version in CI.`

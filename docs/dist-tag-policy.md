@@ -8,7 +8,7 @@ BeeUI 1.0 is the product milestone name. The stable npm package line starts at *
 
 Verified against the live registry (`npm view <package> dist-tags`): `next` and `latest` both currently resolve to `0.86.2-rc.1` for all four packages (`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`, `@beemvp/beeui-cli`). This is not a release-process error. The bootstrap publish ran `npm publish --tag next --provenance` for every package (GitHub Actions run 34294238899, 2026-09-09, job `bootstrap-rc`, log line `npm notice Publishing to https://registry.npmjs.org/ with tag next and public access`), and a later registry observation shows both `next` and `latest` resolving to that first version. The mechanism that created `latest` has not been established (the workflow contains no deliberate `latest` mutation, and npm's documentation describes `--tag` as overriding `latest`); this document records the observation and does not rely on any registry rule. `latest` is only ever re-pointed by the deliberate stable publish/promotion described below. Every one of these four packages has exactly one published version today.
 
-This means a bare, unqualified `npm install @beemvp/beeui-ui` currently installs the same `0.86.2-rc.1` artifact as `npm install @beemvp/beeui-ui@next`. Documentation must keep recommending the explicit `@next` tag (or an exact pinned version) anyway, never a bare install — that recommendation is what stays correct across the transition described below, not what is true only today.
+This means a bare, unqualified `npm install @beemvp/beeui-ui` currently installs the same `0.86.2-rc.1` artifact as `npm install @beemvp/beeui-ui@next`. That is an observed registry state, not a claimed npm first-publish rule: the bootstrap log proves BeeUI published with `--tag next`, while the mechanism that also produced `latest` remains unestablished. Documentation must keep recommending the explicit `@next` tag (or an exact pinned version) anyway, never a bare install — that recommendation is what stays correct across the transition described below, not what is true only today.
 
 **What changes at the first stable `0.86.2` publish:** once the stable release group publishes, `latest` is deliberately moved to point at `0.86.2` (a real, owner-authorized dist-tag operation — see "Stable `0.86.2` publication" below), and it never points at a prerelease again. `next` keeps tracking whatever prerelease is newest (`0.86.2-rc.N`, then later release lines). From that point on, a bare `npm install @beemvp/beeui-ui` installs stable `latest`, and `@next` is required to opt into a prerelease — the behavior the pre-first-publish version of this document assumed applied from day one.
 
@@ -51,7 +51,7 @@ BeeUI uses exactly two persistent public dist-tags:
 | `latest` | default-install channel. Today it resolves to `0.86.2-rc.1` (observed; publish used `--tag next`, the mechanism that also set `latest` is not established — see above) — not because `latest` was deliberately promoted. Once the stable release group publishes, `latest` moves to the stable version and never points to a prerelease again. |
 | `next` | opt-in release-candidate/safety channel; currently points to `0.86.2-rc.1`, same target as `latest` today; keeps tracking future prereleases after the first stable publish. |
 
-`latest` is the intended long-term consumer commit point for stable releases. Default consumers must not see a *deliberately promoted* stable release until the full stable release group has been published and verified — the current first-publish default is a separate, incidental state, not an early promotion.
+`latest` is the intended long-term consumer commit point for stable releases. Default consumers must not see a *deliberately promoted* stable release until the full stable release group has been published and verified — the current observed RC-era `latest` value is a separate, incidental state with an unestablished mechanism, not an early promotion.
 
 ## First-ever package bootstrap — completed
 
@@ -82,7 +82,7 @@ Stable publication deliberately separates upload from the default-install `lates
 1. freeze exact stable `0.86.2` source on `main` and require all release gates to pass;
 2. publish/stage the full stable release group under the safe non-default channel according to the release workflow;
 3. verify all real registry packages and clean-consumer behavior;
-4. only after stable verification is green, move `latest` for the full release group in one coordinated owner-controlled operation — this is the first *deliberate* `latest` dist-tag operation for these packages; the RC-era `latest` value was npm's automatic first-publish default, never an explicit promotion;
+4. only after stable verification is green, move `latest` for the full release group in one coordinated owner-controlled operation — this is the first *deliberate* `latest` dist-tag operation for these packages; the RC-era `latest` value was observed after the bootstrap publish, its mechanism is not established, and it was never an explicit promotion;
 5. verify all `latest` tags resolve to the same stable version.
 
 ## Failure handling

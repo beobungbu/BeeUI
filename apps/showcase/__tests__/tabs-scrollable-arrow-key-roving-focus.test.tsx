@@ -131,6 +131,25 @@ describe('TabsList scrollable arrow-key roving focus (Web)', () => {
     expect(tabIndices(screen)).toEqual({ a: 0, b: -1, c: -1, d: -1 });
   });
 
+  it('keeps only the current closable tab\'s close action in Tab order', () => {
+    const screen = render(
+      <Tabs onValueChange={() => {}} value="a">
+        <TabsList scrollable testID="tabs-list">
+          <TabsTrigger closable closeAccessibilityLabel="Close A" testID="tab-a" value="a">A</TabsTrigger>
+          <TabsTrigger closable closeAccessibilityLabel="Close B" testID="tab-b" value="b">B</TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    );
+
+    expect(screen.getByLabelText('Close A').props.tabIndex).toBe(0);
+    expect(screen.getByLabelText('Close B').props.tabIndex).toBe(-1);
+
+    pressKey(screen, 'ArrowRight');
+
+    expect(screen.getByLabelText('Close A').props.tabIndex).toBe(-1);
+    expect(screen.getByLabelText('Close B').props.tabIndex).toBe(0);
+  });
+
   it('scrolls the newly-focused trigger into view', () => {
     const { ScrollView } = require('react-native');
     const scrollTo = jest.spyOn(ScrollView.prototype, 'scrollTo').mockImplementation(() => {});

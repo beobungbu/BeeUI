@@ -105,6 +105,18 @@ describe('Toolbar arrow-key roving focus (Web)', () => {
     expect(screen.getByLabelText('Export').props.tabIndex).toBe(-1);
   });
 
+  it('treats a child-only disabled control as disabled in the roving sequence', () => {
+    renderToolbar(
+      <Toolbar overflowAccessibilityLabel="More actions" testID="toolbar">
+        <ToolbarItem label="Disabled child"><IconButton accessibilityLabel="Disabled child" disabled>×</IconButton></ToolbarItem>
+        <ToolbarItem label="Real" onPress={() => {}}><IconButton accessibilityLabel="Real">✓</IconButton></ToolbarItem>
+      </Toolbar>,
+    );
+    layoutToolbar('toolbar', 300, [40, 40]);
+    expect(screen.getByLabelText('Disabled child').props.tabIndex).toBe(-1);
+    expect(screen.getByLabelText('Real').props.tabIndex).toBe(0);
+  });
+
   it('ArrowRight moves the roving-current slot forward, skipping a disabled item', () => {
     renderToolbar(<ExampleToolbar onPress={() => {}} />);
     layoutToolbar('toolbar', 300, [40, 40, 40]);

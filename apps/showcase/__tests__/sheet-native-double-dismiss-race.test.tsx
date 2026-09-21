@@ -81,62 +81,45 @@ function sheetElement(onOpenChange: (open: boolean) => void, open: boolean) {
   );
 }
 
-// Drives open → close → open → close → open, capturing the `onDismiss` callback pending
-// right after each of the two closes (both resolve to the same shared `handleDismiss`
-// closure at runtime — gorhom exposes exactly one `onDismiss` prop per sheet, never one per
-// `dismiss()` call — captured separately here only to mirror the two *conceptually*
-// outstanding completions the review scenario describes).
-function driveDoubleCloseReopenRace(onOpenChange: (open: boolean) => void) {
-  const { rerender } = render(sheetElement(onOpenChange, true));
-  expect(mockPresent).toHaveBeenCalledTimes(1);
-
-  rerender(sheetElement(onOpenChange, false));
-  expect(mockDismiss).toHaveBeenCalledTimes(1);
-  const firstPendingOnDismiss = latestOnDismiss;
-
-  rerender(sheetElement(onOpenChange, true));
-  expect(mockPresent).toHaveBeenCalledTimes(2);
-
-  rerender(sheetElement(onOpenChange, false));
-  expect(mockDismiss).toHaveBeenCalledTimes(2);
-  const secondPendingOnDismiss = latestOnDismiss;
-
-  rerender(sheetElement(onOpenChange, true));
-  expect(mockPresent).toHaveBeenCalledTimes(3);
-
-  onOpenChange.mockClear();
-  return { firstPendingOnDismiss, secondPendingOnDismiss };
-}
-
-describe('Sheet (native) double close→reopen dismiss race', () => {
-  it('ignores both stale onDismiss callbacks arriving in call order, and still ends presented', () => {
+describe('Sheet (native) repeated close/reopen serialization', () => {
+  it('coalesces repeated intent changes into one dismiss and one queued reopen', () => {
     const onOpenChange = jest.fn();
-    const { firstPendingOnDismiss, secondPendingOnDismiss } = driveDoubleCloseReopenRace(onOpenChange);
+    const { rerender } = render(sheetElement(onOpenChange, true));
 
-    act(() => firstPendingOnDismiss?.());
+    rerender(sheetElement(onOpenChange, false));
+    const pending = latestOnDismiss;
+
+    rerender(sheetElement(onOpenChange, true));
+    rerender(sheetElement(onOpenChange, false));
+    rerender(sheetElement(onOpenChange, true));
+
+    expect(mockDismiss).toHaveBeenCalledTimes(1);
+    expect(mockPresent).toHaveBeenCalledTimes(1);
+
+    onOpenChange.mockClear();
+    act(() => pending?.());
+
     expect(onOpenChange).not.toHaveBeenCalled();
+    expect(mockPresent).toHaveBeenCalledTimes(2);
 
-    act(() => secondPendingOnDismiss?.());
-    expect(onOpenChange).not.toHaveBeenCalled();
-
-    // The sheet is still genuinely presented, not stuck: a real gorhom-initiated dismiss
-    // fired now (the current, non-stale one) still closes it and notifies the caller.
     act(() => latestOnDismiss?.());
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it('ignores both stale onDismiss callbacks arriving in reverse order, and still ends presented', () => {
+  it('stays closed when latest intent is false at completion', () => {
     const onOpenChange = jest.fn();
-    const { firstPendingOnDismiss, secondPendingOnDismiss } = driveDoubleCloseReopenRace(onOpenChange);
+    const { rerender } = render(sheetElement(onOpenChange, true));
 
-    // The later close's completion arrives first — the literal "out of order" case.
-    act(() => secondPendingOnDismiss?.());
+    rerender(sheetElement(onOpenChange, false));
+    const pending = latestOnDismiss;
+    rerender(sheetElement(onOpenChange, true));
+    rerender(sheetElement(onOpenChange, false));
+
+    onOpenChange.mockClear();
+    act(() => pending?.());
+
     expect(onOpenChange).not.toHaveBeenCalled();
-
-    act(() => firstPendingOnDismiss?.());
-    expect(onOpenChange).not.toHaveBeenCalled();
-
-    act(() => latestOnDismiss?.());
-    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(mockPresent).toHaveBeenCalledTimes(1);
+    expect(mockDismiss).toHaveBeenCalledTimes(1);
   });
 });

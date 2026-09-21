@@ -96,8 +96,11 @@ export type ToolbarItemProps = {
  * row and the overflow menu; a `ToolbarItem` rendered outside a `Toolbar` renders nothing.
  */
 const isWeb = Platform.OS === 'web';
-// react-native-web supports `visibility` even though React Native's ViewStyle type omits it.
-const measurementLayerStyle = { visibility: 'hidden' } as unknown as ViewProps['style'];
+const collapsedItemMeasurementStyle = (
+  isWeb
+    ? { opacity: 0, position: 'absolute', visibility: 'hidden' }
+    : { opacity: 0, position: 'absolute' }
+) as unknown as ViewProps['style'];
 
 export function ToolbarItem(_props: ToolbarItemProps): React.ReactElement | null {
   return null;
@@ -106,6 +109,16 @@ export function ToolbarItem(_props: ToolbarItemProps): React.ReactElement | null
 ToolbarItem.displayName = 'ToolbarItem';
 
 type ResolvedToolbarItem = ToolbarItemProps & { index: number };
+
+function isToolbarItemDisabled(item: ResolvedToolbarItem): boolean {
+  if (item.disabled === true) return true;
+  const child = item.children;
+  return (
+    React.isValidElement<{ disabled?: boolean }>(child) &&
+    child.type !== React.Fragment &&
+    child.props.disabled === true
+  );
+}
 
 type ToolbarOverflowMenuProps = {
   accessibilityLabel?: string;
@@ -148,7 +161,7 @@ const ToolbarOverflowMenu = React.forwardRef<
       <DropdownMenuContent align="end" testID={testID ? `${testID}-overflow-content` : undefined}>
         {items.map((item) => (
           <DropdownMenuItem
-            disabled={item.disabled}
+            disabled={isToolbarItemDisabled(item)}
             key={item.index}
             onSelect={item.onPress}
             testID={testID ? `${testID}-overflow-item-${item.index}` : undefined}
@@ -301,7 +314,7 @@ export const Toolbar = React.forwardRef<React.ComponentRef<typeof View>, Toolbar
       const visibleEntries = visibleItems
         .filter((item) => focusableIds.has(`item-${item.index}`))
         .map((item) => ({
-          disabled: item.disabled === true,
+          disabled: isToolbarItemDisabled(item),
           id: `item-${item.index}`,
         }));
       return overflowItems.length > 0
@@ -488,40 +501,24 @@ export const Toolbar = React.forwardRef<React.ComponentRef<typeof View>, Toolbar
         style={[toolbarRowGapStyle, style]}
         testID={testID}
       >
-        {/*
-          Hidden measurement pass: renders every item at its natural (never-collapsed) width
-          so `itemWidths` reflects real content size regardless of which items the visible
-          row below currently shows. Positioned absolutely (out of normal flow, so it never
-          affects the visible row's layout or this container's own height) and never
-          toggles which items are present, so a previously-measured width is never zeroed
-          out the moment an item collapses — the bug a "just hide the collapsed item" naive
-          implementation would have.
-        */}
-        <View
-          accessibilityElementsHidden
-          aria-hidden
-          className="absolute inset-x-0 top-0 flex-row items-center opacity-0"
-          pointerEvents="none"
-          // Web: `visibility: hidden` keeps the layout box (so `onLayout` still measures)
-          // but makes every descendant unfocusable, which `aria-hidden` alone does not.
-          style={isWeb ? [toolbarRowGapStyle, measurementLayerStyle] : toolbarRowGapStyle}
-          testID={testID ? `${testID}-measure` : undefined}
-        >
-          {items.map((item) => (
+        {items.map((item) => {
+          const collapsed = collapsedIndices.has(item.index);
+          return (
             <View
               key={item.index}
+              accessibilityElementsHidden={collapsed || undefined}
+              aria-hidden={collapsed || undefined}
+              className={item.className}
+              importantForAccessibility={collapsed ? 'no-hide-descendants' : undefined}
               onLayout={(event) => registerItemWidth(item.index, event.nativeEvent.layout.width)}
+              pointerEvents={collapsed ? 'none' : undefined}
+              style={collapsed ? collapsedItemMeasurementStyle : undefined}
               testID={testID ? `${testID}-measure-${item.index}` : undefined}
             >
-              {item.children}
+              {collapsed ? item.children : withRovingFocus(item)}
             </View>
-          ))}
-        </View>
-        {visibleItems.map((item) => (
-          <View key={item.index} className={item.className}>
-            {withRovingFocus(item)}
-          </View>
-        ))}
+          );
+        })}
         {overflowItems.length > 0 ? (
           <ToolbarOverflowMenu
             ref={(node) =>

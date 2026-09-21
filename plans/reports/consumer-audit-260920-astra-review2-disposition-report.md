@@ -18,3 +18,17 @@ Review: plans/reports/from-astra-260920-1827-deep-review-report.md. Every findin
 Still open (owner / #619): real-device #584, Android sheet runtime smoke, native runtime lanes are label-gated (`ci:native`) on PRs, #619 architecture before stable.
 
 Observation for the docs process (from finding 8): freshness gates prove regeneration, not truth; a stale sentence in hand-authored content survives every regeneration. WS-Q's optional guard for contradicted "Limitations" claims was not built; it stays a candidate follow-up.
+
+
+## Independent re-audit follow-up — 2026-09-21
+
+A subsequent source-level audit reopened several items that had been marked fixed because final composed contracts still had gaps. This follow-up addresses them before merge:
+
+- **SafeArea:** only caller padding moves to the additive inner wrapper; non-padding layout/style stays on the public root.
+- **IconButton count:** Button remains the root with and without `count`; Pressable style callbacks are preserved.
+- **Toolbar:** effective disabled includes child-owned `disabled`; wrapper `className` participates in measurement; caller content mounts once rather than in hidden + visible copies.
+- **Sheet native:** generation guessing is replaced by serialized dismiss/present lifecycle, eliminating tokenless stale/live callback ambiguity.
+- **Tabs:** `scrollable + closable` composition now defines bounded close-button Tab order.
+- **npm dist-tag truth:** human/generated docs no longer claim an automatic npm first-publish rule; they record the verified `--tag next` publish plus the observed `latest` state and state that its mechanism is not established.
+
+Native TableRow embedded-control behavior remains documented rather than over-claimed, and #619 remains the separate native Sheet context/z-order stable-release gate.

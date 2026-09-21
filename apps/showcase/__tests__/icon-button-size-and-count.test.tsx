@@ -123,35 +123,17 @@ describe('IconButton layout root', () => {
     expect(tree.props.style).toEqual({ marginTop: 8 });
   });
 
-  it('forwards layout className/style to the badge wrapper as the outermost rendered node when count is present', () => {
-    const screen = render(
-      <IconButton
-        accessibilityLabel="Notifications"
-        className="flex-1 self-center"
-        count={3}
-        style={{ marginTop: 8 }}
-        testID="icon-button"
-      >
-        <Text>Bell</Text>
-      </IconButton>,
-    );
-
-    const tree = screen.toJSON() as {
-      type: string;
-      props: Record<string, unknown>;
-      children: Array<{ type: string; props: Record<string, unknown> }>;
-    };
-    // The badge wrapper — not the Button — is now the tree's own root node,
-    // and it carries the caller's layout className/style.
-    expect(tree.type).toBe('View');
-    expect(tree.props.testID).toBeUndefined();
-    expect(tree.props.className).toContain('flex-1');
-    expect(tree.props.className).toContain('self-center');
+  it('keeps the Button as the outermost layout root when count is present', () => {
+    const screen = render(<IconButton accessibilityLabel="Notifications" className="flex-1 self-center" count={3} style={{ marginTop: 8 }} testID="icon-button"><Text>Bell</Text></IconButton>);
+    const tree = screen.toJSON() as { type: string; props: Record<string, unknown> };
+    expect(tree.props.testID).toBe('icon-button');
+    expect(tree.props.className).toContain('relative');
     expect(tree.props.style).toEqual({ marginTop: 8 });
+  });
 
-    const button = screen.getByTestId('icon-button');
-    // The inner Button keeps its own visual sizing class regardless of the
-    // wrapper split.
-    expect(button.props.className).toContain('h-control-icon');
+  it('preserves Pressable style callbacks when count is present', () => {
+    const style = jest.fn(({ pressed }: { pressed: boolean }) => ({ opacity: pressed ? 0.5 : 1 }));
+    const screen = render(<IconButton accessibilityLabel="Notifications" count={3} style={style} testID="icon-button"><Text>Bell</Text></IconButton>);
+    expect(screen.getByTestId('icon-button').props.style).toBe(style);
   });
 });

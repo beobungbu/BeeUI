@@ -187,6 +187,21 @@ describe('BeeUI safe-area foundation', () => {
       expect(tree.children[0].props.className).toContain('md:pt-6');
     });
 
+    it('keeps non-padding className/style on the outer SafeArea root while moving only padding inward', () => {
+      const screen = render(
+        <SafeArea className="flex-1 bg-surface px-4" edges={['top']} style={{ flexGrow: 1, marginTop: 3, paddingTop: 24 }} testID="safe-area">
+          <Text testID="content">Safe content</Text>
+        </SafeArea>,
+      );
+      const tree = screen.toJSON() as { props: Record<string, unknown>; children: Array<{ props: Record<string, unknown> }> };
+      expect(tree.props.className).toContain('flex-1');
+      expect(tree.props.className).toContain('bg-surface');
+      expect(tree.props.className).not.toContain('px-4');
+      expect(StyleSheet.flatten(tree.props.style)).toEqual({ flexGrow: 1, marginTop: 3, paddingTop: 47 });
+      expect(tree.children[0].props.className).toContain('px-4');
+      expect(StyleSheet.flatten(tree.children[0].props.style)).toEqual({ paddingTop: 24 });
+    });
+
     it('renders an inner wrapper only when the caller actually supplies padding, keeping the no-padding case at a single node', () => {
       const withPadding = render(
         <SafeArea style={{ padding: 8 }} testID="padded">
