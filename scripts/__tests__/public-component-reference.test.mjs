@@ -1644,7 +1644,7 @@ test('a family with props that do nothing on Web says which ones', () => {
   const sheet = buildPublicComponentManifest(REPO_ROOT).find((c) => c.name === 'sheet');
   const page = renderPublicComponentPage(sheet);
 
-  assert.match(page, /`avoidKeyboard`, `enableSwipeToDismiss`, `modalProps` are accepted for API parity/u);
+  assert.match(page, /`avoidKeyboard`, `bridgeContexts`, `enableSwipeToDismiss`, `modalProps` are accepted for API parity/u);
 });
 
 // A derived limitation must never replace a curated one.
