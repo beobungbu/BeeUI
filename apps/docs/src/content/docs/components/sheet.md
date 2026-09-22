@@ -77,6 +77,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
+| `bridgeContexts` | `readonly SheetBridgeContext[]` | — | Consumer-owned React contexts that need bridging only on native gorhom portals. Web and the fallback RN Modal preserve context already, so they accept this for signature parity and ignore it. |
 | `avoidKeyboard` | `boolean` | `true` | Declares the keyboard-interaction contract, but this cross-platform skeleton does not itself read the flag: it relies on the platform's own default Modal keyboard behavior. Defaults to `true`. #158 (native) and #159 (Web) drive real, platform-appropriate keyboard avoidance from it — per ADR-006 native and Web keyboard interaction are not the same problem and are not expected to share one implementation (#157). |
 | `closeOnBackdropPress` | `boolean` | `true` | Backdrop dismissal policy. Defaults to `true`, matching `DialogContent`. |
 | `containerClassName` | `string` | — | Extra utility classes for the overlay's container element, merged after the component's own. |
@@ -97,6 +98,7 @@ Also carries every prop of `Omit<ViewProps, 'accessibilityRole' | 'accessibility
 **Platform differences (native vs. [Web](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/sheet.web.tsx)):**
 
 - `avoidKeyboard` is accepted on Web for API parity but has no effect there.
+- `bridgeContexts` is accepted on Web for API parity but has no effect there.
 - `enableSwipeToDismiss` is accepted on Web for API parity but has no effect there.
 - `modalProps` is accepted on Web for API parity but has no effect there.
 
@@ -202,7 +204,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 - `BeeUIProvider` must wrap `SheetProvider`. On native, `SheetProvider` owns gorhom's gesture/modal provider boundary so the store-backed portal is created below BeeUI runtime contexts; Web/fallback `SheetProvider` is a pass-through.
 - **Peer/native dependencies visible to this Registry item:** `@gorhom/bottom-sheet`, `react`, `react-native`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets`
-- **Registry dependency closure:** `button`, `core-cn`, `overlay-runtime`, `text`, `theme`
+- **Registry dependency closure:** `button`, `core-cn`, `overlay-runtime`, `sheet-context-bridge`, `text`, `theme`, `theme-scope-bridge`, `toast-runtime-bridge`
 - On Web this family renders from `sheet.web.tsx`, which does not import `@gorhom/bottom-sheet`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets`: those peers serve the native implementation.
 - Safe-area ownership remains explicit: shell surfaces touching system edges opt into `SafeArea`; components do not silently invent app-shell insets.
 - Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).
@@ -231,9 +233,10 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
-- **Additional fixture:** [`apps/showcase/app-providers.native.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/app-providers.native.tsx)
+- **Primary executable fixture:** [`apps/showcase/app-providers.native.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/app-providers.native.tsx)
+- **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
 - **Additional fixture:** [`apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx)
+- **Additional fixture:** [`apps/showcase/runtime-smoke/runtime-acceptance.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/runtime-smoke/runtime-acceptance.tsx)
 
 ### Addressable examples
 
@@ -267,6 +270,7 @@ device paths.
     - `SheetDescription`
     - `SheetFooter`
     - `SheetHandle`
+    - `SheetProvider`
     - `SheetTitle`
     - `SheetTrigger`
   - Exported type surface:
@@ -276,6 +280,7 @@ device paths.
     - `SheetFooterProps`
     - `SheetHandleProps`
     - `SheetProps`
+    - `SheetProviderProps`
     - `SheetSnapPoint`
     - `SheetTitleProps`
     - `SheetTriggerProps`
@@ -318,7 +323,7 @@ Open the fixture itself for the full surrounding component. For a smaller app-sp
 
 - Passing `open` without `onOpenChange` leaves the value read-only: the component renders what you passed and can never change it. It warns in development builds rather than failing silently in production.
 - Requires `@gorhom/bottom-sheet`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets` to be installed by the consuming app. They are optional peers of `@beemvp/beeui-ui`, so nothing installs them for you, and a target that never renders this family does not need it.
-- On Web, `avoidKeyboard`, `enableSwipeToDismiss`, `modalProps` are accepted for API parity and read by nothing: setting them changes no behavior there.
+- On Web, `avoidKeyboard`, `bridgeContexts`, `enableSwipeToDismiss`, `modalProps` are accepted for API parity and read by nothing: setting them changes no behavior there.
 
 **Implementation note:** Native apps mount `SheetProvider` below `BeeUIProvider`; it owns @gorhom/bottom-sheet + gesture-handler root wiring, while Web/fallback is pass-through. The family remains platform-split.
 

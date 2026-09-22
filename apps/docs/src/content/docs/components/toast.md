@@ -92,7 +92,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 - `BeeUIProvider` is required above this family because it participates in shared overlay/toast runtime infrastructure.
 - **Peer/native dependencies visible to this Registry item:** `react`, `react-native`, `react-native-safe-area-context`
-- **Registry dependency closure:** `text`, `theme`
+- **Registry dependency closure:** `text`, `theme`, `toast-runtime-bridge`
 - Safe-area ownership remains explicit: shell surfaces touching system edges opt into `SafeArea`; components do not silently invent app-shell insets.
 - Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).
 
