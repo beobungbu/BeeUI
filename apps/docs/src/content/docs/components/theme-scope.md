@@ -77,7 +77,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 - No additional provider is required by this family. `BeeUIProvider` remains the recommended application root.
 - **Peer/native dependencies visible to this Registry item:** `react`, `uniwind`
-- **Registry dependency closure:** `theme`
+- **Registry dependency closure:** `theme`, `theme-scope-bridge`
 - Safe-area ownership remains explicit: shell surfaces touching system edges opt into `SafeArea`; components do not silently invent app-shell insets.
 - Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).
 

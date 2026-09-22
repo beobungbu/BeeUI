@@ -73,7 +73,7 @@ Controlled (`value`/`onValueChange`) or uncontrolled (`defaultValue`) persistent
 | `outsidePressProps` | `Omit<PressableProps, 'children' \| 'onPress' \| 'style'>` | — | Forwarded to the outside-press dismiss layer, excluding `children`/`onPress`/`style`, which this component owns. |
 | `outsidePressTestID` | `string` | — | `testID` applied to the outside-press dismiss layer, for targeting it in tests. |
 | `placement` | `SelectPlacement` | `'bottom'` | Which side of the trigger the listbox opens on. Defaults to `'bottom'`. |
-| `scrollViewProps` | `Omit<ScrollViewProps, 'children'>` | — | Forwarded to the internal `ScrollView` that wraps the options on native, excluding `children`, which this component owns. No effect on Web, where the options render inside a plain overflow `View` instead (`#612` — RN's `ScrollView` on Web still negotiates the touch/pointer responder system, which can win a real mouse click ahead of a `SelectItem`'s own press once the list overflows) — use `listProps` for that host instead. |
+| `scrollViewProps` | `Omit<ScrollViewProps, 'children'>` | — | Forwarded to the internal `ScrollView` that wraps the options on native, excluding `children`, which this component owns. On Web the host is a plain overflow `View` (#612); for migration compatibility View-compatible fields are still forwarded there, with `listProps` winning conflicts. A dev warning asks Web consumers to migrate; ScrollView-only fields have no Web meaning. |
 | `shift` | `boolean` | `true` | Shifts the listbox along the trigger's edge to stay within the viewport instead of overflowing. Defaults to true. |
 | `sideOffset` | `number` | `6` | Pixels of gap between the anchor and the overlay, along the placement side. |
 
