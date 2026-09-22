@@ -1,0 +1,70 @@
+name: temp-regenerate-portal-pages-617-618
+
+on:
+  push:
+    branches:
+      - fix/portal-pages-freshness-617-618
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/portal-pages-freshness-617-618
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.13.1
+          cache: false
+
+      - name: Enable pinned pnpm
+        shell: bash
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare pnpm@10.15.0 --activate
+          test "$(node --version)" = "v24.13.1"
+          test "$(pnpm --version)" = "10.15.0"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Regenerate portal pages
+        run: pnpm docs:portal-pages:generate
+
+      - name: Verify exact generated diff
+        shell: bash
+        run: |
+          expected="$(mktemp)"
+          actual="$(mktemp)"
+          cat > "$expected" <<'EOF'
+          apps/docs/src/content/docs/components/select.md
+          apps/docs/src/content/docs/components/sheet.md
+          apps/docs/src/content/docs/components/tabs.md
+          apps/docs/src/content/docs/components/theme-scope.md
+          apps/docs/src/content/docs/components/toast.md
+          apps/docs/src/content/docs/components/toolbar.md
+          EOF
+          git diff --name-only | sort > "$actual"
+          sort -o "$expected" "$expected"
+          echo "Generated files:"
+          cat "$actual"
+          diff -u "$expected" "$actual"
+          pnpm docs:portal-pages:check
+
+      - name: Remove temporary workflow and commit generated pages
+        shell: bash
+        run: |
+          rm .github/workflows/temp-regenerate-portal-pages-617-618.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "docs: regenerate stale component portal pages"
+          git push origin HEAD:fix/portal-pages-freshness-617-618
