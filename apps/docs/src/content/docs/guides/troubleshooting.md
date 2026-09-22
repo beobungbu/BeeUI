@@ -25,7 +25,7 @@ which platform (Expo, bare React Native, Web) it happened on — this page is se
 literal text, not read top to bottom.
 
 :::caution[Distribution status]
-BeeUI `0.86.2-rc.1` **is publicly published on npm** under the opt-in `next` dist-tag; see
+BeeUI `0.86.2-rc.2` **is publicly published on npm** under the opt-in `next` dist-tag; see
 [Start](/docs/start/) for the install command. Some entries below still run from a BeeUI
 checkout or a packed tarball, because they diagnose the maintained example starters
 (`examples/*`), which deliberately consume packed tarballs rather than the npm package —
@@ -488,15 +488,16 @@ Related usage errors: `'add --all' does not accept explicit item names`,
 - **Applies to:** contributors editing documentation.
 - **Likely cause:** a page showed a registry-install or public-CLI command for a BeeUI
   package with no `@next`/exact-version tag — must not be left bare/unqualified — or one
-  that does not match the current dist-tag policy. BeeUI `0.86.2-rc.1` is
-  published under the opt-in `next` dist-tag; the live registry also currently resolves
-  `latest` to the same RC. The bootstrap publish used `--tag next`, and the mechanism that
+  that does not match the current dist-tag policy. BeeUI `0.86.2-rc.2` is
+  published under the opt-in `next` dist-tag; the live registry was last observed (at
+  `0.86.2-rc.1`) resolving `latest` to the RC as well; that observation is re-verified after
+  every publish and is not an npm rule. The bootstrap publish used `--tag next`, and the mechanism that
   also produced `latest` has not been established (see `docs/dist-tag-policy.md`), but
   `scripts/check-public-doc-truth.mjs` still rejects a bare, unqualified install because that
   coincidence ends at the first stable `0.86.2` release, unless the same line explicitly
   negates the command (for example, "do not install unqualified").
 - **Fix:** pin every registry-install/CLI example to `@next` or the exact
-  `0.86.2-rc.1`, matching [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
+  `0.86.2-rc.2`, matching [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
   For an example that intentionally documents a repository-local path instead (workspace
   commands, starter scripts, `pnpm beeui ...`), say so explicitly on the same line.
 - **Verify:** `node ./scripts/check-public-doc-truth.mjs` and

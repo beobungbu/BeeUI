@@ -3,7 +3,7 @@ title: Web
 description: Install the BeeUI release candidate in a Vite + React Native Web application and verify it with a production build.
 ---
 
-Use this path for a browser-first product built with Vite and React Native Web. BeeUI `0.86.2-rc.1` is public under the npm `next` dist-tag. The live registry currently also resolves `latest` to the same RC; BeeUI's bootstrap publish used `--tag next`, and the mechanism that also produced `latest` has not been established (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)), so keep using `@next` in the commands below.
+Use this path for a browser-first product built with Vite and React Native Web. BeeUI `0.86.2-rc.2` is public under the npm `next` dist-tag. The live registry was last observed (at `0.86.2-rc.1`) resolving `latest` to the RC as well; that observation is re-verified after every publish and is not an npm rule. BeeUI's bootstrap publish used `--tag next`, and the mechanism that also produced `latest` has not been established (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)), so keep using `@next` in the commands below.
 
 **Prerequisites:** Node.js and npm/npx available locally; see the [tested version table](/docs/start/#prerequisites) for the exact React/React DOM/`react-native-web` pins this path expects.
 
@@ -28,7 +28,7 @@ npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@n
 npm install -D vite-plugin-rnw@0.0.12 @tailwindcss/vite@4.3.3
 ```
 
-Pin `@0.86.2-rc.1` instead of `@next` when you need an immutable RC dependency. Check [Compatibility](/docs/compatibility/) before changing the pinned Web stack.
+Pin `@0.86.2-rc.2` instead of `@next` when you need an immutable RC dependency. Check [Compatibility](/docs/compatibility/) before changing the pinned Web stack.
 
 ## Styling entry
 

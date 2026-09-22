@@ -2,9 +2,9 @@
 
 > **Status:** public release-candidate compatibility evidence.
 > **Snapshot:** 2026-09-09.
-> **Packages under test:** `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`; candidate version `0.86.2-rc.1` today.
+> **Packages under test:** `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`; candidate version `0.86.2-rc.2` today.
 
-BeeUI `0.86.2-rc.1` is publicly published under the npm `next` dist-tag. This report records consumer compatibility evidence for the three library packages. `@beemvp/beeui-cli` is published in the same release group and is verified separately by the release/CLI smoke gates.
+BeeUI `0.86.2-rc.2` is the current release candidate published under the npm `next` dist-tag (`0.86.2-rc.1` was the first). This report records consumer compatibility evidence for the three library packages. `@beemvp/beeui-cli` is published in the same release group and is verified separately by the release/CLI smoke gates.
 
 This report does not widen any promise beyond `docs/compatibility-matrix.md` and the peer ranges declared by `packages/ui/package.json`.
 
@@ -64,7 +64,7 @@ Parsed by `scripts/check-distribution-policy.mjs`. Version pins must equal the c
 {
   "published": true,
   "packageSet": ["@beemvp/beeui-core", "@beemvp/beeui-tokens", "@beemvp/beeui-ui"],
-  "candidateVersion": "0.86.2-rc.1",
+  "candidateVersion": "0.86.2-rc.2",
   "cleanConsumerScripts": [
     "scripts/verify-bare-consumer.sh",
     "scripts/verify-web-consumer.sh",

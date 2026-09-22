@@ -10,7 +10,7 @@ committed" below).
 
 ## Packed-tarball consumption
 
-BeeUI `0.86.2-rc.1` is publicly published on npm under the `next` dist-tag
+BeeUI `0.86.2-rc.2` is publicly published on npm under the `next` dist-tag
 (see `../README.md`); a real bare React Native application should install it
 directly — see the [Bare React Native start guide](https://beeui.beemvp.com/docs/start/bare-react-native/).
 This starter deliberately keeps consuming BeeUI through packed tarballs

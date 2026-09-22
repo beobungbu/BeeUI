@@ -3,7 +3,7 @@
 // (examples/expo-package-consumer, examples/bare-rn-consumer,
 // examples/web-consumer, examples/source-ownership-starter).
 //
-// BeeUI `0.86.2-rc.1` is publicly published on npm under the `next` dist-tag
+// BeeUI `0.86.2-rc.2` is publicly published on npm under the `next` dist-tag
 // (see ../../README.md and docs/dist-tag-policy.md), but every starter here
 // still consumes real `pnpm pack` tarballs through the exact same package
 // boundary as scripts/verify-bare-consumer.sh and
