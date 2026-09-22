@@ -1,6 +1,6 @@
 import { cn } from '@beemvp/beeui-core';
 import * as React from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View, type ViewStyle } from 'react-native';
 import {
   SafeAreaListener,
   SafeAreaProvider as NativeSafeAreaProvider,
@@ -79,7 +79,7 @@ export type SafeAreaProps = React.ComponentProps<typeof NativeSafeAreaView> & {
 // safe-area edge.
 const PADDING_CLASS_PATTERN = /(?:^|:)(?:p|pt|pr|pb|pl|px|py)-/;
 
-const PADDING_STYLE_KEYS = [
+const PADDING_STYLE_KEYS = new Set([
   'padding',
   'paddingHorizontal',
   'paddingVertical',
@@ -89,22 +89,45 @@ const PADDING_STYLE_KEYS = [
   'paddingLeft',
   'paddingStart',
   'paddingEnd',
-] as const;
+  'paddingBlock',
+  'paddingBlockStart',
+  'paddingBlockEnd',
+  'paddingInline',
+  'paddingInlineStart',
+  'paddingInlineEnd',
+]);
 
-function classNameHasPadding(className: string | undefined): boolean {
-  if (!className) return false;
-  return className.split(/\s+/).some((token) => PADDING_CLASS_PATTERN.test(token));
+function splitPaddingClassName(className: string | undefined): {
+  outerClassName?: string;
+  paddingClassName?: string;
+} {
+  if (!className) return {};
+  const outer: string[] = [];
+  const padding: string[] = [];
+  className.split(/\s+/).filter(Boolean).forEach((token) => {
+    (PADDING_CLASS_PATTERN.test(token) ? padding : outer).push(token);
+  });
+  return {
+    outerClassName: outer.length ? outer.join(' ') : undefined,
+    paddingClassName: padding.length ? padding.join(' ') : undefined,
+  };
 }
 
-function styleHasPadding(style: SafeAreaProps['style']): boolean {
-  if (!style) return false;
-  const styles = Array.isArray(style) ? style : [style];
-  return styles.some(
-    (entry) =>
-      !!entry &&
-      typeof entry === 'object' &&
-      PADDING_STYLE_KEYS.some((key) => (entry as Record<string, unknown>)[key] !== undefined),
-  );
+function splitPaddingStyle(style: SafeAreaProps['style']): {
+  outerStyle?: ViewStyle;
+  paddingStyle?: ViewStyle;
+} {
+  const flattened = StyleSheet.flatten(style);
+  if (!flattened) return {};
+  const outer: Record<string, unknown> = {};
+  const padding: Record<string, unknown> = {};
+  Object.entries(flattened).forEach(([key, value]) => {
+    (PADDING_STYLE_KEYS.has(key) ? padding : outer)[key] = value;
+  });
+  return {
+    outerStyle: Object.keys(outer).length ? (outer as ViewStyle) : undefined,
+    paddingStyle: Object.keys(padding).length ? (padding as ViewStyle) : undefined,
+  };
 }
 
 /**
@@ -116,28 +139,28 @@ function styleHasPadding(style: SafeAreaProps['style']): boolean {
  * A caller's own `className`/`style` padding used to fight the library's own inset padding:
  * an inline style always beats a CSS class regardless of source order, so a naive merge silently
  * dropped the caller's padding (#598); stripping the conflicting edge instead silently dropped
- * the device inset on that edge (#617 regression). Both now compose instead of competing: when
- * the caller supplies padding (via `className` or `style`), it renders on an inner wrapper `View`
- * that fills the safe box, while the outer element keeps only the safe-area inset — a caller's
- * `pt-6` then sits *inside* the device's own top inset rather than replacing or fighting it. When
- * the caller supplies no padding, everything still renders on the single node it always has, with
- * no extra wrapper.
+ * the device inset on that edge (#617 regression). Both now compose instead of competing: only
+ * caller padding moves to an inner wrapper. Non-padding layout/style (flex sizing, background,
+ * margin, positioning, etc.) stays on the public outer SafeArea root, so a caller's `pt-6` sits
+ * inside the device inset without changing which node the parent lays out. When caller padding is
+ * absent, everything stays on the single node it always had.
  */
 export const SafeArea = React.forwardRef<
   React.ComponentRef<typeof NativeSafeAreaView>,
   SafeAreaProps
 >(({ className, style, ...props }, ref) => {
-  const hasCallerPadding = classNameHasPadding(className) || styleHasPadding(style);
+  const { outerClassName, paddingClassName } = splitPaddingClassName(className);
+  const { outerStyle, paddingStyle } = splitPaddingStyle(style);
+  const hasCallerPadding = paddingClassName !== undefined || paddingStyle !== undefined;
 
   if (!hasCallerPadding) {
-    return <StyledSafeAreaView ref={ref} className={cn(className)} style={style} {...props} />;
+    return <StyledSafeAreaView ref={ref} className={cn(outerClassName)} style={outerStyle} {...props} />;
   }
 
   const { children, ...outerProps } = props;
-
   return (
-    <StyledSafeAreaView ref={ref} {...outerProps}>
-      <View className={cn('flex-1', className)} style={style}>
+    <StyledSafeAreaView ref={ref} {...outerProps} className={cn(outerClassName)} style={outerStyle}>
+      <View className={cn('flex-1', paddingClassName)} style={paddingStyle}>
         {children}
       </View>
     </StyledSafeAreaView>

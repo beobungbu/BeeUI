@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, type ButtonProps } from './button';
 import { ModalOverlayHost, type ModalOverlayDismissScope } from './overlay-runtime';
 import { Text, type TextProps } from './text';
+import type { SheetBridgeContext } from './sheet-context-bridge';
 
 /**
  * BeeUI 1.0 Sheet public API/contract (#157, per accepted ADR-006
@@ -116,6 +117,21 @@ type SheetUncontrolledProps = SheetBaseProps & {
 /** Controlled/uncontrolled root contract, identical shape to `DialogProps`. */
 export type SheetProps = SheetControlledProps | SheetUncontrolledProps;
 
+export type SheetProviderProps = {
+  children?: React.ReactNode;
+};
+
+/**
+ * Cross-platform Sheet integration boundary. Native installs gorhom's required
+ * root providers; this implementation is intentionally a pass-through because
+ * it does not use the gorhom engine.
+ */
+export function SheetProvider({ children }: SheetProviderProps) {
+  return <>{children}</>;
+}
+
+SheetProvider.displayName = 'SheetProvider';
+
 export function Sheet(props: SheetProps) {
   const { children, defaultOpen = false, onOpenChange, open } = props;
   const hasOpenProp = open !== undefined;
@@ -209,6 +225,12 @@ export type SheetContentProps = Omit<
   'accessibilityRole' | 'accessibilityViewIsModal' | 'role'
 > & {
   /**
+   * Consumer-owned React contexts that need bridging only on native gorhom portals.
+   * Web and the fallback RN Modal preserve context already, so they accept this for
+   * signature parity and ignore it.
+   */
+  bridgeContexts?: readonly SheetBridgeContext[];
+  /**
    * Declares the keyboard-interaction contract, but this cross-platform skeleton does not
    * itself read the flag: it relies on the platform's own default Modal keyboard behavior.
    * Defaults to `true`. #158 (native) and #159 (Web) drive real, platform-appropriate
@@ -261,6 +283,7 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
       accessibilityLabel,
       accessibilityLabelledBy,
       avoidKeyboard: _avoidKeyboard,
+      bridgeContexts: _bridgeContexts,
       children,
       className,
       closeOnBackdropPress = true,

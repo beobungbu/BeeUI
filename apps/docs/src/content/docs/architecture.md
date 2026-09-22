@@ -7,6 +7,9 @@ BeeUI is a mobile-first React Native UI system that treats Expo, bare React Nati
 as real targets while keeping behavior APIs independent from an app router, backend or form
 framework.
 
+**Prerequisites:** none — read this for the architectural model before or instead of
+[Learn](/docs/learn/)'s per-concept detail.
+
 ## Stable layers
 
 - **Core** — engine-neutral utilities/contracts.

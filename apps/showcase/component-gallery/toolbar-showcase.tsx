@@ -16,17 +16,17 @@ function OrderToolbar() {
       <View style={{ width: NARROW_TOOLBAR_WIDTH }}>
         <Toolbar overflowAccessibilityLabel="More actions" testID="toolbar-showcase-toolbar">
           <ToolbarItem label="Search" onPress={() => setLastAction('search')}>
-            <IconButton accessibilityLabel="Search" onPress={() => setLastAction('search')} variant="ghost">
+            <IconButton accessibilityLabel="Search" variant="ghost">
               🔍
             </IconButton>
           </ToolbarItem>
           <ToolbarItem label="Filter" onPress={() => setLastAction('filter')} priority={2}>
-            <IconButton accessibilityLabel="Filter" onPress={() => setLastAction('filter')} variant="ghost">
+            <IconButton accessibilityLabel="Filter" variant="ghost">
               ▤
             </IconButton>
           </ToolbarItem>
           <ToolbarItem label="Export" onPress={() => setLastAction('export')} priority={1}>
-            <IconButton accessibilityLabel="Export" onPress={() => setLastAction('export')} variant="ghost">
+            <IconButton accessibilityLabel="Export" variant="ghost">
               ⇩
             </IconButton>
           </ToolbarItem>

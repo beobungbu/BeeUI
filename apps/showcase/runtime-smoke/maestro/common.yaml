@@ -114,10 +114,97 @@ appId: com.beeui.showcase
       - assertNotVisible:
           id: "runtime-dialog-content"
 
+# #619 — SheetProvider must preserve BeeUI runtime context and z-order through
+# gorhom's detached modal portal on both native platforms. The hook creating the
+# Toast executes inside Sheet content; the Popover must target the Sheet-local
+# overlay host rather than render below the modal.
+- scrollUntilVisible:
+    element:
+      id: "runtime-sheet-trigger"
+    direction: DOWN
+    visibilityPercentage: 100
+    centerElement: true
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-sheet-trigger"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-sheet-content"
+          timeout: 15000
 - tapOn:
-    id: "runtime-alert-trigger"
+    id: "runtime-sheet-toast-show"
+- extendedWaitUntil:
+    visible:
+      text: "Sheet-local runtime toast"
+    timeout: 10000
 - assertVisible:
-    id: "runtime-alert-content"
+    id: "runtime-sheet-content"
+- tapOn:
+    id: "runtime-sheet-toast-dismiss"
+- extendedWaitUntil:
+    notVisible:
+      text: "Sheet-local runtime toast"
+    timeout: 10000
+- tapOn:
+    id: "runtime-sheet-popover-trigger"
+- extendedWaitUntil:
+    visible:
+      id: "runtime-sheet-popover-content"
+    timeout: 15000
+- assertVisible:
+    text: "Anchored content remains above the native Sheet."
+- assertVisible:
+    id: "runtime-sheet-content"
+- tapOn:
+    id: "runtime-sheet-popover-close"
+- assertNotVisible:
+    id: "runtime-sheet-popover-content"
+- assertVisible:
+    id: "runtime-sheet-content"
+- tapOn:
+    id: "runtime-sheet-select-trigger"
+- extendedWaitUntil:
+    visible:
+      id: "runtime-sheet-select-content"
+    timeout: 15000
+- tapOn:
+    id: "runtime-sheet-select-item-alpha"
+- assertNotVisible:
+    id: "runtime-sheet-select-content"
+- assertVisible:
+    text: "sheet select: alpha"
+- assertVisible:
+    id: "runtime-sheet-content"
+- tapOn:
+    id: "runtime-sheet-close"
+- extendedWaitUntil:
+    notVisible:
+      id: "runtime-sheet-content"
+    timeout: 10000
+
+# The AlertDialog trigger sits below Dialog/Sheet inside the same tall card. On
+# iOS Maestro can resolve and "tap" its accessibility node while the native hit
+# target is still below the viewport, producing a delivered tap with no dialog.
+# Center the real trigger and prove the destination inside the same retry.
+- scrollUntilVisible:
+    element:
+      id: "runtime-alert-trigger"
+    direction: DOWN
+    visibilityPercentage: 100
+    centerElement: true
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-alert-trigger"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-alert-content"
+          timeout: 15000
 - waitForAnimationToEnd
 - retry:
     maxRetries: 3

@@ -70,20 +70,17 @@ function pressEnterOnMenu(testID: string) {
 function ExampleToolbar({ onPress }: { onPress: (label: string) => void }) {
   return (
     <Toolbar overflowAccessibilityLabel="More actions" testID="toolbar">
+      {/* `onPress` lives only on `ToolbarItem` — `Toolbar` clones it onto the child in the
+          row (see `toolbar-item-visible-mode-contract.test.tsx`) and passes it to the
+          overflow menu row when collapsed, so declaring it twice here would be redundant. */}
       <ToolbarItem label="Search" onPress={() => onPress('Search')}>
-        <IconButton accessibilityLabel="Search" onPress={() => onPress('Search')}>
-          🔍
-        </IconButton>
+        <IconButton accessibilityLabel="Search">🔍</IconButton>
       </ToolbarItem>
       <ToolbarItem label="Filter" onPress={() => onPress('Filter')} priority={2}>
-        <IconButton accessibilityLabel="Filter" onPress={() => onPress('Filter')}>
-          ⚙
-        </IconButton>
+        <IconButton accessibilityLabel="Filter">⚙</IconButton>
       </ToolbarItem>
       <ToolbarItem label="Export" onPress={() => onPress('Export')} priority={1}>
-        <IconButton accessibilityLabel="Export" onPress={() => onPress('Export')}>
-          ⬇
-        </IconButton>
+        <IconButton accessibilityLabel="Export">⬇</IconButton>
       </ToolbarItem>
     </Toolbar>
   );
@@ -102,9 +99,12 @@ describe('Toolbar overflow collapse', () => {
 
   it('collapses the lowest-priority item first into the overflow menu when the row is narrow', () => {
     renderToolbar(<ExampleToolbar onPress={() => {}} />);
-    // Total content is 120px; a 119px container needs to shed only one item to fit under
-    // the (containerWidth - reserved overflow-trigger width) budget.
-    layoutToolbar('toolbar', 119, [40, 40, 40]);
+    // Search=40, Filter=40, Export=60: without collapsing, 3 items need 140px of content plus
+    // 2 gaps (4px each) = 148px. A 140px container doesn't fit that, but shedding only
+    // "Export" leaves 80px of content + 2 gaps (one between Search/Filter, one before the
+    // trigger) + the unmeasured trigger's fallback width (44px, `controlSize.icon`) = 132px,
+    // which fits.
+    layoutToolbar('toolbar', 140, [40, 40, 60]);
 
     // "Export" (priority 1, the lowest number here) collapses first; "Filter" (priority 2)
     // and "Search" (no priority, never collapses) stay in the row.
@@ -120,7 +120,7 @@ describe('Toolbar overflow collapse', () => {
     try {
       const onPress = jest.fn();
       renderToolbar(<ExampleToolbar onPress={onPress} />);
-      layoutToolbar('toolbar', 119, [40, 40, 40]);
+      layoutToolbar('toolbar', 140, [40, 40, 60]);
 
       fireEvent.press(screen.getByTestId('toolbar-overflow-trigger'));
       await waitFor(() =>

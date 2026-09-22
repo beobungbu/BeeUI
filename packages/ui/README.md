@@ -4,19 +4,19 @@ Typed React Native + Web components built on `@beemvp/beeui-core` and `@beemvp/b
 
 ## Distribution state
 
-**Unpublished:** `@beemvp/beeui-ui` and the other public BeeUI packages are not currently available from the public npm registry. Publication remains owner-gated by issue #254. Use repository/packed-consumer verification or the current source-ownership workflow when evaluating BeeUI today.
-
-After publication is explicitly authorized, the intended install shape is:
+**Public release candidate:** `@beemvp/beeui-ui@0.86.2-rc.1` is published on npm. During RC use the explicit `@next` channel (or pin the exact version):
 
 ```bash
-npm install @beemvp/beeui-ui
+npm install @beemvp/beeui-ui@next
 ```
 
-`@beemvp/beeui-core` and `@beemvp/beeui-tokens` are declared package dependencies in the release-ready manifest. See [`docs/compatibility-matrix.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/compatibility-matrix.md) for the exact tested `react`/`react-native`/`uniwind`/`tailwindcss` peer ranges.
+The live registry currently also resolves `latest` to this RC, but the bootstrap publish used `--tag next` and the mechanism that also created the observed `latest` value has not been established. BeeUI therefore documents `@next` as the RC contract; a bare install is not the recommended RC path because `latest` moves to stable at the first deliberate stable promotion.
+
+`@beemvp/beeui-core` and `@beemvp/beeui-tokens` are package dependencies released at the same lockstep version.
 
 ## Usage
 
-The imports below describe the release-ready API and are exercised by repository/packed-consumer tests; they do not imply public npm availability.
+The imports below describe the public RC API and are exercised by repository, packed-consumer, and registry-consumer verification.
 
 ```tsx
 import { BeeUIProvider, Button, Card, Text } from '@beemvp/beeui-ui';

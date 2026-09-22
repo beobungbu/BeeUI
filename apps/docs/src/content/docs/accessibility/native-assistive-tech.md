@@ -16,6 +16,10 @@ boundaries, focus after dismissal, error/live announcements, large text and any
 application-owned navigation semantics can change the experience even when each primitive
 is correct in isolation.
 
+**Prerequisites:** an iOS simulator/device with VoiceOver or an Android emulator/device with
+TalkBack, and a BeeUI screen you can navigate end to end — a compile pass or a Web axe scan
+does not substitute for either.
+
 ## Task: verify one screen with a real screen reader
 
 1. iOS: Settings → Accessibility → VoiceOver → On (or triple-click the side button if you

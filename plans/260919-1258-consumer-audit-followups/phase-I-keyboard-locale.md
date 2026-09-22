@@ -1,0 +1,9 @@
+# WS-I · keyboard roving focus + DateTimePicker locale copy
+
+Owned: packages/ui/src/components/{tabs,toolbar,date-time-picker-shared,date-time-picker.web,date-time-picker.native,date-time-picker-locale}.ts(x), apps/showcase/__tests__/**, apps/visual-regression/tests/** (+ fixture screens in apps/visual-regression/App.tsx). Do NOT edit apps/docs; put docs text in the report.
+
+1. Tabs (web): with `TabsList scrollable`, ArrowLeft/ArrowRight (ArrowUp/Down when orientation vertical, if it exists) move focus between enabled triggers with wrap-around, Home/End jump to first/last, RTL flips left/right (use the existing direction hook, see use-direction.ts), and the focused trigger scrolls into view. Keep existing behavior for non-scrollable lists (check how tabs.tsx handles keys today — if roving focus already exists for the plain list, only make it work through the scroll container). Regression tests: jest for key handling, Playwright for scroll-into-view + focus order.
+2. Toolbar (web): role=toolbar roving tabindex — one item tabbable at a time, ArrowLeft/ArrowRight move between visible items (collapsed items are reached through the overflow menu, which is the last stop), Home/End, RTL-aware. Tests as above.
+3. DateTimePicker: `locale` must localize the component's own copy (empty-state placeholder, and any visible labels) the same way WS-C did for DatePicker in date-picker-locale.ts (#573 item 3); add vi-VN and reuse the DatePicker locale table where the strings are identical. Jest test with locale="vi-VN".
+
+Gates: `pnpm lint`, `pnpm --filter @beemvp/beeui-ui typecheck`, `pnpm --filter @beemvp/beeui-showcase typecheck`, `pnpm ui-exports:check`, full `pnpm --filter @beemvp/beeui-showcase test`, `pnpm --filter @beemvp/beeui-visual-regression typecheck`, and the Playwright specs you add (build:web first). Run `pnpm docs:portal-pages:generate` only if a JSDoc prop comment changed, and commit the regenerated pages.

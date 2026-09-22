@@ -8,7 +8,7 @@ description: "Single-row action toolbar that measures its own width and collapse
 Single-row action toolbar that measures its own width and collapses lower-priority items into an overflow menu when they no longer fit.
 
 :::note[Distribution status]
-BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. Stable `latest` currently resolves to the same RC too. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established, so this is recorded as observed registry state rather than an npm rule. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -55,12 +55,12 @@ Stateless layout primitive with no owned selection state. `Toolbar` measures its
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` **(required)** | `React.ReactNode` | — | Rendered in the toolbar row while this item fits. A single element is expected — an `IconButton`/`Button` is the common case — since `Toolbar` reads its rendered width to decide what fits; it is never cloned or otherwise modified. |
-| `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `disabled` | `boolean` | — | Disables this item everywhere it renders: in the toolbar row and inside the overflow menu. Defaults to false. |
+| `children` **(required)** | `React.ReactNode` | — | Rendered in the toolbar row while this item fits. A single element is expected — an `IconButton`/`Button` is the common case — since `Toolbar` reads its rendered width to decide what fits, and (on Web) clones it to wire `ref`/`tabIndex`/`onFocus` for arrow-key roving-tabindex navigation, preserving any `ref`/`onFocus` the element already carries. Also clones `disabled`/`onPress` onto it per this item's own metadata — see `ToolbarItemProps.disabled`/`.onPress`. Every other prop is left untouched. |
+| `className` | `string` | — | Applied to this item's own wrapper in the toolbar row. Has no effect on the overflow menu row (which has no equivalent wrapper) or on the child element itself — compose a class directly on the child for that. |
+| `disabled` | `boolean` | — | Disables this item everywhere it renders: cloned onto the child in the toolbar row (overriding whatever `disabled` the child element itself declares) and passed to the overflow menu row when this item is collapsed. Defaults to false — omitting it (or passing `false`) never clears a `disabled` the child sets on itself. |
 | `icon` | `React.ReactNode` | — | Icon shown next to `label` when this item renders inside the overflow menu instead of the row. |
 | `label` **(required)** | `string` | — | Accessible label and overflow-menu row text for this item. Required — the overflow menu has no other way to describe a collapsed item's action. |
-| `onPress` | `() => void` | — | Called when this item is activated, whether it currently renders in the toolbar row or the overflow menu. |
+| `onPress` | `() => void` | — | Called when this item is activated. In the overflow menu this is always the row's own activation handler. In the toolbar row it is cloned onto the child only when the child does not already declare its own `onPress` — an `onPress` the child element sets itself always wins there instead (a dev warning fires once if both are set to different functions, since that combination is otherwise silently ambiguous about which one runs). |
 | `priority` | `number` | — | Collapse priority: an item with a **lower** number collapses first when the row does not fit. Items that omit `priority` never collapse — they always render in the row, even if that means the row itself overflows. Items sharing the same priority collapse in trailing-to-leading order (the later item in `children` order collapses first). |
 
 #### `ToolbarProps`
@@ -107,8 +107,10 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx)
-- **Additional fixture:** [`apps/showcase/component-gallery/toolbar-showcase.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/toolbar-showcase.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/toolbar-arrow-key-roving-focus.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/toolbar-arrow-key-roving-focus.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/toolbar-item-visible-mode-contract.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/toolbar-item-visible-mode-contract.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/toolbar-non-focusable-children-roving-focus.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/toolbar-non-focusable-children-roving-focus.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx)
 
 ### Addressable examples
 
@@ -209,7 +211,7 @@ export function ToolbarShowcase() {
 Use the code block's copy affordance to copy the exact fixture. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-`overflowAccessibilityLabel` is required only once the overflow menu actually renders (i.e. once any prioritized item collapses) — a dev warning fires if it is missing at that point, not before. `ToolbarItem.children` is read for measurement and rendering but never cloned or modified, so it must be a single element (typically an `IconButton`/`Button`).
+`overflowAccessibilityLabel` is required only once the overflow menu actually renders (i.e. once any prioritized item collapses) — a dev warning fires if it is missing at that point, not before. `ToolbarItem.children` must be a single element (typically an `IconButton`/`Button`) — `Toolbar` reads it for measurement, clones `disabled` onto it whenever this item is disabled and `onPress` onto it whenever the child declares none of its own (an `onPress` the child sets itself always wins instead), and, on Web, further clones its focus/keyboard-navigation wiring for roving-tabindex support; every other prop on the child is left untouched.
 
 **Implementation note:** The overflow menu is a `DropdownMenu` composition, so it inherits that family's full keyboard/dismiss behavior and `aria-haspopup="menu"` for free — there is no second, bespoke popover implementation.
 

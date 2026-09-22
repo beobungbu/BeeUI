@@ -4,7 +4,7 @@
 
 BeeUI is a mobile-first TypeScript UI system focused on long-lived application interfaces: accessible behavior, explicit responsive contracts, semantic theming, production screen patterns, and source ownership without coupling application code to a styling engine.
 
-> **Distribution status — 2026-09-09:** BeeUI `0.86.2-rc.1` is publicly published on npm under the opt-in `next` dist-tag. The stable `latest` channel is intentionally not promoted yet. Use `@next` or pin `@0.86.2-rc.1` while evaluating the release candidate. `docs/dist-tag-policy.md` is the machine-checked authority.
+> **Distribution status — 2026-09-21:** BeeUI `0.86.2-rc.1` is publicly published on npm under the opt-in `next` dist-tag. The live registry currently also resolves `latest` to the same RC; BeeUI's bootstrap workflow published with `--tag next`, and the mechanism that also produced `latest` has not been established, so this is recorded as observed registry state rather than an npm rule. `latest` moves to a real stable version at the first `0.86.2` release. Use `@next` or pin `@0.86.2-rc.1` while evaluating the release candidate. `docs/dist-tag-policy.md` is the machine-checked authority.
 
 ## Install the public release candidate
 
@@ -13,7 +13,7 @@ npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@n
 npx @beemvp/beeui-cli@next --help
 ```
 
-Do not document a bare `npm install @beemvp/beeui-ui` as the RC install path: unqualified installs follow `latest`, and BeeUI has not promoted stable `0.86.2` to `latest` yet.
+Do not document a bare `npm install @beemvp/beeui-ui` as the RC install path. It currently resolves to the same RC as `@next` (see the distribution-status note above), but that stops being true the moment stable `0.86.2` publishes and `latest` moves off the prerelease — pin `@next` or the exact version so the command stays correct on both sides of that change.
 
 ## What is included
 

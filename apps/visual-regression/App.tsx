@@ -54,10 +54,19 @@ import {
   PopoverTrigger,
   Radio,
   RadioGroup,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
   Separator,
   SettingsItem,
   Sheet,
+  SheetClose,
   SheetContent,
+  SheetDescription,
   SheetTitle,
   SheetTrigger,
   Skeleton,
@@ -80,10 +89,13 @@ import {
   Textarea,
   Timeline,
   TimelineItem,
+  Toolbar,
+  ToolbarItem,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   useBeeToken,
+  useToast,
 } from '@beemvp/beeui-ui';
 import { applyDensity, defaultDensityMode, densityModes, type DensityMode } from '@beemvp/beeui-tokens';
 import * as React from 'react';
@@ -136,8 +148,11 @@ type FixtureId =
   | 'tooltip'
   | 'table'
   | 'date'
+  | 'sheet-context-parity'
   | 'sheet-short-root'
-  | 'keydown-bubble';
+  | 'keydown-bubble'
+  | 'keyboard-roving-focus'
+  | 'table-row-interactive-descendants';
 
 const fixtureIds: readonly FixtureId[] = [
   'density',
@@ -148,8 +163,11 @@ const fixtureIds: readonly FixtureId[] = [
   'tooltip',
   'table',
   'date',
+  'sheet-context-parity',
   'sheet-short-root',
   'keydown-bubble',
+  'keyboard-roving-focus',
+  'table-row-interactive-descendants',
 ];
 
 function isFixtureId(value: string | null): value is FixtureId {
@@ -1436,6 +1454,83 @@ function TooltipFixture() {
 }
 
 /**
+ * BeeUI issue #619 — Web parity for the native Sheet context/z-order
+ * acceptance. This lives in the visual-regression app rather than Component
+ * Gallery so QA-only imports do not perturb the generated public component
+ * example inventory.
+ */
+function SheetContextParityFixture() {
+  const toast = useToast();
+  const [selectValue, setSelectValue] = React.useState<string | undefined>();
+
+  return (
+    <Box className="gap-4 p-6" testID="sheet-context-parity-fixture">
+      <Sheet>
+        <SheetTrigger testID="sheet-context-trigger" variant="outline">
+          Open Sheet context parity
+        </SheetTrigger>
+        <SheetContent testID="sheet-context-content">
+          <SheetTitle>Sheet context parity</SheetTitle>
+          <SheetDescription>
+            Toast and anchored overlays must remain usable while this Sheet is open.
+          </SheetDescription>
+
+          <Button
+            onPress={() =>
+              toast.show({
+                title: 'Sheet parity toast visible',
+                description: 'Provider context survives inside the Web Sheet.',
+                duration: 'persistent',
+              })
+            }
+            testID="sheet-context-toast-show"
+            variant="outline"
+          >
+            Show Sheet parity Toast
+          </Button>
+          <Button onPress={toast.dismissAll} testID="sheet-context-toast-dismiss" variant="ghost">
+            Dismiss Sheet parity Toast
+          </Button>
+
+          <Popover>
+            <PopoverTrigger testID="sheet-context-popover-trigger" variant="outline">
+              Open Sheet parity Popover
+            </PopoverTrigger>
+            <PopoverContent placement="top" testID="sheet-context-popover-content">
+              <PopoverTitle>Sheet parity Popover</PopoverTitle>
+              <PopoverDescription testID="sheet-context-popover-copy">
+                Web nested overlay remains above its parent Sheet.
+              </PopoverDescription>
+              <PopoverClose testID="sheet-context-popover-close">Close parity Popover</PopoverClose>
+            </PopoverContent>
+          </Popover>
+
+          <Select onValueChange={setSelectValue} value={selectValue}>
+            <SelectTrigger testID="sheet-context-select-trigger">
+              <SelectValue placeholder="Open Sheet parity Select" />
+            </SelectTrigger>
+            <SelectContent placement="top" testID="sheet-context-select-content">
+              <SelectGroup>
+                <SelectLabel>Sheet parity Select</SelectLabel>
+                <SelectItem testID="sheet-context-select-item-alpha" value="alpha">
+                  Alpha
+                </SelectItem>
+                <SelectItem value="beta">Beta</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <Text testID="sheet-context-select-selection">{`select: ${selectValue ?? 'none'}`}</Text>
+
+          <SheetClose testID="sheet-context-close" variant="outline">
+            Close parity Sheet
+          </SheetClose>
+        </SheetContent>
+      </Sheet>
+    </Box>
+  );
+}
+
+/**
  * BeeUI issue #548 — the app root here renders far shorter than the browser
  * viewport (one line of text and a trigger button, no `min-h-screen`), the
  * exact shape the issue's external consumer reported: a `Sheet` backdrop/panel
@@ -1473,6 +1568,143 @@ function KeydownBubbleFixture() {
     <Box className="gap-4 p-6" testID="keydown-bubble-fixture">
       <Text>Focus the field below and press a key.</Text>
       <Input accessibilityLabel="Keydown bubble target" testID="keydown-bubble-input" />
+    </Box>
+  );
+}
+
+/**
+ * WS-I — Web arrow-key roving-tabindex evidence for `TabsList scrollable` (#591) and
+ * `Toolbar` (#611 item 1). Deliberately narrow (`w-56`/`w-28`) containers force real
+ * browser layout to overflow the Tabs strip and collapse a Toolbar item, so
+ * scroll-into-view and the overflow-trigger roving stop are proven against real DOM
+ * `document.activeElement`, not the jest `onLayout`+`fireEvent` approximation
+ * `tabs-scrollable-arrow-key-roving-focus.test.tsx`/`toolbar-arrow-key-roving-focus.test.tsx`
+ * already cover.
+ */
+function KeyboardRovingFocusFixture() {
+  const [selectedOrder, setSelectedOrder] = React.useState('order-1');
+  const orders = ['order-1', 'order-2', 'order-3', 'order-4', 'order-5', 'order-6'];
+
+  return (
+    <Box className="min-h-screen gap-8 bg-surface p-6" testID="keyboard-roving-focus-fixture">
+      <Box className="w-56 gap-2">
+        <Text variant="title">Scrollable Tabs</Text>
+        <Tabs onValueChange={setSelectedOrder} testID="roving-tabs" value={selectedOrder}>
+          <TabsList scrollable testID="roving-tabs-list">
+            {orders.map((value, index) => (
+              <TabsTrigger key={value} testID={`roving-tabs-trigger-${index + 1}`} value={value}>
+                Order {index + 1}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </Box>
+
+      <Box className="w-28 gap-2">
+        <Text variant="title">Toolbar</Text>
+        <Toolbar overflowAccessibilityLabel="More actions" testID="roving-toolbar">
+          <ToolbarItem label="Search" onPress={() => undefined}>
+            <IconButton accessibilityLabel="Search" onPress={() => undefined} testID="roving-toolbar-search">
+              🔍
+            </IconButton>
+          </ToolbarItem>
+          <ToolbarItem label="Filter" onPress={() => undefined} priority={2}>
+            <IconButton accessibilityLabel="Filter" onPress={() => undefined} testID="roving-toolbar-filter">
+              ⚙
+            </IconButton>
+          </ToolbarItem>
+          <ToolbarItem label="Export" onPress={() => undefined} priority={1}>
+            <IconButton accessibilityLabel="Export" onPress={() => undefined} testID="roving-toolbar-export">
+              ⬇
+            </IconButton>
+          </ToolbarItem>
+        </Toolbar>
+      </Box>
+    </Box>
+  );
+}
+
+// #618 (Astra review #2, item 6): `table.web`'s interactive-descendant exclusion selector
+// used to miss most of BeeUI's own interactive roles (radio, combobox, tab, option,
+// menuitemcheckbox/radio, slider, spinbutton, textbox, searchbox, listbox) — activating one
+// of those inside a pressable `TableRow` also fired the row's own `onPress`. A jsdom-free real
+// DOM is required to prove this (the exclusion reads real ancestor DOM nodes via
+// `Element.closest`), so this fixture mounts one pressable row with a `Button` (`role="button"`,
+// already excluded before this fix), a `Checkbox` (`role="checkbox"`, already excluded), a
+// `Radio` (`role="radio"`, new), a `SelectTrigger` (`role="combobox"`, new), and a `Link`
+// (`role="link"`, already excluded), plus one plain cell with no interactive descendant. The
+// row's own press count renders as text so Playwright can assert it stays put while each
+// embedded control activates, and only advances for the plain cell.
+function TableRowInteractiveDescendantsFixture() {
+  const [rowPressCount, setRowPressCount] = React.useState(0);
+  const [checked, setChecked] = React.useState(false);
+  const [radioValue, setRadioValue] = React.useState('one');
+  const [selectValue, setSelectValue] = React.useState('alpha');
+
+  return (
+    <Box className="min-h-screen gap-6 bg-surface p-6" testID="table-row-interactive-descendants-fixture">
+      <Text variant="title">Table: row interactive-descendant exclusion</Text>
+      <Text testID="interactive-descendants-row-press-count" tone="muted" variant="caption">
+        {`Row press count: ${rowPressCount}`}
+      </Text>
+      <Table testID="interactive-descendants-table">
+        <TableHeader>
+          <TableRow>
+            <TableHead>Button</TableHead>
+            <TableHead>Checkbox</TableHead>
+            <TableHead>Radio</TableHead>
+            <TableHead>Select</TableHead>
+            <TableHead>Link</TableHead>
+            <TableHead>Plain</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow
+            onPress={() => setRowPressCount((count) => count + 1)}
+            testID="interactive-descendants-row"
+          >
+            <TableCell label="Button">
+              <Button onPress={() => undefined} testID="interactive-descendants-button">
+                Edit
+              </Button>
+            </TableCell>
+            <TableCell label="Checkbox">
+              <Checkbox
+                accessibilityLabel="Select row"
+                checked={checked}
+                onCheckedChange={setChecked}
+                testID="interactive-descendants-checkbox"
+              />
+            </TableCell>
+            <TableCell label="Radio">
+              <RadioGroup accessibilityLabel="Priority" onValueChange={setRadioValue} value={radioValue}>
+                <Radio label="One" testID="interactive-descendants-radio" value="one" />
+              </RadioGroup>
+            </TableCell>
+            <TableCell label="Select">
+              <Select onValueChange={setSelectValue} value={selectValue}>
+                <SelectTrigger accessibilityLabel="Status" testID="interactive-descendants-select-trigger">
+                  <SelectValue placeholder="Choose" testID="interactive-descendants-select-value" />
+                </SelectTrigger>
+                <SelectContent testID="interactive-descendants-select-content">
+                  <SelectItem testID="interactive-descendants-select-alpha" value="alpha">
+                    Alpha
+                  </SelectItem>
+                  <SelectItem testID="interactive-descendants-select-beta" value="beta">
+                    Beta
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </TableCell>
+            <TableCell label="Link">
+              <Link testID="interactive-descendants-link">Details</Link>
+            </TableCell>
+            <TableCell label="Plain" testID="interactive-descendants-plain-cell">
+              Row 1
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </Box>
   );
 }
@@ -1534,10 +1766,16 @@ export default function App() {
         <TableProductionFixture density={densityMode} state={tableState} theme={theme} />
       ) : fixture === 'date' ? (
         <DateProductionFixture locale={dateLocale} />
+      ) : fixture === 'sheet-context-parity' ? (
+        <SheetContextParityFixture />
       ) : fixture === 'sheet-short-root' ? (
         <SheetShortRootFixture />
       ) : fixture === 'keydown-bubble' ? (
         <KeydownBubbleFixture />
+      ) : fixture === 'keyboard-roving-focus' ? (
+        <KeyboardRovingFocusFixture />
+      ) : fixture === 'table-row-interactive-descendants' ? (
+        <TableRowInteractiveDescendantsFixture />
       ) : (
         <Scenario scenario={scenario} />
       )}

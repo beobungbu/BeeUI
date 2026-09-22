@@ -8,7 +8,7 @@ description: "Persistent single string-value selection with anchored option surf
 Persistent single string-value selection with anchored option surface and listbox semantics on Web.
 
 :::note[Distribution status]
-BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. Stable `latest` currently resolves to the same RC too. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established, so this is recorded as observed registry state rather than an npm rule. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -68,11 +68,12 @@ Controlled (`value`/`onValueChange`) or uncontrolled (`defaultValue`) persistent
 | `collisionPadding` | `SelectCollisionPadding` | `8` | Minimum distance to keep from the viewport edges when the kernel repositions or flips the overlay. A number applies to every edge; an object sets edges individually. |
 | `direction` | `SelectDirection` | — | Logical direction used to resolve `align`/`placement` for RTL layouts. Defaults to the app's resolved layout direction. |
 | `flip` | `boolean` | `true` | Flips `placement` to the opposite side of the trigger when there is not enough room. Defaults to true. |
+| `listProps` | `Omit<ViewProps, 'children'>` | — | Forwarded to the internal `View` that wraps the options on Web — a plain overflow `View` there, not a `ScrollView` (see `#612` and `scrollViewProps` below), so this is typed to what a `View` actually honours. Excludes `children`, which this component owns. No effect on native — see `scrollViewProps` for that host. |
 | `maxHeight` | `number` | — | Caps the listbox's height; clamped to at least 96 and to the available viewport space. Defaults to 320. |
 | `outsidePressProps` | `Omit<PressableProps, 'children' \| 'onPress' \| 'style'>` | — | Forwarded to the outside-press dismiss layer, excluding `children`/`onPress`/`style`, which this component owns. |
 | `outsidePressTestID` | `string` | — | `testID` applied to the outside-press dismiss layer, for targeting it in tests. |
 | `placement` | `SelectPlacement` | `'bottom'` | Which side of the trigger the listbox opens on. Defaults to `'bottom'`. |
-| `scrollViewProps` | `Omit<ScrollViewProps, 'children'>` | — | Forwarded to the internal `ScrollView` that wraps the options, excluding `children`, which this component owns. |
+| `scrollViewProps` | `Omit<ScrollViewProps, 'children'>` | — | Forwarded to the internal `ScrollView` that wraps the options on native, excluding `children`, which this component owns. No effect on Web, where the options render inside a plain overflow `View` instead (`#612` — RN's `ScrollView` on Web still negotiates the touch/pointer responder system, which can win a real mouse click ahead of a `SelectItem`'s own press once the list overflows) — use `listProps` for that host instead. |
 | `shift` | `boolean` | `true` | Shifts the listbox along the trigger's edge to stay within the viewport instead of overflowing. Defaults to true. |
 | `sideOffset` | `number` | `6` | Pixels of gap between the anchor and the overlay, along the placement side. |
 

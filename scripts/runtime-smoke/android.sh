@@ -182,7 +182,10 @@ adb_for_device reverse tcp:8081 tcp:8081
 
 (
   cd "$SHOWCASE"
-  NODE_OPTIONS=--dns-result-order=ipv4first CI=1 pnpm exec expo start --localhost --port 8081 > "$ARTIFACT_DIR/metro.log" 2>&1
+  # Expo CLI uses EXPO_UNSTABLE_HEADLESS for its own E2E/headless operation; among
+  # other things this prevents the standalone React Native DevTools/Fusebox shell from
+  # installing/launching in the background while a CI smoke test only needs Metro.
+  EXPO_UNSTABLE_HEADLESS=1 NODE_OPTIONS=--dns-result-order=ipv4first CI=1 pnpm exec expo start --localhost --port 8081 > "$ARTIFACT_DIR/metro.log" 2>&1
 ) &
 METRO_PID=$!
 
@@ -283,10 +286,23 @@ run_inline_maestro reset <<'EOF_FLOW'
 EOF_FLOW
 
 run_inline_maestro a1-open <<'EOF_FLOW'
-- tapOn:
-    id: "runtime-popover-trigger"
-- assertVisible:
-    id: "runtime-popover-content"
+- scrollUntilVisible:
+    element:
+      id: "runtime-popover-trigger"
+    direction: DOWN
+    timeout: 30000
+    visibilityPercentage: 100
+    centerElement: true
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-popover-trigger"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-popover-content"
+          timeout: 15000
 EOF_FLOW
 real_back "A1 root Popover"
 run_inline_maestro a1-assert <<'EOF_FLOW'
@@ -298,10 +314,26 @@ run_inline_maestro a1-assert <<'EOF_FLOW'
 EOF_FLOW
 
 run_inline_maestro a2-open <<'EOF_FLOW'
-- tapOn:
-    id: "runtime-menu-trigger"
-- assertVisible:
-    id: "runtime-menu-content"
+# A1 leaves the Root overlays card near its Popover row. The Menu row is just
+# below it and can fall completely outside Android's accessibility viewport;
+# direct tapOn then fails before any component behavior is exercised.
+- scrollUntilVisible:
+    element:
+      id: "runtime-menu-trigger"
+    direction: DOWN
+    timeout: 30000
+    visibilityPercentage: 100
+    centerElement: true
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "runtime-menu-trigger"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-menu-content"
+          timeout: 15000
 EOF_FLOW
 real_back "A2 root DropdownMenu"
 run_inline_maestro a2-assert <<'EOF_FLOW'

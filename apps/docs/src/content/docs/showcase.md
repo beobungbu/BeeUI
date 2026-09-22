@@ -9,6 +9,9 @@ Native runtime. Component pages deep-link with `?component=<registry-family>`; p
 deep-link with the canonical source identity and the public router resolves it against the
 real Pattern Catalog.
 
+**Prerequisites:** none to browse `/showcase/`; a BeeUI checkout and Node.js/pnpm are needed
+only for the `pnpm --filter @beemvp/beeui-showcase ...` commands below.
+
 ## Public Web surface
 
 - **[Component Gallery](/showcase/?section=components)** — interactive public component system.
@@ -51,9 +54,10 @@ claims require the repository's explicit native runtime/device evidence classes.
 ## Build identity and status
 
 The Showcase application version is aligned to the current BeeUI workspace release label,
-and the launch Web export injects `git rev-parse --short HEAD`. The runtime still states
-that BeeUI packages/CLI are unpublished; a public Showcase URL does not imply npm
-publication.
+and the launch Web export injects `git rev-parse --short HEAD`. A public Showcase URL does
+not by itself imply npm publication — check [Release & security](/docs/release-security/)
+or [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)
+for the current publication state instead of inferring it from the Showcase being reachable.
 
 ## Public navigation
 

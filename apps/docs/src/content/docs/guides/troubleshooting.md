@@ -20,6 +20,10 @@ Every entry uses the same schema:
 | **Relevant versions** | The tested/promised range this entry is valid for. |
 | **Still broken** | Next diagnostic, then where to file. |
 
+**Prerequisites:** the exact error string or symptom from your own console/build output, and
+which platform (Expo, bare React Native, Web) it happened on — this page is searched by
+literal text, not read top to bottom.
+
 :::caution[Distribution status]
 BeeUI `0.86.2-rc.1` **is publicly published on npm** under the opt-in `next` dist-tag; see
 [Start](/docs/start/) for the install command. Some entries below still run from a BeeUI
@@ -485,9 +489,12 @@ Related usage errors: `'add --all' does not accept explicit item names`,
 - **Likely cause:** a page showed a registry-install or public-CLI command for a BeeUI
   package with no `@next`/exact-version tag — must not be left bare/unqualified — or one
   that does not match the current dist-tag policy. BeeUI `0.86.2-rc.1` is
-  published, but only under the opt-in `next` dist-tag — an unqualified install follows
-  stable `latest` instead, so `scripts/check-public-doc-truth.mjs` rejects it unless the
-  same line explicitly negates the command (for example, "do not install unqualified").
+  published under the opt-in `next` dist-tag; the live registry also currently resolves
+  `latest` to the same RC. The bootstrap publish used `--tag next`, and the mechanism that
+  also produced `latest` has not been established (see `docs/dist-tag-policy.md`), but
+  `scripts/check-public-doc-truth.mjs` still rejects a bare, unqualified install because that
+  coincidence ends at the first stable `0.86.2` release, unless the same line explicitly
+  negates the command (for example, "do not install unqualified").
 - **Fix:** pin every registry-install/CLI example to `@next` or the exact
   `0.86.2-rc.1`, matching [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
   For an example that intentionally documents a repository-local path instead (workspace

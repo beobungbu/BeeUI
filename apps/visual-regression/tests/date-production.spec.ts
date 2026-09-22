@@ -1,4 +1,4 @@
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
 import type { VisualProjectMetadata } from '../src/visual-contract';
 
 // BeeUI issue #177 (R4F.7) — Calendar/date visual and native runtime
@@ -29,6 +29,38 @@ async function gotoDateFixture(page: Page, params: Record<string, string> = {}) 
   const query = new URLSearchParams({ fixture: 'date', ...params }).toString();
   await page.goto(`/?${query}`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('html')).toHaveAttribute('data-visual-ready', 'true');
+}
+
+// The open-popover screenshots below encode the popover sitting directly
+// against its trigger with both inside the live viewport. Focusing the
+// opening day cell used to scroll the document to the top while the panel
+// was still measuring off-screen, which left the popover pinned to the
+// viewport edge and the trigger below the fold (the same PNG then could not
+// be reproduced by the code that committed it). Fonts differ between
+// machines, so the PNG alone cannot say which of those two renderings a
+// local run produced; this geometry check can. `boundingBox()` is
+// viewport-relative, so "inside the viewport" and "adjacent" are both
+// statements about what a user sees right after the click.
+async function expectPopoverAdjacentToTrigger(page: Page, trigger: Locator, content: Locator) {
+  const viewportHeight = await page.evaluate(() => window.innerHeight);
+  const triggerBox = await trigger.boundingBox();
+  const contentBox = await content.boundingBox();
+  expect(triggerBox).not.toBeNull();
+  expect(contentBox).not.toBeNull();
+
+  for (const box of [triggerBox!, contentBox!]) {
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewportHeight);
+  }
+
+  // Nearest vertical edges: the popover opens above or below the trigger
+  // with only the anchored-overlay offset between them, never overlapping
+  // it and never detached from it.
+  const gapAbove = triggerBox!.y - (contentBox!.y + contentBox!.height);
+  const gapBelow = contentBox!.y - (triggerBox!.y + triggerBox!.height);
+  const gap = Math.max(gapAbove, gapBelow);
+  expect(gap).toBeGreaterThanOrEqual(0);
+  expect(gap).toBeLessThanOrEqual(24);
 }
 
 test.describe('default state — full canonical theme x viewport matrix', () => {
@@ -107,13 +139,15 @@ test.describe('open Calendar popover', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await gotoDateFixture(page);
 
-    await page.getByTestId('date-production-date-picker-default-trigger').click();
+    const trigger = page.getByTestId('date-production-date-picker-default-trigger');
+    await trigger.click();
     const content = page.getByTestId('date-production-date-picker-default-content');
     await expect(content).toBeVisible();
     await expect(content.getByRole('grid')).toBeVisible();
     await expect(
       page.getByTestId('date-production-date-picker-default-calendar-day-2026-01-10'),
     ).toHaveAttribute('aria-disabled', 'true');
+    await expectPopoverAdjacentToTrigger(page, trigger, content);
 
     await expect(page).toHaveScreenshot('date-production--open-date-picker--light--desktop.png', {
       animations: 'disabled',
@@ -136,11 +170,16 @@ test.describe('open Calendar popover', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await gotoDateFixture(page);
 
-    await page.getByTestId('date-production-date-time-picker-default-trigger').click();
+    const trigger = page.getByTestId('date-production-date-time-picker-default-trigger');
+    await trigger.click();
     const content = page.getByTestId('date-production-date-time-picker-default-content');
     await expect(content).toBeVisible();
     await expect(content.getByRole('grid')).toBeVisible();
     await expect(page.getByTestId('date-production-date-time-picker-default-time-hour')).toBeVisible();
+    // The DateTimePicker trigger sits below the fold at this viewport, so the
+    // page has scrolled to reach it; the popover must open beside it there,
+    // not at the top of the document.
+    await expectPopoverAdjacentToTrigger(page, trigger, content);
 
     await expect(page).toHaveScreenshot('date-production--open-date-time-picker--light--desktop.png', {
       animations: 'disabled',

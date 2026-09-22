@@ -582,28 +582,51 @@
       "files": [
         {
           "source": "packages/ui/src/components/date-time-picker.d.ts",
-          "target": { "root": "components", "path": "date-time-picker.d.ts" },
+          "target": {
+            "root": "components",
+            "path": "date-time-picker.d.ts"
+          },
           "transforms": []
         },
         {
           "source": "packages/ui/src/components/date-time-picker.native.tsx",
-          "target": { "root": "components", "path": "date-time-picker.native.tsx" },
-          "transforms": ["rewrite-beeui-core-module"]
+          "target": {
+            "root": "components",
+            "path": "date-time-picker.native.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-module"
+          ]
         },
         {
           "source": "packages/ui/src/components/date-time-picker.web.tsx",
-          "target": { "root": "components", "path": "date-time-picker.web.tsx" },
-          "transforms": ["rewrite-beeui-core-module"]
+          "target": {
+            "root": "components",
+            "path": "date-time-picker.web.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-module"
+          ]
         },
         {
           "source": "packages/ui/src/components/date-time-picker-shared.tsx",
-          "target": { "root": "components", "path": "date-time-picker-shared.tsx" },
-          "transforms": ["rewrite-beeui-core-module"]
+          "target": {
+            "root": "components",
+            "path": "date-time-picker-shared.tsx"
+          },
+          "transforms": [
+            "rewrite-beeui-core-module"
+          ]
         },
         {
           "source": "packages/ui/src/components/date-time-picker-locale.ts",
-          "target": { "root": "components", "path": "date-time-picker-locale.ts" },
-          "transforms": ["rewrite-beeui-core-module"]
+          "target": {
+            "root": "components",
+            "path": "date-time-picker-locale.ts"
+          },
+          "transforms": [
+            "rewrite-beeui-core-module"
+          ]
         }
       ],
       "registryDependencies": [
@@ -1561,8 +1584,11 @@
         "button",
         "core-cn",
         "overlay-runtime",
+        "sheet-context-bridge",
         "text",
-        "theme"
+        "theme",
+        "theme-scope-bridge",
+        "toast-runtime-bridge"
       ],
       "dependencies": {
         "@beemvp/beeui-tokens": "0.1.0"
@@ -1574,6 +1600,26 @@
         "react-native-gesture-handler": ">=2.32 <3",
         "react-native-reanimated": ">=4.5 <5",
         "react-native-worklets": ">=0.10 <1"
+      }
+    },
+    {
+      "name": "sheet-context-bridge",
+      "type": "utility",
+      "public": false,
+      "files": [
+        {
+          "source": "packages/ui/src/components/sheet-context-bridge.tsx",
+          "target": {
+            "root": "components",
+            "path": "sheet-context-bridge.tsx"
+          },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": [],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19 <20"
       }
     },
     {
@@ -1927,11 +1973,33 @@
         }
       ],
       "registryDependencies": [
-        "theme"
+        "theme",
+        "theme-scope-bridge"
       ],
       "dependencies": {
         "@beemvp/beeui-tokens": "0.1.0"
       },
+      "peerDependencies": {
+        "react": ">=19 <20",
+        "uniwind": ">=1.10.1 <2"
+      }
+    },
+    {
+      "name": "theme-scope-bridge",
+      "type": "utility",
+      "public": false,
+      "files": [
+        {
+          "source": "packages/ui/src/components/theme-scope-bridge.tsx",
+          "target": {
+            "root": "components",
+            "path": "theme-scope-bridge.tsx"
+          },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": [],
+      "dependencies": {},
       "peerDependencies": {
         "react": ">=19 <20",
         "uniwind": ">=1.10.1 <2"
@@ -1981,7 +2049,8 @@
       ],
       "registryDependencies": [
         "text",
-        "theme"
+        "theme",
+        "toast-runtime-bridge"
       ],
       "dependencies": {
         "@beemvp/beeui-tokens": "0.1.0"
@@ -1990,6 +2059,26 @@
         "react": ">=19 <20",
         "react-native": ">=0.86.0 <0.87.0",
         "react-native-safe-area-context": ">=5 <6"
+      }
+    },
+    {
+      "name": "toast-runtime-bridge",
+      "type": "utility",
+      "public": false,
+      "files": [
+        {
+          "source": "packages/ui/src/components/toast-runtime-bridge.tsx",
+          "target": {
+            "root": "components",
+            "path": "toast-runtime-bridge.tsx"
+          },
+          "transforms": []
+        }
+      ],
+      "registryDependencies": [],
+      "dependencies": {},
+      "peerDependencies": {
+        "react": ">=19 <20"
       }
     },
     {

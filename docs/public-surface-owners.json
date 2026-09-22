@@ -39,7 +39,7 @@
   ],
   "acknowledgedSourceBlobs": {
     "packages/ui/package.json": "67c898cb683f249d8c2bf59c02cc9d6e2c357957",
-    "packages/ui/src/index.ts": "6fc4749698b4536902123b46360d85fd7b685249",
+    "packages/ui/src/index.ts": "8e87b1d55ceaa3afa7e4c8a3a97210f0d3124b65",
     "packages/tokens/package.json": "190e611cdabef8c5cdd1e181e6a1a784e6696f61",
     "packages/tokens/tokens.json": "97eab70437a93bca1904059b385dd125499fe09e",
     "packages/tokens/src/index.ts": "a809c960477ccf23718048afd458b0e86ba19356",
@@ -50,7 +50,7 @@
     "packages/core/package.json": "c32b85239769b096973ee030e7500a3092c2a91b",
     "packages/core/src/index.ts": "8bc4dd7cd94583aa191188c52dc6c4ba883ca56a",
     "packages/cli/src/beeui.mjs": "b3d6eccecb6c5ec814b90bcf29083d2e55c0f796",
-    "registry/registry.json": "82249d7bf984d7a0f8fd6ce26793a8d23d3bcd42"
+    "registry/registry.json": "d23d70bf7f94faa3f23dcc5b857036a291f03dd0"
   },
   "ignoredExportSubpaths": [
     "./package.json"

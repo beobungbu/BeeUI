@@ -230,17 +230,19 @@ const UNPUBLISHED_NOTE =
 // Mirrors the wording `apps/docs/src/content/docs/start/index.md` already carries (WS-D1,
 // consumer-audit #543/#574) so the human site and the agent-facing llms.txt family state the
 // identical publication truth instead of drifting again the next time a dist-tag changes.
-function buildStatusNote(policy) {
+export function buildStatusNote(policy, policyHref = 'docs/dist-tag-policy.md') {
   if (!policy.published) return UNPUBLISHED_NOTE;
   const tag = policy.prereleaseDistTag ?? 'next';
   return (
-    `STATUS: BeeUI \`${policy.currentVersion}\` is public on npm under the opt-in \`${tag}\` dist-tag. Stable ` +
-    '`latest` is not promoted to a non-prerelease version yet, so every release-candidate install should use ' +
-    `\`@${tag}\` or pin the exact version — do not recommend an unqualified, untagged install. ` +
-    `\`npm install @beemvp/beeui-ui@${tag} @beemvp/beeui-core@${tag} @beemvp/beeui-tokens@${tag}\` and ` +
+    `STATUS: BeeUI \`${policy.currentVersion}\` is public on npm under the opt-in \`${tag}\` dist-tag. The live ` +
+    "registry currently resolves both `next` and `latest` to the same RC. The bootstrap workflow published " +
+    "with `--tag next`; the mechanism that also produced `latest` has not been established, so this is " +
+    `recorded as observed registry state rather than an npm rule. \`latest\` moves to a real stable version at the first stable release. Every release-candidate install should still use \`@${tag}\` or pin ` +
+    'the exact version — do not recommend an unqualified, untagged install, since that stops matching the RC ' +
+    `once \`latest\` moves. \`npm install @beemvp/beeui-ui@${tag} @beemvp/beeui-core@${tag} @beemvp/beeui-tokens@${tag}\` and ` +
     `\`npx @beemvp/beeui-cli@${tag} --help\` are live, working registry commands today. The source-ownership CLI ` +
     '(`pnpm beeui add <component>`) remains available from a repository checkout. See ' +
-    '[docs/dist-tag-policy.md](docs/dist-tag-policy.md) for the full release/dist-tag mechanics.'
+    `[docs/dist-tag-policy.md](${policyHref}) for the full release/dist-tag mechanics.`
   );
 }
 
@@ -322,7 +324,7 @@ function buildFull(model) {
 
   const packagesHeading = policy.published ? `## Packages (public on npm under \`${tag}\`, one lockstep version)` : '## Packages (all unpublished / pre-1.0, one lockstep version)';
   const packagesNote = policy.published
-    ? `\`@beemvp/beeui-core\`, \`@beemvp/beeui-tokens\`, and \`@beemvp/beeui-ui\` share one lockstep version and are released together (ADR-011 D6). All three are public on npm at \`${policy.currentVersion}\` under the \`${tag}\` dist-tag (stable \`latest\` is not promoted to a non-prerelease version yet); \`exports\` maps ship dual ESM+CJS with \`.d.ts\`, a \`react-native\` condition for Metro, \`browser\`/\`default\` for Web, and \`@beemvp/beeui-tokens/theme.css\` for the Web theme.`
+    ? `\`@beemvp/beeui-core\`, \`@beemvp/beeui-tokens\`, and \`@beemvp/beeui-ui\` share one lockstep version and are released together (ADR-011 D6). All three are public on npm at \`${policy.currentVersion}\` under the \`${tag}\` dist-tag (stable \`latest\` currently resolves to the same RC too; the bootstrap used \`--tag next\` and the mechanism that also produced \`latest\` is not established — see docs/dist-tag-policy.md); \`exports\` maps ship dual ESM+CJS with \`.d.ts\`, a \`react-native\` condition for Metro, \`browser\`/\`default\` for Web, and \`@beemvp/beeui-tokens/theme.css\` for the Web theme.`
     : '`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` share one lockstep version and are released together (ADR-011 D6). Package manifests declare `publishConfig.access=public` + provenance but remain unpublished; `exports` maps ship dual ESM+CJS with `.d.ts`, a `react-native` condition for Metro, `browser`/`default` for Web, and `@beemvp/beeui-tokens/theme.css` for the Web theme.';
   const centralizedModel = policy.published
     ? `1. Centralized packages (public RC, opt in with \`@${tag}\`): \`npm i @beemvp/beeui-ui@${tag}\` pulls \`@beemvp/beeui-core\` + \`@beemvp/beeui-tokens\`; import components from \`@beemvp/beeui-ui\`; wire Web theme with \`@import '@beemvp/beeui-tokens/theme.css'\`. Pin \`@${policy.currentVersion}\` for an immutable version in CI.`

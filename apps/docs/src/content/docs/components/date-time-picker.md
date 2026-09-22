@@ -8,7 +8,7 @@ description: "Native combined date-and-time picker field backed by @react-native
 Native combined date-and-time picker field backed by @react-native-community/datetimepicker.
 
 :::note[Distribution status]
-BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet — see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. Stable `latest` currently resolves to the same RC too. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established, so this is recorded as observed registry state rather than an npm rule. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -79,7 +79,7 @@ Controlled `value`/`onValueChange` (`{ date, time } | null`) field combining dat
 | `onValueChange` | `(value: DateTimePickerValue \| null) => void` | — | `null` signals an explicit clear (see `clearable`). |
 | `open` | `boolean` | — | Controls whether the picker (Web `Popover`, native system picker) is open. Requires `onOpenChange`; otherwise falls back to internal open state with a dev-mode warning. |
 | `periodAccessibilityLabel` | `string` | `'AM or PM'` | Accessible name for the Web AM/PM control. Defaults to `'AM or PM'`. |
-| `placeholder` | `string` | `'Select a date and time'` | Text shown on the trigger when no value is selected. Defaults to `'Select a date and time'`. |
+| `placeholder` | `string` | — | Text shown on the trigger when no value is selected. Defaults to `'Select a date and time'`. |
 | `placement` | `DateTimePickerPlacement` | `'bottom'` | Web-only: `Popover` placement relative to the trigger. Ignored on native. |
 | `previousMonthAccessibilityLabel` | `string` | `'Previous month'` | Accessible label for the `Calendar`'s "previous month" button. Defaults to `'Previous month'`. |
 | `readOnly` | `boolean` | `false` | Keeps the trigger focusable/announced but blocks opening and clearing. |
@@ -288,7 +288,7 @@ export function DateTimePickerShowcase() {
 Use the code block's copy affordance to copy the exact fixture. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
 ## Limitations
 
-`locale` only affects the embedded `Calendar`'s weekday/month grid and `Intl`-based date formatting — it does not translate the combined trigger's `placeholder` or its month-navigation accessible labels, each a separate string prop with a hardcoded English default. A localized app must pass `placeholder`, `previousMonthAccessibilityLabel` and `nextMonthAccessibilityLabel` explicitly alongside `locale`.
+`locale` affects the embedded `Calendar`'s weekday/month grid, `Intl`-based date/time formatting, and — when the caller omits `placeholder` — the combined trigger's default placeholder text and the picker footer's "Done" button label, both drawn from a small built-in dictionary (`en-US`/`vi-VN` today) that falls back to the English copy for any other locale (`Done` has no caller-facing override prop at all; it always follows `locale`). It does not translate the month-navigation accessible labels or the hour/minute/period/clear accessibility labels, each a separate string prop with a hardcoded English default. A localized app must pass those explicitly alongside `locale`.
 
 - Passing `open` without `onOpenChange` leaves the value read-only: the component renders what you passed and can never change it. It warns in development builds rather than failing silently in production.
 - Requires `@react-native-community/datetimepicker` to be installed by the consuming app. It is an optional peer of `@beemvp/beeui-ui`, so nothing installs it for you, and a target that never renders this family does not need it.

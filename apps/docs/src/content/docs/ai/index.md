@@ -5,6 +5,9 @@ description: Give coding agents the canonical BeeUI context and verification bou
 
 BeeUI publishes a small family of generated text files for coding-agent context. They are model-agnostic and generated from the same public package, Registry, compatibility, component and pattern authorities used by human docs.
 
+**Prerequisites:** none — these are plain-text files an agent (or you) can fetch directly; no
+BeeUI installation is required to read them.
+
 ## Pick the smallest useful context
 
 | Task | Context |
@@ -21,7 +24,7 @@ Start small and add the larger file only when the task needs it. The files are p
 ## Rules an agent must preserve
 
 - BeeUI is UI infrastructure; routing, data fetching, backend, auth, payments and business rules remain application-owned.
-- `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (stable `latest` is not promoted to a non-prerelease version yet). Always suffix a registry command with `@next` (or the exact RC version) — `npm install @beemvp/beeui-ui@next` and `npx @beemvp/beeui-cli@next` are live, working commands; do not recommend an unqualified, untagged install. See [Start](/docs/start/) and [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
+- `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. The live registry currently also resolves `latest` to the same RC. BeeUI's bootstrap workflow published with `--tag next`; the mechanism that also produced `latest` has not been established, so this is recorded as observed registry state rather than an npm rule. `latest` moves to a real stable version at the first `0.86.2` release. Always suffix a registry command with `@next` (or the exact RC version) — `npm install @beemvp/beeui-ui@next` and `npx @beemvp/beeui-cli@next` are live, working commands; do not recommend an unqualified, untagged install, since that stops matching the RC once `latest` moves. See [Start](/docs/start/) and [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
 - Prefer public exports and semantic tokens; do not import private workspace internals.
 - Mobile-first responsive behavior, keyboard/focus, RTL, large text and reduced motion are correctness constraints, not optional polish.
 - Web preview evidence is Web evidence. Native compile/bundle evidence is not native interaction proof.

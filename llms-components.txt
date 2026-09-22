@@ -2,7 +2,7 @@
 
 > The 63 public component modules exported by `@beemvp/beeui-ui`, derived from registry/registry.json and packages/ui/src/index.ts. Each line lists the module's exported runtime symbols and its source file. Full per-component behavior/accessibility contracts live in [docs/components.md](docs/components.md); this file is the token-efficient map from name to symbols to source.
 
-STATUS: BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. Stable `latest` is not promoted to a non-prerelease version yet, so every release-candidate install should use `@next` or pin the exact version — do not recommend an unqualified, untagged install. `npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next` and `npx @beemvp/beeui-cli@next --help` are live, working registry commands today. The source-ownership CLI (`pnpm beeui add <component>`) remains available from a repository checkout. See [docs/dist-tag-policy.md](docs/dist-tag-policy.md) for the full release/dist-tag mechanics.
+STATUS: BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. The live registry currently resolves both `next` and `latest` to the same RC. The bootstrap workflow published with `--tag next`; the mechanism that also produced `latest` has not been established, so this is recorded as observed registry state rather than an npm rule. `latest` moves to a real stable version at the first stable release. Every release-candidate install should still use `@next` or pin the exact version — do not recommend an unqualified, untagged install, since that stops matching the RC once `latest` moves. `npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next` and `npx @beemvp/beeui-cli@next --help` are live, working registry commands today. The source-ownership CLI (`pnpm beeui add <component>`) remains available from a repository checkout. See [docs/dist-tag-policy.md](docs/dist-tag-policy.md) for the full release/dist-tag mechanics.
 
 ## How to read this
 - Import all listed symbols from `@beemvp/beeui-ui` (centralized model) or copy the source file via `pnpm beeui add <name>` (source-ownership model). Type-only exports are omitted here for brevity; see the source file or [packages/ui/src/index.ts](packages/ui/src/index.ts) for `Props` and value-type exports.
@@ -61,7 +61,7 @@ STATUS: BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. S
 - `segmented-control` → exports: SegmentedControl, SegmentedControlItem — source: [packages/ui/src/components/segmented-control.tsx](packages/ui/src/components/segmented-control.tsx) — notable peers: react, react-native
 - `select` → exports: Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue — source: [packages/ui/src/components/select.tsx](packages/ui/src/components/select.tsx) — notable peers: react, react-native
 - `separator` → exports: Separator — source: [packages/ui/src/components/separator.tsx](packages/ui/src/components/separator.tsx) — notable peers: react, react-native
-- `sheet` → exports: Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHandle, SheetTitle, SheetTrigger — source: [packages/ui/src/components/sheet.tsx](packages/ui/src/components/sheet.tsx) — notable peers: @gorhom/bottom-sheet, react, react-native, react-native-gesture-handler, react-native-reanimated, react-native-worklets
+- `sheet` → exports: Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHandle, SheetProvider, SheetTitle, SheetTrigger — source: [packages/ui/src/components/sheet.tsx](packages/ui/src/components/sheet.tsx) — notable peers: @gorhom/bottom-sheet, react, react-native, react-native-gesture-handler, react-native-reanimated, react-native-worklets
 - `skeleton` → exports: Skeleton, skeletonVariants — source: [packages/ui/src/components/skeleton.tsx](packages/ui/src/components/skeleton.tsx) — notable peers: react, react-native
 - `spinner` → exports: Spinner — source: [packages/ui/src/components/spinner.tsx](packages/ui/src/components/spinner.tsx) — notable peers: react, react-native
 - `stack` → exports: HStack, Stack, VStack, stackVariants — source: [packages/ui/src/components/stack.tsx](packages/ui/src/components/stack.tsx) — notable peers: react, react-native
@@ -90,6 +90,9 @@ STATUS: BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. S
 - `field-context`
 - `form-group-context`
 - `overlay-runtime`
+- `sheet-context-bridge`
+- `theme-scope-bridge`
+- `toast-runtime-bridge`
 - `use-direction`
 - `use-required-callback-warning`
 

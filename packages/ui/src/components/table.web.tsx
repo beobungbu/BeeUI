@@ -72,8 +72,75 @@ function handleRowActivationKeyDown(
   onPress: () => void,
 ) {
   if (event.key !== 'Enter' && event.key !== ' ') return;
+  if (isEmbeddedInteractiveActivation(event)) return;
   event.preventDefault();
   onPress();
+}
+
+// A pressable `TableRow`'s own `onClick`/keydown handlers fire for a click/keypress
+// originating anywhere inside the row, including an embedded cell action (a `Button`,
+// `Checkbox`, `SegmentedControlItem`, `SelectTrigger`, link, etc.) — without this guard,
+// tapping/activating that control also activates the whole row (e.g. navigating away
+// mid-checkbox-toggle). Bounded to a real `Element`-shaped `target`/`currentTarget` pair (a
+// DOM `MouseEvent`/`KeyboardEvent` at runtime; a plain stub object in unit tests) so it
+// degrades to "not embedded" rather than throwing when either is absent. Covers every native
+// interactive element/attribute BeeUI's own controls render as on Web, plus the full
+// WAI-ARIA widget-role vocabulary those controls expose (`role="radio"`/`"combobox"`/
+// `"slider"`/etc.) — not just the small subset BeeUI happened to ship first. `[tabindex]:
+// not([tabindex="-1"])` catches any other Tab-reachable custom control a consumer embeds;
+// `isEmbeddedInteractiveActivation`'s own `interactiveAncestor === currentTarget` check
+// below is what excludes the row itself when the row's own pressable wrapper also carries a
+// `tabIndex`, so this selector does not need to exclude the row separately.
+const INTERACTIVE_DESCENDANT_SELECTOR =
+  [
+    'button',
+    'a[href]',
+    'input',
+    'select',
+    'textarea',
+    'summary',
+    '[contenteditable]',
+    '[tabindex]:not([tabindex="-1"])',
+    '[role="button"]',
+    '[role="link"]',
+    '[role="checkbox"]',
+    '[role="radio"]',
+    '[role="switch"]',
+    '[role="menuitem"]',
+    '[role="menuitemcheckbox"]',
+    '[role="menuitemradio"]',
+    '[role="tab"]',
+    '[role="option"]',
+    '[role="combobox"]',
+    '[role="listbox"]',
+    '[role="textbox"]',
+    '[role="searchbox"]',
+    '[role="slider"]',
+    '[role="spinbutton"]',
+    '[role="scrollbar"]',
+  ].join(', ');
+
+type ClosestCapable = { closest?: (selector: string) => unknown };
+type ContainsCapable = { contains?: (node: unknown) => boolean };
+
+function isEmbeddedInteractiveActivation(
+  event: { target?: unknown; currentTarget?: unknown } | null | undefined,
+): boolean {
+  if (!event) return false;
+  const target = event.target as ClosestCapable | null | undefined;
+  const currentTarget = event.currentTarget as ContainsCapable | null | undefined;
+  if (!target || typeof target.closest !== 'function') return false;
+
+  const interactiveAncestor = target.closest(INTERACTIVE_DESCENDANT_SELECTOR);
+  if (!interactiveAncestor || interactiveAncestor === currentTarget) return false;
+
+  // Bound the match to inside the row when the real DOM `Node.contains` API is available, so
+  // an interactive ancestor *above* the row (outside this component's control) never
+  // suppresses the row's own activation.
+  if (currentTarget && typeof currentTarget.contains === 'function') {
+    return currentTarget.contains(interactiveAncestor);
+  }
+  return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -463,7 +530,10 @@ export const TableRow = React.forwardRef<HTMLElement, TableRowProps>(
     });
     const interactiveProps = interactive
       ? {
-          onClick: onPress,
+          onClick: (event: React.MouseEvent<HTMLElement>) => {
+            if (isEmbeddedInteractiveActivation(event)) return;
+            onPress();
+          },
           onKeyDown: (event: React.KeyboardEvent<HTMLElement>) => handleRowActivationKeyDown(event, onPress),
           tabIndex: 0,
         }

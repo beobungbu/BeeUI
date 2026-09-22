@@ -4,7 +4,7 @@
 
 > Per-component documentation contract for the 63 public `@beemvp/beeui-ui` components. Each entry documents the same required sections so a new public component cannot silently ship without docs. Derived from registry/registry.json, packages/ui/src/index.ts, and the @beemvp/beeui-showcase app; enforced by `pnpm docs:contract:check`. The behavior-contract link points at the authoritative [component catalog](components.md); this file is the coverage-enforced per-component index, not a second copy of it.
 
-STATUS: BeeUI is pre-1.0 and UNPUBLISHED. No `@beemvp/beeui-*` package or CLI is on npm. The install / import lines below are release-ready-but-not-published targets; the working, in-repo path today is the source-ownership CLI (`pnpm beeui add <component>`).
+STATUS: BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. The live registry currently resolves both `next` and `latest` to the same RC. The bootstrap workflow published with `--tag next`; the mechanism that also produced `latest` has not been established, so this is recorded as observed registry state rather than an npm rule. `latest` moves to a real stable version at the first stable release. Every release-candidate install should still use `@next` or pin the exact version — do not recommend an unqualified, untagged install, since that stops matching the RC once `latest` moves. `npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next` and `npx @beemvp/beeui-cli@next --help` are live, working registry commands today. The source-ownership CLI (`pnpm beeui add <component>`) remains available from a repository checkout. See [docs/dist-tag-policy.md](dist-tag-policy.md) for the full release/dist-tag mechanics.
 
 The documentation contract, its required sections, and how it is enforced are defined in [component-documentation-contract.md](component-documentation-contract.md). For the token-efficient name→symbol→source map see [llms-components.txt](../llms-components.txt); for composed screens see the [pattern library](pattern-library.md).
 
@@ -229,7 +229,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/date-picker-showcase.tsx`](../apps/showcase/component-gallery/date-picker-showcase.tsx), [`runtime-smoke/l10n-stress-acceptance.tsx`](../apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** `locale` only affects `Calendar`'s own weekday/month grid and `Intl`-based date formatting — it does not translate the date trigger's own `placeholder` or its month-navigation accessible labels, which are separate string props with hardcoded English defaults. A localized app must pass `placeholder`, `previousMonthAccessibilityLabel` and `nextMonthAccessibilityLabel` explicitly alongside `locale`.
+- **Limitations:** `locale` affects `Calendar`'s own weekday/month grid, `Intl`-based date formatting, and — when the caller omits `placeholder` — the trigger's own default placeholder text, drawn from a small built-in dictionary (`en-US`/`vi-VN` today) that falls back to the English copy for any other locale. It does not translate the month-navigation accessible labels, which stay separate string props with hardcoded English defaults. A localized app must pass `previousMonthAccessibilityLabel` and `nextMonthAccessibilityLabel` explicitly alongside `locale`.
 - **Notes:** Platform-split: resolves date-picker.native.tsx / date-picker.web.tsx at build time.
 
 ## `date-time-picker`
@@ -244,7 +244,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/date-time-picker-showcase.tsx`](../apps/showcase/component-gallery/date-time-picker-showcase.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** `locale` only affects the embedded `Calendar`'s weekday/month grid and `Intl`-based date formatting — it does not translate the combined trigger's `placeholder` or its month-navigation accessible labels, each a separate string prop with a hardcoded English default. A localized app must pass `placeholder`, `previousMonthAccessibilityLabel` and `nextMonthAccessibilityLabel` explicitly alongside `locale`.
+- **Limitations:** `locale` affects the embedded `Calendar`'s weekday/month grid, `Intl`-based date/time formatting, and — when the caller omits `placeholder` — the combined trigger's default placeholder text and the picker footer's "Done" button label, both drawn from a small built-in dictionary (`en-US`/`vi-VN` today) that falls back to the English copy for any other locale (`Done` has no caller-facing override prop at all; it always follows `locale`). It does not translate the month-navigation accessible labels or the hour/minute/period/clear accessibility labels, each a separate string prop with a hardcoded English default. A localized app must pass those explicitly alongside `locale`.
 - **Notes:** Platform-split module; segmented date/time entry on native.
 
 ## `description-list`
@@ -609,7 +609,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`component-gallery/select-showcase.tsx`](../apps/showcase/component-gallery/select-showcase.tsx), [`runtime-smoke/dynamic-type-acceptance.tsx`](../apps/showcase/runtime-smoke/dynamic-type-acceptance.tsx), [`runtime-smoke/runtime-stress-acceptance.tsx`](../apps/showcase/runtime-smoke/runtime-stress-acceptance.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Executable examples:** [`component-gallery/select-showcase.tsx`](../apps/showcase/component-gallery/select-showcase.tsx), [`runtime-smoke/dynamic-type-acceptance.tsx`](../apps/showcase/runtime-smoke/dynamic-type-acceptance.tsx), [`runtime-smoke/runtime-acceptance.tsx`](../apps/showcase/runtime-smoke/runtime-acceptance.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Notes:** Rendering a `Select` inside a `Popover` is supported: the two share the same anchored-overlay runtime and dismiss/collision handling, so the listbox opens above the popover rather than being clipped or hidden behind it.
 
 ## `separator`
@@ -629,16 +629,16 @@ The documentation contract, its required sections, and how it is enforced are de
 ## `sheet`
 
 - **Purpose:** Gesture-driven bottom sheet with detents on the shared overlay runtime.
-- **Import:** `import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHandle, SheetTitle, SheetTrigger } from '@beemvp/beeui-ui';`
-- **API:** `Sheet`, `SheetClose`, `SheetContent`, `SheetDescription`, `SheetFooter`, `SheetHandle`, `SheetTitle`, `SheetTrigger` — source [`packages/ui/src/components/sheet.tsx`](../packages/ui/src/components/sheet.tsx). Typed props: `SheetCloseProps`, `SheetContentProps`, `SheetDescriptionProps`, `SheetFooterProps`, `SheetHandleProps`, `SheetProps`, `SheetSnapPoint`, `SheetTitleProps`, `SheetTriggerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
+- **Import:** `import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHandle, SheetProvider, SheetTitle, SheetTrigger } from '@beemvp/beeui-ui';`
+- **API:** `Sheet`, `SheetClose`, `SheetContent`, `SheetDescription`, `SheetFooter`, `SheetHandle`, `SheetProvider`, `SheetTitle`, `SheetTrigger` — source [`packages/ui/src/components/sheet.tsx`](../packages/ui/src/components/sheet.tsx). Typed props: `SheetCloseProps`, `SheetContentProps`, `SheetDescriptionProps`, `SheetFooterProps`, `SheetHandleProps`, `SheetProps`, `SheetProviderProps`, `SheetSnapPoint`, `SheetTitleProps`, `SheetTriggerProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add sheet` (copies the source file into your app; see [registry CLI](registry-cli.md)).
-- **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `@gorhom/bottom-sheet`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `button`, `core-cn`, `overlay-runtime`, `text`, `theme`.
+- **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `@gorhom/bottom-sheet`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets`. Requires [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) above `SheetProvider`; native `SheetProvider` owns gorhom's modal/gesture root so its portal stays below BeeUI runtime contexts. Source-ownership pulls in registry dependencies: `button`, `core-cn`, `overlay-runtime`, `sheet-context-bridge`, `text`, `theme`, `theme-scope-bridge`, `toast-runtime-bridge`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md). Platform-split module (native/web files resolve at build time).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`runtime-smoke/l10n-stress-acceptance.tsx`](../apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Notes:** Native gesture engine uses @gorhom/bottom-sheet + reanimated/gesture-handler; platform-split module.
+- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`app-providers.native.tsx`](../apps/showcase/app-providers.native.tsx), [`runtime-smoke/l10n-stress-acceptance.tsx`](../apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Notes:** Native apps mount `SheetProvider` below `BeeUIProvider`; it owns @gorhom/bottom-sheet + gesture-handler root wiring, while Web/fallback is pass-through. The family remains platform-split.
 
 ## `skeleton`
 
@@ -750,7 +750,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
 - **Executable examples:** [`component-gallery/table-showcase.tsx`](../apps/showcase/component-gallery/table-showcase.tsx), [`runtime-smoke/l10n-stress-acceptance.tsx`](../apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx), [`__tests__/dynamic-type-contract.test.tsx`](../apps/showcase/__tests__/dynamic-type-contract.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** `colSpan` is an approximation on native: with no table-layout engine a spanning cell grows its flex share instead of measuring the columns it covers. A `TableHead` whose content is not plain text needs an explicit `label`, because both the stacked layout's visible pairing and each native cell's accessible name are built from it.
+- **Limitations:** `colSpan` is an approximation on native: with no table-layout engine a spanning cell grows its flex share instead of measuring the columns it covers. A `TableHead` whose content is not plain text needs an explicit `label`, because both the stacked layout's visible pairing and each native cell's accessible name are built from it. A row with `onPress` should not also embed its own interactive controls on native: the row renders as a single button-role `Pressable`, so a screen reader exposes the whole row as one button regardless of what its cells contain — prefer a single cell action or a leading `Checkbox` instead of a row-level `onPress` when a row needs its own actionable controls. Web keeps row and cell activation independent (a click or `Enter`/`Space` on an embedded interactive descendant activates that control, not the row), so this combination is `onPress`-only-on-Web territory, not a cross-platform pattern.
 - **Notes:** Platform-split; see docs/data-typography.md for data-cell typography. Row-to-detail navigation pattern: `TableRow` accepts an opt-in `onPress` (mirroring `ListItem`) to make an entire row navigate to a detail screen, e.g. `<TableRow onPress={() => router.push(`/orders/${order.id}`)}>`. It renders as a real, keyboard-reachable pressable row (native: `accessibilityRole="button"`; Web: the row stays a real `<tr>`/`role="row"` — not `role="button"`, which would break table semantics — and adds `tabIndex={0}` plus `Enter`/`Space` keydown activation alongside the pointer `onClick`) while every row without `onPress` keeps rendering exactly as before. Prefer this over wrapping a whole row in your own `Pressable`, which duplicates row semantics; for a row that only needs one actionable cell (not the whole row), put an `IconButton` in its own `TableCell` instead.
 
 ## `tabs`
@@ -802,7 +802,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Import:** `import { BeeThemeScope } from '@beemvp/beeui-ui';`
 - **API:** `BeeThemeScope` — source [`packages/ui/src/components/theme-scope.tsx`](../packages/ui/src/components/theme-scope.tsx). Typed props: `BeeThemeScopeProps` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add theme-scope` (copies the source file into your app; see [registry CLI](registry-cli.md)).
-- **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `uniwind`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `theme`.
+- **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `uniwind`. No provider required; `BeeUIProvider` is still the recommended application root. Source-ownership pulls in registry dependencies: `theme`, `theme-scope-bridge`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
@@ -831,7 +831,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Import:** `import { TOAST_DEFAULT_DURATION, TOAST_MAX_VISIBLE, useToast } from '@beemvp/beeui-ui';`
 - **API:** `TOAST_DEFAULT_DURATION`, `TOAST_MAX_VISIBLE`, `useToast` — source [`packages/ui/src/components/toast.tsx`](../packages/ui/src/components/toast.tsx). Typed props: `ToastAction`, `ToastApi`, `ToastDuration`, `ToastId`, `ToastOptions`, `ToastVariant` (from [`@beemvp/beeui-ui`](../packages/ui/src/index.ts)).
 - **Source ownership:** `pnpm beeui add toast` (copies the source file into your app; see [registry CLI](registry-cli.md)).
-- **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `react-native-safe-area-context`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `text`, `theme`.
+- **Dependencies / provider:** Peer dependencies: `react`, `react-native`, `react-native-safe-area-context`. Requires a [`BeeUIProvider`](../packages/ui/src/components/safe-area.tsx) ancestor (shared overlay / toast runtime). Source-ownership pulls in registry dependencies: `text`, `theme`, `toast-runtime-bridge`.
 - **Accessibility:** roles/states per the [accessibility contract](accessibility-contract.md); text honors font scaling ([dynamic type](dynamic-type.md)).
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
@@ -850,8 +850,8 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`component-gallery/toolbar-showcase.tsx`](../apps/showcase/component-gallery/toolbar-showcase.tsx), [`__tests__/toolbar-overflow-collapse.test.tsx`](../apps/showcase/__tests__/toolbar-overflow-collapse.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
-- **Limitations:** `overflowAccessibilityLabel` is required only once the overflow menu actually renders (i.e. once any prioritized item collapses) — a dev warning fires if it is missing at that point, not before. `ToolbarItem.children` is read for measurement and rendering but never cloned or modified, so it must be a single element (typically an `IconButton`/`Button`).
+- **Executable examples:** [`component-gallery/toolbar-showcase.tsx`](../apps/showcase/component-gallery/toolbar-showcase.tsx), [`__tests__/toolbar-arrow-key-roving-focus.test.tsx`](../apps/showcase/__tests__/toolbar-arrow-key-roving-focus.test.tsx), [`__tests__/toolbar-item-visible-mode-contract.test.tsx`](../apps/showcase/__tests__/toolbar-item-visible-mode-contract.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Limitations:** `overflowAccessibilityLabel` is required only once the overflow menu actually renders (i.e. once any prioritized item collapses) — a dev warning fires if it is missing at that point, not before. `ToolbarItem.children` must be a single element (typically an `IconButton`/`Button`) — `Toolbar` reads it for measurement, clones `disabled` onto it whenever this item is disabled and `onPress` onto it whenever the child declares none of its own (an `onPress` the child sets itself always wins instead), and, on Web, further clones its focus/keyboard-navigation wiring for roving-tabindex support; every other prop on the child is left untouched.
 - **Notes:** The overflow menu is a `DropdownMenu` composition, so it inherits that family's full keyboard/dismiss behavior and `aria-haspopup="menu"` for free — there is no second, bespoke popover implementation.
 
 ## `tooltip`
