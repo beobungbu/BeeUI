@@ -8,7 +8,7 @@ description: "Decorative-by-default divider (semantic when requested); vertical 
 Decorative-by-default divider (semantic when requested); vertical orientation stretches across the cross axis.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. Stable `latest` currently resolves to the same RC too. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established, so this is recorded as observed registry state rather than an npm rule. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Data display
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/separator.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/separator.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add separator
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -94,9 +95,9 @@ Colors, spacing and typography come from semantic tokens rather than from values
 ## Executable examples
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/issue-7-runtime-a11y.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-runtime-a11y.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/separator-vertical-stretch.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/separator-vertical-stretch.test.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/select-showcase.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/select-showcase.tsx)
-- **Additional fixture:** [`apps/showcase/patterns/account-settings/screens/account-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/account-settings/screens/account-screen.tsx)
 
 ### Addressable examples
 
@@ -132,9 +133,17 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Separator** is actually used: 114 lines in 6 places, of 13 in total — open the fixture for the remaining 7. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Separator** is actually used: 114 lines in 6 places, of 13 in total — open the fixture for the remaining 7. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
-[lines 545–563](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L545-L563):
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, Badge, Box, Button, Card, Collapsible, CollapsibleContent, CollapsibleTrigger, DescriptionItem, DescriptionList, EmptyState, ErrorState, ListItem, Progress, Section, Separator, SettingsItem, Skeleton, Spinner, Switch, Tabs, TabsContent, TabsList, TabsTrigger, Text } from '@beemvp/beeui-ui';
+import * as React from 'react';
+import { Uniwind, useUniwind } from 'uniwind';
+````
+
+[lines 546–564](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L546-L564):
 
 ````tsx
             <Card className="gap-4" variant="muted">
@@ -158,7 +167,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
             </Card>
 ````
 
-[lines 567–588](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L567-L588):
+[lines 568–589](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L568-L589):
 
 ````tsx
             <Card className="gap-4">
@@ -185,19 +194,25 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
             </Card>
 ````
 
-[line 620](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L620-L620):
+[line 621](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L621-L621):
 
 ````tsx
               <Separator />
 ````
 
-[line 719](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L719-L719):
+[line 726](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L726-L726):
 
 ````tsx
               <Separator />
 ````
 
-[lines 914–949](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L914-L949):
+Fixture state this block reads (same file, line 462):
+
+````tsx
+  const [tab, setTab] = React.useState('overview');
+````
+
+[lines 921–956](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L921-L956):
 
 ````tsx
             <Card className="gap-4">
@@ -238,7 +253,14 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
             </Card>
 ````
 
-[lines 1018–1052](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1018-L1052):
+Fixture state this block reads (same file, lines 458, 460):
+
+````tsx
+  const { theme } = useUniwind();
+  const [notifications, setNotifications] = React.useState(true);
+````
+
+[lines 1025–1059](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1025-L1059):
 
 ````tsx
               <Section description="Read-only application information patterns." title="Metadata and rows">
@@ -278,7 +300,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               </Section>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 The role is owned here and omitted from the prop type: the component sets the separator role only when `decorative` is false, and while `decorative` is at its default the view is also marked as not an accessibility element of its own. Thickness is fixed at one pixel with no thickness, length or inset prop; anything else comes from `className`.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # R10.4 (#233) — installs this starter's own dependencies from freshly packed
-# BeeUI tarballs (BeeUI is unpublished; see README.md and
-# docs/decisions/011-distribution-architecture.md). Mirrors
+# BeeUI tarballs (see README.md for why this starter uses packed tarballs
+# instead of the public npm RC). Mirrors
 # scripts/verify-web-consumer.sh's dependency pins so this starter matches the
 # same tested Web support contract (docs/compatibility-matrix.md).
 set -euo pipefail

@@ -169,7 +169,9 @@ EOF
   # axe correctly flags, so this fixture must not do that.
   cat > src/App.tsx <<'EOF'
 import {
+  BeeThemeScope,
   BeeUIProvider,
+  Box,
   Button,
   Calendar,
   Card,
@@ -205,6 +207,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  useBeeToken,
   type CalendarDate,
 } from '@beemvp/beeui-ui';
 // #204: proves a granular per-component subpath (ADR-012,
@@ -213,6 +216,15 @@ import {
 // import above.
 import { Badge } from '@beemvp/beeui-ui/badge';
 import * as React from 'react';
+
+// #550/#552: proves BeeThemeScope/useBeeToken resolve correctly through the packed
+// tarball, not just the barrel import compiling — see verify-consumer.mjs below, which
+// asserts the computed --color-primary and the useBeeToken readout both differ between
+// the ambient theme and this BeeThemeScope.
+function PrimaryTokenReadout({ testID }: { testID: string }) {
+  const primary = useBeeToken('colors.primary');
+  return <Text testID={testID}>{primary}</Text>;
+}
 
 export function App() {
   const [checked, setChecked] = React.useState(false);
@@ -285,6 +297,16 @@ export function App() {
                 </TableRow>
               </TableBody>
             </Table>
+
+            <Card className="gap-2">
+              <Text variant="title">Package boundary: BeeThemeScope + useBeeToken</Text>
+              <Box className="h-8 w-16 rounded-md bg-primary" testID="ambient-primary-swatch" />
+              <PrimaryTokenReadout testID="ambient-primary-token" />
+              <BeeThemeScope appearance="dark" brand="violet">
+                <Box className="h-8 w-16 rounded-md bg-primary" testID="scoped-primary-swatch" />
+                <PrimaryTokenReadout testID="scoped-primary-token" />
+              </BeeThemeScope>
+            </Card>
           </Card>
         </div>
       </Screen>
@@ -351,12 +373,44 @@ await page.getByRole('button', { name: 'Dismiss' }).first().click();
 await page.waitForSelector('text=Representative Sheet', { state: 'hidden' });
 
 // Calendar — select a day by its full accessible date name.
-const dayCell = page.getByRole('cell', { name: /15, \d{4}/ });
+const dayCell = page.getByRole('gridcell', { name: /15, \d{4}/ });
 await dayCell.waitFor({ state: 'visible', timeout: 5000 });
 await dayCell.click();
 
 // Table renders with real table semantics.
 await page.waitForSelector('role=table');
+
+// #550/#552 — BeeThemeScope/useBeeToken package-boundary proof: a scope wrapping a
+// different brand/appearance than the ambient app theme must actually change what
+// resolves through the packed tarball, both as a real computed CSS value (not just a
+// className string that happened to compile) and through the useBeeToken hook.
+const ambientPrimaryCssValue = await page
+  .locator('[data-testid="ambient-primary-swatch"]')
+  .evaluate((el) => getComputedStyle(el).backgroundColor);
+const scopedPrimaryCssValue = await page
+  .locator('[data-testid="scoped-primary-swatch"]')
+  .evaluate((el) => getComputedStyle(el).backgroundColor);
+if (!ambientPrimaryCssValue || !scopedPrimaryCssValue) {
+  throw new Error('Could not read a computed background-color for the primary-token swatches.');
+}
+if (ambientPrimaryCssValue === scopedPrimaryCssValue) {
+  throw new Error(
+    `BeeThemeScope did not change the computed --color-primary value: both the ambient and ` +
+      `scoped swatch resolved to ${ambientPrimaryCssValue}.`,
+  );
+}
+
+const ambientPrimaryToken = (await page.locator('[data-testid="ambient-primary-token"]').innerText()).trim();
+const scopedPrimaryToken = (await page.locator('[data-testid="scoped-primary-token"]').innerText()).trim();
+if (!ambientPrimaryToken || !scopedPrimaryToken) {
+  throw new Error('Could not read a useBeeToken readout for the primary-token swatches.');
+}
+if (ambientPrimaryToken === scopedPrimaryToken) {
+  throw new Error(
+    `useBeeToken('colors.primary') did not change inside the BeeThemeScope: both the ambient ` +
+      `and scoped readout resolved to ${ambientPrimaryToken}.`,
+  );
+}
 
 const axeResults = await new AxeBuilder({ page })
   .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
@@ -377,7 +431,7 @@ if (errors.length > 0) {
 }
 
 if (process.exitCode !== 1) {
-  console.log('OK: independent Vite + react-native-web consumer — forms, overlays, Select, Tooltip, Sheet, Table, Calendar all interact correctly with no console errors and no serious/critical axe violations.');
+  console.log('OK: independent Vite + react-native-web consumer — forms, overlays, Select, Tooltip, Sheet, Table, Calendar, and the BeeThemeScope/useBeeToken package-boundary proof all interact correctly with no console errors and no serious/critical axe violations.');
 }
 EOF
 }

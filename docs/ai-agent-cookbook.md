@@ -2,9 +2,13 @@
 
 This document tells a coding agent (Claude, Codex, or any other) how to reason about,
 build applications with, and contribute to BeeUI **without relying on hidden maintainer
-knowledge**. It is truthful to the current repository state: BeeUI is pre-1.0 and
-**unpublished**. Everything an agent needs is in canonical, in-repo, machine-checkable
-context.
+knowledge**. It is truthful to the current repository state: BeeUI is pre-1.0, and
+**`0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag**. Because this is each
+package's first-ever npm publish, `latest` currently resolves to the same RC too — npm's
+automatic first-publish default, not a deliberate stable promotion; `latest` moves to a real
+stable version at the first `0.86.2` release (see
+[docs/dist-tag-policy.md](dist-tag-policy.md)). Everything an agent needs is in canonical,
+in-repo, machine-checkable context.
 
 It has two parts:
 
@@ -32,32 +36,40 @@ Stat, Timeline, Badge, Avatar, DescriptionList, useToast
 
 ## Part 1 — Development contract
 
-### 1. Read this before anything else: the unpublished-status rules
+### 1. Read this before anything else: the current distribution-status rules
 
-BeeUI is **pre-1.0 and UNPUBLISHED**. This is the single most important fact for an agent,
-because the natural instinct — "install the library from npm" — is wrong today.
+BeeUI is **pre-1.0**, and **`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`,
+and `@beemvp/beeui-cli` are public on npm at `0.86.2-rc.1`** under the opt-in `next` dist-tag.
+This is the single most important fact for an agent, because it flips the instinct from the
+pre-RC era — "install the library from npm" is now correct, but only with the `@next` suffix
+(or an exact pinned version). `latest` currently resolves to the same RC too — that is npm's
+automatic first-publish default, not a deliberate stable promotion, and it stops being true at
+the first `0.86.2` stable release — so always suffix commands with `@next` rather than relying
+on today's coincidence.
 
-- There is **no `@beemvp/beeui-*` package on npm**, **no `@beemvp/beeui-cli`**, **no `v1.0.0` tag**, and
-  **no GitHub Release**. The repository is public, but nothing is published to npm; the `@beemvp`
-  scope resolves `404`, and publication stays owner-gated at #254.
-- The names `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`, and `@beemvp/beeui-cli` are
-  **release-ready-but-not-published targets**. They are reserved intent, not live registry
-  entries. See [docs/distribution-names.md](distribution-names.md) and
-  [ADR-011](decisions/011-distribution-architecture.md).
-- **Never** tell a user to run `npm install @beemvp/beeui-ui`, `npx @beemvp/beeui-cli add ...`, or
-  `npx beeui ...`. Those resolve to nothing today (`beeui` unscoped is an unrelated
-  unpublish tombstone — do not claim it).
-- **Never** describe BeeUI as published or as being installable from npm. "Release-ready"
-  is not "released".
+- `npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next` and
+  `npx @beemvp/beeui-cli@next --help` are **live, working commands today**. There is still
+  **no `v1.0.0` tag** and **no GitHub Release** — publication of the stable `0.86.2` line to
+  `latest` remains owner-gated (see [docs/dist-tag-policy.md](dist-tag-policy.md)).
+- Pin `@0.86.2-rc.1` instead of `@next` when you need an immutable prerelease version in CI
+  or a reproducible consumer fixture. See [docs/distribution-names.md](distribution-names.md)
+  and [ADR-011](decisions/011-distribution-architecture.md).
+- **Always** suffix a registry command with `@next` (or the exact RC version). An unqualified
+  `npm install @beemvp/beeui-ui`/`npx @beemvp/beeui-cli` is not the documented RC install path
+  even when it happens to resolve — do not recommend it.
+- `npx beeui ...` (the unscoped name) is an unrelated npm unpublish tombstone, not this
+  project's CLI — never claim it. The published CLI binary is `@beemvp/beeui-cli`.
 
-The path that **works today** is repository-local source ownership:
+The source-ownership path remains available from a repository checkout and needs no npm
+registry at all:
 
 ```sh
 pnpm beeui add <component>
 ```
 
-Whenever you write install/setup instructions, present the package model as a
-*future/target* path and the source-ownership CLI as the *working* path.
+Whenever you write install/setup instructions, always suffix the centralized-package
+commands with `@next` (or the exact RC version) and present the source-ownership CLI as the
+no-registry-required alternative.
 
 ### 2. The two consumption models (package vs source ownership)
 
@@ -65,30 +77,32 @@ BeeUI deliberately supports two models. Pick per the consumer's needs.
 
 | | Centralized packages | Source ownership |
 | --- | --- | --- |
-| Command | `npm i @beemvp/beeui-ui @beemvp/beeui-core @beemvp/beeui-tokens` (**target, not yet on npm**) | `pnpm beeui add <component>` (**works today, repo-local**) |
+| Command | `npm i @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next` (**public RC on npm**) | `pnpm beeui add <component>` (**works today, repo-local**) |
 | Consumer gets | a dependency on `@beemvp/beeui-*` | copied component **source files it now owns** |
 | Import | `import { Button } from '@beemvp/beeui-ui'` | imports rewritten to consumer-local copies (e.g. `@beemvp/beeui-core` → copied `cn`) |
-| Upgrades | bump the package | re-run `add`, or hand-maintain the owned copy |
-| Available now | no (release-gated, #254) | yes |
+| Upgrades | bump the package (or `@next` tracks the latest RC) | re-run `add`, or hand-maintain the owned copy |
+| Available now | yes, under `@next` (`@latest` also resolves to this RC today, incidentally — see dist-tag-policy) | yes |
 
 Details: [docs/registry-cli.md](registry-cli.md), [docs/distribution-names.md](distribution-names.md),
-[ADR-011](decisions/011-distribution-architecture.md). The machine-readable registry that
+[ADR-011](decisions/011-distribution-architecture.md),
+[docs/dist-tag-policy.md](dist-tag-policy.md). The machine-readable registry that
 drives `add` is [registry/registry.json](../registry/registry.json).
 
-**Consuming the centralized packages before release (tarballs).** The package-model row
-above is a target, but a **new, standalone** app can consume it today without npm — as
-local tarballs, the exact package boundary CI's `scripts/verify-web-consumer.sh` and the
-checked-in starters already prove (never a `workspace:*` link or a hand-copied `dist/`).
-Build the packages once (`pnpm build`), pack `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and
-`@beemvp/beeui-ui` into `*.tgz` files (the starters do this with
+**Consuming the centralized packages from a local build (tarballs).** The `@next` install
+above is the normal path now that the RC is public. Repository-local packed tarballs — the
+exact package boundary CI's `scripts/verify-web-consumer.sh` and the checked-in starters
+use (never a `workspace:*` link or a hand-copied `dist/`) — remain useful for testing an
+**unreleased commit** that has not been published yet, but are no longer required to consume
+the published RC. Build the packages once (`pnpm build`), pack `@beemvp/beeui-core`,
+`@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` into `*.tgz` files (the starters do this with
 [examples/scripts/pack-beeui-packages.mjs](../examples/scripts/pack-beeui-packages.mjs)), then
 `npm install --save-exact <core.tgz> <tokens.tgz> <ui.tgz>` so the app depends on them as
-`file:….tgz`. This resolves the real package `exports` and Web theme CSS exactly as a
-published install would, with no invented npm entry. Worked reference:
+`file:….tgz`. Worked reference:
 [examples/web-consumer](../examples/web-consumer) and [examples/README.md](../examples/README.md);
 expanded in [llms-full.txt](../llms-full.txt) ("Consuming the packages before release").
 This is distinct from source ownership: use tarballs when you want the centralized
-package dependency; use `pnpm beeui add` when you want to own the copied source.
+package dependency from an unreleased commit; use `pnpm beeui add` when you want to own the
+copied source.
 
 The source-ownership CLI:
 
@@ -113,7 +127,7 @@ design-token contract. It intentionally does **not** own routers, data fetching,
 auth, payment, a form-management library, or a chart framework. Do not add those into
 `@beemvp/beeui-ui`, and do not expect BeeUI to provide them. See [docs/architecture.md](architecture.md).
 
-The public surface is **62 public component modules** exported from `@beemvp/beeui-ui`, plus
+The public surface is **63 public component modules** exported from `@beemvp/beeui-ui`, plus
 `@beemvp/beeui-core` (engine-neutral helpers) and `@beemvp/beeui-tokens` (semantic tokens + theme CSS).
 The authoritative inventory is [llms-components.txt](../llms-components.txt), generated from
 [packages/ui/src/index.ts](../packages/ui/src/index.ts) and
@@ -206,18 +220,20 @@ must do:
 - **No self-merge.** An implementation agent must not merge its own PR, merge sibling PRs,
   update `main` directly, weaken required checks, or claim "CI green" without identifying the
   exact green head.
-- **Owner/admin/release gates are hard stops.** An agent must not publish npm packages or the
-  CLI, create stable tags/dist-tags/releases, make the repo public, or decide owner-gated
-  legal/business policy. Prepare a decision packet and stop with `OWNER_ACTION_REQUIRED`.
-  Final 1.0 publication is owner-commanded (#254) only. See
-  [docs/beeui-1.0-owner-gates.md](beeui-1.0-owner-gates.md).
+- **Owner/admin/release gates are hard stops.** An agent must not publish a new npm package
+  version, move a dist-tag (including promoting stable `0.86.2` to `latest`), create stable
+  tags/GitHub Releases, make the repo public, or decide owner-gated legal/business policy.
+  Prepare a decision packet and stop with `OWNER_ACTION_REQUIRED`. The `0.86.2-rc.1` bootstrap
+  publish under `next` is already complete; stable `latest` promotion remains
+  owner-commanded (#254) only. See [docs/beeui-1.0-owner-gates.md](beeui-1.0-owner-gates.md)
+  and [docs/dist-tag-policy.md](dist-tag-policy.md).
 
 ### 9. Common failure recovery
 
 | Symptom | Cause | Recovery |
 | --- | --- | --- |
-| `npm install @beemvp/beeui-ui` fails / 404 | package is unpublished | Use `pnpm beeui add <component>` (source ownership). Do not invent a registry. |
-| `npx beeui add ...` does nothing / wrong package | `beeui` unscoped is a tombstone; CLI is repo-local | Use `pnpm beeui add ...` inside the repo. |
+| `npm install @beemvp/beeui-ui` resolves an unexpected/older version | no `@next`/version suffix — an unqualified install is not the documented RC path | Use `npm install @beemvp/beeui-ui@next` (or pin `@0.86.2-rc.1`). Do not recommend a bare, unqualified install. |
+| `npx beeui add ...` does nothing / wrong package | `beeui` unscoped is a tombstone; the real CLI is `@beemvp/beeui-cli` | Use `npx @beemvp/beeui-cli@next add ...` (published) or `pnpm beeui add ...` (repo-local source ownership). |
 | Copied component fails to resolve `@beemvp/beeui-core` | expected — imports are rewritten to a local copy | Ensure `pnpm beeui add` ran fully; it copies `core-cn`/`core-overlay` and rewrites imports. |
 | `Sheet` throws at runtime on native | missing gesture/bottom-sheet providers | Add `GestureHandlerRootView` + `BottomSheetModalProvider` at the app root (ADR-006) and install the native peers the CLI reported. |
 | Overlay renders in the wrong place / no dismiss | second overlay authority introduced | Use the shared anchored-overlay contract; do not add a parallel portal. |
@@ -239,8 +255,12 @@ The canonical dispatcher prompt these align with is
 
 ### Shared preamble (prepend to any recipe)
 
-> Read [llms.txt](../llms.txt) first, then the specific docs it links. BeeUI is pre-1.0 and
-> UNPUBLISHED: never use `npm install @beemvp/beeui-*` or `npx @beemvp/beeui-cli`; the working path is
+> Read [llms.txt](../llms.txt) first, then the specific docs it links. BeeUI is pre-1.0;
+> `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag (always suffix
+> `npm install @beemvp/beeui-*` / `npx @beemvp/beeui-cli` with `@next` or the exact version —
+> `latest` also resolves to this RC today by npm's first-publish default, not a deliberate
+> promotion, and that changes at the first `0.86.2` stable release). The no-registry-required
+> alternative is
 > `pnpm beeui add <component>`. Derive the current base with `git fetch` + record the
 > `origin/main` SHA. Prefer semantic tokens; keep domain composition in the app. Stop and
 > report `BLOCKED_BY_DEPENDENCY` or `OWNER_ACTION_REQUIRED` rather than guessing.
@@ -250,8 +270,9 @@ The canonical dispatcher prompt these align with is
 > Goal: add `<component>` to `<consumer app>` using BeeUI source ownership. Steps: run
 > `pnpm beeui add --dry-run <component>` and show me the plan; then `pnpm beeui add
 > <component>`; wire the app shell with `BeeUIProvider` + `SafeArea`; import from the copied
-> local path (not `@beemvp/beeui-ui`, which is unpublished). Install any external peers the CLI
-> reports. Do not add a router, data layer, or form library.
+> local path (not `@beemvp/beeui-ui` — that is the centralized-package import, a different
+> consumption model). Install any external peers the CLI reports. Do not add a router, data
+> layer, or form library.
 
 ### Recipe B — Build a responsive form
 
@@ -303,22 +324,25 @@ import { Field, Input } from '@beemvp/beeui-ui';
 > via `@import '@beemvp/beeui-tokens/theme.css'`. Reference [docs/theming.md](theming.md) and
 > [docs/density.md](density.md).
 
-Runtime light/dark switching is **app-owned** and goes through Uniwind, not a BeeUI
-component: call `Uniwind.setTheme(name)` to change the active theme globally and read the
-current one with `useUniwind()` (both from the `uniwind` package). Valid names are exported
-from `@beemvp/beeui-tokens` as `beeRuntimeThemeNames` (`light`, `dark`, `violet-light`,
-`violet-dark`):
+Runtime theme switching is **app-owned** and goes through Uniwind, not a BeeUI component.
+The application owns exactly one preference state — BeeUI/Uniwind does not store or persist
+it — with **three** values: `type ThemePreference = 'system' | 'light' | 'dark'`, passed to
+`Uniwind.setTheme(preference)`. `setTheme('light')`/`setTheme('dark')` pin the app to that
+runtime theme regardless of what the OS/browser reports afterward; `setTheme('system')` is
+meant to release that pin and resume following the platform/browser color scheme. Read the
+current theme with `useUniwind()` (both from the `uniwind` package). Valid runtime-theme
+names are exported from `@beemvp/beeui-tokens` as `beeRuntimeThemeNames` (`light`, `dark`,
+`violet-light`, `violet-dark`).
 
-```tsx
-import { Button } from '@beemvp/beeui-ui';
-import { Uniwind, useUniwind } from 'uniwind';
-
-function ThemeToggle() {
-  const { theme } = useUniwind();
-  const next = theme === 'dark' ? 'light' : 'dark';
-  return <Button title={`Theme: ${theme}`} onPress={() => Uniwind.setTheme(next)} />;
-}
-```
+**Known gap, verified against `@beemvp/beeui-*@0.86.2-rc.1` with Uniwind `1.10.1`:** after an
+explicit `setTheme('light')`/`setTheme('dark')`, a later `setTheme('system')` type-checks and
+does not throw, but the app can stay pinned to the last explicit theme instead of reliably
+resuming OS/browser following. Do not tell a consumer `setTheme('system')` alone restores
+following; resolve `'system'` to `'light'`/`'dark'` yourself first (via `Appearance`/
+`useColorScheme` on native, `window.matchMedia('(prefers-color-scheme: dark)')` on Web) and
+re-run that resolution whenever the OS/browser scheme changes while the preference is
+`'system'`. Full working `useResolvedSystemScheme`/`applyThemePreference` pattern:
+[apps/docs/src/content/docs/theming/index.md](../apps/docs/src/content/docs/theming/index.md).
 
 This is one small piece of app state choosing *which* theme BeeUI's existing runtime uses —
 not a second theme authority (density re-applies per resolved theme via `applyDensity`, see
@@ -338,8 +362,8 @@ the `BeeThemeScope` component (a public `@beemvp/beeui-ui` export) instead of an
 
 > Goal: a consumer reports `<error>` (e.g. `Cannot find module '@beemvp/beeui-ui'`, or `Sheet`
 > throwing on native). Diagnose from the failure-recovery table in
-> [docs/ai-agent-cookbook.md](ai-agent-cookbook.md) §9: identify whether the root cause is the
-> unpublished-package assumption, missing source-ownership `add`, missing native
+> [docs/ai-agent-cookbook.md](ai-agent-cookbook.md) §9: identify whether the root cause is a
+> missing `@next`/version dist-tag suffix, missing source-ownership `add`, missing native
 > Sheet providers, a second overlay authority, or timezone expectations — then apply the
 > documented recovery from [§9](ai-agent-cookbook.md). Do not fix it by inventing an npm package.
 

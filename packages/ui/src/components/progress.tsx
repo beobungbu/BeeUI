@@ -67,6 +67,13 @@ export const Progress = React.forwardRef<React.ComponentRef<typeof View>, Progre
           min: 0,
           now: boundedValue,
         }}
+        // `accessibilityValue` alone does not reach the DOM on react-native-web (see
+        // Checkbox's `accessibilityState`/`aria-checked` note), so `role="progressbar"`
+        // needs the web-native `aria-valuemin`/`aria-valuenow`/`aria-valuemax` props set
+        // explicitly to satisfy the required-attribute contract.
+        aria-valuemax={boundedMax}
+        aria-valuemin={0}
+        aria-valuenow={boundedValue}
         className={cn(progressVariants({ size }), className)}
       >
         <View

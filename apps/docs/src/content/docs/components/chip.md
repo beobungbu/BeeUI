@@ -8,7 +8,7 @@ description: "Standalone toggle or value-scoped group item with button/radio/che
 Standalone toggle or value-scoped group item with button/radio/checkbox semantics.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. Stable `latest` currently resolves to the same RC too. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established, so this is recorded as observed registry state rather than an npm rule. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Data display
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/chip.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/chip.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add chip
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -46,7 +47,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Standalone toggle (`selected`/`onSelectedChange`) or, nested in `ChipGroup`, a value-scoped selection item; a grouped `Chip` rendered without a `value` fails safe as disabled and warns in development, and `ChipGroup` supports controlled/uncontrolled single- or multiple-selection.
+Standalone toggle (`selected`/`onSelectedChange`) or, nested in `ChipGroup`, a value-scoped selection item; a grouped `Chip` rendered without a `value` fails safe as disabled and warns in development, and `ChipGroup` supports controlled/uncontrolled single- or multiple-selection. A standalone `Chip` set to `interactive={false}` renders as a static, read-only tag with no button/radio/checkbox role and no press handling; `ChipGroup`'s `allowDeselect` lets pressing the already-selected `Chip` again clear the `'single'`-mode selection instead of leaving it always-one-selected.
 
 ### Props
 
@@ -54,6 +55,7 @@ Standalone toggle (`selected`/`onSelectedChange`) or, nested in `ChipGroup`, a v
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
+| `allowDeselect` | `boolean` | `false` | `'single'` mode only: pressing the already-selected `Chip` again clears the selection (reported as `''`, the same empty-string sentinel the group already starts from) instead of doing nothing. Off by default — existing single-select filter bars keep their current "always one selected" behavior unless they opt in. Ignored in `'multiple'` mode, which can already reach zero selections by unchecking every `Chip`. |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `defaultValue` | `ChipGroupValue` | — | Initial selection for uncontrolled usage: a string in `'single'` mode, an array in `'multiple'` mode. Defaults to no selection. |
@@ -71,6 +73,7 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `defaultSelected` | `boolean` | `false` | Initial selected state when this Chip is standalone (not inside a `ChipGroup`) and uncontrolled. Defaults to false. |
+| `interactive` | `boolean` | `true` | Set `false` for a read-only tag with no interactive role (`button`/ `radio`/`checkbox`) and no press handling — e.g. a list of stores a staff member belongs to, where `button`/`checkbox` semantics would be wrong. Defaults to `true`. Always treated as `true` inside a `ChipGroup`, whose selection semantics require an interactive member. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
 | `onSelectedChange` | `(selected: boolean) => void` | — | Called with the next selected state when pressed, if this Chip is standalone (not inside a `ChipGroup`). |
 | `selected` | `boolean` | — | Controls whether this standalone Chip is selected. Ignored inside a `ChipGroup`, which derives selection from `value` instead. |
@@ -117,10 +120,10 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/chip-static-tag-and-group-deselect.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/chip-static-tag-and-group-deselect.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/dynamic-type-contract.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/dynamic-type-contract.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-7-state-edge-cases.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-state-edge-cases.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/selection-control-aria.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/selection-control-aria.test.tsx)
 
 ### Addressable examples
 
@@ -161,9 +164,22 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Chip** is actually used: 9 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Chip** is actually used: 9 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
-[lines 888–896](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L888-L896):
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Chip, ChipGroup } from '@beemvp/beeui-ui';
+import * as React from 'react';
+````
+
+Fixture state this block reads (same file, line 464):
+
+````tsx
+  const [filters, setFilters] = React.useState<string[]>(['mobile']);
+````
+
+[lines 895–903](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L895-L903):
 
 ````tsx
                 <ChipGroup
@@ -177,10 +193,10 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                 </ChipGroup>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
-Inside a `ChipGroup`, a chip's own `selected`, `defaultSelected` and `onSelectedChange` are ignored: selection is read from the group's value and a press is routed to the group instead of the item's callback.
+Inside a `ChipGroup`, a chip's own `selected`, `defaultSelected`, `onSelectedChange` and `interactive` are ignored: selection and role are read from the group's value and semantics, and a press is routed to the group instead of the item's callback. `allowDeselect` has no effect in `'multiple'` mode, which can already reach zero selections by unchecking every `Chip`.
 
 ## Related
 

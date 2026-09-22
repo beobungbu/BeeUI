@@ -391,7 +391,7 @@ test('every public component resolves a typeDocs model with no thrown errors, an
   // across all 62 families must be parseable (fail loudly, not silently, is
   // enforced by generatePublicComponentPages itself; this asserts it in test).
   const manifest = buildPublicComponentManifest();
-  assert.equal(manifest.length, 62);
+  assert.equal(manifest.length, 63);
   for (const component of manifest) {
     assert.ok(component.behavior.trim().length > 0, `${component.name} has no curated behavior`);
     for (const entry of component.typeDocs) {
@@ -1913,9 +1913,10 @@ test('a style axis inherited from a public base type is published, and named', (
 
   const page = renderPublicComponentPage(iconButton, REPO_ROOT);
 
-  assert.match(page, /\*\*Style axes:\*\* `variant` \(5 values, inherited from `ButtonProps`\)/u);
-  // `size` is in the Omit list, so inheriting `variant` must not drag it along.
-  assert.equal(/`size` \(\d+ values, inherited/u.test(page), false);
+  // `size` is intentionally no longer in the Omit list — IconButton mirrors
+  // Button's own size scale (`sm`/`md`/`lg`/`icon`, defaulting to `icon`)
+  // instead of being fixed-size-only — so both axes are published together.
+  assert.match(page, /\*\*Style axes:\*\* `size` \(4 values, inherited from `ButtonProps`\), `variant` \(5 values, inherited from `ButtonProps`\)/u);
 });
 
 test('a peer the Web implementation never imports is scoped to native', () => {
@@ -2026,17 +2027,31 @@ test('a base that names an imported type is named, not called inline', () => {
   );
 });
 
-test('every base a family defers to is listed, named and structural alike', () => {
+test('a real style axis takes over the Style axes line once a family has one, even one that also defers to bases', () => {
+  // Table now has a real axis of its own (`TableHead`/`TableCell`'s `align`
+  // prop), so this line's own branching (see `axisLine` in
+  // `public-component-reference.mjs`) reports it instead of the "defers
+  // only" narrative this test previously exercised table with (`table` was
+  // this file's only real fixture for that "defers, no axis of its own"
+  // shape — no other current public component matches it, so that branch is
+  // presently uncovered by a real-component fixture; a synthetic
+  // `buildPublicComponentManifest`-shaped one is a larger investment than
+  // this workstream's scope, and is deliberately left for the next family
+  // that fits the shape, or a follow-up specifically for it, rather than a
+  // fixture whose manifest-entry shape is left unverified against the real
+  // builder). The base types Table still defers to for every individual
+  // sub-component (`TableRow`, `TableCell`, ...) remain documented per-type,
+  // in each "Also carries every prop of ..." line, which this test also
+  // checks.
   const manifest = buildPublicComponentManifest(REPO_ROOT);
   const table = manifest.find((component) => component.name === 'table');
 
   const page = renderPublicComponentPage(table, REPO_ROOT);
   const axes = page.split('\n').find((line) => line.startsWith('- **Style axes:**'));
 
-  // Table defers to both `ViewProps` and `React.ComponentProps<typeof Text>`; listing named
-  // bases only when no structural one exists dropped the second.
-  assert.match(axes, /ViewProps/u);
-  assert.match(axes, /typeof Text/u);
+  assert.match(axes, /`align` \(3 values\)/u);
+  assert.match(page, /Also carries every prop of `Omit<ViewProps, 'children'>`/u);
+  assert.match(page, /Also carries every prop of `Omit<React\.ComponentProps<typeof Text>, 'children'>`/u);
 });
 
 test('a family with no Props type gets a table for the object alias that is its prop surface', () => {

@@ -1,6 +1,7 @@
 import { cn } from '@beemvp/beeui-core';
 import * as React from 'react';
 import { Pressable, View, type PressableProps, type ViewProps } from 'react-native';
+import { useFieldContext } from './field-context';
 import { Text } from './text';
 import { useRequiredCallbackWarning } from './use-required-callback-warning';
 
@@ -32,8 +33,16 @@ export type SegmentedControlProps = Omit<ViewProps, 'children' | 'role'> & {
 export const SegmentedControl = React.forwardRef<
   React.ComponentRef<typeof View>,
   SegmentedControlProps
->(({ children, className, disabled = false, onValueChange, value, ...props }, ref) => {
+>(({ accessibilityLabel, accessibilityLabelledBy, children, className, disabled = false, onValueChange, value, ...props }, ref) => {
   useRequiredCallbackWarning('SegmentedControl', 'onValueChange', onValueChange, disabled);
+
+  // The `radiogroup` previously had no accessible name at all (a screen
+  // reader announced bare "radio group"). An explicit `accessibilityLabel`
+  // always wins; absent that, falls back to the enclosing `Field`'s label the
+  // same way `RadioGroup` already does.
+  const field = useFieldContext();
+  const resolvedAccessibilityLabelledBy = accessibilityLabelledBy ?? field?.labelNativeID;
+  const resolvedAccessibilityLabel = accessibilityLabel ?? field?.label;
 
   const context = React.useMemo(
     () => ({ disabled, onValueChange, value }),
@@ -45,6 +54,8 @@ export const SegmentedControl = React.forwardRef<
       <View
         ref={ref}
         {...props}
+        accessibilityLabel={resolvedAccessibilityLabel}
+        accessibilityLabelledBy={resolvedAccessibilityLabelledBy}
         accessibilityRole="radiogroup"
         className={cn('flex-row rounded-md bg-muted p-1', className)}
       >
@@ -127,6 +138,14 @@ export const SegmentedControlItem = React.forwardRef<
             <Text
               key={`segmented-control-label-${index}`}
               className={cn(
+                // A React Native flex item's default `flexShrink` is `0`
+                // (unlike CSS Web's `1` — see Button's own `max-w-full` note), so
+                // without an explicit width this label measures at its own
+                // single-line intrinsic width and gets hard-clipped mid-glyph by
+                // this item's `flex-1` bounds at large accessibility text sizes
+                // instead of wrapping. `w-full` gives it the item's full
+                // available width to wrap onto multiple lines within.
+                'w-full text-center',
                 selected ? 'text-foreground' : 'text-muted-foreground',
                 labelClassName,
               )}

@@ -23,6 +23,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { extractPublicationPolicy } from './check-public-doc-truth.mjs';
 import { parseBarrelExports } from './generate-llms-txt.mjs';
 
 export const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -197,12 +198,28 @@ export function runChecks(rootDir = ROOT_DIR) {
   const wrongClaims = claims.filter((n) => n !== realCount);
   add('public-component count claims are accurate', wrongClaims.length === 0, wrongClaims.length ? `claims ${wrongClaims.join(', ')} but real count is ${realCount}` : `count ${realCount}`);
 
-  // Unpublished-status rules present.
-  add('states the UNPUBLISHED status', /UNPUBLISHED/.test(text), 'must carry the unpublished-status rules');
+  // Distribution-status rules present and accurate — read from the same `docs/dist-tag-policy.md`
+  // machine-readable block the docs site's own publication-truth check uses, so the cookbook
+  // cannot silently keep claiming "unpublished" once a real RC ships (#543, #574 rows A001-A005).
   add('documents the working source-ownership command', /pnpm beeui add/.test(text), 'must present the repo-local `pnpm beeui add` path');
-
-  // No false "published / available on npm" claim.
-  add('never claims availability on npm', !/available on npm/i.test(text), 'must not present the packages as available on npm');
+  const policy = extractPublicationPolicy(rootDir);
+  if (policy.published) {
+    const tag = policy.prereleaseDistTag ?? 'next';
+    add(
+      'states the current npm publication status',
+      text.includes('public on npm') && text.includes(`\`${tag}\``),
+      `must state BeeUI is public on npm under \`${tag}\` (per docs/dist-tag-policy.md)`,
+    );
+    add(
+      'does not carry a stale unpublished claim',
+      !/\bUNPUBLISHED\b/.test(text) && !/is unpublished\b/i.test(text),
+      'must not claim BeeUI is unpublished once docs/dist-tag-policy.md says published',
+    );
+  } else {
+    add('states the UNPUBLISHED status', /UNPUBLISHED/.test(text), 'must carry the unpublished-status rules');
+    // No false "published / available on npm" claim.
+    add('never claims availability on npm', !/available on npm/i.test(text), 'must not present the packages as available on npm');
+  }
 
   const ok = results.every((r) => r.ok);
   return { ok, results };

@@ -5,6 +5,8 @@ description: The provider tree behind Dialog, Sheet, Popover, DropdownMenu, Sele
 
 Overlays are not standalone components: they are **clients of two provider-owned runtimes** that `BeeUIProvider` installs at the application root — one for anchored/modal overlays, one for transient notifications.
 
+**Prerequisites:** read [State model](/docs/learn/state-model/) first, and mount `BeeUIProvider` at your app root (see [Provider & safe area](/docs/start/provider-safe-area/)) before relying on the behavior described here.
+
 ## Why the concept exists
 
 An overlay has to answer questions no single component can answer alone. Which layer does this `Escape` close? Where is "the anchor", when the trigger is inside a dialog that is itself inside a scroll view? Which viewport does this toast render into?

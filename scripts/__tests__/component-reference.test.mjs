@@ -45,9 +45,9 @@ test('usageForComponent returns files importing any of the component values', ()
 
 // --- Contract integration tests (against the real repo) ---------------------
 
-test('there are 62 public components and each maps to barrel exports', () => {
+test('there are 63 public components and each maps to barrel exports', () => {
   const components = getPublicComponents();
-  assert.equal(components.length, 62);
+  assert.equal(components.length, 63);
   for (const component of components) {
     assert.ok(component.values.length > 0, `${component.name} has no exported values`);
     assert.match(component.cliAdd, /^pnpm beeui add /);
@@ -67,7 +67,7 @@ test('every public component has a curated content entry with a purpose', () => 
 test('generated document contains every required section for every component', () => {
   const doc = buildDocument();
   const blocks = doc.split(/^## /m).slice(1);
-  assert.equal(blocks.length, 62);
+  assert.equal(blocks.length, 63);
   for (const block of blocks) {
     for (const section of REQUIRED_SECTIONS) {
       assert.ok(block.includes(`**${section}`), `missing "${section}" in:\n${block.slice(0, 60)}`);

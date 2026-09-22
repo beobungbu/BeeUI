@@ -9,6 +9,9 @@ error, or build a table or a date picker properly the first time.
 
 Every guide leads with the answer and puts the evidence underneath it.
 
+**Prerequisites:** BeeUI already installed and running per [Start](/docs/start/) — Guides assume
+a working app, not a fresh install.
+
 ## Make it yours
 
 | Guide | Use it when |

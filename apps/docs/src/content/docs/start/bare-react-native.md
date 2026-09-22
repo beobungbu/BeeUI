@@ -3,13 +3,19 @@ title: Bare React Native
 description: Install the BeeUI release candidate in a true bare React Native 0.86 application and verify native bundles without Expo.
 ---
 
-Use this path for a React Native application that does not use the Expo runtime. BeeUI `0.86.2-rc.1` is public under the npm `next` dist-tag; stable `latest` is not promoted yet.
+Use this path for a React Native application that does not use the Expo runtime. BeeUI `0.86.2-rc.1` is public under the npm `next` dist-tag. The live registry currently also resolves `latest` to the same RC; BeeUI's bootstrap publish used `--tag next`, and the mechanism that also produced `latest` has not been established (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)), so keep using `@next` in the commands below.
+
+**Prerequisites:** an existing bare React Native `0.86.x` project created with the React
+Native Community CLI (this page does not cover scaffolding one) and Node.js/npm available
+locally.
 
 ## Install
 
+Install BeeUI and every runtime peer it declares in one command — installing `@beemvp/beeui-ui` alone first and the React Native peers afterward, in two separate commands, is the ordering that produces an `ERESOLVE` on `react-native`:
+
 ```bash
-npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next
-npm install react@19.2.3 react-dom@19.2.3 react-native@0.86.2 \
+npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next \
+  react@19.2.3 react-dom@19.2.3 react-native@0.86.2 \
   react-native-safe-area-context@5.7.0 react-native-teleport@1.1.13 \
   tailwindcss@4.3.3 uniwind@1.10.1
 ```
@@ -19,6 +25,9 @@ Pin `@0.86.2-rc.1` instead of `@next` when you need an immutable RC dependency.
 Optional native peers for `Sheet`, `DatePicker` and `DateTimePicker` are listed in [Compatibility](/docs/compatibility/).
 
 ## Styling entry
+
+Create `global.css` at the project root, matching the `cssEntryFile` path your Metro/Uniwind
+config points at. `@source` paths are relative to this file:
 
 ```css
 @import 'tailwindcss';

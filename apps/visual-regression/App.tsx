@@ -54,8 +54,21 @@ import {
   PopoverTrigger,
   Radio,
   RadioGroup,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
   Separator,
   SettingsItem,
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
   Skeleton,
   Spinner,
   Stepper,
@@ -76,10 +89,13 @@ import {
   Textarea,
   Timeline,
   TimelineItem,
+  Toolbar,
+  ToolbarItem,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   useBeeToken,
+  useToast,
 } from '@beemvp/beeui-ui';
 import { applyDensity, defaultDensityMode, densityModes, type DensityMode } from '@beemvp/beeui-tokens';
 import * as React from 'react';
@@ -127,19 +143,31 @@ type FixtureId =
   | 'density'
   | 'dataviz-brands'
   | 'scoped-preview'
+  | 'theme-scope-tokens'
   | 'high-contrast-focus'
   | 'tooltip'
   | 'table'
-  | 'date';
+  | 'date'
+  | 'sheet-context-parity'
+  | 'sheet-short-root'
+  | 'keydown-bubble'
+  | 'keyboard-roving-focus'
+  | 'table-row-interactive-descendants';
 
 const fixtureIds: readonly FixtureId[] = [
   'density',
   'dataviz-brands',
   'scoped-preview',
+  'theme-scope-tokens',
   'high-contrast-focus',
   'tooltip',
   'table',
   'date',
+  'sheet-context-parity',
+  'sheet-short-root',
+  'keydown-bubble',
+  'keyboard-roving-focus',
+  'table-row-interactive-descendants',
 ];
 
 function isFixtureId(value: string | null): value is FixtureId {
@@ -1188,6 +1216,61 @@ function ScopedPreviewFixture({ theme }: { theme: VisualTheme }) {
   );
 }
 
+// BeeThemeScope must actually scope semantic CSS variables (a computed
+// `bg-primary` background) *and* the `useBeeToken` runtime-token-read hook to
+// the nearest scope on Web, in a real rendered DOM — not only Uniwind's mock
+// test runtime. `ThemeScopeTokensReader` renders both proofs at once: the
+// visible `useBeeToken('colors.primary')` text and a `bg-primary` swatch
+// `tests/theme-scope-tokens.spec.ts` reads with `getComputedStyle`. `primary`
+// (not `background`) is the token under test deliberately — Bee and Violet
+// happen to share the same `background` hex at the `light` appearance, but
+// every runtime theme's `primary` is unique, so any leak from an enclosing
+// scope is guaranteed to show up as a false equality here.
+function ThemeScopeTokensReader({ label, testID }: { label: string; testID: string }) {
+  const primary = useBeeToken('colors.primary');
+
+  return (
+    <Box className="gap-2 bg-primary p-4" testID={testID}>
+      <Text className="text-primary-foreground" testID={`${testID}-label`} variant="heading">
+        {label}
+      </Text>
+      <Text className="text-primary-foreground" testID={`${testID}-token-primary`} variant="caption">
+        {primary}
+      </Text>
+    </Box>
+  );
+}
+
+// Global theme stays whichever `theme` this project runs under; the outer
+// scope deliberately picks Violet at the *opposite* appearance, and the
+// nested scope picks Violet at the *global*'s appearance — so every one of
+// global/scoped/nested is guaranteed to differ from its neighbors under every
+// `theme` this fixture runs at, without needing an interactive toggle.
+function ThemeScopeTokensFixture({ theme }: { theme: VisualTheme }) {
+  const globalAppearance = appearanceForVisualTheme(theme);
+  const scopedAppearance: 'light' | 'dark' = globalAppearance === 'dark' ? 'light' : 'dark';
+
+  return (
+    <ScenarioShell title="Theme scope: CSS variables + useBeeToken">
+      <Box className="gap-4" testID="theme-scope-tokens-fixture">
+        <ThemeScopeTokensReader label="Global" testID="theme-scope-tokens-global" />
+        <BeeThemeScope appearance={scopedAppearance} brand="violet">
+          <ThemeScopeTokensReader
+            label={`Scoped (violet ${scopedAppearance})`}
+            testID="theme-scope-tokens-scoped"
+          />
+          <BeeThemeScope appearance={globalAppearance} brand="violet">
+            <ThemeScopeTokensReader
+              label={`Nested (violet ${globalAppearance})`}
+              testID="theme-scope-tokens-nested"
+            />
+          </BeeThemeScope>
+        </BeeThemeScope>
+      </Box>
+    </ScenarioShell>
+  );
+}
+
 // #77 finalization — active keyboard-focus proof for the high-contrast
 // themes. A Button on the plain background, an Input inside a raised Card, and
 // a Link on a muted surface — one representative placement per surface, tabbed
@@ -1370,6 +1453,262 @@ function TooltipFixture() {
   );
 }
 
+/**
+ * BeeUI issue #619 — Web parity for the native Sheet context/z-order
+ * acceptance. This lives in the visual-regression app rather than Component
+ * Gallery so QA-only imports do not perturb the generated public component
+ * example inventory.
+ */
+function SheetContextParityFixture() {
+  const toast = useToast();
+  const [selectValue, setSelectValue] = React.useState<string | undefined>();
+
+  return (
+    <Box className="gap-4 p-6" testID="sheet-context-parity-fixture">
+      <Sheet>
+        <SheetTrigger testID="sheet-context-trigger" variant="outline">
+          Open Sheet context parity
+        </SheetTrigger>
+        <SheetContent testID="sheet-context-content">
+          <SheetTitle>Sheet context parity</SheetTitle>
+          <SheetDescription>
+            Toast and anchored overlays must remain usable while this Sheet is open.
+          </SheetDescription>
+
+          <Button
+            onPress={() =>
+              toast.show({
+                title: 'Sheet parity toast visible',
+                description: 'Provider context survives inside the Web Sheet.',
+                duration: 'persistent',
+              })
+            }
+            testID="sheet-context-toast-show"
+            variant="outline"
+          >
+            Show Sheet parity Toast
+          </Button>
+          <Button onPress={toast.dismissAll} testID="sheet-context-toast-dismiss" variant="ghost">
+            Dismiss Sheet parity Toast
+          </Button>
+
+          <Popover>
+            <PopoverTrigger testID="sheet-context-popover-trigger" variant="outline">
+              Open Sheet parity Popover
+            </PopoverTrigger>
+            <PopoverContent placement="top" testID="sheet-context-popover-content">
+              <PopoverTitle>Sheet parity Popover</PopoverTitle>
+              <PopoverDescription testID="sheet-context-popover-copy">
+                Web nested overlay remains above its parent Sheet.
+              </PopoverDescription>
+              <PopoverClose testID="sheet-context-popover-close">Close parity Popover</PopoverClose>
+            </PopoverContent>
+          </Popover>
+
+          <Select onValueChange={setSelectValue} value={selectValue}>
+            <SelectTrigger testID="sheet-context-select-trigger">
+              <SelectValue placeholder="Open Sheet parity Select" />
+            </SelectTrigger>
+            <SelectContent placement="top" testID="sheet-context-select-content">
+              <SelectGroup>
+                <SelectLabel>Sheet parity Select</SelectLabel>
+                <SelectItem testID="sheet-context-select-item-alpha" value="alpha">
+                  Alpha
+                </SelectItem>
+                <SelectItem value="beta">Beta</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <Text testID="sheet-context-select-selection">{`select: ${selectValue ?? 'none'}`}</Text>
+
+          <SheetClose testID="sheet-context-close" variant="outline">
+            Close parity Sheet
+          </SheetClose>
+        </SheetContent>
+      </Sheet>
+    </Box>
+  );
+}
+
+/**
+ * BeeUI issue #548 — the app root here renders far shorter than the browser
+ * viewport (one line of text and a trigger button, no `min-h-screen`), the
+ * exact shape the issue's external consumer reported: a `Sheet` backdrop/panel
+ * that measures itself from document/app-root content height instead of the
+ * real viewport leaves part of the viewport uncovered and can render partly
+ * above it. `SheetContent`'s Web wrapper uses `position: fixed; inset: 0`
+ * precisely so it anchors to the viewport regardless of this short root —
+ * `tests/sheet-backdrop-covers-viewport-with-short-root.spec.ts` measures the
+ * backdrop's real bounding box against `page.viewportSize()` to prove it.
+ */
+function SheetShortRootFixture() {
+  return (
+    <Box testID="sheet-short-root-fixture">
+      <Text testID="sheet-short-root-content">Short app root</Text>
+      <Sheet>
+        <SheetTrigger testID="sheet-short-root-trigger">Open cart</SheetTrigger>
+        <SheetContent overlayTestID="sheet-short-root-overlay" testID="sheet-short-root-content-panel">
+          <SheetTitle>Cart</SheetTitle>
+          <Text>Deterministic short-root Sheet content.</Text>
+        </SheetContent>
+      </Sheet>
+    </Box>
+  );
+}
+
+/**
+ * BeeUI issue #606 — a single, minimal, unambiguous `Input` to focus and press
+ * a key against. `tests/input-keydown-bubble.spec.ts` asserts whether a
+ * bubble-phase `document.addEventListener('keydown', ...)` listener (the
+ * consumer's own reported workaround needs a capture-phase one instead) still
+ * fires while this Input holds focus.
+ */
+function KeydownBubbleFixture() {
+  return (
+    <Box className="gap-4 p-6" testID="keydown-bubble-fixture">
+      <Text>Focus the field below and press a key.</Text>
+      <Input accessibilityLabel="Keydown bubble target" testID="keydown-bubble-input" />
+    </Box>
+  );
+}
+
+/**
+ * WS-I — Web arrow-key roving-tabindex evidence for `TabsList scrollable` (#591) and
+ * `Toolbar` (#611 item 1). Deliberately narrow (`w-56`/`w-28`) containers force real
+ * browser layout to overflow the Tabs strip and collapse a Toolbar item, so
+ * scroll-into-view and the overflow-trigger roving stop are proven against real DOM
+ * `document.activeElement`, not the jest `onLayout`+`fireEvent` approximation
+ * `tabs-scrollable-arrow-key-roving-focus.test.tsx`/`toolbar-arrow-key-roving-focus.test.tsx`
+ * already cover.
+ */
+function KeyboardRovingFocusFixture() {
+  const [selectedOrder, setSelectedOrder] = React.useState('order-1');
+  const orders = ['order-1', 'order-2', 'order-3', 'order-4', 'order-5', 'order-6'];
+
+  return (
+    <Box className="min-h-screen gap-8 bg-surface p-6" testID="keyboard-roving-focus-fixture">
+      <Box className="w-56 gap-2">
+        <Text variant="title">Scrollable Tabs</Text>
+        <Tabs onValueChange={setSelectedOrder} testID="roving-tabs" value={selectedOrder}>
+          <TabsList scrollable testID="roving-tabs-list">
+            {orders.map((value, index) => (
+              <TabsTrigger key={value} testID={`roving-tabs-trigger-${index + 1}`} value={value}>
+                Order {index + 1}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </Box>
+
+      <Box className="w-28 gap-2">
+        <Text variant="title">Toolbar</Text>
+        <Toolbar overflowAccessibilityLabel="More actions" testID="roving-toolbar">
+          <ToolbarItem label="Search" onPress={() => undefined}>
+            <IconButton accessibilityLabel="Search" onPress={() => undefined} testID="roving-toolbar-search">
+              🔍
+            </IconButton>
+          </ToolbarItem>
+          <ToolbarItem label="Filter" onPress={() => undefined} priority={2}>
+            <IconButton accessibilityLabel="Filter" onPress={() => undefined} testID="roving-toolbar-filter">
+              ⚙
+            </IconButton>
+          </ToolbarItem>
+          <ToolbarItem label="Export" onPress={() => undefined} priority={1}>
+            <IconButton accessibilityLabel="Export" onPress={() => undefined} testID="roving-toolbar-export">
+              ⬇
+            </IconButton>
+          </ToolbarItem>
+        </Toolbar>
+      </Box>
+    </Box>
+  );
+}
+
+// #618 (Astra review #2, item 6): `table.web`'s interactive-descendant exclusion selector
+// used to miss most of BeeUI's own interactive roles (radio, combobox, tab, option,
+// menuitemcheckbox/radio, slider, spinbutton, textbox, searchbox, listbox) — activating one
+// of those inside a pressable `TableRow` also fired the row's own `onPress`. A jsdom-free real
+// DOM is required to prove this (the exclusion reads real ancestor DOM nodes via
+// `Element.closest`), so this fixture mounts one pressable row with a `Button` (`role="button"`,
+// already excluded before this fix), a `Checkbox` (`role="checkbox"`, already excluded), a
+// `Radio` (`role="radio"`, new), a `SelectTrigger` (`role="combobox"`, new), and a `Link`
+// (`role="link"`, already excluded), plus one plain cell with no interactive descendant. The
+// row's own press count renders as text so Playwright can assert it stays put while each
+// embedded control activates, and only advances for the plain cell.
+function TableRowInteractiveDescendantsFixture() {
+  const [rowPressCount, setRowPressCount] = React.useState(0);
+  const [checked, setChecked] = React.useState(false);
+  const [radioValue, setRadioValue] = React.useState('one');
+  const [selectValue, setSelectValue] = React.useState('alpha');
+
+  return (
+    <Box className="min-h-screen gap-6 bg-surface p-6" testID="table-row-interactive-descendants-fixture">
+      <Text variant="title">Table: row interactive-descendant exclusion</Text>
+      <Text testID="interactive-descendants-row-press-count" tone="muted" variant="caption">
+        {`Row press count: ${rowPressCount}`}
+      </Text>
+      <Table testID="interactive-descendants-table">
+        <TableHeader>
+          <TableRow>
+            <TableHead>Button</TableHead>
+            <TableHead>Checkbox</TableHead>
+            <TableHead>Radio</TableHead>
+            <TableHead>Select</TableHead>
+            <TableHead>Link</TableHead>
+            <TableHead>Plain</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow
+            onPress={() => setRowPressCount((count) => count + 1)}
+            testID="interactive-descendants-row"
+          >
+            <TableCell label="Button">
+              <Button onPress={() => undefined} testID="interactive-descendants-button">
+                Edit
+              </Button>
+            </TableCell>
+            <TableCell label="Checkbox">
+              <Checkbox
+                accessibilityLabel="Select row"
+                checked={checked}
+                onCheckedChange={setChecked}
+                testID="interactive-descendants-checkbox"
+              />
+            </TableCell>
+            <TableCell label="Radio">
+              <RadioGroup accessibilityLabel="Priority" onValueChange={setRadioValue} value={radioValue}>
+                <Radio label="One" testID="interactive-descendants-radio" value="one" />
+              </RadioGroup>
+            </TableCell>
+            <TableCell label="Select">
+              <Select onValueChange={setSelectValue} value={selectValue}>
+                <SelectTrigger accessibilityLabel="Status" testID="interactive-descendants-select-trigger">
+                  <SelectValue placeholder="Choose" testID="interactive-descendants-select-value" />
+                </SelectTrigger>
+                <SelectContent testID="interactive-descendants-select-content">
+                  <SelectItem testID="interactive-descendants-select-alpha" value="alpha">
+                    Alpha
+                  </SelectItem>
+                  <SelectItem testID="interactive-descendants-select-beta" value="beta">
+                    Beta
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </TableCell>
+            <TableCell label="Link">
+              <Link testID="interactive-descendants-link">Details</Link>
+            </TableCell>
+            <TableCell label="Plain" testID="interactive-descendants-plain-cell">
+              Row 1
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </Box>
+  );
+}
+
 function Scenario({ scenario }: { scenario: VisualScenarioId }) {
   switch (scenario) {
     case 'foundation':
@@ -1417,6 +1756,8 @@ export default function App() {
         <DataVizBrandsFixture theme={theme} />
       ) : fixture === 'scoped-preview' ? (
         <ScopedPreviewFixture theme={theme} />
+      ) : fixture === 'theme-scope-tokens' ? (
+        <ThemeScopeTokensFixture theme={theme} />
       ) : fixture === 'high-contrast-focus' ? (
         <HighContrastFocusFixture />
       ) : fixture === 'tooltip' ? (
@@ -1425,6 +1766,16 @@ export default function App() {
         <TableProductionFixture density={densityMode} state={tableState} theme={theme} />
       ) : fixture === 'date' ? (
         <DateProductionFixture locale={dateLocale} />
+      ) : fixture === 'sheet-context-parity' ? (
+        <SheetContextParityFixture />
+      ) : fixture === 'sheet-short-root' ? (
+        <SheetShortRootFixture />
+      ) : fixture === 'keydown-bubble' ? (
+        <KeydownBubbleFixture />
+      ) : fixture === 'keyboard-roving-focus' ? (
+        <KeyboardRovingFocusFixture />
+      ) : fixture === 'table-row-interactive-descendants' ? (
+        <TableRowInteractiveDescendantsFixture />
       ) : (
         <Scenario scenario={scenario} />
       )}

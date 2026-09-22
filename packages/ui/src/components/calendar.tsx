@@ -109,6 +109,8 @@ function buildDayAccessibilityLabel(
   return parts.join(', ');
 }
 
+const isWeb = Platform.OS === 'web';
+
 export const Calendar = React.forwardRef<React.ComponentRef<typeof View>, CalendarProps>(
   (props, forwardedRef) => {
     const hasVisibleMonthProp = Object.prototype.hasOwnProperty.call(props, 'visibleMonth');
@@ -408,6 +410,10 @@ export const Calendar = React.forwardRef<React.ComponentRef<typeof View>, Calend
                       selected,
                     })}
                     accessibilityState={{ disabled: cellDisabled, selected }}
+                    // `accessibilityState` alone does not reach the DOM on react-native-web
+                    // (see Checkbox), so the selected day needs the web-native
+                    // `aria-selected` prop set explicitly.
+                    aria-selected={selected}
                     className={cn(
                       'min-h-touch-target min-w-touch-target flex-1 items-center justify-center rounded-md web:focus-visible:bee-focus-ring',
                       selected && 'bg-primary',
@@ -424,7 +430,10 @@ export const Calendar = React.forwardRef<React.ComponentRef<typeof View>, Calend
                       moveFocus(cell.date);
                       commitSelection(cell.date);
                     }}
-                    role="cell"
+                    // `aria-selected` is only permitted on `gridcell` (not `cell`);
+                    // react-native-web forwards the role string verbatim, and React
+                    // Native's `Role` union has no `gridcell`, so the web value is cast.
+                    role={isWeb ? ('gridcell' as 'cell') : 'cell'}
                     tabIndex={!disabled && isRovingTarget ? 0 : -1}
                     testID={testID ? `${testID}-day-${iso}` : undefined}
                   >

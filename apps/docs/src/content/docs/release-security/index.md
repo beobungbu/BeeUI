@@ -3,7 +3,7 @@ title: Release & security
 description: BeeUI publication state, release channels, security reporting and license.
 ---
 
-BeeUI `0.86.2-rc.1` is publicly published on npm under the opt-in **`next`** dist-tag. Stable **`latest`** is intentionally not promoted yet.
+BeeUI `0.86.2-rc.1` is publicly published on npm under the opt-in **`next`** dist-tag. The live registry currently resolves **`latest`** to the same RC too; BeeUI's bootstrap publish used `--tag next`, and the mechanism that also produced `latest` has not been established (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)). `latest` moves to a real stable version at the first `0.86.2` release.
 
 Use `@next` or pin `@0.86.2-rc.1` while evaluating this release candidate:
 
@@ -15,6 +15,8 @@ npx @beemvp/beeui-cli@next --help
 A green verification matrix, package publication, and stable `latest` promotion are separate release events. The current RC has completed publication; stable `0.86.2` still requires its own release and promotion gates.
 
 The machine-checked channel authority is [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md), and the evidence/process authority is [`docs/release.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/release.md).
+
+**Prerequisites:** none — this page states current publication/security facts, it is not a setup step.
 
 ## Report a security issue
 

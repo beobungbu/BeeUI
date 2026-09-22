@@ -8,7 +8,7 @@ description: "Search-keyboard input layered on Input; clearing a non-empty query
 Search-keyboard input layered on Input; clearing a non-empty query emits one onSearch('') reset.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. Stable `latest` currently resolves to the same RC too. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established, so this is recorded as observed registry state rather than an npm rule. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Forms & selection
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/search-input.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/search-input.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add search-input
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -45,7 +46,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Uncontrolled-by-default search-keyboard field layered on `Input`; clearing a previously non-empty query emits exactly one `onSearch('')` reset call, not one per keystroke of the clear action.
+Uncontrolled-by-default search-keyboard field layered on `Input`; clearing a previously non-empty query emits exactly one `onSearch('')` reset call, not one per keystroke of the clear action. `trailing` renders extra content (e.g. a filter button) after the input inside the same row; omitting it renders the input with no extra wrapper, unchanged.
 
 ### Props
 
@@ -53,7 +54,9 @@ Uncontrolled-by-default search-keyboard field layered on `Input`; clearing a pre
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
+| `containerClassName` | `string` | — | Applied to the row wrapping the input and `trailing`; ignored when `trailing` is omitted (the input then renders with no extra wrapper, unchanged). |
 | `onSearch` | `(value: string) => void` | — | Called with the submitted text when the return key is pressed, and with `''` when the text is cleared back to empty after having had content. Not called for every keystroke — use `onChangeText` for that. |
+| `trailing` | `React.ReactNode` | — | Rendered after the input, outside it (e.g. a scan-glyph button or a keyboard-shortcut hint). Forward a ref (`React.ComponentRef<typeof TextInput>`) to this component and call `ref.current.focus()` to focus the field from it. |
 
 Also carries every prop of `Omit<InputProps, 'inputMode' | 'returnKeyType'>` — documented on the [Input](/docs/components/input/) page, not reproduced here.
 
@@ -63,7 +66,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 - No additional provider is required by this family. `BeeUIProvider` remains the recommended application root.
 - **Peer/native dependencies visible to this Registry item:** `react`, `react-native`
-- **Registry dependency closure:** `input`, `theme`
+- **Registry dependency closure:** `core-cn`, `input`, `theme`
 - Safe-area ownership remains explicit: shell surfaces touching system edges opt into `SafeArea`; components do not silently invent app-shell insets.
 - Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).
 
@@ -85,16 +88,16 @@ Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-m
 ## Styling and theming
 
 - **Style axes:** `size` (3 values, inherited from `InputProps`).
-- **Class-name surfaces:** `className`.
+- **Class-name surfaces:** `className`, `containerClassName`.
 
 Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.
 
 ## Executable examples
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/input-value-accessibility-and-search-slot.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/input-value-accessibility-and-search-slot.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-7-runtime-a11y.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-runtime-a11y.test.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
-- **Additional fixture:** [`apps/showcase/patterns/commerce-social/screens/messages-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/commerce-social/screens/messages-screen.tsx)
 
 ### Addressable examples
 
@@ -130,9 +133,15 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Search Input** is actually used: 3 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Search Input** is actually used: 3 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
-[lines 598–600](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L598-L600):
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Field, SearchInput } from '@beemvp/beeui-ui';
+````
+
+[lines 599–601](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L599-L601):
 
 ````tsx
               <Field label="Search">
@@ -140,7 +149,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               </Field>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 `onSearch` is neither per-keystroke nor debounced: it fires on return-key submit, and exactly once when a non-empty query is cleared to empty. The search keyboard and return key are owned here and not accepted from outside, and the family carries no suggestion list.

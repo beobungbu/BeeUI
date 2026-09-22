@@ -83,8 +83,13 @@ export const FormGroup = React.forwardRef<React.ComponentRef<typeof View>, FormG
           // literal, pixel-identical).
           className={cn('gap-density-form-gap', className)}
         >
+          {/* This Label never carries its own
+              accessible name — a child that consumes FormGroupContext (RadioGroup,
+              Checkbox) already derives its own `legendAccessibilityLabel`/`aria-labelledby`
+              from context, so the name lives once, not duplicated onto this Label too. */}
           <Label
             nativeID={resolvedLegendNativeID}
+            presentational
             required={required}
             requiredAccessibilityLabel={requiredAccessibilityLabel}
           >

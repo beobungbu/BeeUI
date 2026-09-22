@@ -8,7 +8,7 @@ description: "Grouped row (with a settings-row specialization) that synthesizes 
 Grouped row (with a settings-row specialization) that synthesizes accessible names from primitive content when interactive.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. Stable `latest` currently resolves to the same RC too. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established, so this is recorded as observed registry state rather than an npm rule. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Data display
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/list-item.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/list-item.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add list-item
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -46,7 +47,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Press behavior is opt-in (`onPress` makes the row interactive); an interactive row without an explicit `accessibilityLabel` synthesizes one from its primitive title/description/trailing content, while non-interactive rows never hide complex descendant content.
+Press behavior is opt-in (`onPress` makes the row interactive); an interactive row without an explicit `accessibilityLabel` synthesizes one from its primitive title/description/trailing content, while non-interactive rows never hide complex descendant content. `active` marks a row as the current/selected item (e.g. the active sidebar entry) — a purely visual/accessibility-state flag that does not change press behavior.
 
 ### Props
 
@@ -54,6 +55,7 @@ Press behavior is opt-in (`onPress` makes the row interactive); an interactive r
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
+| `active` | `boolean` | `false` | Marks this row as the current/selected item — e.g. the active sidebar link, or a selected row in a master/detail list. Adds a tokenized selected background plus `accessibilityState.selected` (native) and `aria-current` (Web, since `accessibilityState` is not forwarded to the DOM there — see the `aria-current` prop below). Defaults to false. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `description` | `React.ReactNode` | — | Secondary supporting text rendered beneath the primary label or title. |
 | `descriptionClassName` | `string` | — | Applied to the description `Text` when `description` is a plain string or number; ignored if `description` is a custom element. |
@@ -94,7 +96,7 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 ## Accessibility
 
 - **Roles this family assigns:** `button`, `listitem` — set in `list-item.tsx` by the components themselves, not by the caller.
-- **Accessibility states and properties it sets:** `accessibilityLabel`, `accessible`, `disabled` — read from `list-item.tsx`.
+- **Accessibility states and properties it sets:** `accessibilityLabel`, `accessible`, `current`, `disabled`, `selected` — read from `list-item.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
@@ -150,9 +152,17 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **List Item** is actually used: 28 lines in 2 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **List Item** is actually used: 28 lines in 2 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
-[lines 986–990](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L986-L990):
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Badge, ListItem, SettingsItem, Switch } from '@beemvp/beeui-ui';
+import * as React from 'react';
+import { useUniwind } from 'uniwind';
+````
+
+[lines 993–997](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L993-L997):
 
 ````tsx
                     <ListItem
@@ -162,7 +172,14 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                     />
 ````
 
-[lines 1029–1051](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1029-L1051):
+Fixture state this block reads (same file, lines 458, 460):
+
+````tsx
+  const { theme } = useUniwind();
+  const [notifications, setNotifications] = React.useState(true);
+````
+
+[lines 1036–1058](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1036-L1058):
 
 ````tsx
                 <ListItem
@@ -190,7 +207,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                 />
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 A row with no `onPress` is rendered non-interactive and disabled — `disabled` alone can never make it pressable. The synthesized accessible name is all-or-nothing: if `title`, `description` or `trailing` is anything but a plain string or number, no name is synthesized at all.

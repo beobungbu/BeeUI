@@ -107,6 +107,7 @@ const COMPONENT_FIXTURES: readonly [string, string][] = [
   ['theme-scope', MAIN_GALLERY],
   ['timeline', MAIN_GALLERY],
   ['toast', MAIN_GALLERY],
+  ['toolbar', 'apps/showcase/component-gallery/toolbar-showcase.tsx'],
   ['tooltip', MAIN_GALLERY],
   ['use-bee-token', PUBLIC_DOC_FIXTURES],
   ['visually-hidden', PUBLIC_DOC_FIXTURES],

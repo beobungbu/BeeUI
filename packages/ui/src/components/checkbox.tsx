@@ -2,6 +2,8 @@ import { cn } from '@beemvp/beeui-core';
 import { cva } from 'class-variance-authority';
 import * as React from 'react';
 import { Pressable, View, type PressableProps } from 'react-native';
+import { useFieldContext } from './field-context';
+import { useFormGroupContext } from './form-group-context';
 import { Text } from './text';
 import { useRequiredCallbackWarning } from './use-required-callback-warning';
 
@@ -46,7 +48,9 @@ export type CheckboxProps = Omit<
 export const Checkbox = React.forwardRef<React.ComponentRef<typeof Pressable>, CheckboxProps>(
   (
     {
+      accessibilityHint,
       accessibilityLabel,
+      accessibilityLabelledBy,
       accessibilityState,
       checked = false,
       className,
@@ -59,9 +63,34 @@ export const Checkbox = React.forwardRef<React.ComponentRef<typeof Pressable>, C
     },
     ref,
   ) => {
-    const isDisabled = disabled === true;
+    // A Checkbox rendered as `Field`/`FormGroup` `children` (with no own
+    // `label`/`accessibilityLabel`/`accessibilityLabelledBy`) picks up the
+    // enclosing Field's label association and the enclosing FormGroup's
+    // error/description hint, the same way `Input`/`RadioGroup` already do —
+    // a Checkbox with its own `label` (the common single-checkbox pattern)
+    // keeps that as its accessible name unchanged.
+    const field = useFieldContext();
+    const formGroup = useFormGroupContext();
+    const isDisabled = disabled === true || field?.disabled === true || formGroup?.disabled === true;
     const state = checked === 'indeterminate' ? 'indeterminate' : checked ? 'checked' : 'unchecked';
     const accessibilityChecked = checked === 'indeterminate' ? 'mixed' : checked;
+    const hasOwnAccessibleName = accessibilityLabel !== undefined || label !== undefined;
+    const resolvedAccessibilityLabelledBy =
+      accessibilityLabelledBy ?? (hasOwnAccessibleName ? undefined : field?.labelNativeID);
+    const inheritedHint = field
+      ? field.invalid && field.error
+        ? field.error
+        : field.description
+      : formGroup?.invalid && formGroup.error
+        ? formGroup.error
+        : formGroup?.description;
+    // No hardcoded English "required" copy in the fallback name — only a
+    // caller-supplied, localized `Field.requiredLabel` is appended; otherwise
+    // `required` reaches assistive tech solely through `aria-required` below.
+    const fallbackFieldLabel =
+      !hasOwnAccessibleName && field && field.required && field.requiredLabel
+        ? `${field.label}, ${field.requiredLabel}`
+        : field?.label;
 
     useRequiredCallbackWarning('Checkbox', 'onCheckedChange', onCheckedChange, isDisabled);
 
@@ -69,7 +98,9 @@ export const Checkbox = React.forwardRef<React.ComponentRef<typeof Pressable>, C
       <Pressable
         ref={ref}
         {...props}
-        accessibilityLabel={accessibilityLabel ?? label}
+        accessibilityHint={accessibilityHint ?? inheritedHint}
+        accessibilityLabel={accessibilityLabel ?? label ?? fallbackFieldLabel}
+        accessibilityLabelledBy={resolvedAccessibilityLabelledBy}
         accessibilityRole="checkbox"
         accessibilityState={{
           ...accessibilityState,
@@ -82,6 +113,9 @@ export const Checkbox = React.forwardRef<React.ComponentRef<typeof Pressable>, C
         // the web-native `aria-checked` prop directly keeps native platforms
         // (which read `accessibilityState`) and Web (which reads `aria-*`) both correct.
         aria-checked={accessibilityChecked}
+        // `required` reaches the DOM via `aria-required` rather than
+        // injected text (RN's compound `accessibilityState` has no `required` key).
+        aria-required={field?.required || undefined}
         className={cn('flex-row items-center gap-3 active:opacity-80', className)}
         disabled={isDisabled}
         onPress={() => onCheckedChange?.(checked !== true)}

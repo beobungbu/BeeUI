@@ -8,7 +8,7 @@ description: "BeeUIProvider application root plus an explicit SafeArea surface w
 BeeUIProvider application root plus an explicit SafeArea surface with caller-owned edge selection.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. Stable `latest` currently resolves to the same RC too. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established, so this is recorded as observed registry state rather than an npm rule. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Layout & surfaces
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/safe-area.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/safe-area.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add safe-area
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -46,7 +47,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-`BeeUIProvider` (the application root) supplies safe-area measurement, the Toast runtime/viewport, and the shared anchored-overlay runtime to every descendant; `SafeArea` itself is a stateless surface with caller-owned `edges` selection — BeeUI never adds system insets to other components implicitly.
+`BeeUIProvider` (the application root) supplies safe-area measurement, the Toast runtime/viewport, and the shared anchored-overlay runtime to every descendant; `SafeArea` itself is a stateless surface with caller-owned `edges` selection — BeeUI never adds system insets to other components implicitly. `BeeUIProvider` accepts an optional `toastPlacement` (`'top' | 'bottom'`), forwarded to the Toast runtime; omitting it keeps the existing platform default (bottom on iOS/Android, top on Web).
 
 ### Props
 
@@ -56,6 +57,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `syncUniwindInsets` | `boolean` | `true` | Keeps Uniwind OSS safe-area utilities (`pt-safe`, `bottom-safe`, etc.) in sync with react-native-safe-area-context. Disable only when the application already owns that bridge elsewhere. |
+| `toastPlacement` | `ToastPlacement` | — | Where the transient `useToast()` notification stack docks. Defaults to `'bottom'` on native (so it clears the bottom tab bar / home indicator) and `'top'` on Web. |
 
 Also carries every prop of `Omit<React.ComponentProps<typeof NativeSafeAreaProvider>, 'children'>` — that upstream contract is not reproduced here.
 
@@ -73,7 +75,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 - No additional provider is required by this family. `BeeUIProvider` remains the recommended application root.
 - **Peer/native dependencies visible to this Registry item:** `react`, `react-native`, `react-native-safe-area-context`, `uniwind`
-- **Registry dependency closure:** `overlay-runtime`, `theme`, `toast`
+- **Registry dependency closure:** `core-cn`, `overlay-runtime`, `theme`, `toast`
 - Safe-area ownership remains explicit: shell surfaces touching system edges opt into `SafeArea`; components do not silently invent app-shell insets.
 - Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).
 
@@ -101,10 +103,10 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/__tests__/dynamic-type-fixture.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/dynamic-type-fixture.test.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/class-name-merge-safety.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/class-name-merge-safety.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/dynamic-type-fixture.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/dynamic-type-fixture.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-19-overlay-runtime.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-19-overlay-runtime.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/pattern-gallery.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/pattern-gallery.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/perf-render-commit.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/perf-render-commit.test.tsx)
 
 ### Addressable examples
 
@@ -143,9 +145,46 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Safe Area** is actually used: 28 lines in 2 places, of 3 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Safe Area** is actually used: 28 lines in 2 places, of 3 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
-[lines 474–495](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L474-L495):
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { AppHeader, Avatar, BottomActionBar, Button, HStack, SafeArea, Switch } from '@beemvp/beeui-ui';
+import * as React from 'react';
+import { Uniwind, useUniwind } from 'uniwind';
+````
+
+Fixture state this block reads (same file, lines 121-137, 458):
+
+````tsx
+function ThemeToggle() {
+  const { hasAdaptiveThemes, theme } = useUniwind();
+  const activeTheme = hasAdaptiveThemes ? 'system' : theme;
+  const nextTheme = activeTheme === 'system' ? 'light' : activeTheme === 'light' ? 'dark' : 'system';
+
+  return (
+    <Button
+      accessibilityLabel={`Theme ${activeTheme}. Switch to ${nextTheme}`}
+      onPress={() => Uniwind.setTheme(nextTheme)}
+      size="sm"
+      testID="component-gallery-theme-toggle"
+      variant="outline"
+    >
+      {`Theme: ${activeTheme}`}
+    </Button>
+  );
+}
+  const { theme } = useUniwind();
+````
+
+Placeholder for a prop this fixture receives (not fixture source — substitute your own handler):
+
+````tsx
+const onBack: () => void = () => {};
+````
+
+[lines 475–496](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L475-L496):
 
 ````tsx
       <SafeArea className="bg-surface" edges={['top', 'left', 'right']} testID="component-gallery-safe-area">
@@ -172,7 +211,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
       </SafeArea>
 ````
 
-[lines 1065–1070](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1065-L1070):
+[lines 1072–1077](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1072-L1077):
 
 ````tsx
       <SafeArea className="bg-surface" edges={['bottom', 'left', 'right']}>
@@ -183,7 +222,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
       </SafeArea>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 `SafeArea` is a pass-through to `react-native-safe-area-context`'s own view: BeeUI adds no `edges` default and no inset arithmetic of its own, so which edges a surface pads is the caller's to state. Uniwind's safe-area utilities are fed only by the provider's `syncUniwindInsets` bridge; turning it off leaves the application to push insets into Uniwind itself.

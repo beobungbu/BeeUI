@@ -38,7 +38,7 @@ describe('BeeUI accessibility and read-only contracts', () => {
     expect(screen.getByText('*', { includeHiddenElements: true }).props['aria-hidden']).toBe(true);
   });
 
-  it('links Field labels to Input and propagates readable required semantics', () => {
+  it('links Field labels to Input and exposes required state without injecting English copy', () => {
     const screen = render(
       <Field label="Email" labelNativeID="email-field-label" required>
         <Input testID="email-input" />
@@ -47,7 +47,20 @@ describe('BeeUI accessibility and read-only contracts', () => {
 
     const input = screen.getByTestId('email-input');
     expect(input.props.accessibilityLabelledBy).toBe('email-field-label');
-    expect(input.props.accessibilityLabel).toBe('Email, required');
+    expect(input.props.accessibilityLabel).toBe('Email');
+    expect(input.props['aria-required']).toBe(true);
+  });
+
+  it('appends a caller-localized requiredLabel to the Input accessible name when provided', () => {
+    const screen = render(
+      <Field label="Tên sản phẩm" labelNativeID="product-field-label" required requiredLabel="Bắt buộc">
+        <Input testID="product-input" />
+      </Field>,
+    );
+
+    const input = screen.getByTestId('product-input');
+    expect(input.props.accessibilityLabel).toBe('Tên sản phẩm, Bắt buộc');
+    expect(input.props['aria-required']).toBe(true);
   });
 
   it('preserves explicit control accessibility overrides inside a required Field', () => {

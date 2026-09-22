@@ -18,6 +18,7 @@ import {
   type ScrollViewProps,
   type TextProps as RNTextProps,
   type ViewProps,
+  type ViewStyle,
 } from 'react-native';
 import {
   OverlayDismissLayer,
@@ -488,6 +489,13 @@ export type SelectContentProps = Omit<ViewProps, 'nativeID' | 'role'> & {
   direction?: SelectDirection;
   /** Flips `placement` to the opposite side of the trigger when there is not enough room. Defaults to true. */
   flip?: boolean;
+  /**
+   * Forwarded to the internal `View` that wraps the options on Web — a plain overflow `View`
+   * there, not a `ScrollView` (see `#612` and `scrollViewProps` below), so this is typed to
+   * what a `View` actually honours. Excludes `children`, which this component owns. No effect
+   * on native — see `scrollViewProps` for that host.
+   */
+  listProps?: Omit<ViewProps, 'children'>;
   /** Caps the listbox's height; clamped to at least 96 and to the available viewport space. Defaults to 320. */
   maxHeight?: number;
   /** Forwarded to the outside-press dismiss layer, excluding `children`/`onPress`/`style`, which this component owns. */
@@ -496,7 +504,13 @@ export type SelectContentProps = Omit<ViewProps, 'nativeID' | 'role'> & {
   outsidePressTestID?: string;
   /** Which side of the trigger the listbox opens on. Defaults to `'bottom'`. */
   placement?: SelectPlacement;
-  /** Forwarded to the internal `ScrollView` that wraps the options, excluding `children`, which this component owns. */
+  /**
+   * Forwarded to the internal `ScrollView` that wraps the options on native, excluding
+   * `children`, which this component owns. On Web the host is a plain overflow `View`
+   * (#612); for migration compatibility View-compatible fields are still forwarded there,
+   * with `listProps` winning conflicts. A dev warning asks Web consumers to migrate;
+   * ScrollView-only fields have no Web meaning.
+   */
   scrollViewProps?: Omit<ScrollViewProps, 'children'>;
   /** Shifts the listbox along the trigger's edge to stay within the viewport instead of overflowing. Defaults to true. */
   shift?: boolean;
@@ -522,6 +536,7 @@ export const SelectContent = React.forwardRef<
       direction = resolveDirection(),
       flip = true,
       importantForAccessibility,
+      listProps,
       maxHeight,
       onAccessibilityEscape,
       onLayout,
@@ -540,8 +555,35 @@ export const SelectContent = React.forwardRef<
     const { anchorRef, contentNativeID, duplicateValues, items, open, overlayId, selectedItem, setOpen } =
       root;
     const [currentItemId, setCurrentItemId] = React.useState<string | null>(null);
+    const warnedLegacyWebScrollPropsRef = React.useRef(false);
+    React.useEffect(() => {
+      if (
+        Platform.OS !== 'web' ||
+        !scrollViewProps ||
+        warnedLegacyWebScrollPropsRef.current ||
+        typeof __DEV__ === 'undefined' ||
+        !__DEV__
+      ) return;
+      warnedLegacyWebScrollPropsRef.current = true;
+      console.warn(
+        'BeeUI SelectContent: `scrollViewProps` on Web is deprecated because the Web list host is a plain View (issue 612). ' +
+          'View-compatible props are still forwarded for migration; move them to `listProps`. ScrollView-only props have no Web effect.',
+      );
+    }, [scrollViewProps]);
     const [itemLayouts, setItemLayouts] = React.useState<Record<string, ItemLayout>>({});
-    const scrollRef = React.useRef<React.ComponentRef<typeof ScrollView> | null>(null);
+    // Web renders a plain overflow `View` instead of `ScrollView` here (see
+    // the render below and `#612`'s docblock note) — RN's `ScrollView` on Web
+    // still negotiates the touch/pointer responder system a real browser
+    // scroll container never needs, and once the listbox actually overflows,
+    // that negotiation can win the gesture ahead of a `SelectItem`'s own
+    // press, so a real mouse click on an option silently does nothing. A
+    // plain `overflow: scroll` `View` renders as an ordinary scrollable `div`
+    // on Web with no responder involved, so a click always reaches the
+    // pressed option. Both target types support `.scrollTo`-equivalent
+    // access through the ref below.
+    const scrollRef = React.useRef<
+      React.ComponentRef<typeof ScrollView> | React.ComponentRef<typeof View> | null
+    >(null);
     const typeaheadRef = React.useRef({ query: '', timestamp: 0 });
     const renderOrderRef = React.useRef(0);
     renderOrderRef.current = 0;
@@ -606,9 +648,18 @@ export const SelectContent = React.forwardRef<
       if (!open || !currentItemId) return;
       const layout = itemLayouts[currentItemId];
       if (!layout) return;
-      scrollRef.current?.scrollTo({
+      const top = Math.max(0, layout.y - 8);
+      if (Platform.OS === 'web') {
+        // The Web listbox is a plain `View` (an ordinary DOM node), not a
+        // `ScrollView` — scroll it the same way a browser scrolls any
+        // overflow container.
+        (scrollRef.current as unknown as { scrollTo?: (options: { top: number }) => void } | null)
+          ?.scrollTo?.({ top });
+        return;
+      }
+      (scrollRef.current as React.ComponentRef<typeof ScrollView> | null)?.scrollTo({
         animated: false,
-        y: Math.max(0, layout.y - 8),
+        y: top,
       });
     }, [currentItemId, itemLayouts, open]);
 
@@ -758,14 +809,36 @@ export const SelectContent = React.forwardRef<
               pointerEvents={open && position ? 'auto' : 'none'}
               style={resolvedStyle}
             >
-              <ScrollView
-                ref={scrollRef}
-                keyboardShouldPersistTaps="handled"
-                {...scrollViewProps}
-                style={[{ maxHeight: resolvedMaxHeight }, scrollViewProps?.style]}
-              >
-                {children}
-              </ScrollView>
+              {Platform.OS === 'web' ? (
+                // See the `scrollRef` docblock above (#612): a plain overflow
+                // `View` here, not `ScrollView`, so a mouse press on an
+                // option is never swallowed by RN's touch-responder
+                // negotiation once the list actually scrolls. `listProps`
+                // (not `scrollViewProps`, which only ever reaches the native
+                // `ScrollView` below) is this host's own forwarded-props hook.
+                <View
+                  ref={scrollRef as unknown as React.Ref<React.ComponentRef<typeof View>>}
+                  {...(scrollViewProps as unknown as ViewProps)}
+                  {...listProps}
+                  style={[
+                    styles.webScroll,
+                    { maxHeight: resolvedMaxHeight },
+                    scrollViewProps?.style as ViewProps['style'],
+                    listProps?.style,
+                  ]}
+                >
+                  {children}
+                </View>
+              ) : (
+                <ScrollView
+                  ref={scrollRef as React.Ref<React.ComponentRef<typeof ScrollView>>}
+                  keyboardShouldPersistTaps="handled"
+                  {...scrollViewProps}
+                  style={[{ maxHeight: resolvedMaxHeight }, scrollViewProps?.style]}
+                >
+                  {children}
+                </ScrollView>
+              )}
             </View>
           </SelectItemsContext.Provider>
         </SelectRootContext.Provider>
@@ -970,5 +1043,11 @@ const styles = StyleSheet.create({
     left: -10000,
     opacity: 0,
     top: -10000,
+  },
+  // `'scroll'` (not RN's narrower typed 'hidden' | 'visible') so the listbox
+  // scrolls like an ordinary browser overflow container on Web (#612) — see
+  // the `scrollRef` docblock above for why this replaces `ScrollView` here.
+  webScroll: {
+    overflow: 'scroll' as ViewStyle['overflow'],
   },
 });

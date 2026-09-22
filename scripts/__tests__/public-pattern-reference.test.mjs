@@ -32,6 +32,7 @@ import {
   PATTERN_WIDTH_NONE_CLAIM,
   publishedComposedFamilies,
   publishedFactGroups,
+  renderPropsBlock,
   renderPublicPatternIndex,
   renderPublicPatternPage,
   sectionBody,
@@ -115,6 +116,61 @@ test('renderPublicPatternPage embeds the *ScreenProps fields as a fenced code bl
     );
   } finally {
     fs.rmSync(path.dirname(absSource), { recursive: true, force: true });
+  }
+});
+
+// #582: a props type referencing a domain fixture type (`Order`, `ProfileSetupFieldErrors`, …)
+// failed `tsc` as pasted, because the block never declared or imported it.
+test('renderPropsBlock inlines a same-file domain type the props type references', () => {
+  const relSource = 'scripts/__tests__/.tmp-fixtures/domain-same-file-screen.tsx';
+  const absSource = path.join(ROOT_DIR, relSource);
+  fs.mkdirSync(path.dirname(absSource), { recursive: true });
+  fs.writeFileSync(
+    absSource,
+    'export type FieldErrors = {\n  name?: string;\n};\n\n' +
+    'export type FakeScreenProps = {\n  fieldErrors?: FieldErrors;\n};\n',
+  );
+  try {
+    const pattern = makePattern({ source: relSource });
+    const block = renderPropsBlock(pattern, ROOT_DIR);
+    assert.match(block, /export type FieldErrors = \{\n {2}name\?: string;\n\};/);
+    assert.match(block, /export type FakeScreenProps/);
+    // The domain type must appear BEFORE the props type that references it, so the block
+    // reads top-to-bottom exactly like a consumer would paste and use it.
+    assert.ok(block.indexOf('FieldErrors = {') < block.indexOf('FakeScreenProps = {'));
+  } finally {
+    fs.rmSync(path.dirname(absSource), { recursive: true, force: true });
+  }
+});
+
+// The domain type can live in a sibling fixture file the screen imports from, and that type can
+// itself reference a further type declared in the SAME sibling file — both must resolve, and the
+// second lookup must start from the sibling file, not back at the screen file that never imports it.
+test('renderPropsBlock resolves a domain type through a relative import, recursively', () => {
+  const relSource = 'scripts/__tests__/.tmp-fixtures/domain-cross-file-screen.tsx';
+  const relFixtures = 'scripts/__tests__/.tmp-fixtures/fixtures.ts';
+  const absSource = path.join(ROOT_DIR, relSource);
+  const absFixtures = path.join(ROOT_DIR, relFixtures);
+  fs.mkdirSync(path.dirname(absSource), { recursive: true });
+  fs.writeFileSync(
+    absFixtures,
+    "export type Status = 'open' | 'closed';\n\n" +
+    'export type Order = {\n  status: Status;\n};\n',
+  );
+  fs.writeFileSync(
+    absSource,
+    "import type { Order } from './fixtures';\n\n" +
+    'export type FakeScreenProps = {\n  onSelect?: (order: Order) => void;\n};\n',
+  );
+  try {
+    const pattern = makePattern({ source: relSource });
+    const block = renderPropsBlock(pattern, ROOT_DIR);
+    assert.match(block, /export type Status = 'open' \| 'closed';/);
+    assert.match(block, /export type Order = \{\n {2}status: Status;\n\};/);
+    assert.ok(block.includes(`// from ${relFixtures}`));
+  } finally {
+    fs.rmSync(path.dirname(absSource), { recursive: true, force: true });
+    fs.rmSync(absFixtures, { force: true });
   }
 });
 

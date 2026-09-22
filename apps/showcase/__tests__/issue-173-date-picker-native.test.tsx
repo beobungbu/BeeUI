@@ -21,9 +21,12 @@ import { DatePicker } from '../../../packages/ui/src/components/date-picker.nati
 // a documented deferral — see `docs/decisions/008-datetime-architecture.md`'s "#177
 // resolution (documented deferral)" note, not an open gap in this file.
 
-type MockOnChange = (event: { type: 'set' | 'dismissed' }, date?: Date) => void;
+type MockOnValueChange = (event: { nativeEvent: { timestamp: number; utcOffset: number } }, date: Date) => void;
 
-const mockAndroidOpen = jest.fn<void, [{ value: Date; onChange: MockOnChange; [key: string]: unknown }]>();
+const mockAndroidOpen = jest.fn<
+  void,
+  [{ value: Date; onDismiss?: () => void; onValueChange?: MockOnValueChange; [key: string]: unknown }]
+>();
 
 jest.mock('@react-native-community/datetimepicker', () => {
   const ReactActual = require('react');
@@ -82,15 +85,25 @@ describe('BeeUI issue #173 DatePicker (native) rendering contract', () => {
     expect(notClearable.queryByTestId('date-picker-clear')).toBeNull();
   });
 
-  it('derives disabled/invalid/accessibilityLabel/hint from an enclosing Field', () => {
+  it('derives disabled/invalid/accessibilityLabel/hint from an enclosing Field without injecting English required copy', () => {
     const screen = render(
       <Field error="Required" invalid label="Birthday" required>
         <DatePicker testID="date-picker" value={null} />
       </Field>,
     );
     const trigger = screen.getByTestId('date-picker-trigger');
-    expect(trigger.props.accessibilityLabel).toBe('Birthday, required');
+    expect(trigger.props.accessibilityLabel).toBe('Birthday');
     expect(trigger.props.accessibilityHint).toBe('Required');
+  });
+
+  it('appends a caller-localized Field.requiredLabel to the trigger accessible name', () => {
+    const screen = render(
+      <Field label="Birthday" required requiredLabel="Bắt buộc">
+        <DatePicker testID="date-picker" value={null} />
+      </Field>,
+    );
+    const trigger = screen.getByTestId('date-picker-trigger');
+    expect(trigger.props.accessibilityLabel).toBe('Birthday, Bắt buộc');
   });
 
   it('disabled marks the trigger disabled and blocks opening', () => {
@@ -139,7 +152,12 @@ describe('BeeUI issue #173 DatePicker (native) rendering contract', () => {
       expect((call.maximumDate as Date).getDate()).toBe(25);
     });
 
-    it('commits the selected date and closes on "set", ignores "dismissed"', () => {
+    it('commits the selected date and closes on a value change, ignores a plain dismiss', () => {
+      // `onValueChange`/`onDismiss` (not the deprecated `onChange`) — matches
+      // `@react-native-community/datetimepicker`'s current, non-deprecated
+      // imperative Android API (`DateTimePickerAndroid.open`'s own
+      // `warnIfOnChangeIsUsed` fires a dev warning for `onChange`, verified
+      // against the installed 9.1 package).
       const onValueChange = jest.fn();
       const onOpenChange = jest.fn();
       const screen = render(
@@ -152,15 +170,15 @@ describe('BeeUI issue #173 DatePicker (native) rendering contract', () => {
       );
 
       fireEvent.press(screen.getByTestId('date-picker-trigger'));
-      const { onChange } = mockAndroidOpen.mock.calls[0][0];
-      onChange({ type: 'dismissed' });
+      const { onDismiss } = mockAndroidOpen.mock.calls[0][0];
+      onDismiss?.();
       expect(onValueChange).not.toHaveBeenCalled();
       expect(onOpenChange).toHaveBeenCalledWith(false);
 
       onOpenChange.mockClear();
       fireEvent.press(screen.getByTestId('date-picker-trigger'));
-      const { onChange: onChangeAgain } = mockAndroidOpen.mock.calls[1][0];
-      onChangeAgain({ type: 'set' }, new Date(2026, 0, 20));
+      const { onValueChange: onPickerValueChange } = mockAndroidOpen.mock.calls[1][0];
+      onPickerValueChange?.({ nativeEvent: { timestamp: 0, utcOffset: 0 } }, new Date(2026, 0, 20));
       expect(onValueChange).toHaveBeenCalledWith({ day: 20, month: 1, year: 2026 });
       expect(onOpenChange).toHaveBeenCalledWith(false);
     });
@@ -180,7 +198,9 @@ describe('BeeUI issue #173 DatePicker (native) rendering contract', () => {
       expect(picker.props.mode).toBe('date');
       expect((picker.props.value as Date).getDate()).toBe(15);
 
-      fireEvent(picker, 'change', { type: 'set' }, new Date(2026, 0, 22));
+      // `onValueChange` (not the deprecated `onChange`) — see the Android
+      // test above for the same rationale.
+      fireEvent(picker, 'valueChange', { nativeEvent: { timestamp: 0, utcOffset: 0 } }, new Date(2026, 0, 22));
       expect(onValueChange).toHaveBeenCalledWith({ day: 22, month: 1, year: 2026 });
       // iOS stays open until Done is pressed explicitly.
       expect(screen.getByTestId('date-picker-content')).toBeTruthy();

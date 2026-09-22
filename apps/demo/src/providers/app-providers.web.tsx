@@ -9,8 +9,8 @@ import * as React from 'react';
  * verbatim from `apps/showcase/app-providers.web.tsx` (ADR-013 D2): rendering
  * `GestureHandlerRootView`/`BottomSheetModalProvider` unconditionally on Web
  * has previously measurably broken unrelated Web overlay behavior (Dialog's
- * Escape-to-close focus-trap contract, #146), even though `Sheet` itself
- * never rendered them there.
+ * Escape-to-close focus-trap contract, #146). Native now consumes BeeUI's
+ * `SheetProvider` boundary instead of wiring those providers here.
  */
 export function AppProviders({ children }: { children?: React.ReactNode }) {
   return <>{children}</>;

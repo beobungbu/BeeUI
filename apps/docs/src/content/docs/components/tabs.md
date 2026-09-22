@@ -8,7 +8,7 @@ description: "Controlled tab set sharing state across list/triggers/content; ina
 Controlled tab set sharing state across list/triggers/content; inactive panels are not mounted.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.1` is public on npm under the opt-in `next` dist-tag. Stable `latest` currently resolves to the same RC too. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established, so this is recorded as observed registry state rather than an npm rule. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Navigation & disclosure
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/tabs.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/tabs.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add tabs
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -48,7 +49,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Fully controlled (`value`/`onValueChange`, required — there is no uncontrolled mode) tab state shared across `TabsList`/`TabsTrigger`/`TabsContent`; enabled usage without `onValueChange` warns in development, and an inactive `TabsContent` panel is not mounted.
+Fully controlled (`value`/`onValueChange`, required — there is no uncontrolled mode) tab state shared across `TabsList`/`TabsTrigger`/`TabsContent`; enabled usage without `onValueChange` warns in development, and an inactive `TabsContent` panel is not mounted. `TabsList`'s `scrollable` renders the strip inside a horizontal scroll container instead of an equal-width flex row, scrolling the selected `TabsTrigger` into view whenever `value` changes; `addon` renders extra pinned content (e.g. a "+ new order" button) after the strip, staying fixed even when `scrollable` is true. `TabsTrigger`'s `closable` renders an accessible close control as a sibling of the tab (never nested inside it) and requires `closeAccessibilityLabel`; closing the currently selected tab moves selection to the previous sibling (else the next) via `onValueChange`, while closing a non-selected tab only calls `onClose`.
 
 ### Props
 
@@ -66,7 +67,9 @@ Also carries every prop of `Omit<ViewProps, 'children' | 'role'>` — that upstr
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
+| `addon` | `React.ReactNode` | — | Extra content rendered after the tab strip (e.g. a pinned "+ new order" action). Stays fixed in place even when `scrollable` is true and the strip itself scrolls underneath it — it is never part of the horizontally-scrollable region. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `scrollable` | `boolean` | `false` | Renders the strip inside a horizontal scroll container instead of an equal-width flex row — each `TabsTrigger` sizes to its own content instead of stretching — and scrolls the selected `TabsTrigger` into view whenever the parent `Tabs`'s `value` changes. Existing (non-scrollable) tab strips are unaffected. Defaults to false. |
 
 Also carries every prop of `Omit<ViewProps, 'accessibilityRole' | 'role'>` — that upstream contract is not reproduced here.
 
@@ -88,7 +91,10 @@ Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contr
 | --- | --- | --- | --- |
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
+| `closable` | `boolean` | `false` | Renders an accessible close control as a **sibling** of this tab's own pressable, never nested inside it (a `Pressable`-in-`Pressable`/`<button>`-in-`<button>` composition is the same anti-pattern flagged for `DropdownMenuTrigger` wrapping `IconButton` — nesting interactive elements breaks Web's DOM validity and native's hit-testing). Requires `closeAccessibilityLabel`. Defaults to false. |
+| `closeAccessibilityLabel` | `string` | — | Accessible name for the close control, e.g. `` `Close ${label}` ``. Required whenever `closable` is true — BeeUI does not synthesize an English default from the tab's own label, since that would hardcode a locale. A dev warning fires if `closable` is set without it. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
+| `onClose` | `(value: string) => void` | — | Called with this tab's `value` when its close control is pressed. If this tab is currently selected, `Tabs`'s `onValueChange` is also called — with the previous sibling's `value` if one exists, else the next sibling's — moving selection away from the tab being closed. No-op (besides `onClose` itself) when a non-selected tab closes, or when the closing tab has no remaining sibling. |
 | `value` **(required)** | `string` | — | Identifies this tab; compared against the parent `Tabs`'s `value` to determine whether it is selected. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children' | 'onPress'>` — that upstream contract is not reproduced here.
@@ -105,7 +111,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 ## Platform behavior
 
-This family ships no platform-specific file, and its own source takes no `Platform` branch.
+This family ships no platform-specific file, but its source branches on `Platform`, so some behavior differs by target.
 
 The same public family is exposed across the supported target matrix; meaningful platform differences remain governed by the compatibility contract.
 
@@ -113,7 +119,7 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 
 ## Accessibility
 
-- **Roles this family assigns:** `tab`, `tablist`, `tabpanel` — set in `tabs.tsx` by the components themselves, not by the caller.
+- **Roles this family assigns:** `button`, `tab`, `tablist`, `tabpanel` — set in `tabs.tsx` by the components themselves, not by the caller.
 - **Accessibility states and properties it sets:** `accessibilityLabel`, `disabled`, `selected` — read from `tabs.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
@@ -129,8 +135,8 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-7-remaining-hardening.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-remaining-hardening.test.tsx)
-- **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
-- **Additional fixture:** [`apps/showcase/patterns/dashboard-finance/screens/analytics-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/dashboard-finance/screens/analytics-screen.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/tabs-closable-scrollable-strip.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/tabs-closable-scrollable-strip.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/tabs-pagination-stepper-current-aria.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/tabs-pagination-stepper-current-aria.test.tsx)
 
 ### Addressable examples
 
@@ -174,9 +180,22 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Tabs** is actually used: 12 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Tabs** is actually used: 12 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
-[lines 916–927](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L916-L927):
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Tabs, TabsContent, TabsList, TabsTrigger, Text } from '@beemvp/beeui-ui';
+import * as React from 'react';
+````
+
+Fixture state this block reads (same file, line 462):
+
+````tsx
+  const [tab, setTab] = React.useState('overview');
+````
+
+[lines 923–934](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L923-L934):
 
 ````tsx
               <Tabs onValueChange={setTab} value={tab}>
@@ -193,10 +212,10 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               </Tabs>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
-Press handling is owned by the family: a trigger reaches `onValueChange` only when its tab is not already selected, so pressing the active tab does nothing and a trigger cannot carry its own press handler.
+Press handling is owned by the family: a trigger reaches `onValueChange` only when its tab is not already selected, so pressing the active tab does nothing and a trigger cannot carry its own press handler. `closable` without `closeAccessibilityLabel` warns in development — the close control has no other way to describe itself.
 
 ## Related
 

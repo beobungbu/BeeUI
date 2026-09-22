@@ -11,6 +11,7 @@ import {
   type ViewProps,
 } from 'react-native';
 import { Button, type ButtonProps } from './button';
+import { getWebMutationObserverConstructor, watchDialogOwnerRole } from './dialog-role-watch';
 import {
   ModalOverlayHost,
   useOverlayDismissable,
@@ -43,6 +44,7 @@ import { Text, type TextProps } from './text';
 type WebFocusableElement = {
   contains: (other: WebFocusableElement | null) => boolean;
   focus: (options?: { preventScroll?: boolean }) => void;
+  getAttribute: (name: string) => string | null;
   getClientRects: () => ArrayLike<unknown>;
   hasAttribute: (name: string) => boolean;
   querySelectorAll: (selectors: string) => ArrayLike<WebFocusableElement>;
@@ -207,24 +209,70 @@ function useDialogFocusTrap(
  * unconditionally would query the native accessibility bridge — and, in
  * tests, trigger a post-`act()` state update — for every closed Dialog in
  * the tree, never just the ones actually being shown.
+ *
+ * On Web the value is additionally read synchronously from `matchMedia` on
+ * every render, because the `animationType` it feeds must be right on the
+ * very first open render, not one microtask later. `isReduceMotionEnabled()`
+ * is a Promise even on Web (react-native-web wraps the same synchronous
+ * `matchMedia` read), so before this the first open render always used
+ * `fade` and flipped to `none` once the Promise resolved — while the Modal
+ * was already visible. react-native-web's `ModalAnimation` only calls its
+ * `onShow` callback manually when `visible` *changes* with `animationType`
+ * already `'none'`, and otherwise waits for the `animationend` event of the
+ * fade keyframe that the flip had just removed — so its internal "active"
+ * flag never flipped, and it never wrote `role="dialog"` onto the owner
+ * node under `prefers-reduced-motion: reduce` (reproduced in Chromium
+ * against the Showcase: `aria-modal`/`aria-labelledby` present, `role`
+ * absent, one second after opening). Reading synchronously means the open
+ * render already carries the current preference, and a preference change
+ * while closed is picked up on reopen without any transient value. A
+ * preference toggled *while* a Dialog is open still changes `animationType`
+ * mid-presentation, and react-native-web's internal "active" flag then stays
+ * unset for that cycle; nothing user-visible depends on it — the owner
+ * node's `role` is stamped by `watchDialogOwnerRole` regardless, and this
+ * component owns its own Web focus trap and Escape handling.
+ * `readWebReducedMotionPreference` returns `undefined` off Web and where
+ * `matchMedia` is unavailable (SSR, this repo's Jest harness), which keeps
+ * the async native path — and the existing deterministic tests that mock
+ * it — unchanged.
  */
 function useReducedMotionPreference(enabled: boolean): boolean {
-  const [reducedMotion, setReducedMotion] = React.useState(false);
+  const [ambientReducedMotion, setAmbientReducedMotion] = React.useState(false);
 
   React.useEffect(() => {
     if (!enabled) return undefined;
     let mounted = true;
     AccessibilityInfo.isReduceMotionEnabled().then((value) => {
-      if (mounted) setReducedMotion(value);
+      if (mounted) setAmbientReducedMotion(value);
     });
-    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReducedMotion);
+    const subscription = AccessibilityInfo.addEventListener(
+      'reduceMotionChanged',
+      setAmbientReducedMotion,
+    );
     return () => {
       mounted = false;
       subscription.remove();
     };
   }, [enabled]);
 
-  return reducedMotion;
+  return readWebReducedMotionPreference() ?? ambientReducedMotion;
+}
+
+const reducedMotionMediaQuery = '(prefers-reduced-motion: reduce)';
+
+/**
+ * Web only: the browser's live `prefers-reduced-motion` value, read
+ * synchronously — the same query react-native-web's `AccessibilityInfo`
+ * resolves asynchronously. `undefined` off Web or where `matchMedia` is not
+ * available, so callers fall back to the async signal there.
+ */
+function readWebReducedMotionPreference(): boolean | undefined {
+  if (Platform.OS !== 'web') return undefined;
+  const { matchMedia } = globalThis as {
+    matchMedia?: (query: string) => { matches: boolean };
+  };
+  if (typeof matchMedia !== 'function') return undefined;
+  return matchMedia.call(globalThis, reducedMotionMediaQuery).matches;
 }
 
 /**
@@ -434,6 +482,14 @@ export type DialogContentProps = Omit<
   overlayProps?: Omit<PressableProps, 'children' | 'onPress'>;
   /** `testID` applied to the backdrop `Pressable`, for targeting it in tests. */
   overlayTestID?: string;
+  /**
+   * @internal Selects this panel's ARIA/accessibility dialog role.
+   * `AlertDialogContent` (`alert-dialog.tsx`) passes `'alertdialog'`; every
+   * other caller keeps the default `'dialog'`. Not meant as a general-purpose
+   * public override — a plain `Dialog` that wants `alertdialog` semantics
+   * should render an `AlertDialog` instead.
+   */
+  role?: 'dialog' | 'alertdialog';
 };
 
 export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, DialogContentProps>(
@@ -454,6 +510,7 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
       overlayClassName,
       overlayProps,
       overlayTestID,
+      role = 'dialog',
       ...props
     },
     ref,
@@ -549,10 +606,56 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
     // formSheet. Only overFullScreen is transparent; native non-fullscreen/fullScreen
     // presentations must be non-transparent so the requested presentationStyle is real.
     const transparent = presentationStyle === 'overFullScreen';
+    const isWeb = Platform.OS === 'web';
+    const resolvedAccessibilityLabel = accessibilityLabel ?? titleText;
+    const resolvedAccessibilityLabelledBy = accessibilityLabelledBy ?? titleNativeID;
+
+    const modalOwnerRef = React.useRef<WebFocusableElement | null>(null);
+    const setModalOwnerRef = React.useCallback((node: React.ComponentRef<typeof Modal> | null) => {
+      modalOwnerRef.current = node as unknown as WebFocusableElement | null;
+    }, []);
+
+    // Web only, both roles: BeeUI stamps this dialog's `role` onto the one
+    // Modal owner node from the first open commit and keeps it there — see
+    // `watchDialogOwnerRole`'s docblock for why the owner's own `role` write
+    // cannot be relied on (it hinges on react-native-web's animation
+    // bookkeeping and never happens at all when `animationType` changes
+    // while visible) and why this needs a `MutationObserver` rather than a
+    // prop or a fixed-delay correction.
+    React.useEffect(() => {
+      if (!isWeb || !open) return undefined;
+      const MutationObserverCtor = getWebMutationObserverConstructor();
+      const node = modalOwnerRef.current;
+      if (!node || !MutationObserverCtor) return undefined;
+      return watchDialogOwnerRole(node, role, MutationObserverCtor);
+    }, [isWeb, open, role]);
 
     return (
       <Modal
         {...restModalProps}
+        ref={setModalOwnerRef}
+        // Web only: react-native-web's own `Modal` (verified against 0.21's
+        // `ModalContent` source) unconditionally renders `role="dialog"` +
+        // `aria-modal="true"` on its own owner node once open, with no prop this
+        // component can pass to opt that wrapper out — the object literal that
+        // sets those two attributes is applied after this component's own props
+        // are spread, so it always wins. Before this, the panel `View` below
+        // ALSO carried `role="dialog"`/`aria-modal`, so an open Dialog produced
+        // two nested `role="dialog"` nodes on Web: a strict-mode violation for
+        // `page.getByRole('dialog')` without a name filter, and two "entered a
+        // dialog" announcements for one screen-reader visit. Forwarding this
+        // dialog's own computed label/labelledby to the one Web owner
+        // react-native-web insists on rendering — instead of also stamping a
+        // second `role="dialog"` on the panel underneath — leaves exactly one
+        // labelled dialog node. Native has no such forced wrapper (`Modal`
+        // there is an opaque OS-level container with no injected role/label of
+        // its own), so the panel keeps owning `role="dialog"` there unchanged.
+        // The owner's `role` itself (`'dialog'` or `'alertdialog'`) is
+        // stamped by the `MutationObserver` effect above that
+        // `ref={setModalOwnerRef}` feeds, not left to react-native-web's own
+        // forced write.
+        accessibilityLabel={isWeb ? resolvedAccessibilityLabel : undefined}
+        accessibilityLabelledBy={isWeb ? resolvedAccessibilityLabelledBy : undefined}
         animationType={animationType}
         onRequestClose={handleModalRequestClose}
         presentationStyle={presentationStyle}
@@ -597,22 +700,39 @@ export const DialogContent = React.forwardRef<React.ComponentRef<typeof View>, D
                 ref={setPanelRef}
                 {...props}
                 accessibilityHint={accessibilityHint ?? descriptionText}
-                accessibilityLabel={accessibilityLabel ?? titleText}
-                accessibilityLabelledBy={accessibilityLabelledBy ?? titleNativeID}
+                // Web: already forwarded to `<Modal>` above, onto the one owner
+                // node react-native-web actually renders `role="dialog"` on —
+                // see that prop's docblock. Setting it again here would restore
+                // the double-labelled/double-dialog nesting this fix removes.
+                accessibilityLabel={isWeb ? undefined : resolvedAccessibilityLabel}
+                accessibilityLabelledBy={isWeb ? undefined : resolvedAccessibilityLabelledBy}
                 // The iOS accessibility modal boundary lives on the
                 // ModalOverlayHost wrapper so portalled overlays stay inside
                 // it (#60). Do not re-add the flag here: it would prune the
                 // portal outlet subtree from the accessibility tree.
-                aria-modal
+                //
+                // Never re-added on Web for `alertdialog` either: the one
+                // Modal owner react-native-web forces (see `role` below)
+                // already carries `aria-modal="true"` unconditionally,
+                // regardless of `role`/`active` — adding it here too would
+                // reintroduce the exact duplicate-`aria-modal` shape this
+                // fix removes, just for the alert-dialog path instead.
+                aria-modal={isWeb ? undefined : true}
                 className={cn(
-                  'w-full max-w-lg gap-4 rounded-xl border border-border bg-surface p-5',
+                  'w-full max-w-lg gap-4 overflow-hidden rounded-xl border border-border bg-surface p-5',
                   className,
                 )}
                 onAccessibilityEscape={() => {
                   onAccessibilityEscape?.();
                   requestClose();
                 }}
-                role="dialog"
+                // Web: the one Modal owner node react-native-web renders
+                // (its `role` stamped to this panel's `role` by the
+                // `MutationObserver` above) is the sole `role`/`aria-modal`
+                // owner for both cases — restating either role here would recreate a
+                // two-nodes-same-role shape (the exact bug #607 removed for
+                // `dialog`, and would reintroduce it for `alertdialog` too).
+                role={isWeb ? undefined : role}
               >
                 {children}
               </View>

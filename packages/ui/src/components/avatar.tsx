@@ -27,7 +27,7 @@ const avatarVariants = cva(
   },
 );
 
-const avatarFallbackVariants = cva('font-semibold text-muted-foreground', {
+const avatarFallbackVariants = cva('font-semibold', {
   variants: {
     size: {
       sm: 'text-caption',
@@ -141,7 +141,18 @@ export const Avatar = React.forwardRef<React.ComponentRef<typeof View>, AvatarPr
           />
         ) : fallback ? (
           <Text
-            className={cn(avatarFallbackVariants({ size }), fallbackClassName)}
+            // `text-muted-foreground` after `avatarFallbackVariants({ size })`,
+            // not folded into that `cva`'s own base classes: its `size`
+            // variants (`text-caption`/`text-label`/`text-body`/`text-heading`)
+            // are this project's own typography-scale class names, not real
+            // Tailwind color utilities, but `tailwind-merge` (which `cn` uses)
+            // has no way to know that — it groups any bare `text-*` class it
+            // does not recognize as a font-size keyword into the same "text
+            // color" conflict bucket, so it silently evicted a same-string
+            // color class that came *before* one of these size classes,
+            // dropping fallback initials back to react-native-web's default
+            // black. Applying it *after* is what actually survives the merge.
+            className={cn(avatarFallbackVariants({ size }), 'text-muted-foreground', fallbackClassName)}
             variant="label"
           >
             {fallback}

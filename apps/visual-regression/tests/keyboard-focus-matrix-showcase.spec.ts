@@ -288,7 +288,7 @@ test.describe('AlertDialog — focus-trap and intentional non-dismissal by Escap
     const trigger = page.getByRole('button', { name: 'Delete project' });
     await trigger.click();
     // See the `openDialog` comment above: named, not `.filter({ hasText })`.
-    const alertDialog = page.getByRole('dialog', { name: 'Delete this project?' });
+    const alertDialog = page.getByRole('alertdialog', { name: 'Delete this project?' });
     await alertDialog.waitFor({ state: 'visible' });
     return { alertDialog, trigger };
   }

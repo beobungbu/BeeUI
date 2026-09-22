@@ -59,7 +59,7 @@ test('AlertDialog opens and its explicit action dismisses it under prefers-reduc
   const trigger = page.getByRole('button', { name: 'Delete project' });
   await trigger.click();
 
-  const dialog = page.getByRole('dialog', { name: 'Delete this project?' });
+  const dialog = page.getByRole('alertdialog', { name: 'Delete this project?' });
   await expect(dialog).toBeVisible();
 
   // AlertDialog never dismisses via Escape by design (destructive
@@ -114,6 +114,14 @@ test('Select opens and selects from the keyboard under prefers-reduced-motion: r
 
   const trigger = page.getByTestId('select-showcase-placeholder-trigger');
   await trigger.scrollIntoViewIfNeeded();
+  // Keyboard-only from here on. The pointer is still parked where "Open
+  // Components" was clicked, and at this 390px viewport the listbox opens
+  // underneath it: Chromium then fires `pointerenter` on the option beneath
+  // the stationary cursor, `SelectItem`'s `onHoverIn` makes that option
+  // current, and focus lands one item down before any Arrow key is read.
+  // Whether the rects overlap depends on font metrics, so this is
+  // machine-dependent unless the pointer is moved off the page content.
+  await page.mouse.move(0, 0);
   await trigger.focus();
   await expect(page.getByTestId('select-showcase-placeholder-value')).toHaveText('Choose a role');
 

@@ -5,6 +5,8 @@ description: How BeeUI compound components share context, why the parts are sepa
 
 A BeeUI compound component is **one root that owns state and context, plus named part components that read it** — so the parts stay in your markup where you can style and reorder them, while the behavior stays in one place.
 
+**Prerequisites:** read [Ownership model](/docs/learn/ownership-model/) first — this page assumes you already know which decisions belong to BeeUI.
+
 ## Why the concept exists
 
 A `Select` needs a trigger, a value display, a surface, groups, labels and items. There are two ways to expose that. A configuration API takes an `options` array and renders everything for you: easy at first, then a wall of escape-hatch props the moment a real product needs an icon in an item or a section header in the middle. A composition API hands you the parts.
@@ -45,6 +47,11 @@ import {
   SelectValue,
 } from '@beemvp/beeui-ui';
 
+type CurrencySelectProps = {
+  onValueChange: (value: string) => void;
+  value: string | undefined;
+};
+
 export function CurrencySelect({ onValueChange, value }: CurrencySelectProps) {
   return (
     <Select onValueChange={onValueChange} value={value}>
@@ -68,6 +75,7 @@ export function CurrencySelect({ onValueChange, value }: CurrencySelectProps) {
 4. **The root is the state boundary.** Selection, open state and dismissal belong to the root — see [State model](/docs/learn/state-model/).
 5. **Every part is a public export of `@beemvp/beeui-ui`.** If a part is not exported from the package barrel, it is internal and not part of the contract, even if the file resolves.
 6. **`children` is the extension point.** Adding your own nodes inside a part is expected. Replacing a part with your own component that mimics it is not, because the context contract goes with the part.
+7. **Do not nest one pressable inside another.** A trigger part (`SelectTrigger`, `DropdownMenuTrigger`, `PopoverTrigger`, `TooltipTrigger`, `SheetTrigger`, `DialogTrigger`, `AlertDialogTrigger`) is itself the pressable — it carries the same variant/size/press API as [Button](/docs/components/button/) — so an icon or label goes directly inside it, never wrapped in a second `IconButton`. The same rule holds wherever a family exposes a pressable slot: `ListItem`'s `trailing`, or a `SettingsItem` composed with `AlertDialogTrigger`. On Web, nesting two pressables renders one interactive element inside another, which React flags as invalid DOM nesting; reach for `variant="ghost"` on the outer one instead.
 
 ## Consequences for application code
 

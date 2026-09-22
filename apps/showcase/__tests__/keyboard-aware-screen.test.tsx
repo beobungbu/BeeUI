@@ -1,6 +1,6 @@
 import { act, render } from '@testing-library/react-native';
 import * as React from 'react';
-import { Keyboard, Platform, TextInput, UIManager } from 'react-native';
+import { Keyboard, Platform, ScrollView, TextInput, UIManager } from 'react-native';
 import { KeyboardAwareScreen, Text } from '@beemvp/beeui-ui';
 
 jest.mock('react-native-safe-area-context', () => {
@@ -173,6 +173,64 @@ describe('BeeUI KeyboardAwareScreen', () => {
     act(() => {
       listeners.get('keyboardDidHide')?.();
     });
+    expect(screen.getByTestId('ka-screen-scroll').props.contentContainerStyle.paddingBottom).toBe(0);
+  });
+
+  // #588 — `KeyboardAvoidingView behavior="padding"` on iOS makes room for the
+  // keyboard but never itself scrolls a specific already-below-the-fold
+  // focused field into that newly visible area. KeyboardAwareScreen now runs
+  // the same field-measure-and-scroll correction on iOS as it always has on
+  // Android — but without Android's extra bottom content-padding
+  // compensation, since KeyboardAvoidingView already reserves that room here.
+  it('scrolls the focused field above the keyboard on iOS, with no extra bottom padding', () => {
+    Platform.OS = 'ios';
+    const listeners = new Map<string, (event?: unknown) => void>();
+    jest.spyOn(Keyboard, 'addListener').mockImplementation(((event: string, listener: (event?: unknown) => void) => {
+      listeners.set(event, listener);
+      return { remove: jest.fn() };
+    }) as typeof Keyboard.addListener);
+
+    jest.spyOn(TextInput.State, 'currentlyFocusedField').mockImplementation(() => 303);
+    const measure = jest.fn((_field: number, callback: (x: number, y: number, width: number, height: number) => void) => {
+      // Field bottom (y + height = 780) sits 130px below the keyboard top (650).
+      callback(0, 730, 200, 50);
+    });
+    Object.defineProperty(UIManager, 'measureInWindow', {
+      configurable: true,
+      value: measure,
+      writable: true,
+    });
+    jest.spyOn(global, 'requestAnimationFrame').mockImplementation((callback) => {
+      callback(0);
+      return 1;
+    });
+    const scrollToSpy = jest.fn();
+    Object.defineProperty(ScrollView.prototype, 'scrollTo', {
+      configurable: true,
+      value: scrollToSpy,
+      writable: true,
+    });
+
+    const screen = render(
+      <KeyboardAwareScreen testID="ka-screen">
+        <Text>Long form body</Text>
+      </KeyboardAwareScreen>,
+    );
+
+    // iOS never gets Android's extra bottom content-padding compensation —
+    // KeyboardAvoidingView already reserves that room.
+    expect(screen.getByTestId('ka-screen-scroll').props.contentContainerStyle.paddingBottom).toBe(0);
+
+    act(() => {
+      listeners.get('keyboardDidShow')?.({
+        endCoordinates: { height: 300, screenY: 650 },
+      });
+    });
+
+    expect(measure).toHaveBeenCalledTimes(1);
+    expect(measure.mock.calls[0]?.[0]).toBe(303);
+    // overlap (780 - 650 = 130) + default 24px margin.
+    expect(scrollToSpy).toHaveBeenCalledWith({ animated: false, y: 154 });
     expect(screen.getByTestId('ka-screen-scroll').props.contentContainerStyle.paddingBottom).toBe(0);
   });
 

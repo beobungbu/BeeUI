@@ -3,10 +3,10 @@ title: Start
 description: Install the BeeUI release candidate from npm or evaluate the repository, then follow the verified Expo, bare React Native or Web path.
 ---
 
-BeeUI **`0.86.2-rc.1` is public on npm** under the opt-in `next` dist-tag. Stable `latest` is not promoted yet, so every release-candidate install should use `@next` or pin the exact RC version.
+BeeUI **`0.86.2-rc.1` is public on npm** under the opt-in `next` dist-tag. The live registry currently resolves `latest` to the same RC too. BeeUI's bootstrap workflow published with `--tag next`; the mechanism that also produced `latest` has not been established, so the docs record that as observed registry state rather than an npm first-publish rule. Every release-candidate install should still use `@next` or pin the exact RC version.
 
 :::caution[Release-candidate channel]
-Use `@next` while evaluating `0.86.2-rc.1`. Do not replace the commands below with unqualified package names until stable `0.86.2` has been promoted to `latest`.
+Use `@next` while evaluating `0.86.2-rc.1`, even though an unqualified install currently resolves to the same RC by coincidence (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)). That coincidence ends the moment stable `0.86.2` is promoted to `latest`; keep the commands below tagged so they stay correct on both sides of that change.
 :::
 
 ## Install the package boundary
@@ -48,6 +48,10 @@ BeeUI documents tested points, not unlimited compatibility promises. The authori
 | Tailwind CSS / Uniwind | `4.3.3` / `1.10.1` | styling entry |
 
 Check [Compatibility](/docs/compatibility/) for peer ranges and optional native peers before changing versions.
+
+## Versioning policy
+
+The published npm version, the repository's `package.json` version, and the React Native version it pins are all `0.86.x` today, and that is a deliberate but coincidental alignment, not a rule: BeeUI's package version tracks its own release history (prereleases are `0.86.2-rc.N`; the stable release is `0.86.2`), independently of whichever React Native version happens to share the same number. Do not assume BeeUI's version implies a specific React Native version or vice versa — always check [Compatibility](/docs/compatibility/) for the actual pinned/tested peer versions. See [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md) for the release/dist-tag mechanics.
 
 ## Pick a platform
 

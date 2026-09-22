@@ -29,6 +29,27 @@ The pattern is a composition recipe rather than a new framework layer. Follow th
 The screen is controlled through `ProductSearchScreenProps`. User intent crosses the application boundary through `onFavorite`, `onFilterPress`, `onProductSelect`, `onSortPress`; fetching, routing, persistence and side effects remain application-owned.
 
 ```tsx
+// from apps/showcase/patterns/commerce-social/screens/product-search-screen.tsx
+export type ProductSearchMode = 'results' | 'empty' | 'loading';
+
+// from apps/showcase/patterns/commerce-social/fixtures/commerce-fixtures.ts
+export type Product = {
+  id: string;
+  name: string;
+  subtitle: string;
+  category: string;
+  price: number;
+  originalPrice?: number;
+  rating: number;
+  reviewCount: number;
+  imageUri: string;
+  badge?: string;
+  description: string;
+  availability: string;
+  shipping: string;
+  variants: string[];
+};
+
 export type ProductSearchScreenProps = {
   initialQuery?: string;
   mode?: ProductSearchMode;
@@ -74,7 +95,7 @@ BeeUI does not take ownership of app routing, authentication/business rules, API
 
 ## Source ownership
 
-`ProductSearchScreen` is **Showcase source you copy**, not a package export: it is not shipped from any `@beemvp/beeui-*` package, and the Registry CLI (`pnpm beeui list` / `pnpm beeui add`) does not carry pattern screens. Copy [`apps/showcase/patterns/commerce-social/screens/product-search-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/commerce-social/screens/product-search-screen.tsx) into your app and adapt it directly. Only the individual BeeUI components it composes (linked above) are available for source ownership through the repository-local Registry workflow; before public CLI publication, use [CLI & source ownership](/docs/guides/cli-source-ownership/) from a BeeUI checkout rather than a public `npx` command.
+`ProductSearchScreen` is **Showcase source you copy**, not a package export: it is not shipped from any `@beemvp/beeui-*` package, and the Registry CLI (`pnpm beeui list` / `pnpm beeui add`) does not carry pattern screens. Copy [`apps/showcase/patterns/commerce-social/screens/product-search-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/commerce-social/screens/product-search-screen.tsx) into your app and adapt it directly. Only the individual BeeUI components it composes (linked above) are available for source ownership through the repository-local Registry workflow; see [CLI & source ownership](/docs/guides/cli-source-ownership/) for both the published `npx @beemvp/beeui-cli@next` path and the repository-local checkout path.
 
 ## Related
 

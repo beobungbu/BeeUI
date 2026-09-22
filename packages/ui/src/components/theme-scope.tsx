@@ -9,6 +9,7 @@ import {
 } from '@beemvp/beeui-tokens';
 import * as React from 'react';
 import { ScopedTheme, type ThemeName } from 'uniwind';
+import { BeeThemeScopeMirrorProvider } from './theme-scope-bridge';
 
 /**
  * `BeeThemeScope` is a thin typed wrapper around Uniwind's own `ScopedTheme`
@@ -86,9 +87,11 @@ import { ScopedTheme, type ThemeName } from 'uniwind';
  *   `BeeUIProvider`, outside any subtree-level `BeeThemeScope`. **On this path a
  *   scoped theme does not reach portaled overlay content**; the overlay renders
  *   under whatever theme is active at the application root instead. This is an
- *   existing, pre-#68 constraint of the overlay transport itself (see
- *   `overlay-host-mode.ts`), not something this component special-cases —
- *   `BeeThemeScope` does not add a second propagation path to work around it.
+ *   existing, pre-#68 constraint of the generic overlay transport itself (see
+ *   `overlay-host-mode.ts`). Native `Sheet` is the deliberate exception: because
+ *   @gorhom/bottom-sheet reparents through its own store portal, Sheet captures this
+ *   scope's resolved runtime-theme name and re-applies the same Uniwind `ScopedTheme`
+ *   inside that portal. Other legacy anchored overlays keep the generic limitation.
  *
  * This component never modifies focus-trap, dismissal, or event-routing
  * behavior; it only supplies the `theme` value Uniwind's `ScopedTheme` already
@@ -104,18 +107,19 @@ import { ScopedTheme, type ThemeName } from 'uniwind';
  *
  * ## SSR / web / native
  *
- * `BeeThemeScope` itself renders nothing platform-specific — it is a pure
- * pass-through to Uniwind's own `ScopedTheme`, whose web/native/SSR behavior
+ * `BeeThemeScope` keeps Uniwind's `ScopedTheme` as the sole styling authority and
+ * adds only a value mirror used by native Sheet's portal bridge. Uniwind's web/native/SSR behavior
  * (including that library's own DOM/host requirements) is documented by Uniwind,
  * not by BeeUI. BeeUI adds no additional SSR constraint beyond what Uniwind
  * itself requires (see the platform notes above for the one known constraint
  * that does originate here: portal/overlay transport mode).
  *
- * ## No new theme store/provider
+ * ## No second theme authority
  *
- * `BeeThemeScope` introduces no `React.createContext`, no module-level mutable
- * state, and no subscription mechanism of its own. It is a stateless function
- * component that resolves a name and renders Uniwind's `ScopedTheme`.
+ * Uniwind remains the only theme authority. BeeUI keeps one tiny React-context mirror of
+ * the resolved runtime-theme name solely so native Sheet can re-apply the same ScopedTheme
+ * after @gorhom/bottom-sheet reparents content through its store portal. The mirror owns
+ * no theme mutations, subscriptions, or fallback logic.
  */
 export type BeeThemeScopeProps<Def extends ThemeRegistryDefinition = typeof beeRuntimeThemeByBrand> = {
   /**
@@ -187,7 +191,12 @@ export function BeeThemeScope<Def extends ThemeRegistryDefinition = typeof beeRu
   // component authored once in `@beemvp/beeui-ui` cannot know that app-specific union
   // ahead of time. This mirrors the same, already-established bridge the
   // Showcase's `ThemeInspector` uses for `Uniwind.setTheme(...)`.
-  return <ScopedTheme theme={runtimeTheme as ThemeName}>{props.children}</ScopedTheme>;
+  const resolvedTheme = runtimeTheme as ThemeName;
+  return (
+    <BeeThemeScopeMirrorProvider theme={resolvedTheme}>
+      <ScopedTheme theme={resolvedTheme}>{props.children}</ScopedTheme>
+    </BeeThemeScopeMirrorProvider>
+  );
 }
 
 BeeThemeScope.displayName = 'BeeThemeScope';
