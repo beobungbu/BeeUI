@@ -1,0 +1,36 @@
+name: phase00-registry-evidence-probe
+
+on:
+  push:
+    branches:
+      - release-flow/phase-00-truth-drift
+
+permissions:
+  contents: read
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.13.1
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Observe rc.2 registry metadata
+        run: |
+          set -euo pipefail
+          for package in \
+            @beemvp/beeui-core \
+            @beemvp/beeui-tokens \
+            @beemvp/beeui-ui \
+            @beemvp/beeui-cli
+          do
+            echo "=== ${package}@0.86.2-rc.2 ==="
+            npm view "${package}@0.86.2-rc.2" version dist.integrity dist.shasum dist.unpackedSize repository.url --json
+            echo "next=$(npm view "$package" dist-tags.next)"
+            echo "latest=$(npm view "$package" dist-tags.latest)"
+          done
