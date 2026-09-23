@@ -4,7 +4,7 @@ BeeUI's source-ownership CLI: copies BeeUI component source and its transitive d
 
 ## Distribution state
 
-**Public release candidate:** `@beemvp/beeui-cli@0.86.2-rc.1` is published on npm. During RC use the explicit `@next` channel (or pin the exact version):
+**Public release candidate:** `@beemvp/beeui-cli@0.86.2-rc.2` is published on npm. During RC use the explicit `@next` channel (or pin the exact version):
 
 ```bash
 npx @beemvp/beeui-cli@next --help

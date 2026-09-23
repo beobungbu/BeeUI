@@ -4,7 +4,7 @@ This document defines BeeUI release-candidate evidence and separates automated p
 
 ## Current distribution model
 
-BeeUI's first public release candidate, **`0.86.2-rc.1`**, is published on npm under the opt-in **`next`** dist-tag. The public lockstep package set is:
+BeeUI's current public release candidate, **`0.86.2-rc.2`** (the first was `0.86.2-rc.1`), is published on npm under the opt-in **`next`** dist-tag. The public lockstep package set is:
 
 - `@beemvp/beeui-core`
 - `@beemvp/beeui-tokens`
@@ -14,7 +14,7 @@ BeeUI's first public release candidate, **`0.86.2-rc.1`**, is published on npm u
 The bootstrap release was produced from exact source SHA
 `ddf415b0d665c14e1b154bb02570a906585b4b98` through `.github/workflows/npm-release.yml`. The protected release workflow verified canonical reproducible tarballs before publishing sequentially with provenance.
 
-The stable **`latest`** channel is intentionally not promoted to this RC. Public consumer examples must therefore use `@next` or pin `@0.86.2-rc.1` until stable `0.86.2` has completed its own verification and promotion flow.
+The stable **`latest`** channel is intentionally not promoted to this RC. Public consumer examples must therefore use `@next` or pin `@0.86.2-rc.2` until stable `0.86.2` has completed its own verification and promotion flow.
 
 ```bash
 npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next

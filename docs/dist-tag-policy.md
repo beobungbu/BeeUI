@@ -2,6 +2,8 @@
 
 This document is the machine-checked authority for BeeUI npm versioning, staging and dist-tag behavior.
 
+`0.86.2-rc.2` is the current candidate prepared from `development`; it is published under `next` only once the owner approves the staged publish.
+
 BeeUI 1.0 is the product milestone name. The stable npm package line starts at **`0.86.2`** per ADR-015. The first public release candidate, **`0.86.2-rc.1`**, is published on npm under the opt-in **`next`** dist-tag.
 
 ## Real current dist-tag state: `latest` also resolves to the RC
@@ -14,7 +16,7 @@ This means a bare, unqualified `npm install @beemvp/beeui-ui` currently installs
 
 ## Current public distribution state
 
-The four release-group packages are public at `0.86.2-rc.1`:
+The four release-group packages are public at `0.86.2-rc.2` once its staged publish is approved (`0.86.2-rc.1` before that):
 
 - `@beemvp/beeui-core`
 - `@beemvp/beeui-tokens`
@@ -30,7 +32,7 @@ npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@n
 npx @beemvp/beeui-cli@next --help
 ```
 
-Do **not** document a bare `npm install @beemvp/beeui-ui` as the recommended RC command. Today an unqualified install happens to resolve to the same RC as `@next` (see "Real current dist-tag state" above), but that coincidence ends the moment stable `0.86.2` publishes and `latest` moves off the prerelease — an explicit `@next` tag or exact pinned version stays correct on both sides of that transition, a bare install does not.
+Do **not** document a bare `npm install @beemvp/beeui-ui` as the recommended RC command. An unqualified install was last observed (at `0.86.2-rc.1`) resolving to the same RC as `@next` (see "Real current dist-tag state" above); that observation is re-verified after every publish and is not an npm rule, and it stops applying the moment stable `0.86.2` publishes and `latest` moves off the prerelease — an explicit `@next` tag or exact pinned version stays correct on both sides of that transition, a bare install does not.
 
 ## Owner guard
 
@@ -49,7 +51,7 @@ BeeUI uses exactly two persistent public dist-tags:
 | Tag | Meaning |
 | --- | --- |
 | `latest` | default-install channel. Today it resolves to `0.86.2-rc.1` (observed; publish used `--tag next`, the mechanism that also set `latest` is not established — see above) — not because `latest` was deliberately promoted. Once the stable release group publishes, `latest` moves to the stable version and never points to a prerelease again. |
-| `next` | opt-in release-candidate/safety channel; currently points to `0.86.2-rc.1`, same target as `latest` today; keeps tracking future prereleases after the first stable publish. |
+| `next` | opt-in release-candidate/safety channel; points to the newest published `0.86.2-rc.N` (`0.86.2-rc.2` once its staged publish is approved); the last live observation, at `0.86.2-rc.1`, showed it sharing `latest`'s target; keeps tracking future prereleases after the first stable publish. |
 
 `latest` is the intended long-term consumer commit point for stable releases. Default consumers must not see a *deliberately promoted* stable release until the full stable release group has been published and verified — the current observed RC-era `latest` value is a separate, incidental state with an unestablished mechanism, not an early promotion.
 
@@ -108,10 +110,10 @@ The block below is parsed by `scripts/check-distribution-policy.mjs` and feeds t
 ```json dist-tag-policy
 {
   "published": true,
-  "currentVersion": "0.86.2-rc.1",
+  "currentVersion": "0.86.2-rc.2",
   "candidateStableVersion": "0.86.2",
   "prereleaseVersionPattern": "^0\\.86\\.2-rc\\.(0|[1-9][0-9]*)$",
-  "prereleaseExample": "0.86.2-rc.1",
+  "prereleaseExample": "0.86.2-rc.2",
   "distTags": ["latest", "next"],
   "prereleaseDistTag": "next",
   "stableDistTag": "latest",

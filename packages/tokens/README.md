@@ -4,7 +4,7 @@ The shared design-token runtime for BeeUI: DTCG-derived color/typography/spacing
 
 ## Distribution state
 
-**Public release candidate:** `@beemvp/beeui-tokens@0.86.2-rc.1` is published on npm. During RC use the explicit `@next` channel (or pin the exact version):
+**Public release candidate:** `@beemvp/beeui-tokens@0.86.2-rc.2` is published on npm. During RC use the explicit `@next` channel (or pin the exact version):
 
 ```bash
 npm install @beemvp/beeui-tokens@next

@@ -4,7 +4,69 @@ All notable consumer-facing changes to BeeUI are recorded here.
 
 ## Unreleased
 
-No unreleased consumer-facing changes are recorded after the first public release candidate yet.
+No unreleased consumer-facing changes are recorded after `0.86.2-rc.2` yet.
+
+## [0.86.2-rc.2] — 2026-09-22
+
+Second release candidate on the `0.86.2` line. It carries the consumer-audit batch from the BeePOS and BeeECOM validation programs (BeeUI #543–#615, landed through #617 and #618) and the follow-up portal-page regeneration (#621). The frozen candidate source SHA and the packed-tarball identities are recorded in `docs/rc-candidate.md`. Publication happens only through the protected `npm-release` workflow (`operation=stage-rc`) with owner approval of each staged package.
+
+### Distribution
+
+- `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`, and `@beemvp/beeui-cli` move in lockstep to `0.86.2-rc.2`.
+- The prerelease channel stays npm dist-tag **`next`**. This candidate does not deliberately promote stable **`latest`**; the observation that `latest` also resolved to `0.86.2-rc.1` after the bootstrap publish is re-verified against the live registry once the rc.2 staged publish is approved (`docs/dist-tag-policy.md`).
+- Public RC install path:
+
+  ```bash
+  npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next
+  npx @beemvp/beeui-cli@next --help
+  ```
+
+- `@beemvp/beeui-ui` gains the `./toolbar` export subpath (63 granular subpaths).
+- Generated public docs, `llms.txt` surfaces, release state, and component portal pages are regenerated from the dist-tag policy so they describe this candidate.
+
+### Added
+
+- `Toolbar` / `ToolbarItem` family with priority-based overflow into a dropdown menu (`priority`, `overflowAccessibilityLabel`, `icon`, `disabled`, `onPress`), overflow math that measures the trigger and gaps, and roving keyboard focus whose sequence is derived only from items that registered a focusable child (overflow trigger is the last stop). New Registry item, export subpath, Showcase fixture, and component page.
+- `Tabs`: `TabsList scrollable` and `addon`; `TabsTrigger closable`, `onClose`, and `closeAccessibilityLabel` (required with `closable`; BeeUI does not synthesize an English default). Arrow-key roving focus with wrap, Home/End, and RTL for scrollable tablists; in a Web scrollable tablist the close control stays out of sequential Tab order and Delete on the focused closable tab closes it. Closing the selected tab moves selection to the previous sibling, else the next.
+- `Sheet`: public `SheetProvider` (with `SheetProviderProps`). Native apps mount it directly below `BeeUIProvider`; it owns the `@gorhom/bottom-sheet` modal provider and `GestureHandlerRootView` wiring so gorhom's portal host sits below BeeUI's runtime contexts by construction. Web and the RN `Modal` fallback are pass-through. `SheetContent bridgeContexts` preserves consumer-owned React contexts (query, i18n, navigation, app stores) across gorhom's store-backed portal; BeeUI's own Sheet, safe-area, overlay, toast, and theme state are bridged automatically.
+- `Select listProps` for the Web list host, which is a plain overflow `View` rather than a `ScrollView` (#612).
+- `Table density` (`TableDensity`; new `spacing.row-dense` 48 token), `TableCell align` (`TableAlign`), and `TableRow onPress`. On Web, row activation that originates from an interactive descendant (click, Enter, Space) is ignored.
+- `BeeUIProvider toastPlacement` and the `ToastPlacement` type; toasts default to the bottom edge on native. `SafeArea toastPlacement` follows the same contract.
+- `OTPInput appearance="segmented"`.
+- `IconButton size` and `count` (with `countClassName`); `ListItem active`; `Chip` static tag variant (`interactive={false}`) and `ChipGroup allowDeselect`; `DropdownMenuItem description` (with `descriptionClassName`); `Stepper orientation`; `Screen scroll`; `SearchInput trailing` (with `containerClassName`); `Field requiredLabel`; `Label presentational`.
+- Prerequisites lines on the hand-written docs pages, runnable example blocks and pattern contract blocks that are `tsc`-verified, and a Toolbar Registry entry.
+
+### Fixed
+
+- Web ARIA across `Tabs`, `Pagination`, `Stepper`, `Accordion`, `Collapsible`, `Progress`, `Calendar`, `DropdownMenu`, `Switch`, and `Field`; `AlertDialog` carries the `alertdialog` role; exactly one labelled dialog owner on Web, including under reduced motion, where the preference is now read synchronously so the first open render already has the right role.
+- `BeeThemeScope` on Web: `theme.css` emitted `:root:where(.theme …)` blocks that could only match `<html>`, so nested scopes never applied. Scoped semantic variables are now emitted as un-anchored `.theme {}` blocks (packed-consumer reproduction and Playwright proof; the packed Vite consumer asserts scoped values differ).
+- `Sheet` never presented on iOS in a real Expo 57 consumer (#584): `SheetContent` no longer calls `dismiss()` on mount, content gets an in-flow `flex: 1` box so it fills the snap point, gorhom's container no longer collapses the sheet into one accessibility element, a rapid close→reopen race is fixed with presentation/dismiss generation counters, and the toast viewport renders topmost inside the sheet. Proven on the iOS simulator; a real-device run is still recommended.
+- Runtime: styleq crash on `className={cond ? x : undefined}`; `SafeArea className`, with insets and caller padding composed additively instead of dropping a safe edge; Sheet viewport geometry; `Select` mouse pick in scrolled lists; `Input` Dynamic Type and VoiceOver value, and a masked `Input` no longer exposes its value through `accessibilityValue.text`; `KeyboardAwareScreen` scroll-into-view on iOS; dark-mode `Table` header and `Avatar` contrast; `IconButton` renders the `Button` directly when `count` is absent and keeps a 44dp width at `size="sm"`.
+- Date pickers: focusing the selected day no longer scrolls the document to the popover's off-screen measuring position.
+- i18n: no injected English "required", "Show", or "Hide" copy; `Field required` and `PasswordInput` follow a localized-copy contract; DatePicker and DateTimePicker locale copy.
+- Docs generators: prop defaults, optionality, and phantom types in the generated props tables; stale "maintainer checkout" / "unpublished" claims; component portal pages regenerated after the final follow-ups so the published pages match the generators (#621).
+
+### Changed
+
+- `Select scrollViewProps` on Web is deprecated in favor of `listProps`. View-compatible fields are still forwarded to the Web list host for migration, with `listProps` winning conflicts, and a development warning asks Web consumers to migrate; `ScrollView`-only fields have no Web effect. Native behavior is unchanged.
+- Native `Sheet` app-root wiring moved from consumer-mounted `GestureHandlerRootView` + `BottomSheetModalProvider` to BeeUI's `SheetProvider` below `BeeUIProvider`. `SheetProvider` deliberately does not reuse an already-present outer gorhom provider; that arrangement is reported as a development-time misconfiguration while BeeUI mounts its own inner provider.
+- `DateTimePicker locale` now localizes the picker's own copy (placeholder, Done); `vi-VN` copy added.
+- Token lifecycle manifest governs 107 stable tokens (was 106) with the new `spacing.row-dense` token.
+- `docs/dist-tag-policy.md`, the README, the AI cookbook, and the generators state the real npm behavior observed for rc.1 (`latest` and `next` both resolving to `0.86.2-rc.1` until the first stable publish) as an observation with its mechanism unestablished, instead of asserting general npm first-publish semantics (owner decision 2026-09-19).
+- `docs/compatibility-matrix.md` documents the Expo consumer-starter pins (`react-native@0.86.3`, `@expo/metro-runtime@~57.0.16`) as a deliberate narrow exception that does not widen the repo-tested `0.86.2` claim.
+
+### Compatibility
+
+The governed line is unchanged from rc.1 (`docs/compatibility-matrix.md`, `docs/consumer-compatibility-report.md`): React `>=19 <20`, React Native `>=0.86.0 <0.87.0` with `0.86.2` as the repo-tested pin, Expo SDK 57, React Native Web 0.21.x, Tailwind CSS `>=4 <5`, Uniwind `>=1.10.1 <2`, Chromium browser evidence.
+
+### Known limitations
+
+- Native runtime smoke for `Sheet` is wired for iOS only; Android smoke is not wired, and a real-device run of the #584 fix is still recommended.
+- Web keydown bubbling through react-native-web's Modal is documented as an upstream root cause (#606) and its spec is kept as `fixme`; the native half of #609 is documented rather than changed.
+- iOS `pageSheet` / `formSheet` presentation remains experimental until the native-runtime acceptance gate promotes it; `overFullScreen` is unaffected.
+- Web support remains evidence-bounded to Chromium with Expo/Metro and Vite + React Native Web.
+
+Stable `0.86.2` is a separate future release event. rc.2 publication under `next` does not authorize or imply promotion of `latest`.
 
 ## [0.86.2-rc.1] — 2026-09-09
 

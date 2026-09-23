@@ -15,7 +15,7 @@ the end. The reproducibility verdict and the documentation gap list are in
 
 ## Packed-tarball consumption
 
-BeeUI `0.86.2-rc.1` is publicly published on npm under the `next` dist-tag
+BeeUI `0.86.2-rc.2` is publicly published on npm under the `next` dist-tag
 (see `../../README.md`). This app deliberately keeps consuming real
 `pnpm pack` tarballs of `@beemvp/beeui-core` / `@beemvp/beeui-tokens` /
 `@beemvp/beeui-ui` through the same package boundary CI's `verify-web-consumer.sh`

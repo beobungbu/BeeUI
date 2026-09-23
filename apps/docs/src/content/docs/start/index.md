@@ -3,10 +3,10 @@ title: Start
 description: Install the BeeUI release candidate from npm or evaluate the repository, then follow the verified Expo, bare React Native or Web path.
 ---
 
-BeeUI **`0.86.2-rc.1` is public on npm** under the opt-in `next` dist-tag. The live registry currently resolves `latest` to the same RC too. BeeUI's bootstrap workflow published with `--tag next`; the mechanism that also produced `latest` has not been established, so the docs record that as observed registry state rather than an npm first-publish rule. Every release-candidate install should still use `@next` or pin the exact RC version.
+BeeUI **`0.86.2-rc.2` is public on npm** under the opt-in `next` dist-tag. The live registry was last observed (at `0.86.2-rc.1`) resolving `latest` to the RC as well; that observation is re-verified after every publish and is not an npm rule. BeeUI's bootstrap workflow published with `--tag next`; the mechanism that also produced `latest` has not been established. Every release-candidate install should still use `@next` or pin the exact RC version.
 
 :::caution[Release-candidate channel]
-Use `@next` while evaluating `0.86.2-rc.1`, even though an unqualified install currently resolves to the same RC by coincidence (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)). That coincidence ends the moment stable `0.86.2` is promoted to `latest`; keep the commands below tagged so they stay correct on both sides of that change.
+Use `@next` while evaluating `0.86.2-rc.2`, even though an unqualified install was last observed (at `0.86.2-rc.1`) resolving to the RC as well (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)); that observation is re-verified after every publish and is not an npm rule, and it stops applying the moment stable `0.86.2` is promoted to `latest`; keep the commands below tagged so they stay correct on both sides of that change.
 :::
 
 ## Install the package boundary
@@ -23,7 +23,7 @@ The CLI is published separately in the same lockstep release:
 npx @beemvp/beeui-cli@next --help
 ```
 
-Pin `@0.86.2-rc.1` instead of `@next` when you need an immutable prerelease version in CI or a reproducible consumer fixture.
+Pin `@0.86.2-rc.2` instead of `@next` when you need an immutable prerelease version in CI or a reproducible consumer fixture.
 
 ## Which intent is yours
 
@@ -142,7 +142,7 @@ Read [Provider & safe area](/docs/start/provider-safe-area/) before building a p
 
 After installation:
 
-1. Confirm `npm ls @beemvp/beeui-ui @beemvp/beeui-core @beemvp/beeui-tokens` resolves `0.86.2-rc.1` when using `@next` today.
+1. Confirm `npm ls @beemvp/beeui-ui @beemvp/beeui-core @beemvp/beeui-tokens` resolves the current candidate `0.86.2-rc.2` when using `@next`.
 2. Typecheck your application.
 3. Build or export for every platform you ship.
 4. Exercise at least one real BeeUI component under `BeeUIProvider`.

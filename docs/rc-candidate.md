@@ -1,14 +1,76 @@
 # BeeUI release candidate authority
 
-> **Status:** `0.86.2-rc.1` is frozen as the first npm release candidate; no public npm package has been published yet.
+> **Status:** `0.86.2-rc.2` is the frozen current release candidate (not yet published); `0.86.2-rc.1` is the published first candidate on npm under `next`.
 >
 > **Stable package line:** `0.86.2` (ADR-015).
 >
-> **Prerelease channel:** `0.86.2-rc.N` → `next` only after explicit owner authorization.
+> **Prerelease channel:** `0.86.2-rc.N` → `next` only after explicit owner authorization (`stage-rc` + npm 2FA approval for rc.2 and later).
 
 This file is the human release-candidate authority for BeeUI. It intentionally does **not** reuse the historical `5cb061f` / `0.1.0` evidence set: that candidate predates ADR-015 and later package/runtime fixes and is not publishable as the current package set.
 
-## Frozen candidate — `0.86.2-rc.1`
+## Frozen candidate — `0.86.2-rc.2`
+
+The second current-line RC is frozen from exact verified source SHA:
+
+- candidate source SHA: `a58d8b83977f364bb141351f86b61e8b477602bd`;
+- lockstep package version: `0.86.2-rc.2`;
+- PR: #622 (`release/0.86.2-rc.2` → `development`);
+- integration merge SHA and ancestry-only `main` sync SHA: recorded here once the reviewer merges the PR and the `main` sync lands;
+- the evidence-only commit that adds this section changes no package/runtime contents relative to the candidate tree.
+
+Any package/CLI/registry/token source change after this freeze invalidates `0.86.2-rc.2` and requires a new `rc.N`. Evidence-only documentation may describe this frozen source candidate without changing the candidate package contents.
+
+### Release artifact identity
+
+`pnpm release:verify` passed for the exact candidate source and recorded these fresh `pnpm pack` artifacts (canonical + reproducible):
+
+| Package | Tarball | Bytes | SHA-256 |
+| --- | --- | ---: | --- |
+| `@beemvp/beeui-core` | `beemvp-beeui-core-0.86.2-rc.2.tgz` | 36,709 | `77d7c7a41a7dd3dfd14f1346eea9f5c0d93f54f4fed89ccce7a856325b4717d1` |
+| `@beemvp/beeui-tokens` | `beemvp-beeui-tokens-0.86.2-rc.2.tgz` | 137,593 | `5b48a4156cc5e17062ed68f0a08c35b52232733f5ab364767cb6857bc3309c02` |
+| `@beemvp/beeui-ui` | `beemvp-beeui-ui-0.86.2-rc.2.tgz` | 974,335 | `e12143818eeff8da271a24d08cf310f57eacef9c35fd3b036616b2c9d679ec7c` |
+| `@beemvp/beeui-cli` | `beemvp-beeui-cli-0.86.2-rc.2.tgz` | 269,202 | `64c0a2d8d39ef40bfa5b11790edbc5875c05c335a788809e173f27538ffe3aec` |
+
+The verifier again proved the packed manifests contain no unresolved `workspace:` protocol, package exports resolve to shipped files (including the new `./toolbar` subpath), the four tarballs install into a clean consumer, the CLI binary executes `help` and `list`, and the package set does not pull the Expo runtime.
+
+### Exact-head CI evidence
+
+For candidate SHA `a58d8b83977f364bb141351f86b61e8b477602bd` (pull request #622 run):
+
+- primary `ci` workflow: **PASS** (full-CI lanes selected by the manifest bump);
+- aggregate `verify` fan-in: **PASS**;
+- `verify-fast`, `verify-docs`, `verify-runtime`, `verify-release`, `verify-tokens`, `verify-benchmark`: **PASS**;
+- bare React Native consumer bundle (`bare-consumer`): **PASS**;
+- Android native compile (`android-native`, both jobs): **PASS**;
+- iOS native compile for Showcase and bare consumer (`ios-native`, both jobs): **PASS**;
+- Expo consumer workflow: **PASS**;
+- Web consumer workflow: **PASS**;
+- Web accessibility workflow: **PASS**;
+- visual Web workflow (`visual-web-report`): **PASS**;
+- public BeeUI Web workflow (`build-and-local-smoke`): **PASS**.
+
+The separate `native-runtime-smoke` workflow and the label-gated `android-runtime` / `ios-runtime` / `visual-web-full` jobs were skipped by their own change/label contracts; this is not treated as a pass.
+
+`beeui-environment-ci` (`pnpm typecheck` + `pnpm test`) runs only on push to `development`; its result for the integration merge is recorded here after the merge. Locally, `pnpm typecheck` and `pnpm test` passed on the candidate tree before the PR was opened (`pnpm typecheck` exit 0; `pnpm test` exit 0 with 1010 node:test cases and 0 failures).
+
+### Publication / provenance state
+
+At freeze time:
+
+- `0.86.2-rc.1` is published under `next` (bootstrap path, 2026-09-09); the bootstrap token path is retired for subsequent RCs;
+- `stage-rc` is the publication path for this candidate: `operation=stage-rc`, `expected_version=0.86.2-rc.2`, `confirmation=BEEUI_RC_RELEASE`, dispatched on `main`, staging all four packages under `next` through Trusted Publishing/OIDC, each approved by the owner with npm 2FA;
+- the live registry was last observed (at `0.86.2-rc.1`) resolving `latest` to the RC as well; that observation must be re-verified after the rc.2 staged publish is approved and the dist-tag policy, README, and generated surfaces updated if it changed;
+- no package version or dist-tag for `0.86.2-rc.2` exists on the registry at freeze time.
+
+Registry mutation remains blocked until the repository owner explicitly dispatches and approves it.
+
+### Experimental / quarantined runtime dimension
+
+The iOS `pageSheet` / `formSheet` presentation surface remains **EXPERIMENTAL** for the 1.0 product milestone. Native runtime smoke for `Sheet` is wired for iOS only; Android smoke and a real-device run of the #584 fix remain open.
+
+## Previous candidate — `0.86.2-rc.1` (published)
+
+### Frozen candidate record — `0.86.2-rc.1`
 
 The first current-line RC is frozen from exact verified source SHA:
 
