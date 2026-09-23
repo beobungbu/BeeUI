@@ -114,8 +114,11 @@ export const Checkbox = React.forwardRef<React.ComponentRef<typeof Pressable>, C
         // (which read `accessibilityState`) and Web (which reads `aria-*`) both correct.
         aria-checked={accessibilityChecked}
         // `required` reaches the DOM via `aria-required` rather than
-        // injected text (RN's compound `accessibilityState` has no `required` key).
-        aria-required={field?.required || undefined}
+        // injected text (RN's compound `accessibilityState` has no `required`
+        // key) — from the enclosing `Field` when present, otherwise from the
+        // enclosing `FormGroup` (a checkbox list's own group-level required
+        // state, e.g. "select at least one").
+        aria-required={(field?.required ?? formGroup?.required) || undefined}
         className={cn('flex-row items-center gap-3 active:opacity-80', className)}
         disabled={isDisabled}
         onPress={() => onCheckedChange?.(checked !== true)}

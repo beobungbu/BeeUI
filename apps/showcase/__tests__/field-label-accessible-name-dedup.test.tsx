@@ -67,6 +67,23 @@ describe('BeeUI dedup extended to FormGroup + RadioGroup', () => {
     expect(legend.props.accessibilityLabel).toBeUndefined();
 
     const radioGroup = screen.getByTestId('plan-group');
-    expect(radioGroup.props.accessibilityLabel).toBe('Plan, required');
+    // No hardcoded English "required" suffix (#631 item 4/5): `required` is
+    // true but no `requiredAccessibilityLabel` was supplied, so the resolved
+    // name stays exactly the legend.
+    expect(radioGroup.props.accessibilityLabel).toBe('Plan');
+  });
+
+  it('appends only a caller-supplied, localized requiredAccessibilityLabel to the legend name, never the English word', () => {
+    const screen = render(
+      <FormGroup legend="Kế hoạch" required requiredAccessibilityLabel="bắt buộc">
+        <RadioGroup onValueChange={() => {}} testID="plan-group" value="starter">
+          <Radio label="Starter" value="starter" />
+        </RadioGroup>
+      </FormGroup>,
+    );
+
+    const radioGroup = screen.getByTestId('plan-group');
+    expect(radioGroup.props.accessibilityLabel).toBe('Kế hoạch, bắt buộc');
+    expect(radioGroup.props.accessibilityLabel).not.toMatch(/required/i);
   });
 });
