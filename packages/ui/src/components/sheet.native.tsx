@@ -3,7 +3,8 @@ import { spacing } from '@beemvp/beeui-tokens';
 import * as React from 'react';
 import {
   BottomSheetModal,
-  BottomSheetView,
+  BottomSheetModalProvider,
+  useBottomSheetModalInternal,
   type BottomSheetBackdropProps,
   type BottomSheetHandleProps,
 } from '@gorhom/bottom-sheet';
@@ -16,11 +17,39 @@ import {
   type PressableProps,
   type ViewProps,
 } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { Extrapolation, interpolate, ReduceMotion, useAnimatedStyle } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaFrameContext,
+  SafeAreaInsetsContext,
+  useSafeAreaFrame,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { Button, type ButtonProps } from './button';
-import { ModalOverlayHost, type ModalOverlayDismissScope } from './overlay-runtime';
+import {
+  BeeThemeScopeBridge,
+  useBeeThemeScopeSnapshot,
+  type BeeThemeScopeSnapshot,
+} from './theme-scope-bridge';
+import {
+  ModalOverlayHost,
+  OverlayRuntimeBridge,
+  useOverlayRuntimeSnapshot,
+  type ModalOverlayDismissScope,
+} from './overlay-runtime';
 import { Text, type TextProps } from './text';
+import {
+  ToastRuntimeBridge,
+  ToastRuntimeLocalViewport,
+  useToastRuntimeSnapshot,
+  type ToastRuntimeSnapshot,
+} from './toast-runtime-bridge';
+import {
+  EMPTY_SHEET_BRIDGE_CONTEXTS,
+  SheetBridgeContextCapture,
+  SheetConsumerContextBridge,
+  type SheetBridgeContext,
+} from './sheet-context-bridge';
 
 /**
  * BeeUI 1.0 Sheet — native implementation (#158, per accepted ADR-006
@@ -39,14 +68,15 @@ import { Text, type TextProps } from './text';
  * real native "portal to top + Android back interception" surface) standing
  * in for RN's `<Modal>`.
  *
- * **Required native root wiring** (unavoidable, upstream-mandated integration
- * cost of `@gorhom/bottom-sheet`'s modal API, not a BeeUI invention): any app
- * that renders `Sheet` must wrap its root in both `GestureHandlerRootView`
- * (from `react-native-gesture-handler`) and `BottomSheetModalProvider` (from
- * `@gorhom/bottom-sheet`) — see `apps/showcase/App.tsx` for the reference
- * wiring. Without it, `BottomSheetModal`'s portal has nowhere correct to
- * render above the rest of the app. This is intentionally **not** routed
- * through BeeUI's own `react-native-teleport` transport
+ * **Required native root wiring** is owned by BeeUI's public `SheetProvider`.
+ * Mount it below `BeeUIProvider`: on native it installs the required
+ * `GestureHandlerRootView` + `BottomSheetModalProvider`, so gorhom's portal host
+ * is constructed below BeeUI's runtime contexts instead of above them (#619).
+ * `SheetProvider` deliberately does not reuse an already-present outer gorhom
+ * provider: that topology is the context-loss bug this boundary fixes, so an outer
+ * provider is reported as a dev-time misconfiguration while BeeUI still mounts its
+ * own inner provider. This is intentionally **not** routed through BeeUI's own
+ * `react-native-teleport` transport
  * (`overlay-transport.native.tsx`): `BottomSheetModalProvider` owns its own
  * portal/stacking coordination (`push`/`switch`/`replace` between multiple
  * concurrently-mounted sheets) that BeeUI does not reimplement, matching
@@ -167,6 +197,47 @@ type SheetUncontrolledProps = SheetBaseProps & {
 
 /** Controlled/uncontrolled root contract, identical shape to `sheet.tsx`/`sheet.web.tsx`. */
 export type SheetProps = SheetControlledProps | SheetUncontrolledProps;
+
+export type SheetProviderProps = {
+  children?: React.ReactNode;
+};
+
+/**
+ * Native Sheet integration boundary (#619).
+ *
+ * This component intentionally mounts its own gorhom modal provider even when
+ * an outer one exists. Reusing an outer `BottomSheetModalProvider` would put
+ * gorhom's store-backed portal above BeeUI's runtime contexts and recreate the
+ * context/z-order bug this boundary exists to prevent.
+ */
+export function SheetProvider({ children }: SheetProviderProps) {
+  const outerModalProvider = useBottomSheetModalInternal(true);
+  const warnedOuterProviderRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (
+      typeof __DEV__ !== 'undefined' &&
+      __DEV__ &&
+      outerModalProvider &&
+      !warnedOuterProviderRef.current
+    ) {
+      warnedOuterProviderRef.current = true;
+      console.error(
+        'BeeUI SheetProvider detected an outer @gorhom/bottom-sheet BottomSheetModalProvider. ' +
+          'That boundary sits above BeeUI Sheet integration and creates a split modal-provider topology; ' +
+          'BeeUI will use its own inner provider for Sheet.',
+      );
+    }
+  }, [outerModalProvider]);
+
+  return (
+    <GestureHandlerRootView style={styles.providerRoot}>
+      <BottomSheetModalProvider>{children}</BottomSheetModalProvider>
+    </GestureHandlerRootView>
+  );
+}
+
+SheetProvider.displayName = 'SheetProvider';
 
 export function Sheet(props: SheetProps) {
   const { children, defaultOpen = false, onOpenChange, open } = props;
@@ -332,6 +403,10 @@ export type SheetContentProps = Omit<
   'accessibilityRole' | 'accessibilityViewIsModal' | 'role'
 > & {
   /**
+   * Consumer-owned contexts that must survive gorhom's store-backed portal. BeeUI automatically bridges its own Sheet/safe-area/overlay/toast/theme state; pass app contexts here only for authorities BeeUI cannot enumerate (query, i18n, navigation, app stores).
+   */
+  bridgeContexts?: readonly SheetBridgeContext[];
+  /**
    * Keyboard-interaction contract (#157). Maps to gorhom's own
    * `keyboardBehavior`; see this file's module docblock for the honest
    * "no true off switch" limitation. Defaults to `true`.
@@ -387,6 +462,58 @@ function SheetHandleSlot({
   return <SheetHandle className={handleClassNameRef.current} />;
 }
 
+type SheetPortalContextBridgeProps = {
+  bridgeContexts: readonly SheetBridgeContext[];
+  bridgeValues: readonly unknown[];
+  children?: React.ReactNode;
+  frame: ReturnType<typeof useSafeAreaFrame>;
+  insets: ReturnType<typeof useSafeAreaInsets>;
+  overlayRuntime: ReturnType<typeof useOverlayRuntimeSnapshot>;
+  sheetContext: SheetContextValue;
+  themeScope: BeeThemeScopeSnapshot;
+  toastRuntime: ToastRuntimeSnapshot | null;
+};
+
+/**
+ * `@gorhom/bottom-sheet`'s modal renders its children through its own
+ * store-backed portal, mounted under `BottomSheetModalProvider` — not under
+ * `SheetContent`. React context declared below that provider (the `Sheet`
+ * root itself, and a `BeeUIProvider` rendered inside the gorhom provider, as
+ * the module docblock's required root wiring allows) is therefore invisible
+ * to the sheet's content. This re-provides what `SheetContent` captured in
+ * place: BeeUI's Sheet/safe-area/overlay/toast/theme state automatically, plus
+ * consumer-owned contexts explicitly named in `bridgeContexts`. BeeUI cannot
+ * enumerate application authorities such as React Query/i18n/navigation/store
+ * contexts, so those opt in through that prop rather than being silently lost.
+ */
+function SheetPortalContextBridge({
+  bridgeContexts,
+  bridgeValues,
+  children,
+  frame,
+  insets,
+  overlayRuntime,
+  sheetContext,
+  themeScope,
+  toastRuntime,
+}: SheetPortalContextBridgeProps) {
+  return (
+    <SheetConsumerContextBridge bridgeContexts={bridgeContexts} bridgeValues={bridgeValues}>
+      <SheetContext.Provider value={sheetContext}>
+        <SafeAreaFrameContext.Provider value={frame}>
+          <SafeAreaInsetsContext.Provider value={insets}>
+            <BeeThemeScopeBridge snapshot={themeScope}>
+              <ToastRuntimeBridge snapshot={toastRuntime}>
+                <OverlayRuntimeBridge snapshot={overlayRuntime}>{children}</OverlayRuntimeBridge>
+              </ToastRuntimeBridge>
+            </BeeThemeScopeBridge>
+          </SafeAreaInsetsContext.Provider>
+        </SafeAreaFrameContext.Provider>
+      </SheetContext.Provider>
+    </SheetConsumerContextBridge>
+  );
+}
+
 export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, SheetContentProps>(
   (
     {
@@ -397,6 +524,7 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
       accessibilityLabel,
       accessibilityLabelledBy,
       avoidKeyboard = true,
+      bridgeContexts = EMPTY_SHEET_BRIDGE_CONTEXTS,
       children,
       className,
       closeOnBackdropPress = true,
@@ -418,8 +546,13 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
     },
     ref,
   ) => {
-    const { open, setOpen } = useSheetContext();
+    const sheetContext = useSheetContext();
+    const { open, setOpen } = sheetContext;
     const insets = useSafeAreaInsets();
+    const frame = useSafeAreaFrame();
+    const overlayRuntime = useOverlayRuntimeSnapshot();
+    const toastRuntime = useToastRuntimeSnapshot();
+    const themeScope = useBeeThemeScopeSnapshot();
     const reducedMotion = useReducedMotionPreference();
     const reactID = React.useId().replace(/:/g, '');
     const defaultTitleNativeID = `beeui-sheet-title-${reactID}`;
@@ -438,12 +571,22 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
     // it" — without this, an effect-driven `dismiss()` would double-fire
     // `onOpenChange`.
     const openRef = React.useRef(open);
+    // Whether BeeUI has presented this modal and gorhom has not yet reported
+    // it dismissed. Never dismiss a never-presented modal (#584).
+    const presentedRef = React.useRef(false);
+    // gorhom exposes one shared, tokenless onDismiss callback. Serialize engine transitions so
+    // an old dismissal and a new presentation are never awaiting the same callback at once.
+    const dismissInFlightRef = React.useRef(false);
 
     React.useEffect(() => {
       openRef.current = open;
       if (open) {
-        sheetRef.current?.present();
-      } else {
+        if (!presentedRef.current && !dismissInFlightRef.current) {
+          presentedRef.current = true;
+          sheetRef.current?.present();
+        }
+      } else if (presentedRef.current && !dismissInFlightRef.current) {
+        dismissInFlightRef.current = true;
         sheetRef.current?.dismiss();
       }
     }, [open]);
@@ -454,15 +597,24 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
     }, [dismissOnRequestClose, onRequestClose, setOpen]);
 
     const handleDismiss = React.useCallback(() => {
+      const completedBeeUIDismiss = dismissInFlightRef.current;
+      dismissInFlightRef.current = false;
+      presentedRef.current = false;
+
+      if (completedBeeUIDismiss) {
+        if (openRef.current) {
+          presentedRef.current = true;
+          sheetRef.current?.present();
+        }
+        return;
+      }
+
       if (!openRef.current) return;
       onRequestClose?.();
       if (dismissOnRequestClose) {
         setOpen(false);
       } else {
-        // gorhom already animated closed and unmounted; the caller vetoed
-        // the close (`dismissOnRequestClose={false}`), so re-present to
-        // honor that policy. A native gesture/back completion cannot be
-        // "cancelled" mid-flight, so this re-opens rather than blocking it.
+        presentedRef.current = true;
         sheetRef.current?.present();
       }
     }, [dismissOnRequestClose, onRequestClose, setOpen]);
@@ -535,14 +687,38 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
     );
 
     return (
-      <BottomSheetModal
+      <SheetBridgeContextCapture contexts={bridgeContexts}>
+        {(bridgeValues) => (
+          <BottomSheetModal
+        // gorhom's content container defaults to `accessible` with its own
+        // "Bottom Sheet" label, which makes iOS fold the whole subtree into
+        // that one element: VoiceOver (and XCTest-driven smoke flows) can
+        // then reach neither the dialog content below nor its controls.
+        // BeeUI's `role="dialog"` content `View` owns the modal semantics,
+        // exactly as in `sheet.tsx`.
+        accessible={false}
         // Only compile/deterministic-test evidence backs this mapping today
         // (#160 owns real-device keyboard verification) — see the module
         // docblock's "no true off switch" note.
         android_keyboardInputMode="adjustResize"
         backdropComponent={backdropComponent}
         backgroundComponent={null}
+        // #584 — gorhom v5's `enableDynamicSizing` defaults to `true`. With
+        // an explicit `snapPoints` array (BeeUI always supplies one — see
+        // `resolveSheetSnapPoints`'s default below), dynamic sizing instead
+        // measures `BottomSheetView`'s own content height to insert as the
+        // *first* snap point. `BottomSheetView` below is given `flex: 1`
+        // (`styles.contentFill`) with no bounding parent height, which
+        // measures to 0 in an unbounded container, producing a zero-height
+        // snap point the sheet then targets — explaining the real-device
+        // report of `present()` being called with no visible sheet and no
+        // `onChange`. `snapPoints` already IS the explicit sizing contract
+        // here, so dynamic sizing is off, matching gorhom's own documented
+        // recommendation for a fixed/percentage `snapPoints` array. Real
+        // on-device confirmation remains an owner gate — see
+        // `plans/260918-1559-consumer-audit-fix-all/reports/ws-b-sheet-584.md`.
         enableDismissOnClose
+        enableDynamicSizing={false}
         enablePanDownToClose={enableSwipeToDismiss}
         handleComponent={showHandle ? handleComponent : null}
         index={clampedInitialIndex}
@@ -553,36 +729,63 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
         ref={sheetRef}
         snapPoints={resolvedSnapPoints}
       >
-        <ModalOverlayHost active={open} dismissScopeRef={modalDismissScopeRef}>
-          <BottomSheetView style={styles.contentFill}>
-            <SheetContentAccessibilityContext.Provider value={accessibilityContext}>
-              <View
-                ref={ref}
-                {...props}
-                accessibilityHint={accessibilityHint ?? descriptionText}
-                accessibilityLabel={accessibilityLabel ?? titleText}
-                accessibilityLabelledBy={accessibilityLabelledBy ?? titleNativeID}
-                aria-modal
-                className={cn(
-                  'w-full flex-1 gap-4 rounded-t-xl border border-border bg-surface px-5',
-                  showHandle ? 'pt-2' : 'pt-5',
-                  className,
-                )}
-                onAccessibilityEscape={() => {
-                  onAccessibilityEscape?.();
-                  requestClose();
-                }}
-                role="dialog"
-                // Bottom safe area (ADR-006 "Safe area — reused, not
-                // reinvented"): same additive pattern as `sheet.tsx`.
-                style={[{ paddingBottom: spacing['5'] + insets.bottom }, style]}
-              >
-                {children}
-              </View>
-            </SheetContentAccessibilityContext.Provider>
-          </BottomSheetView>
-        </ModalOverlayHost>
-      </BottomSheetModal>
+        {/* Everything below is mounted by gorhom's own portal under
+            `BottomSheetModalProvider`, not here, so React context from this
+            tree stops at this line (#584): re-provide the Sheet root, the
+            safe-area metrics, and the overlay runtime so `SheetClose`,
+            `useSafeAreaInsets`, and nested BeeUI overlays inside the sheet
+            resolve exactly what they would have resolved in place. */}
+        <SheetPortalContextBridge
+          bridgeContexts={bridgeContexts}
+          bridgeValues={bridgeValues}
+          frame={frame}
+          insets={insets}
+          overlayRuntime={overlayRuntime}
+          sheetContext={sheetContext}
+          themeScope={themeScope}
+          toastRuntime={toastRuntime}
+        >
+          {/* A plain in-flow `flex: 1` View, the same box gorhom's own
+              scrollables use, fills the content area gorhom sizes from the
+              snap points (keyboard adjustments included). `BottomSheetView`
+              is not used: gorhom positions it absolutely and sizes it from its
+              children for `enableDynamicSizing`, which BeeUI turns off, so
+              under it the content would sit content-sized at the top of a
+              transparent sheet instead of filling it. */}
+          <View style={styles.contentFill}>
+            <ModalOverlayHost active={open} dismissScopeRef={modalDismissScopeRef}>
+              <SheetContentAccessibilityContext.Provider value={accessibilityContext}>
+                <View
+                  ref={ref}
+                  {...props}
+                  accessibilityHint={accessibilityHint ?? descriptionText}
+                  accessibilityLabel={accessibilityLabel ?? titleText}
+                  accessibilityLabelledBy={accessibilityLabelledBy ?? titleNativeID}
+                  aria-modal
+                  className={cn(
+                    'w-full flex-1 gap-4 rounded-t-xl border border-border bg-surface px-5',
+                    showHandle ? 'pt-2' : 'pt-5',
+                    className,
+                  )}
+                  onAccessibilityEscape={() => {
+                    onAccessibilityEscape?.();
+                    requestClose();
+                  }}
+                  role="dialog"
+                  // Bottom safe area (ADR-006 "Safe area — reused, not
+                  // reinvented"): same additive pattern as `sheet.tsx`.
+                  style={[{ paddingBottom: spacing['5'] + insets.bottom }, style]}
+                >
+                  {children}
+                </View>
+              </SheetContentAccessibilityContext.Provider>
+              <ToastRuntimeLocalViewport active={open} snapshot={toastRuntime} />
+            </ModalOverlayHost>
+          </View>
+        </SheetPortalContextBridge>
+          </BottomSheetModal>
+        )}
+      </SheetBridgeContextCapture>
     );
   },
 );
@@ -591,6 +794,7 @@ SheetContent.displayName = 'SheetContent';
 
 const styles = {
   contentFill: { flex: 1 },
+  providerRoot: { flex: 1 },
 } as const;
 
 export type SheetHandleProps = Omit<ViewProps, 'accessibilityRole' | 'role'>;

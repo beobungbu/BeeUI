@@ -5,6 +5,8 @@ description: Which decisions belong to BeeUI, which belong to your application, 
 
 Every responsibility in a BeeUI screen belongs to exactly one owner: **BeeUI owns component behavior, semantic tokens and the provider/overlay runtime; your application owns routing, data, domain state and product policy.**
 
+**Prerequisites:** read [Foundations](/docs/learn/foundations/) first — this page assumes the contract-stack framing it establishes.
+
 ## Why the concept exists
 
 Almost every hard bug people hit with a UI system is an ownership bug rather than a rendering bug: two safe-area layers both claiming the top inset, a second global toast store mirroring BeeUI's, an application state machine fighting a component's internal open state. None of those produce a clean error. They produce a screen that is *slightly* wrong, on one platform, sometimes.
@@ -65,6 +67,7 @@ The interface between the two halves is ordinary React: props in, callbacks out,
 A correctly owned shell reads like this — BeeUI surfaces, application decisions:
 
 ```tsx
+import * as React from 'react';
 import {
   AppHeader,
   BeeUIProvider,
@@ -73,6 +76,12 @@ import {
   SafeArea,
   Screen,
 } from '@beemvp/beeui-ui';
+
+type AppShellProps = {
+  children: React.ReactNode;
+  onSave: () => void;
+  title: string;
+};
 
 export function AppShell({ children, onSave, title }: AppShellProps) {
   return (

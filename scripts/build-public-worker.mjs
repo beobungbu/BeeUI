@@ -80,6 +80,20 @@ https://:version.:subdomain.workers.dev/*
 // through the same `claimed` map as copied assets so an upstream build that ever emits one
 // raises the collision error instead of being silently overwritten — and so the set is a
 // value a test can assert against, which is what the redirect defect needed and lacked.
+// A crawler conventionally tries `/sitemap-index.xml` at the site root before anything else;
+// with no static asset claiming that exact path, the host's SPA-style fallback served an empty
+// 200 body instead of a real sitemap or a 404 (#566 item 6). This is a real sitemap index (the
+// format a URL named "sitemap-index" is expected to be), pointing at the two real sitemaps the
+// composed site already serves — it does not replace either, both stay linked from robots.txt.
+// No `lastmod`: a build-time timestamp would make this file (and the reproducible-tarball
+// comparison every release verifies) differ between two builds of the exact same commit.
+export function renderRootSitemapIndex(contract) {
+  const entries = [`${contract.origin}/sitemap.xml`, `${contract.origin}/docs/sitemap-index.xml`]
+    .map((loc) => `  <sitemap><loc>${loc}</loc></sitemap>`)
+    .join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries}\n</sitemapindex>\n`;
+}
+
 export function buildComposedRootFiles({ rootDir, contract, identity }) {
   const rules = buildRedirectRules(readPublicSiteConfig(rootDir));
   return {
@@ -89,6 +103,7 @@ export function buildComposedRootFiles({ rootDir, contract, identity }) {
     // validated for duplicates/loops/cycles, and never written to disk, so every legacy
     // URL 404ed in production while every check stayed green.
     _redirects: renderRedirectsFile(rules),
+    'sitemap-index.xml': renderRootSitemapIndex(contract),
   };
 }
 

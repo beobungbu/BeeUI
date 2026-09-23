@@ -1,6 +1,6 @@
 {
   "name": "@beemvp/beeui-ui",
-  "version": "0.86.2-rc.1",
+  "version": "0.86.2-rc.2",
   "description": "Typed React Native + Web components built on @beemvp/beeui-core and @beemvp/beeui-tokens, styled through Uniwind/Tailwind.",
   "license": "MIT",
   "author": {
@@ -892,6 +892,20 @@
       },
       "browser": "./dist/module/components/toast.js",
       "default": "./dist/module/components/toast.js"
+    },
+    "./toolbar": {
+      "source": "./src/components/toolbar",
+      "react-native": "./dist/module/components/toolbar.js",
+      "import": {
+        "types": "./dist/typescript/module/components/toolbar.d.ts",
+        "default": "./dist/module/components/toolbar.js"
+      },
+      "require": {
+        "types": "./dist/typescript/commonjs/components/toolbar.d.ts",
+        "default": "./dist/commonjs/components/toolbar.js"
+      },
+      "browser": "./dist/module/components/toolbar.js",
+      "default": "./dist/module/components/toolbar.js"
     },
     "./tooltip": {
       "source": "./src/components/tooltip",

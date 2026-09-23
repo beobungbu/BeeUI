@@ -47,6 +47,11 @@ test('a large fixture is reduced to the lines where the family is used', () => {
     // lets a corrupted line derivation be caught instead of agreeing with itself.
     anchor: '<Accordion value="a">',
     text: '<Accordion value="a">\n  <AccordionItem />\n</Accordion>',
+    // Module-scope JSX (as in this fixture) has no enclosing function, so there is no scope to
+    // recover fixture state/prop placeholders from.
+    scopeNode: undefined,
+    contextDecls: [],
+    paramStubs: [],
   });
 });
 
@@ -81,7 +86,16 @@ test('a wrapper element contributes its opening tag, not everything it contains'
 
   assert.equal(result.whole, false);
   assert.deepEqual(result.excerpts, [
-    { start: 1, end: 1, text: '<Accordion testID="root">', openingTagOnly: true, anchor: '<Accordion testID="root">' },
+    {
+      start: 1,
+      end: 1,
+      text: '<Accordion testID="root">',
+      openingTagOnly: true,
+      anchor: '<Accordion testID="root">',
+      scopeNode: undefined,
+      contextDecls: [],
+      paramStubs: [],
+    },
   ]);
   // The page must not then claim the omitted remainder belongs to other families: for a wrapper
   // it is this family's own children.
@@ -99,6 +113,73 @@ test('the excerpt stays inside a line and region budget, and reports what it lef
   assert.ok(total <= 120, `kept ${total} lines`);
   assert.equal(result.omittedRegions, result.totalRegions - result.excerpts.length);
   assert.ok(result.omittedRegions > 0);
+});
+
+// #578: a "Verified example source" excerpt referenced outer-scope state and imports the
+// citation never showed, so it was not runnable as pasted. `excerptFixture` now recovers both as
+// real, byte-identical subsets of the same fixture.
+test('an excerpt inside a function recovers the local state it reads', () => {
+  const source = fixtureOf([
+    "import * as React from 'react';",
+    "import { Accordion } from '@beemvp/beeui-ui';",
+    '',
+    'function Gallery() {',
+    "  const [open, setOpen] = React.useState(false);",
+    ...Array.from({ length: 160 }, (_, index) => `  const filler${index} = ${index};`),
+    '  return (',
+    '    <Accordion value={open ? "a" : "b"} onValueChange={() => setOpen(!open)} />',
+    '  );',
+    '}',
+  ]);
+  const result = excerptFixture(source, FAMILY, 'scoped.tsx');
+  assert.equal(result.whole, false);
+  assert.equal(result.excerpts.length, 1);
+  const [part] = result.excerpts;
+  assert.equal(part.contextDecls.length, 1);
+  assert.match(part.contextDecls[0].text, /const \[open, setOpen\] = React\.useState\(false\);/);
+  assert.ok(result.importLines.some((line) => line.includes('Accordion')));
+  assert.ok(result.importLines.some((line) => line.includes("from 'react'")));
+});
+
+// A prop of the fixture's own enclosing component (`function Gallery({ onBack })`) has no
+// `const` declaration to recover — it is synthesized as a labeled, honestly-typed placeholder
+// instead of left as an unresolved free identifier.
+test('an excerpt using a prop of its enclosing component gets a typed placeholder', () => {
+  const source = fixtureOf([
+    "import { Accordion } from '@beemvp/beeui-ui';",
+    '',
+    'function Gallery({ onBack }: { onBack: () => void }) {',
+    ...Array.from({ length: 160 }, (_, index) => `  const filler${index} = ${index};`),
+    '  return (',
+    '    <Accordion onValueChange={onBack} />',
+    '  );',
+    '}',
+  ]);
+  const result = excerptFixture(source, FAMILY, 'stub.tsx');
+  assert.equal(result.excerpts[0].paramStubs.length, 1);
+  assert.equal(result.excerpts[0].paramStubs[0], 'const onBack: () => void = () => {};');
+});
+
+// A sibling top-level helper (not exported, not part of `@beemvp/beeui-ui`) that an excerpt uses
+// as a JSX tag is inlined as real fixture source, same as local state.
+test('an excerpt using a sibling top-level helper component recovers its declaration', () => {
+  const source = fixtureOf([
+    "import { Accordion } from '@beemvp/beeui-ui';",
+    '',
+    "function Helper({ testID }: { testID: string }) {",
+    '  return null;',
+    '}',
+    '',
+    'function Gallery() {',
+    ...Array.from({ length: 160 }, (_, index) => `  const filler${index} = ${index};`),
+    '  return (',
+    '    <Accordion><Helper testID="h" /></Accordion>',
+    '  );',
+    '}',
+  ]);
+  const result = excerptFixture(source, FAMILY, 'helper.tsx');
+  const decl = result.excerpts[0].contextDecls.find((d) => d.text.includes('function Helper'));
+  assert.ok(decl, 'expected the Helper function declaration to be recovered');
 });
 
 // Both regions must differ in size, or a stable sort preserves file order anyway and the

@@ -16,6 +16,15 @@ type ChipGroupContextValue = {
 const ChipGroupContext = React.createContext<ChipGroupContextValue | null>(null);
 
 export type ChipGroupProps = Omit<ViewProps, 'children'> & {
+  /**
+   * `'single'` mode only: pressing the already-selected `Chip` again clears
+   * the selection (reported as `''`, the same empty-string sentinel the
+   * group already starts from) instead of doing nothing. Off by default —
+   * existing single-select filter bars keep their current "always one
+   * selected" behavior unless they opt in. Ignored in `'multiple'` mode,
+   * which can already reach zero selections by unchecking every `Chip`.
+   */
+  allowDeselect?: boolean;
   children?: React.ReactNode;
   className?: string;
   /** Initial selection for uncontrolled usage: a string in `'single'` mode, an array in `'multiple'` mode. Defaults to no selection. */
@@ -33,6 +42,7 @@ export type ChipGroupProps = Omit<ViewProps, 'children'> & {
 export const ChipGroup = React.forwardRef<React.ComponentRef<typeof View>, ChipGroupProps>(
   (
     {
+      allowDeselect = false,
       children,
       className,
       defaultValue,
@@ -72,14 +82,18 @@ export const ChipGroup = React.forwardRef<React.ComponentRef<typeof View>, ChipG
             ? current.filter((item) => item !== candidate)
             : [...current, candidate];
         } else {
-          if (isSelected(candidate)) return;
-          nextValue = candidate;
+          if (isSelected(candidate)) {
+            if (!allowDeselect) return;
+            nextValue = '';
+          } else {
+            nextValue = candidate;
+          }
         }
 
         if (!controlled) setInternalValue(nextValue);
         onValueChange?.(nextValue);
       },
-      [controlled, isSelected, onValueChange, resolvedValue, selectionMode],
+      [allowDeselect, controlled, isSelected, onValueChange, resolvedValue, selectionMode],
     );
 
     const context = React.useMemo(
@@ -112,6 +126,14 @@ export type ChipProps = Omit<
   className?: string;
   /** Initial selected state when this Chip is standalone (not inside a `ChipGroup`) and uncontrolled. Defaults to false. */
   defaultSelected?: boolean;
+  /**
+   * Set `false` for a read-only tag with no interactive role (`button`/
+   * `radio`/`checkbox`) and no press handling — e.g. a list of stores a
+   * staff member belongs to, where `button`/`checkbox` semantics would be
+   * wrong. Defaults to `true`. Always treated as `true` inside a `ChipGroup`,
+   * whose selection semantics require an interactive member.
+   */
+  interactive?: boolean;
   labelClassName?: string;
   /** Called with the next selected state when pressed, if this Chip is standalone (not inside a `ChipGroup`). */
   onSelectedChange?: (selected: boolean) => void;
@@ -130,6 +152,7 @@ export const Chip = React.forwardRef<React.ComponentRef<typeof Pressable>, ChipP
       className,
       defaultSelected = false,
       disabled = false,
+      interactive = true,
       labelClassName,
       onPress,
       onSelectedChange,
@@ -143,6 +166,11 @@ export const Chip = React.forwardRef<React.ComponentRef<typeof Pressable>, ChipP
     const inGroup = group !== null;
     const grouped = inGroup && value !== undefined;
     const missingGroupValue = inGroup && value === undefined;
+    // A `ChipGroup` member's role/press handling is always driven by the
+    // group's own selection semantics — `interactive={false}` only applies to
+    // a standalone Chip (a static tag makes no sense as a group's selectable
+    // member).
+    const isStatic = !inGroup && interactive === false;
     const controlled = selected !== undefined;
     const [internalSelected, setInternalSelected] = React.useState(defaultSelected);
     const resolvedSelected = grouped
@@ -177,36 +205,45 @@ export const Chip = React.forwardRef<React.ComponentRef<typeof Pressable>, ChipP
         ref={ref}
         {...props}
         accessibilityLabel={accessibilityLabel ?? inferredLabel}
-        accessibilityRole={role}
-        accessibilityState={{
-          ...accessibilityState,
-          disabled: isDisabled,
-          ...(inGroup ? { checked: groupChecked } : { selected: resolvedSelected }),
-        }}
+        accessibilityRole={isStatic ? undefined : role}
+        accessibilityState={
+          isStatic
+            ? undefined
+            : {
+                ...accessibilityState,
+                disabled: isDisabled,
+                ...(inGroup ? { checked: groupChecked } : { selected: resolvedSelected }),
+              }
+        }
         // See Checkbox/Radio: `accessibilityState` is not forwarded to the DOM
         // by react-native-web, so a grouped Chip's `role="checkbox"`/`role="radio"`
         // needs the web-native `aria-checked` prop set explicitly.
         aria-checked={inGroup ? groupChecked : undefined}
         className={cn(
-          'min-h-9 flex-row items-center justify-center rounded-full border px-3 py-2 active:opacity-80',
+          'min-h-9 flex-row items-center justify-center rounded-full border px-3 py-2',
+          !isStatic && 'active:opacity-80',
           resolvedSelected
             ? 'border-primary bg-primary'
             : 'border-border-strong bg-surface web:hover:bg-surface-muted',
           isDisabled && 'opacity-50',
           className,
         )}
-        disabled={isDisabled}
-        onPress={(event) => {
-          onPress?.(event);
-          if (grouped && value !== undefined) {
-            group.select(value);
-            return;
-          }
+        disabled={isStatic ? true : isDisabled}
+        onPress={
+          isStatic
+            ? undefined
+            : (event) => {
+                onPress?.(event);
+                if (grouped && value !== undefined) {
+                  group.select(value);
+                  return;
+                }
 
-          const nextSelected = !resolvedSelected;
-          if (!controlled) setInternalSelected(nextSelected);
-          onSelectedChange?.(nextSelected);
-        }}
+                const nextSelected = !resolvedSelected;
+                if (!controlled) setInternalSelected(nextSelected);
+                onSelectedChange?.(nextSelected);
+              }
+        }
       >
         {childArray.map((child, index) =>
           typeof child === 'string' || typeof child === 'number' ? (

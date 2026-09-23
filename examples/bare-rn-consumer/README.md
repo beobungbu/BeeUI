@@ -8,11 +8,16 @@ are checked into git and maintained, even though the generated native
 `android`/`ios` project tree (`app/`) is not (see "Why `app/` isn't
 committed" below).
 
-## Unpublished status
+## Packed-tarball consumption
 
-BeeUI is not published to npm (see `../README.md`). `setup.sh` packs
-`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` with `pnpm pack` and installs
-those tarballs with `npm install`, plus the same pinned native peers
+BeeUI `0.86.2-rc.2` is publicly published on npm under the `next` dist-tag
+(see `../README.md`); a real bare React Native application should install it
+directly — see the [Bare React Native start guide](https://beeui.beemvp.com/docs/start/bare-react-native/).
+This starter deliberately keeps consuming BeeUI through packed tarballs
+instead, to prove the exact package boundary reproduces outside the
+monorepo: `setup.sh` packs `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and
+`@beemvp/beeui-ui` with `pnpm pack` and installs those tarballs with
+`npm install`, plus the same pinned native peers
 `scripts/verify-bare-consumer.sh` uses (uniwind, tailwindcss,
 react-native-safe-area-context, react-native-teleport,
 @react-native-community/datetimepicker, @gorhom/bottom-sheet,

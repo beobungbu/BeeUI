@@ -156,3 +156,57 @@ test('buildFamily is deterministic for a fixed model', () => {
 test('all linked paths resolve to real repository files', () => {
   assert.deepEqual(collectMissingLinkedPaths(), []);
 });
+
+// #543/#574: the llms.txt family previously hardcoded "UNPUBLISHED" regardless of real npm
+// state. `docs/dist-tag-policy.md`'s machine-readable block — the same file
+// `scripts/check-public-doc-truth.mjs` reads for the human docs site — is now threaded through
+// `buildModel`'s `policy` option; omitting it keeps the conservative unpublished defaults the
+// tests above pin, so this only needs to prove the *other* branch is reachable and correct.
+function publishedPolicy() {
+  return { published: true, currentVersion: '0.86.2-rc.1', prereleaseDistTag: 'next' };
+}
+
+test('buildFamily states a real npm publication instead of UNPUBLISHED when the policy says published', () => {
+  const model = buildModel({
+    registry: sampleRegistry(),
+    barrelSource: SAMPLE_BARREL,
+    packages: samplePackages(),
+    policy: publishedPolicy(),
+  });
+  for (const content of Object.values(buildFamily(model))) {
+    assert.doesNotMatch(content, /UNPUBLISHED/);
+    assert.match(content, /public on npm/);
+    assert.match(content, /`next`/);
+    assert.match(content, /\n$/);
+  }
+});
+
+// A published RC must still never be presented as safe to install unqualified: `latest` is not
+// promoted, so every install/npx command needs the `@next` (or exact-version) suffix.
+test('buildFamily never drops the dist-tag/version suffix from an install command once published', () => {
+  const model = buildModel({
+    registry: sampleRegistry(),
+    barrelSource: SAMPLE_BARREL,
+    packages: samplePackages(),
+    policy: publishedPolicy(),
+  });
+  for (const content of Object.values(buildFamily(model))) {
+    for (const match of content.matchAll(/npm i(?:nstall)? @beemvp\/beeui-ui[^\n`]*/g)) {
+      assert.match(match[0], /@(?:next|0\.86\.2-rc\.1)\b/, `unqualified install command: ${match[0]}`);
+    }
+  }
+});
+
+// #545: the app-owned theme preference is three-valued ('system' | 'light' | 'dark'), and the
+// known `setTheme('system')` restore gap must be stated, not silently dropped.
+test('llms-full.txt states the system/light/dark theme preference contract and the restore-semantics gap', () => {
+  const model = buildModel({
+    registry: sampleRegistry(),
+    barrelSource: SAMPLE_BARREL,
+    packages: samplePackages(),
+    policy: publishedPolicy(),
+  });
+  const full = buildFamily(model)[OUTPUT_FILES.full];
+  assert.match(full, /'system' \| 'light' \| 'dark'/);
+  assert.match(full, /does not reliably resume/);
+});

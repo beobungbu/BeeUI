@@ -6,11 +6,16 @@ no Showcase internals. Mirrors `scripts/verify-web-consumer.sh`'s dependency
 pins and structure, checked in here as a maintained starter rather than a
 CI-only ephemeral fixture.
 
-## Unpublished status
+## Packed-tarball consumption
 
-BeeUI is not published to npm (see `../README.md`). `setup.sh` packs
-`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` with `pnpm pack` and installs
-those tarballs with `npm install`.
+BeeUI `0.86.2-rc.2` is publicly published on npm under the `next` dist-tag
+(see `../README.md`); a real Web application should install it directly —
+see the [Web start guide](https://beeui.beemvp.com/docs/start/web/). This
+starter deliberately keeps consuming BeeUI through packed tarballs instead,
+to prove the exact package boundary reproduces outside the monorepo:
+`setup.sh` packs `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and
+`@beemvp/beeui-ui` with `pnpm pack` and installs those tarballs with
+`npm install`.
 
 ## Run it
 

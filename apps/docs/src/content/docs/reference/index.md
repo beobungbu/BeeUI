@@ -7,6 +7,9 @@ Use **Reference** when you need a fact, not a tutorial: does this symbol exist, 
 where does it come from. For how to achieve something use [Guides](/docs/guides/); for the model
 behind it use [Learn](/docs/learn/).
 
+**Prerequisites:** none — these pages are a lookup surface; you do not need to have installed
+anything to check whether a symbol exists.
+
 ## Public surface
 
 These pages are generated from the same public-surface inventory that enforces documentation
@@ -36,6 +39,11 @@ production patterns under [Patterns](/docs/patterns/).
 | Architecture decisions | [Architecture](/docs/architecture/) |
 
 :::caution[Publication state]
-BeeUI packages and the CLI are not published to npm. Every command on these pages runs from a
-repository checkout; publication remains owner-gated by [#254](https://github.com/beobungbu/BeeUI/issues/254).
+BeeUI `0.86.2-rc.2` is publicly published on npm under the opt-in `next` dist-tag. The live
+registry was last observed (at `0.86.2-rc.1`) resolving `latest` to the RC too; the bootstrap used `--tag next`, and
+the mechanism that also produced `latest` has not been established (see
+[`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)).
+Commands on these pages that show `pnpm beeui ...` or another repository-local form remain
+available from a checkout as the no-registry-required alternative; they are not the only way
+to consume the published package.
 :::

@@ -34,7 +34,20 @@ import {
   SafeArea,
   Screen,
   Section,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
   Separator,
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
   Text,
   useToast,
   VStack,
@@ -125,6 +138,69 @@ function ControlledPresentationDialog({
   );
 }
 
+function SheetRuntimeActions() {
+  const toast = useToast();
+  const [selectValue, setSelectValue] = React.useState<string | undefined>();
+
+  return (
+    <VStack gap="sm">
+      <Button
+        onPress={() =>
+          toast.show({
+            title: 'Sheet-local runtime toast',
+            description: 'Toast remains visible above the native Sheet.',
+            duration: 'persistent',
+          })
+        }
+        testID="runtime-sheet-toast-show"
+        variant="outline"
+      >
+        Show Sheet-local Toast
+      </Button>
+      <Button
+        onPress={toast.dismissAll}
+        testID="runtime-sheet-toast-dismiss"
+        variant="ghost"
+      >
+        Dismiss Sheet-local Toast
+      </Button>
+
+      <Popover>
+        <PopoverTrigger testID="runtime-sheet-popover-trigger" variant="outline">
+          Open Sheet child Popover
+        </PopoverTrigger>
+        <PopoverContent placement="top" testID="runtime-sheet-popover-content">
+          <PopoverTitle>Sheet child Popover</PopoverTitle>
+          <PopoverDescription testID="runtime-sheet-popover-copy">
+            Anchored content remains above the native Sheet.
+          </PopoverDescription>
+          <PopoverClose testID="runtime-sheet-popover-close">
+            Close Sheet child Popover
+          </PopoverClose>
+        </PopoverContent>
+      </Popover>
+
+      <Select onValueChange={setSelectValue} value={selectValue}>
+        <SelectTrigger testID="runtime-sheet-select-trigger">
+          <SelectValue placeholder="Open Sheet child Select" />
+        </SelectTrigger>
+        <SelectContent placement="top" testID="runtime-sheet-select-content">
+          <SelectGroup>
+            <SelectLabel>Sheet child Select</SelectLabel>
+            <SelectItem testID="runtime-sheet-select-item-alpha" value="alpha">
+              Alpha
+            </SelectItem>
+            <SelectItem testID="runtime-sheet-select-item-beta" value="beta">
+              Beta
+            </SelectItem>
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      <Text testID="runtime-sheet-select-selection">{`sheet select: ${selectValue ?? 'none'}`}</Text>
+    </VStack>
+  );
+}
+
 export function RuntimeAcceptance({ onBack }: { onBack: () => void }) {
   const { theme } = useUniwind();
   const insets = useSafeAreaInsets();
@@ -202,6 +278,24 @@ export function RuntimeAcceptance({ onBack }: { onBack: () => void }) {
                     <DialogClose testID="runtime-dialog-close">Close root Dialog</DialogClose>
                   </DialogContent>
                 </Dialog>
+
+                {/* #584/#619: presentation is proven on-device, and the child
+                    fixture below calls useToast() from inside the Sheet portal
+                    plus opens an anchored Popover. Both must remain visible above
+                    the native gorhom surface on iOS and Android. */}
+                <Sheet>
+                  <SheetTrigger testID="runtime-sheet-trigger">Open root Sheet</SheetTrigger>
+                  <SheetContent
+                    overlayTestID="runtime-sheet-overlay"
+                    snapPoints={['70%']}
+                    testID="runtime-sheet-content"
+                  >
+                    <SheetTitle>Runtime root Sheet</SheetTitle>
+                    <SheetDescription>Presents through the native bottom-sheet engine.</SheetDescription>
+                    <SheetRuntimeActions />
+                    <SheetClose testID="runtime-sheet-close">Close root Sheet</SheetClose>
+                  </SheetContent>
+                </Sheet>
 
                 <AlertDialog>
                   <AlertDialogTrigger testID="runtime-alert-trigger" variant="destructive">

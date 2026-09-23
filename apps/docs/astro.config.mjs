@@ -124,9 +124,9 @@ export default defineConfig({
           label: 'Accessibility',
           items: [
             { label: 'Overview', slug: 'accessibility' },
+            { label: 'Keyboard & focus', slug: 'accessibility/keyboard-focus' },
             { label: 'RTL & localization', slug: 'accessibility/rtl' },
             { label: 'Large text & zoom', slug: 'accessibility/large-text' },
-            { label: 'Keyboard & focus', slug: 'accessibility/keyboard-focus' },
             { label: 'Reduced motion', slug: 'accessibility/reduced-motion' },
             { label: 'Native assistive tech', slug: 'accessibility/native-assistive-tech' },
           ],

@@ -3,13 +3,14 @@ title: All components
 description: Source-driven BeeUI public component reference.
 ---
 
-This index is generated from the public Registry + `@beemvp/beeui-ui` export map. It currently contains **62** stable public component families; adding or removing a public Registry component changes this inventory automatically and is checked by CI.
+This index is generated from the public Registry + `@beemvp/beeui-ui` export map. It currently contains **63** stable public component families; adding or removing a public Registry component changes this inventory automatically and is checked by CI.
 
 ## Actions & controls
 
 - **[Button](/docs/components/button/)** — Accessible pressable with variant/size/loading/disabled states and an optional label primitive. · [Showcase](/showcase/?surface=component&id=button&example=basic)
 - **[Icon Button](/docs/components/icon-button/)** — 44px icon-only action; an accessible label is required. · [Showcase](/showcase/?surface=component&id=icon-button&example=basic)
 - **[Segmented Control](/docs/components/segmented-control/)** — Compact mutually-exclusive selection surface with radiogroup semantics. · [Showcase](/showcase/?surface=component&id=segmented-control&example=basic)
+- **[Toolbar](/docs/components/toolbar/)** — Single-row action toolbar that measures its own width and collapses lower-priority items into an overflow menu when they no longer fit. · [Showcase](/showcase/?surface=component&id=toolbar&example=basic)
 
 ## Data display
 
@@ -52,7 +53,7 @@ This index is generated from the public Registry + `@beemvp/beeui-ui` export map
 - **[Card](/docs/components/card/)** — Elevated/outlined surface with variant and spacing contract. · [Showcase](/showcase/?surface=component&id=card&example=basic)
 - **[Keyboard Aware Screen](/docs/components/keyboard-aware-screen/)** — Scrollable form-screen shell with bounded width, explicit safe-area ownership, and platform keyboard handling. · [Showcase](/showcase/?surface=component&id=keyboard-aware-screen&example=basic)
 - **[Safe Area](/docs/components/safe-area/)** — BeeUIProvider application root plus an explicit SafeArea surface with caller-owned edge selection. · [Showcase](/showcase/?surface=component&id=safe-area&example=basic)
-- **[Screen](/docs/components/screen/)** — Base application surface with semantic background and optional spacing; owns no safe-area or scroll behavior. · [Showcase](/showcase/?surface=component&id=screen&example=basic)
+- **[Screen](/docs/components/screen/)** — Base application surface with semantic background and optional spacing; owns no safe-area behavior and offers only an opt-in scroll body. · [Showcase](/showcase/?surface=component&id=screen&example=basic)
 - **[Section](/docs/components/section/)** — Title/description/action/content composition for screen sections. · [Showcase](/showcase/?surface=component&id=section&example=basic)
 - **[Stack](/docs/components/stack/)** — Typed direction/gap/alignment/wrap layout over View, with HStack/VStack specializations. · [Showcase](/showcase/?surface=component&id=stack&example=basic)
 

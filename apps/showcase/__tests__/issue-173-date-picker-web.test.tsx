@@ -186,15 +186,41 @@ describe('BeeUI issue #173 DatePicker (Web) rendering contract', () => {
     expect(onValueChange).not.toHaveBeenCalled();
   });
 
-  it('derives disabled/invalid/accessibilityLabel/hint from an enclosing Field', () => {
+  it('derives disabled/invalid/accessibilityLabel/hint from an enclosing Field without injecting English required copy', () => {
     const screen = renderDatePicker(
       <Field error="Required" invalid label="Birthday" required>
         <DatePicker testID="date-picker" value={null} />
       </Field>,
     );
     const trigger = screen.getByTestId('date-picker-trigger');
-    expect(trigger.props.accessibilityLabel).toBe('Birthday, required');
+    expect(trigger.props.accessibilityLabel).toBe('Birthday');
     expect(trigger.props.accessibilityHint).toBe('Required');
+  });
+
+  it('never stamps aria-required on the trigger (not a permitted attribute on role=button), even when the enclosing Field is required', () => {
+    const requiredScreen = renderDatePicker(
+      <Field label="Birthday" required>
+        <DatePicker testID="date-picker" value={null} />
+      </Field>,
+    );
+    expect(requiredScreen.getByTestId('date-picker-trigger').props['aria-required']).toBeUndefined();
+
+    const optionalScreen = renderDatePicker(
+      <Field label="Birthday">
+        <DatePicker testID="date-picker" value={null} />
+      </Field>,
+    );
+    expect(optionalScreen.getByTestId('date-picker-trigger').props['aria-required']).toBeUndefined();
+  });
+
+  it('appends a caller-localized Field.requiredLabel to the trigger accessible name', () => {
+    const screen = renderDatePicker(
+      <Field label="Birthday" required requiredLabel="Bắt buộc">
+        <DatePicker testID="date-picker" value={null} />
+      </Field>,
+    );
+    const trigger = screen.getByTestId('date-picker-trigger');
+    expect(trigger.props.accessibilityLabel).toBe('Birthday, Bắt buộc');
   });
 
   it('ORs its own disabled/invalid with the Field, never weakening either', () => {

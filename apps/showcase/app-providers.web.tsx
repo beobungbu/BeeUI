@@ -10,8 +10,8 @@ import * as React from 'react';
  * `BottomSheetModalProvider` unconditionally in `App.tsx` and that measurably
  * broke unrelated Web overlay behavior (Dialog's Escape-to-close focus-trap
  * contract, #146), even though `Sheet` itself never rendered them there.
- * See `app-providers.native.tsx` for the native implementation this file has
- * no equivalent of.
+ * See `app-providers.native.tsx` for the native `SheetProvider` boundary
+ * this file has no equivalent of.
  */
 export function AppProviders({ children }: { children?: React.ReactNode }) {
   return <>{children}</>;

@@ -99,6 +99,16 @@ jest.mock('@gorhom/bottom-sheet', () => {
   const ReactActual = require('react');
   const { View } = require('react-native');
 
+  const BottomSheetModalInternalContext = ReactActual.createContext(null);
+  const BottomSheetModalProvider = ({ children }: { children?: React.ReactNode }) =>
+    ReactActual.createElement(
+      BottomSheetModalInternalContext.Provider,
+      { value: { hostName: 'mock-bottom-sheet-host' } },
+      children,
+    );
+  const useBottomSheetModalInternal = (_unsafe?: boolean) =>
+    ReactActual.useContext(BottomSheetModalInternalContext);
+
   const BottomSheetModal = ReactActual.forwardRef(
     (
       props: {
@@ -125,6 +135,21 @@ jest.mock('@gorhom/bottom-sheet', () => {
   return {
     __esModule: true,
     BottomSheetModal,
+    BottomSheetModalProvider,
     BottomSheetView,
+    useBottomSheetModalInternal,
+  };
+});
+
+jest.mock('react-native-gesture-handler', () => {
+  const ReactActual = require('react');
+  const { View } = require('react-native');
+
+  return {
+    __esModule: true,
+    GestureHandlerRootView: ReactActual.forwardRef(
+      ({ children, ...props }: { children?: React.ReactNode }, ref: React.Ref<typeof View>) =>
+        ReactActual.createElement(View, { ref, ...props }, children),
+    ),
   };
 });

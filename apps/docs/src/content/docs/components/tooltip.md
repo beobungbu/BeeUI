@@ -8,7 +8,7 @@ description: "Non-interactive contextual annotation (ADR-005): a hover/focus del
 Non-interactive contextual annotation (ADR-005): a hover/focus delay state machine plus an anchored, non-focusable bubble.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. Stable `latest` was last observed (at `0.86.2-rc.1`) resolving to the RC as well; that observation is re-verified after every publish and is not an npm rule. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Overlays & feedback
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/tooltip-shared.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/tooltip-shared.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add tooltip
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -105,11 +106,13 @@ one of the following mutually exclusive variants:
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
+| `loading` | `boolean` | `false` | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 | `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Chooses this element's `size` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 | `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'primary'` | Chooses this element's `variant` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` — that upstream contract is not reproduced here.
+
+**This is the pressable itself** — the same variant/size/press API as [Button](/docs/components/button/) — so icon/label children go directly inside it. Do not nest a second pressable (an icon button, or an avatar wrapped for press) inside a `*Trigger`: on Web that renders one interactive element inside another, which React flags as invalid DOM nesting. For an icon-only or avatar trigger, set `variant="ghost"` (and `size`/`className` as needed) on the trigger itself instead of wrapping a second pressable.
 
 **Related exported types:**
 
@@ -199,9 +202,25 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Tooltip** is actually used: 24 lines in 3 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Tooltip** is actually used: 24 lines in 3 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
-[lines 258–265](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L258-L265):
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Text, Tooltip, TooltipContent, TooltipTrigger } from '@beemvp/beeui-ui';
+import * as React from 'react';
+````
+
+Fixture state this block reads (same file, lines 174, 176-178):
+
+````tsx
+const OverlayConsumerContext = React.createContext('overlay-context-default');
+function OverlayContextValue({ testID }: { testID: string }) {
+  return <Text testID={testID}>{`context: ${React.useContext(OverlayConsumerContext)}`}</Text>;
+}
+````
+
+[lines 259–266](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L259-L266):
 
 ````tsx
         <Tooltip>
@@ -214,7 +233,16 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
         </Tooltip>
 ````
 
-[lines 280–287](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L280-L287):
+Fixture state this block reads (same file, lines 174, 176-178):
+
+````tsx
+const OverlayConsumerContext = React.createContext('overlay-context-default');
+function OverlayContextValue({ testID }: { testID: string }) {
+  return <Text testID={testID}>{`context: ${React.useContext(OverlayConsumerContext)}`}</Text>;
+}
+````
+
+[lines 281–288](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L281-L288):
 
 ````tsx
             <Tooltip>
@@ -227,7 +255,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
             </Tooltip>
 ````
 
-[lines 804–811](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L804-L811):
+[lines 811–818](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L811-L818):
 
 ````tsx
                   <Tooltip>
@@ -240,7 +268,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                   </Tooltip>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 Never a press target and never interactive content; use Popover for interactive overlays.

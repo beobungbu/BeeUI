@@ -6,9 +6,13 @@ description: Build mobile-first React Native interfaces for Expo, bare React Nat
 BeeUI is a production-oriented React Native UI system with one public behavior contract across
 Expo, bare React Native and Web.
 
-The first public release candidate, **`0.86.2-rc.1`**, is published on npm under the opt-in
-**`next`** dist-tag. Stable `latest` is intentionally not published yet. Use `@next` or the exact
-RC version in install commands until the stable `0.86.2` promotion is completed.
+The current public release candidate, **`0.86.2-rc.2`**, is published on npm under the opt-in
+**`next`** dist-tag. The live registry was last observed (at `0.86.2-rc.1`) resolving `latest` to the RC too. BeeUI's
+bootstrap publish used `--tag next`, and the mechanism that also produced `latest` has not been
+established (see
+[`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)).
+Use `@next` or the exact RC version in install commands; that stays correct once the stable
+`0.86.2` promotion moves `latest` off the prerelease.
 
 ```bash
 npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next
@@ -17,6 +21,8 @@ npx @beemvp/beeui-cli@next --help
 
 Use the search box at the top of any page to jump straight to a component, token, CLI command or
 error message.
+
+**Prerequisites:** none — this is the entry point. New to BeeUI? Go to [Start](/docs/start/) next.
 
 ## What do you want to do?
 
@@ -50,8 +56,13 @@ package exports themselves.
 
 ## Platform and release truth
 
-- **Current RC:** `0.86.2-rc.1` on npm tag `next`.
-- **Stable channel:** `latest` remains intentionally unassigned to this RC.
+- **Current RC:** `0.86.2-rc.2` on npm tag `next`.
+- **Stable channel:** `latest` was last observed (at `0.86.2-rc.1`) resolving to the RC as
+  well; that observation is re-verified after every publish and is not an npm rule. The
+  bootstrap used `--tag next` and the mechanism that also produced `latest` is not
+  established. It moves to a real stable version, and never returns to a prerelease, at the
+  first `0.86.2` release. See
+  [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
 - [Current compatibility](/docs/compatibility/current/) — the tested and pinned versions, machine-checked.
 - [Migration & versioning](/docs/guides/migration-versioning/) — channel, version authority and upgrade rules.
 - [Release & security](/docs/release-security/) — reporting path and source-ownership implications.

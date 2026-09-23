@@ -10,6 +10,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from './text';
+import {
+  ToastRuntimeBoundary,
+  useToastApiContext,
+  type ToastRuntimeSnapshot,
+} from './toast-runtime-bridge';
 
 export const TOAST_DEFAULT_DURATION = 5000;
 export const TOAST_MAX_VISIBLE = 3;
@@ -179,8 +184,6 @@ function toastReducer(state: ToastState, action: ToastStateAction): ToastState {
   }
 }
 
-const ToastContext = React.createContext<ToastApi | null>(null);
-
 function ToastCard({ toast, dismiss }: { toast: NormalizedToast; dismiss: (id: ToastId) => void }) {
   const announcement = toast.description ? `${toast.title}, ${toast.description}` : toast.title;
 
@@ -248,24 +251,79 @@ function ToastCard({ toast, dismiss }: { toast: NormalizedToast; dismiss: (id: T
   );
 }
 
+export type ToastPlacement = 'top' | 'bottom';
+
 export type ToastRuntimeProviderProps = {
   children?: React.ReactNode;
+  /**
+   * Which safe-area edge the toast viewport anchors to. Defaults to
+   * `'bottom'` on native (iOS/Android) and `'top'` on Web. Native's default
+   * used to be an unconditional top anchor — on iOS that docks a toast
+   * directly under the header instead of near the bottom tab bar/home
+   * indicator, where most native apps (and every previously-audited BeePOS
+   * screen) expect transient feedback to appear.
+   */
+  placement?: ToastPlacement;
 };
 
+// Read inside the component (not a module-level constant): `Platform.OS` on
+// Web can only be asserted correctly once react-native-web itself has set it,
+// and every other platform-conditional default in this file/its siblings
+// (e.g. `dialog.tsx`'s `isWeb`) is likewise resolved at render time rather
+// than cached at import time.
+function getDefaultToastPlacement(): ToastPlacement {
+  return Platform.OS === 'web' ? 'top' : 'bottom';
+}
+
+function ToastViewport({
+  dismiss,
+  placement,
+  state,
+  testID,
+}: {
+  dismiss: (id: ToastId) => void;
+  placement: ToastPlacement;
+  state: ToastState;
+  testID: string;
+}) {
+  const insets = useSafeAreaInsets();
+  const viewportStyle = React.useMemo<ViewStyle>(
+    () => (placement === 'bottom' ? { bottom: insets.bottom + 12 } : { top: insets.top + 12 }),
+    [insets.bottom, insets.top, placement],
+  );
+  const orderedToasts = placement === 'bottom' ? state.visible : [...state.visible].reverse();
+
+  return (
+    <View
+      accessible={false}
+      pointerEvents="box-none"
+      style={[styles.viewport, viewportStyle]}
+      testID={testID}
+    >
+      <View className="w-full items-center gap-2" pointerEvents="box-none">
+        {orderedToasts.map((toast) => (
+          <ToastCard dismiss={dismiss} key={toast.id} toast={toast} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
 /** Internal application-root runtime. BeeUIProvider owns this provider. */
-export function ToastRuntimeProvider({ children }: ToastRuntimeProviderProps) {
+export function ToastRuntimeProvider({
+  children,
+  placement = getDefaultToastPlacement(),
+}: ToastRuntimeProviderProps) {
   const [state, dispatch] = React.useReducer(toastReducer, EMPTY_TOAST_STATE);
+  const [localViewportIds, setLocalViewportIds] = React.useState<readonly string[]>([]);
   const runtimeId = React.useId().replace(/:/g, '');
   const nextIdRef = React.useRef(0);
-  const insets = useSafeAreaInsets();
 
   const dismiss = React.useCallback((id: ToastId) => {
     if (typeof id !== 'string' || !id) return;
     dispatch({ type: 'dismiss', id });
   }, []);
-
   const dismissAll = React.useCallback(() => dispatch({ type: 'dismiss-all' }), []);
-
   const show = React.useCallback((options: ToastOptions) => {
     const normalized = normalizeToastOptions(options);
     nextIdRef.current += 1;
@@ -273,34 +331,47 @@ export function ToastRuntimeProvider({ children }: ToastRuntimeProviderProps) {
     dispatch({ type: 'show', toast: { id, ...normalized } });
     return id;
   }, [runtimeId]);
-
   const api = React.useMemo<ToastApi>(() => ({ show, dismiss, dismissAll }), [dismiss, dismissAll, show]);
-  const viewportStyle = React.useMemo<ViewStyle>(
-    () => ({ top: insets.top + 12 }),
-    [insets.top],
+
+  const registerLocalViewport = React.useCallback((id: string) => {
+    let registered = true;
+    setLocalViewportIds((current) => [...current.filter((entry) => entry !== id), id]);
+    return () => {
+      if (!registered) return;
+      registered = false;
+      setLocalViewportIds((current) => current.filter((entry) => entry !== id));
+    };
+  }, []);
+
+  const topLocalViewportId = localViewportIds[localViewportIds.length - 1] ?? null;
+
+  const renderViewport = React.useCallback(
+    (testID: string) => (
+      <ToastViewport
+        dismiss={dismiss}
+        placement={placement}
+        state={state}
+        testID={testID}
+      />
+    ),
+    [dismiss, placement, state],
+  );
+
+  const snapshot = React.useMemo<ToastRuntimeSnapshot>(
+    () => ({ api, registerLocalViewport, renderViewport, topLocalViewportId }),
+    [api, registerLocalViewport, renderViewport, topLocalViewportId],
   );
 
   return (
-    <ToastContext.Provider value={api}>
+    <ToastRuntimeBoundary snapshot={snapshot}>
       {children}
-      <View
-        accessible={false}
-        pointerEvents="box-none"
-        style={[styles.viewport, viewportStyle]}
-        testID="beeui-toast-viewport"
-      >
-        <View className="w-full items-center gap-2" pointerEvents="box-none">
-          {[...state.visible].reverse().map((toast) => (
-            <ToastCard dismiss={dismiss} key={toast.id} toast={toast} />
-          ))}
-        </View>
-      </View>
-    </ToastContext.Provider>
+      {topLocalViewportId === null ? renderViewport('beeui-toast-viewport') : null}
+    </ToastRuntimeBoundary>
   );
 }
 
 export function useToast(): ToastApi {
-  const context = React.useContext(ToastContext);
+  const context = useToastApiContext() as ToastApi | null;
   if (!context) {
     throw new Error('BeeUI toast APIs require BeeUIProvider at the application root.');
   }

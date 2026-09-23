@@ -700,6 +700,58 @@ export function useOverlayId(prefix = 'beeui-overlay') {
   return `${prefix}-${reactId}`;
 }
 
+/**
+ * Every overlay-runtime context an overlay surface reads, captured where the
+ * surface is declared. Some presentation engines re-render their children
+ * somewhere else in the React tree — `@gorhom/bottom-sheet`'s modal hands its
+ * children to a store-backed portal that mounts them under
+ * `BottomSheetModalProvider`, so React context declared below that provider
+ * (a `BeeUIProvider` rendered inside it, for instance) never reaches them
+ * (#584). Take a snapshot next to the declaring component and re-provide it
+ * with `OverlayRuntimeBridge` inside the engine, and nested BeeUI overlays
+ * keep resolving the same transport, scheduler, dismiss coordinator, and
+ * geometry scope they would have had in place.
+ */
+export type OverlayRuntimeSnapshot = {
+  activeScope: OverlayActiveScopeCoordinator | null;
+  measurementScheduler: MeasurementScheduler;
+  runtime: OverlayRuntimeContextValue | null;
+  scope: OverlayScope | null;
+  transport: OverlayTransport | null;
+};
+
+export function useOverlayRuntimeSnapshot(): OverlayRuntimeSnapshot {
+  const transport = React.useContext(OverlayTransportContext);
+  const measurementScheduler = React.useContext(OverlayMeasurementSchedulerContext);
+  const runtime = React.useContext(OverlayRuntimeContext);
+  const activeScope = React.useContext(OverlayActiveScopeContext);
+  const scope = React.useContext(OverlayScopeContext);
+  return React.useMemo(
+    () => ({ activeScope, measurementScheduler, runtime, scope, transport }),
+    [activeScope, measurementScheduler, runtime, scope, transport],
+  );
+}
+
+export type OverlayRuntimeBridgeProps = {
+  children?: React.ReactNode;
+  snapshot: OverlayRuntimeSnapshot;
+};
+
+/** Re-provides a `useOverlayRuntimeSnapshot()` capture; see that hook. */
+export function OverlayRuntimeBridge({ children, snapshot }: OverlayRuntimeBridgeProps) {
+  return (
+    <OverlayTransportContext.Provider value={snapshot.transport}>
+      <OverlayMeasurementSchedulerContext.Provider value={snapshot.measurementScheduler}>
+        <OverlayRuntimeContext.Provider value={snapshot.runtime}>
+          <OverlayActiveScopeContext.Provider value={snapshot.activeScope}>
+            <OverlayScopeContext.Provider value={snapshot.scope}>{children}</OverlayScopeContext.Provider>
+          </OverlayActiveScopeContext.Provider>
+        </OverlayRuntimeContext.Provider>
+      </OverlayMeasurementSchedulerContext.Provider>
+    </OverlayTransportContext.Provider>
+  );
+}
+
 export type ModalOverlayDismissScope = {
   dismissTopmostChild: (reason: OverlayDismissReason) => boolean;
 };

@@ -3,18 +3,21 @@ title: Migration & versioning
 description: Understand BeeUI's public RC channel, version authority, and the migration rules that will govern later upgrades.
 ---
 
-BeeUI now has its first public npm release: **`0.86.2-rc.1`** under the opt-in **`next`** dist-tag. Stable **`latest`** is intentionally not promoted yet.
+BeeUI's current public npm release candidate is **`0.86.2-rc.2`** under the opt-in **`next`** dist-tag (the first was `0.86.2-rc.1`). The live registry was last observed (at `0.86.2-rc.1`) resolving **`latest`** to the RC too; BeeUI's bootstrap publish used `--tag next`, and the mechanism that also produced `latest` has not been established (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)). `latest` moves to a real stable version at the first `0.86.2` release.
 
 Because this is the first public package release, there is still no older public BeeUI version to migrate from. The migration work today is primarily for repository/internal consumers moving onto the public package boundary.
 
 Canonical source: https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md
 
+**Prerequisites:** know which BeeUI packages and versions your app currently installs
+(`npm ls @beemvp/beeui-ui @beemvp/beeui-core @beemvp/beeui-tokens @beemvp/beeui-cli`).
+
 ## Which channel am I on?
 
 | Channel | Exists today | What it means |
 | --- | --- | --- |
-| **Prerelease (`next`)** | Yes | Public opt-in release-candidate channel; currently `0.86.2-rc.1`. |
-| **Stable (`latest`)** | Not promoted yet | Reserved for a fully verified stable version; never points to a prerelease. |
+| **Prerelease (`next`)** | Yes | Public opt-in release-candidate channel; currently `0.86.2-rc.2`. |
+| **Stable (`latest`)** | Not deliberately promoted yet | Last observed (at `0.86.2-rc.1`) resolving to the RC too as an observed registry state; the bootstrap used `--tag next` and the mechanism that also produced `latest` is not established. Reserved to be deliberately moved to a fully verified stable version and never returns to a prerelease after that. |
 | **Repository source** | Yes | Development/evaluation path for exact commits and unpublished work. |
 
 Install the current RC explicitly:
@@ -24,7 +27,7 @@ npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@n
 npx @beemvp/beeui-cli@next --help
 ```
 
-Pin `@0.86.2-rc.1` instead of `@next` when reproducibility matters more than following the newest RC.
+Pin `@0.86.2-rc.2` instead of `@next` when reproducibility matters more than following the newest RC.
 
 ## Version authority
 
@@ -82,7 +85,7 @@ BeeUI applies semver to its inventoried public surface: package exports/subpaths
 | **Minor** | Adding a component, optional prop, CLI command/flag or token; widening a peer range after verification; promoting an experimental surface to stable. |
 | **Patch** | Backward-compatible fixes, docs corrections, packaging fixes that do not change the public contract. |
 
-Prerelease identifiers (`-rc.N`) are opt-in test releases and do not change the rule that `latest` must never point to a prerelease.
+Prerelease identifiers (`-rc.N`) are opt-in test releases and do not change the deliberate-promotion rule for `latest`: only an owner-authorized stable release ever moves `latest` on purpose, and once it has moved to a stable version it never returns to a prerelease. Before that first deliberate move, `latest` happens to resolve to the current RC too — see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
 
 ## What to check before upgrading between RCs
 

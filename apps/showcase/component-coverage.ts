@@ -152,6 +152,7 @@ export const COMPONENT_COVERAGE: Readonly<
     accessibility: { focusText: 'Persistent' },
     composition: { focusText: 'Action' },
   },
+  toolbar: { basic: { focusTestId: 'toolbar-showcase-toolbar' } },
   tooltip: { basic: { focusTestId: 'tooltip-demo-trigger' } },
   'use-bee-token': { basic: { focusTestId: 'use-bee-token-value' } },
   'visually-hidden': {

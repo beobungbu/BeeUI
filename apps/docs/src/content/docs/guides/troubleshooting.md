@@ -20,10 +20,16 @@ Every entry uses the same schema:
 | **Relevant versions** | The tested/promised range this entry is valid for. |
 | **Still broken** | Next diagnostic, then where to file. |
 
+**Prerequisites:** the exact error string or symptom from your own console/build output, and
+which platform (Expo, bare React Native, Web) it happened on — this page is searched by
+literal text, not read top to bottom.
+
 :::caution[Distribution status]
-BeeUI is **unpublished**. There is no public npm package and no public CLI, so no entry
-below tells you to install one. Every fix runs from a BeeUI checkout or from a packed
-tarball produced by that checkout. See [Start](/docs/start/).
+BeeUI `0.86.2-rc.2` **is publicly published on npm** under the opt-in `next` dist-tag; see
+[Start](/docs/start/) for the install command. Some entries below still run from a BeeUI
+checkout or a packed tarball, because they diagnose the maintained example starters
+(`examples/*`), which deliberately consume packed tarballs rather than the npm package —
+those entries say so explicitly.
 :::
 
 ---
@@ -271,13 +277,20 @@ Also: `Bare consumer unexpectedly resolves the Expo runtime.` (CI) and
 - **Applies to:** Expo and bare React Native.
 - **Likely cause:** `metro.config.js` does not wrap the default config with
   `withUniwindConfig`, or `cssEntryFile` points at a file that is not the entry above.
-- **Fix:** wrap the config and point `cssEntryFile` at your real CSS entry:
+  `cssEntryFile` is relative to the project root where `metro.config.js` lives (for
+  example `./global.css` at the root), not to `src/` or any other subdirectory.
+- **Fix:** wrap the whole file — a bare options object with no `require`/`module.exports`
+  wrapper is not valid Metro config — and point `cssEntryFile` at your real CSS entry:
 
 ```js
-withUniwindConfig(getDefaultConfig(__dirname), {
+// metro.config.js
+const { getDefaultConfig } = require('expo/metro-config');
+const { withUniwindConfig } = require('uniwind/metro');
+
+module.exports = withUniwindConfig(getDefaultConfig(__dirname), {
   cssEntryFile: './global.css',
   dtsFile: './uniwind-types.d.ts',
-})
+});
 ```
 
 - **Verify:** `bash bundle.sh` succeeds and the running app is themed.
@@ -473,14 +486,23 @@ Related usage errors: `'add --all' does not accept explicit item names`,
 ### A docs build fails a publication-truth check
 
 - **Applies to:** contributors editing documentation.
-- **Likely cause:** a page presented BeeUI as installable. Because BeeUI is unpublished,
-  public registry-install commands and public CLI invocations are rejected outright unless
-  the same line explicitly negates them.
-- **Fix:** document the repository-local path instead — workspace commands, starter scripts,
-  and `pnpm beeui ...` — and keep the unpublished caution intact.
+- **Likely cause:** a page showed a registry-install or public-CLI command for a BeeUI
+  package with no `@next`/exact-version tag — must not be left bare/unqualified — or one
+  that does not match the current dist-tag policy. BeeUI `0.86.2-rc.2` is
+  published under the opt-in `next` dist-tag; the live registry was last observed (at
+  `0.86.2-rc.1`) resolving `latest` to the RC as well; that observation is re-verified after
+  every publish and is not an npm rule. The bootstrap publish used `--tag next`, and the mechanism that
+  also produced `latest` has not been established (see `docs/dist-tag-policy.md`), but
+  `scripts/check-public-doc-truth.mjs` still rejects a bare, unqualified install because that
+  coincidence ends at the first stable `0.86.2` release, unless the same line explicitly
+  negates the command (for example, "do not install unqualified").
+- **Fix:** pin every registry-install/CLI example to `@next` or the exact
+  `0.86.2-rc.2`, matching [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
+  For an example that intentionally documents a repository-local path instead (workspace
+  commands, starter scripts, `pnpm beeui ...`), say so explicitly on the same line.
 - **Verify:** `node ./scripts/check-public-doc-truth.mjs` and
   `node ./scripts/check-doc-examples.mjs` both pass.
-- **Relevant versions:** current, until the owner publication gate is executed.
+- **Relevant versions:** current publication state per `docs/dist-tag-policy.md`.
 - **Still broken:** every identifier a doc example imports must be a real public export, and
   every `pnpm beeui add` target must be a real public registry item — the checks fail on
   invented names.

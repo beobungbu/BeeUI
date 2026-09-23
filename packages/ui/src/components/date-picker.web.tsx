@@ -5,12 +5,11 @@ import { Calendar } from './calendar';
 import { resolveCalendarLocale } from './calendar-locale';
 import {
   DATE_PICKER_DEFAULT_CLEAR_ACCESSIBILITY_LABEL,
-  DATE_PICKER_DEFAULT_PLACEHOLDER,
   useDatePickerFieldIntegration,
   useDatePickerOpenState,
   type DatePickerProps,
 } from './date-picker-shared';
-import { getDatePickerFormattedValue } from './date-picker-locale';
+import { getDatePickerDefaultPlaceholder, getDatePickerFormattedValue } from './date-picker-locale';
 import { IconButton } from './icon-button';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 import { Text } from './text';
@@ -57,7 +56,7 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
       onOpenChange,
       onValueChange,
       open,
-      placeholder = DATE_PICKER_DEFAULT_PLACEHOLDER,
+      placeholder,
       placement = 'bottom',
       previousMonthAccessibilityLabel,
       readOnly = false,
@@ -81,6 +80,7 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
       open,
     });
     const locale = resolveCalendarLocale(localeProp);
+    const resolvedPlaceholder = placeholder ?? getDatePickerDefaultPlaceholder(locale);
 
     const anchorRef = React.useRef<React.ComponentRef<typeof Pressable> | null>(null);
     const setTriggerRef = React.useCallback(
@@ -141,17 +141,20 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
       let cancelled = false;
       const tryFocus = (attemptsLeft: number) => {
         if (cancelled) return;
-        // Scoped to `[role="cell"]` (`calendar.tsx`'s day-cell `Pressable`): the
+        // Scoped to `[role="gridcell"]` (`calendar.tsx`'s day-cell `Pressable`): the
         // Calendar's month-navigation `IconButton`s are also real focusable
         // `<button>`s with `tabindex="0"` and precede the grid in document order, so
         // an unscoped `[tabindex="0"]` query matches "previous month" instead of the
         // intended roving day cell.
         const target = (
           calendarRef.current as unknown as
-            | { querySelector?: (selector: string) => { focus?: () => void } | null }
+            | { querySelector?: (selector: string) => { focus?: (options?: { preventScroll?: boolean }) => void } | null }
             | null
-        )?.querySelector?.('[role="cell"][tabindex="0"]');
-        target?.focus?.();
+        )?.querySelector?.('[role="gridcell"][tabindex="0"]');
+        // `preventScroll`: a plain focus() on a day cell that sits inside a still-measuring
+        // popover makes the browser scroll the document to the panel's off-screen
+        // position, detaching the popover from a below-the-fold trigger.
+        target?.focus?.({ preventScroll: true });
         // `document` is a DOM-only global not declared in this package's `lib`
         // (`tsconfig.base.json` intentionally omits `dom` — `@beemvp/beeui-ui` is RN-first);
         // reading it through `globalThis` keeps this Web-only check type-safe without
@@ -223,7 +226,7 @@ export const DatePicker = React.forwardRef<React.ComponentRef<typeof Pressable>,
               testID={testID ? `${testID}-value` : undefined}
               variant="body"
             >
-              {hasValue ? formattedValue : placeholder}
+              {hasValue ? formattedValue : resolvedPlaceholder}
             </Text>
           </PopoverTrigger>
           {showClear ? (

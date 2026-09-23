@@ -8,7 +8,7 @@ description: "Semantic typography primitive with variant/tone styling that honor
 Semantic typography primitive with variant/tone styling that honors OS/browser font scaling.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. Stable `latest` was last observed (at `0.86.2-rc.1`) resolving to the RC as well; that observation is re-verified after every publish and is not an npm rule. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Data display
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/text.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/text.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add text
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -58,8 +59,8 @@ Stateless semantic typography primitive; `variant`/`tone` apply typed styling, a
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `family` | `FontFamily` | — | `'mono'` renders the text in the system-monospace fallback stack (e.g. for reference codes/IDs). Opt-in only — omitting it preserves the inherited sans/system font. |
-| `numeric` | `NumericVariant` | — | `'tabular'` opts numeric content into equal-width figures so columns of amounts/KPIs/timers align. Omit for normal proportional figures. |
+| `family` | `'mono'` | — | `'mono'` renders the text in the system-monospace fallback stack (e.g. for reference codes/IDs). Opt-in only — omitting it preserves the inherited sans/system font. |
+| `numeric` | `'tabular'` | — | `'tabular'` opts numeric content into equal-width figures so columns of amounts/KPIs/timers align. Omit for normal proportional figures. |
 | `tone` | `'default' \| 'muted' \| 'subtle' \| 'primary' \| 'destructive' \| 'success' \| 'warning' \| 'info'` | `'default'` | Chooses this element's `tone` from `textVariants`'s presets, declared in `packages/ui/src/components/text.tsx` — the classes each value applies are there. |
 | `variant` | `'display' \| 'title' \| 'heading' \| 'body' \| 'label' \| 'caption'` | `'body'` | Chooses this element's `variant` from `textVariants`'s presets, declared in `packages/ui/src/components/text.tsx` — the classes each value applies are there. |
 
@@ -92,7 +93,7 @@ Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-m
 
 ## Styling and theming
 
-- **Style axes:** `tone` (8 values), `variant` (6 values), `numeric` (1 value).
+- **Style axes:** `tone` (8 values), `variant` (6 values) — the values are in the props tables above.
 - **Class-name surfaces:** `className`.
 
 Colors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A `className` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.
@@ -140,9 +141,23 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Text** is actually used: 59 lines in 6 places, of 11 in total — open the fixture for the remaining 5. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Text** is actually used: 59 lines in 6 places, of 11 in total — open the fixture for the remaining 5. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
-[lines 140–143](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L140-L143):
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Badge, Box, Button, Card, EmptyState, ErrorState, Progress, Separator, Skeleton, Spinner, Switch, Text, VStack } from '@beemvp/beeui-ui';
+import * as React from 'react';
+````
+
+Placeholder for a prop this fixture receives (not fixture source — substitute your own handler):
+
+````tsx
+const children: string = undefined as never;
+const description: string = undefined as never;
+````
+
+[lines 141–144](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L141-L144):
 
 ````tsx
     <VStack gap="xs">
@@ -151,7 +166,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
     </VStack>
 ````
 
-[lines 545–563](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L545-L563):
+[lines 546–564](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L546-L564):
 
 ````tsx
             <Card className="gap-4" variant="muted">
@@ -175,7 +190,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
             </Card>
 ````
 
-[lines 567–588](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L567-L588):
+[lines 568–589](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L568-L589):
 
 ````tsx
             <Card className="gap-4">
@@ -202,7 +217,13 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
             </Card>
 ````
 
-[lines 642–649](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L642-L649):
+Fixture state this block reads (same file, line 460):
+
+````tsx
+  const [notifications, setNotifications] = React.useState(true);
+````
+
+[lines 643–650](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L643-L650):
 
 ````tsx
               <Box className="flex-row items-center justify-between gap-4">
@@ -215,7 +236,15 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               </Box>
 ````
 
-[lines 791–793](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L791-L793):
+Fixture state this block reads (same file, lines 468, 469, 470):
+
+````tsx
+  const [menuToolbar, setMenuToolbar] = React.useState(true);
+  const [menuDensity, setMenuDensity] = React.useState('comfortable');
+  const [menuAction, setMenuAction] = React.useState('No action yet');
+````
+
+[lines 798–800](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L798-L800):
 
 ````tsx
                   <Text tone="muted">
@@ -223,7 +252,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                   </Text>
 ````
 
-[lines 1056–1058](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1056-L1058):
+[lines 1063–1065](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1063-L1065):
 
 ````tsx
               <Text tone="muted" variant="caption">
@@ -231,10 +260,12 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               </Text>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 `family` accepts only the monospace value — there is no sans value that would reset an inherited font family — and `numeric` only the tabular one. Both resolve through utility classes on Web and through React Native style props on native, so no inline font style is emitted on Web.
+
+**Implementation note:** Each `variant` maps to a fixed `fontSize`/`lineHeight` step from the token scale — see the [typography scale table](/docs/reference/tokens/) for the full `variant` ↔ size/line-height/weight mapping. There is no separate numeric scale to read at runtime; `variant` is the only entry point.
 
 ## Related
 

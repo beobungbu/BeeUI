@@ -4,7 +4,8 @@
     "accordion": {
       "purpose": "Single-value controlled/uncontrolled disclosure group where one item expands at a time.",
       "behavior": "Single-value controlled (`value`/`onValueChange`) or uncontrolled (`defaultValue`) disclosure coordination shared by every `AccordionItem`; a disabled item's trigger stays non-interactive and cannot expand, and only the active item's `AccordionContent` mounts.",
-      "limitations": "`AccordionTrigger` and `AccordionContent` throw when rendered outside `Accordion`/`AccordionItem` rather than degrading, so the parts cannot be lifted out of the family's own tree; and because a closed item's content is unmounted rather than hidden, any state its children hold is discarded on every collapse."
+      "limitations": "`AccordionTrigger` and `AccordionContent` throw when rendered outside `Accordion`/`AccordionItem` rather than degrading, so the parts cannot be lifted out of the family's own tree; and because a closed item's content is unmounted rather than hidden, any state its children hold is discarded on every collapse.",
+      "notes": "Coming from shadcn/ui: this Accordion does not accept a `type=\"single\" | \"multiple\"` prop. BeeUI models the single-expand behavior this family implements as the only mode — pass `value`/`onValueChange` (or `defaultValue`) the same way you would for shadcn's `type=\"single\"`. Multi-expand (`type=\"multiple\"`) is not implemented; compose independent `Collapsible` instances instead if every item must be able to stay open simultaneously."
     },
     "alert-banner": {
       "purpose": "Inline semantic status callout with live-region announcement for feedback that stays on screen.",
@@ -66,8 +67,8 @@
     },
     "chip": {
       "purpose": "Standalone toggle or value-scoped group item with button/radio/checkbox semantics.",
-      "behavior": "Standalone toggle (`selected`/`onSelectedChange`) or, nested in `ChipGroup`, a value-scoped selection item; a grouped `Chip` rendered without a `value` fails safe as disabled and warns in development, and `ChipGroup` supports controlled/uncontrolled single- or multiple-selection.",
-      "limitations": "Inside a `ChipGroup`, a chip's own `selected`, `defaultSelected` and `onSelectedChange` are ignored: selection is read from the group's value and a press is routed to the group instead of the item's callback."
+      "behavior": "Standalone toggle (`selected`/`onSelectedChange`) or, nested in `ChipGroup`, a value-scoped selection item; a grouped `Chip` rendered without a `value` fails safe as disabled and warns in development, and `ChipGroup` supports controlled/uncontrolled single- or multiple-selection. A standalone `Chip` set to `interactive={false}` renders as a static, read-only tag with no button/radio/checkbox role and no press handling; `ChipGroup`'s `allowDeselect` lets pressing the already-selected `Chip` again clear the `'single'`-mode selection instead of leaving it always-one-selected.",
+      "limitations": "Inside a `ChipGroup`, a chip's own `selected`, `defaultSelected`, `onSelectedChange` and `interactive` are ignored: selection and role are read from the group's value and semantics, and a press is routed to the group instead of the item's callback. `allowDeselect` has no effect in `'multiple'` mode, which can already reach zero selections by unchecking every `Chip`."
     },
     "collapsible": {
       "purpose": "Controlled/uncontrolled single-region disclosure with content mounted only while open.",
@@ -76,12 +77,14 @@
     },
     "date-picker": {
       "purpose": "Native system date-picker field backed by @react-native-community/datetimepicker.",
-      "behavior": "Controlled `value`/`onValueChange` (`CalendarDate | null`) field wrapping the native system date picker; `disabled` blocks opening the picker, and `clearable` opts in an explicit clear affordance rather than allowing an implicit empty selection.",
+      "behavior": "Controlled `value`/`onValueChange` (`CalendarDate | null`) field wrapping the native system date picker; `disabled` blocks opening the picker, and `clearable` opts in an explicit clear affordance rather than allowing an implicit empty selection. A wrapping `Field`'s required state no longer injects an English word into the trigger's accessible name — pass the field's own localized-required prop to append copy instead.",
+      "limitations": "`locale` affects `Calendar`'s own weekday/month grid, `Intl`-based date formatting, and — when the caller omits `placeholder` — the trigger's own default placeholder text, drawn from a small built-in dictionary (`en-US`/`vi-VN` today) that falls back to the English copy for any other locale. It does not translate the month-navigation accessible labels, which stay separate string props with hardcoded English defaults. A localized app must pass `previousMonthAccessibilityLabel` and `nextMonthAccessibilityLabel` explicitly alongside `locale`.",
       "notes": "Platform-split: resolves date-picker.native.tsx / date-picker.web.tsx at build time."
     },
     "date-time-picker": {
       "purpose": "Native combined date-and-time picker field backed by @react-native-community/datetimepicker.",
-      "behavior": "Controlled `value`/`onValueChange` (`{ date, time } | null`) field combining date and time entry through the native system pickers; `disabled` blocks opening either sub-picker.",
+      "behavior": "Controlled `value`/`onValueChange` (`{ date, time } | null`) field combining date and time entry through the native system pickers; `disabled` blocks opening either sub-picker. A wrapping `Field`'s required state no longer injects an English word into the trigger's accessible name — pass the field's own localized-required prop to append copy instead.",
+      "limitations": "`locale` affects the embedded `Calendar`'s weekday/month grid, `Intl`-based date/time formatting, and — when the caller omits `placeholder` — the combined trigger's default placeholder text and the picker footer's \"Done\" button label, both drawn from a small built-in dictionary (`en-US`/`vi-VN` today) that falls back to the English copy for any other locale (`Done` has no caller-facing override prop at all; it always follows `locale`). It does not translate the month-navigation accessible labels or the hour/minute/period/clear accessibility labels, each a separate string prop with a hardcoded English default. A localized app must pass those explicitly alongside `locale`.",
       "notes": "Platform-split module; segmented date/time entry on native."
     },
     "description-list": {
@@ -96,12 +99,12 @@
     },
     "dropdown-menu": {
       "purpose": "Non-modal action menu on the shared anchored-overlay runtime, with items, checkbox items, and radio groups.",
-      "behavior": "Controlled/uncontrolled (`open`/`onOpenChange`/`defaultOpen`) non-modal menu; `DropdownMenuItem`'s `onSelect` closes the menu by default after the handler runs, `DropdownMenuCheckboxItem` stays open by default, and `DropdownMenuRadioGroup` fails safe by disabling every item that shares a duplicate value."
+      "behavior": "Controlled/uncontrolled (`open`/`onOpenChange`/`defaultOpen`) non-modal menu; `DropdownMenuItem`'s `onSelect` closes the menu by default after the handler runs, `DropdownMenuCheckboxItem` stays open by default, and `DropdownMenuRadioGroup` fails safe by disabling every item that shares a duplicate value. `DropdownMenuItem` accepts an optional `description` — a muted secondary line rendered below the primary content, mirroring `ListItem`'s own `description` — but only for single-line, plain-text/number `children`; a custom element `children` ignores it."
     },
     "field": {
       "purpose": "Label/description/error composition for text-entry controls; wires accessible label and required relationships to text inputs only.",
-      "behavior": "Stateless label/description/error composition; it wires accessible label/required/error relationships only to a wrapped text-entry control (`Input`/`Textarea`) — never to checkbox/radio/switch, which label themselves explicitly.",
-      "limitations": "Checkbox/radio/switch labelling stays explicit at the control/group level."
+      "behavior": "Stateless label/description/error composition; it wires accessible label/required/error relationships only to a wrapped text-entry control (`Input`/`Textarea`) — never to checkbox/radio/switch, which label themselves explicitly. `required` never injects an English word into the wrapped control's accessible name by default; it reaches assistive tech only through the control's own aria-required/accessibility-required state. Pass `requiredLabel` to append localized copy (e.g. `\"Bắt buộc\"`) to the accessible name instead — there is no built-in English or other-language default.",
+      "limitations": "Checkbox/radio/switch labelling stays explicit at the control/group level. The older `requiredAccessibilityLabel` prop still works if set explicitly, but is deprecated in favor of `requiredLabel`."
     },
     "form-group": {
       "purpose": "Structural legend/description/error grouping for related controls without becoming one accessible parent element.",
@@ -115,13 +118,14 @@
     },
     "icon-button": {
       "purpose": "44px icon-only action; an accessible label is required.",
-      "behavior": "Stateless 44px icon-only pressable sharing Button's `disabled`/`loading` semantics; an accessible label (`accessibilityLabel`) is required because there is no visible text to derive one from.",
-      "limitations": "A size prop is not accepted: an icon button always renders at Button's icon size, so there is no compact or large variant, and any string child is styled by Button's own label rules with no override hook."
+      "behavior": "Stateless icon-only pressable sharing Button's `disabled`/`loading` semantics; an accessible label (`accessibilityLabel`) is required because there is no visible text to derive one from. Button's own size variant (`'sm'`/`'md'`/`'lg'`/`'icon'`, defaulting to `'icon'`) renders a square control at Button's matching control-height token here instead of Button's rectangular label padding. `count` renders a small overlay badge anchored to the top-end corner (e.g. an unread count) and is appended to `accessibilityLabel` so it is announced; omit it for no badge.",
+      "limitations": "Any string child is styled by Button's own label rules with no override hook. `count` accepts any node, but only a string/number value renders inside the badge pill and is appended to the accessible name — any other node renders as-is and must carry its own accessible text."
     },
     "input": {
       "purpose": "Single-line text input with semantic focus/invalid/disabled states and Field-provided accessibility.",
-      "behavior": "Uncontrolled-by-default text field (standard React Native `value`/`onChangeText`); `invalid`/`disabled`/focus state drive semantic styling, while label/required/error metadata come from a wrapping `Field`, not from `Input` itself.",
-      "limitations": "An explicit `accessibilityLabel`, or an explicit accessibility hint, replaces the label, description and error a wrapping `Field` supplies — but not the label association, which is forwarded unconditionally, so on Web an input that names itself is still pointed at the field's label as well. `disabled` cannot be undone by the editable flag: that flag can only turn editing off, never back on."
+      "behavior": "Uncontrolled-by-default text field (standard React Native `value`/`onChangeText`); `invalid`/`disabled`/focus state drive semantic styling, while label/required/error metadata come from a wrapping `Field`, not from `Input` itself. A wrapping `Field`'s required state reaches this control only through its own `aria-required` prop (`true` when the field is required) — no English word is injected into the accessible name unless the field also sets a localized required label.",
+      "limitations": "An explicit `accessibilityLabel`, or an explicit accessibility hint, replaces the label, description and error a wrapping `Field` supplies — but not the label association, which is forwarded unconditionally, so on Web an input that names itself is still pointed at the field's label as well. `disabled` cannot be undone by the editable flag: that flag can only turn editing off, never back on.",
+      "notes": "On Web, react-native-web's own `TextInput` calls `stopPropagation()` on every `keydown` while it holds focus, so a `document`/`window` `keydown` listener registered in the default bubble phase never fires while an `Input`, `SearchInput`, or `Textarea` is focused. Register app-level keyboard shortcuts in the capture phase instead: `document.addEventListener('keydown', handler, true)`. This is a react-native-web behavior, not something BeeUI opts you out of per-field today."
     },
     "keyboard-aware-screen": {
       "purpose": "Scrollable form-screen shell with bounded width, explicit safe-area ownership, and platform keyboard handling.",
@@ -145,7 +149,7 @@
     },
     "list-item": {
       "purpose": "Grouped row (with a settings-row specialization) that synthesizes accessible names from primitive content when interactive.",
-      "behavior": "Press behavior is opt-in (`onPress` makes the row interactive); an interactive row without an explicit `accessibilityLabel` synthesizes one from its primitive title/description/trailing content, while non-interactive rows never hide complex descendant content.",
+      "behavior": "Press behavior is opt-in (`onPress` makes the row interactive); an interactive row without an explicit `accessibilityLabel` synthesizes one from its primitive title/description/trailing content, while non-interactive rows never hide complex descendant content. `active` marks a row as the current/selected item (e.g. the active sidebar entry) — a purely visual/accessibility-state flag that does not change press behavior.",
       "limitations": "A row with no `onPress` is rendered non-interactive and disabled — `disabled` alone can never make it pressable. The synthesized accessible name is all-or-nothing: if `title`, `description` or `trailing` is anything but a plain string or number, no name is synthesized at all."
     },
     "metadata-row": {
@@ -155,8 +159,9 @@
     },
     "otp-input": {
       "purpose": "Controlled/uncontrolled one-time-code input with numeric normalization and per-value completion callbacks.",
-      "behavior": "Controlled/uncontrolled one-time-code input; entered text is normalized to digits only when `mode` is `'numeric'` (the default) — `mode: 'text'` accepts any character unnormalized — and the completion callback fires exactly once per completed value — it does not re-fire on further keystrokes while already complete, only after the value becomes incomplete again.",
-      "limitations": "One text field, not one box per digit: there is no per-character slot, caret or focus movement, so a segmented OTP appearance has to be built by the caller. The length limit, keyboard type and change handler are owned here and not accepted from outside."
+      "behavior": "Controlled/uncontrolled one-time-code input; entered text is normalized to digits only when `mode` is `'numeric'` (the default) — `mode: 'text'` accepts any character unnormalized — and the completion callback fires exactly once per completed value — it does not re-fire on further keystrokes while already complete, only after the value becomes incomplete again. `appearance` (`'joined'` default, or `'segmented'`) is a pure rendering switch: `'segmented'` draws one visually separate box per character over the same single hidden input — one value, one caret (hidden; the active box shows a focus-ring border instead), one change contract — it does not change the value/completion/normalization behavior above.",
+      "limitations": "One text field, not one box per digit: there is no per-character slot, caret or focus movement — `appearance=\"segmented\"` only changes what is drawn, not this input model. The length limit, keyboard type and change handler are owned here and not accepted from outside.",
+      "notes": "`OTPInputProps` omits `onChangeText` from `InputProps`; the only change callback is the inherited React Native `onChange`, which receives a `NativeSyntheticEvent<TextInputChangeEventData>`, not a plain string — read the new value from `event.nativeEvent.text`."
     },
     "pagination": {
       "purpose": "Controlled page/page-count context with normalized boundaries and type-enforced page/prev/next items.",
@@ -165,8 +170,8 @@
     },
     "password-input": {
       "purpose": "Password field with visibility toggle and safe keyboard/autofill defaults; caller overrides remain authoritative.",
-      "behavior": "Uncontrolled-by-default text field (same contract as `Input`) with a visibility-toggle affordance; toggling visibility never changes the caller-owned `secureTextEntry`/autofill overrides, which remain authoritative.",
-      "limitations": "The toggle's visible text is a hardcoded English Show/Hide inside a fixed-width button: `showLabel` and `hideLabel` change only its accessible name, not what is rendered. Masking follows `visible` alone; the underlying secure-entry flag is not accepted."
+      "behavior": "Uncontrolled-by-default text field (same contract as `Input`) with a visibility-toggle affordance; toggling visibility never changes the caller-owned `secureTextEntry`/autofill overrides, which remain authoritative. `showLabel`/`hideLabel` drive both the toggle button's visible text and its accessible name for the masked/visible states respectively (defaulting to the English `'Show password'`/`'Hide password'`) — a localized app passes both to replace the rendered text, not just the announced name.",
+      "limitations": "Masking follows `visible` alone; the underlying secure-entry flag is not accepted."
     },
     "popover": {
       "purpose": "Non-modal anchored surface on the shared overlay runtime with flip/shift/collision and safe-area policy.",
@@ -184,18 +189,18 @@
     },
     "safe-area": {
       "purpose": "BeeUIProvider application root plus an explicit SafeArea surface with caller-owned edge selection.",
-      "behavior": "`BeeUIProvider` (the application root) supplies safe-area measurement, the Toast runtime/viewport, and the shared anchored-overlay runtime to every descendant; `SafeArea` itself is a stateless surface with caller-owned `edges` selection — BeeUI never adds system insets to other components implicitly.",
+      "behavior": "`BeeUIProvider` (the application root) supplies safe-area measurement, the Toast runtime/viewport, and the shared anchored-overlay runtime to every descendant; `SafeArea` itself is a stateless surface with caller-owned `edges` selection — BeeUI never adds system insets to other components implicitly. `BeeUIProvider` accepts an optional `toastPlacement` (`'top' | 'bottom'`), forwarded to the Toast runtime; omitting it keeps the existing platform default (bottom on iOS/Android, top on Web).",
       "limitations": "`SafeArea` is a pass-through to `react-native-safe-area-context`'s own view: BeeUI adds no `edges` default and no inset arithmetic of its own, so which edges a surface pads is the caller's to state. Uniwind's safe-area utilities are fed only by the provider's `syncUniwindInsets` bridge; turning it off leaves the application to push insets into Uniwind itself.",
       "notes": "BeeUIProvider supplies safe-area measurement, the Toast runtime/viewport, and the shared anchored-overlay runtime."
     },
     "screen": {
-      "purpose": "Base application surface with semantic background and optional spacing; owns no safe-area or scroll behavior.",
-      "behavior": "Stateless base application surface with a semantic background and optional spacing prop; it owns no safe-area or scroll behavior itself.",
-      "limitations": "`padding` is a four-value preset applied to both axes at once: there is no per-axis, per-edge or token-level spacing control, so anything else comes from `className`."
+      "purpose": "Base application surface with semantic background and optional spacing; owns no safe-area behavior and offers only an opt-in scroll body.",
+      "behavior": "Stateless base application surface with a semantic background and optional spacing prop; it owns no safe-area behavior itself. `scroll` defaults to `false` (children render directly, unchanged); pass `true` for a keyboard-avoiding `ScrollView` body, or a `ScrollViewProps` object to override it (e.g. `{ keyboardShouldPersistTaps: 'always' }`) — for the fuller Android focused-field scroll-into-view contract, use `KeyboardAwareScreen` instead.",
+      "limitations": "`padding` is a four-value preset applied to both axes at once: there is no per-axis, per-edge or token-level spacing control, so anything else comes from `className`. `scroll`'s keyboard-avoiding wrapper is the same basic case `KeyboardAwareScreen` covers more fully; it does not add safe-area edges of its own."
     },
     "search-input": {
       "purpose": "Search-keyboard input layered on Input; clearing a non-empty query emits one onSearch('') reset.",
-      "behavior": "Uncontrolled-by-default search-keyboard field layered on `Input`; clearing a previously non-empty query emits exactly one `onSearch('')` reset call, not one per keystroke of the clear action.",
+      "behavior": "Uncontrolled-by-default search-keyboard field layered on `Input`; clearing a previously non-empty query emits exactly one `onSearch('')` reset call, not one per keystroke of the clear action. `trailing` renders extra content (e.g. a filter button) after the input inside the same row; omitting it renders the input with no extra wrapper, unchanged.",
       "limitations": "`onSearch` is neither per-keystroke nor debounced: it fires on return-key submit, and exactly once when a non-empty query is cleared to empty. The search keyboard and return key are owned here and not accepted from outside, and the family carries no suggestion list."
     },
     "section": {
@@ -205,12 +210,13 @@
     },
     "segmented-control": {
       "purpose": "Compact mutually-exclusive selection surface with radiogroup semantics.",
-      "behavior": "Controlled (`value`/`onValueChange`) mutually exclusive selection with `radiogroup` semantics; enabled usage without `onValueChange` warns in development, and a disabled segment cannot be selected.",
+      "behavior": "Controlled (`value`/`onValueChange`) mutually exclusive selection with `radiogroup` semantics; enabled usage without `onValueChange` warns in development, and a disabled segment cannot be selected. `accessibilityLabel` names the radiogroup for assistive tech; an explicit value always wins, and absent one it falls back to a wrapping `Field`'s label — the group is never left with the unnamed \"radio group\" announcement.",
       "limitations": "A press on the already-selected item changes nothing: `onValueChange` fires only for an item that is not selected. An item's own `onPress` runs first but cannot cancel the selection that follows it."
     },
     "select": {
       "purpose": "Persistent single string-value selection with anchored option surface and listbox semantics on Web.",
-      "behavior": "Controlled (`value`/`onValueChange`) or uncontrolled (`defaultValue`) persistent single-value selection, independent of the anchored `open`/`onOpenChange`/`defaultOpen` presentation state; a duplicate `SelectItem` value disables every item sharing it and warns in development, and removing the selected option does not synthesize a value change — `SelectValue` falls back to its placeholder until a matching item returns."
+      "behavior": "Controlled (`value`/`onValueChange`) or uncontrolled (`defaultValue`) persistent single-value selection, independent of the anchored `open`/`onOpenChange`/`defaultOpen` presentation state; a duplicate `SelectItem` value disables every item sharing it and warns in development, and removing the selected option does not synthesize a value change — `SelectValue` falls back to its placeholder until a matching item returns.",
+      "notes": "Rendering a `Select` inside a `Popover` is supported: the two share the same anchored-overlay runtime and dismiss/collision handling, so the listbox opens above the popover rather than being clipped or hidden behind it."
     },
     "separator": {
       "purpose": "Decorative-by-default divider (semantic when requested); vertical orientation stretches across the cross axis.",
@@ -220,7 +226,7 @@
     "sheet": {
       "purpose": "Gesture-driven bottom sheet with detents on the shared overlay runtime.",
       "behavior": "Controlled (`open`+`onOpenChange`) or uncontrolled (`defaultOpen`) gesture-driven bottom sheet on the shared overlay runtime; dismissal (backdrop press, swipe, Web Escape, Android hardware back) routes through the same `dismissOnRequestClose`/`onRequestClose` contract Dialog uses.",
-      "notes": "Native gesture engine uses @gorhom/bottom-sheet + reanimated/gesture-handler; platform-split module."
+      "notes": "Native apps mount `SheetProvider` below `BeeUIProvider`; it owns @gorhom/bottom-sheet + gesture-handler root wiring, while Web/fallback is pass-through. The family remains platform-split."
     },
     "skeleton": {
       "purpose": "Decorative static loading placeholder surface.",
@@ -249,7 +255,7 @@
     },
     "stepper": {
       "purpose": "Controlled current-step context with finite normalization and duplicate-step fail-safe; owns no workflow state.",
-      "behavior": "Controlled `currentStep` context shared with every `StepperItem`; step values are normalized to a finite range, and a `StepperItem` sharing a duplicate normalized step value fails safe as disabled — it owns no application workflow state.",
+      "behavior": "Controlled `currentStep` context shared with every `StepperItem`; step values are normalized to a finite range, and a `StepperItem` sharing a duplicate normalized step value fails safe as disabled — it owns no application workflow state. `orientation` (`'vertical'` default, or `'horizontal'`) is a pure layout switch — it changes the connector line direction only, not the step-normalization or fail-safe behavior above.",
       "limitations": "The step total each item announces is the number of the stepper's own direct children, so wrapping items in another element miscounts it, and the announced string is an English literal. A `StepperItem` throws when rendered outside a `Stepper`."
     },
     "switch": {
@@ -259,19 +265,20 @@
     },
     "table": {
       "purpose": "Semantic data-table primitives that render real table/th scope/aria-sort semantics on Web.",
-      "behavior": "Composable primitive family with no owned fetching, sort/filter/selection state, or spreadsheet-style cell navigation. `TableHead`'s `sortDirection`/`onSortChange` pair is fully caller-controlled (the presence of `sortDirection` is what marks a column sortable); `TableRow`'s `selected` is a caller-owned boolean reflected only visually/for accessibility. `layout` (`'scroll'` default, or `'stacked'`) is an explicit caller choice — Table never measures viewport width itself.",
-      "limitations": "`colSpan` is an approximation on native: with no table-layout engine a spanning cell grows its flex share instead of measuring the columns it covers. A `TableHead` whose content is not plain text needs an explicit `label`, because both the stacked layout's visible pairing and each native cell's accessible name are built from it.",
-      "notes": "Platform-split; see docs/data-typography.md for data-cell typography."
+      "behavior": "Composable primitive family with no owned fetching, sort/filter/selection state, or spreadsheet-style cell navigation. `TableHead`'s `sortDirection`/`onSortChange` pair is fully caller-controlled (the presence of `sortDirection` is what marks a column sortable); `TableRow`'s `selected` is a caller-owned boolean reflected only visually/for accessibility, and its optional `onPress` makes the whole row a real keyboard-reachable pressable. `layout` (`'scroll'` default, or `'stacked'`) is an explicit caller choice — Table never measures viewport width itself. `TableHead`/`TableCell` accept an `align` prop (`'start'` | `'center'` | `'end'`) for numeric/action columns instead of the platform-specific `className=\"items-end text-end\"` combination. `Table`'s `density` overrides the row height for that one table only (`'compact'`/`'comfortable'`/`'spacious'` reuse the global density-axis values; `'dense48'` is a fourth, table-specific 48px step) and is ignored in `layout=\"stacked\"`; omitting it leaves rows following the ambient global density exactly as before.",
+      "limitations": "`colSpan` is an approximation on native: with no table-layout engine a spanning cell grows its flex share instead of measuring the columns it covers. A `TableHead` whose content is not plain text needs an explicit `label`, because both the stacked layout's visible pairing and each native cell's accessible name are built from it. A row with `onPress` should not also embed its own interactive controls on native: the row renders as a single button-role `Pressable`, so a screen reader exposes the whole row as one button regardless of what its cells contain — prefer a single cell action or a leading `Checkbox` instead of a row-level `onPress` when a row needs its own actionable controls. Web keeps row and cell activation independent (a click or `Enter`/`Space` on an embedded interactive descendant activates that control, not the row), so this combination is `onPress`-only-on-Web territory, not a cross-platform pattern.",
+      "notes": "Platform-split; see docs/data-typography.md for data-cell typography. Row-to-detail navigation pattern: `TableRow` accepts an opt-in `onPress` (mirroring `ListItem`) to make an entire row navigate to a detail screen, e.g. `<TableRow onPress={() => router.push(`/orders/${order.id}`)}>`. It renders as a real, keyboard-reachable pressable row (native: `accessibilityRole=\"button\"`; Web: the row stays a real `<tr>`/`role=\"row\"` — not `role=\"button\"`, which would break table semantics — and adds `tabIndex={0}` plus `Enter`/`Space` keydown activation alongside the pointer `onClick`) while every row without `onPress` keeps rendering exactly as before. Prefer this over wrapping a whole row in your own `Pressable`, which duplicates row semantics; for a row that only needs one actionable cell (not the whole row), put an `IconButton` in its own `TableCell` instead."
     },
     "tabs": {
       "purpose": "Controlled tab set sharing state across list/triggers/content; inactive panels are not mounted.",
-      "behavior": "Fully controlled (`value`/`onValueChange`, required — there is no uncontrolled mode) tab state shared across `TabsList`/`TabsTrigger`/`TabsContent`; enabled usage without `onValueChange` warns in development, and an inactive `TabsContent` panel is not mounted.",
-      "limitations": "Press handling is owned by the family: a trigger reaches `onValueChange` only when its tab is not already selected, so pressing the active tab does nothing and a trigger cannot carry its own press handler."
+      "behavior": "Fully controlled (`value`/`onValueChange`, required — there is no uncontrolled mode) tab state shared across `TabsList`/`TabsTrigger`/`TabsContent`; enabled usage without `onValueChange` warns in development, and an inactive `TabsContent` panel is not mounted. `TabsList`'s `scrollable` renders the strip inside a horizontal scroll container instead of an equal-width flex row, scrolling the selected `TabsTrigger` into view whenever `value` changes; `addon` renders extra pinned content (e.g. a \"+ new order\" button) after the strip, staying fixed even when `scrollable` is true. `TabsTrigger`'s `closable` renders an accessible close control as a sibling of the tab (never nested inside it) and requires `closeAccessibilityLabel`; closing the currently selected tab moves selection to the previous sibling (else the next) via `onValueChange`, while closing a non-selected tab only calls `onClose`.",
+      "limitations": "Press handling is owned by the family: a trigger reaches `onValueChange` only when its tab is not already selected, so pressing the active tab does nothing and a trigger cannot carry its own press handler. `closable` without `closeAccessibilityLabel` warns in development — the close control has no other way to describe itself."
     },
     "text": {
       "purpose": "Semantic typography primitive with variant/tone styling that honors OS/browser font scaling.",
       "behavior": "Stateless semantic typography primitive; `variant`/`tone` apply typed styling, and text always honors OS/browser font scaling — BeeUI never sets `allowFontScaling={false}`.",
-      "limitations": "`family` accepts only the monospace value — there is no sans value that would reset an inherited font family — and `numeric` only the tabular one. Both resolve through utility classes on Web and through React Native style props on native, so no inline font style is emitted on Web."
+      "limitations": "`family` accepts only the monospace value — there is no sans value that would reset an inherited font family — and `numeric` only the tabular one. Both resolve through utility classes on Web and through React Native style props on native, so no inline font style is emitted on Web.",
+      "notes": "Each `variant` maps to a fixed `fontSize`/`lineHeight` step from the token scale — see the [typography scale table](/docs/reference/tokens/) for the full `variant` ↔ size/line-height/weight mapping. There is no separate numeric scale to read at runtime; `variant` is the only entry point."
     },
     "textarea": {
       "purpose": "Multiline text input using the same semantic contract as Input.",
@@ -291,8 +298,14 @@
     },
     "toast": {
       "purpose": "Provider-scoped runtime for toast notifications, exposed via useToast (show/dismiss/dismissAll) with FIFO queueing and safe-area-aware stacking.",
-      "behavior": "Provider-scoped imperative API (`useToast().show`/`dismiss`/`dismissAll`) rather than a controlled component; toasts queue FIFO with at most three visible at once, an explicit persistent mode opts a toast out of auto-dismiss, and action-triggered dismissal is deterministic (never racing the auto-dismiss timer).",
+      "behavior": "Provider-scoped imperative API (`useToast().show`/`dismiss`/`dismissAll`) rather than a controlled component; toasts queue FIFO with at most three visible at once, an explicit persistent mode opts a toast out of auto-dismiss, and action-triggered dismissal is deterministic (never racing the auto-dismiss timer). Stacking position defaults to bottom on iOS/Android and top on Web; override it app-wide with `BeeUIProvider`'s toastPlacement prop (see the SafeArea page).",
       "limitations": "No Modal/anchored geometry and no arbitrary ReactNode transport; descriptors only."
+    },
+    "toolbar": {
+      "purpose": "Single-row action toolbar that measures its own width and collapses lower-priority items into an overflow menu when they no longer fit.",
+      "behavior": "Stateless layout primitive with no owned selection state. `Toolbar` measures its own container width and every child `ToolbarItem`'s natural (never-collapsed) width, then moves whichever items do not fit into a trailing overflow `DropdownMenu` — lowest `priority` collapses first, items omitting `priority` never collapse even if the row still overflows, and widening the container automatically restores previously collapsed items on the next render (no separate collapsed-state store). A collapsed item keeps its `onPress`/`label`/`icon` inside the overflow menu; `ToolbarItem` itself is a config-only element `Toolbar` reads props from and never mounts as a component, so a `ToolbarItem` rendered outside a `Toolbar` renders nothing.",
+      "limitations": "`overflowAccessibilityLabel` is required only once the overflow menu actually renders (i.e. once any prioritized item collapses) — a dev warning fires if it is missing at that point, not before. `ToolbarItem.children` must be a single element (typically an `IconButton`/`Button`) — `Toolbar` reads it for measurement, clones `disabled` onto it whenever this item is disabled and `onPress` onto it whenever the child declares none of its own (an `onPress` the child sets itself always wins instead), and, on Web, further clones its focus/keyboard-navigation wiring for roving-tabindex support; every other prop on the child is left untouched.",
+      "notes": "The overflow menu is a `DropdownMenu` composition, so it inherits that family's full keyboard/dismiss behavior and `aria-haspopup=\"menu\"` for free — there is no second, bespoke popover implementation."
     },
     "tooltip": {
       "purpose": "Non-interactive contextual annotation (ADR-005): a hover/focus delay state machine plus an anchored, non-focusable bubble.",
@@ -302,7 +315,8 @@
     "use-bee-token": {
       "purpose": "Read resolved design-token values at runtime via useBeeToken (hook) and getBeeToken (imperative).",
       "behavior": "Stateless read-only accessors — `useBeeToken` (hook) and `getBeeToken` (imperative) — for resolved design-token values at runtime; neither writes tokens or holds component state.",
-      "limitations": "`getBeeToken` always reads the global theme: it ignores an enclosing theme scope and returns a one-shot snapshot rather than a subscription, where `useBeeToken` is scope-aware and re-reads on change. Both throw when a token is read before the theme has loaded. Only the color, chart, radius and motion categories are readable at runtime — spacing, typography, elevation and the other theme-invariant categories are not exposed here and are imported as constants instead."
+      "limitations": "`getBeeToken` always reads the global theme: it ignores an enclosing theme scope and returns a one-shot snapshot rather than a subscription, where `useBeeToken` is scope-aware and re-reads on change. Both throw when a token is read before the theme has loaded. Only the color, chart, radius and motion categories are readable at runtime — spacing, typography, elevation and the other theme-invariant categories are not exposed here and are imported as constants instead.",
+      "notes": "Category paths are top-level, not nested under `colors`: chart tokens read as `useBeeToken(\"chart.series-1\")` (one of the ten `chartColorTokens` names — see [Design tokens reference](/docs/reference/tokens/)), never `colors.chart-series-1`. Only `colors.*`, `chart.*`, `radius.*` and `motion.*` are readable at runtime; typography (font size/weight/line-height) is not one of them — see the Text component page for how the type scale is actually reached."
     },
     "visually-hidden": {
       "purpose": "Keeps non-interactive assistive content in the accessibility tree while removing it from visual layout.",

@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { extractPublicationPolicy } from './check-public-doc-truth.mjs';
 import { coverageForComponent } from '../apps/showcase/component-coverage.ts';
 import { showcaseHref } from '../apps/showcase/showcase-target.ts';
 import { buildPublicSurfaceInventory } from './generate-public-surface-inventory.mjs';
@@ -38,7 +39,7 @@ const CATEGORY_RULES = [
   ['Layout & surfaces', /^(box|stack|screen|safe-area|card|section|keyboard-aware-screen|bottom-action-bar)$/],
   ['Navigation & disclosure', /^(app-header|breadcrumb|link|pagination|tabs|accordion|collapsible|stepper)$/],
   ['Data display', /^(avatar|badge|chip|description-list|list-group|list-item|metadata-row|separator|stat|table|text|timeline)$/],
-  ['Actions & controls', /^(button|icon-button|segmented-control)$/],
+  ['Actions & controls', /^(button|icon-button|segmented-control|toolbar)$/],
   ['Theming & utilities', /^(theme-scope|use-bee-token|visually-hidden)$/],
 ];
 
@@ -171,7 +172,7 @@ function findUnknownBehaviorPropReferences(component, rootDir, field = 'behavior
 // A ratchet rather than a pass/fail threshold: failing on any blank would fail today and teach
 // nothing, and a silent percentage would drift back down the way it drifted here. The floor is
 // the measured value at the time it was written, so coverage can only go up.
-export const PROP_DESCRIPTION_FLOOR = 640;
+export const PROP_DESCRIPTION_FLOOR = 677;
 
 // Two floors, because coverage alone is satisfiable by boilerplate: 22 props were added to the
 // total by one repeated sentence and 100% never moved.
@@ -183,7 +184,7 @@ export const PROP_DESCRIPTION_FLOOR = 640;
 // justify (0.44), and measuring what it was actually rejecting showed the real defect is one
 // sentence reused across props with *different names*, which `sharedAcrossProps` states directly
 // and a ratio only approximates.
-export const PROP_DISTINCT_DESCRIPTION_FLOOR = 302;
+export const PROP_DISTINCT_DESCRIPTION_FLOOR = 336;
 
 // Walks a resolved type entry the same way `applyGlossary` and the renderer do:
 // a `union` entry carries no `fields` of its own, only `variants`, each of which is
@@ -363,12 +364,13 @@ const NEGATIVE_CLAIM_ORACLES = [
 // all of them — and the whole point of the set is that adding a role is a deliberate edit here.
 const KNOWN_ACCESSIBILITY_ROLES = new Set([
   // React Native AccessibilityRole
-  'adjustable', 'alert', 'button', 'checkbox', 'combobox', 'grid', 'header', 'image',
+  'adjustable', 'alert', 'button', 'checkbox', 'combobox', 'grid',
+  'gridcell', 'header', 'image',
   'imagebutton', 'keyboardkey', 'link', 'list', 'menu', 'menubar', 'menuitem', 'none',
   'progressbar', 'radio', 'radiogroup', 'scrollbar', 'search', 'spinbutton', 'summary', 'switch',
   'tab', 'tablist', 'text', 'timer', 'togglebutton', 'toolbar',
   // WAI-ARIA roles used on Web
-  'application', 'article', 'banner', 'cell', 'columnheader', 'complementary', 'contentinfo',
+  'alertdialog', 'application', 'article', 'banner', 'cell', 'columnheader', 'complementary', 'contentinfo',
   'definition', 'dialog', 'document', 'feed', 'figure', 'form', 'group', 'heading', 'listbox',
   'listitem', 'log', 'main', 'marquee', 'math', 'menuitemcheckbox', 'menuitemradio', 'meter',
   'navigation', 'note', 'option', 'presentation', 'region', 'row', 'rowgroup', 'rowheader',
@@ -842,6 +844,30 @@ function renderPlatformDiffNote(entry) {
   return `\n\n**Platform differences (native vs. [Web](${webHref})):**\n\n${lines.join('\n')}`;
 }
 
+// `DropdownMenuTrigger`, `PopoverTrigger`, `TooltipTrigger`, `SheetTrigger`, `DialogTrigger`
+// and `AlertDialogTrigger` are each exactly `ButtonProps` (or a bare alias of another one of
+// these that is) — a full pressable with its own `variant`/`size`/`loading`/`onPress`, not an
+// inert wrapper. The obvious composition for an icon-only trigger is to nest an `IconButton`
+// inside it, which renders `<button>` inside `<button>` on Web (React DOM-nesting warning) and
+// gives an `Avatar` trigger the default Button chrome nobody asked for (#565, #592 item 3).
+// Detected structurally (a `loading` field surviving to this `*Trigger` type's own resolved
+// shape) rather than by name/alias-chain, so it still fires through one level of aliasing
+// (`AlertDialogTriggerProps = DialogTriggerProps = ButtonProps`) without also firing on
+// `SelectTrigger`/`AccordionTrigger`/`CollapsibleTrigger`/`TabsTrigger`, which are `Omit<PressableProps, …>`
+// compositions with no `loading` field of their own.
+function pressableTriggerCallout(entry) {
+  if (!/TriggerProps$/.test(entry.name)) return '';
+  if (!(entry.fields ?? []).some((field) => field.name === 'loading')) return '';
+  return (
+    '\n\n**This is the pressable itself** — the same variant/size/press API as ' +
+    '[Button](/docs/components/button/) — so icon/label children go directly inside it. Do not ' +
+    'nest a second pressable (an icon button, or an avatar wrapped for press) inside a ' +
+    '`*Trigger`: on Web that renders one interactive element inside another, which React flags ' +
+    'as invalid DOM nesting. For an icon-only or avatar trigger, set `variant="ghost"` (and ' +
+    '`size`/`className` as needed) on the trigger itself instead of wrapping a second pressable.'
+  );
+}
+
 function renderPropsTypeEntry(entry) {
   const heading = `#### \`${entry.name}\``;
   let body;
@@ -856,7 +882,7 @@ function renderPropsTypeEntry(entry) {
     body = `${intro}${renderObjectShape(entry)}`;
   }
   const platformNote = entry.webShape ? renderPlatformDiffNote(entry) : '';
-  return `${heading}\n\n${body}${platformNote}`;
+  return `${heading}\n\n${body}${platformNote}${pressableTriggerCallout(entry)}`;
 }
 
 function renderRelatedTypeEntry(entry) {
@@ -1332,6 +1358,34 @@ function renderDerivedLimitations(component, rootDir) {
   return lines.join('\n');
 }
 
+// Every one of the 62 generated component pages carried this note verbatim, and it kept saying
+// "remain unpublished" after `0.86.2-rc.1` went public on npm under `next` (#543, #574, #585 site
+// pattern 1: two contradictory publication stories, neither generated from release state). Reads
+// the same `docs/dist-tag-policy.md` machine-readable block the docs site's own publication-truth
+// check (`scripts/check-public-doc-truth.mjs`) and the llms.txt family (`scripts/generate-llms-txt.mjs`)
+// already read, so all three surfaces state one publication truth instead of drifting independently.
+function distributionStatusNote(rootDir) {
+  const policy = extractPublicationPolicy(rootDir);
+  if (!policy.published) {
+    return (
+      'BeeUI packages and the public CLI remain unpublished. The import shape below is the ' +
+      'stable public package boundary used by workspace/packed-consumer verification; use the ' +
+      'repository-local Registry command only from a BeeUI checkout until publication is ' +
+      'explicitly authorized.'
+    );
+  }
+  const tag = policy.prereleaseDistTag ?? 'next';
+  return (
+    `BeeUI \`${policy.currentVersion}\` is public on npm under the opt-in \`${tag}\` dist-tag. ` +
+    `Stable \`latest\` was last observed (at \`0.86.2-rc.1\`) resolving to the RC as well; that observation ` +
+    `is re-verified after every publish and is not an npm rule. The bootstrap publish used \`--tag next\`; ` +
+    `the mechanism that also produced \`latest\` has not been established. It moves to a real stable version at the first stable ` +
+    `release (see [Start](/docs/start/) for the full install commands). The import shape below ` +
+    'works against the published package; the repository-local Registry command remains available ' +
+    'as a no-registry-required alternative from a BeeUI checkout.'
+  );
+}
+
 export function renderPublicComponentPage(component, rootDir = ROOT_DIR) {
   const examples = component.examples
     .map((file, index) => `- ${index === 0 ? '**Primary executable fixture:**' : '**Additional fixture:**'} [\`${file}\`](${githubHref(file)})`)
@@ -1362,11 +1416,13 @@ export function renderPublicComponentPage(component, rootDir = ROOT_DIR) {
       ? ''
       : 'No component-specific limitation is curated here. Check Compatibility and the linked behavior contract for target-specific constraints.');
   const limitations = [curatedLimitations, derivedLimitations].filter(Boolean).join('\n\n');
-  const provider = component.providerRequired
-    ? '`BeeUIProvider` is required above this family because it participates in shared overlay/toast runtime infrastructure.'
-    : 'No additional provider is required by this family. `BeeUIProvider` remains the recommended application root.';
+  const provider = component.name === 'sheet'
+    ? '`BeeUIProvider` must wrap `SheetProvider`. On native, `SheetProvider` owns gorhom\'s gesture/modal provider boundary so the store-backed portal is created below BeeUI runtime contexts; Web/fallback `SheetProvider` is a pass-through.'
+    : component.providerRequired
+      ? '`BeeUIProvider` is required above this family because it participates in shared overlay/toast runtime infrastructure.'
+      : 'No additional provider is required by this family. `BeeUIProvider` remains the recommended application root.';
 
-  return `---\ntitle: ${yamlString(component.title)}\ndescription: ${yamlString(component.purpose)}\n---\n\n<!-- Generated by scripts/public-component-reference.mjs. Do not hand-edit. -->\n\n${component.purpose}\n\n:::note[Distribution status]\nBeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.\n:::\n\n## Identity\n\n- **Category:** ${component.category}\n- **Status:** stable public Registry/export-map component family\n- **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)\n- **Source:** [\`${component.source}\`](${component.sourceHref})\n\n## Import\n\n\`\`\`tsx\nimport { ${component.values.join(', ')} } from '@beemvp/beeui-ui';\n\`\`\`\n\nThere is no documented deep/private source import. For source ownership from a BeeUI checkout:\n\n\`\`\`bash\n${component.cliAdd}\n\`\`\`\n\nRegistry metadata: [\`registry/registry.json\`](${component.registryHref}).\n\n## Composition and public API\n\n${renderAnatomy(component)}\n\n**Exported types:** ${types}\n\nThe generated API inventory is mechanically joined to \`packages/ui/src/index.ts\`, Registry metadata, and the component reference contract. Each type's field table below is parsed directly from that source, not a second hand-maintained copy; for the fuller behavior narrative see the [canonical component behavior catalog](https://github.com/beobungbu/BeeUI/blob/main/docs/components.md).\n\n## State and behavior contract\n\n${component.behavior}\n\n### Props\n\n${renderTypeDocs(component.typeDocs)}\n\nThe executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.\n\n## Provider and dependencies\n\n- ${provider}\n- **Peer/native dependencies visible to this Registry item:** ${peers}\n- **Registry dependency closure:** ${registryDeps}\n${webPeerNote}- Safe-area ownership remains explicit: shell surfaces touching system edges opt into \`SafeArea\`; components do not silently invent app-shell insets.\n- Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).\n\n## Platform behavior\n\n${renderPlatformImplementation(component, rootDir)}\n\n${platformSplit}\n\nEvidence classes are not equal and this page does not blur them: Web behavior is exercised in a real browser, while iOS and Android carry package/export and native-compile evidence, which is not device-runtime proof. The [compatibility contract](/docs/compatibility/) records which class each claim rests on.\n\n## Accessibility\n\n${renderAccessibilityFacts(component, rootDir)}\n\nKeyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.\n\n## Styling and theming\n\n${renderStylingFacts(component, rootDir)}\n\nColors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A \`className\` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.\n\n## Executable examples\n\n${examples}\n\n### Addressable examples\n\nEach link below opens the Showcase at that exact example, not at the top of the gallery:\n\n${renderExampleTargets(component)}\n\nThe Showcase links demonstrate Web behavior; use the native-preview guide for real simulator/emulator/device paths.\n\n## Limitations\n\n${limitations}\n\n${component.notes ? `**Implementation note:** ${component.notes}\n\n` : ''}## Related\n\n- [All components](/docs/components/)\n- [Production patterns](/docs/patterns/)\n- [Showcase](/showcase/)\n- [CLI & source ownership](/docs/guides/cli-source-ownership/)\n- [Source](${component.sourceHref})\n`;
+  return `---\ntitle: ${yamlString(component.title)}\ndescription: ${yamlString(component.purpose)}\n---\n\n<!-- Generated by scripts/public-component-reference.mjs. Do not hand-edit. -->\n\n${component.purpose}\n\n:::note[Distribution status]\n${distributionStatusNote(rootDir)}\n:::\n\n## Identity\n\n- **Category:** ${component.category}\n- **Status:** stable public Registry/export-map component family\n- **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)\n- **Prerequisites:** \`@beemvp/beeui-ui\` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.\n- **Source:** [\`${component.source}\`](${component.sourceHref})\n\n## Import\n\n\`\`\`tsx\nimport { ${component.values.join(', ')} } from '@beemvp/beeui-ui';\n\`\`\`\n\nThere is no documented deep/private source import. For source ownership from a BeeUI checkout:\n\n\`\`\`bash\n${component.cliAdd}\n\`\`\`\n\n**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [\`registry/registry.json\`](${component.registryHref}) — that the \`pnpm beeui\`/\`@beemvp/beeui-cli\` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [\`registry/registry.json\`](${component.registryHref}).\n\n## Composition and public API\n\n${renderAnatomy(component)}\n\n**Exported types:** ${types}\n\nThe generated API inventory is mechanically joined to \`packages/ui/src/index.ts\`, Registry metadata, and the component reference contract. Each type's field table below is parsed directly from that source, not a second hand-maintained copy; for the fuller behavior narrative see the [canonical component behavior catalog](https://github.com/beobungbu/BeeUI/blob/main/docs/components.md).\n\n## State and behavior contract\n\n${component.behavior}\n\n### Props\n\n${renderTypeDocs(component.typeDocs)}\n\nThe executable fixtures below are the source-grounded usage examples; consumers should not infer state ownership from DOM structure or another UI library.\n\n## Provider and dependencies\n\n- ${provider}\n- **Peer/native dependencies visible to this Registry item:** ${peers}\n- **Registry dependency closure:** ${registryDeps}\n${webPeerNote}- Safe-area ownership remains explicit: shell surfaces touching system edges opt into \`SafeArea\`; components do not silently invent app-shell insets.\n- Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).\n\n## Platform behavior\n\n${renderPlatformImplementation(component, rootDir)}\n\n${platformSplit}\n\nEvidence classes are not equal and this page does not blur them: Web behavior is exercised in a real browser, while iOS and Android carry package/export and native-compile evidence, which is not device-runtime proof. The [compatibility contract](/docs/compatibility/) records which class each claim rests on.\n\n## Accessibility\n\n${renderAccessibilityFacts(component, rootDir)}\n\nKeyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.\n\n## Styling and theming\n\n${renderStylingFacts(component, rootDir)}\n\nColors, spacing and typography come from semantic tokens rather than from values written here — see [Theming](/docs/theming/) and [Density](/docs/guides/density/). A \`className\` is an escape hatch for source-owned and application work, not a cross-engine portability guarantee.\n\n## Executable examples\n\n${examples}\n\n### Addressable examples\n\nEach link below opens the Showcase at that exact example, not at the top of the gallery:\n\n${renderExampleTargets(component)}\n\nThe Showcase links demonstrate Web behavior; use the native-preview guide for real simulator/emulator/device paths.\n\n## Limitations\n\n${limitations}\n\n${component.notes ? `**Implementation note:** ${component.notes}\n\n` : ''}## Related\n\n- [All components](/docs/components/)\n- [Production patterns](/docs/patterns/)\n- [Showcase](/showcase/)\n- [CLI & source ownership](/docs/guides/cli-source-ownership/)\n- [Source](${component.sourceHref})\n`;
 }
 
 export function renderPublicComponentIndex(manifest) {

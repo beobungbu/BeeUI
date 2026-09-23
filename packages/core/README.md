@@ -4,15 +4,15 @@ Small, framework-light utility surface shared by `@beemvp/beeui-ui`: the class-n
 
 ## Distribution state
 
-**Unpublished:** `@beemvp/beeui-core` is not currently available from the public npm registry. Publication remains owner-gated by issue #254. Evaluate it through the repository/packed-consumer workflow today.
-
-After publication is explicitly authorized, the intended direct-install shape is:
+**Public release candidate:** `@beemvp/beeui-core@0.86.2-rc.2` is published on npm. During RC use the explicit `@next` channel (or pin the exact version):
 
 ```bash
-npm install @beemvp/beeui-core
+npm install @beemvp/beeui-core@next
 ```
 
-`@beemvp/beeui-core` is normally a dependency of `@beemvp/beeui-ui`; a direct install is intended only for consumers deliberately using the public utilities in isolation.
+The live registry currently also resolves `latest` to this RC, but the bootstrap publish used `--tag next` and the mechanism that also created the observed `latest` value has not been established. BeeUI therefore documents `@next` as the RC contract; a bare install is not the recommended RC path because `latest` moves to stable at the first deliberate stable promotion.
+
+It is normally installed transitively by `@beemvp/beeui-ui`.
 
 ## Package contents
 

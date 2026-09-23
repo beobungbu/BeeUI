@@ -2854,6 +2854,17 @@
       "ownerStatus": "published"
     },
     {
+      "id": "@beemvp/beeui-ui:export:./toolbar",
+      "package": "@beemvp/beeui-ui",
+      "kind": "package-export",
+      "name": "./toolbar",
+      "source": "packages/ui/package.json#exports../toolbar",
+      "implementation": "./src/components/toolbar",
+      "classification": "consumer",
+      "primaryDocsOwner": "/docs/components/toolbar/",
+      "ownerStatus": "published"
+    },
+    {
       "id": "@beemvp/beeui-ui:export:./tooltip",
       "package": "@beemvp/beeui-ui",
       "kind": "package-export",
@@ -4361,6 +4372,17 @@
       "ownerStatus": "published"
     },
     {
+      "id": "@beemvp/beeui-ui:type:SheetProviderProps",
+      "package": "@beemvp/beeui-ui",
+      "kind": "ui-type",
+      "name": "SheetProviderProps",
+      "family": "sheet",
+      "source": "packages/ui/src/components/sheet.tsx",
+      "classification": "consumer-type",
+      "primaryDocsOwner": "/docs/components/sheet/",
+      "ownerStatus": "published"
+    },
+    {
       "id": "@beemvp/beeui-ui:type:SheetSnapPoint",
       "package": "@beemvp/beeui-ui",
       "kind": "ui-type",
@@ -4504,6 +4526,17 @@
       "ownerStatus": "published"
     },
     {
+      "id": "@beemvp/beeui-ui:type:TableAlign",
+      "package": "@beemvp/beeui-ui",
+      "kind": "ui-type",
+      "name": "TableAlign",
+      "family": "table",
+      "source": "packages/ui/src/components/table.tsx",
+      "classification": "consumer-type",
+      "primaryDocsOwner": "/docs/components/table/",
+      "ownerStatus": "published"
+    },
+    {
       "id": "@beemvp/beeui-ui:type:TableBodyProps",
       "package": "@beemvp/beeui-ui",
       "kind": "ui-type",
@@ -4530,6 +4563,17 @@
       "package": "@beemvp/beeui-ui",
       "kind": "ui-type",
       "name": "TableCellProps",
+      "family": "table",
+      "source": "packages/ui/src/components/table.tsx",
+      "classification": "consumer-type",
+      "primaryDocsOwner": "/docs/components/table/",
+      "ownerStatus": "published"
+    },
+    {
+      "id": "@beemvp/beeui-ui:type:TableDensity",
+      "package": "@beemvp/beeui-ui",
+      "kind": "ui-type",
+      "name": "TableDensity",
       "family": "table",
       "source": "packages/ui/src/components/table.tsx",
       "classification": "consumer-type",
@@ -4757,6 +4801,17 @@
       "ownerStatus": "published"
     },
     {
+      "id": "@beemvp/beeui-ui:type:ToastPlacement",
+      "package": "@beemvp/beeui-ui",
+      "kind": "ui-type",
+      "name": "ToastPlacement",
+      "subpath": "./toast",
+      "source": "packages/ui/src/components/toast.tsx",
+      "classification": "consumer-type",
+      "primaryDocsOwner": "/docs/components/toast/",
+      "ownerStatus": "published"
+    },
+    {
       "id": "@beemvp/beeui-ui:type:ToastRuntimeProviderProps",
       "package": "@beemvp/beeui-ui",
       "kind": "ui-type",
@@ -4776,6 +4831,28 @@
       "source": "packages/ui/src/components/toast.tsx",
       "classification": "consumer-type",
       "primaryDocsOwner": "/docs/components/toast/",
+      "ownerStatus": "published"
+    },
+    {
+      "id": "@beemvp/beeui-ui:type:ToolbarItemProps",
+      "package": "@beemvp/beeui-ui",
+      "kind": "ui-type",
+      "name": "ToolbarItemProps",
+      "family": "toolbar",
+      "source": "packages/ui/src/components/toolbar.tsx",
+      "classification": "consumer-type",
+      "primaryDocsOwner": "/docs/components/toolbar/",
+      "ownerStatus": "published"
+    },
+    {
+      "id": "@beemvp/beeui-ui:type:ToolbarProps",
+      "package": "@beemvp/beeui-ui",
+      "kind": "ui-type",
+      "name": "ToolbarProps",
+      "family": "toolbar",
+      "source": "packages/ui/src/components/toolbar.tsx",
+      "classification": "consumer-type",
+      "primaryDocsOwner": "/docs/components/toolbar/",
       "ownerStatus": "published"
     },
     {
@@ -6176,6 +6253,17 @@
       "ownerStatus": "published"
     },
     {
+      "id": "@beemvp/beeui-ui:value:SheetProvider",
+      "package": "@beemvp/beeui-ui",
+      "kind": "ui-value",
+      "name": "SheetProvider",
+      "family": "sheet",
+      "source": "packages/ui/src/components/sheet.tsx",
+      "classification": "consumer",
+      "primaryDocsOwner": "/docs/components/sheet/",
+      "ownerStatus": "published"
+    },
+    {
       "id": "@beemvp/beeui-ui:value:SheetTitle",
       "package": "@beemvp/beeui-ui",
       "kind": "ui-value",
@@ -6547,6 +6635,28 @@
       "source": "packages/ui/src/components/toast.tsx",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/toast/",
+      "ownerStatus": "published"
+    },
+    {
+      "id": "@beemvp/beeui-ui:value:Toolbar",
+      "package": "@beemvp/beeui-ui",
+      "kind": "ui-value",
+      "name": "Toolbar",
+      "family": "toolbar",
+      "source": "packages/ui/src/components/toolbar.tsx",
+      "classification": "consumer",
+      "primaryDocsOwner": "/docs/components/toolbar/",
+      "ownerStatus": "published"
+    },
+    {
+      "id": "@beemvp/beeui-ui:value:ToolbarItem",
+      "package": "@beemvp/beeui-ui",
+      "kind": "ui-value",
+      "name": "ToolbarItem",
+      "family": "toolbar",
+      "source": "packages/ui/src/components/toolbar.tsx",
+      "classification": "consumer",
+      "primaryDocsOwner": "/docs/components/toolbar/",
       "ownerStatus": "published"
     },
     {
@@ -7214,6 +7324,16 @@
       "source": "registry/registry.json",
       "classification": "consumer",
       "primaryDocsOwner": "/docs/components/toast/",
+      "ownerStatus": "published"
+    },
+    {
+      "id": "registry:component:toolbar",
+      "package": "@beemvp/beeui-cli",
+      "kind": "registry-item",
+      "name": "toolbar",
+      "source": "registry/registry.json",
+      "classification": "consumer",
+      "primaryDocsOwner": "/docs/components/toolbar/",
       "ownerStatus": "published"
     },
     {

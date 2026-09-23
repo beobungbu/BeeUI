@@ -263,6 +263,7 @@ export {
   SheetDescription,
   SheetFooter,
   SheetHandle,
+  SheetProvider,
   SheetTitle,
   SheetTrigger,
   type SheetCloseProps,
@@ -271,6 +272,7 @@ export {
   type SheetFooterProps,
   type SheetHandleProps,
   type SheetProps,
+  type SheetProviderProps,
   type SheetSnapPoint,
   type SheetTitleProps,
   type SheetTriggerProps,
@@ -321,8 +323,10 @@ export {
   type TableBodyProps,
   type TableCaptionProps,
   type TableCellProps,
+  type TableDensity,
   type TableFooterProps,
   type TableHeadProps,
+  type TableAlign,
   type TableHeaderProps,
   type TableLayout,
   type TableProps,
@@ -360,6 +364,7 @@ export {
   type ToastOptions,
   type ToastVariant,
 } from './components/toast';
+export { Toolbar, ToolbarItem, type ToolbarItemProps, type ToolbarProps } from './components/toolbar';
 export {
   Tooltip,
   TooltipContent,

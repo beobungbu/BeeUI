@@ -8,7 +8,7 @@ description: "Gesture-driven bottom sheet with detents on the shared overlay run
 Gesture-driven bottom sheet with detents on the shared overlay runtime.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. Stable `latest` was last observed (at `0.86.2-rc.1`) resolving to the RC as well; that observation is re-verified after every publish and is not an npm rule. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,12 +16,13 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Overlays & feedback
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/sheet.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/sheet.tsx)
 
 ## Import
 
 ```tsx
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHandle, SheetTitle, SheetTrigger } from '@beemvp/beeui-ui';
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHandle, SheetProvider, SheetTitle, SheetTrigger } from '@beemvp/beeui-ui';
 ```
 
 There is no documented deep/private source import. For source ownership from a BeeUI checkout:
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add sheet
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -40,13 +41,14 @@ Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI
    `SheetDescription`
    `SheetFooter`
    `SheetHandle`
+   `SheetProvider`
    `SheetTitle`
    `SheetTrigger`
   - Also routed here, outside the Registry family:
     - `sheet`
   - Package export subpath: `@beemvp/beeui-ui/sheet`
 
-**Exported types:** `SheetCloseProps`, `SheetContentProps`, `SheetDescriptionProps`, `SheetFooterProps`, `SheetHandleProps`, `SheetProps`, `SheetSnapPoint`, `SheetTitleProps`, `SheetTriggerProps`
+**Exported types:** `SheetCloseProps`, `SheetContentProps`, `SheetDescriptionProps`, `SheetFooterProps`, `SheetHandleProps`, `SheetProps`, `SheetProviderProps`, `SheetSnapPoint`, `SheetTitleProps`, `SheetTriggerProps`
 
 The generated API inventory is mechanically joined to `packages/ui/src/index.ts`, Registry metadata, and the component reference contract. Each type's field table below is parsed directly from that source, not a second hand-maintained copy; for the fuller behavior narrative see the [canonical component behavior catalog](https://github.com/beobungbu/BeeUI/blob/main/docs/components.md).
 
@@ -65,7 +67,7 @@ Controlled (`open`+`onOpenChange`) or uncontrolled (`defaultOpen`) gesture-drive
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
+| `loading` | `boolean` | `false` | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 | `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Chooses this element's `size` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 | `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'primary'` | Chooses this element's `variant` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 
@@ -75,6 +77,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
+| `bridgeContexts` | `readonly SheetBridgeContext[]` | — | Consumer-owned React contexts that need bridging only on native gorhom portals. Web and the fallback RN Modal preserve context already, so they accept this for signature parity and ignore it. |
 | `avoidKeyboard` | `boolean` | `true` | Declares the keyboard-interaction contract, but this cross-platform skeleton does not itself read the flag: it relies on the platform's own default Modal keyboard behavior. Defaults to `true`. #158 (native) and #159 (Web) drive real, platform-appropriate keyboard avoidance from it — per ADR-006 native and Web keyboard interaction are not the same problem and are not expected to share one implementation (#157). |
 | `closeOnBackdropPress` | `boolean` | `true` | Backdrop dismissal policy. Defaults to `true`, matching `DialogContent`. |
 | `containerClassName` | `string` | — | Extra utility classes for the overlay's container element, merged after the component's own. |
@@ -95,6 +98,7 @@ Also carries every prop of `Omit<ViewProps, 'accessibilityRole' | 'accessibility
 **Platform differences (native vs. [Web](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/sheet.web.tsx)):**
 
 - `avoidKeyboard` is accepted on Web for API parity but has no effect there.
+- `bridgeContexts` is accepted on Web for API parity but has no effect there.
 - `enableSwipeToDismiss` is accepted on Web for API parity but has no effect there.
 - `modalProps` is accepted on Web for API parity but has no effect there.
 
@@ -153,6 +157,12 @@ one of the following mutually exclusive variants:
 | `onOpenChange` | `(open: boolean) => void` | — | Notified after the open state changes, and optional here because the uncontrolled variant updates its own state either way. |
 | `open` | `undefined` | — | Must be left undefined in the uncontrolled variant, because a defined `open` together with `onOpenChange` selects the controlled variant instead. |
 
+#### `SheetProviderProps`
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
+
 #### `SheetTitleProps`
 
 This type adds no fields of its own. These are the props the implementation reads from the base type below; everything else is passed straight through.
@@ -176,11 +186,13 @@ Also carries every prop of `Omit<TextProps, 'accessibilityRole' | 'role' | 'vari
 | `children` | `React.ReactNode` | — | Content rendered inside this element. The family's composition section states which children it expects. |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
 | `labelClassName` | `string` | — | Extra utility classes for the label text specifically, merged after the component's own. |
-| `loading` | `boolean` | — | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
+| `loading` | `boolean` | `false` | Shows a spinner in place of the label, sets `aria-busy`, and disables presses. Defaults to false. |
 | `size` | `'sm' \| 'md' \| 'lg' \| 'icon'` | `'md'` | Chooses this element's `size` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 | `variant` | `'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive'` | `'primary'` | Chooses this element's `variant` from `buttonVariants`'s presets, declared in `packages/ui/src/components/button.tsx` — the classes each value applies are there. |
 
 Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'role' | 'children'>` — that upstream contract is not reproduced here.
+
+**This is the pressable itself** — the same variant/size/press API as [Button](/docs/components/button/) — so icon/label children go directly inside it. Do not nest a second pressable (an icon button, or an avatar wrapped for press) inside a `*Trigger`: on Web that renders one interactive element inside another, which React flags as invalid DOM nesting. For an icon-only or avatar trigger, set `variant="ghost"` (and `size`/`className` as needed) on the trigger itself instead of wrapping a second pressable.
 
 **Related exported types:**
 
@@ -190,9 +202,9 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 ## Provider and dependencies
 
-- `BeeUIProvider` is required above this family because it participates in shared overlay/toast runtime infrastructure.
+- `BeeUIProvider` must wrap `SheetProvider`. On native, `SheetProvider` owns gorhom's gesture/modal provider boundary so the store-backed portal is created below BeeUI runtime contexts; Web/fallback `SheetProvider` is a pass-through.
 - **Peer/native dependencies visible to this Registry item:** `@gorhom/bottom-sheet`, `react`, `react-native`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets`
-- **Registry dependency closure:** `button`, `core-cn`, `overlay-runtime`, `text`, `theme`
+- **Registry dependency closure:** `button`, `core-cn`, `overlay-runtime`, `sheet-context-bridge`, `text`, `theme`, `theme-scope-bridge`, `toast-runtime-bridge`
 - On Web this family renders from `sheet.web.tsx`, which does not import `@gorhom/bottom-sheet`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets`: those peers serve the native implementation.
 - Safe-area ownership remains explicit: shell surfaces touching system edges opt into `SafeArea`; components do not silently invent app-shell insets.
 - Web consumers load the BeeUI semantic theme CSS as documented in [Web onboarding](/docs/start/web/).
@@ -221,8 +233,10 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
+- **Primary executable fixture:** [`apps/showcase/app-providers.native.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/app-providers.native.tsx)
+- **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
 - **Additional fixture:** [`apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/runtime-smoke/l10n-stress-acceptance.tsx)
+- **Additional fixture:** [`apps/showcase/runtime-smoke/runtime-acceptance.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/runtime-smoke/runtime-acceptance.tsx)
 
 ### Addressable examples
 
@@ -256,6 +270,7 @@ device paths.
     - `SheetDescription`
     - `SheetFooter`
     - `SheetHandle`
+    - `SheetProvider`
     - `SheetTitle`
     - `SheetTrigger`
   - Exported type surface:
@@ -265,6 +280,7 @@ device paths.
     - `SheetFooterProps`
     - `SheetHandleProps`
     - `SheetProps`
+    - `SheetProviderProps`
     - `SheetSnapPoint`
     - `SheetTitleProps`
     - `SheetTriggerProps`
@@ -274,9 +290,15 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Sheet** is actually used: 15 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Sheet** is actually used: 15 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
-[lines 725–739](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L725-L739):
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Field, Input, Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetTitle, SheetTrigger } from '@beemvp/beeui-ui';
+````
+
+[lines 732–746](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L732-L746):
 
 ````tsx
                 <Sheet>
@@ -296,14 +318,14 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                 </Sheet>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 - Passing `open` without `onOpenChange` leaves the value read-only: the component renders what you passed and can never change it. It warns in development builds rather than failing silently in production.
 - Requires `@gorhom/bottom-sheet`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets` to be installed by the consuming app. They are optional peers of `@beemvp/beeui-ui`, so nothing installs them for you, and a target that never renders this family does not need it.
-- On Web, `avoidKeyboard`, `enableSwipeToDismiss`, `modalProps` are accepted for API parity and read by nothing: setting them changes no behavior there.
+- On Web, `avoidKeyboard`, `bridgeContexts`, `enableSwipeToDismiss`, `modalProps` are accepted for API parity and read by nothing: setting them changes no behavior there.
 
-**Implementation note:** Native gesture engine uses @gorhom/bottom-sheet + reanimated/gesture-handler; platform-split module.
+**Implementation note:** Native apps mount `SheetProvider` below `BeeUIProvider`; it owns @gorhom/bottom-sheet + gesture-handler root wiring, while Web/fallback is pass-through. The family remains platform-split.
 
 ## Related
 

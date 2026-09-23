@@ -8,7 +8,7 @@ description: "Controlled/uncontrolled one-time-code input with numeric normaliza
 Controlled/uncontrolled one-time-code input with numeric normalization and per-value completion callbacks.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. Stable `latest` was last observed (at `0.86.2-rc.1`) resolving to the RC as well; that observation is re-verified after every publish and is not an npm rule. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Forms & selection
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/otp-input.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/otp-input.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add otp-input
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -45,7 +46,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Controlled/uncontrolled one-time-code input; entered text is normalized to digits only when `mode` is `'numeric'` (the default) — `mode: 'text'` accepts any character unnormalized — and the completion callback fires exactly once per completed value — it does not re-fire on further keystrokes while already complete, only after the value becomes incomplete again.
+Controlled/uncontrolled one-time-code input; entered text is normalized to digits only when `mode` is `'numeric'` (the default) — `mode: 'text'` accepts any character unnormalized — and the completion callback fires exactly once per completed value — it does not re-fire on further keystrokes while already complete, only after the value becomes incomplete again. `appearance` (`'joined'` default, or `'segmented'`) is a pure rendering switch: `'segmented'` draws one visually separate box per character over the same single hidden input — one value, one caret (hidden; the active box shows a focus-ring border instead), one change contract — it does not change the value/completion/normalization behavior above.
 
 ### Props
 
@@ -53,6 +54,7 @@ Controlled/uncontrolled one-time-code input; entered text is normalized to digit
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
+| `appearance` | `'joined' \| 'segmented'` | `'joined'` | `'joined'` (the default, unchanged) renders one plain text field with letter-spacing — no per-character caret or box. `'segmented'` renders `length` visually separate boxes over the exact same single hidden input: one real caret, one value, one `onChangeText` — the boxes are pure decoration, positioned over the input, never a second source of truth for the code. The active (next-to-fill) box gets a focus-ring border while the hidden input is focused. Reuses only existing semantic tokens (`bg-input`, `border-control-border`/`border-destructive`, `border-focus-ring`). |
 | `defaultValue` | `string` | `''` | Initial code for uncontrolled usage; normalized (digits-only in `'numeric'` mode, truncated to `length`) like any other value. Defaults to `''`. |
 | `length` | `number` | `6` | Number of characters the code must reach before `onComplete` fires. Also sets the underlying input's `maxLength`. Defaults to 6. |
 | `mode` | `'numeric' \| 'text'` | `'numeric'` | `'numeric'` strips non-digit characters as they are typed and shows a numeric keyboard; `'text'` accepts any character. Defaults to `'numeric'`. |
@@ -98,8 +100,8 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-7-state-edge-cases.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-state-edge-cases.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/otp-input-segmented-appearance.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/otp-input-segmented-appearance.test.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
-- **Additional fixture:** [`apps/showcase/patterns/auth/screens/verify-code-screen.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/patterns/auth/screens/verify-code-screen.tsx)
 
 ### Addressable examples
 
@@ -135,9 +137,22 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **OTP Input** is actually used: 5 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **OTP Input** is actually used: 5 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
-[lines 605–609](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L605-L609):
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { OTPInput } from '@beemvp/beeui-ui';
+import * as React from 'react';
+````
+
+Fixture state this block reads (same file, line 463):
+
+````tsx
+  const [otp, setOtp] = React.useState('');
+````
+
+[lines 606–610](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L606-L610):
 
 ````tsx
                 <OTPInput
@@ -147,10 +162,12 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                 />
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
-One text field, not one box per digit: there is no per-character slot, caret or focus movement, so a segmented OTP appearance has to be built by the caller. The length limit, keyboard type and change handler are owned here and not accepted from outside.
+One text field, not one box per digit: there is no per-character slot, caret or focus movement — `appearance="segmented"` only changes what is drawn, not this input model. The length limit, keyboard type and change handler are owned here and not accepted from outside.
+
+**Implementation note:** `OTPInputProps` omits `onChangeText` from `InputProps`; the only change callback is the inherited React Native `onChange`, which receives a `NativeSyntheticEvent<TextInputChangeEventData>`, not a plain string — read the new value from `event.nativeEvent.text`.
 
 ## Related
 

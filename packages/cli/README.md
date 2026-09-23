@@ -4,17 +4,15 @@ BeeUI's source-ownership CLI: copies BeeUI component source and its transitive d
 
 ## Distribution state
 
-**Unpublished:** `@beemvp/beeui-cli` is not currently available from the public npm registry and must not be presented as an available global install or `npx` command. Publication remains owner-gated by issue #254. The supported evaluation path today is the repository-local command, for example `pnpm beeui help` or `pnpm beeui add button`.
-
-After publication is explicitly authorized, the intended global install/invocation shapes are:
+**Public release candidate:** `@beemvp/beeui-cli@0.86.2-rc.2` is published on npm. During RC use the explicit `@next` channel (or pin the exact version):
 
 ```bash
-npm install -g @beemvp/beeui-cli
+npx @beemvp/beeui-cli@next --help
 ```
 
-```bash
-npx @beemvp/beeui-cli add button
-```
+The live registry currently also resolves `latest` to this RC, but the bootstrap publish used `--tag next` and the mechanism that also created the observed `latest` value has not been established. BeeUI therefore documents `@next` as the RC contract; a bare install is not the recommended RC path because `latest` moves to stable at the first deliberate stable promotion.
+
+Repository-local `pnpm beeui ...` remains supported from a source checkout.
 
 ## Usage
 

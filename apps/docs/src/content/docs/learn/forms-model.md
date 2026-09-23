@@ -5,6 +5,8 @@ description: How Field, controls, messages and submit compose — and why valida
 
 BeeUI gives you the **presentation and accessibility wiring of a form** — label, control, description, error, grouping and keyboard-aware layout — while values, validation rules and submission stay entirely in your application.
 
+**Prerequisites:** read [State model](/docs/learn/state-model/) first — this page assumes you already know which values a component holds versus reports back.
+
 ## Why the concept exists
 
 Form libraries are opinionated by nature: they decide when validation runs, what an error is, how async checks resolve and what a submit lifecycle looks like. Those are product decisions, and a UI library that made them would force every consumer onto one form architecture.
@@ -32,6 +34,10 @@ KeyboardAwareScreen        the screen shell: scrolling, keyboard avoidance, meas
 ```tsx
 import * as React from 'react';
 import { Button, Field, Input, KeyboardAwareScreen } from '@beemvp/beeui-ui';
+
+type EmailFormProps = {
+  onSubmit: (email: string) => void;
+};
 
 export function EmailForm({ onSubmit }: EmailFormProps) {
   const [email, setEmail] = React.useState('');

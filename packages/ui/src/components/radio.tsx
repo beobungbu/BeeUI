@@ -2,6 +2,7 @@ import { cn } from '@beemvp/beeui-core';
 import { cva } from 'class-variance-authority';
 import * as React from 'react';
 import { Pressable, View, type PressableProps, type ViewProps } from 'react-native';
+import { useFieldContext } from './field-context';
 import { useFormGroupContext } from './form-group-context';
 import { Text } from './text';
 import { useRequiredCallbackWarning } from './use-required-callback-warning';
@@ -117,7 +118,9 @@ export type RadioProps = Omit<
 export const Radio = React.forwardRef<React.ComponentRef<typeof Pressable>, RadioProps>(
   (
     {
+      accessibilityHint,
       accessibilityLabel,
+      accessibilityLabelledBy,
       accessibilityState,
       checked = false,
       className,
@@ -134,7 +137,29 @@ export const Radio = React.forwardRef<React.ComponentRef<typeof Pressable>, Radi
     const group = React.useContext(RadioGroupContext);
     const isGrouped = group !== null && value !== undefined;
     const resolvedChecked = isGrouped ? group.value === value : checked;
-    const isDisabled = disabled === true || group?.disabled === true;
+    // A standalone Radio (not inside a `RadioGroup`, which already gets its
+    // own Field/FormGroup association) rendered as `Field` `children` with no own
+    // `label`/`accessibilityLabel` picks up the enclosing Field's label
+    // association and hint, matching Checkbox/Input. A grouped Radio ignores this
+    // context — `RadioGroup` itself already owns that association.
+    const fieldContext = useFieldContext();
+    const field = isGrouped ? null : fieldContext;
+    const isDisabled = disabled === true || group?.disabled === true || field?.disabled === true;
+    const hasOwnAccessibleName = accessibilityLabel !== undefined || label !== undefined;
+    const resolvedAccessibilityLabelledBy =
+      accessibilityLabelledBy ?? (hasOwnAccessibleName ? undefined : field?.labelNativeID);
+    const inheritedHint = field
+      ? field.invalid && field.error
+        ? field.error
+        : field.description
+      : undefined;
+    // No hardcoded English "required" copy in the fallback name — only a
+    // caller-supplied, localized `Field.requiredLabel` is appended; otherwise
+    // `required` reaches assistive tech solely through `aria-required` below.
+    const fallbackFieldLabel =
+      !hasOwnAccessibleName && field && field.required && field.requiredLabel
+        ? `${field.label}, ${field.requiredLabel}`
+        : field?.label;
 
     useRequiredCallbackWarning('Radio', 'onCheckedChange', onCheckedChange, isDisabled || isGrouped);
 
@@ -142,7 +167,9 @@ export const Radio = React.forwardRef<React.ComponentRef<typeof Pressable>, Radi
       <Pressable
         ref={ref}
         {...props}
-        accessibilityLabel={accessibilityLabel ?? label}
+        accessibilityHint={accessibilityHint ?? inheritedHint}
+        accessibilityLabel={accessibilityLabel ?? label ?? fallbackFieldLabel}
+        accessibilityLabelledBy={resolvedAccessibilityLabelledBy}
         accessibilityRole="radio"
         accessibilityState={{
           ...accessibilityState,
@@ -153,6 +180,9 @@ export const Radio = React.forwardRef<React.ComponentRef<typeof Pressable>, Radi
         // react-native-web, so `role="radio"` needs the web-native `aria-checked`
         // prop set explicitly to satisfy the required-attribute contract.
         aria-checked={resolvedChecked}
+        // `required` reaches the DOM via `aria-required` rather than
+        // injected text (RN's compound `accessibilityState` has no `required` key).
+        aria-required={field?.required || undefined}
         className={cn('flex-row items-center gap-3 active:opacity-80', className)}
         disabled={isDisabled}
         onPress={() => {

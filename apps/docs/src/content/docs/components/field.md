@@ -8,7 +8,7 @@ description: "Label/description/error composition for text-entry controls; wires
 Label/description/error composition for text-entry controls; wires accessible label and required relationships to text inputs only.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. Stable `latest` was last observed (at `0.86.2-rc.1`) resolving to the RC as well; that observation is re-verified after every publish and is not an npm rule. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Forms & selection
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/field.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/field.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add field
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -45,7 +46,7 @@ The generated API inventory is mechanically joined to `packages/ui/src/index.ts`
 
 ## State and behavior contract
 
-Stateless label/description/error composition; it wires accessible label/required/error relationships only to a wrapped text-entry control (`Input`/`Textarea`) — never to checkbox/radio/switch, which label themselves explicitly.
+Stateless label/description/error composition; it wires accessible label/required/error relationships only to a wrapped text-entry control (`Input`/`Textarea`) — never to checkbox/radio/switch, which label themselves explicitly. `required` never injects an English word into the wrapped control's accessible name by default; it reaches assistive tech only through the control's own aria-required/accessibility-required state. Pass `requiredLabel` to append localized copy (e.g. `"Bắt buộc"`) to the accessible name instead — there is no built-in English or other-language default.
 
 ### Props
 
@@ -62,7 +63,8 @@ Stateless label/description/error composition; it wires accessible label/require
 | `label` **(required)** | `string` | — | The visible text naming this element, and the accessible name unless one is set explicitly. |
 | `labelNativeID` | `string` | — | `nativeID` for the rendered `Label`, used to build `accessibilityLabelledBy` links. Defaults to a generated, stable-per-mount ID. |
 | `required` | `boolean` | `false` | Renders the label with a required indicator and exposes it via `requiredAccessibilityLabel`. Defaults to false. |
-| `requiredAccessibilityLabel` | `string` | `'required'` | Accessible label appended to the field's name when `required` is true (e.g. announced as "Email, required"). Defaults to `'required'`. |
+| `requiredAccessibilityLabel` | `string` | `'required'` | Accessible label appended to the field's name when `required` is true (e.g. announced as "Email, required"). No default — omit to expose `required` only through `aria-required`/`accessibilityRequired` on field-consuming controls, without injecting English copy. |
+| `requiredLabel` | `string` | — | Localized copy appended to the field's accessible name when `required` is true (e.g. `"Email, Bắt buộc"`). No default — omit it to expose `required` only through `aria-required`/`accessibilityRequired` on field-context-aware controls (Checkbox, Radio, Switch), without injecting any English copy. |
 
 Also carries every prop of `Omit<ViewProps, 'children'>` — that upstream contract is not reproduced here.
 
@@ -101,9 +103,9 @@ Colors, spacing and typography come from semantic tokens rather than from values
 ## Executable examples
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/accessibility-readonly.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/accessibility-readonly.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/checkbox-radio-field-form-group-context.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/checkbox-radio-field-form-group-context.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/issue-173-date-picker-native.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-173-date-picker-native.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/issue-173-date-picker-web.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-173-date-picker-web.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/field-label-accessible-name-dedup.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/field-label-accessible-name-dedup.test.tsx)
 
 ### Addressable examples
 
@@ -142,9 +144,16 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1074 lines — where **Field** is actually used: 34 lines in 4 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Field** is actually used: 34 lines in 4 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
-[lines 159–161](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L159-L161):
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Field, Input, OTPInput, PasswordInput, Popover, SearchInput, Sheet, Textarea } from '@beemvp/beeui-ui';
+import * as React from 'react';
+````
+
+[lines 160–162](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L160-L162):
 
 ````tsx
           <Field label="Note">
@@ -152,7 +161,14 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
           </Field>
 ````
 
-[lines 595–619](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L595-L619):
+Fixture state this block reads (same file, lines 460, 463):
+
+````tsx
+  const [notifications, setNotifications] = React.useState(true);
+  const [otp, setOtp] = React.useState('');
+````
+
+[lines 596–620](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L596-L620):
 
 ````tsx
               <Field description="Used only for account notifications." label="Email" required testID="component-gallery-field">
@@ -182,7 +198,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
               </Field>
 ````
 
-[lines 693–695](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L693-L695):
+[lines 700–702](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L700-L702):
 
 ````tsx
                       <Field label="Project name">
@@ -190,7 +206,7 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                       </Field>
 ````
 
-[lines 730–732](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L730-L732):
+[lines 737–739](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L737-L739):
 
 ````tsx
                     <Field label="Search">
@@ -198,10 +214,10 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                     </Field>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
-Checkbox/radio/switch labelling stays explicit at the control/group level.
+Checkbox/radio/switch labelling stays explicit at the control/group level. The older `requiredAccessibilityLabel` prop still works if set explicitly, but is deprecated in favor of `requiredLabel`.
 
 ## Related
 

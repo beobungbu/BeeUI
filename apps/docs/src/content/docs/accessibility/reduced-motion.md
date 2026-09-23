@@ -14,4 +14,8 @@ same policy.
 
 The public landing also respects the browser `prefers-reduced-motion` preference.
 
+**Prerequisites:** a device/OS with "Reduce motion" enabled (iOS/Android accessibility
+settings) or a browser with `prefers-reduced-motion: reduce` set, and a BeeUI screen that
+triggers an overlay or transition to compare against.
+
 Canonical source: [reduced-motion acceptance matrix](https://github.com/beobungbu/BeeUI/blob/main/docs/reduced-motion-acceptance-matrix.md) and [motion contract](https://github.com/beobungbu/BeeUI/blob/main/docs/motion.md).

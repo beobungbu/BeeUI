@@ -8,7 +8,7 @@ description: "Persistent single string-value selection with anchored option surf
 Persistent single string-value selection with anchored option surface and listbox semantics on Web.
 
 :::note[Distribution status]
-BeeUI packages and the public CLI remain unpublished. The import shape below is the stable public package boundary used by workspace/packed-consumer verification; use the repository-local Registry command only from a BeeUI checkout until publication is explicitly authorized.
+BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. Stable `latest` was last observed (at `0.86.2-rc.1`) resolving to the RC as well; that observation is re-verified after every publish and is not an npm rule. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -16,6 +16,7 @@ BeeUI packages and the public CLI remain unpublished. The import shape below is 
 - **Category:** Forms & selection
 - **Status:** stable public Registry/export-map component family
 - **Targets:** iOS · Android · Web, subject to the [compatibility contract](/docs/compatibility/)
+- **Prerequisites:** `@beemvp/beeui-ui` installed (or this component's source copied via the Registry CLI below) and, on Web, the BeeUI Tailwind/Uniwind theme CSS loaded — see [Start](/docs/start/) for full platform setup.
 - **Source:** [`packages/ui/src/components/select.tsx`](https://github.com/beobungbu/BeeUI/blob/main/packages/ui/src/components/select.tsx)
 
 ## Import
@@ -30,7 +31,7 @@ There is no documented deep/private source import. For source ownership from a B
 pnpm beeui add select
 ```
 
-Registry metadata: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
+**Registry** (used throughout this page) is BeeUI's source-ownership manifest — [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json) — that the `pnpm beeui`/`@beemvp/beeui-cli` CLI reads to copy a component's real source into your app and rewrite its internal imports; it is not an npm package index. This component's own Registry entry: [`registry/registry.json`](https://github.com/beobungbu/BeeUI/blob/main/registry/registry.json).
 
 ## Composition and public API
 
@@ -67,11 +68,12 @@ Controlled (`value`/`onValueChange`) or uncontrolled (`defaultValue`) persistent
 | `collisionPadding` | `SelectCollisionPadding` | `8` | Minimum distance to keep from the viewport edges when the kernel repositions or flips the overlay. A number applies to every edge; an object sets edges individually. |
 | `direction` | `SelectDirection` | — | Logical direction used to resolve `align`/`placement` for RTL layouts. Defaults to the app's resolved layout direction. |
 | `flip` | `boolean` | `true` | Flips `placement` to the opposite side of the trigger when there is not enough room. Defaults to true. |
+| `listProps` | `Omit<ViewProps, 'children'>` | — | Forwarded to the internal `View` that wraps the options on Web — a plain overflow `View` there, not a `ScrollView` (see `#612` and `scrollViewProps` below), so this is typed to what a `View` actually honours. Excludes `children`, which this component owns. No effect on native — see `scrollViewProps` for that host. |
 | `maxHeight` | `number` | — | Caps the listbox's height; clamped to at least 96 and to the available viewport space. Defaults to 320. |
 | `outsidePressProps` | `Omit<PressableProps, 'children' \| 'onPress' \| 'style'>` | — | Forwarded to the outside-press dismiss layer, excluding `children`/`onPress`/`style`, which this component owns. |
 | `outsidePressTestID` | `string` | — | `testID` applied to the outside-press dismiss layer, for targeting it in tests. |
 | `placement` | `SelectPlacement` | `'bottom'` | Which side of the trigger the listbox opens on. Defaults to `'bottom'`. |
-| `scrollViewProps` | `Omit<ScrollViewProps, 'children'>` | — | Forwarded to the internal `ScrollView` that wraps the options, excluding `children`, which this component owns. |
+| `scrollViewProps` | `Omit<ScrollViewProps, 'children'>` | — | Forwarded to the internal `ScrollView` that wraps the options on native, excluding `children`, which this component owns. On Web the host is a plain overflow `View` (#612); for migration compatibility View-compatible fields are still forwarded there, with `listProps` winning conflicts. A dev warning asks Web consumers to migrate; ScrollView-only fields have no Web meaning. |
 | `shift` | `boolean` | `true` | Shifts the listbox along the trigger's edge to stay within the viewport instead of overflowing. Defaults to true. |
 | `sideOffset` | `number` | `6` | Pixels of gap between the anchor and the overlay, along the placement side. |
 
@@ -248,6 +250,19 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/select-showcase.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/select-showcase.tsx), 311 lines — where **Select** is actually used: 64 lines in 6 places, of 10 in total — open the fixture for the remaining 4. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
+Imports the examples below need (a filtered subset of the fixture's own top-level imports):
+
+````tsx
+import { Dialog, Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue, Text } from '@beemvp/beeui-ui';
+import * as React from 'react';
+````
+
+Fixture state this block reads (same file, line 41):
+
+````tsx
+  const [rootSelectOpen, setRootSelectOpen] = React.useState(false);
+````
+
 [lines 57–64](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/select-showcase.tsx#L57-L64):
 
 ````tsx
@@ -259,6 +274,12 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
           <SelectItem value="root">Root option</SelectItem>
         </SelectContent>
       </Select>
+````
+
+Fixture state this block reads (same file, line 40):
+
+````tsx
+  const [dialogSelectOpen, setDialogSelectOpen] = React.useState(false);
 ````
 
 [lines 73–80](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/select-showcase.tsx#L73-L80):
@@ -310,6 +331,15 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                 </Select>
 ````
 
+Fixture state this block reads (same file, lines 27, 29-31):
+
+````tsx
+const SelectConsumerContext = React.createContext('select-context-default');
+function SelectContextProbe({ testID }: { testID: string }) {
+  return <Text testID={testID}>{`context: ${React.useContext(SelectConsumerContext)}`}</Text>;
+}
+````
+
 [lines 202–212](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/select-showcase.tsx#L202-L212):
 
 ````tsx
@@ -342,10 +372,12 @@ These are the parts of the typechecked **runtime Showcase fixture behind this li
                 </Select>
 ````
 
-Open the fixture itself for the surrounding imports and state. For a smaller app-specific example, start from the public imports shown above and keep only the state your screen owns.
+Open the fixture itself for the full surrounding component. For a smaller app-specific example, start from the imports and fixture-state blocks above and keep only the state your screen owns.
 ## Limitations
 
 - Passing `open` without `onOpenChange` leaves the value read-only: the component renders what you passed and can never change it. It warns in development builds rather than failing silently in production.
+
+**Implementation note:** Rendering a `Select` inside a `Popover` is supported: the two share the same anchored-overlay runtime and dismiss/collision handling, so the listbox opens above the popover rather than being clipped or hidden behind it.
 
 ## Related
 
