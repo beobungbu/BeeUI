@@ -1,28 +1,31 @@
 # BeeUI release candidate authority
 
-> **Status:** `0.86.2-rc.2` is the frozen current release candidate (not yet published); `0.86.2-rc.1` is the published first candidate on npm under `next`.
+> **Status:** `0.86.2-rc.2` is the current published BeeUI release candidate.
 >
 > **Stable package line:** `0.86.2` (ADR-015).
 >
-> **Prerelease channel:** `0.86.2-rc.N` → `next` only after explicit owner authorization (`stage-rc` + npm 2FA approval for rc.2 and later).
+> **Prerelease channel:** `0.86.2-rc.N` → `next`; `latest` is not the RC channel.
 
-This file is the human release-candidate authority for BeeUI. It intentionally does **not** reuse the historical `5cb061f` / `0.1.0` evidence set: that candidate predates ADR-015 and later package/runtime fixes and is not publishable as the current package set.
+This file records the immutable source candidate, its integration/promotion lineage, the publication workflow identity and the observed npm registry result. Those identities are deliberately separate: registry integrity proves published bytes, while Git/GitHub evidence proves the release lineage.
 
-## Frozen candidate — `0.86.2-rc.2`
+## Current published candidate — `0.86.2-rc.2`
 
-The second current-line RC is frozen from exact verified source SHA:
+### Release lineage
 
-- candidate source SHA: `a58d8b83977f364bb141351f86b61e8b477602bd`;
-- lockstep package version: `0.86.2-rc.2`;
-- PR: #622 (`release/0.86.2-rc.2` → `development`);
-- integration merge SHA and ancestry-only `main` sync SHA: recorded here once the reviewer merges the PR and the `main` sync lands;
-- the evidence-only commit that adds this section changes no package/runtime contents relative to the candidate tree.
+| Identity | SHA / run | Meaning |
+| --- | --- | --- |
+| candidate source | `a58d8b83977f364bb141351f86b61e8b477602bd` | exact source tree frozen and verified before release-prep-only changes |
+| release-prep branch head | `3a5b30d85d3b43d707c2d0171a2a672e1541614c` | PR #622 head with release metadata/version preparation |
+| `development` integration | `292b0a7bc773d76a03c3e86fe44ba64c65f84531` | merge of #622 into `development` |
+| `main` promotion / workflow SHA | `cd07c671a0814cdcf8a9809fa1c414276acf5bdc` | merge of #624 and exact `GITHUB_SHA` used by the npm workflow |
+| npm release workflow | run `35846285677` | `stage-rc`; preflight and staging both passed |
+| registry observation | run `35848833210` | read-only post-publication `npm view` observation |
 
-Any package/CLI/registry/token source change after this freeze invalidates `0.86.2-rc.2` and requires a new `rc.N`. Evidence-only documentation may describe this frozen source candidate without changing the candidate package contents.
+PR #624 was the reviewed `development` → `main` promotion. The release workflow was dispatched from the exact promoted `main` SHA above.
 
-### Release artifact identity
+### Candidate artifact identity
 
-`pnpm release:verify` passed for the exact candidate source and recorded these fresh `pnpm pack` artifacts (canonical + reproducible):
+`pnpm release:verify` passed for the frozen candidate and recorded these canonical/reproducible candidate tarballs:
 
 | Package | Tarball | Bytes | SHA-256 |
 | --- | --- | ---: | --- |
@@ -31,137 +34,90 @@ Any package/CLI/registry/token source change after this freeze invalidates `0.86
 | `@beemvp/beeui-ui` | `beemvp-beeui-ui-0.86.2-rc.2.tgz` | 974,335 | `e12143818eeff8da271a24d08cf310f57eacef9c35fd3b036616b2c9d679ec7c` |
 | `@beemvp/beeui-cli` | `beemvp-beeui-cli-0.86.2-rc.2.tgz` | 269,202 | `64c0a2d8d39ef40bfa5b11790edbc5875c05c335a788809e173f27538ffe3aec` |
 
-The verifier again proved the packed manifests contain no unresolved `workspace:` protocol, package exports resolve to shipped files (including the new `./toolbar` subpath), the four tarballs install into a clean consumer, the CLI binary executes `help` and `list`, and the package set does not pull the Expo runtime.
+These candidate SHA-256 values are source/release-verification evidence. They are not a substitute for npm's post-publication `dist.integrity`/`dist.shasum` evidence below.
+
+The verifier also proved that packed manifests contain no unresolved `workspace:` protocol, package exports resolve to shipped files, all four tarballs install into a clean consumer, the CLI binary executes `help` and `list`, and the package set does not pull the Expo runtime.
+
+### Publication path
+
+`0.86.2-rc.2` used the steady-state protected staged-publishing path:
+
+1. GitHub Actions run `35846285677` ran `stage-rc` from `main@cd07c671a0814cdcf8a9809fa1c414276acf5bdc`.
+2. `preflight` verified the exact workflow SHA, lockstep version and release control plane.
+3. The protected GitHub `release` environment was approved.
+4. The workflow used npm Trusted Publishing/OIDC and `npm stage publish --access public --tag next --provenance` sequentially for `core` → `tokens` → `ui` → `cli`.
+5. The owner approved the npm staged packages; this npm-side proof-of-presence gate is distinct from the GitHub Environment approval.
+6. Read-only registry observation then verified the public package metadata and dist-tags.
+
+Stage IDs:
+
+| Package | npm stage ID |
+| --- | --- |
+| `@beemvp/beeui-core` | `b6399036-e1bb-466a-adbf-8aa4be1fad31` |
+| `@beemvp/beeui-tokens` | `0b773fcb-3a46-48f8-a91d-bb67d2bbe243` |
+| `@beemvp/beeui-ui` | `06f1d318-fabe-4ceb-ab57-ba041ce8d8b5` |
+| `@beemvp/beeui-cli` | `24ba08d3-7be1-4639-8d2f-0ba39a8c89bf` |
+
+### Observed npm registry evidence
+
+The following values were read from the live npm registry in read-only GitHub Actions run `35848833210` on 2026-09-23. The temporary probe workflow was removed after the observation; it is not part of the release control plane.
+
+| Package | `dist.integrity` | `dist.shasum` | `dist.unpackedSize` | `next` | `latest` |
+| --- | --- | --- | ---: | --- | --- |
+| `@beemvp/beeui-core@0.86.2-rc.2` | `sha512-8xoWK9xJl4u4Zz0c0oyBc/yOk7F4HdhmL0QnE4gUYTfLrndMwjUSqoixrckmD9qAE6FTkt0+8DGnjEcQx92wrQ==` | `a7ca1d97232de11833022c8f57696b8828a007ec` | 151022 | `0.86.2-rc.2` | `0.86.2-rc.1` |
+| `@beemvp/beeui-tokens@0.86.2-rc.2` | `sha512-2Q3F7FIg+Vw97+FOC2hUBmZi9vfTsGfcbvEAO9IjB4RDve0Yrx8OTHjpYH+L3SYgoeOqnsfcN5sHxzvJxIvlhw==` | `8a615875d64e0e8a9f9c9a3418b1caa576db5189` | 591567 | `0.86.2-rc.2` | `0.86.2-rc.1` |
+| `@beemvp/beeui-ui@0.86.2-rc.2` | `sha512-R+7fNTmg/yF28CYkRbJZNL/ynjHBxyijU3/K8Bdl1+AyYZ0YCYgDQvQY8h3q5PauPRqcmWK2dTaW8tg5n8yXPw==` | `31c500ac9105fade1040b8181f1a638eb7341311` | 3981958 | `0.86.2-rc.2` | `0.86.2-rc.1` |
+| `@beemvp/beeui-cli@0.86.2-rc.2` | `sha512-3x5AOpVc7UYLZQzIFrFCjtDTnUO13Po/8peLHHdi5G5LsasVDFvwY0vOBC1HdFFbe66CtcVtdWXnLES53FLktQ==` | `d7b5bb184ebd5cfc0c914012484b90c6789c259a` | 1078532 | `0.86.2-rc.2` | `0.86.2-rc.1` |
+
+All four registry entries reported repository URL `git+https://github.com/beobungbu/BeeUI.git`.
+
+The observed public state is therefore complete, not `partial-publication`: all four package versions exist and all four `next` tags agree on `0.86.2-rc.2`.
 
 ### Exact-head CI evidence
 
-For candidate SHA `a58d8b83977f364bb141351f86b61e8b477602bd` (pull request #622 run):
+The rc.2 release-prep/promotion path completed the required package, docs, Web, accessibility, clean-consumer and native compile gates before publication. The npm release workflow then reran the release control-plane checks and `pnpm release:verify` at the exact publication workflow SHA.
 
-- primary `ci` workflow: **PASS** (full-CI lanes selected by the manifest bump);
-- aggregate `verify` fan-in: **PASS**;
-- `verify-fast`, `verify-docs`, `verify-runtime`, `verify-release`, `verify-tokens`, `verify-benchmark`: **PASS**;
-- bare React Native consumer bundle (`bare-consumer`): **PASS**;
-- Android native compile (`android-native`, both jobs): **PASS**;
-- iOS native compile for Showcase and bare consumer (`ios-native`, both jobs): **PASS**;
-- Expo consumer workflow: **PASS**;
-- Web consumer workflow: **PASS**;
-- Web accessibility workflow: **PASS**;
-- visual Web workflow (`visual-web-report`): **PASS**;
-- public BeeUI Web workflow (`build-and-local-smoke`): **PASS**.
+Runtime workflows that were skipped by their own change/schedule/label contract remain skipped evidence, not passes. The iOS `pageSheet` / `formSheet` presentation surface remains **EXPERIMENTAL** under the existing native-evidence contract.
 
-The separate `native-runtime-smoke` workflow and the label-gated `android-runtime` / `ios-runtime` / `visual-web-full` jobs were skipped by their own change/label contracts; this is not treated as a pass.
+## Previous candidate — `0.86.2-rc.1` (historical bootstrap)
 
-`beeui-environment-ci` (`pnpm typecheck` + `pnpm test`) runs only on push to `development`; its result for the integration merge is recorded here after the merge. Locally, `pnpm typecheck` and `pnpm test` passed on the candidate tree before the PR was opened (`pnpm typecheck` exit 0; `pnpm test` exit 0 with 1010 node:test cases and 0 failures).
-
-### Publication / provenance state
-
-At freeze time:
-
-- `0.86.2-rc.1` is published under `next` (bootstrap path, 2026-09-09); the bootstrap token path is retired for subsequent RCs;
-- `stage-rc` is the publication path for this candidate: `operation=stage-rc`, `expected_version=0.86.2-rc.2`, `confirmation=BEEUI_RC_RELEASE`, dispatched on `main`, staging all four packages under `next` through Trusted Publishing/OIDC, each approved by the owner with npm 2FA;
-- the live registry was last observed (at `0.86.2-rc.1`) resolving `latest` to the RC as well; that observation must be re-verified after the rc.2 staged publish is approved and the dist-tag policy, README, and generated surfaces updated if it changed;
-- no package version or dist-tag for `0.86.2-rc.2` exists on the registry at freeze time.
-
-Registry mutation remains blocked until the repository owner explicitly dispatches and approves it.
-
-### Experimental / quarantined runtime dimension
-
-The iOS `pageSheet` / `formSheet` presentation surface remains **EXPERIMENTAL** for the 1.0 product milestone. Native runtime smoke for `Sheet` is wired for iOS only; Android smoke and a real-device run of the #584 fix remain open.
-
-## Previous candidate — `0.86.2-rc.1` (published)
-
-### Frozen candidate record — `0.86.2-rc.1`
-
-The first current-line RC is frozen from exact verified source SHA:
+`0.86.2-rc.1` remains public but is no longer the `next` target. Its lineage is retained because the one-time bootstrap publication used a different authorization path:
 
 - candidate source SHA: `58d038dfd63267a0760b6eb1b5749e96939edb28`;
-- lockstep package version: `0.86.2-rc.1`;
-- PR: #528 (`release/0.86.2-rc.1` → `development`);
-- integration merge SHA: `0b46eac123a91e509570380124f400aa27369822`;
-- ancestry-only `main` sync SHA: `11c357188282d0d872902b0b5bf4b82e9568000d` via #529;
-- #529 changed zero files; neither integration commit changed package/runtime contents relative to the verified candidate tree.
+- `development` integration SHA: `0b46eac123a91e509570380124f400aa27369822`;
+- ancestry-only main sync from the original candidate path: `11c357188282d0d872902b0b5bf4b82e9568000d` via #529;
+- actual bootstrap publish workflow SHA: `ddf415b0d665c14e1b154bb02570a906585b4b98`;
+- publish workflow run: `34294238899`, job `bootstrap-rc`;
+- transport: temporary environment-scoped `NPM_BOOTSTRAP_TOKEN` plus provenance.
 
-Any package/CLI/registry/token source change after this freeze invalidates `0.86.2-rc.1` and requires a new `rc.N`. Evidence-only documentation may describe this frozen source candidate without changing the candidate package contents.
+The candidate source SHA and the later workflow/publish SHA must not be collapsed into one value. `ddf415b0...` proves which repository state the publish workflow checked out; it does not retroactively redefine the original candidate source SHA.
 
-### Release artifact identity
-
-`pnpm release:verify` passed for the exact candidate source and the retained release-verification report recorded these fresh `pnpm pack` artifacts:
-
-| Package | Tarball | Bytes | SHA-256 |
-| --- | --- | ---: | --- |
-| `@beemvp/beeui-core` | `beemvp-beeui-core-0.86.2-rc.1.tgz` | 26,727 | `e136d987d4742d1aef21c441a01ee855c74f66d5cb03457683d9cea58d34944a` |
-| `@beemvp/beeui-tokens` | `beemvp-beeui-tokens-0.86.2-rc.1.tgz` | 101,225 | `3c775837fd28299df5b35d47e5f18781bb61a2edc0254d57a0320ba61507a65a` |
-| `@beemvp/beeui-ui` | `beemvp-beeui-ui-0.86.2-rc.1.tgz` | 554,388 | `75b89707af5860dd8a5ae3bf025f13e02ae48a226869fa1bb51b6936ea7aa32b` |
-| `@beemvp/beeui-cli` | `beemvp-beeui-cli-0.86.2-rc.1.tgz` | 201,500 | `c53404a57528c5c6e936cbf604b54e40bece773b3b70dbb2c390468c02122d5e` |
-
-The verifier also proved the packed manifests contain no unresolved `workspace:` protocol, package exports resolve to shipped files, the four tarballs install into a clean consumer, the CLI binary executes `help` and `list`, and the package set does not pull the Expo runtime.
-
-### Exact-head CI evidence
-
-For candidate SHA `58d038dfd63267a0760b6eb1b5749e96939edb28`:
-
-- primary `ci` workflow: **PASS**;
-- aggregate `verify` fan-in: **PASS**;
-- `verify-fast`: **PASS**;
-- `verify-docs`: **PASS**;
-- `verify-runtime`: **PASS**;
-- `verify-release`: **PASS**;
-- `verify-tokens`: **PASS**;
-- `verify-benchmark`: **PASS**;
-- bare React Native consumer bundle: **PASS**;
-- Android native compile: **PASS**;
-- iOS native compile for Showcase and bare consumer: **PASS**;
-- Expo consumer workflow: **PASS**;
-- Web consumer workflow: **PASS**;
-- Web accessibility workflow: **PASS**;
-- visual Web workflow: **PASS**;
-- public BeeUI Web workflow: **PASS**.
-
-The separate `native-runtime-smoke` workflow was skipped by its own change/schedule contract; this is not treated as a pass. Runtime/device dimensions that require scheduled/live-device evidence remain governed by `docs/rc-ci-matrix.md` and the experimental/quarantine rules below.
-
-### Publication / provenance state
-
-At freeze time:
-
-- npm scope `@beemvp` exists and the owner account has 2FA enabled;
-- GitHub `release` environment exists with owner review protection;
-- the RC workflow is manual-only and registry mutation is restricted to `main`;
-- package manifests request public access and provenance;
-- first publication uses `bootstrap-rc` with the temporary environment-scoped `NPM_BOOTSTRAP_TOKEN` under `next`;
-- after packages exist, each package still needs its npm Trusted Publisher binding to `beobungbu/BeeUI`, workflow `npm-release.yml`, environment `release` before `stage-rc` can replace the bootstrap path;
-- the temporary bootstrap token must then be revoked and removed;
-- no package or dist-tag has been created or moved yet.
-
-Registry mutation remains blocked until the repository owner explicitly authorizes publication under issue #254.
-
-### Experimental / quarantined runtime dimension
-
-The iOS `pageSheet` / `formSheet` presentation surface remains **EXPERIMENTAL** for the 1.0 product milestone. Compile and deterministic evidence do not claim full live-device placement/swipe parity. Its quarantine does not convert unverified device behavior into a pass.
+The bootstrap-token path is historical. Later RCs use Trusted Publishing/OIDC staged publishing.
 
 ## Superseded evidence
 
-The former candidate at `5cb061f60df312e04036c1f6108ef0f099307bd9` proved an earlier release-verification path, but its tarballs encoded the old `0.1.0` package version. It remains useful only as historical evidence. It MUST NOT be published, promoted, or described as the current BeeUI npm candidate.
+The former candidate `5cb061f60df312e04036c1f6108ef0f099307bd9` encoded the old `0.1.0` package version and is historical only. The later date-version proposal `20260902.0.0` was never published and is superseded by ADR-015.
 
-The later date-version proposal `20260902.0.0` was also never published and is superseded by ADR-015. BeeUI 1.0 is the product milestone name; the stable npm package version is `0.86.2`.
+BeeUI 1.0 is the product milestone name; the stable npm version for this line is `0.86.2`.
 
 ## Candidate-freeze rule
 
-A public prerelease candidate is frozen only after all of the following are true on one reviewed source candidate:
+A new public prerelease candidate is frozen only when:
 
-1. the release-control-plane and package manifests agree on one lockstep `0.86.2-rc.N` version;
-2. `pnpm release:verify` passes from that exact source;
-3. release-equivalent tarballs are rebuilt from source and their SHA-256 values are retained;
-4. required Web, clean-consumer, Android/native compile and iOS/native evidence is green for the exact candidate or explicitly classified by the release contract;
-5. `CHANGELOG.md`, migration/support documentation, distribution policy and npm workflow all describe the same version authority;
-6. no superseded package scope or old package-version authority remains in an active release path;
-7. registry mutation remains separately gated by explicit owner authorization.
+1. one exact candidate source is identified;
+2. the package set has one lockstep `0.86.2-rc.N` version;
+3. `pnpm release:verify` passes and canonical candidate artifact digests are retained;
+4. required CI evidence is green or explicitly classified by the release contract;
+5. release-prep, integration, main-promotion and workflow identities remain separately traceable;
+6. owner authorization remains separate from technical readiness;
+7. after publication, real registry metadata and dist-tags are observed rather than inferred.
 
 ## Publication channels
 
-- `0.86.2-rc.N` → `next` only.
-- stable `0.86.2` is staged under `next`, verified as a complete four-package set, then promoted to `latest` only by the owner after verification.
-- package publication order is `core` → `tokens` → `ui` → `cli`.
-- npm package versions are immutable; never attempt to overwrite an already-published version.
+- `0.86.2-rc.N` → `next`.
+- stable `0.86.2` is staged/verified as a complete set before owner-controlled promotion to `latest`.
+- package staging order is `core` → `tokens` → `ui` → `cli`.
+- npm package versions are immutable; never overwrite an already-published version.
 
 ## Current package set
 
@@ -169,8 +125,6 @@ A public prerelease candidate is frozen only after all of the following are true
 - `@beemvp/beeui-tokens`
 - `@beemvp/beeui-ui`
 - `@beemvp/beeui-cli` (`beeui` binary)
-
-All four release together on one lockstep version.
 
 ## References
 
@@ -180,5 +134,3 @@ All four release together on one lockstep version.
 - `docs/beeui-1.0-owner-gates.md`
 - `docs/rc-ci-matrix.md`
 - `docs/rollback-runbook.md`
-- issue #205
-- issue #254
