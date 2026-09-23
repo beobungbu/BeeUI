@@ -95,9 +95,9 @@ Colors, spacing and typography come from semantic tokens rather than from values
 ## Executable examples
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/input-line-height-follows-font-size.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/input-line-height-follows-font-size.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/input-placeholder-colour-web-theme-variable.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/input-placeholder-colour-web-theme-variable.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/input-value-accessibility-and-search-slot.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/input-value-accessibility-and-search-slot.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/issue-7-runtime-a11y.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-runtime-a11y.test.tsx)
-- **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
 
 ### Addressable examples
 

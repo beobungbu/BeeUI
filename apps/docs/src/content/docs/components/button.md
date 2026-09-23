@@ -112,8 +112,8 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/app-header-large-text.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/app-header-large-text.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/button-label-variant-inheritance-and-wrap.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/button-label-variant-inheritance-and-wrap.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/button-label-wrap-alignment.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/button-label-wrap-alignment.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/dynamic-type-contract.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/dynamic-type-contract.test.tsx)
 
 ### Addressable examples
 
