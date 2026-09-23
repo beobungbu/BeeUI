@@ -8,7 +8,7 @@
 
 1. Correct the rc.1 provenance record without collapsing distinct SHAs:
    - keep the original verified candidate/source SHA `58d038dfd63267a0760b6eb1b5749e96939edb28` as historical candidate evidence;
-   - record the `main` promotion/publish-run SHA separately. PR #538 merged to `main` as `ddf415b0d665c14e1b154bb02570a906585b4b98`; call it the publish SHA only if the actual npm workflow run/provenance proves publication ran from that SHA;
+   - record the `main` promotion/publish-run SHA separately. PR #538 merged to `main` as `ddf415b0d665c14e1b154bb02570a906585b4b98`; call it the publish SHA only if the actual npm workflow run/provenance proves publication ran from that SHA. The pipeline audit already found that proof: `npm-release.yml` run `34294238899` (job `bootstrap-rc`, 2026-09-09) executed on `main@ddf415b0…` with the exact-SHA checkout guard, so cite that run id in the record;
    - record registry `dist.integrity`, `dist.shasum` and unpacked size for all four packages;
    - where available, link/record npm provenance or the GitHub release workflow run so commit provenance is not inferred from npm integrity alone.
 2. Preserve the old `58d038d` candidate table under a clear historical/frozen-candidate heading; do not rewrite history to pretend candidate SHA and promotion SHA are the same.

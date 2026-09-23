@@ -45,6 +45,7 @@ After the migration gate is accepted (or when the next release line begins):
 - use the reviewed/pinned Changesets Action with:
   - `version-script: pnpm release:version`;
   - no `publish-script`;
+  - `create-github-releases: false` and `push-git-tags: false` set explicitly (both default to `true` in the action; they only act after a publish step, but the bot workflow must never be one edit away from creating Changesets per-package tags that Phase 03C rejects);
   - least-privilege `contents: write` and `pull-requests: write` only in this workflow;
 - the standing PR is “Version Packages (rc)” while pre mode is active;
 - merging the bot PR performs the source/version bump only. npm mutation remains separate.

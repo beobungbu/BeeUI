@@ -43,7 +43,16 @@ Create `scripts/release-status-lib.mjs` with:
 - renderers for markdown/plain/Astro inputs;
 - no network access.
 
-Consumers include generated component notes, llms output, README generated block, package/example README status blocks where retained, Starlight `<ReleaseStatus />`, release-state JSON and worker build identity.
+Consumers include generated component notes, llms output, README generated block, package/example README status blocks where retained, the Starlight release-status surface, release-state JSON and worker build identity.
+
+### Starlight surface: override, not per-page components
+
+The hand-authored Starlight pages are all `.md` (`apps/docs/src/content/docs/{start,guides,ai,theming,release-security}/*.md`, `index.md`); a `.md` page cannot render an Astro component inline. Two viable routes, in order of preference:
+
+1. **Starlight `components` override (preferred).** `apps/docs/astro.config.mjs` already overrides `Head` with `src/components/SearchFilterHead.astro`; add a second override (e.g. `PageTitle` or `Banner`) that renders the release status from `release-state.json` when the page frontmatter sets `releaseStatus: true`. The 13 pages lose their hand-written paragraph and gain one frontmatter flag; no page becomes MDX and no `*.md` glob in the check scripts changes.
+2. **Rename to `.mdx`.** Starlight bundles `@astrojs/mdx` (7.0.8 in the lockfile), so `<ReleaseStatus />` works after renaming the 13 files. Costs: every script that walks `*.md` under `apps/docs/src/content/docs` (`public-guide-data.mjs`, `check-public-doc-truth.mjs` walker, public-surface ownership page scans, `ci-scope` doc rules) must accept `.mdx`, and link/route checks must be re-run.
+
+Pick route 1 unless a page needs the status inline mid-body.
 
 Every public registry sentence includes the observation date/time or links to a release-state surface that does.
 
