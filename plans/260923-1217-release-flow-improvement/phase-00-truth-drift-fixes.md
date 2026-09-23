@@ -1,17 +1,22 @@
-# Phase 00 — truth drift that is wrong today (docs only)
+# Phase 00 — fix truth drift that is wrong today
 
-**Context:** `reports/scout-release-pipeline-and-process-docs-report.md` §2, §4, §7 items 1, 3, 4, 10; `reports/scout-version-literal-inventory-and-ci-scope-report.md` §1(d).
-**When:** after PR #622 (rc.2 candidate) merges, so `docs/rc-candidate.md` edits do not conflict.
-**Size:** S. No code, no workflow.
+**Context:** audit reports §2/§4/§7 and the literal inventory.
+**When:** after PR #622 merges, so rc.2 evidence edits do not conflict.
+**Size:** S. Docs/evidence only; no release workflow behavior changes.
 
 ## Requirements
 
-1. `docs/rc-candidate.md` rc.1 record states the SHA that was actually published (`ddf415b0d665c14e1b154bb02570a906585b4b98`, PR #538) and the digests of the artifacts on the registry, not the `58d038d` tree. Obtain digests with `npm view @beemvp/beeui-<pkg>@0.86.2-rc.1 dist.integrity dist.shasum dist.unpackedSize --json` and record `integrity`; keep the `58d038d` table under a "superseded pre-hardening candidate" heading so history is not erased.
-2. `docs/rc-candidate.md` status banner and "Publication / provenance state" for rc.1 describe the post-publish state (already partially done in #622; verify).
-3. `CONTRIBUTING.md` and `docs/beeui-1.0-owner-gates.md` no longer describe the repository as unpublished/private; publication is owner-gated per operation, not forbidden.
-4. `docs/rc-ci-matrix.md` moves to `docs/archive/` (or gets a top-of-file "superseded, do not use" block plus removal from any index) and `docs/release.md` stops linking it as current.
-5. `docs/npm-release-bootstrap.md` "Subsequent RCs" describes the real sequence: release branch → PR into `development` → ancestry-only or promote PR into `main` (iterate until artifact determinism is green) → dispatch `stage-rc` → owner 2FA → registry observation → evidence commit.
-6. `CONTRIBUTING.md` local setup lists GNU tar as a requirement for `pnpm release:verify` on macOS (`brew install gnu-tar`, PATH note), matching `scripts/release/add-artifact-digests.mjs:213-224`.
+1. Correct the rc.1 provenance record without collapsing distinct SHAs:
+   - keep the original verified candidate/source SHA `58d038dfd63267a0760b6eb1b5749e96939edb28` as historical candidate evidence;
+   - record the `main` promotion/publish-run SHA separately. PR #538 merged to `main` as `ddf415b0d665c14e1b154bb02570a906585b4b98`; call it the publish SHA only if the actual npm workflow run/provenance proves publication ran from that SHA;
+   - record registry `dist.integrity`, `dist.shasum` and unpacked size for all four packages;
+   - where available, link/record npm provenance or the GitHub release workflow run so commit provenance is not inferred from npm integrity alone.
+2. Preserve the old `58d038d` candidate table under a clear historical/frozen-candidate heading; do not rewrite history to pretend candidate SHA and promotion SHA are the same.
+3. Verify the rc.1 status banner and publication/provenance section describe the current post-publish state.
+4. Update `CONTRIBUTING.md` and `docs/beeui-1.0-owner-gates.md`: the repository is public/published, while registry mutation remains owner-gated per operation.
+5. Move `docs/rc-ci-matrix.md` under `docs/archive/` or add a top-of-file superseded banner and remove it from current indexes.
+6. Update `docs/npm-release-bootstrap.md` “Subsequent RCs” to the real sequence: release branch → PR to `development` → promotion/sync to `main` → explicit `stage-rc` dispatch → release-environment/2FA approval → registry observation → evidence update.
+7. Document the GNU tar requirement for local `pnpm release:verify` on macOS, matching the deterministic artifact script.
 
 ## Files
 
@@ -19,17 +24,19 @@ Modify: `docs/rc-candidate.md`, `CONTRIBUTING.md`, `docs/beeui-1.0-owner-gates.m
 
 ## Steps
 
-1. Query registry digests (read-only `npm view`); paste into the rc.1 record.
-2. Edit the six docs; keep every historical sentence, change only the claims that are false today.
-3. Run `pnpm docs:public-truth:check`, `pnpm docs:surface:check`, `pnpm dist-policy:check`, `pnpm release-control-plane:check` (all read some of these files).
-4. PR into `development`; docs lane only.
+1. Collect read-only registry metadata for rc.1 and the authoritative publication workflow/provenance record.
+2. Edit the docs so candidate source, integration/promotion and publish provenance are separate fields.
+3. Run `pnpm docs:public-truth:check`, `pnpm docs:surface:check`, `pnpm dist-policy:check`, `pnpm release-control-plane:check`.
+4. Open/merge a docs-only PR into `development`.
 
 ## Validation
 
-- `grep -n "58d038d" docs/rc-candidate.md` appears only under the superseded heading.
-- `grep -n "not published\|remains private" CONTRIBUTING.md docs/beeui-1.0-owner-gates.md` returns nothing that describes the current state.
-- Gates above green.
+- `58d038d` is explicitly labeled candidate/source evidence, not silently replaced.
+- `ddf415b` is labeled according to verified workflow provenance, not merely because it is PR #538’s merge commit.
+- No current-state “not published” / “remains private” claim survives in contributor/owner-gate docs.
+- Current release docs no longer direct users to the superseded CI matrix.
+- All four documentation/release-policy gates above are green.
 
 ## Risks / rollback
 
-Docs-only; revert the PR. Do not touch the JSON block in `docs/dist-tag-policy.md` here (Phase 01 owns it).
+Docs/evidence only; revert the PR. Do not touch the live policy JSON schema here (Phase 01 owns it).
