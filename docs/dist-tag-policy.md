@@ -2,110 +2,148 @@
 
 This document is the machine-checked authority for BeeUI npm versioning, staging and dist-tag behavior.
 
-`0.86.2-rc.2` is the current candidate prepared from `development`; it is published under `next` only once the owner approves the staged publish.
+## Current public state — observed 2026-09-23
 
-BeeUI 1.0 is the product milestone name. The stable npm package line starts at **`0.86.2`** per ADR-015. The first public release candidate, **`0.86.2-rc.1`**, is published on npm under the opt-in **`next`** dist-tag.
+`0.86.2-rc.2` is published for all four lockstep packages. A read-only registry observation from GitHub Actions run `35848833210` verified:
 
-## Real current dist-tag state: `latest` also resolves to the RC
+- `next` → `0.86.2-rc.2` for all four packages;
+- `latest` → `0.86.2-rc.1` for all four packages;
+- each `0.86.2-rc.2` package exposes non-empty registry integrity/shasum metadata and the BeeUI repository URL.
 
-Verified against the live registry (`npm view <package> dist-tags`): `next` and `latest` both currently resolve to `0.86.2-rc.1` for all four packages (`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`, `@beemvp/beeui-cli`). No deliberate release-process mutation to `latest` has been found. The bootstrap publish ran `npm publish --tag next --provenance` for every package (GitHub Actions run 34294238899, 2026-09-09, job `bootstrap-rc`, log line `npm notice Publishing to https://registry.npmjs.org/ with tag next and public access`), and a later registry observation shows both `next` and `latest` resolving to that first version. The mechanism that created `latest` has not been established (the workflow contains no deliberate `latest` mutation, and npm's documentation describes `--tag` as overriding `latest`); this document records the observation and does not rely on any registry rule. `latest` is only ever re-pointed by the deliberate stable publish/promotion described below. Every one of these four packages has exactly one published version today.
+The current tag split is therefore intentional evidence, not an inference from the publish command. Consumer documentation must use `@next` or an exact RC version. Stable `0.86.2` has not been promoted to `latest`.
 
-This means a bare, unqualified `npm install @beemvp/beeui-ui` currently installs the same `0.86.2-rc.1` artifact as `npm install @beemvp/beeui-ui@next`. That is an observed registry state, not a claimed npm first-publish rule: the bootstrap log proves BeeUI published with `--tag next`, while the mechanism that also produced `latest` remains unestablished. Documentation must keep recommending the explicit `@next` tag (or an exact pinned version) anyway, never a bare install — that recommendation is what stays correct across the transition described below, not what is true only today.
+BeeUI 1.0 is the product milestone name. The stable npm package line is **`0.86.2`** per ADR-015.
 
-**What changes at the first stable `0.86.2` publish:** once the stable release group publishes, `latest` is deliberately moved to point at `0.86.2` (a real, owner-authorized dist-tag operation — see "Stable `0.86.2` publication" below), and it never points at a prerelease again. `next` keeps tracking whatever prerelease is newest (`0.86.2-rc.N`, then later release lines). From that point on, a bare `npm install @beemvp/beeui-ui` installs stable `latest`, and `@next` is required to opt into a prerelease — the behavior the pre-first-publish version of this document assumed applied from day one.
+## Release group
 
-## Current public distribution state
-
-The four release-group packages are public at `0.86.2-rc.2` once its staged publish is approved (`0.86.2-rc.1` before that):
+The public lockstep release group is:
 
 - `@beemvp/beeui-core`
 - `@beemvp/beeui-tokens`
 - `@beemvp/beeui-ui`
 - `@beemvp/beeui-cli`
 
-The bootstrap publication was executed from exact source SHA `ddf415b0d665c14e1b154bb02570a906585b4b98` through `.github/workflows/npm-release.yml`, using the protected GitHub `release` environment. The workflow verified canonical reproducible tarballs and published the set sequentially under `next` with provenance.
-
-Consumer commands for this RC must opt into the prerelease channel or pin the exact version:
+Recommended prerelease consumption:
 
 ```bash
 npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next
 npx @beemvp/beeui-cli@next --help
 ```
 
-Do **not** document a bare `npm install @beemvp/beeui-ui` as the recommended RC command. An unqualified install was last observed (at `0.86.2-rc.1`) resolving to the same RC as `@next` (see "Real current dist-tag state" above); that observation is re-verified after every publish and is not an npm rule, and it stops applying the moment stable `0.86.2` publishes and `latest` moves off the prerelease — an explicit `@next` tag or exact pinned version stays correct on both sides of that transition, a bare install does not.
+Do not recommend an unqualified install for RC consumers. Today that resolves through `latest`, which remains on `0.86.2-rc.1`, while `next` resolves to `0.86.2-rc.2`.
 
-## Owner guard
+## Publication history and authority
 
-Technical readiness is not publication authorization. No later npm package, staged package or dist-tag may be created or changed until the repository owner explicitly authorizes the corresponding operation through the protected GitHub `release` environment and the release control plane.
+### `0.86.2-rc.1` — bootstrap release
 
-## Package set and lockstep versioning
+The first package publication used the one-time bootstrap path. Important provenance identities are deliberately separated:
 
-All four released packages share one version. The three library packages form the package-boundary set used by the public docs foundation; the CLI is modelled separately by the docs generator but its version is locked to the same line by the release control plane.
+- candidate source SHA: `58d038dfd63267a0760b6eb1b5749e96939edb28`;
+- publish workflow `GITHUB_SHA`: `ddf415b0d665c14e1b154bb02570a906585b4b98`;
+- publish workflow run: `34294238899` (`bootstrap-rc`);
+- transport: temporary environment-scoped npm bootstrap token plus provenance.
 
-A prerelease is `0.86.2-rc.N`; the stable version is `0.86.2`. `pnpm release:verify` must prove packed manifests contain the expected version and no unresolved `workspace:*` dependency.
+The bootstrap token path is historical. It is not the steady-state release mechanism.
+
+### `0.86.2-rc.2` — Trusted Publishing / staged release
+
+The second RC used the steady-state staged path:
+
+- candidate source SHA: `a58d8b83977f364bb141351f86b61e8b477602bd`;
+- release-prep branch head: `3a5b30d85d3b43d707c2d0171a2a672e1541614c`;
+- `development` integration SHA: `292b0a7bc773d76a03c3e86fe44ba64c65f84531`;
+- `main` promotion / publish workflow SHA: `cd07c671a0814cdcf8a9809fa1c414276acf5bdc`;
+- GitHub Actions run: `35846285677` (`stage-rc`);
+- transport: npm Trusted Publishing/OIDC with `npm stage publish --tag next --provenance`;
+- final registry exposure: owner approval of the npm staged packages.
+
+The four npm stage IDs were:
+
+| Package | Stage ID |
+| --- | --- |
+| `@beemvp/beeui-core` | `b6399036-e1bb-466a-adbf-8aa4be1fad31` |
+| `@beemvp/beeui-tokens` | `0b773fcb-3a46-48f8-a91d-bb67d2bbe243` |
+| `@beemvp/beeui-ui` | `06f1d318-fabe-4ceb-ab57-ba041ce8d8b5` |
+| `@beemvp/beeui-cli` | `24ba08d3-7be1-4639-8d2f-0ba39a8c89bf` |
+
+GitHub Environment approval and npm staged-package approval are distinct gates. OIDC authorizes staging; it does not turn the protected GitHub environment approval into npm-side approval.
 
 ## Persistent dist-tags
 
 BeeUI uses exactly two persistent public dist-tags:
 
-| Tag | Meaning |
-| --- | --- |
-| `latest` | default-install channel. Today it resolves to `0.86.2-rc.1` (observed; publish used `--tag next`, the mechanism that also set `latest` is not established — see above) — not because `latest` was deliberately promoted. Once the stable release group publishes, `latest` moves to the stable version and never points to a prerelease again. |
-| `next` | opt-in release-candidate/safety channel; points to the newest published `0.86.2-rc.N` (`0.86.2-rc.2` once its staged publish is approved); the last live observation, at `0.86.2-rc.1`, showed it sharing `latest`'s target; keeps tracking future prereleases after the first stable publish. |
+| Tag | Current observed target | Meaning |
+| --- | --- | --- |
+| `latest` | `0.86.2-rc.1` | default-install channel; do not deliberately move it again until approved stable promotion |
+| `next` | `0.86.2-rc.2` | opt-in release-candidate channel; tracks the newest published RC |
 
-`latest` is the intended long-term consumer commit point for stable releases. Default consumers must not see a *deliberately promoted* stable release until the full stable release group has been published and verified — the current observed RC-era `latest` value is a separate, incidental state with an unestablished mechanism, not an early promotion.
+When stable `0.86.2` is ready, it is staged under the safe non-default path, verified as a complete four-package set, and only then is `latest` moved to `0.86.2` in one coordinated owner-controlled operation.
 
-## First-ever package bootstrap — completed
+## Owner guard
 
-The one-time bootstrap path for `0.86.2-rc.1` is complete:
+Technical readiness is not publication authorization. Creating staged packages, approving staged packages, publishing versions, or mutating dist-tags remains owner-controlled through the release control plane. Contributor/agent work may prepare and verify artifacts but must not bypass these gates.
 
-1. exact candidate frozen on `main`;
-2. exact-head release gates passed;
-3. protected `bootstrap-rc` workflow approved through the `release` environment;
-4. all four packages published sequentially under `next` with provenance;
-5. public package publication succeeded.
+## Package set and lockstep versioning
 
-After Trusted Publisher configuration is verified for all four packages, revoke the temporary bootstrap token and delete `NPM_BOOTSTRAP_TOKEN` from the GitHub `release` environment.
+All four released packages share one version. A prerelease is `0.86.2-rc.N`; stable is `0.86.2`.
+
+`pnpm release:verify` must prove packed manifests contain the expected lockstep version, exports resolve to shipped files, and no unresolved `workspace:*` dependency remains.
 
 ## Subsequent RC publication
 
-For later `0.86.2-rc.N` versions:
+For a later `0.86.2-rc.N`:
 
-1. freeze an exact `main` SHA with a fresh lockstep RC version;
-2. run `stage-rc` from that SHA;
-3. CI uses npm Trusted Publishing/OIDC and the approved staged-release path under `next`;
-4. the owner reviews/approves the staged package set as required;
-5. verify the actual registry artifacts and clean-consumer behavior.
+1. freeze an exact source candidate;
+2. integrate it through `development` and promote the reviewed release state to `main`;
+3. run `stage-rc` on that exact `main` workflow SHA;
+4. GitHub Actions stages the canonical package set sequentially using Trusted Publishing/OIDC and provenance under `next`;
+5. the owner approves the staged npm packages;
+6. observe the real registry state and record version, integrity, shasum, unpacked size, repository metadata and dist-tags;
+7. verify clean public consumption.
+
+Do not infer publication merely because the stage workflow succeeded.
 
 ## Stable `0.86.2` publication
 
-Stable publication deliberately separates upload from the default-install `latest` promotion:
+Stable publication deliberately separates upload from default-channel promotion:
 
-1. freeze exact stable `0.86.2` source on `main` and require all release gates to pass;
-2. publish/stage the full stable release group under the safe non-default channel according to the release workflow;
-3. verify all real registry packages and clean-consumer behavior;
-4. only after stable verification is green, move `latest` for the full release group in one coordinated owner-controlled operation — this is the first *deliberate* `latest` dist-tag operation for these packages; the RC-era `latest` value was observed after the bootstrap publish, its mechanism is not established, and it was never an explicit promotion;
+1. freeze exact stable `0.86.2` source on `main` and require release gates to pass;
+2. stage the full stable release group under the safe non-default channel;
+3. approve and verify all four real registry packages and clean-consumer behavior;
+4. only then move `latest` for all four packages to `0.86.2` in one owner-controlled operation;
 5. verify all `latest` tags resolve to the same stable version.
 
 ## Failure handling
 
-npm does not provide a cross-package transaction. Safety comes from ordering:
+npm does not provide a cross-package transaction. Safety comes from ordering and explicit state:
 
-- if an RC operation fails partway, only the opt-in `next` channel may be inconsistent; `latest` is unaffected;
+- before approval, staged packages are not public registry evidence;
+- while only part of a four-package set is public, record `partial-publication` rather than claiming release success;
 - never overwrite an already-published package version;
 - complete a partial set at the same version only when the missing package version is truly absent;
-- if a published version is bad, correct forward with a new version and deprecate the bad one rather than treating unpublish as rollback;
-- if `latest` is moved incorrectly, restore the complete release group to the last-good stable before doing anything else.
+- correct a bad immutable version forward with a new version and deprecate the bad one where appropriate;
+- if a dist-tag is moved incorrectly, restore the complete release group to the last-good target before proceeding.
 
-## Candidate and evidence requirements
+## Evidence requirements
 
-Before registry mutation, record or verify the exact source SHA, lockstep version, changelog/migration/support status, canonical artifact verification, exact-head CI gates, candidate-version registry state, and protected release-environment approval.
+Before registry mutation, record the candidate source SHA, release-prep/integration/promotion identities, lockstep version, artifact verification, exact-head CI and owner authorization boundary.
 
-After publication, additionally record the real registry package state, provenance/integrity where available, dist-tags, and clean-consumer result.
+After publication, additionally record:
+
+- public version for every package;
+- full `dist.integrity`;
+- `dist.shasum`;
+- `dist.unpackedSize`;
+- repository metadata;
+- observed dist-tags;
+- publication workflow run and workflow `GITHUB_SHA`;
+- clean-consumer result.
+
+Registry integrity identifies published bytes. It does **not** by itself prove which Git commit produced those bytes; source/promotion/workflow lineage is separate evidence.
 
 ## Machine-readable policy contract
 
-The block below is parsed by `scripts/check-distribution-policy.mjs` and feeds the public docs/release control plane. `lockstepPackages` intentionally lists the three library packages consumed as one package boundary; `@beemvp/beeui-cli` is represented separately by the docs foundation and is still version-locked by the release control plane.
+The block below is parsed by the release/public-doc control plane. `currentVersion` remains the current-line pin until Phase 01 replaces duplicate authored version authorities with the package manifest authority.
 
 ```json dist-tag-policy
 {
@@ -118,6 +156,10 @@ The block below is parsed by `scripts/check-distribution-policy.mjs` and feeds t
   "prereleaseDistTag": "next",
   "stableDistTag": "latest",
   "stablePromotionTag": "latest",
+  "observedDistTags": {
+    "latest": "0.86.2-rc.1",
+    "next": "0.86.2-rc.2"
+  },
   "lockstepPackages": ["@beemvp/beeui-core", "@beemvp/beeui-tokens", "@beemvp/beeui-ui"],
   "releaseEnvironment": "release"
 }
@@ -125,4 +167,4 @@ The block below is parsed by `scripts/check-distribution-policy.mjs` and feeds t
 
 ## Revisit trigger
 
-Revisit this policy if npm changes Trusted Publishing/dist-tag capabilities, a second maintained release line needs another persistent channel, or the CLI leaves the release group.
+Revisit this policy if npm changes Trusted Publishing/staged-publishing/dist-tag capabilities, a second maintained release line needs another persistent channel, or the CLI leaves the lockstep release group.
