@@ -1,35 +1,106 @@
-# Phase 03 — Changesets pre mode, bot "Version Packages" PR, tags
+# Phase 03 — Changesets v3 migration gate, Version Packages PR and repository tags
 
-**Context:** `reports/scout-release-pipeline-and-process-docs-report.md` §3, §4, §6, §7 items 2, 6, 9; owner decisions D4, D5. Depends on Phase 01 (`release:prepare`), preferably Phase 02.
-**Size:** M. Configuration plus one workflow; the only source edit is wiring `release:prepare` into the Changesets version step.
+**Context:** pipeline/process audit and owner decisions D4/D5.
+**Depends on:** Phase 01; Phase 02 preferred.
+**Size:** M.
 
-## Target
+## Non-negotiable compatibility constraints
 
-- `.changeset/pre.json` present with `mode: "pre"`, `tag: "rc"`, `initialVersions` at the current lockstep version. While the stable line is `0.86.2`, every changeset declares `patch`; `changeset version` yields `0.86.2-rc.N+1`. `changeset pre exit` + a final `changeset version` yields `0.86.2` for the stable cut.
-- ADR-016 (amends ADR-015): bump rule during and after the `0.86.2` line; the prerelease pattern is derived from the manifest (Phase 01), so a future `0.87.0-rc.0` needs no policy edit.
-- `.github/workflows/version-packages.yml`: on push to `development`, `changesets/action` with `version: pnpm release:version` (which runs `changeset version && pnpm version:sync && pnpm release:prepare --regenerate-only`) and **no** `publish` step. It opens or updates the standing PR "Version Packages (rc)". Merging that PR is the bump. Human-authored bump PRs become the exception.
-- Tags: `.github/workflows/tag-release.yml` on push to `main` creates `v<version>` when no tag for that version exists and the commit is a `development` sync (guards: `release-control-plane:check` green, tag absent). The `refs/tags/v*` ruleset already protects it. `docs/rollback-runbook.md` guidance about tags becomes true.
-- D5: `npm-release.yml` gains an optional `push: tags: ['v*']` trigger that runs `operation=stage-rc` with `expected_version` from the tag; `environment: release` approval and npm 2FA remain. Until D5 is accepted, the tag workflow only creates the tag and prints the dispatch command.
+BeeUI currently uses Changesets v3. Therefore:
+
+- prerelease state is created by `pnpm changeset pre enter rc`;
+- `.changeset/pre.json` is tool-owned and must not contain removed v2 state such as `initialVersions`;
+- versioned prerelease changesets are managed by Changesets under `.changeset/pre/`;
+- do not hand-edit prerelease state to force a desired version;
+- the GitHub Action is pinned to a reviewed commit SHA and configured with its current `version-script` input, not the older `version` input.
+
+Because BeeUI is already mid-line at `0.86.2-rc.2`, prerelease automation is gated by a scratch proof rather than assumed safe.
+
+## Phase 03A — migration proof
+
+On a throwaway branch/worktree based on the post-rc.2 `development` state:
+
+1. Confirm manifests are exactly `0.86.2-rc.2`.
+2. Run `pnpm changeset pre enter rc`; inspect the tool-generated state but do not edit it.
+3. Add a representative patch changeset for the fixed package group.
+4. Run the proposed `pnpm release:version` path.
+5. Required result for current-line adoption: lockstep packages become exactly `0.86.2-rc.3`.
+6. Add another patch changeset and prove the next cycle is `0.86.2-rc.4`.
+7. Run `pnpm changeset pre exit` then the version step; required stable result is exactly `0.86.2`.
+8. Record command output and diff in the phase report; reset the scratch branch.
+
+### Migration decision
+
+- **If every transition above is correct:** current-line Changesets prerelease adoption may proceed.
+- **If any transition differs** (for example Changesets wants a new stable base such as `0.86.3-rc.0`): do not invent/mutate `pre.json`. Finish the 0.86.2 line with `release:prepare`, ship stable 0.86.2, then enter Changesets pre mode from the next clean release line.
+
+This gate is stronger than a unit fixture because it executes the exact installed dependency and BeeUI fixed-package graph.
+
+## Phase 03B — Version Packages PR
+
+After the migration gate is accepted (or when the next release line begins):
+
+- add `release:version` that runs `changeset version`, then BeeUI version propagation and generated-surface regeneration;
+- create `.github/workflows/version-packages.yml` on push to `development`;
+- use the reviewed/pinned Changesets Action with:
+  - `version-script: pnpm release:version`;
+  - no `publish-script`;
+  - least-privilege `contents: write` and `pull-requests: write` only in this workflow;
+- the standing PR is “Version Packages (rc)” while pre mode is active;
+- merging the bot PR performs the source/version bump only. npm mutation remains separate.
+
+The action must update the existing standing PR rather than create one PR per merge.
+
+## Phase 03C — repository release tag
+
+Create a repository-level `v<version>` tag after the promoted `main` commit is known.
+
+A custom `tag-release.yml` may create/verify this tag, but:
+
+- the tag target is the `main` release/promotion commit, **not** the earlier candidate-source SHA;
+- if the tag already exists, verify its target and fail on mismatch;
+- do not use Changesets monorepo package tags as a substitute for BeeUI’s repository-level `v<version>` release tag unless a separate ADR chooses that convention;
+- do not rely on the tag push to recursively start publication.
+
+## Phase 03D — publication authorization
+
+For the 0.86.2 line, `npm-release.yml` remains `workflow_dispatch`-driven:
+
+1. merge/version candidate to `development`;
+2. promote/sync the exact release content to `main`;
+3. create/verify `v<version>` on that `main` commit;
+4. owner dispatches `stage-rc` with the exact version/confirmation;
+5. release environment + npm 2FA authorize registry mutation;
+6. dispatch registry observation.
+
+Do **not** add a `push: tags: ['v*']` publication path that depends on a tag created using `GITHUB_TOKEN`. GitHub Actions suppresses event-recursion for token-generated events; the design must not depend on that chain.
+
+A future fully automatic design may call a reusable workflow with `workflow_call` from the same orchestrator or use a reviewed GitHub App token, but that is outside the current line.
 
 ## Files
 
-Create: `.changeset/pre.json`, `docs/decisions/016-release-line-and-prerelease-bumps.md`, `.github/workflows/version-packages.yml`, `.github/workflows/tag-release.yml`.
-Modify: `.changeset/README.md` (new 2-step recipe: merge bot PR → dispatch), `package.json` scripts (`release:version`), `.github/workflows/npm-release.yml` (D5 only), `docs/npm-release-bootstrap.md`, `docs/release.md`, `docs/release-ruleset.md` (document the two new workflows; `check-release-ruleset` test update), `scripts/ci-scope.mjs` (new workflow files are control plane → full-ci, already covered by prefix).
+Create/modify as appropriate:
 
-## Steps
+- tool-generated `.changeset/pre.json` only after the migration gate;
+- `docs/decisions/016-release-line-and-prerelease-bumps.md`;
+- `.github/workflows/version-packages.yml`;
+- `.github/workflows/tag-release.yml`;
+- package scripts for `release:version`;
+- release docs/ruleset contracts/tests.
 
-1. Write ADR-016; get D4 accepted.
-2. `pnpm changeset pre enter rc` on a branch; commit `pre.json`; add a `patch` changeset for anything unreleased; run `pnpm release:version` locally and confirm the output equals what Phase 01's dry run produced; revert the version, keep `pre.json`.
-3. Add `version-packages.yml`; verify on a fork or with `workflow_dispatch` that the bot PR opens against `development` and PR CI (Phase 04) runs on it.
-4. Add `tag-release.yml`; verify on the next `main` sync that `v0.86.2-rc.N` appears and the ruleset blocks deletion.
-5. Optional D5 wiring; verified by a dry `operation=verify` run triggered from a tag.
+No tag-triggered npm publish workflow is added in this phase.
 
 ## Validation
 
-- Bot PR diff equals `release:prepare` output (no prose).
-- `pnpm dist-policy:check`, `release-control-plane:check`, `release-ruleset:check/test` green on the bot PR.
-- Tag exists for the published SHA; `docs/rc-candidate.md` candidate SHA equals the tag target (Phase 05 script asserts it).
+- Scratch evidence proves the exact accepted version sequence or explicitly records deferral to the next release line.
+- No hand-authored `initialVersions` exists.
+- Bot PR diff equals the approved version/regeneration path and contains no current-state prose edits.
+- Action is commit-SHA pinned and uses `version-script`.
+- Bot workflow has no publish command and no npm credentials.
+- Repository tag target equals the promoted `main` release commit.
+- Creating the tag is not required to trigger another workflow; manual release dispatch still works independently.
+- Release-control-plane, distribution-policy, ruleset and PR CI checks are green.
 
 ## Risks / rollback
 
-`changesets/action` needs `contents: write` + `pull-requests: write`; scope it to that workflow only. If the bot PR is noisy (one per merge), set it to update in place (default) and only merge at cut time. Rollback: delete the two workflows; pre mode can be exited with `changeset pre exit` without side effects.
+The biggest risk is adopting prerelease mode halfway through an already established RC line. The migration gate makes “defer until next line” an explicit successful outcome, not a failure. Workflows can be reverted without changing already published registry state.
