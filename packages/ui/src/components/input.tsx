@@ -232,7 +232,12 @@ export const Input = React.forwardRef<React.ComponentRef<typeof TextInput>, Inpu
           className,
         )}
         {...(Platform.OS === 'web'
-          ? { placeholderTextColor: props.placeholderTextColor ?? webPlaceholderTextColor }
+          ? {
+              // react-native-web drops `accessibilityHint`, so the Field's
+              // helper text reaches Web assistive tech through `aria-describedby`.
+              'aria-describedby': field?.descriptionNativeID,
+              placeholderTextColor: props.placeholderTextColor ?? webPlaceholderTextColor,
+            }
           : nativeAccentColorProps)}
         defaultValue={defaultValue}
         editable={!resolvedDisabled && editable !== false}

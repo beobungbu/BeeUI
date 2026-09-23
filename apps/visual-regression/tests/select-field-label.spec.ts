@@ -61,11 +61,7 @@ test('a Select inside a required Field is required, and one inside an invalid Fi
   await expect(plain).not.toHaveAttribute('aria-invalid', /.*/);
 });
 
-// The Field renders its description/error text without an id and publishes no id for it in its
-// context, so no field control (Input included) can point `aria-describedby` at it; the helper
-// text only reaches native assistive tech as `accessibilityHint`. Enable once Field exposes the
-// helper text's id.
-test.fixme('Input and Select inside a Field are described by the field helper text', async ({
+test('Input and Select inside a Field are described by the field helper text', async ({
   page,
 }, testInfo) => {
   skipOutsideLightDesktop(testInfo);
