@@ -1,37 +1,60 @@
-# Phase 01 — single source of version truth
+# Phase 01 — single source of workspace version truth
 
-**Context:** `reports/scout-version-truth-data-flow-report.md` §1 #1–#5, §2, §5, §6 items 1, 3, 4; owner decisions D1, D2.
-**Size:** M. Contract change in five scripts and their tests. Lands after rc.2 publishes.
+**Context:** version-truth data-flow report and owner decisions D1/D2.
+**Size:** M. Contract change across release-policy scripts and tests. Lands after rc.2 publication/integration is complete.
 
 ## Target
 
-`packages/ui/package.json` is the only authored version. Everything else is derived or checked against it:
+`packages/ui/package.json` is the only authored current lockstep version.
 
-- `sync-root-version.mjs` remains the propagation tool for the three followers and two Expo identities (Changesets cannot reach them).
-- `docs/dist-tag-policy.md` JSON block keeps only *policy*: `candidateStableVersion`, `distTags`, `prereleaseDistTag`, `stableDistTag`, `stablePromotionTag`, `lockstepPackages`, `releaseEnvironment`. `currentVersion` and `prereleaseExample` are removed; `prereleaseVersionPattern` is derived as `^${escape(candidateStableVersion)}-rc\.(0|[1-9][0-9]*)$` by the library, not typed.
-- `.github/workflows/npm-release.yml` `expected_version` input has no default (required); preflight already asserts it equals `package.json`. The verbatim-copy assertion in `check-release-control-plane.mjs:65-100` is replaced by "input has no default and the regex in the workflow equals the derived pattern".
-- `docs/consumer-compatibility-report.md` drops `candidateVersion` (derived) and its own `published` (Phase 02 owns published state); the prose sentence "candidate version `X` today" becomes generated text or is removed from `VERSION_SENTENCES`.
-- `docs:surface` acknowledged blobs for `packages/{ui,tokens,core}/package.json` hash the manifest with `version` stripped (and `dependencies` on workspace packages normalised), so a bump never requires `docs:surface:acknowledge`.
+- `sync-root-version.mjs` remains the propagation tool for followers that Changesets does not own directly.
+- `docs/dist-tag-policy.md` keeps policy only: `candidateStableVersion`, dist-tag names, lockstep package names and release environment. Remove authored `currentVersion`, `prereleaseExample` and the authored prerelease-regex copy.
+- Derive the prerelease shape from the manifest/stable-line policy in one library function.
+- `.github/workflows/npm-release.yml` requires `expected_version` with no hard-coded default; preflight asserts the dispatch value equals the checked-out manifest.
+- `docs/consumer-compatibility-report.md` drops its own current candidate version and publication boolean. Phase 02 replaces publication claims with observed data.
+- Public-surface ownership hashing ignores **only** the derived top-level `version` field for lockstep manifests. Dependency protocols/ranges and every other semantic field remain part of the hash.
 
 ## Files
 
-Modify: `scripts/public-site-contract-lib.mjs` (`readPublicationState`, `readPinnedVersion` → read manifest), `scripts/check-release-control-plane.mjs` (EXPECTED_VERSION from manifest; lockstep + shape assertions; workflow assertions), `scripts/check-distribution-policy.mjs` (remove currentVersion/prereleaseExample expectations; derive pattern; drop candidateVersion check), `scripts/check-public-doc-truth.mjs` (`VERSION_SENTENCES`: keep README + ADR-015 for now, remove compat-report sentence), `scripts/check-public-surface-ownership.mjs` + `docs/public-surface-owners.json` (version-stripped hashing; one-time re-acknowledge), `scripts/generate-docs-foundation.mjs` (currentVersion from manifest; keep workspaceVersion; remove the 362-364 equality assertion only in Phase 02), `scripts/sync-root-version.mjs` (drop the "now hand-edit the policy" hint), `docs/dist-tag-policy.md`, `docs/consumer-compatibility-report.md`, `.github/workflows/npm-release.yml`, `.changeset/README.md`, tests: `scripts/__tests__/{release-control-plane,check-distribution-policy,public-doc-truth,public-site-contract,generate-llms-txt,check-public-surface-diff}.test.mjs`.
+Modify the release/public-site contract library; release-control-plane, distribution-policy, public-doc-truth and public-surface ownership checks; docs-foundation generator; sync-root-version; policy/compatibility docs; npm release workflow; relevant tests.
+
+Create `scripts/release/prepare-candidate.mjs` and a `release:prepare` package script.
 
 ## Steps
 
-1. Library first: `readPinnedVersion` reads `packages/ui/package.json`; add `derivePrereleasePattern(policy)`; keep old field names accepted for one release with a deprecation violation ("`currentVersion` is no longer authored; remove it") so the migration PR itself passes.
-2. Update the four checks and their tests; the tautology concern in `check-release-control-plane.mjs:10-14` is answered by asserting (a) all five manifests + two app.json equal the ui manifest, (b) the value matches the derived pattern or equals `candidateStableVersion`, (c) the workflow regex equals the derived pattern and the input has no default.
-3. Edit the two policy docs and the workflow input; re-acknowledge surface owners once.
-4. Add `pnpm release:prepare <version>` (new `scripts/release/prepare-candidate.mjs`): sets the ui manifest version, runs `sync-root-version`, regenerates every generated surface (`docs:portal-pages`, `docs:reference`, `docs:contract`, `docs:foundation`, `llms`, `public-guide-data`), and prints the gate list. No prose edits: after Phase 02 there are none; until then it prints the remaining literal hits as a checklist.
-5. Dry-run on a scratch branch: `pnpm release:prepare 0.86.2-rc.9 && pnpm typecheck && pnpm test`, then revert.
+1. Change the shared library first:
+   - current version reads `packages/ui/package.json`;
+   - add one derived prerelease-pattern helper;
+   - during the migration PR, reject authored legacy current-version fields with an actionable error once all callers have moved.
+2. Update release-control-plane assertions:
+   - all lockstep/follower manifests equal the UI manifest where required;
+   - the version is either the stable candidate or a valid RC for the stable line;
+   - `npm-release.yml` dispatch input has no default;
+   - workflow guards use the shared/derived rule rather than a second hard-coded current-version pin.
+3. Update distribution/public-doc checks and tests to stop reading the removed live pin.
+4. Change public-surface ownership hashing:
+   - parse lockstep manifests;
+   - delete only the top-level `version` property before canonical serialization/hash;
+   - do **not** normalize `dependencies`, `peerDependencies`, `workspace:^`, `workspace:*`, export maps or other semantics.
+5. Add `pnpm release:prepare <version>`:
+   - validate requested version against the release line;
+   - set the UI manifest;
+   - run version propagation;
+   - regenerate canonical generated surfaces;
+   - run a literal audit/report;
+   - never silently edit prose.
+6. Dry-run on a scratch branch using `0.86.2-rc.9`, then revert.
 
 ## Validation
 
-- Unit tests for each modified check (existing fixtures + new "authored currentVersion present" violation).
+- Existing tests plus new tests for missing workflow default, invalid derived RC shape and legacy policy fields.
+- Ownership-hash regression:
+  - changing only `version` does **not** require a manual surface acknowledgement;
+  - changing `workspace:^` to `workspace:*` **does** fail the ownership gate until reviewed/acknowledged.
 - `pnpm typecheck && pnpm test` green.
-- Dry-run diff contains only manifests + generated surfaces (+ remaining prose hits listed by the script, which Phase 02 removes).
-- Second PR: deliberately desync `packages/core/package.json` and confirm `release-control-plane:check` fails on PR CI (verify-fast).
+- Dry-run diff contains only expected manifests/generated surfaces plus the remaining prose hits that Phase 02 removes.
+- Deliberately desync one lockstep manifest and prove PR CI rejects it.
 
 ## Risks / rollback
 
-Any consumer of `policy.currentVersion` missed by grep breaks at runtime: grep `currentVersion` across scripts/, web/, apps/docs/src before merging. Rollback is a revert; no data migration.
+A missed consumer of `policy.currentVersion` can break at runtime. Before merge, grep `scripts/`, `web/` and `apps/docs/src` for all legacy fields. Rollback is a revert; there is no data migration.
