@@ -1,22 +1,22 @@
 # BeeUI package consumer compatibility report
 
 > **Status:** public release-candidate compatibility evidence.
-> **Snapshot:** 2026-09-09.
-> **Packages under test:** `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`; candidate version `0.86.2-rc.2` today.
+> **Snapshot:** 2026-09-23.
+> **Packages under test:** `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`; current published candidate `0.86.2-rc.2`.
 
-BeeUI `0.86.2-rc.2` is the current release candidate published under the npm `next` dist-tag (`0.86.2-rc.1` was the first). This report records consumer compatibility evidence for the three library packages. `@beemvp/beeui-cli` is published in the same release group and is verified separately by the release/CLI smoke gates.
+BeeUI `0.86.2-rc.2` is published under the npm `next` dist-tag. `@beemvp/beeui-cli` is published in the same lockstep release group and is verified separately by the release/CLI smoke gates.
 
 This report does not widen any promise beyond `docs/compatibility-matrix.md` and the peer ranges declared by `packages/ui/package.json`.
 
 ## Public package verification
 
-The release pipeline verifies canonical packed artifacts before publication and clean consumer boundaries without monorepo/workspace fallback. Public RC availability is now additional registry evidence on top of that package-boundary proof.
+Post-publication registry observation on 2026-09-23 verified all four `0.86.2-rc.2` versions are public and all four `next` tags resolve to `0.86.2-rc.2`. `latest` remains on `0.86.2-rc.1`; stable `0.86.2` has not been promoted.
+
+The exact registry integrity/shasum/unpacked-size evidence and release lineage are recorded in `docs/rc-candidate.md`. The release pipeline separately verifies canonical packed artifacts and clean consumer boundaries without monorepo/workspace fallback.
 
 ```bash
 npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next
 ```
-
-Stable `latest` is intentionally not promoted yet.
 
 ## Clean-consumer evidence
 
@@ -55,6 +55,8 @@ Exact tested pins and evidence sources remain authoritative in `docs/compatibili
 Current Web evidence is centered on React Native Web `0.21.0`, Vite and Expo/Metro Web, with Chromium browser interaction. Firefox, WebKit/Safari, Next.js/Webpack/Parcel, SSR and SSG are not implied unless a later compatibility record explicitly adds them.
 
 Metro/bundle proof, native compilation and simulator/device interaction are separate evidence classes. Compile-only evidence must not be translated into runtime/accessibility claims. See `docs/release.md`, `docs/native-verification.md` and `docs/native-runtime-smoke.md`.
+
+Registry publication is also a separate evidence class: a successful stage command is not proof that the npm-side staged package was approved and public. The post-publication observation in `docs/rc-candidate.md` is the authority for that state.
 
 ## Machine-readable evidence contract
 
@@ -100,6 +102,7 @@ Parsed by `scripts/check-distribution-policy.mjs`. Version pins must equal the c
 
 - channel/publication authority: `docs/dist-tag-policy.md`
 - release/evidence authority: `docs/release.md`
+- immutable candidate and registry evidence: `docs/rc-candidate.md`
 - exact compatibility matrix: `docs/compatibility-matrix.md`
 - CLI/source-ownership authority: `docs/registry-cli.md`
 
