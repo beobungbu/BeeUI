@@ -154,6 +154,7 @@ type FixtureId =
   | 'date'
   | 'sheet-context-parity'
   | 'sheet-short-root'
+  | 'popover-scrolled-anchor'
   | 'keydown-bubble'
   | 'controls-sizing'
   | 'keyboard-roving-focus'
@@ -173,6 +174,7 @@ const fixtureIds: readonly FixtureId[] = [
   'date',
   'sheet-context-parity',
   'sheet-short-root',
+  'popover-scrolled-anchor',
   'keydown-bubble',
   'controls-sizing',
   'keyboard-roving-focus',
@@ -1569,6 +1571,43 @@ function SheetShortRootFixture() {
 }
 
 /**
+ * A Popover whose trigger is only reachable by scrolling the document, with a
+ * content height chosen by the `contentHeight` query parameter. The app root
+ * stays one viewport tall while this content overflows it, so once the page
+ * scrolls the root overlay host sits partly above the window — the shape the
+ * date fixture's below-the-fold DateTimePicker has. Varying the content height
+ * shows whether placement follows the trigger or only the host's position.
+ * `tests/popover-scrolled-anchor.spec.ts` drives it.
+ */
+function readPopoverContentHeightQuery(): number {
+  if (typeof window === 'undefined') return 120;
+  const requested = Number(new URLSearchParams(window.location.search).get('contentHeight'));
+  return Number.isFinite(requested) && requested > 0 ? Math.min(requested, 600) : 120;
+}
+
+function PopoverScrolledAnchorFixture() {
+  const [contentHeight] = React.useState(readPopoverContentHeightQuery);
+  return (
+    <Box className="gap-4 bg-surface p-6" testID="popover-scrolled-anchor-fixture">
+      <Text variant="title">Popover anchored below the fold</Text>
+      <Box style={{ height: 900 }} />
+      <Popover>
+        <PopoverTrigger testID="popover-scrolled-anchor-trigger">Open popover</PopoverTrigger>
+        {/* No padding or title, so the panel is `contentHeight` plus its 1px border. */}
+        <PopoverContent
+          accessibilityLabel={`Content ${contentHeight}px`}
+          className="p-0"
+          testID="popover-scrolled-anchor-content"
+        >
+          <Box style={{ height: contentHeight }} />
+        </PopoverContent>
+      </Popover>
+      <Box style={{ height: 900 }} />
+    </Box>
+  );
+}
+
+/**
  * Minimal, unambiguous text fields to focus and press keys against.
  * `tests/input-keydown-bubble.spec.ts` asserts that bubble-phase `window` and
  * `document` keydown listeners (application-level shortcuts) still fire while
@@ -1788,6 +1827,8 @@ export default function App() {
         <SheetContextParityFixture />
       ) : fixture === 'sheet-short-root' ? (
         <SheetShortRootFixture />
+      ) : fixture === 'popover-scrolled-anchor' ? (
+        <PopoverScrolledAnchorFixture />
       ) : fixture === 'keydown-bubble' ? (
         <KeydownBubbleFixture />
       ) : fixture === 'controls-sizing' ? (
