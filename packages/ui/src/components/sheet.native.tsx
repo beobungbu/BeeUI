@@ -36,7 +36,9 @@ import {
   OverlayRuntimeBridge,
   useOverlayRuntimeSnapshot,
   type ModalOverlayDismissScope,
+  type OverlayRuntimeSnapshot,
 } from './overlay-runtime';
+import { createLegacyStoreTransport, type OverlayTransport } from './overlay-transport-shared';
 import { Text, type TextProps } from './text';
 import {
   ToastRuntimeBridge,
@@ -75,7 +77,11 @@ import {
  * `SheetProvider` deliberately does not reuse an already-present outer gorhom
  * provider: that topology is the context-loss bug this boundary fixes, so an outer
  * provider is reported as a dev-time misconfiguration while BeeUI still mounts its
- * own inner provider. This is intentionally **not** routed through BeeUI's own
+ * own inner provider. A missing `SheetProvider` never crashes the app: it is
+ * reported once in development, a Sheet with no gorhom provider above it renders
+ * nothing, and a Sheet presented from an outer provider outside BeeUI's overlay
+ * runtime swaps in a store-backed overlay transport for its content (see
+ * `SheetHostTransportBoundary`). This is intentionally **not** routed through BeeUI's own
  * `react-native-teleport` transport
  * (`overlay-transport.native.tsx`): `BottomSheetModalProvider` owns its own
  * portal/stacking coordination (`push`/`switch`/`replace` between multiple
@@ -202,6 +208,19 @@ export type SheetProviderProps = {
   children?: React.ReactNode;
 };
 
+function isDevelopment() {
+  return typeof __DEV__ !== 'undefined' && __DEV__;
+}
+
+const SHEET_PROVIDER_WIRING = '<BeeUIProvider><SheetProvider>{app}</SheetProvider></BeeUIProvider>';
+
+// One report per JS runtime: every Sheet in a misconfigured app shares the same cause.
+let reportedMissingSheetProvider = false;
+let reportedSheetProviderOutsideRuntime = false;
+
+/** Lets `SheetContent` tell whether the app root mounted BeeUI's `SheetProvider`. */
+const SheetProviderPresenceContext = React.createContext(false);
+
 /**
  * Native Sheet integration boundary (#619).
  *
@@ -212,15 +231,11 @@ export type SheetProviderProps = {
  */
 export function SheetProvider({ children }: SheetProviderProps) {
   const outerModalProvider = useBottomSheetModalInternal(true);
+  const outsideOverlayRuntime = useOverlayRuntimeSnapshot().runtime === null;
   const warnedOuterProviderRef = React.useRef(false);
 
   React.useEffect(() => {
-    if (
-      typeof __DEV__ !== 'undefined' &&
-      __DEV__ &&
-      outerModalProvider &&
-      !warnedOuterProviderRef.current
-    ) {
+    if (isDevelopment() && outerModalProvider && !warnedOuterProviderRef.current) {
       warnedOuterProviderRef.current = true;
       console.error(
         'BeeUI SheetProvider detected an outer @gorhom/bottom-sheet BottomSheetModalProvider. ' +
@@ -230,9 +245,21 @@ export function SheetProvider({ children }: SheetProviderProps) {
     }
   }, [outerModalProvider]);
 
+  React.useEffect(() => {
+    if (!isDevelopment() || !outsideOverlayRuntime || reportedSheetProviderOutsideRuntime) return;
+    reportedSheetProviderOutsideRuntime = true;
+    console.error(
+      'BeeUI SheetProvider is mounted outside BeeUIProvider. Mount it below BeeUIProvider: ' +
+        `${SHEET_PROVIDER_WIRING}. Until then Sheets present outside BeeUI's overlay runtime, ` +
+        'and overlays opened inside them use a fallback host that drops app context.',
+    );
+  }, [outsideOverlayRuntime]);
+
   return (
     <GestureHandlerRootView style={styles.providerRoot}>
-      <BottomSheetModalProvider>{children}</BottomSheetModalProvider>
+      <BottomSheetModalProvider>
+        <SheetProviderPresenceContext.Provider value>{children}</SheetProviderPresenceContext.Provider>
+      </BottomSheetModalProvider>
     </GestureHandlerRootView>
   );
 }
@@ -514,6 +541,43 @@ function SheetPortalContextBridge({
   );
 }
 
+/**
+ * Renders where gorhom mounts the sheet content (its modal host), not where
+ * `SheetContent` is declared. The captured overlay transport keeps private
+ * provider state inside `BeeUIProvider`'s overlay runtime: teleport's
+ * `PortalProvider` on device, the store context for the legacy host. When
+ * gorhom's host sits outside that runtime (a `BottomSheetModalProvider` mounted
+ * above `BeeUIProvider`, or `SheetProvider` mounted above it), the modal-local
+ * teleport host would throw "usePortalContext must be used within
+ * PortalProvider" and unmount the whole app. The content then gets its own
+ * store-backed transport: nested overlays still render, under the sheet's
+ * modal-local host, with BeeUI's bridged contexts but without app context
+ * declared between the sheet and the overlay.
+ */
+function SheetHostTransportBoundary({
+  children,
+  overlayRuntime,
+}: {
+  children: (overlayRuntime: OverlayRuntimeSnapshot) => React.ReactNode;
+  overlayRuntime: OverlayRuntimeSnapshot;
+}) {
+  const hostRuntime = useOverlayRuntimeSnapshot().runtime;
+  const hostOutsideRuntime = overlayRuntime.transport !== null && hostRuntime === null;
+  const fallbackTransportRef = React.useRef<OverlayTransport | null>(null);
+  if (hostOutsideRuntime && fallbackTransportRef.current === null) {
+    fallbackTransportRef.current = createLegacyStoreTransport();
+  }
+  const fallbackTransport = hostOutsideRuntime ? fallbackTransportRef.current : null;
+  const resolvedOverlayRuntime = React.useMemo(
+    () => (fallbackTransport ? { ...overlayRuntime, transport: fallbackTransport } : overlayRuntime),
+    [fallbackTransport, overlayRuntime],
+  );
+
+  if (!fallbackTransport) return <>{children(resolvedOverlayRuntime)}</>;
+  const { RootBoundary } = fallbackTransport;
+  return <RootBoundary>{children(resolvedOverlayRuntime)}</RootBoundary>;
+}
+
 export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, SheetContentProps>(
   (
     {
@@ -548,6 +612,11 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
   ) => {
     const sheetContext = useSheetContext();
     const { open, setOpen } = sheetContext;
+    const hasSheetProvider = React.useContext(SheetProviderPresenceContext);
+    // gorhom's `BottomSheetModal` throws on mount without a modal provider above
+    // it, so without one there is no host to present into: render nothing
+    // rather than take the app down.
+    const canPresent = useBottomSheetModalInternal(true) !== null;
     const insets = useSafeAreaInsets();
     const frame = useSafeAreaFrame();
     const overlayRuntime = useOverlayRuntimeSnapshot();
@@ -579,7 +648,23 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
     const dismissInFlightRef = React.useRef(false);
 
     React.useEffect(() => {
+      if (!isDevelopment() || hasSheetProvider || reportedMissingSheetProvider) return;
+      reportedMissingSheetProvider = true;
+      console.error(
+        'BeeUI Sheet: SheetContent is rendered without SheetProvider. On native, mount one ' +
+          `SheetProvider below BeeUIProvider at the app root: ${SHEET_PROVIDER_WIRING}. ` +
+          'SheetProvider installs GestureHandlerRootView and the @gorhom/bottom-sheet ' +
+          'BottomSheetModalProvider itself; remove any BottomSheetModalProvider mounted around ' +
+          'BeeUIProvider. ' +
+          (canPresent
+            ? 'Until then this Sheet presents from that outer provider, where BeeUI cannot guarantee overlay context or stacking.'
+            : 'Until then this Sheet does not open, because no BottomSheetModalProvider is mounted above it.'),
+      );
+    }, [canPresent, hasSheetProvider]);
+
+    React.useEffect(() => {
       openRef.current = open;
+      if (!canPresent) return;
       if (open) {
         if (!presentedRef.current && !dismissInFlightRef.current) {
           presentedRef.current = true;
@@ -589,7 +674,7 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
         dismissInFlightRef.current = true;
         sheetRef.current?.dismiss();
       }
-    }, [open]);
+    }, [canPresent, open]);
 
     const requestClose = React.useCallback(() => {
       onRequestClose?.();
@@ -633,10 +718,10 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
     }, [dismissOnRequestClose, onRequestClose, setOpen]);
 
     React.useEffect(() => {
-      if (!open || Platform.OS !== 'android') return undefined;
+      if (!canPresent || !open || Platform.OS !== 'android') return undefined;
       const subscription = BackHandler.addEventListener('hardwareBackPress', handleAndroidBack);
       return () => subscription.remove();
-    }, [handleAndroidBack, open]);
+    }, [canPresent, handleAndroidBack, open]);
 
     const registerTitle = React.useCallback((nativeID?: string, text?: string) => {
       setTitleNativeID(nativeID);
@@ -685,6 +770,8 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
       (_handleProps: BottomSheetHandleProps) => <SheetHandleSlot handleClassNameRef={handleClassNameRef} />,
       [],
     );
+
+    if (!canPresent) return null;
 
     return (
       <SheetBridgeContextCapture contexts={bridgeContexts}>
@@ -735,12 +822,14 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
             safe-area metrics, and the overlay runtime so `SheetClose`,
             `useSafeAreaInsets`, and nested BeeUI overlays inside the sheet
             resolve exactly what they would have resolved in place. */}
+        <SheetHostTransportBoundary overlayRuntime={overlayRuntime}>
+        {(hostOverlayRuntime) => (
         <SheetPortalContextBridge
           bridgeContexts={bridgeContexts}
           bridgeValues={bridgeValues}
           frame={frame}
           insets={insets}
-          overlayRuntime={overlayRuntime}
+          overlayRuntime={hostOverlayRuntime}
           sheetContext={sheetContext}
           themeScope={themeScope}
           toastRuntime={toastRuntime}
@@ -783,6 +872,8 @@ export const SheetContent = React.forwardRef<React.ComponentRef<typeof View>, Sh
             </ModalOverlayHost>
           </View>
         </SheetPortalContextBridge>
+        )}
+        </SheetHostTransportBoundary>
           </BottomSheetModal>
         )}
       </SheetBridgeContextCapture>
