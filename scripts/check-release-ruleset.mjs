@@ -32,6 +32,7 @@ export const CONDITIONAL_JOBS_EXCLUDED_FROM_REQUIRED_CHECKS = Object.freeze([
   { workflow: 'ci.yml', job: 'verify-tokens' },
   { workflow: 'ci.yml', job: 'verify-runtime' },
   { workflow: 'ci.yml', job: 'verify-release' },
+  { workflow: 'ci.yml', job: 'verify-release-prep' },
   { workflow: 'ci.yml', job: 'verify-benchmark' },
   { workflow: 'ci.yml', job: 'bare-consumer' },
   { workflow: 'ci.yml', job: 'android-native' },
