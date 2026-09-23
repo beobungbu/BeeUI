@@ -4,7 +4,28 @@ All notable consumer-facing changes to BeeUI are recorded here.
 
 ## Unreleased
 
-No unreleased consumer-facing changes are recorded after `0.86.2-rc.2` yet.
+Fixes from the BeePOS consumer verification of `0.86.2-rc.2`.
+
+### Fixed
+
+- **Sheet (native) no longer crashes without `SheetProvider`** (#629). With the rc.1 root wiring (an outer `BottomSheetModalProvider`, no `SheetProvider`) the sheet opens instead of blanking the app; with no gorhom provider at all it stays closed. Either way one development error names the required `BeeUIProvider > SheetProvider > app` wiring.
+- **Select commits the option under the pointer** (#612). Hovering an option no longer scrolls the list, so a press on a long, scrolling list can no longer commit a different option or select nothing.
+- **Select inside `Field`** (#630) is named by the field label and exposes required, invalid, disabled and the field's description or error, like `Input`. `Input` and `Select` now point `aria-describedby` at the Field's helper text on Web.
+- **Keys typed in a focused `Input`/`SearchInput` bubble to `window` and `document` on Web** (#606); React ancestors still treat the key as handled.
+- **Typography and contrast:** `text-caption` keeps its size and the default text colour (#599); Avatar fallback initials scale with the avatar size (#599); plain table cells use the foreground colour in dark (#604); the current Stepper step title meets 4.5:1 (#631).
+- **Input/SearchInput** no longer clip descenders at accessibility text sizes (#589). **SegmentedControl** sizes segments from their labels and no longer breaks words mid-word in narrow containers (#600). **IconButton `size="sm"`** renders at its small size; native keeps a 44dp hit target (#568). Wrapped button labels are centred (#631).
+- **Forms:** a Checkbox list inside `FormGroup` is exposed as a group labelled by its legend, linked to its error and marked invalid/required (#571). `KeyboardAwareScreen` no longer calls the deprecated `currentlyFocusedField()` and reserves keyboard space on iOS too, so the last field inside a shell layout scrolls above the keyboard (#588, #631).
+- **Web accent colours:** Spinner, Switch and Input placeholder resolve their colour from theme variables, so a late-loaded stylesheet no longer logs the `accent-primary` warning (#592).
+- **Web popovers opened after the page scrolls** stay adjacent to their trigger.
+
+### Changed
+
+- `FormGroup` no longer appends an English "required" to its legend by default; pass a localized `requiredAccessibilityLabel`, as with the other form primitives (#631).
+- Native bottom toasts dock above a standard bottom-navigation band (safe-area inset + 80) so they do not cover a tab bar (#631).
+
+### Added
+
+- `Select` `locale` prop for its built-in placeholder copy (`vi-VN` → "Chọn một mục"; other locales fall back to English) (#587).
 
 ## [0.86.2-rc.2] — 2026-09-22
 
