@@ -54,6 +54,7 @@ import {
   PopoverTrigger,
   Radio,
   RadioGroup,
+  SearchInput,
   Select,
   SelectContent,
   SelectGroup,
@@ -107,6 +108,7 @@ import {
   type VisualTheme,
 } from './src/visual-contract';
 import { ColorTypographyFixture } from './src/color-typography-fixture';
+import { ControlsSizingFixture } from './src/controls-sizing-fixture';
 import { SelectFieldFixture, SelectMinimalRouteFixture } from './src/select-fixtures';
 
 function readVisualQuery(): { scenario: VisualScenarioId; theme: VisualTheme } {
@@ -153,6 +155,7 @@ type FixtureId =
   | 'sheet-context-parity'
   | 'sheet-short-root'
   | 'keydown-bubble'
+  | 'controls-sizing'
   | 'keyboard-roving-focus'
   | 'table-row-interactive-descendants'
   | 'select-minimal-route'
@@ -171,6 +174,7 @@ const fixtureIds: readonly FixtureId[] = [
   'sheet-context-parity',
   'sheet-short-root',
   'keydown-bubble',
+  'controls-sizing',
   'keyboard-roving-focus',
   'table-row-interactive-descendants',
   'select-minimal-route',
@@ -1565,17 +1569,23 @@ function SheetShortRootFixture() {
 }
 
 /**
- * BeeUI issue #606 — a single, minimal, unambiguous `Input` to focus and press
- * a key against. `tests/input-keydown-bubble.spec.ts` asserts whether a
- * bubble-phase `document.addEventListener('keydown', ...)` listener (the
- * consumer's own reported workaround needs a capture-phase one instead) still
- * fires while this Input holds focus.
+ * Minimal, unambiguous text fields to focus and press keys against.
+ * `tests/input-keydown-bubble.spec.ts` asserts that bubble-phase `window` and
+ * `document` keydown listeners (application-level shortcuts) still fire while
+ * an `Input` or `SearchInput` holds focus, and that a field whose own
+ * `onKeyPress` deliberately stops propagation still stops it.
  */
 function KeydownBubbleFixture() {
   return (
     <Box className="gap-4 p-6" testID="keydown-bubble-fixture">
       <Text>Focus the field below and press a key.</Text>
       <Input accessibilityLabel="Keydown bubble target" testID="keydown-bubble-input" />
+      <SearchInput accessibilityLabel="Keydown bubble search" testID="keydown-bubble-search-input" />
+      <Input
+        accessibilityLabel="Keydown bubble stopped"
+        onKeyPress={(event) => event.stopPropagation()}
+        testID="keydown-bubble-stopping-input"
+      />
     </Box>
   );
 }
@@ -1780,6 +1790,8 @@ export default function App() {
         <SheetShortRootFixture />
       ) : fixture === 'keydown-bubble' ? (
         <KeydownBubbleFixture />
+      ) : fixture === 'controls-sizing' ? (
+        <ControlsSizingFixture />
       ) : fixture === 'keyboard-roving-focus' ? (
         <KeyboardRovingFocusFixture />
       ) : fixture === 'table-row-interactive-descendants' ? (
