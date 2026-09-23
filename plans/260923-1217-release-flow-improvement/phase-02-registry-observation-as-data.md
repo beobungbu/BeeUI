@@ -49,10 +49,10 @@ Consumers include generated component notes, llms output, README generated block
 
 The hand-authored Starlight pages are all `.md` (`apps/docs/src/content/docs/{start,guides,ai,theming,release-security}/*.md`, `index.md`); a `.md` page cannot render an Astro component inline. Two viable routes, in order of preference:
 
-1. **Starlight `components` override (preferred).** `apps/docs/astro.config.mjs` already overrides `Head` with `src/components/SearchFilterHead.astro`; add a second override (e.g. `PageTitle` or `Banner`) that renders the release status from `release-state.json` when the page frontmatter sets `releaseStatus: true`. The 13 pages lose their hand-written paragraph and gain one frontmatter flag; no page becomes MDX and no `*.md` glob in the check scripts changes.
+1. **Starlight `components` override (preferred).** Keep the pages as `.md` and extend the existing Starlight content schema in `apps/docs/src/content.config.ts` with an optional boolean field such as `releaseStatus` using `docsSchema({ extend: z.object({ releaseStatus: z.boolean().optional() }) })`. Then add a Starlight `PageTitle` override in `apps/docs/astro.config.mjs` (the repo already overrides `Head` and `Search`). The override must reuse/wrap Starlight's default `PageTitle` so default title semantics/props are preserved, then render `ReleaseStatus.astro` when `Astro.locals.starlightRoute.entry.data.releaseStatus === true`. The 13 pages lose their hand-written paragraph and gain `releaseStatus: true`; no page becomes MDX and no `*.md` glob in the check scripts changes.
 2. **Rename to `.mdx`.** Starlight bundles `@astrojs/mdx` (7.0.8 in the lockfile), so `<ReleaseStatus />` works after renaming the 13 files. Costs: every script that walks `*.md` under `apps/docs/src/content/docs` (`public-guide-data.mjs`, `check-public-doc-truth.mjs` walker, public-surface ownership page scans, `ci-scope` doc rules) must accept `.mdx`, and link/route checks must be re-run.
 
-Pick route 1 unless a page needs the status inline mid-body.
+Pick route 1 unless a page needs the status inline mid-body. Do not add an undeclared custom frontmatter key: Starlight's `docsSchema()` is currently unextended in BeeUI, so the schema change is part of route 1 rather than optional follow-up work.
 
 Every public registry sentence includes the observation date/time or links to a release-state surface that does.
 
@@ -92,19 +92,21 @@ Create:
 - `scripts/release-status-lib.mjs`;
 - `docs/registry-observation.json`;
 - `apps/docs/src/components/ReleaseStatus.astro`;
+- `apps/docs/src/components/ReleaseStatusPageTitle.astro` (or equivalently named wrapper around the default Starlight `PageTitle`);
 - `.github/workflows/registry-observe.yml`.
 
-Modify generators/checks, README/package/example docs, release policy docs, release-state types, worker build identity and the hand-authored Starlight pages identified by the audit. Add tests for observation parsing, atomic-write behavior, all derived states and renderer output.
+Modify generators/checks, README/package/example docs, release policy docs, release-state types, worker build identity, `apps/docs/src/content.config.ts`, `apps/docs/astro.config.mjs`, and the hand-authored Starlight pages identified by the audit. Add tests for observation parsing, atomic-write behavior, all derived states and renderer output.
 
 ## Steps
 
 1. Define and test the observation schema and pure state derivation first.
 2. Add the registry observer with injectable command runner and atomic write.
 3. Switch generators/release-state JSON to the shared state model; remove workspace==published assertions.
-4. Replace live registry prose with generated blocks/components.
-5. Add a public-truth rule forbidding hand-written current-state release claims outside generated blocks.
-6. Add the dispatch + scheduled observation workflow and prove its PR/CI behavior.
-7. Add `release:literal-audit` to report/fail on current-version literals outside explicit history/evidence/plan allowlists.
+4. Extend the Starlight docs schema with `releaseStatus?: boolean`, add the `PageTitle` override, and replace the 13 hand-written release paragraphs with the frontmatter flag + shared status component. Preserve the default PageTitle behavior by wrapping/reusing the Starlight default component.
+5. Replace the remaining live registry prose with generated blocks/components.
+6. Add a public-truth rule forbidding hand-written current-state release claims outside generated blocks/components.
+7. Add the dispatch + scheduled observation workflow and prove its PR/CI behavior.
+8. Add `release:literal-audit` to report/fail on current-version literals outside explicit history/evidence/plan allowlists.
 
 ## Validation
 
@@ -112,6 +114,8 @@ Modify generators/checks, README/package/example docs, release policy docs, rele
 - Scenario: workspace `0.86.2-rc.9`, registry complete at rc.2 → renderer says candidate is ahead and reports observed `next`.
 - Scenario: only core/tokens have rc.9 → renderer says partial publication; it must not say BeeUI rc.9 is fully published.
 - Failed npm query leaves the committed observation untouched.
+- Starlight schema/typecheck accepts `releaseStatus` because the field is explicitly declared; one flagged page renders the shared release status and an unflagged page renders the default title surface without it.
+- `pnpm --filter @beemvp/beeui-docs typecheck` and docs build pass after the component override.
 - README, docs, llms and worker release-state surfaces agree for the same snapshot.
 - Full `pnpm typecheck && pnpm test` passes.
 
