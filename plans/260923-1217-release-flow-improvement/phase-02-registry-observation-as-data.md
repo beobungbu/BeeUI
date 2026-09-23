@@ -1,44 +1,111 @@
-# Phase 02 — registry state as observed data; all public sentences rendered from data
+# Phase 02 — registry state as observed data; all public release claims render from data
 
-**Context:** `reports/scout-version-truth-data-flow-report.md` §3, §4, §6; `reports/scout-version-literal-inventory-and-ci-scope-report.md` §1(c), §2; owner decisions D3, D7. Depends on Phase 01.
-**Size:** L. This is the phase that removes the ~29 hand-maintained narrative files and the "published while only staged" window.
+**Context:** version-truth data-flow report, literal inventory, owner decisions D3/D7.
+**Depends on:** Phase 01.
+**Size:** L.
 
 ## Target
 
-Two facts, two provenances:
+Two independent facts with independent provenance:
 
-| Fact | Source | Field |
+| Fact | Source | Meaning |
 |---|---|---|
-| Workspace / candidate version | `packages/ui/package.json` | `workspaceVersion` |
-| Published state | `docs/registry-observation.json`, written by `pnpm registry:observe` (`npm view <pkg> versions dist-tags --json` for the four packages), with `observedAt` and `observedBy` (local user or workflow run id) | `published`, `publishedVersions[]`, `distTags.{latest,next}` per package |
+| Workspace/candidate version | `packages/ui/package.json` | what this checkout intends to release |
+| Registry observation | `docs/registry-observation.json` written by `pnpm registry:observe` | what npm actually exposed at a specific time |
 
-`published` is no longer authored anywhere. `apps/docs/public/release-state.json` carries both facts and the equality assertion at `generate-docs-foundation.mjs:362-364` is removed; `status` becomes one of `unpublished | prerelease-published | candidate-ahead-of-registry | stable`.
+The observation file stores raw observed facts, not conclusions:
 
-Every public sentence about npm is rendered from these fields by one shared renderer (`scripts/release-status-lib.mjs`, exporting `renderDistributionStatus({ workspaceVersion, observation, format })` for markdown/plain/astro). Consumers: `distributionStatusNote` (component pages), `buildStatusNote` (llms), `docs/component-reference.md`, `README.md` (generated block between markers, checked by `docs:public-truth:check`), `packages/*/README.md` (generated block or no literal, per D7), an Astro component `<ReleaseStatus />` used by the 13 hand-authored Starlight pages in place of their paragraphs, `web/worker` `build-identity.json` gains `publishedVersion`/`observedAt`.
+- `observedAt` (UTC timestamp);
+- `observedBy` (local actor or workflow/run id);
+- per package: observed `versions[]`, `distTags`, `dist.integrity` / shasum for the relevant version when available;
+- command/tool metadata sufficient to reproduce the query.
 
-The `latest` observation stops being prose: the renderer prints "observed <date>: next → X, latest → Y" and, when `latest` points at a prerelease, the fixed sentence about the unestablished mechanism from the policy doc.
+There is **no authored `published` boolean**. Publication state is derived from the workspace version plus all four package observations.
+
+## Required derived states
+
+The shared renderer/state calculator must support at least:
+
+- `unpublished` — workspace version exists on none of the four packages;
+- `candidate-ahead-of-registry` — registry has an older complete BeeUI line, workspace is newer;
+- `partial-publication` — the workspace version exists on only a subset of the four lockstep packages during/after staged publication;
+- `prerelease-published` — all four packages expose the workspace RC consistently on the prerelease channel;
+- `stable` — all four expose the stable workspace version consistently on the stable channel;
+- `registry-inconsistent` — all packages/version presence may exist but dist-tags/lockstep observations disagree in a way that cannot be represented as a healthy release state.
+
+Public docs must never collapse `partial-publication` or `registry-inconsistent` into “published”.
+
+## Shared renderer
+
+Create `scripts/release-status-lib.mjs` with:
+
+- a pure state derivation function;
+- renderers for markdown/plain/Astro inputs;
+- no network access.
+
+Consumers include generated component notes, llms output, README generated block, package/example README status blocks where retained, Starlight `<ReleaseStatus />`, release-state JSON and worker build identity.
+
+Every public registry sentence includes the observation date/time or links to a release-state surface that does.
+
+## Observation command
+
+Create `scripts/registry-observe.mjs` and scripts:
+
+- `pnpm registry:observe` — query all four packages and write one atomic snapshot;
+- `pnpm registry:observe --stdout` — print without writing;
+- `pnpm registry:observe:check` — compare live observations to the committed snapshot for explicit drift checks.
+
+Rules:
+
+1. Query all required packages before replacing the committed file.
+2. A network/registry error must not overwrite the last good snapshot with partial data.
+3. A successful snapshot may legitimately describe `partial-publication`; that is observed registry state, not a command failure.
+4. Tests inject/mock the registry command; unit tests never require npm network access.
+
+## Workflow model
+
+Create `.github/workflows/registry-observe.yml` with:
+
+- `workflow_dispatch` as the **primary** post-publish refresh path;
+- a daily/low-frequency schedule as drift detection/backstop;
+- read-only npm access and no npm secret;
+- write permission only for the branch/PR update step.
+
+When the observation changes, the workflow opens/updates a PR into `development`. Using `GITHUB_TOKEN` is acceptable only after proving the resulting PR receives the repository’s required validation/approval behavior. Do not assume bot-created PRs execute all protected CI unattended; record the actual repository behavior in the phase report. If fully unattended observation PRs are later required, design a GitHub App token path separately.
+
+The release runbook explicitly dispatches observation after staged publication completes. The schedule is not the primary release step.
 
 ## Files
 
-Create: `scripts/registry-observe.mjs` (+ `registry:observe`, `registry:observe:check` scripts), `docs/registry-observation.json`, `scripts/release-status-lib.mjs`, `apps/docs/src/components/ReleaseStatus.astro`, `.github/workflows/registry-observe.yml` (schedule daily + `workflow_dispatch`; opens/updates a PR into `development` when the snapshot changes; read-only registry access, no secrets).
-Modify: `scripts/generate-docs-foundation.mjs`, `scripts/public-component-reference.mjs` (`distributionStatusNote`), `scripts/generate-llms-txt.mjs` (`buildStatusNote`, packages note), `scripts/generate-component-reference.mjs`, `scripts/check-public-doc-truth.mjs` (README block freshness; registry-command channel check reads observation), `scripts/check-distribution-policy.mjs` ("a published prerelease must use next" reads observation), `scripts/build-public-worker.mjs`, `web/worker/src/index.mjs`, `docs/dist-tag-policy.md` (prose points to the observation file; JSON keeps policy only), `README.md`, `packages/*/README.md`, `examples/**/README.md`, `docs/ai-agent-cookbook.md`, `docs/registry-cli.md`, `docs/release.md`, `docs/consumer-compatibility-report.md`, `docs/reference.content.json`, the 13 Starlight pages listed in the inventory report §1(c), `apps/docs/src/lib/release-state.ts` (now actually used), `scripts/generate-llms-txt.mjs:388` (move the "verified against rc.1" evidence sentence to a dated evidence field, or delete), `examples/scripts/pack-beeui-packages.mjs:6` comment. Tests for every touched script; new tests for the renderer (all four `status` states) and for `registry-observe --check`.
+Create:
+
+- `scripts/registry-observe.mjs`;
+- `scripts/release-status-lib.mjs`;
+- `docs/registry-observation.json`;
+- `apps/docs/src/components/ReleaseStatus.astro`;
+- `.github/workflows/registry-observe.yml`.
+
+Modify generators/checks, README/package/example docs, release policy docs, release-state types, worker build identity and the hand-authored Starlight pages identified by the audit. Add tests for observation parsing, atomic-write behavior, all derived states and renderer output.
 
 ## Steps
 
-1. Renderer + observation schema + `registry:observe` (with `--check` that diffs the live registry against the committed snapshot and exits non-zero on drift). Land with tests; no consumer change yet.
-2. Switch generators and `release-state.json` to the renderer; remove the equality assertion; regenerate; `docs:portal-pages:check` etc. green.
-3. README and package READMEs: generated block with `<!-- release-status:start/end -->` markers; `docs:public-truth:check` verifies the block equals renderer output.
-4. Astro component; replace paragraphs in the 13 pages; `docs:public-truth:check` gains a rule: no hand-written sentence matching `/is publicly published|is public on npm|currently resolves|same RC/` outside generated blocks.
-5. Observation workflow: daily schedule + dispatch; on change, commit `docs/registry-observation.json` and open a PR (uses `GITHUB_TOKEN` only). After every `stage-rc` approval the owner dispatches it once.
-6. Inventory gate: `pnpm release:literal-audit` (in `release:prepare`) fails if a version literal other than the workspace version appears outside `CHANGELOG.md`, `docs/rc-candidate.md`, `docs/decisions/`, `plans/`.
+1. Define and test the observation schema and pure state derivation first.
+2. Add the registry observer with injectable command runner and atomic write.
+3. Switch generators/release-state JSON to the shared state model; remove workspace==published assertions.
+4. Replace live registry prose with generated blocks/components.
+5. Add a public-truth rule forbidding hand-written current-state release claims outside generated blocks.
+6. Add the dispatch + scheduled observation workflow and prove its PR/CI behavior.
+7. Add `release:literal-audit` to report/fail on current-version literals outside explicit history/evidence/plan allowlists.
 
 ## Validation
 
-- Unit: renderer snapshots for the four states; `registry-observe --check` against a fixture registry (mock `npm view` via injectable runner).
-- Scenario: set workspace to `0.86.2-rc.9` with observation at rc.2 → docs say "candidate 0.86.2-rc.9 ahead of registry; published next → 0.86.2-rc.2 (observed 2026-…)"; README block and llms agree.
-- `grep -rn "publicly published\|same RC\|currently resolves" README.md docs apps/docs/src/content/docs llms*.txt` returns only generated blocks and the renderer.
-- Full `pnpm typecheck && pnpm test`.
+- Unit fixtures cover all states including `partial-publication` and `registry-inconsistent`.
+- Scenario: workspace `0.86.2-rc.9`, registry complete at rc.2 → renderer says candidate is ahead and reports observed `next`.
+- Scenario: only core/tokens have rc.9 → renderer says partial publication; it must not say BeeUI rc.9 is fully published.
+- Failed npm query leaves the committed observation untouched.
+- README, docs, llms and worker release-state surfaces agree for the same snapshot.
+- Full `pnpm typecheck && pnpm test` passes.
 
 ## Risks / rollback
 
-Network in the observe workflow only; docs builds stay offline (D3 committed snapshot). If npm rate-limits, the workflow retries later; nothing else depends on it. Rollback: keep the renderer but seed the observation file by hand once.
+The observer is the only new network-dependent operation. Build/docs generation stays offline. Rollback can keep the pure renderer and restore a manually captured snapshot, but must not reintroduce an authored publication boolean.
