@@ -38,7 +38,7 @@
     "./lifecycle.json"
   ],
   "acknowledgedSourceBlobs": {
-    "packages/ui/package.json": "9e02fb474bbc91dfd13758e9235fa16ae32756d6",
+    "packages/ui/package.json": "0000000000000000000000000000000000000000",
     "packages/ui/src/index.ts": "8e87b1d55ceaa3afa7e4c8a3a97210f0d3124b65",
     "packages/tokens/package.json": "01dd9e6a9c70b5a9eee16c6d3e3d175b24e10040",
     "packages/tokens/tokens.json": "97eab70437a93bca1904059b385dd125499fe09e",
