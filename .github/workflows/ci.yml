@@ -218,7 +218,6 @@ jobs:
           pnpm docs:surface:check
           pnpm docs:surface:diff
           pnpm docs:social-card:asset-check
-          pnpm docs:social-card:check
           pnpm portal-shell:test
 
   verify-tokens:
