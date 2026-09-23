@@ -126,7 +126,7 @@ export default function App() {
 }
 ```
 
-## Sheet on native (optional)
+## Sheet on native
 
 If your app renders `Sheet` on iOS/Android, mount BeeUI's public `SheetProvider` directly below `BeeUIProvider`, above the rest of the app:
 

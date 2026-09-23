@@ -449,9 +449,14 @@ export const SelectTrigger = React.forwardRef<
       [onKeyDown, resolvedDisabled, setOpen],
     );
 
+    // react-native-web drops `accessibilityHint`, so on Web the Field's helper
+    // text reaches assistive tech through `aria-describedby` instead.
     const webKeyboardProps =
       Platform.OS === 'web'
-        ? ({ onKeyDown: handleWebKeyDown } as unknown as PressableProps)
+        ? ({
+            'aria-describedby': field?.descriptionNativeID,
+            onKeyDown: handleWebKeyDown,
+          } as unknown as PressableProps)
         : ({} as PressableProps);
 
     return (

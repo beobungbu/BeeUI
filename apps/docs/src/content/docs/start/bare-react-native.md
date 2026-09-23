@@ -58,7 +58,7 @@ export default function App() {
 
 Your Metro/Uniwind setup should follow the maintained consumer fixture at `examples/bare-rn-consumer`.
 
-## Sheet on native (optional)
+## Sheet on native
 
 If your app renders `Sheet`, mount BeeUI's public `SheetProvider` directly below `BeeUIProvider`, above the rest of the app:
 
