@@ -3,7 +3,7 @@ import * as React from 'react';
 import { textVariants } from './text';
 import { useDirection } from './use-direction';
 import { useRequiredCallbackWarning } from './use-required-callback-warning';
-import { resolveTableDensityRowHeight, type TableAlign, type TableDensity, type TableLayout, type TableSortDirection } from './table-shared';
+import { plainTextContent, resolveTableDensityRowHeight, type TableAlign, type TableDensity, type TableLayout, type TableSortDirection } from './table-shared';
 
 export type { TableAlign, TableDensity, TableLayout, TableSortDirection } from './table-shared';
 
@@ -279,7 +279,10 @@ export const Table = React.forwardRef<HTMLDivElement, TableProps>(
                 'aria-label': ariaLabel,
                 'aria-labelledby': ariaLabelledBy,
               })}
-              className={cn('w-full', className)}
+              // `text-foreground`: every cell, caption and stacked value below is a raw DOM
+              // element whose text inherits colour. Without a colour here they inherit the
+              // document's default black, unreadable on a dark surface.
+              className={cn('w-full text-foreground', className)}
               data-testid={testID}
               // `layout="stacked"` has no real `<table>` element to supply the
               // implicit `table` role every `<tr>`'s `row` role (below, in
@@ -319,12 +322,16 @@ export type TableCaptionProps = Omit<React.HTMLAttributes<HTMLElement>, 'childre
 export const TableCaption = React.forwardRef<HTMLElement, TableCaptionProps>(
   ({ children, className, testID, ...props }, ref) => {
     const layout = useTableLayout();
-    const captionClassName = cn('px-1 py-2 text-center', className);
+    const captionClassName = cn(
+      textVariants({ variant: 'caption', tone: 'muted' }),
+      'px-1 py-2 text-center',
+      className,
+    );
 
     if (layout === 'stacked') {
       return (
         <p
-          className={cn(textVariants({ variant: 'caption', tone: 'muted' }), captionClassName)}
+          className={captionClassName}
           data-testid={testID}
           ref={ref as React.Ref<HTMLParagraphElement>}
           {...props}
@@ -671,8 +678,7 @@ export const TableHead = React.forwardRef<HTMLElement, TableHeadProps>(
   ) => {
     const layout = useTableLayout();
     const registry = React.useContext(TableColumnLabelRegistryContext);
-    const isPlainContent = typeof children === 'string' || typeof children === 'number';
-    const resolvedLabel = label ?? (isPlainContent ? String(children) : undefined);
+    const resolvedLabel = label ?? plainTextContent(children);
     const sortable = sortDirection !== undefined;
 
     useRequiredCallbackWarning('TableHead', 'onSortChange', onSortChange, !sortable);
@@ -823,7 +829,7 @@ export const TableCell = React.forwardRef<HTMLElement, TableCellProps>(
 
     return (
       <td
-        className={cn('px-3 py-2 align-middle', className)}
+        className={cn('px-3 py-2 align-middle text-foreground', className)}
         colSpan={colSpan}
         data-testid={testID}
         ref={ref as React.Ref<HTMLElement>}

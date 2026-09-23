@@ -106,6 +106,7 @@ import {
   type VisualScenarioId,
   type VisualTheme,
 } from './src/visual-contract';
+import { ColorTypographyFixture } from './src/color-typography-fixture';
 import { SelectFieldFixture, SelectMinimalRouteFixture } from './src/select-fixtures';
 
 function readVisualQuery(): { scenario: VisualScenarioId; theme: VisualTheme } {
@@ -155,7 +156,8 @@ type FixtureId =
   | 'keyboard-roving-focus'
   | 'table-row-interactive-descendants'
   | 'select-minimal-route'
-  | 'select-field';
+  | 'select-field'
+  | 'color-typography';
 
 const fixtureIds: readonly FixtureId[] = [
   'density',
@@ -173,6 +175,7 @@ const fixtureIds: readonly FixtureId[] = [
   'table-row-interactive-descendants',
   'select-minimal-route',
   'select-field',
+  'color-typography',
 ];
 
 function isFixtureId(value: string | null): value is FixtureId {
@@ -1785,6 +1788,8 @@ export default function App() {
         <SelectMinimalRouteFixture />
       ) : fixture === 'select-field' ? (
         <SelectFieldFixture />
+      ) : fixture === 'color-typography' ? (
+        <ColorTypographyFixture />
       ) : (
         <Scenario scenario={scenario} />
       )}
