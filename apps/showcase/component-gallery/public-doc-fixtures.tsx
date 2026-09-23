@@ -26,7 +26,7 @@ export function PublicDocFixtures() {
     <VStack gap="lg" testID="public-doc-fixtures">
       <Card className="gap-4" padding="lg">
         <Section
-          description="Public primitives that are normally embedded in larger application compositions."
+          description="Public primitives that are normally embedded in larger application compositions. Phase 04 negative proof."
           title="Documentation runtime fixtures"
         >
           <VStack gap="sm">
