@@ -14,6 +14,7 @@ const ALL_SCOPES = [
   'consumer',
   'expoConsumer',
   'release',
+  'releasePrep',
   'benchmark',
 ];
 
@@ -80,6 +81,42 @@ test('release and benchmark checks are independently scoped', () => {
   assert.equal(classifyCiScope(['docs/guide.md']).benchmark, false);
 });
 
+test('docs generator inputs select the freshness lane before merge', () => {
+  const cases = [
+    'packages/ui/src/components/button.tsx',
+    'registry/button.json',
+    'apps/showcase/patterns/dashboard.tsx',
+    'apps/showcase/pattern-gallery/dashboard.tsx',
+    'apps/showcase/component-gallery/button.tsx',
+    'apps/showcase/example-registry.ts',
+    'scripts/public-component-reference.mjs',
+  ];
+  for (const file of cases) {
+    assert.equal(classifyCiScope([file]).docs, true, `${file} must select docs freshness`);
+  }
+});
+
+test('release-prep composite is narrow and explicit', () => {
+  const required = [
+    'package.json',
+    'packages/ui/package.json',
+    'packages/cli/package.json',
+    'CHANGELOG.md',
+    '.changeset/example.md',
+    'docs/release.md',
+    'docs/dist-tag-policy.md',
+    'scripts/sync-root-version.mjs',
+    'scripts/release/add-artifact-digests.mjs',
+    '.github/workflows/npm-release.yml',
+  ];
+  for (const file of required) {
+    assert.equal(classifyCiScope([file]).releasePrep, true, `${file} must select release-prep composite`);
+  }
+  for (const file of ['packages/ui/src/components/button.tsx', 'apps/docs/src/content/docs/index.mdx', 'registry/button.json']) {
+    assert.equal(classifyCiScope([file]).releasePrep, false, `${file} must not select the root composite`);
+  }
+});
+
 test('central CI control-plane changes force one full self-validation run', () => {
   for (const file of [
     '.github/workflows/ci.yml',
@@ -102,7 +139,7 @@ test('empty input and explicit full mode fail safe to every lane', () => {
 // by inspection, and a path that silently selects nothing looks identical to a
 // path that is genuinely inert — which is how packages/cli, tsconfig.base.json
 // and the whole packages/core source tree ended up unverified on pull requests.
-const LANES = ['docs', 'web', 'visual', 'package', 'tokens', 'showcase', 'consumer', 'expoConsumer', 'release', 'benchmark'];
+const LANES = ['docs', 'web', 'visual', 'package', 'tokens', 'showcase', 'consumer', 'expoConsumer', 'release', 'releasePrep', 'benchmark'];
 
 const NO_LANE_REQUIRED = [
   // verify-fast has no job-level `if:`, so it runs these on every pull request.

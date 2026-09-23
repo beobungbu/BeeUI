@@ -115,6 +115,21 @@ const RELEASE_EXACT = new Set([
   '.github/workflows/ci.yml',
 ]);
 const RELEASE_PREFIXES = ['.changeset/', 'scripts/release/'];
+const RELEASE_PREP_EXACT = new Set([
+  'package.json',
+  'CHANGELOG.md',
+  'docs/release.md',
+  'docs/dist-tag-policy.md',
+  'docs/rc-candidate.md',
+  'docs/consumer-compatibility-report.md',
+  'docs/rollback-runbook.md',
+  'scripts/verify-release.mjs',
+  'scripts/pack-artifacts.mjs',
+  'scripts/sync-root-version.mjs',
+]);
+const RELEASE_PREP_PREFIXES = ['.changeset/', 'scripts/release/'];
+const RELEASE_PREP_MANIFEST_RE = /^packages\/(?:core|ui|tokens|cli)\/package\.json$/;
+const RELEASE_PREP_WORKFLOW_RE = /^\.github\/workflows\/(?:npm-release|version-packages|release|tag)[^/]*\.ya?ml$/;
 
 const BENCH_PREFIXES = ['scripts/benchmark/'];
 const BENCH_EXACT = new Set(['scripts/__tests__/benchmark-statistics.test.mjs']);
@@ -149,6 +164,12 @@ function isDependencyGraphPath(file) {
 const DOC_ARTIFACT_RE = /^llms(?:-[a-z]+)?\.txt$/;
 const DOC_EXTRA_EXACT = new Set(['AGENTS.md']);
 const DOC_LIB_RE = /^scripts\/(?:component-docs-lib|component-props-lib|public-component-reference|public-pattern-reference|public-reference|public-guide-data|public-portal-shell|generate-production-pattern-usage|check-portal-pages-fresh|public-docs-a11y|report-prop-coverage|check-docs-page-budget)\.mjs$/;
+const DOC_GENERATOR_INPUT_PREFIXES = ['registry/', 'apps/showcase/patterns/', 'apps/showcase/pattern-gallery/', 'apps/showcase/component-gallery/'];
+const DOC_GENERATOR_INPUT_EXACT = new Set([
+  'apps/showcase/example-registry.ts',
+  'apps/showcase/component-coverage.ts',
+  'apps/showcase/production-pattern-usage.ts',
+]);
 
 const WEB_PREFIXES_EXTRA = ['scripts/public-web-checks/', 'examples/', '.github/deployment/'];
 const WEB_LIB_RE = /^scripts\/(?:public-site-contract-lib|public-component-previews|social-card-lib|generate-og-image|check-docs-social-card)\.mjs$/;
@@ -202,7 +223,9 @@ function isDocsPath(file) {
     DOC_SCRIPT_RE.test(file) ||
     DOC_EXTRA_EXACT.has(file) ||
     DOC_ARTIFACT_RE.test(file) ||
-    DOC_LIB_RE.test(file)
+    DOC_LIB_RE.test(file) ||
+    DOC_GENERATOR_INPUT_EXACT.has(file) ||
+    DOC_GENERATOR_INPUT_PREFIXES.some((prefix) => file.startsWith(prefix))
   );
 }
 
@@ -290,6 +313,15 @@ function isReleasePath(file) {
   );
 }
 
+function isReleasePrepPath(file) {
+  return (
+    RELEASE_PREP_EXACT.has(file) ||
+    RELEASE_PREP_MANIFEST_RE.test(file) ||
+    RELEASE_PREP_WORKFLOW_RE.test(file) ||
+    RELEASE_PREP_PREFIXES.some((prefix) => file.startsWith(prefix))
+  );
+}
+
 function isBenchmarkPath(file) {
   return (
     BENCH_EXACT.has(file) ||
@@ -312,6 +344,7 @@ function fullResult(files, reason) {
     consumer: true,
     expoConsumer: true,
     release: true,
+    releasePrep: true,
     benchmark: true,
     reason,
   };
@@ -366,6 +399,7 @@ export function classifyCiScope(values, { forceFull = false } = {}) {
     consumer: files.some((file) => matchesWithCompanion(file, isConsumerPath)),
     expoConsumer: files.some((file) => matchesWithCompanion(file, isExpoPath)),
     release: files.some((file) => matchesWithCompanion(file, isReleasePath)),
+    releasePrep: files.some((file) => matchesWithCompanion(file, isReleasePrepPath)),
     benchmark: files.some((file) => matchesWithCompanion(file, isBenchmarkPath)),
     reason: 'changed-path scope classification',
   };
@@ -377,7 +411,7 @@ function envFlag(name) {
 
 function writeOutput(result) {
   if (!process.env.GITHUB_OUTPUT) return;
-  for (const key of ['docs', 'web', 'visual', 'package', 'tokens', 'showcase', 'consumer', 'expoConsumer', 'release', 'benchmark']) {
+  for (const key of ['docs', 'web', 'visual', 'package', 'tokens', 'showcase', 'consumer', 'expoConsumer', 'release', 'releasePrep', 'benchmark']) {
     const outputName = key.replace(/[A-Z]/g, (value) => `-${value.toLowerCase()}`);
     appendFileSync(process.env.GITHUB_OUTPUT, `${outputName}=${result[key] ? 'true' : 'false'}\n`);
   }
