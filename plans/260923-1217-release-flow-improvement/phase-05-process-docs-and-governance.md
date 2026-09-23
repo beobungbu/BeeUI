@@ -1,36 +1,119 @@
-# Phase 05 — process docs, evidence automation, governance
+# Phase 05 — reproducible evidence, one release runbook and governance
 
-**Context:** `reports/scout-release-pipeline-and-process-docs-report.md` §2, §5, §7 items 1, 6, 7, 8, 9; owner decisions D6, D7. Depends on Phases 01–04 (documents the flow they create).
+**Context:** pipeline/process audit and owner decisions D6/D7.
+**Depends on:** Phases 01–04.
 **Size:** S/M.
 
-## Requirements
+## Core correction
 
-1. **Evidence is generated, not typed.** `pnpm release:evidence` (`scripts/release/write-candidate-evidence.mjs`) writes the "Frozen candidate — `<version>`" section of `docs/rc-candidate.md` between markers from `.artifacts/release-verification.json` (tarball names, bytes, SHA-256), `git rev-parse HEAD`, and, when given `--pr <n>`, the `gh` check results for that head. `npm-release.yml` preflight asserts the candidate SHA recorded in the section equals `GITHUB_SHA` (so the rc.1 mismatch cannot recur), and after a successful stage the owner's next `registry:observe` PR appends the published integrity values.
-2. **One release runbook.** Collapse `docs/release.md`, `docs/npm-release-bootstrap.md` "Subsequent RCs", `docs/rc-candidate.md` "Candidate-freeze rule", and `.changeset/README.md` into a single ordered runbook (`docs/release-runbook.md`): merge bot PR → sync `main` (tag appears) → dispatch/approve `stage-rc` → owner 2FA → `registry:observe` PR → evidence updated. Old docs keep a pointer. `docs/rollback-runbook.md` references real tags.
-3. **CONTRIBUTING.md**: post-publication state; GNU tar requirement; "no self-merge" stated as convention with the ruleset value; how to add a changeset (`patch` while on the 0.86.2 line, ADR-016).
-4. **Governance (D6)**: `docs/release-ruleset.md` records the decision on `requiredApprovingReviewCount`; if raised, `check-release-ruleset` expectation updated.
-5. **Package READMEs (D7)**: no exact version literal; install via `@next`; link to CHANGELOG.
-6. **Archive**: `docs/rc-ci-matrix.md` and other superseded candidate evidence move under `docs/archive/` with an index.
+Release evidence must not require a commit to contain its own SHA.
+
+The frozen candidate source commit, later evidence commit, `development` integration commit, `main` promotion commit/tag target and publication workflow SHA are distinct objects. The release invariant is **artifact identity plus explicit provenance**, not `candidateSourceSha === GITHUB_SHA`.
+
+## Machine-readable release ledger
+
+Create a machine-readable evidence file (for example `docs/release-evidence/<version>.json`) with fields such as:
+
+- `version`;
+- `candidateSourceSha`;
+- candidate verification timestamp/tool versions;
+- canonical per-package tarball name, bytes and SHA-256;
+- optional canonical package manifest digest/content fingerprint;
+- `integrationSha` once known;
+- `mainPromotionSha` once known;
+- `repositoryTag` and `tagTargetSha`;
+- publication workflow run id / publication SHA once known;
+- post-publish npm integrity/shasum values;
+- registry-observation reference/timestamp.
+
+Fields may be filled in over the lifecycle, but once a provenance/digest field is recorded it may not be silently rewritten. Corrections are explicit amendments with reason/history.
+
+`docs/rc-candidate.md` becomes a generated/human-readable projection of this ledger between markers rather than the primary machine authority.
+
+## Candidate evidence generation
+
+Add `pnpm release:evidence` / `scripts/release/write-candidate-evidence.mjs`:
+
+1. read `.artifacts/release-verification.json`;
+2. record `candidateSourceSha = git rev-parse HEAD` **for the candidate being verified**;
+3. record canonical tarball digests and tool/runtime metadata;
+4. optionally import exact-head PR/CI evidence through an explicit API/`gh` integration;
+5. write/update the version ledger and generated candidate section.
+
+Committing that evidence creates a later commit SHA. That is expected and must not invalidate the candidate.
+
+## Release preflight invariant
+
+On `main`, `npm-release.yml`:
+
+1. reads the evidence ledger for the requested version;
+2. checks the requested version equals the checked-out manifest;
+3. verifies the repository release tag exists/targets the expected `main` release commit when the tag is part of the current flow;
+4. runs the canonical `pnpm release:verify` / artifact build at `GITHUB_SHA`;
+5. compares every resulting canonical package artifact digest to the frozen candidate evidence;
+6. fails on any package/digest mismatch before registry mutation.
+
+It must **not** assert `candidateSourceSha === GITHUB_SHA`.
+
+This directly proves that evidence-only/integration/promotion commits did not alter the publishable package artifacts.
+
+## Post-publication evidence
+
+After staged publication completes:
+
+1. dispatch `registry:observe`;
+2. record the publication workflow run/SHA and npm provenance/integrity facts;
+3. link the committed registry observation;
+4. render the updated release ledger into the candidate/release docs.
+
+Do not infer the publish commit from npm integrity alone; use workflow/provenance evidence for the source/run association.
+
+## One release runbook
+
+Create `docs/release-runbook.md` as the canonical ordered flow:
+
+1. prepare/version candidate;
+2. verify and generate frozen candidate evidence;
+3. merge to `development`;
+4. promote/sync release content to `main`;
+5. create/verify `v<version>` tag on the main release commit;
+6. owner dispatches/approves `stage-rc`;
+7. npm 2FA/release environment completes publication;
+8. dispatch registry observation;
+9. append publication/provenance facts to the release ledger;
+10. confirm public rendered release state.
+
+Old release/bootstrap/change-set docs keep a pointer for at least one release cycle before deletion/archive.
+
+## Governance/docs
+
+- `CONTRIBUTING.md`: post-publication state, GNU tar local requirement, review convention/ruleset reality, changeset policy for the active line.
+- `docs/release-ruleset.md`: record D6 accurately.
+- package READMEs: no exact live RC literal; use `@next` + CHANGELOG/release-state link.
+- archive superseded candidate/CI docs with an index.
+- agent execution contract: agents may prepare/verify/generate evidence but never approve the protected release environment or satisfy owner 2FA.
 
 ## Files
 
-Create: `scripts/release/write-candidate-evidence.mjs` (+ test), `docs/release-runbook.md`, `docs/archive/README.md`.
-Modify: `docs/rc-candidate.md` (markers), `.github/workflows/npm-release.yml` (preflight SHA assertion), `docs/release.md`, `docs/npm-release-bootstrap.md`, `docs/rollback-runbook.md`, `CONTRIBUTING.md`, `docs/release-ruleset.md` (+ check/test), `packages/*/README.md`, `.changeset/README.md`, `docs/agent-execution-contract.md` (agent may run `release:prepare`/`release:evidence`, never dispatch/approve).
+Create:
 
-## Steps
+- release evidence writer + tests;
+- per-version machine-readable evidence ledger path/schema;
+- `docs/release-runbook.md`;
+- archive index.
 
-1. Evidence script + markers + preflight assertion; test with the rc.2 verification report.
-2. Runbook written from the real rc.2 trail (PR #622, tag, dispatch); old docs pointed at it.
-3. CONTRIBUTING and README edits; `docs:public-truth:check` adjusted for the generated block from Phase 02.
-4. Archive move; link check (`pnpm docs:foundation:check`, `web:check`).
+Modify release workflow preflight, candidate docs, contributing/release/ruleset/rollback docs, package READMEs and relevant contract tests.
 
 ## Validation
 
-- `pnpm release:evidence --pr 622` reproduces the rc.2 section byte-for-byte except the CI rows it fetches.
-- A dry `operation=verify` dispatch on a commit whose evidence SHA differs fails preflight with the new message.
-- `grep -rn "0.86.2-rc" packages/*/README.md` returns nothing.
-- Full `pnpm typecheck && pnpm test`.
+- Generating evidence at candidate SHA A and committing it at SHA B is a normal passing case.
+- Promotion to SHA C passes preflight **only if** canonical artifact digests equal the candidate ledger.
+- Deliberately modify one packed file/manifest after candidate freeze: preflight at promotion SHA must fail digest comparison.
+- Tag target is checked separately from candidate source SHA.
+- Registry observation/publication provenance can be appended without pretending those later commits are the frozen candidate.
+- Package README current RC literals are absent.
+- Full `pnpm typecheck && pnpm test` passes.
 
 ## Risks / rollback
 
-Doc consolidation can drop a rule someone relies on: keep the old files as pointers for one release before deleting. Preflight assertion is additive; revert if it blocks a legitimate re-dispatch (re-run `release:evidence` instead).
+Digest comparison must use the same canonical deterministic packaging path on candidate and promotion commits. If that path itself changes, the candidate is invalid and must be re-frozen; do not bypass the mismatch. Runbook consolidation can drop a rule, so old docs remain as pointers for one release cycle.
