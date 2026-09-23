@@ -106,6 +106,7 @@ import {
   type VisualScenarioId,
   type VisualTheme,
 } from './src/visual-contract';
+import { SelectFieldFixture, SelectMinimalRouteFixture } from './src/select-fixtures';
 
 function readVisualQuery(): { scenario: VisualScenarioId; theme: VisualTheme } {
   if (typeof window === 'undefined') {
@@ -152,7 +153,9 @@ type FixtureId =
   | 'sheet-short-root'
   | 'keydown-bubble'
   | 'keyboard-roving-focus'
-  | 'table-row-interactive-descendants';
+  | 'table-row-interactive-descendants'
+  | 'select-minimal-route'
+  | 'select-field';
 
 const fixtureIds: readonly FixtureId[] = [
   'density',
@@ -168,6 +171,8 @@ const fixtureIds: readonly FixtureId[] = [
   'keydown-bubble',
   'keyboard-roving-focus',
   'table-row-interactive-descendants',
+  'select-minimal-route',
+  'select-field',
 ];
 
 function isFixtureId(value: string | null): value is FixtureId {
@@ -1776,6 +1781,10 @@ export default function App() {
         <KeyboardRovingFocusFixture />
       ) : fixture === 'table-row-interactive-descendants' ? (
         <TableRowInteractiveDescendantsFixture />
+      ) : fixture === 'select-minimal-route' ? (
+        <SelectMinimalRouteFixture />
+      ) : fixture === 'select-field' ? (
+        <SelectFieldFixture />
       ) : (
         <Scenario scenario={scenario} />
       )}

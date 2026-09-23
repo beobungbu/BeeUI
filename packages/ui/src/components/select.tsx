@@ -20,6 +20,7 @@ import {
   type ViewProps,
   type ViewStyle,
 } from 'react-native';
+import { useFieldContext } from './field-context';
 import {
   OverlayDismissLayer,
   OverlayPortal,
@@ -28,6 +29,7 @@ import {
   useOverlayId,
   type OverlayMeasurableNode,
 } from './overlay-runtime';
+import { getSelectDefaultPlaceholder } from './select-locale';
 import { Text } from './text';
 import { resolveDirection } from './use-direction';
 
@@ -37,15 +39,28 @@ export type SelectAlign = AnchoredOverlayAlign;
 export type SelectDirection = AnchoredOverlayDirection;
 export type SelectCollisionPadding = AnchoredOverlayCollisionPadding;
 
+type SelectFocusOptions = { preventScroll?: boolean };
+
 type SelectFocusableNode = React.ComponentRef<typeof Pressable> &
   OverlayMeasurableNode & {
-    focus?: () => void;
+    focus?: (options?: SelectFocusOptions) => void;
   };
+
+type WebBoxNode = {
+  clientHeight: number;
+  getBoundingClientRect: () => { height: number; top: number };
+  scrollTop: number;
+};
+
+function isWebBoxNode(node: Partial<WebBoxNode> | null | undefined): node is WebBoxNode {
+  return typeof node?.getBoundingClientRect === 'function';
+}
 
 type SelectItemRegistration = {
   disabled: boolean;
-  focus: () => void;
+  focus: (options?: SelectFocusOptions) => void;
   id: string;
+  node: () => SelectFocusableNode | null;
   order: number;
   textValue: string;
   value: SelectOptionValue;
@@ -57,6 +72,7 @@ type SelectRootContextValue = {
   disabled: boolean;
   duplicateValues: ReadonlySet<SelectOptionValue>;
   items: SelectItemRegistration[];
+  locale: string | undefined;
   open: boolean;
   overlayId: string;
   registerItem: (item: SelectItemRegistration) => void;
@@ -98,14 +114,12 @@ function assignRef<T>(ref: React.ForwardedRef<T>, value: T | null) {
   if (ref) ref.current = value;
 }
 
-const SELECT_DEFAULT_PLACEHOLDER = 'Select an option';
-
-function inferSelectAccessibleFallback(children: React.ReactNode): string {
+function inferSelectAccessibleFallback(children: React.ReactNode, locale: string | undefined): string {
   if (React.isValidElement(children) && children.type === SelectValue) {
     const placeholder = (children.props as SelectValueProps).placeholder;
     if (typeof placeholder === 'string' && placeholder.trim().length > 0) return placeholder;
   }
-  return SELECT_DEFAULT_PLACEHOLDER;
+  return getSelectDefaultPlaceholder(locale);
 }
 
 function primitiveText(children: React.ReactNode): string | undefined {
@@ -138,6 +152,8 @@ type SelectBaseProps = {
   defaultValue?: SelectOptionValue;
   /** Prevents the trigger from opening the listbox and disables the root. Defaults to false. */
   disabled?: boolean;
+  /** Locale of the built-in copy (`SelectValue`'s default placeholder). Explicit-only (ADR-008) — no ambient device/browser locale auto-detection; an unknown locale falls back to English. Defaults to `'en-US'`. */
+  locale?: string;
   /** Called whenever the open state changes (trigger press, item selection, outside press, Escape). Required alongside `open` to make it controlled; otherwise falls back to internal open state with a dev-mode warning. */
   onOpenChange?: (open: boolean) => void;
   /** Called with the newly selected `SelectItem`'s `value`. Required for enabled controlled `value` usage (logs a dev warning otherwise). */
@@ -158,6 +174,7 @@ export function Select(props: SelectProps) {
     defaultOpen = false,
     defaultValue,
     disabled = false,
+    locale,
     onOpenChange,
     onValueChange,
     open,
@@ -231,6 +248,7 @@ export function Select(props: SelectProps) {
       if (
         existing.disabled === item.disabled &&
         existing.focus === item.focus &&
+        existing.node === item.node &&
         existing.order === item.order &&
         existing.textValue === item.textValue &&
         existing.value === item.value
@@ -295,6 +313,7 @@ export function Select(props: SelectProps) {
       disabled,
       duplicateValues,
       items,
+      locale,
       open: resolvedOpen,
       overlayId,
       registerItem,
@@ -309,6 +328,7 @@ export function Select(props: SelectProps) {
       disabled,
       duplicateValues,
       items,
+      locale,
       overlayId,
       registerItem,
       resolvedOpen,
@@ -348,7 +368,9 @@ export const SelectTrigger = React.forwardRef<
 >(
   (
     {
+      accessibilityHint,
       accessibilityLabel,
+      accessibilityLabelledBy,
       accessibilityState,
       accessibilityValue,
       children,
@@ -361,9 +383,33 @@ export const SelectTrigger = React.forwardRef<
     },
     forwardedRef,
   ) => {
-    const { anchorRef, contentNativeID, disabled: rootDisabled, open, selectedItem, setOpen } =
-      useSelectRootContext();
-    const resolvedDisabled = rootDisabled || disabled === true;
+    const {
+      anchorRef,
+      contentNativeID,
+      disabled: rootDisabled,
+      locale,
+      open,
+      selectedItem,
+      setOpen,
+    } = useSelectRootContext();
+    // Inside a `Field` the trigger is that field's control, wired the same way
+    // `Input` is: named by (and linked to) the field label, its helper text as
+    // the hint, `required` through `aria-required`, and the field's
+    // disabled/invalid state ORed in.
+    const field = useFieldContext();
+    const resolvedDisabled = rootDisabled || disabled === true || field?.disabled === true;
+    const resolvedInvalid = field?.invalid === true;
+    const resolvedHint =
+      accessibilityHint ?? (resolvedInvalid ? field?.error : field?.description);
+    const requiredSuffix = field?.required
+      ? (field.requiredLabel ?? field.requiredAccessibilityLabel)
+      : undefined;
+    const fieldAccessibleLabel = field
+      ? requiredSuffix
+        ? `${field.label}, ${requiredSuffix}`
+        : field.label
+      : undefined;
+    const resolvedAccessibilityLabelledBy = accessibilityLabelledBy ?? field?.labelNativeID;
     // The combobox trigger's own text (the selected value or placeholder) is
     // rendered inside an `accessible={false}` View, and `role="combobox"`
     // does not get an accessible name from its content per the ARIA naming
@@ -373,12 +419,16 @@ export const SelectTrigger = React.forwardRef<
     // both (e.g. name "Choose a plan", value "Pro"). The selected item's
     // label already surfaces as the combobox's value via
     // `accessibilityValue.text` below — never promote it into the name.
-    // Fall back to a stable purpose/name derived from the SelectValue
-    // placeholder, or a generic default, so every trigger has a real
-    // accessible name even when a consumer omits `accessibilityLabel`.
-    const fallbackAccessibleLabel = inferSelectAccessibleFallback(children);
+    // Outside a `Field`, fall back to a stable purpose/name derived from the
+    // SelectValue placeholder, or the localized default, so every trigger has
+    // a real accessible name even when a consumer omits `accessibilityLabel`.
+    // The placeholder never names a trigger that has a field label.
     const resolvedAccessibilityLabel =
-      accessibilityLabel ?? (props.accessibilityLabelledBy ? undefined : fallbackAccessibleLabel);
+      accessibilityLabel ??
+      fieldAccessibleLabel ??
+      (resolvedAccessibilityLabelledBy
+        ? undefined
+        : inferSelectAccessibleFallback(children, locale));
     const setTriggerRef = React.useCallback(
       (node: React.ComponentRef<typeof Pressable> | null) => {
         anchorRef.current = node as SelectFocusableNode | null;
@@ -390,12 +440,13 @@ export const SelectTrigger = React.forwardRef<
     const handleWebKeyDown = React.useCallback(
       (event: WebKeyboardEvent) => {
         onKeyDown?.(event);
+        if (resolvedDisabled) return;
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
           event.preventDefault?.();
           setOpen(true);
         }
       },
-      [onKeyDown, setOpen],
+      [onKeyDown, resolvedDisabled, setOpen],
     );
 
     const webKeyboardProps =
@@ -411,14 +462,19 @@ export const SelectTrigger = React.forwardRef<
         aria-controls={contentNativeID}
         aria-expanded={open}
         aria-haspopup="listbox"
+        aria-invalid={resolvedInvalid || undefined}
+        aria-required={field?.required || undefined}
+        accessibilityHint={resolvedHint}
         accessibilityLabel={resolvedAccessibilityLabel}
+        accessibilityLabelledBy={resolvedAccessibilityLabelledBy}
         accessibilityState={{ ...accessibilityState, disabled: resolvedDisabled, expanded: open }}
         accessibilityValue={{
           ...accessibilityValue,
           text: accessibilityValue?.text ?? selectedItem?.textValue,
         }}
         className={cn(
-          'min-h-11 min-w-48 flex-row items-center justify-between gap-3 rounded-md border border-border-strong bg-input px-3 py-2 active:opacity-90 web:hover:bg-surface-muted',
+          'min-h-11 min-w-48 flex-row items-center justify-between gap-3 rounded-md border bg-input px-3 py-2 active:opacity-90 web:hover:bg-surface-muted',
+          resolvedInvalid ? 'border-destructive' : 'border-border-strong',
           resolvedDisabled && 'border-disabled bg-disabled opacity-60',
           className,
         )}
@@ -448,13 +504,13 @@ SelectTrigger.displayName = 'SelectTrigger';
 
 export type SelectValueProps = Omit<RNTextProps, 'children' | 'role'> & {
   className?: string;
-  /** Shown when no `SelectItem` is selected. Also used, when a plain string, as the trigger's fallback accessible name if no `accessibilityLabel` is set. Defaults to `'Select an option'`. */
+  /** Shown when no `SelectItem` is selected. Also used, when a plain string, as the trigger's fallback accessible name if no `accessibilityLabel` is set and the Select is not inside a `Field`. Defaults to the `Select` root's `locale` copy (`'Select an option'` for `'en-US'`). */
   placeholder?: React.ReactNode;
 };
 
 export const SelectValue = React.forwardRef<React.ComponentRef<typeof Text>, SelectValueProps>(
-  ({ className, placeholder = SELECT_DEFAULT_PLACEHOLDER, ...props }, ref) => {
-    const { disabled, selectedItem } = useSelectRootContext();
+  ({ className, placeholder, ...props }, ref) => {
+    const { disabled, locale, selectedItem } = useSelectRootContext();
     const hasSelection = selectedItem !== undefined;
     return (
       <Text
@@ -468,7 +524,11 @@ export const SelectValue = React.forwardRef<React.ComponentRef<typeof Text>, Sel
         numberOfLines={1}
         variant="body"
       >
-        {hasSelection ? selectedItem.textValue : placeholder}
+        {hasSelection
+          ? selectedItem.textValue
+          : placeholder === undefined
+            ? getSelectDefaultPlaceholder(locale)
+            : placeholder}
       </Text>
     );
   },
@@ -623,50 +683,89 @@ export const SelectContent = React.forwardRef<
       [duplicateValues],
     );
 
+    // Only opening the list and keyboard navigation may scroll it to the current
+    // option. A pointer that hovers or presses an option makes that option current
+    // too, but it is already under the pointer: scrolling the list then would slide
+    // a different option under the same pointer, which hovers next and scrolls
+    // again, until the list hits its end and the press lands on the wrong option.
+    const revealRef = React.useRef<{ align: 'start' | 'nearest'; id: string } | null>(null);
+
     React.useEffect(() => {
       if (!open) {
+        revealRef.current = null;
         setCurrentItemId(null);
         typeaheadRef.current = { query: '', timestamp: 0 };
         return;
       }
-      setCurrentItemId((current) => {
-        if (current) {
-          const currentItem = orderedItems.find((item) => item.id === current);
-          if (currentItem && isEnabled(currentItem)) return current;
-        }
-        if (selectedItem && isEnabled(selectedItem)) return selectedItem.id;
-        return orderedItems.find(isEnabled)?.id ?? null;
-      });
-    }, [isEnabled, open, orderedItems, selectedItem]);
+      if (currentItemId) {
+        const currentItem = orderedItems.find((item) => item.id === currentItemId);
+        if (currentItem && isEnabled(currentItem)) return;
+      }
+      const nextId =
+        selectedItem && isEnabled(selectedItem)
+          ? selectedItem.id
+          : (orderedItems.find(isEnabled)?.id ?? null);
+      revealRef.current = nextId ? { align: 'start', id: nextId } : null;
+      setCurrentItemId(nextId);
+    }, [currentItemId, isEnabled, open, orderedItems, selectedItem]);
 
     React.useEffect(() => {
       if (!open || Platform.OS !== 'web' || !currentItemId) return;
-      orderedItems.find((item) => item.id === currentItemId)?.focus();
+      // An option made current by the pointer is focused without the
+      // browser's focus-scroll, which would move the list under that pointer.
+      const pointerDriven = revealRef.current?.id !== currentItemId;
+      orderedItems
+        .find((item) => item.id === currentItemId)
+        ?.focus(pointerDriven ? { preventScroll: true } : undefined);
     }, [currentItemId, open, orderedItems]);
 
+    const viewportMaxHeight = viewportRect ? Math.max(96, viewportRect.height - 16) : 320;
+    const resolvedMaxHeight = Math.max(96, Math.min(maxHeight ?? 320, viewportMaxHeight));
+
     React.useEffect(() => {
-      if (!open || !currentItemId) return;
-      const layout = itemLayouts[currentItemId];
-      if (!layout) return;
-      const top = Math.max(0, layout.y - 8);
+      const reveal = revealRef.current;
+      if (!open || !currentItemId || reveal?.id !== currentItemId) return;
       if (Platform.OS === 'web') {
         // The Web listbox is a plain `View` (an ordinary DOM node), not a
-        // `ScrollView` — scroll it the same way a browser scrolls any
-        // overflow container.
-        (scrollRef.current as unknown as { scrollTo?: (options: { top: number }) => void } | null)
-          ?.scrollTo?.({ top });
-        return;
+        // `ScrollView`: measure the option against it directly, so the
+        // result never depends on when an `onLayout` was last reported.
+        const container = scrollRef.current as unknown as Partial<WebBoxNode> | null;
+        const node = items.find((item) => item.id === currentItemId)?.node() as unknown as
+          | Partial<WebBoxNode>
+          | null
+          | undefined;
+        if (!isWebBoxNode(container) || !isWebBoxNode(node)) return;
+        const containerRect = container.getBoundingClientRect();
+        const nodeRect = node.getBoundingClientRect();
+        const top = nodeRect.top - containerRect.top + container.scrollTop;
+        const bottom = top + nodeRect.height;
+        const visibleTop = container.scrollTop;
+        const visibleBottom = visibleTop + container.clientHeight;
+        if (reveal.align === 'start' || top < visibleTop) {
+          container.scrollTop = Math.max(0, top - 8);
+        } else if (bottom > visibleBottom) {
+          container.scrollTop = bottom - container.clientHeight + 8;
+        }
+      } else {
+        const layout = itemLayouts[currentItemId];
+        if (!layout) return;
+        (scrollRef.current as React.ComponentRef<typeof ScrollView> | null)?.scrollTo({
+          animated: false,
+          y: Math.max(0, layout.y - 8),
+        });
       }
-      (scrollRef.current as React.ComponentRef<typeof ScrollView> | null)?.scrollTo({
-        animated: false,
-        y: top,
-      });
-    }, [currentItemId, itemLayouts, open]);
+      // Once the list sits in its final place the reveal is done; a later
+      // re-render must not pull a list the user has scrolled back to it.
+      if (position) revealRef.current = null;
+    }, [currentItemId, itemLayouts, items, open, position, resolvedMaxHeight]);
 
     const setCurrentItem = React.useCallback(
       (id: string) => {
         const target = orderedItems.find((item) => item.id === id);
         if (!target || !isEnabled(target)) return;
+        // A pointer (or the focus that follows it) never scrolls the list; a
+        // keyboard move keeps its pending reveal when its own focus lands here.
+        if (revealRef.current?.id !== id) revealRef.current = null;
         setCurrentItemId(id);
       },
       [isEnabled, orderedItems],
@@ -675,6 +774,7 @@ export const SelectContent = React.forwardRef<
     const focusItem = React.useCallback(
       (item: SelectItemRegistration | undefined) => {
         if (!item || !isEnabled(item)) return;
+        revealRef.current = { align: 'nearest', id: item.id };
         setCurrentItemId(item.id);
         if (Platform.OS === 'web') item.focus();
       },
@@ -761,8 +861,6 @@ export const SelectContent = React.forwardRef<
       [claimOrder, currentItemId, registerLayout, setCurrentItem],
     );
 
-    const viewportMaxHeight = viewportRect ? Math.max(96, viewportRect.height - 16) : 320;
-    const resolvedMaxHeight = Math.max(96, Math.min(maxHeight ?? 320, viewportMaxHeight));
     const resolvedStyle = !open
       ? [styles.content, styles.hidden, style]
       : position
@@ -890,6 +988,11 @@ export const SelectItem = React.forwardRef<React.ComponentRef<typeof Pressable>,
     const id = useOverlayId('beeui-select-item');
     const order = itemsContext.claimOrder();
     const internalRef = React.useRef<SelectFocusableNode | null>(null);
+    const focusNode = React.useCallback(
+      (options?: SelectFocusOptions) => internalRef.current?.focus?.(options),
+      [],
+    );
+    const getNode = React.useCallback(() => internalRef.current, []);
     const inferredText = primitiveText(children);
     const resolvedTextValue = (textValue ?? inferredText ?? value).trim();
     const duplicate = root.duplicateValues.has(value);
@@ -923,19 +1026,36 @@ export const SelectItem = React.forwardRef<React.ComponentRef<typeof Pressable>,
     React.useEffect(() => {
       registerItem({
         disabled: disabled === true,
-        focus: () => internalRef.current?.focus?.(),
+        focus: focusNode,
         id,
+        node: getNode,
         order,
         textValue: resolvedTextValue,
         value,
       });
       return () => unregisterItem(id);
-    }, [disabled, id, order, registerItem, resolvedTextValue, unregisterItem, value]);
+    }, [disabled, focusNode, getNode, id, order, registerItem, resolvedTextValue, unregisterItem, value]);
+
+    // On Web the current option follows real pointer movement, not hover-in: a
+    // browser also reports hover when the list opens (or scrolls) under a
+    // resting pointer, and that must not take the current option away from
+    // the keyboard.
+    const consumerOnMouseMove = (props as { onMouseMove?: (event: unknown) => void }).onMouseMove;
+    const webPointerProps =
+      Platform.OS === 'web'
+        ? ({
+            onMouseMove: (event: unknown) => {
+              itemsContext.setCurrentItem(id);
+              consumerOnMouseMove?.(event);
+            },
+          } as unknown as PressableProps)
+        : ({} as PressableProps);
 
     return (
       <Pressable
         ref={setRef}
         {...props}
+        {...webPointerProps}
         accessibilityLabel={accessibilityLabel ?? resolvedTextValue}
         accessibilityState={{
           ...accessibilityState,
@@ -955,7 +1075,7 @@ export const SelectItem = React.forwardRef<React.ComponentRef<typeof Pressable>,
           onFocus?.(event);
         }}
         onHoverIn={(event) => {
-          itemsContext.setCurrentItem(id);
+          if (Platform.OS !== 'web') itemsContext.setCurrentItem(id);
           onHoverIn?.(event);
         }}
         onLayout={(event: LayoutChangeEvent) => {
