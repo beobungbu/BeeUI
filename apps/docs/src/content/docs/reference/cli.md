@@ -1,6 +1,6 @@
 ---
 title: CLI reference
-description: Every command and flag the BeeUI Registry CLI accepts.
+description: Every command and flag the BeeUI Registry CLI accepts. [INTENTIONAL STALE PROOF]
 ---
 
 <!-- Generated file: written by scripts/public-reference.mjs from docs/public-surface.inventory.json. Prose lives in docs/reference.content.json. Do not hand-edit. -->
