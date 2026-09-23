@@ -202,7 +202,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Tooltip** is actually used: 24 lines in 3 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1103 lines — where **Tooltip** is actually used: 24 lines in 3 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -255,7 +255,7 @@ function OverlayContextValue({ testID }: { testID: string }) {
             </Tooltip>
 ````
 
-[lines 811–818](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L811-L818):
+[lines 833–840](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L833-L840):
 
 ````tsx
                   <Tooltip>

@@ -111,8 +111,8 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/application-primitives.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/application-primitives.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-7-state-edge-cases.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-state-edge-cases.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/stepper-current-title-contrast.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/stepper-current-title-contrast.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/stepper-orientation-and-step-clamp-warning.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/stepper-orientation-and-step-clamp-warning.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/tabs-pagination-stepper-current-aria.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/tabs-pagination-stepper-current-aria.test.tsx)
 
 ### Addressable examples
 
@@ -151,7 +151,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Stepper** is actually used: 5 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1103 lines — where **Stepper** is actually used: 5 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -160,13 +160,13 @@ import { Stepper, StepperItem } from '@beemvp/beeui-ui';
 import * as React from 'react';
 ````
 
-Fixture state this block reads (same file, line 467):
+Fixture state this block reads (same file, line 468):
 
 ````tsx
   const [step, setStep] = React.useState(3);
 ````
 
-[lines 982–986](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L982-L986):
+[lines 1004–1008](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1004-L1008):
 
 ````tsx
                   <Stepper currentStep={step} onStepChange={setStep} testID="stepper-showcase">

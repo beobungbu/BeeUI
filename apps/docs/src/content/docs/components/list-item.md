@@ -152,7 +152,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **List Item** is actually used: 28 lines in 2 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1103 lines — where **List Item** is actually used: 28 lines in 2 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -162,7 +162,7 @@ import * as React from 'react';
 import { useUniwind } from 'uniwind';
 ````
 
-[lines 993–997](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L993-L997):
+[lines 1015–1019](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1015-L1019):
 
 ````tsx
                     <ListItem
@@ -172,14 +172,14 @@ import { useUniwind } from 'uniwind';
                     />
 ````
 
-Fixture state this block reads (same file, lines 458, 460):
+Fixture state this block reads (same file, lines 458, 461):
 
 ````tsx
   const { theme } = useUniwind();
   const [notifications, setNotifications] = React.useState(true);
 ````
 
-[lines 1036–1058](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1036-L1058):
+[lines 1058–1080](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1058-L1080):
 
 ````tsx
                 <ListItem

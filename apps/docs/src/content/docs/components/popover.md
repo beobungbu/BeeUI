@@ -254,7 +254,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Popover** is actually used: 63 lines in 6 places, of 7 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1103 lines — where **Popover** is actually used: 63 lines in 6 places, of 7 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -385,7 +385,7 @@ function ThemeScopeValue({ testID }: { testID: string }) {
           </Popover>
 ````
 
-[lines 856–865](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L856-L865):
+[lines 878–887](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L878-L887):
 
 ````tsx
                   <Popover>

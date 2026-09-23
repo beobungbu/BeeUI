@@ -231,7 +231,7 @@ Colors, spacing and typography come from semantic tokens rather than from values
 - **Primary executable fixture:** [`apps/showcase/__tests__/dynamic-type-contract.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/dynamic-type-contract.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/perf-render-commit.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/perf-render-commit.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/table-cell-alignment-and-content-hug.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/table-cell-alignment-and-content-hug.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/table-performance.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/table-performance.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/table-mixed-text-children.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/table-mixed-text-children.test.tsx)
 
 ### Addressable examples
 
