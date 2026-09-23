@@ -68,6 +68,17 @@ The governed line is unchanged from rc.1 (`docs/compatibility-matrix.md`, `docs/
 
 Stable `0.86.2` is a separate future release event. rc.2 publication under `next` does not authorize or imply promotion of `latest`.
 
+### Upgrading from 0.86.2-rc.1
+
+*Added to this entry after `0.86.2-rc.2` publication (2026-09-23), from rc.2 consumer verification findings. Not part of the original rc.2 release notes above.*
+
+If your app already installed `0.86.2-rc.1`, four changes need action when you move to `0.86.2-rc.2`. Full detail: [Migration & versioning](https://github.com/beobungbu/BeeUI/blob/main/apps/docs/src/content/docs/guides/migration-versioning.md#upgrading-from-0862-rc1-to-0862-rc2).
+
+1. **`Sheet` native root wiring changed and is now required.** rc.1's guidance was `GestureHandlerRootView` > `BottomSheetModalProvider` > `BeeUIProvider`. On rc.2, mount BeeUI's public `SheetProvider` directly below `BeeUIProvider` instead (`BeeUIProvider` > `SheetProvider` > app) and remove the outer `BottomSheetModalProvider` — `SheetProvider` installs `GestureHandlerRootView` and gorhom's `BottomSheetModalProvider` itself, and deliberately does not reuse an already-present outer one.
+2. **Context bridging for Sheet content.** `SheetContent` only sees React contexts mounted above `SheetProvider`. Keep app-wide providers (query client, i18n, navigation, app stores) above `SheetProvider`; pass a screen-scoped provider's value through `SheetContent`'s `bridgeContexts` prop instead.
+3. **`Calendar` day cells are now `role="gridcell"` on Web** (previously `"cell"`). Update Web test selectors from `getByRole('cell')` to `getByRole('gridcell')` for calendar day cells; native is unchanged.
+4. **Workarounds you can drop:** per-table row density classes (use `Table density="dense48"`); a wrapping pressable for row-level navigation inside `TableRow`/`TableCell` (use `TableRow onPress`); a custom closable tab strip (use `TabsList scrollable` with `TabsTrigger closable`); a hover wrapper around `DropdownMenuTrigger` (it now carries its own hover affordance); manually splitting a `Button`'s label across two `Text` nodes for large text (a long label now wraps and the button grows instead of clipping).
+
 ## [0.86.2-rc.1] — 2026-09-09
 
 First public BeeUI release candidate. Published from exact source SHA

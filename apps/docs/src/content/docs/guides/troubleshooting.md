@@ -324,7 +324,8 @@ module.exports = withUniwindConfig(getDefaultConfig(__dirname), {
   repository develops and tests on, so the CLI fails loudly instead of dying later with an
   obscure syntax or API error.
 - **Fix:** switch to Node 24 (`nvm use`) and retry.
-- **Verify:** `pnpm beeui doctor` prints an `OK` line naming your Node version.
+- **Verify:** `npx @beemvp/beeui-cli@next doctor` prints an `OK` line naming your Node version
+  (`pnpm beeui doctor` from a BeeUI checkout).
 - **Relevant versions:** repository toolchain Node `24.13.1` exact; CLI engine `>=24`.
   Node 22 has no evidence and is not promised.
 - **Still broken:** the workspace is `engine-strict`, so an install under the wrong Node
@@ -363,35 +364,40 @@ module.exports = withUniwindConfig(getDefaultConfig(__dirname), {
 
 ## CLI and source-ownership conflicts
 
+Every command below is shown as a consumer would run it, `npx @beemvp/beeui-cli@next <command>`
+(pin `@0.86.2-rc.2` instead of `@next` for an immutable version). The repository-local
+equivalent from a BeeUI checkout is the same command name under `pnpm beeui <command>` — see
+[CLI & source ownership](/docs/guides/cli-source-ownership/) for that distinction.
+
 ### `refusing to overwrite existing files: <paths>; rerun with --overwrite only if replacement is intentional`
 
-- **Applies to:** `pnpm beeui add ...`.
+- **Applies to:** `add ...`.
 - **Likely cause:** the destination already contains a file with different content — usually
   because you already added that component and then edited it. The CLI refuses to silently
   destroy owned source.
 - **Fix:** inspect the difference first, then decide.
 
 ```bash
-pnpm beeui diff
-pnpm beeui add --dry-run button
+npx @beemvp/beeui-cli@next diff
+npx @beemvp/beeui-cli@next add --dry-run button
 ```
 
   Only then re-run with `--overwrite` if replacement really is what you want.
-- **Verify:** `pnpm beeui diff` reports no unexpected drift afterwards.
+- **Verify:** `npx @beemvp/beeui-cli@next diff` reports no unexpected drift afterwards.
 - **Relevant versions:** registry `schemaVersion: 1`, `beeui.config.json` schema v1.
 - **Still broken:** if you want to keep local edits *and* take upstream changes, use
-  `pnpm beeui update`, which never touches a locally edited file unless the upstream
-  source for that same file also changed.
+  `npx @beemvp/beeui-cli@next update`, which never touches a locally edited file unless the
+  upstream source for that same file also changed.
 
 ### `unknown or unsupported registry item '<name>'`
 
-- **Applies to:** `pnpm beeui add ...`.
+- **Applies to:** `add ...`.
 - **Likely cause:** a typo, or an internal (non-public) registry item. Only public items are
   addable.
 - **Fix:** list the addable surface and copy the exact name.
 
 ```bash
-pnpm beeui list
+npx @beemvp/beeui-cli@next list
 ```
 
 - **Verify:** the add plan resolves, including transitive registry dependencies.
@@ -407,12 +413,12 @@ pnpm beeui list
 - **Fix:** correct the offending field, or remove the file and regenerate a default one.
 
 ```bash
-pnpm beeui init
+npx @beemvp/beeui-cli@next init
 ```
 
   `init` never overwrites an existing config, so remove the broken file first if you want a
   fresh one.
-- **Verify:** `pnpm beeui doctor` reports a valid `beeui.config.json`.
+- **Verify:** `npx @beemvp/beeui-cli@next doctor` reports a valid `beeui.config.json`.
 - **Relevant versions:** config schema v1 — `componentsDir`, `libDir`, `themeFile`.
 - **Still broken:** a config schema bump that is not backward compatible is a MAJOR change
   under [Migration & versioning](/docs/guides/migration-versioning/); an unexpected bump
@@ -424,14 +430,17 @@ pnpm beeui init
 - **Likely cause:** the CLI's bundled registry data is absent or unreadable. The registry
   ships inside the CLI package and is never fetched over the network, so a missing manifest
   means the package tree itself is damaged or partially built.
-- **Fix:** rebuild the CLI from the checkout before running it:
+- **Fix:** as a consumer, reinstall the package (`npm install @beemvp/beeui-cli@next` again,
+  or clear the `npx` cache) so a fresh, complete build is fetched. From a BeeUI checkout,
+  rebuild the CLI instead:
 
 ```bash
 pnpm --filter @beemvp/beeui-cli run build
 ```
 
-- **Verify:** `pnpm beeui doctor` prints
+- **Verify:** `npx @beemvp/beeui-cli@next doctor` prints
   `BeeUI doctor OK: registry schema v1, ... public components, valid beeui.config.json.`
+  (`pnpm beeui doctor` from a checkout).
 - **Relevant versions:** CLI engine `>=24`.
 - **Still broken:** in a source-ownership starter, `Expected packed CLI binary missing:
   <path>` means the same thing one step earlier — the CLI build has not run yet.
@@ -456,9 +465,11 @@ Related usage errors: `'add --all' does not accept explicit item names`,
 `unknown add option '<flag>'`, `unknown command '<x>'. Run 'beeui help' for usage.`
 
 - **Applies to:** the CLI argument parser.
-- **Likely cause:** a malformed invocation. Note the `--` separator when invoking through
-  pnpm: everything after it belongs to the CLI, not to pnpm.
-- **Fix:** run `pnpm beeui help` and copy the exact form.
+- **Likely cause:** a malformed invocation. If you are invoking through `pnpm beeui` from a
+  BeeUI checkout, note the `--` separator: everything after it belongs to the CLI, not to
+  pnpm.
+- **Fix:** run `npx @beemvp/beeui-cli@next help` (`pnpm beeui help` from a checkout) and copy
+  the exact form.
 - **Verify:** the command runs and exits `0`.
 - **Relevant versions:** commands are `help`, `version`, `init`, `list`, `add`, `doctor`,
   `verify`, `diff`, `update`. Every failure exits `1` with the reason on stderr.

@@ -5,7 +5,7 @@ description: Understand BeeUI's public RC channel, version authority, and the mi
 
 BeeUI's current public npm release candidate is **`0.86.2-rc.2`** under the opt-in **`next`** dist-tag (the first was `0.86.2-rc.1`). The live registry was last observed (at `0.86.2-rc.1`) resolving **`latest`** to the RC too; BeeUI's bootstrap publish used `--tag next`, and the mechanism that also produced `latest` has not been established (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)). `latest` moves to a real stable version at the first `0.86.2` release.
 
-Because this is the first public package release, there is still no older public BeeUI version to migrate from. The migration work today is primarily for repository/internal consumers moving onto the public package boundary.
+`0.86.2-rc.1` was the first public package release; `0.86.2-rc.2` is the second, and consumers who installed the RC channel now have a real upgrade to make — see [Upgrading from 0.86.2-rc.1](#upgrading-from-0862-rc1-to-0862-rc2) below. The migration work described in the rest of this page (moving repository/internal consumers onto the public package boundary) is a separate, one-time move.
 
 Canonical source: https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md
 
@@ -86,6 +86,20 @@ BeeUI applies semver to its inventoried public surface: package exports/subpaths
 | **Patch** | Backward-compatible fixes, docs corrections, packaging fixes that do not change the public contract. |
 
 Prerelease identifiers (`-rc.N`) are opt-in test releases and do not change the deliberate-promotion rule for `latest`: only an owner-authorized stable release ever moves `latest` on purpose, and once it has moved to a stable version it never returns to a prerelease. Before that first deliberate move, `latest` happens to resolve to the current RC too — see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
+
+## Upgrading from 0.86.2-rc.1 to 0.86.2-rc.2
+
+Four changes need action if your app already installed `0.86.2-rc.1` (added to this page after `0.86.2-rc.2` publication, from rc.2 consumer verification findings — see `CHANGELOG.md`'s `[0.86.2-rc.2]` entry for the same list):
+
+1. **`Sheet` native root wiring changed and is now required.** `0.86.2-rc.1`'s guidance was `GestureHandlerRootView` > `BottomSheetModalProvider` > `BeeUIProvider`. On `0.86.2-rc.2`, mount BeeUI's public `SheetProvider` directly below `BeeUIProvider` instead — `BeeUIProvider` > `SheetProvider` > your app — and remove the outer `BottomSheetModalProvider`. `SheetProvider` installs `GestureHandlerRootView` and gorhom's `BottomSheetModalProvider` itself, and deliberately does not reuse an already-present outer one. See [Expo: Sheet on native](/docs/start/expo/#sheet-on-native-optional) or [Bare React Native: Sheet on native](/docs/start/bare-react-native/#sheet-on-native-optional).
+2. **Context bridging for Sheet content.** `SheetContent` only sees React contexts mounted above `SheetProvider`. Keep app-wide providers (a query client, i18n, navigation, your own app stores) above `SheetProvider`; a screen-scoped provider that a Sheet's content still needs to read must be passed through `SheetContent`'s `bridgeContexts` prop instead.
+3. **`Calendar` day cells are now `role="gridcell"` on Web** (previously `"cell"`). If your Web tests select a calendar day cell by role, change `getByRole('cell')` to `getByRole('gridcell')`. Native `Calendar` cells are unchanged.
+4. **Workarounds you can drop:**
+   - A per-table row density `className`/style override → `Table density="dense48"`.
+   - A wrapping pressable added around a row for navigation → `TableRow onPress`.
+   - A hand-built closable tab strip → `TabsList scrollable` with `TabsTrigger closable`, `onClose`, and `closeAccessibilityLabel`.
+   - A hover wrapper placed around `DropdownMenuTrigger` for a Web hover affordance → the trigger now carries its own hover styling.
+   - Splitting a long `Button` label across two `Text` nodes to avoid clipping at large text sizes → a long label now wraps onto a second line and the button grows to fit it.
 
 ## What to check before upgrading between RCs
 

@@ -5,12 +5,7 @@ description: BeeUI publication state, release channels, security reporting and l
 
 BeeUI `0.86.2-rc.2` is publicly published on npm under the opt-in **`next`** dist-tag. The live registry was last observed (at `0.86.2-rc.1`) resolving **`latest`** to the RC as well; that observation is re-verified after every publish and is not an npm rule. BeeUI's bootstrap publish used `--tag next`, and the mechanism that also produced `latest` has not been established (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)). `latest` moves to a real stable version at the first `0.86.2` release.
 
-Use `@next` or pin `@0.86.2-rc.2` while evaluating this release candidate:
-
-```bash
-npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next
-npx @beemvp/beeui-cli@next --help
-```
+Use `@next` or pin `@0.86.2-rc.2` while evaluating this release candidate — see [Start](/docs/start/) for the full install command per platform (Expo, bare React Native, Web).
 
 A green verification matrix, package publication, and stable `latest` promotion are separate release events. The current RC has completed publication; stable `0.86.2` still requires its own release and promotion gates.
 

@@ -185,8 +185,10 @@ These are the boundaries agents most often get wrong. Respect the ADRs.
   [docs/date-i18n-timezone-matrix.md](date-i18n-timezone-matrix.md).
 - **Overlays / Sheet**: use `Dialog`/`AlertDialog` for modal-class flows;
   `Popover`/`DropdownMenu`/`Select`/`Tooltip` for anchored non-modal content; `Sheet` for
-  gesture bottom sheets. `Sheet` requires `GestureHandlerRootView` + `BottomSheetModalProvider`
-  at the app root on native ([ADR-006](decisions/006-sheet-gesture-engine.md)). Anchored
+  gesture bottom sheets. `Sheet` requires BeeUI's public `SheetProvider` mounted directly below
+  `BeeUIProvider` on native (`BeeUIProvider > SheetProvider > app`) — `SheetProvider` installs
+  `GestureHandlerRootView` and gorhom's `BottomSheetModalProvider` itself, so do not also mount
+  an outer one ([ADR-006](decisions/006-sheet-gesture-engine.md)). Anchored
   overlays share one geometry/runtime/portal contract
   ([docs/anchored-overlays.md](anchored-overlays.md), [ADR-002](decisions/002-overlay-behavior.md));
   do not introduce a second overlay/portal authority. Use `useToast()` for transient
@@ -234,7 +236,7 @@ must do:
 | `npm install @beemvp/beeui-ui` resolves an unexpected/older version | no `@next`/version suffix — an unqualified install is not the documented RC path | Use `npm install @beemvp/beeui-ui@next` (or pin `@0.86.2-rc.2`). Do not recommend a bare, unqualified install. |
 | `npx beeui add ...` does nothing / wrong package | `beeui` unscoped is a tombstone; the real CLI is `@beemvp/beeui-cli` | Use `npx @beemvp/beeui-cli@next add ...` (published) or `pnpm beeui add ...` (repo-local source ownership). |
 | Copied component fails to resolve `@beemvp/beeui-core` | expected — imports are rewritten to a local copy | Ensure `pnpm beeui add` ran fully; it copies `core-cn`/`core-overlay` and rewrites imports. |
-| `Sheet` throws at runtime on native | missing gesture/bottom-sheet providers | Add `GestureHandlerRootView` + `BottomSheetModalProvider` at the app root (ADR-006) and install the native peers the CLI reported. |
+| `Sheet` misbehaves on native | `SheetProvider` not mounted | `SheetProvider` is required on native: mount it directly below `BeeUIProvider` (`BeeUIProvider > SheetProvider > app`, ADR-006) and install the native peers the CLI reported. Do not also mount an outer `GestureHandlerRootView`/`BottomSheetModalProvider` — `SheetProvider` installs those itself. |
 | Overlay renders in the wrong place / no dismiss | second overlay authority introduced | Use the shared anchored-overlay contract; do not add a parallel portal. |
 | Dates shift by a day across timezones | expecting BeeUI to own timezones | It does not (ADR-008). Do the timezone conversion in the app. |
 | `pnpm llms:check` or `registry:verify` fails after edits | generated artifacts / registry drift | Run `pnpm llms:generate`; update `registry/registry.json` for public export changes. |
@@ -311,9 +313,12 @@ import { Field, Input } from '@beemvp/beeui-ui';
 
 > Goal: add a `Tooltip` on `<trigger>` and a `Sheet` for `<bottom-sheet content>`. `Tooltip`
 > is anchored non-modal content (shared overlay contract). `Sheet` is a gesture bottom sheet
-> that requires `GestureHandlerRootView` + `BottomSheetModalProvider` at the native app root
-> (ADR-006); install the native peers the CLI reports. Do not introduce a second overlay or
-> portal authority.
+> that requires BeeUI's public `SheetProvider` mounted directly below `BeeUIProvider` on native
+> (`BeeUIProvider > SheetProvider > app`, ADR-006) — `SheetProvider` installs
+> `GestureHandlerRootView` and gorhom's `BottomSheetModalProvider` itself, so do not also mount
+> an outer one; install the native peers the CLI reports. `SheetContent` only sees contexts
+> mounted above `SheetProvider` — bridge a screen-scoped context with `SheetContent
+> bridgeContexts`. Do not introduce a second overlay or portal authority.
 
 ### Recipe F — Apply theme and density
 

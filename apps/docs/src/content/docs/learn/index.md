@@ -9,6 +9,8 @@ It is deliberately not the other two layers. [Start](/docs/start/) gets one thin
 
 Every page follows the same shape: the concept in one sentence, why it exists, a diagram or minimal example, the rules that always hold, what that means for your code, the misconception that costs people a day, and where to go next.
 
+**Prerequisites:** none — this is an index page; each linked Learn page states its own prerequisites, and the [suggested reading order](#suggested-reading-order) below assumes no prior BeeUI knowledge.
+
 ## Start here
 
 | Page | The one sentence |

@@ -5,7 +5,7 @@ description: Install the BeeUI release candidate in Expo SDK 57 and verify Andro
 
 Use this path for an Expo SDK 57 application. BeeUI `0.86.2-rc.2` is public under the npm `next` dist-tag. The live registry was last observed (at `0.86.2-rc.1`) resolving `latest` to the RC as well; that observation is re-verified after every publish and is not an npm rule. BeeUI's bootstrap publish used `--tag next`, and the mechanism that also produced `latest` has not been established (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)), so keep using `@next` in the commands below.
 
-**Prerequisites:** Node.js and npm/npx available locally, and the [tested version table](/docs/start/#prerequisites) if you already have an Expo project instead of creating a new one below.
+**Prerequisites:** Node.js and npm/npx available locally, and the [tested version table](/docs/start/#prerequisites) if you already have an Expo project instead of creating a new one below. Already on `0.86.2-rc.1`? Read [Upgrading from 0.86.2-rc.1](/docs/guides/migration-versioning/#upgrading-from-0862-rc1-to-0862-rc2) first — the required `Sheet` provider rewiring is a breaking native-root change.
 
 ## Create the project
 
@@ -125,6 +125,28 @@ export default function App() {
   );
 }
 ```
+
+## Sheet on native (optional)
+
+If your app renders `Sheet` on iOS/Android, mount BeeUI's public `SheetProvider` directly below `BeeUIProvider`, above the rest of the app:
+
+```tsx
+import { BeeUIProvider, SheetProvider } from '@beemvp/beeui-ui';
+
+export default function RootLayout() {
+  return (
+    <BeeUIProvider>
+      <SheetProvider>
+        {/* Screen / SafeArea / Stack as above */}
+      </SheetProvider>
+    </BeeUIProvider>
+  );
+}
+```
+
+`SheetProvider` is required on native: it installs `GestureHandlerRootView` and `@gorhom/bottom-sheet`'s `BottomSheetModalProvider` itself, so gorhom's portal host is constructed below BeeUI's runtime contexts. Do not also mount an outer `GestureHandlerRootView`/`BottomSheetModalProvider` — if you followed an earlier BeeUI release's guidance to wire `GestureHandlerRootView > BottomSheetModalProvider > BeeUIProvider`, remove that outer `BottomSheetModalProvider` (and move `GestureHandlerRootView` inside `SheetProvider`'s ownership) when you upgrade. `SheetProvider` deliberately does not reuse an already-present outer gorhom provider.
+
+`SheetContent` only sees React contexts mounted above `SheetProvider`. Keep app-wide providers (a query client, i18n, navigation, your own app stores) above `SheetProvider`; a screen-scoped provider that a Sheet's content still needs to read must be passed through `SheetContent`'s `bridgeContexts` prop instead. Web and the RN `Modal` fallback do not need `SheetProvider` mounted for correctness — it is a pass-through there — but it is safe to mount everywhere for one consistent tree. See the [Sheet component reference](/docs/components/sheet/) for the full provider and `bridgeContexts` contract.
 
 ## Verify with the maintained consumer
 

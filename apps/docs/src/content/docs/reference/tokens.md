@@ -26,6 +26,19 @@ Only `colors`, `radius` and `motionDuration` are runtime-overridable. Everything
 
 There is no runtime accessor for this scale outside of `Text`'s own `variant` prop — `useBeeToken`/`getBeeToken` do not expose `fontSize`/`lineHeight` as a readable category (they are build-time-only, per the table above).
 
+### Chart token example
+
+Chart tokens are read the same way as color tokens, through the runtime reader's top-level `chart` category — never nested under `colors`:
+
+```ts
+import { useBeeToken } from '@beemvp/beeui-ui';
+
+const seriesColor = useBeeToken('chart.series-1');
+const positiveColor = useBeeToken('chart.positive');
+```
+
+`colors.chart-series-1` does not typecheck. The ten `chartColorTokens` names (`series-1`, `series-2`, `series-3`, `series-4`, `positive`, `negative`, `neutral`, `highlight`, `grid`, `axis`) are only reachable as `chart.<name>`.
+
 ## Token groups (21)
 
 | Group | Values | Source |
