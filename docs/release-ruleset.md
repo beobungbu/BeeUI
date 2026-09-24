@@ -6,9 +6,11 @@ This documents the live GitHub configuration that protects `main`, protects rele
 
 BeeUI optimizes CI for wall-clock latency on public GitHub-hosted runners. Expensive independent work fans out immediately; stable required status names fan results back in.
 
-`ci.yml` starts `classify`, then fans out `verify-fast` plus the change-scoped lanes `verify-docs`, `verify-tokens`, `verify-runtime`, `verify-release`, `verify-benchmark`, `bare-consumer`, `android-native` and `ios-native`. The branch-protection-required `verify` job is a lightweight `if: always()` aggregator over all of them, preserving the required status name while any failed upstream lane still blocks it.
+`ci.yml` starts `classify`, then fans out `verify-fast` plus the change-scoped lanes `verify-docs`, `verify-tokens`, `verify-runtime`, `verify-release`, `verify-release-prep`, `verify-benchmark`, `bare-consumer`, `android-native` and `ios-native`. The branch-protection-required `verify` job is a lightweight `if: always()` aggregator over all of them, preserving the required status name while any failed upstream lane still blocks it.
 
-The historical top-level `pnpm typecheck` and `pnpm test` commands remain useful local commands, and still run in full on every `development`/`staging` push (`beeui-environment-ci.yml`). On pull requests CI decomposes their constituent checks across the lanes above instead of executing the two long serial chains. `verify-fast` runs unconditionally and owns the CI policy contracts — including `release-ruleset:check`/`release-ruleset:test`, which pin this document to the real workflow topology — so a change to the required-check graph cannot land without re-validating it.
+The historical top-level `pnpm typecheck` and `pnpm test` commands remain useful local commands, and still run in full on every `development`/`staging` push (`beeui-environment-ci.yml`). On pull requests CI decomposes their constituent checks across the lanes above instead of executing the two long serial chains for ordinary source changes. The literal root composite `pnpm typecheck && pnpm test` is reserved for `verify-release-prep` when release-preparation/control-plane inputs change, or when an explicit `ci:full` label requests that expensive escape hatch. Generic source/full classification alone does not select the root composite. `verify-fast` runs unconditionally and owns the CI policy contracts — including `release-ruleset:check`/`release-ruleset:test`, which pin this document to the real workflow topology — so a change to the required-check graph cannot land without re-validating it.
+
+`verify-docs` owns deterministic committed-output freshness checks for portal pages, generated reference content, public-surface ownership/diff, the social-card asset, and the portal shell. Slower behavior/quality suites remain in their dedicated workflows or deeper lanes rather than being duplicated into the fast freshness path.
 
 `classify` controls which lanes run at all. Every lane except `verify-fast` carries a job-level `if:`, so legitimate docs/test-only PRs skip the expensive work; none of them is branch-protection-required, because GitHub reports a skipped required check as unsatisfied.
 
@@ -41,7 +43,7 @@ Standard GitHub-hosted runners are isolated, ephemeral VMs; BeeUI grants these w
 
 These remain real gates when scheduled, but are not branch-protection-required because legitimate PRs can skip them:
 
-- `ci.yml`: `verify-docs`, `verify-tokens`, `verify-runtime`, `verify-release`, `verify-benchmark`, `bare-consumer`, `android-native`, `ios-native` — classifier-controlled work, split so independent compiles run concurrently.
+- `ci.yml`: `verify-docs`, `verify-tokens`, `verify-runtime`, `verify-release`, `verify-release-prep`, `verify-benchmark`, `bare-consumer`, `android-native`, `ios-native` — classifier-controlled work, split so independent checks and compiles run concurrently. `verify-release-prep` alone owns the literal root `pnpm typecheck && pnpm test` composite for release-preparation/control-plane changes or explicit `ci:full` requests.
 - `runtime-native.yml`: `ios-runtime`, `android-runtime` — main push, weekly/manual, or explicit runtime PR intent.
 - `visual-web.yml`: `visual-web-full` — the push-only, duration-balanced lane matrix; `visual-web-report` is the stable pull-request signal.
 

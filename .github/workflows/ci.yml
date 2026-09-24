@@ -57,6 +57,7 @@ jobs:
       consumer-required: ${{ steps.scope.outputs.consumer }}
       expo-consumer-required: ${{ steps.scope.outputs.expo-consumer }}
       release-required: ${{ steps.scope.outputs.release }}
+      release-prep-required: ${{ steps.scope.outputs.release-prep }}
       benchmark-required: ${{ steps.scope.outputs.benchmark }}
       package-boundary-required: ${{ steps.native.outputs.package-boundary }}
       bare-native-required: ${{ steps.native.outputs.bare-native }}
@@ -211,6 +212,13 @@ jobs:
           pnpm docs:examples:test
           pnpm docs:patterns:check
           pnpm docs:patterns:test
+          # Deterministic committed-output freshness: keep these in the fast docs lane.
+          pnpm docs:portal-pages:check
+          pnpm docs:reference:check
+          pnpm docs:surface:check
+          pnpm docs:surface:diff
+          pnpm docs:social-card:asset-check
+          pnpm portal-shell:test
 
   verify-tokens:
     needs: [classify]
@@ -346,6 +354,39 @@ jobs:
           path: .artifacts/release-verification.json
           if-no-files-found: warn
           retention-days: 14
+
+  # Literal root composite is intentionally isolated from generic full/source CI.
+  # It runs only when release preparation/control-plane inputs change (or ci:full
+  # explicitly asks for the expensive escape hatch on a development PR).
+  verify-release-prep:
+    needs: [classify]
+    if: github.event_name == 'pull_request' && (needs.classify.outputs.release-prep-required == 'true' || contains(github.event.pull_request.labels.*.name, 'ci:full'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - name: Enable pinned pnpm
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+          pnpm config set store-dir "$HOME/.pnpm-store"
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Run release-preparation root composite
+        run: pnpm typecheck && pnpm test
 
   verify-benchmark:
     needs: [classify]
@@ -665,6 +706,7 @@ jobs:
       - verify-tokens
       - verify-runtime
       - verify-release
+      - verify-release-prep
       - verify-benchmark
       - bare-consumer
       - android-native
@@ -681,6 +723,7 @@ jobs:
           TOKENS: ${{ needs.verify-tokens.result }}
           RUNTIME: ${{ needs.verify-runtime.result }}
           RELEASE: ${{ needs.verify-release.result }}
+          RELEASE_PREP: ${{ needs.verify-release-prep.result }}
           BENCHMARK: ${{ needs.verify-benchmark.result }}
           BARE_CONSUMER: ${{ needs.bare-consumer.result }}
           ANDROID_NATIVE: ${{ needs.android-native.result }}
@@ -688,7 +731,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$CLASSIFY" = success
-          for result in "$FAST" "$DOCS" "$TOKENS" "$RUNTIME" "$RELEASE" "$BENCHMARK" "$BARE_CONSUMER" "$ANDROID_NATIVE" "$IOS_NATIVE"; do
+          for result in "$FAST" "$DOCS" "$TOKENS" "$RUNTIME" "$RELEASE" "$RELEASE_PREP" "$BENCHMARK" "$BARE_CONSUMER" "$ANDROID_NATIVE" "$IOS_NATIVE"; do
             case "$result" in
               success|skipped) ;;
               *) echo "::error::selected CI lane ended as '$result'"; exit 1 ;;
