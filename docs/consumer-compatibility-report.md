@@ -1,16 +1,16 @@
 # BeeUI package consumer compatibility report
 
 > **Status:** public release-candidate compatibility evidence.
-> **Snapshot:** 2026-09-23.
-> **Packages under test:** `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`; candidate `0.86.2-rc.3` (newest published: `0.86.2-rc.2`).
+> **Snapshot:** 2026-09-24.
+> **Packages under test:** `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`; current published candidate `0.86.2-rc.3`.
 
-BeeUI `0.86.2-rc.2` is published under the npm `next` dist-tag. `@beemvp/beeui-cli` is published in the same lockstep release group and is verified separately by the release/CLI smoke gates.
+BeeUI `0.86.2-rc.3` is published under the npm `next` dist-tag. `@beemvp/beeui-cli` is published in the same lockstep release group and is verified separately by the release/CLI smoke gates.
 
 This report does not widen any promise beyond `docs/compatibility-matrix.md` and the peer ranges declared by `packages/ui/package.json`.
 
 ## Public package verification
 
-Post-publication registry observation on 2026-09-23 verified all four `0.86.2-rc.2` versions are public and all four `next` tags resolve to `0.86.2-rc.2`. `latest` remains on `0.86.2-rc.1`; stable `0.86.2` has not been promoted.
+Post-publication registry observation on 2026-09-24T09:02:17Z verified all four `0.86.2-rc.3` versions are public and all four `next` tags resolve to `0.86.2-rc.3`. The owner then moved `latest` for all four packages; the observation at 2026-09-24T09:27:49Z recorded `latest` → `0.86.2-rc.3` for all four, with an untagged install resolving `0.86.2-rc.3`. Stable `0.86.2` has not been published. A clean consumer installed `@beemvp/beeui-ui`, `@beemvp/beeui-core` and `@beemvp/beeui-tokens` at `0.86.2-rc.3`, ran `npx @beemvp/beeui-cli@0.86.2-rc.3 --help` and `list`, and `npm audit signatures` verified 227 registry signatures and 59 attestations.
 
 The exact registry integrity/shasum/unpacked-size evidence and release lineage are recorded in `docs/rc-candidate.md`. The release pipeline separately verifies canonical packed artifacts and clean consumer boundaries without monorepo/workspace fallback.
 

@@ -4,17 +4,17 @@ This document defines BeeUI release-candidate evidence and the publication contr
 
 ## Current distribution model
 
-BeeUI's newest published release candidate is **`0.86.2-rc.2`**, published under the opt-in npm **`next`** dist-tag. The repository is prepared at candidate **`0.86.2-rc.3`**, which is not published until the owner approves its staged packages. The lockstep release group is:
+BeeUI's current public release candidate is **`0.86.2-rc.3`**, published under the opt-in npm **`next`** dist-tag. The lockstep release group is:
 
 - `@beemvp/beeui-core`
 - `@beemvp/beeui-tokens`
 - `@beemvp/beeui-ui`
 - `@beemvp/beeui-cli`
 
-Observed registry state on 2026-09-23:
+Observed registry state on 2026-09-24T09:27:49Z:
 
-- `next` → `0.86.2-rc.2` for all four packages;
-- `latest` → `0.86.2-rc.1` for all four packages;
+- `next` → `0.86.2-rc.3` for all four packages;
+- `latest` → `0.86.2-rc.3` for all four packages (moved by the owner after publication and verification);
 - stable `0.86.2` is not yet published/promoted.
 
 Use the explicit prerelease channel:
@@ -50,6 +50,18 @@ Artifact integrity proves bytes. It does not by itself prove which Git commit pr
 - workflow run: `34294238899`, job `bootstrap-rc`.
 
 The temporary bootstrap token was a first-publication exception, not the steady-state mechanism.
+
+### Current rc.3 publication
+
+`0.86.2-rc.3` used the protected staged path:
+
+- candidate source SHA: `1110844adec4fbbf6ae73d2f8ed1ed12986a5047`;
+- release-prep head: `3ccecae3` (evidence only);
+- development integration SHA: `f6d0d4284e6a3bd319b572772c407132198f314e` (PR #634);
+- main promotion and workflow SHA: `9b1fb095d419198728b6389b55b9e383ba857ae6` (PR #635);
+- workflow run: `35977601708`, operation `stage-rc`;
+- transport: npm Trusted Publishing/OIDC + staged publishing + provenance;
+- npm-side owner approval (2FA) made the four staged packages public.
 
 ### rc.2 publication
 
@@ -91,6 +103,12 @@ All four public packages use one lockstep version.
 `pnpm release:verify` builds and verifies the release package set and records canonical tarballs under `.artifacts/release-packages`.
 
 The release workflow must stage/publish those exact verified tarballs. A later step must not independently rebuild or repack a second artifact and call it equivalent.
+
+### Artifact digest authority
+
+- **Authoritative digests** come from the `npm-release` preflight's `pnpm release:verify` on the exact `main` workflow SHA. Those tarballs are the staged bytes, and `docs/rc-candidate.md` records their digests as the release artifact identity.
+- **A local `pnpm release:verify`** on a contributor machine, typically macOS, is a pre-merge smoke check only. The verifier's canonical + reproducible guarantee holds within one build platform. Tarball bytes differ between macOS and the Linux CI runner, so a local digest is never expected to equal the CI digest. rc.2 and rc.3 both showed this.
+- **Candidate-to-release identity** is proven by the build inputs: the diff between the frozen candidate source SHA and the `main` workflow SHA must touch only documentation and release evidence, never package, CLI, registry or token sources. Do not compare tarball bytes across platforms, and do not fail a release because a local digest differs from the CI digest.
 
 Canonical artifact verification includes:
 
@@ -183,7 +201,7 @@ A new RC may be staged only when:
 
 1. the version is fresh and lockstep across all four packages;
 2. exact-head required release gates are green;
-3. `pnpm release:verify` produces canonical reproducible artifacts;
+3. `pnpm release:verify` produces canonical reproducible artifacts (the CI preflight on the exact `main` SHA is authoritative; a local run is a smoke check);
 4. docs/public-surface policy checks are green;
 5. changelog/migration/support documentation is current;
 6. runtime/device limitations are stated honestly;

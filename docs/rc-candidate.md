@@ -1,6 +1,6 @@
 # BeeUI release candidate authority
 
-> **Status:** `0.86.2-rc.2` is the current published BeeUI release candidate; `0.86.2-rc.3` is the frozen next candidate (not yet published).
+> **Status:** `0.86.2-rc.3` is the current published BeeUI release candidate (observed 2026-09-24T09:27:49Z: `next` and `latest` → `0.86.2-rc.3` for all four packages).
 >
 > **Stable package line:** `0.86.2` (ADR-015).
 >
@@ -8,52 +8,93 @@
 
 This file records the immutable source candidate, its integration/promotion lineage, the publication workflow identity and the observed npm registry result. Those identities are deliberately separate: registry integrity proves published bytes, while Git/GitHub evidence proves the release lineage.
 
-## Frozen candidate — `0.86.2-rc.3`
+## Current published candidate — `0.86.2-rc.3`
 
-The third current-line RC is frozen from exact verified source SHA:
+### Release lineage
 
-- candidate source SHA: `1110844adec4fbbf6ae73d2f8ed1ed12986a5047`;
-- lockstep package version: `0.86.2-rc.3`;
-- branch: `release/0.86.2-rc.3` (from `development` at `f30fd8e2`, the #633 merge) → `development`; PR number, integration merge SHA and `main` promotion SHA are recorded here once they exist;
-- the evidence-only commit that adds this section changes no package/runtime contents relative to the candidate tree.
+| Identity | SHA / run | Meaning |
+| --- | --- | --- |
+| candidate source | `1110844adec4fbbf6ae73d2f8ed1ed12986a5047` | exact source tree frozen and verified before release-prep-only changes |
+| release-prep branch head | `3ccecae3` | evidence-only commit on `release/0.86.2-rc.3` (adds this file's rc.3 freeze section and the prep report) |
+| `development` integration | `f6d0d4284e6a3bd319b572772c407132198f314e` | merge of PR #634 into `development` |
+| `main` promotion / workflow SHA | `9b1fb095d419198728b6389b55b9e383ba857ae6` | merge of PR #635 and exact `GITHUB_SHA` used by the npm workflow |
+| npm release workflow | run `35977601708` | `stage-rc`; `preflight` and `stage-rc` both succeeded |
+| registry observation | 2026-09-24T09:02:17Z | read-only post-publication observation by the release controller |
 
-Any package/CLI/registry/token source change after this freeze invalidates `0.86.2-rc.3` and requires a new `rc.N`. Evidence-only documentation may describe this frozen source candidate without changing the candidate package contents.
+`main@9b1fb09` differs from the candidate source only in `docs/rc-candidate.md` and the preparation report; no package build input changed between the candidate and the published workflow SHA.
 
 ### Release artifact identity
 
-`pnpm release:verify` passed for the exact candidate source and recorded these fresh `pnpm pack` artifacts (canonical + reproducible):
+The authoritative artifact digests are the canonical + reproducible tarballs produced by the `npm-release` **preflight on the exact `main` workflow SHA** (run `35977601708`, Linux). Those are the bytes that were staged:
 
 | Package | Tarball | Bytes | SHA-256 |
 | --- | --- | ---: | --- |
-| `@beemvp/beeui-core` | `beemvp-beeui-core-0.86.2-rc.3.tgz` | 37,917 | `c1d72cd99af538e0154eb7b3495aa97af90d332bcb47a42035fe91b2eb130d72` |
-| `@beemvp/beeui-tokens` | `beemvp-beeui-tokens-0.86.2-rc.3.tgz` | 137,590 | `48c02df1864be41807e8b7e7bcf20fbe4a6b32f8edb3773d00652ef506119225` |
-| `@beemvp/beeui-ui` | `beemvp-beeui-ui-0.86.2-rc.3.tgz` | 1,018,481 | `8275dcb91b988b9fc3cdc1ed07a20556e621e9b6a7a31b335af0f0f92ffcad05` |
-| `@beemvp/beeui-cli` | `beemvp-beeui-cli-0.86.2-rc.3.tgz` | 280,039 | `66ff2d83c925564ef2db7e20ecf277d033b53a240bf13a4d5bb49daac3baf209` |
+| `@beemvp/beeui-core` | `beemvp-beeui-core-0.86.2-rc.3.tgz` | 37,864 | `102b193c490e1da087384b75793f927af37fad7db166dee62b3f8beb9dad5585` |
+| `@beemvp/beeui-tokens` | `beemvp-beeui-tokens-0.86.2-rc.3.tgz` | 137,359 | `71ea8ac13225740702a64f8544143eebca308b740391580a8604412e1f450df3` |
+| `@beemvp/beeui-ui` | `beemvp-beeui-ui-0.86.2-rc.3.tgz` | 1,017,950 | `30efb68ba7ece3adc4cb97fcb67b657bead7301bd609bfcd4980fdaca5ac332a` |
+| `@beemvp/beeui-cli` | `beemvp-beeui-cli-0.86.2-rc.3.tgz` | 280,038 | `cce56ed8a483110f4127ebf6428ded49fed7c4acdc6309de7d04413ee6bc0377` |
 
-The verifier again proved the packed manifests contain no unresolved `workspace:` protocol, package exports resolve to shipped files, the four tarballs install into a clean consumer, the CLI binary executes `help` and `list`, and the package set does not pull the Expo runtime.
+**Local, non-authoritative pre-merge build.** At freeze time `pnpm release:verify` also ran on macOS against the candidate source and recorded different bytes. These are a local smoke check only. Tarball bytes are not reproducible across build platforms, so these values were never expected to match the Linux CI build:
+
+| Package | Bytes | SHA-256 (macOS, local) |
+| --- | ---: | --- |
+| `@beemvp/beeui-core` | 37,917 | `c1d72cd99af538e0154eb7b3495aa97af90d332bcb47a42035fe91b2eb130d72` |
+| `@beemvp/beeui-tokens` | 137,590 | `48c02df1864be41807e8b7e7bcf20fbe4a6b32f8edb3773d00652ef506119225` |
+| `@beemvp/beeui-ui` | 1,018,481 | `8275dcb91b988b9fc3cdc1ed07a20556e621e9b6a7a31b335af0f0f92ffcad05` |
+| `@beemvp/beeui-cli` | 280,039 | `66ff2d83c925564ef2db7e20ecf277d033b53a240bf13a4d5bb49daac3baf209` |
+
+Candidate-to-release identity is established by the build inputs: the candidate → `main` diff touches documentation only. It is not established by comparing tarball bytes across platforms.
+
+Both verifier runs proved the packed manifests contain no unresolved `workspace:` protocol, package exports resolve to shipped files, the four tarballs install into a clean consumer, the CLI binary executes `help` and `list`, and the package set does not pull the Expo runtime.
+
+### Publication path
+
+1. GitHub Actions run `35977601708` ran `stage-rc` from `main@9b1fb095d419198728b6389b55b9e383ba857ae6`.
+2. `preflight` verified the exact workflow SHA, lockstep version and release control plane, and produced the authoritative tarballs above.
+3. The protected GitHub `release` environment was approved by `beobungbu`.
+4. The workflow used npm Trusted Publishing/OIDC and `npm stage publish --access public --tag next --provenance` sequentially for `core` → `tokens` → `ui` → `cli`.
+5. The owner approved the four npm staged packages with npm 2FA; this npm-side proof-of-presence gate is distinct from the GitHub Environment approval.
+6. Read-only registry observation then verified the public package metadata, provenance and dist-tags.
+
+### Observed npm registry evidence
+
+Post-publication observation, 2026-09-24T09:02:17Z (intermediate record, before the owner's `latest` move):
+
+| Package | `dist.integrity` | `dist.shasum` | `dist.unpackedSize` | Provenance (sigstore logIndex) | `next` | `latest` |
+| --- | --- | --- | ---: | ---: | --- | --- |
+| `@beemvp/beeui-core@0.86.2-rc.3` | `sha512-6H37vDe8Sp/pbQkkJpyogNqgcq0xBlGjx+4lomH8lANg5zGapmncfdsX27nZ3y1Zj257Fjhyw9KwNqEQmYb1fQ==` | `53bf3df9bd2d568f7958923097f0a3ef7e4cb1fc` | 153625 | 2935188175 | `0.86.2-rc.3` | `0.86.2-rc.1` |
+| `@beemvp/beeui-tokens@0.86.2-rc.3` | `sha512-oJpDC2d5OE8aUJkSnvVpOaljizCIrX8N3AK5lLgX5bOeSVMtrEBXKpXgnui4VVJnyEUh6AUsEOVPAhQhYANNSw==` | `e8cd99871163245317b001a6ee45b417f8bdab8f` | 591601 | 2935189814 | `0.86.2-rc.3` | `0.86.2-rc.1` |
+| `@beemvp/beeui-ui@0.86.2-rc.3` | `sha512-uoNqUlEVnQfjhjdY8e8DB8M1KHtw0QUbXqIqtEVAqRXmjc+SmszgS2VzUQuaPSnz+9v0FhA2LvJWJhmcGwJf8A==` | `5744e25f60819404d8386fd55ababe012756362d` | 4119746 | 2935190628 | `0.86.2-rc.3` | `0.86.2-rc.1` |
+| `@beemvp/beeui-cli@0.86.2-rc.3` | `sha512-sJadsm06euJoE+gq7tR70UdoVUCSXVV6+HTb6kTnBL0w2yMiSi23rzvy3k1F/xyJLBc6PXoWtZFdDAoHAdJsiQ==` | `d9f5ab8764313ee8d4715fd427be8430fc9b7047` | 1112301 | 2935191279 | `0.86.2-rc.3` | `0.86.2-rc.1` |
+
+The observed public state is complete, not `partial-publication`: all four package versions exist and all four `next` tags agree on `0.86.2-rc.3`. `latest` was still on `0.86.2-rc.1` for all four packages at that time.
+
+### `latest` move
+
+Under the owner decision of 2026-09-24 (issue #561), the owner moved `latest` for all four packages to `0.86.2-rc.3` with npm 2FA after the four-package set was published and verified. The release workflow did not touch dist-tags.
+
+Controller observation at 2026-09-24T09:27:49Z (registry cache bypassed):
+
+| Package | `next` | `latest` |
+| --- | --- | --- |
+| `@beemvp/beeui-core` | `0.86.2-rc.3` | `0.86.2-rc.3` |
+| `@beemvp/beeui-tokens` | `0.86.2-rc.3` | `0.86.2-rc.3` |
+| `@beemvp/beeui-ui` | `0.86.2-rc.3` | `0.86.2-rc.3` |
+| `@beemvp/beeui-cli` | `0.86.2-rc.3` | `0.86.2-rc.3` |
+
+An untagged `npm install @beemvp/beeui-ui @beemvp/beeui-core @beemvp/beeui-tokens` resolved `0.86.2-rc.3`, and `npx @beemvp/beeui-cli version` printed `0.86.2-rc.3`. All four `latest` tags agree, so there is no split `latest` state.
+
+### Clean public consumption
+
+Against the public registry: `npm install` of `@beemvp/beeui-ui`, `@beemvp/beeui-core` and `@beemvp/beeui-tokens` at `@0.86.2-rc.3` succeeded; `npx @beemvp/beeui-cli@0.86.2-rc.3 --help` and `list` succeeded; `npm audit signatures` reported 227 verified registry signatures and 59 verified attestations.
 
 ### Exact-head CI evidence
 
-For candidate SHA `1110844adec4fbbf6ae73d2f8ed1ed12986a5047`: **pending** — the pull-request CI results (primary `ci`, aggregate `verify` and its lanes, bare/Expo/Web consumers, Android/iOS native compile, Web accessibility, visual Web, public Web) are recorded here after the PR run completes. Label- or schedule-gated runtime workflows that are skipped by their own contract are recorded as skipped, not as passes.
+The PR #634 / #635 CI results for the candidate and promotion heads are not transcribed here yet; the npm release workflow reran the release control-plane checks and `pnpm release:verify` at the exact publication workflow SHA. Before the PR was opened, locally on the candidate tree: `pnpm typecheck` exit 0; `pnpm lint` exit 0; `pnpm test` exit 0 (1012 node:test cases and 1259 Jest tests in 146 suites, 0 failures).
 
-Locally, on the candidate tree before the PR was opened: `pnpm typecheck` exit 0; `pnpm lint` exit 0; `pnpm test` exit 0 (1012 node:test cases and 1259 Jest tests in 146 suites, 0 failures).
+Runtime workflows that were skipped by their own change/schedule/label contract remain skipped evidence, not passes. The iOS `pageSheet` / `formSheet` presentation surface remains **EXPERIMENTAL**; native runtime smoke for `Sheet` is wired for iOS only, and Android smoke and a real-device run remain open.
 
-### Publication / provenance state
-
-At freeze time:
-
-- `0.86.2-rc.2` is the newest published RC; the 2026-09-23 observation recorded `next` → `0.86.2-rc.2` and `latest` → `0.86.2-rc.1` for all four packages;
-- `stage-rc` is the publication path for this candidate: `operation=stage-rc`, `expected_version=0.86.2-rc.3`, `confirmation=BEEUI_RC_RELEASE`, dispatched on the exact promoted `main` SHA, staging all four packages under `next` through Trusted Publishing/OIDC, each approved by the owner with npm 2FA;
-- after all four packages are public and verified, the owner moves `latest` for all four to `0.86.2-rc.3` in one npm 2FA operation (owner decision 2026-09-24, issue #561) and the resulting dist-tags are observed and recorded; the workflow never moves dist-tags;
-- no package version or dist-tag for `0.86.2-rc.3` exists on the registry at freeze time.
-
-Registry mutation remains blocked until the repository owner explicitly dispatches and approves it.
-
-### Experimental / quarantined runtime dimension
-
-The iOS `pageSheet` / `formSheet` presentation surface remains **EXPERIMENTAL** for the 1.0 product milestone. Native runtime smoke for `Sheet` is wired for iOS only; Android smoke and a real-device run remain open.
-
-## Current published candidate — `0.86.2-rc.2`
+## Previous candidate — `0.86.2-rc.2`
 
 ### Release lineage
 
@@ -70,7 +111,7 @@ PR #624 was the reviewed `development` → `main` promotion. The release workflo
 
 ### Candidate artifact identity
 
-`pnpm release:verify` passed for the frozen candidate and recorded these canonical/reproducible candidate tarballs:
+`pnpm release:verify` passed for the frozen candidate and recorded these candidate tarballs (local macOS build; see the correction below):
 
 | Package | Tarball | Bytes | SHA-256 |
 | --- | --- | ---: | --- |
@@ -80,6 +121,15 @@ PR #624 was the reviewed `development` → `main` promotion. The release workflo
 | `@beemvp/beeui-cli` | `beemvp-beeui-cli-0.86.2-rc.2.tgz` | 269,202 | `64c0a2d8d39ef40bfa5b11790edbc5875c05c335a788809e173f27538ffe3aec` |
 
 These candidate SHA-256 values are source/release-verification evidence. They are not a substitute for npm's post-publication `dist.integrity`/`dist.shasum` evidence below.
+
+**Correction (recorded 2026-09-24).** The table above came from a local macOS `pnpm release:verify` run. It is a non-authoritative pre-merge smoke build and does not match the Linux CI build: tarball bytes are not reproducible across build platforms. The authoritative rc.2 artifact digests are the ones produced by the `npm-release` preflight on the exact `main` workflow SHA (run `35846285677`). Those are the bytes that were staged:
+
+| Package | Bytes | SHA-256 (CI preflight, authoritative) |
+| --- | ---: | --- |
+| `@beemvp/beeui-core` | 36,654 | `d5aa2f83dc512ea637a16f3e951b3bfff9890403b6c83ba827f1517c05e366c2` |
+| `@beemvp/beeui-tokens` | 137,359 | `7a62fd30b449223dd7f0a952a202a5520ca0b311f7175d5551c5aa750d78b6e6` |
+| `@beemvp/beeui-ui` | 973,982 | `0f979ce344dabffdf56d9c47bb0104cfbca57149df26da1f6c9847d5506d3e5d` |
+| `@beemvp/beeui-cli` | 268,532 | `85839128a4dc26587968427f6ec536d51e5e6fcf636be5d1cfd2a4ef0cea92f0` |
 
 The verifier also proved that packed manifests contain no unresolved `workspace:` protocol, package exports resolve to shipped files, all four tarballs install into a clean consumer, the CLI binary executes `help` and `list`, and the package set does not pull the Expo runtime.
 
@@ -151,7 +201,7 @@ A new public prerelease candidate is frozen only when:
 
 1. one exact candidate source is identified;
 2. the package set has one lockstep `0.86.2-rc.N` version;
-3. `pnpm release:verify` passes and canonical candidate artifact digests are retained;
+3. `pnpm release:verify` passes; the authoritative artifact digests are retained from the CI preflight on the exact `main` workflow SHA (a local build is a smoke check, and candidate-to-release identity is proven by a documentation-only candidate → `main` diff, not by cross-platform byte comparison);
 4. required CI evidence is green or explicitly classified by the release contract;
 5. release-prep, integration, main-promotion and workflow identities remain separately traceable;
 6. owner authorization remains separate from technical readiness;

@@ -3,7 +3,7 @@ title: Start
 description: Install the BeeUI release candidate from npm or evaluate the repository, then follow the verified Expo, bare React Native or Web path.
 ---
 
-BeeUI **`0.86.2-rc.2` is public on npm** under the opt-in `next` dist-tag, and `0.86.2-rc.3` is the current release candidate, published only once the owner approves its staged packages. The live registry was last observed (2026-09-23) resolving `next` to `0.86.2-rc.2` and `latest` to `0.86.2-rc.1`; dist-tags are re-verified after every publish. Every release-candidate install should still use `@next` or pin the exact RC version.
+BeeUI **`0.86.2-rc.3` is public on npm** under the opt-in `next` dist-tag (observed 2026-09-24; dist-tags are re-verified after every publish). Every release-candidate install should still use `@next` or pin the exact RC version.
 
 :::caution[Release-candidate channel]
 Use `@next` while evaluating the release candidate. An unqualified install resolves through `latest`, which during the `0.86.2` prerelease line follows the newest complete, verified RC only after the owner moves it for all four packages, so it lags `next` in between (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)); keep the commands below tagged so they stay correct on both sides of each move and after stable `0.86.2` is promoted.
@@ -144,7 +144,7 @@ Read [Provider & safe area](/docs/start/provider-safe-area/) before building a p
 
 After installation:
 
-1. Confirm `npm ls @beemvp/beeui-ui @beemvp/beeui-core @beemvp/beeui-tokens` resolves the version `next` points at (last observed: `0.86.2-rc.2`; `0.86.2-rc.3` once it is published) when using `@next`.
+1. Confirm `npm ls @beemvp/beeui-ui @beemvp/beeui-core @beemvp/beeui-tokens` resolves the current candidate `0.86.2-rc.3` when using `@next`.
 2. Typecheck your application.
 3. Build or export for every platform you ship.
 4. Exercise at least one real BeeUI component under `BeeUIProvider`.

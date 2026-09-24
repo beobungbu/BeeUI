@@ -5,7 +5,7 @@ description: Use the public BeeUI CLI release candidate to copy governed compone
 
 Source ownership means BeeUI component source lives in **your** repository: you read it, edit it,
 review its diffs, and decide when to take upstream changes. The public CLI is
-`@beemvp/beeui-cli`; the current release candidate is `0.86.2-rc.3` (published only once the owner approves it), and npm tag `next` was last observed at `0.86.2-rc.2`.
+`@beemvp/beeui-cli` and the current release candidate is `0.86.2-rc.3` on npm tag `next`.
 
 **Prerequisites:** a Node.js project with `npx`/`pnpm dlx` available, and `@beemvp/beeui-core`
 installed for the copied imports to resolve against (see [Start](/docs/start/)).
@@ -88,6 +88,6 @@ That repository-local path is a maintainer/development convenience. External con
 
 ## Release channel
 
-`0.86.2-rc.3` is a prerelease. The live registry was last observed (2026-09-23) resolving `next` to `0.86.2-rc.2` and `latest` to `0.86.2-rc.1`; dist-tags are re-verified after every publish. During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages, so it lags `next` in between (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)). Documentation and automation must therefore keep using `@next` or the exact RC version.
+`0.86.2-rc.3` is a prerelease, published under `next` (observed 2026-09-24; dist-tags are re-verified after every publish). During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages, so it can lag `next`; the last observed `latest` target is recorded in [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md). Documentation and automation must therefore keep using `@next` or the exact RC version.
 
 See the repository authority `docs/dist-tag-policy.md` for channel rules and `docs/registry-cli.md` for the full Registry/source-ownership contract.

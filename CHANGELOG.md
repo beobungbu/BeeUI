@@ -8,12 +8,12 @@ No unreleased consumer-facing changes are recorded after `0.86.2-rc.3` yet.
 
 ## [0.86.2-rc.3] — 2026-09-24
 
-Third release candidate on the `0.86.2` line. It carries the fixes from the BeePOS consumer verification of `0.86.2-rc.2` (BeeUI #568–#631, landed through #633). The frozen candidate source SHA and the packed-tarball identities are recorded in `docs/rc-candidate.md`. Publication happens only through the protected `npm-release` workflow (`operation=stage-rc`) with owner approval of each staged package.
+Third release candidate on the `0.86.2` line. It carries the fixes from the BeePOS consumer verification of `0.86.2-rc.2` (BeeUI #568–#631, landed through #633). The frozen candidate source SHA and the packed-tarball identities are recorded in `docs/rc-candidate.md`. Published from `main@9b1fb09` through npm-release run `35977601708` (`operation=stage-rc`), with owner approval of each staged package.
 
 ### Distribution
 
 - `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`, and `@beemvp/beeui-cli` move in lockstep to `0.86.2-rc.3`.
-- The prerelease channel stays npm dist-tag **`next`**. During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC: once all four `0.86.2-rc.3` packages are published and verified, the owner moves `latest` for all four in one npm 2FA operation and records the observation (owner decision 2026-09-24, issue #561; `docs/dist-tag-policy.md`). The release workflow never moves dist-tags. Until that move is observed, `latest` stays on the last recorded target (`0.86.2-rc.1` at the 2026-09-23 observation).
+- The prerelease channel stays npm dist-tag **`next`**. During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC: once all four `0.86.2-rc.3` packages are published and verified, the owner moves `latest` for all four in one npm 2FA operation and records the observation (owner decision 2026-09-24, issue #561; `docs/dist-tag-policy.md`). The release workflow never moves dist-tags. The post-publication observation at 2026-09-24T09:02:17Z recorded `next` → `0.86.2-rc.3` with `latest` still on `0.86.2-rc.1`. After verification the owner moved `latest`, and at 2026-09-24T09:27:49Z all four packages resolved both `next` and `latest` to `0.86.2-rc.3`.
 - Public RC install path:
 
   ```bash
