@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { extractPublicationPolicy } from './check-public-doc-truth.mjs';
+import { publicationObservation } from './generate-llms-txt.mjs';
 import { coverageForComponent } from '../apps/showcase/component-coverage.ts';
 import { showcaseHref } from '../apps/showcase/showcase-target.ts';
 import { buildPublicSurfaceInventory } from './generate-public-surface-inventory.mjs';
@@ -172,7 +173,7 @@ function findUnknownBehaviorPropReferences(component, rootDir, field = 'behavior
 // A ratchet rather than a pass/fail threshold: failing on any blank would fail today and teach
 // nothing, and a silent percentage would drift back down the way it drifted here. The floor is
 // the measured value at the time it was written, so coverage can only go up.
-export const PROP_DESCRIPTION_FLOOR = 677;
+export const PROP_DESCRIPTION_FLOOR = 678;
 
 // Two floors, because coverage alone is satisfiable by boilerplate: 22 props were added to the
 // total by one repeated sentence and 100% never moved.
@@ -184,7 +185,7 @@ export const PROP_DESCRIPTION_FLOOR = 677;
 // justify (0.44), and measuring what it was actually rejecting showed the real defect is one
 // sentence reused across props with *different names*, which `sharedAcrossProps` states directly
 // and a ratio only approximates.
-export const PROP_DISTINCT_DESCRIPTION_FLOOR = 336;
+export const PROP_DISTINCT_DESCRIPTION_FLOOR = 337;
 
 // Walks a resolved type entry the same way `applyGlossary` and the renderer do:
 // a `union` entry carries no `fields` of its own, only `variants`, each of which is
@@ -1374,13 +1375,19 @@ function distributionStatusNote(rootDir) {
       'explicitly authorized.'
     );
   }
-  const tag = policy.prereleaseDistTag ?? 'next';
+  const { tag, publishedVersion, latestVersion, stableVersion, candidatePending } = publicationObservation(policy);
+  const observedTags = latestVersion
+    ? `resolving \`${tag}\` to \`${publishedVersion}\` and \`latest\` to \`${latestVersion}\``
+    : `resolving \`${tag}\` to \`${publishedVersion}\``;
+  const candidate = candidatePending
+    ? `This repository is at release candidate \`${policy.currentVersion}\`, which is not published until the owner approves its staged packages. `
+    : '';
   return (
-    `BeeUI \`${policy.currentVersion}\` is public on npm under the opt-in \`${tag}\` dist-tag. ` +
-    `Stable \`latest\` was last observed (at \`0.86.2-rc.1\`) resolving to the RC as well; that observation ` +
-    `is re-verified after every publish and is not an npm rule. The bootstrap publish used \`--tag next\`; ` +
-    `the mechanism that also produced \`latest\` has not been established. It moves to a real stable version at the first stable ` +
-    `release (see [Start](/docs/start/) for the full install commands). The import shape below ` +
+    `BeeUI \`${publishedVersion}\` is public on npm under the opt-in \`${tag}\` dist-tag. The live registry was last ` +
+    `observed ${observedTags}; dist-tags are re-verified after every publish. ${candidate}` +
+    `During the \`${stableVersion}\` prerelease line \`latest\` follows the newest complete, verified RC only after the ` +
+    `owner moves it for all four packages, and stable \`${stableVersion}\` moves it at stable promotion ` +
+    '(see [Start](/docs/start/) for the full install commands). The import shape below ' +
     'works against the published package; the repository-local Registry command remains available ' +
     'as a no-registry-required alternative from a BeeUI checkout.'
   );

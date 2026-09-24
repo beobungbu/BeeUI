@@ -8,7 +8,7 @@ description: "Layout-only metric composition (label/value/help text) with no for
 Layout-only metric composition (label/value/help text) with no formatting or state ownership.
 
 :::note[Distribution status]
-BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. Stable `latest` was last observed (at `0.86.2-rc.1`) resolving to the RC as well; that observation is re-verified after every publish and is not an npm rule. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
+BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. The live registry was last observed resolving `next` to `0.86.2-rc.2` and `latest` to `0.86.2-rc.1`; dist-tags are re-verified after every publish. This repository is at release candidate `0.86.2-rc.3`, which is not published until the owner approves its staged packages. During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages, and stable `0.86.2` moves it at stable promotion (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -169,7 +169,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Stat** is actually used: 10 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1103 lines — where **Stat** is actually used: 10 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -177,7 +177,7 @@ Imports the examples below need (a filtered subset of the fixture's own top-leve
 import { Stat, StatHelpText, StatLabel, StatValue } from '@beemvp/beeui-ui';
 ````
 
-[lines 970–979](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L970-L979):
+[lines 992–1001](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L992-L1001):
 
 ````tsx
                     <Stat className="min-w-32 flex-1">

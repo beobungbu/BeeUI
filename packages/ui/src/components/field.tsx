@@ -53,9 +53,13 @@ export const Field = React.forwardRef<React.ComponentRef<typeof View>, FieldProp
     const reactId = React.useId();
     const generatedLabelNativeID = `beeui-field-${reactId.replace(/:/g, '')}-label`;
     const resolvedLabelNativeID = labelNativeID ?? generatedLabelNativeID;
+    const showError = invalid && Boolean(error);
+    const helperNativeID =
+      showError || description ? `${resolvedLabelNativeID}-helper` : undefined;
     const contextValue = React.useMemo<FieldContextValue>(
       () => ({
         description,
+        descriptionNativeID: helperNativeID,
         disabled,
         error,
         invalid,
@@ -69,6 +73,7 @@ export const Field = React.forwardRef<React.ComponentRef<typeof View>, FieldProp
         description,
         disabled,
         error,
+        helperNativeID,
         invalid,
         label,
         required,
@@ -103,12 +108,18 @@ export const Field = React.forwardRef<React.ComponentRef<typeof View>, FieldProp
             {label}
           </Label>
           {children}
-          {invalid && error ? (
-            <Text accessibilityLiveRegion="polite" role="alert" tone="destructive" variant="caption">
+          {showError ? (
+            <Text
+              accessibilityLiveRegion="polite"
+              nativeID={helperNativeID}
+              role="alert"
+              tone="destructive"
+              variant="caption"
+            >
               {error}
             </Text>
           ) : description ? (
-            <Text tone="muted" variant="caption">
+            <Text nativeID={helperNativeID} tone="muted" variant="caption">
               {description}
             </Text>
           ) : null}

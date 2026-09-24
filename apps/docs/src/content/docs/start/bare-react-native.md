@@ -3,11 +3,11 @@ title: Bare React Native
 description: Install the BeeUI release candidate in a true bare React Native 0.86 application and verify native bundles without Expo.
 ---
 
-Use this path for a React Native application that does not use the Expo runtime. BeeUI `0.86.2-rc.2` is public under the npm `next` dist-tag. The live registry was last observed (at `0.86.2-rc.1`) resolving `latest` to the RC as well; that observation is re-verified after every publish and is not an npm rule. BeeUI's bootstrap publish used `--tag next`, and the mechanism that also produced `latest` has not been established (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)), so keep using `@next` in the commands below.
+Use this path for a React Native application that does not use the Expo runtime. BeeUI `0.86.2-rc.2` is public under the npm `next` dist-tag, and `0.86.2-rc.3` is the current release candidate, published only once the owner approves it. The live registry was last observed (2026-09-23) resolving `next` to `0.86.2-rc.2` and `latest` to `0.86.2-rc.1`. During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages, so it lags `next` in between (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)); keep using `@next` in the commands below.
 
 **Prerequisites:** an existing bare React Native `0.86.x` project created with the React
 Native Community CLI (this page does not cover scaffolding one) and Node.js/npm available
-locally.
+locally. Already on `0.86.2-rc.1`? Read [Upgrading from 0.86.2-rc.1](/docs/guides/migration-versioning/#upgrading-from-0862-rc1-to-0862-rc2) first — the required `Sheet` provider rewiring is a breaking native-root change.
 
 ## Install
 
@@ -20,7 +20,7 @@ npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@n
   tailwindcss@4.3.3 uniwind@1.10.1
 ```
 
-Pin `@0.86.2-rc.2` instead of `@next` when you need an immutable RC dependency.
+Pin `@0.86.2-rc.3` instead of `@next` when you need an immutable RC dependency.
 
 Optional native peers for `Sheet`, `DatePicker` and `DateTimePicker` are listed in [Compatibility](/docs/compatibility/).
 
@@ -57,6 +57,28 @@ export default function App() {
 ```
 
 Your Metro/Uniwind setup should follow the maintained consumer fixture at `examples/bare-rn-consumer`.
+
+## Sheet on native
+
+If your app renders `Sheet`, mount BeeUI's public `SheetProvider` directly below `BeeUIProvider`, above the rest of the app:
+
+```tsx
+import { BeeUIProvider, SheetProvider } from '@beemvp/beeui-ui';
+
+export default function App() {
+  return (
+    <BeeUIProvider>
+      <SheetProvider>
+        {/* Screen / SafeArea as above */}
+      </SheetProvider>
+    </BeeUIProvider>
+  );
+}
+```
+
+`SheetProvider` is required on native: it installs `GestureHandlerRootView` and `@gorhom/bottom-sheet`'s `BottomSheetModalProvider` itself, so gorhom's portal host is constructed below BeeUI's runtime contexts. Do not also mount an outer `GestureHandlerRootView`/`BottomSheetModalProvider` — if you followed an earlier BeeUI release's guidance to wire `GestureHandlerRootView > BottomSheetModalProvider > BeeUIProvider`, remove that outer `BottomSheetModalProvider` when you upgrade. `SheetProvider` deliberately does not reuse an already-present outer gorhom provider.
+
+`SheetContent` only sees React contexts mounted above `SheetProvider`. Keep app-wide providers (a query client, i18n, navigation, your own app stores) above `SheetProvider`; a screen-scoped provider that a Sheet's content still needs to read must be passed through `SheetContent`'s `bridgeContexts` prop instead. See the [Sheet component reference](/docs/components/sheet/) for the full provider and `bridgeContexts` contract.
 
 ## Verify the maintained bare consumer
 

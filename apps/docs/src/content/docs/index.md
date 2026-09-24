@@ -6,13 +6,15 @@ description: Build mobile-first React Native interfaces for Expo, bare React Nat
 BeeUI is a production-oriented React Native UI system with one public behavior contract across
 Expo, bare React Native and Web.
 
-The current public release candidate, **`0.86.2-rc.2`**, is published on npm under the opt-in
-**`next`** dist-tag. The live registry was last observed (at `0.86.2-rc.1`) resolving `latest` to the RC too. BeeUI's
-bootstrap publish used `--tag next`, and the mechanism that also produced `latest` has not been
-established (see
+The current release candidate is **`0.86.2-rc.3`**; it is published only once the owner approves
+its staged npm packages. The newest published release candidate is **`0.86.2-rc.2`** under the opt-in
+**`next`** dist-tag: the live registry was last observed (2026-09-23) resolving `next` to `0.86.2-rc.2`
+and `latest` to `0.86.2-rc.1`, and dist-tags are re-verified after every publish. During the `0.86.2`
+prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all
+four packages (see
 [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)).
-Use `@next` or the exact RC version in install commands; that stays correct once the stable
-`0.86.2` promotion moves `latest` off the prerelease.
+Use `@next` or the exact RC version in install commands; that stays correct while `latest` lags
+`next` and after the stable `0.86.2` promotion.
 
 ```bash
 npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next
@@ -56,12 +58,12 @@ package exports themselves.
 
 ## Platform and release truth
 
-- **Current RC:** `0.86.2-rc.2` on npm tag `next`.
-- **Stable channel:** `latest` was last observed (at `0.86.2-rc.1`) resolving to the RC as
-  well; that observation is re-verified after every publish and is not an npm rule. The
-  bootstrap used `--tag next` and the mechanism that also produced `latest` is not
-  established. It moves to a real stable version, and never returns to a prerelease, at the
-  first `0.86.2` release. See
+- **Current RC:** `0.86.2-rc.3` (candidate, not yet published); newest published RC `0.86.2-rc.2` on npm tag `next`.
+- **Default channel:** `latest` was last observed (2026-09-23) resolving to `0.86.2-rc.1`; that
+  observation is re-verified after every publish. During the `0.86.2` prerelease line `latest`
+  follows the newest complete, verified RC once the owner moves it for all four packages. It
+  moves to the stable version, and never returns to a prerelease, at the `0.86.2` stable
+  promotion. See
   [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
 - [Current compatibility](/docs/compatibility/current/) — the tested and pinned versions, machine-checked.
 - [Migration & versioning](/docs/guides/migration-versioning/) — channel, version authority and upgrade rules.

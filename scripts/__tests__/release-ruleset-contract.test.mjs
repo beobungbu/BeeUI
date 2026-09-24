@@ -44,6 +44,9 @@ jobs:
   verify-release:
     needs: [classify]
     if: needs.classify.outputs.release-required == 'true'
+  verify-release-prep:
+    needs: [classify]
+    if: needs.classify.outputs.release-prep-required == 'true'
   verify-benchmark:
     needs: [classify]
     if: needs.classify.outputs.benchmark-required == 'true'
@@ -93,6 +96,7 @@ test('required fan-in aggregators using always() count as always-run', () => {
 });
 
 test('classifier/runtime gated jobs remain conditionally skippable', () => {
+  assert.equal(jobIsConditionallySkippable(CLASSIFY_GATED_JOBS, 'verify-release-prep'), true);
   assert.equal(jobIsConditionallySkippable(CLASSIFY_GATED_JOBS, 'android-native'), true);
   assert.equal(jobIsConditionallySkippable(CLASSIFY_GATED_JOBS, 'ios-native'), true);
   assert.equal(jobIsConditionallySkippable(LABEL_GATED_RUNTIME_JOB, 'ios-runtime'), true);
@@ -167,6 +171,8 @@ jobs:
     if: needs.classify.outputs.package-required == 'true'
   verify-release:
     if: needs.classify.outputs.release-required == 'true'
+  verify-release-prep:
+    if: needs.classify.outputs.release-prep-required == 'true'
   verify-benchmark:
     if: needs.classify.outputs.benchmark-required == 'true'
   bare-consumer:

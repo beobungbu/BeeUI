@@ -9,45 +9,69 @@ import * as React from 'react';
 // a small count/unread badge, so a notification bell needed a hand-built
 // IconButton + absolutely positioned Badge.
 
+const SIZE_TOKENS = ['control-compact', 'control-default', 'control-large', 'control-icon'] as const;
+
+// Exactly one height and one width token may reach the element: a second one
+// is not removed by tailwind-merge (it does not know the token names), and the
+// stylesheet order, not the `size` prop, then decides the rendered size.
+function sizeTokensOn(className: string) {
+  const tokens = className.split(/\s+/);
+  return {
+    height: SIZE_TOKENS.filter((token) => tokens.includes(`h-${token}`)),
+    width: SIZE_TOKENS.filter((token) => tokens.includes(`w-${token}`)),
+  };
+}
+
 describe('IconButton size', () => {
-  it('defaults to the icon square size', () => {
+  it.each([
+    [undefined, 'control-icon'],
+    ['sm', 'control-compact'],
+    ['md', 'control-default'],
+    ['lg', 'control-large'],
+  ] as const)('size=%s renders only the %s square', (size, token) => {
     const screen = render(
-      <IconButton accessibilityLabel="Delete" testID="icon-button">
-        <Text>X</Text>
+      <IconButton accessibilityLabel="Increase quantity" size={size} testID="icon-button">
+        <Text>+</Text>
       </IconButton>,
     );
 
     const className = screen.getByTestId('icon-button').props.className as string;
-    expect(className).toContain('h-control-icon');
-    expect(className).toContain('w-control-icon');
+    expect(sizeTokensOn(className)).toEqual({ height: [token], width: [token] });
   });
 
-  it('renders a smaller square control for size="sm" guarding a 44dp tappable region in both dimensions', () => {
+  it('keeps the small visual box on native and extends only its tappable region to the 44dp floor', () => {
     const screen = render(
       <IconButton accessibilityLabel="Increase quantity" size="sm" testID="icon-button">
         <Text>+</Text>
       </IconButton>,
     );
 
-    const className = screen.getByTestId('icon-button').props.className as string;
-    expect(className).toContain('h-control-compact');
-    expect(className).toContain('w-control-compact');
-    expect(className).toContain('ios:min-h-touch-target');
-    expect(className).toContain('ios:min-w-touch-target');
-    expect(className).toContain('android:min-h-touch-target');
-    expect(className).toContain('android:min-w-touch-target');
+    const button = screen.getByTestId('icon-button');
+    // A min-h/min-w touch-target guard would grow the visual box back to 44.
+    expect(button.props.className).not.toContain('touch-target');
+    // 36 + 4 + 4 = 44 in both dimensions.
+    expect(button.props.hitSlop).toEqual({ bottom: 4, left: 4, right: 4, top: 4 });
   });
 
-  it('renders a larger square control for size="lg"', () => {
+  it('adds no hit slop to sizes that already meet the touch-target floor', () => {
+    for (const size of [undefined, 'md', 'lg'] as const) {
+      const screen = render(
+        <IconButton accessibilityLabel="Open" size={size} testID="icon-button">
+          <Text>+</Text>
+        </IconButton>,
+      );
+      expect(screen.getByTestId('icon-button').props.hitSlop).toBeUndefined();
+      screen.unmount();
+    }
+  });
+
+  it("lets the caller's own hitSlop win", () => {
     const screen = render(
-      <IconButton accessibilityLabel="Open" size="lg" testID="icon-button">
+      <IconButton accessibilityLabel="Increase quantity" hitSlop={10} size="sm" testID="icon-button">
         <Text>+</Text>
       </IconButton>,
     );
-
-    const className = screen.getByTestId('icon-button').props.className as string;
-    expect(className).toContain('h-control-large');
-    expect(className).toContain('w-control-large');
+    expect(screen.getByTestId('icon-button').props.hitSlop).toBe(10);
   });
 });
 

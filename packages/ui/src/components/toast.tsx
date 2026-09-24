@@ -257,11 +257,10 @@ export type ToastRuntimeProviderProps = {
   children?: React.ReactNode;
   /**
    * Which safe-area edge the toast viewport anchors to. Defaults to
-   * `'bottom'` on native (iOS/Android) and `'top'` on Web. Native's default
-   * used to be an unconditional top anchor — on iOS that docks a toast
-   * directly under the header instead of near the bottom tab bar/home
-   * indicator, where most native apps (and every previously-audited BeePOS
-   * screen) expect transient feedback to appear.
+   * `'bottom'` on native (iOS/Android) and `'top'` on Web. A bottom toast
+   * docks above the bottom safe-area inset plus a bottom-navigation band
+   * tall enough for a standard tab bar, so it never sits over the app's
+   * bottom navigation (see `BOTTOM_NAVIGATION_CLEARANCE`).
    */
   placement?: ToastPlacement;
 };
@@ -274,6 +273,18 @@ export type ToastRuntimeProviderProps = {
 function getDefaultToastPlacement(): ToastPlacement {
   return Platform.OS === 'web' ? 'top' : 'bottom';
 }
+
+// Gap between the toast stack and whatever it docks against.
+const TOAST_EDGE_GAP = 12;
+
+// The toast runtime sits at the application root and cannot see the app's navigator, and
+// BeeUI takes no navigation-library dependency to measure one. Bottom placement therefore
+// reserves the tallest standard bottom-navigation height above the safe-area inset:
+// Material 3's navigation bar is 80dp, which also clears an iOS tab bar (49pt) and React
+// Navigation's default bottom tabs (49pt iOS / 56dp Android). Both sit on top of the
+// bottom inset, which is added separately. An app without bottom navigation only sees the
+// toast float a little higher; an app with one no longer has it covered.
+const BOTTOM_NAVIGATION_CLEARANCE = 80;
 
 function ToastViewport({
   dismiss,
@@ -288,7 +299,10 @@ function ToastViewport({
 }) {
   const insets = useSafeAreaInsets();
   const viewportStyle = React.useMemo<ViewStyle>(
-    () => (placement === 'bottom' ? { bottom: insets.bottom + 12 } : { top: insets.top + 12 }),
+    () =>
+      placement === 'bottom'
+        ? { bottom: insets.bottom + BOTTOM_NAVIGATION_CLEARANCE + TOAST_EDGE_GAP }
+        : { top: insets.top + TOAST_EDGE_GAP },
     [insets.bottom, insets.top, placement],
   );
   const orderedToasts = placement === 'bottom' ? state.visible : [...state.visible].reverse();

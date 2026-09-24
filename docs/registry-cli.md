@@ -2,7 +2,7 @@
 
 ## Status
 
-`@beemvp/beeui-cli` is publicly published at **`0.86.2-rc.2`** under npm tag **`next`**. It is the supported source-ownership CLI for the current BeeUI release candidate.
+`@beemvp/beeui-cli` is publicly published at **`0.86.2-rc.2`** under npm tag **`next`**; the current release candidate **`0.86.2-rc.3`** is published only once the owner approves it. It is the supported source-ownership CLI for the current BeeUI release candidate.
 
 External consumers should run the published RC explicitly:
 
@@ -18,9 +18,9 @@ npx @beemvp/beeui-cli@next diff
 npx @beemvp/beeui-cli@next update
 ```
 
-Pin `@0.86.2-rc.2` instead of `@next` when an immutable CLI version is required.
+Pin `@0.86.2-rc.3` instead of `@next` when an immutable CLI version is required.
 
-Stable `latest` is intentionally not promoted yet, so RC documentation must not use an unqualified CLI package name as the recommended install/run command.
+`latest` follows the newest complete, verified RC only after the owner moves it, so it lags `next` between an RC publication and that move; RC documentation must not use an unqualified CLI package name as the recommended install/run command.
 
 Repository contributors may continue to use the workspace shim, which delegates to the same CLI engine:
 
@@ -101,9 +101,9 @@ The CLI releases in lockstep with:
 - `@beemvp/beeui-tokens`
 - `@beemvp/beeui-ui`
 
-Current public RC: `0.86.2-rc.2` under `next`.
+Current release candidate: `0.86.2-rc.3` (not published until owner approval); `next` last observed at `0.86.2-rc.2`.
 
-The channel/version authority is `docs/dist-tag-policy.md`. Do not infer stable availability from the existence of a public RC; stable `latest` is a separate owner-controlled release event.
+The channel/version authority is `docs/dist-tag-policy.md`. Do not infer stable availability from the existence of a public RC; every `latest` move, including stable promotion, is a separate owner-controlled release event.
 
 ## Tests and verification
 
@@ -112,7 +112,7 @@ Repository tests pin command parsing, negative cases, Registry integrity, depend
 For public RC verification, prefer the published command:
 
 ```sh
-npx @beemvp/beeui-cli@0.86.2-rc.2 --help
+npx @beemvp/beeui-cli@0.86.2-rc.3 --help
 ```
 
 For contributor verification from source:

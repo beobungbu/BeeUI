@@ -4,7 +4,45 @@ All notable consumer-facing changes to BeeUI are recorded here.
 
 ## Unreleased
 
-No unreleased consumer-facing changes are recorded after `0.86.2-rc.2` yet.
+No unreleased consumer-facing changes are recorded after `0.86.2-rc.3` yet.
+
+## [0.86.2-rc.3] — 2026-09-24
+
+Third release candidate on the `0.86.2` line. It carries the fixes from the BeePOS consumer verification of `0.86.2-rc.2` (BeeUI #568–#631, landed through #633). The frozen candidate source SHA and the packed-tarball identities are recorded in `docs/rc-candidate.md`. Publication happens only through the protected `npm-release` workflow (`operation=stage-rc`) with owner approval of each staged package.
+
+### Distribution
+
+- `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`, and `@beemvp/beeui-cli` move in lockstep to `0.86.2-rc.3`.
+- The prerelease channel stays npm dist-tag **`next`**. During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC: once all four `0.86.2-rc.3` packages are published and verified, the owner moves `latest` for all four in one npm 2FA operation and records the observation (owner decision 2026-09-24, issue #561; `docs/dist-tag-policy.md`). The release workflow never moves dist-tags. Until that move is observed, `latest` stays on the last recorded target (`0.86.2-rc.1` at the 2026-09-23 observation).
+- Public RC install path:
+
+  ```bash
+  npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next
+  npx @beemvp/beeui-cli@next --help
+  ```
+
+- Generated public docs, `llms.txt` surfaces, release state, and component portal pages are regenerated from the dist-tag policy; they name `0.86.2-rc.3` as the current candidate and state the last observed registry dist-tags separately.
+
+### Fixed
+
+- **Sheet (native) no longer crashes without `SheetProvider`** (#629). With the rc.1 root wiring (an outer `BottomSheetModalProvider`, no `SheetProvider`) the sheet opens instead of blanking the app; with no gorhom provider at all it stays closed. Either way one development error names the required `BeeUIProvider > SheetProvider > app` wiring.
+- **Select commits the option under the pointer** (#612). Hovering an option no longer scrolls the list, so a press on a long, scrolling list can no longer commit a different option or select nothing.
+- **Select inside `Field`** (#630) is named by the field label and exposes required, invalid, disabled and the field's description or error, like `Input`. `Input` and `Select` now point `aria-describedby` at the Field's helper text on Web.
+- **Keys typed in a focused `Input`/`SearchInput` bubble to `window` and `document` on Web** (#606); React ancestors still treat the key as handled.
+- **Typography and contrast:** `text-caption` keeps its size and the default text colour (#599); Avatar fallback initials scale with the avatar size (#599); plain table cells use the foreground colour in dark (#604); the current Stepper step title meets 4.5:1 (#631).
+- **Input/SearchInput** no longer clip descenders at accessibility text sizes (#589). **SegmentedControl** sizes segments from their labels and no longer breaks words mid-word in narrow containers (#600). **IconButton `size="sm"`** renders at its small size; native keeps a 44dp hit target (#568). Wrapped button labels are centred (#631).
+- **Forms:** a Checkbox list inside `FormGroup` is exposed as a group labelled by its legend, linked to its error and marked invalid/required (#571). `KeyboardAwareScreen` no longer calls the deprecated `currentlyFocusedField()` and reserves keyboard space on iOS too, so the last field inside a shell layout scrolls above the keyboard (#588, #631).
+- **Web accent colours:** Spinner, Switch and Input placeholder resolve their colour from theme variables, so a late-loaded stylesheet no longer logs the `accent-primary` warning (#592).
+- **Web popovers opened after the page scrolls** stay adjacent to their trigger.
+
+### Changed
+
+- `FormGroup` no longer appends an English "required" to its legend by default; pass a localized `requiredAccessibilityLabel`, as with the other form primitives (#631).
+- Native bottom toasts dock above a standard bottom-navigation band (safe-area inset + 80) so they do not cover a tab bar (#631).
+
+### Added
+
+- `Select` `locale` prop for its built-in placeholder copy (`vi-VN` → "Chọn một mục"; other locales fall back to English) (#587).
 
 ## [0.86.2-rc.2] — 2026-09-22
 
@@ -67,6 +105,17 @@ The governed line is unchanged from rc.1 (`docs/compatibility-matrix.md`, `docs/
 - Web support remains evidence-bounded to Chromium with Expo/Metro and Vite + React Native Web.
 
 Stable `0.86.2` is a separate future release event. rc.2 publication under `next` does not authorize or imply promotion of `latest`.
+
+### Upgrading from 0.86.2-rc.1
+
+*Added to this entry after `0.86.2-rc.2` publication (2026-09-23), from rc.2 consumer verification findings. Not part of the original rc.2 release notes above.*
+
+If your app already installed `0.86.2-rc.1`, four changes need action when you move to `0.86.2-rc.2`. Full detail: [Migration & versioning](https://github.com/beobungbu/BeeUI/blob/main/apps/docs/src/content/docs/guides/migration-versioning.md#upgrading-from-0862-rc1-to-0862-rc2).
+
+1. **`Sheet` native root wiring changed and is now required.** rc.1's guidance was `GestureHandlerRootView` > `BottomSheetModalProvider` > `BeeUIProvider`. On rc.2, mount BeeUI's public `SheetProvider` directly below `BeeUIProvider` instead (`BeeUIProvider` > `SheetProvider` > app) and remove the outer `BottomSheetModalProvider` — `SheetProvider` installs `GestureHandlerRootView` and gorhom's `BottomSheetModalProvider` itself, and deliberately does not reuse an already-present outer one.
+2. **Context bridging for Sheet content.** `SheetContent` only sees React contexts mounted above `SheetProvider`. Keep app-wide providers (query client, i18n, navigation, app stores) above `SheetProvider`; pass a screen-scoped provider's value through `SheetContent`'s `bridgeContexts` prop instead.
+3. **`Calendar` day cells are now `role="gridcell"` on Web** (previously `"cell"`). Update Web test selectors from `getByRole('cell')` to `getByRole('gridcell')` for calendar day cells; native is unchanged.
+4. **Workarounds you can drop:** per-table row density classes (use `Table density="dense48"`); a wrapping pressable for row-level navigation inside `TableRow`/`TableCell` (use `TableRow onPress`); a custom closable tab strip (use `TabsList scrollable` with `TabsTrigger closable`); a hover wrapper around `DropdownMenuTrigger` (it now carries its own hover affordance); manually splitting a `Button`'s label across two `Text` nodes for large text (a long label now wraps and the button grows instead of clipping).
 
 ## [0.86.2-rc.1] — 2026-09-09
 

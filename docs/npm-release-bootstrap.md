@@ -73,7 +73,11 @@ For a later fresh `0.86.2-rc.N` candidate:
 2. dispatch `operation=stage-rc` with `confirmation=BEEUI_RC_RELEASE`;
 3. CI stages all four packages under `next` through npm Trusted Publishing/OIDC;
 4. owner reviews/downloads the staged tarballs as needed and approves each package with npm 2FA;
-5. verify the actual public registry artifacts and clean-consumer behavior.
+5. verify the actual public registry artifacts and clean-consumer behavior;
+6. only after all four packages are public and step 5 is green, the owner moves `latest` for all four packages to the new RC in one authenticated 2FA session (`npm dist-tag add @beemvp/beeui-<pkg>@0.86.2-rc.N latest` for `core`, `tokens`, `ui`, `cli`);
+7. observe the resulting `latest` and `next` tags for all four packages and record them in `docs/dist-tag-policy.md` and `docs/rc-candidate.md`.
+
+During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC (owner decision 2026-09-24, issue #561; `docs/dist-tag-policy.md`). The workflow never performs step 6.
 
 Do not silently retry an occupied staged version. Reject/reconcile the existing stage first.
 
@@ -95,9 +99,9 @@ The stable upload temporarily uses `next` as a safety channel because npm staged
 
 ## Why final dist-tag promotion is manual
 
-npm Trusted Publishing/OIDC authenticates `npm publish` and `npm stage publish`. It does not authorize `npm dist-tag` mutation. The final `latest` move is therefore an owner proof-of-presence operation rather than a CI write-token workflow.
+npm Trusted Publishing/OIDC authenticates `npm publish` and `npm stage publish`. It does not authorize `npm dist-tag` mutation. The `latest` moves — for each complete, verified RC during the `0.86.2` prerelease line and for stable promotion — are therefore owner proof-of-presence operations rather than a CI write-token workflow.
 
-This is intentional: BeeUI does not add a long-lived npm write token merely to automate the last four dist-tag changes.
+This is intentional: BeeUI does not add a long-lived npm write token merely to automate four dist-tag changes.
 
 ## Workflow guardrails
 
@@ -127,7 +131,7 @@ If a bootstrap or approval sequence is partial:
 - inspect exact registry/stage state;
 - compare package integrity/provenance with the reviewed candidate;
 - recover only the missing package/version pair with explicit owner authorization;
-- keep `latest` untouched until the full stable set is verified.
+- keep `latest` untouched until the full four-package set (RC or stable) is public and verified.
 
 Published versions are immutable. Correct forward; do not unpublish to reclaim a version.
 

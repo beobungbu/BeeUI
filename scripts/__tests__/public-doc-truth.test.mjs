@@ -114,6 +114,20 @@ test('README distribution status must match workspace version', () => {
     collectPublicTruthViolations(wrong).some((v) => v.includes('states version 9.9.9 but the workspace version is 0.86.2-rc.1')),
   );
 
+  const candidate = fixture(baseFiles({
+    published: true,
+    readme: '> **Distribution status:** BeeUI `0.86.2-rc.1` is the current release candidate in this repository; the newest published version is `0.86.2-rc.0`.\n',
+  }));
+  assert.deepEqual(collectPublicTruthViolations(candidate), []);
+
+  const wrongCandidate = fixture(baseFiles({
+    published: true,
+    readme: '> **Distribution status:** BeeUI `9.9.9` is the current release candidate in this repository.\n',
+  }));
+  assert.ok(
+    collectPublicTruthViolations(wrongCandidate).some((v) => v.includes('states version 9.9.9 but the workspace version is 0.86.2-rc.1')),
+  );
+
   const missing = fixture(baseFiles({ published: true, readme: 'BeeUI\n' }));
   assert.ok(collectPublicTruthViolations(missing).some((v) => v.includes('no longer carries its distribution-status line')));
 });

@@ -135,9 +135,17 @@ describe('BeeUI issue #15 alert dialog and form grouping', () => {
     const formGroup = screen.getByTestId('form-group');
     const radioGroup = screen.getByTestId('radio-group');
 
-    expect(formGroup.props.accessible).toBe(false);
+    // The group container itself now carries its own group semantics (#571):
+    // a `role="group"` labelled by the legend, no longer opaque to native
+    // accessibility (see the FormGroup+Checkbox-list coverage below for the
+    // full description/invalid relationship set).
+    expect(formGroup.props.role).toBe('group');
+    expect(formGroup.props.accessibilityLabelledBy).toMatch(/^beeui-form-group-.*-legend$/);
     expect(radioGroup.props.accessibilityRole).toBe('radiogroup');
-    expect(radioGroup.props.accessibilityLabel).toBe('Plan, required');
+    // No hardcoded English "required" suffix (#631 item 4/5) — `required` is
+    // true but no `requiredAccessibilityLabel` was supplied, so the name stays
+    // exactly the legend.
+    expect(radioGroup.props.accessibilityLabel).toBe('Plan');
     expect(radioGroup.props.accessibilityLabelledBy).toMatch(/^beeui-form-group-.*-legend$/);
     expect(radioGroup.props.accessibilityHint).toBe('Choose one plan.');
     expect(radioGroup.props.accessibilityState.disabled).toBe(true);

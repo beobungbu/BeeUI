@@ -1,10 +1,11 @@
-import { act, render } from '@testing-library/react-native';
+import { act } from '@testing-library/react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 // Explicit `.native` suffix (mirrors `issue-158-sheet-native.test.tsx`): forces the native
 // presentation regardless of Jest's default platform resolution, and is the only way to
 // exercise the file that imports `@gorhom/bottom-sheet` at all.
 import { Sheet, SheetContent, SheetTitle } from '../../../packages/ui/src/components/sheet.native';
+import { renderWithModalProvider } from './helpers/render-with-modal-provider';
 
 // #618 (Astra review, item 4), plausible-but-unverified: `sheet.native.tsx`'s
 // `handleDismiss` (gorhom's `onDismiss`) resets `presentedRef` and checks `openRef.current`
@@ -32,10 +33,26 @@ jest.mock('@gorhom/bottom-sheet', () => {
     },
   );
 
+  const BottomSheetModalInternalContext = ReactActual.createContext(null);
+  const BottomSheetModalProvider = ({ children }: { children?: React.ReactNode }) =>
+    ReactActual.createElement(
+      BottomSheetModalInternalContext.Provider,
+      { value: { hostName: 'mock-bottom-sheet-host' } },
+      children,
+    );
+  const useBottomSheetModalInternal = (_unsafe?: boolean) =>
+    ReactActual.useContext(BottomSheetModalInternalContext);
+
   const BottomSheetView = ({ children }: { children?: React.ReactNode }) =>
     ReactActual.createElement(RNView, null, children);
 
-  return { __esModule: true, BottomSheetModal, BottomSheetView };
+  return {
+    __esModule: true,
+    BottomSheetModal,
+    BottomSheetModalProvider,
+    BottomSheetView,
+    useBottomSheetModalInternal,
+  };
 });
 
 const SAFE_AREA_INSETS = { top: 20, right: 0, bottom: 30, left: 0 };
@@ -70,7 +87,7 @@ beforeEach(() => {
 });
 
 function renderSheet(onOpenChange: (open: boolean) => void, open: boolean) {
-  return render(
+  return renderWithModalProvider(
     <Sheet onOpenChange={onOpenChange} open={open}>
       <SheetContent testID="sheet-content">
         <SheetTitle>Filters</SheetTitle>

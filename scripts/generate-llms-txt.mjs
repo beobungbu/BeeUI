@@ -92,6 +92,7 @@ export const LINKED_PATHS = [
   'apps/docs/src/content/docs/start/provider-safe-area.md',
   'apps/docs/src/content/docs/guides/cli-source-ownership.md',
   'apps/docs/src/content/docs/components/index.md',
+  'apps/docs/src/content/docs/components/sheet.md',
   'apps/docs/src/content/docs/guides/table.md',
   'apps/docs/src/content/docs/guides/date-time.md',
   'apps/docs/src/content/docs/patterns/index.md',
@@ -212,8 +213,25 @@ function packageLine(pkg, policy) {
   if (!policy.published) {
     return `\`${pkg.name}\` v${pkg.version} — ${pkg.description} [unpublished (publishConfig.access=public prepared)]`;
   }
+  const { tag, publishedVersion, candidatePending } = publicationObservation(policy);
+  const candidate = candidatePending ? `; v${policy.currentVersion} is the unpublished source candidate` : '';
+  return `\`${pkg.name}\` v${pkg.version} — ${pkg.description} [public on npm under \`${tag}\` (last observed ${publishedVersion})${candidate}]`;
+}
+
+// `currentVersion` is the source candidate; `observedDistTags` is the last recorded registry observation.
+// Between candidate preparation and the owner's publication they differ, and the generated surfaces must
+// never present the candidate as published (or as a dist-tag target) before the registry is observed.
+export function publicationObservation(policy) {
   const tag = policy.prereleaseDistTag ?? 'next';
-  return `\`${pkg.name}\` v${pkg.version} — ${pkg.description} [public on npm under \`${tag}\` (${policy.currentVersion})]`;
+  const observed = policy.observedDistTags ?? {};
+  const publishedVersion = observed[tag] ?? policy.currentVersion;
+  return {
+    tag,
+    publishedVersion,
+    latestVersion: observed.latest,
+    stableVersion: policy.candidateStableVersion ?? '0.86.2',
+    candidatePending: publishedVersion !== policy.currentVersion,
+  };
 }
 
 const HEADER_NOTE =
@@ -232,15 +250,21 @@ const UNPUBLISHED_NOTE =
 // identical publication truth instead of drifting again the next time a dist-tag changes.
 export function buildStatusNote(policy, policyHref = 'docs/dist-tag-policy.md') {
   if (!policy.published) return UNPUBLISHED_NOTE;
-  const tag = policy.prereleaseDistTag ?? 'next';
+  const { tag, publishedVersion, latestVersion, stableVersion, candidatePending } = publicationObservation(policy);
+  const observedTags = latestVersion
+    ? `resolving \`${tag}\` to \`${publishedVersion}\` and \`latest\` to \`${latestVersion}\``
+    : `resolving \`${tag}\` to \`${publishedVersion}\``;
+  const candidate = candidatePending
+    ? `This repository is at release candidate \`${policy.currentVersion}\`, which is not published until the owner approves its staged packages. `
+    : '';
   return (
-    `STATUS: BeeUI \`${policy.currentVersion}\` is public on npm under the opt-in \`${tag}\` dist-tag. The live ` +
-    "registry was last observed (at `0.86.2-rc.1`) resolving both `next` and `latest` to that RC; that " +
-    "observation is re-verified after every publish and is not an npm rule. The bootstrap workflow published " +
-    "with `--tag next`; the mechanism that also produced `latest` has not been established. " +
-    `\`latest\` moves to a real stable version at the first stable release. Every release-candidate install should still use \`@${tag}\` or pin ` +
-    'the exact version — do not recommend an unqualified, untagged install, since that stops matching the RC ' +
-    `once \`latest\` moves. \`npm install @beemvp/beeui-ui@${tag} @beemvp/beeui-core@${tag} @beemvp/beeui-tokens@${tag}\` and ` +
+    `STATUS: BeeUI \`${publishedVersion}\` is public on npm under the opt-in \`${tag}\` dist-tag. The live registry was ` +
+    `last observed ${observedTags}; dist-tags are re-verified after every publish. ${candidate}` +
+    `During the \`${stableVersion}\` prerelease line \`latest\` follows the newest complete, verified RC only after the owner ` +
+    `moves it for all four packages, and stable \`${stableVersion}\` moves it at stable promotion. Every release-candidate ` +
+    `install should still use \`@${tag}\` or pin the exact version — do not recommend an unqualified, untagged install, since ` +
+    `\`latest\` lags \`${tag}\` between an RC publication and the owner's move. ` +
+    `\`npm install @beemvp/beeui-ui@${tag} @beemvp/beeui-core@${tag} @beemvp/beeui-tokens@${tag}\` and ` +
     `\`npx @beemvp/beeui-cli@${tag} --help\` are live, working registry commands today. The source-ownership CLI ` +
     '(`pnpm beeui add <component>`) remains available from a repository checkout. See ' +
     `[docs/dist-tag-policy.md](${policyHref}) for the full release/dist-tag mechanics.`
@@ -297,6 +321,8 @@ ${cliInstall}
 - [docs/anchored-overlays.md](docs/anchored-overlays.md): shared overlay geometry/runtime/portal contract.
 - [registry/registry.json](registry/registry.json): machine-readable source-ownership registry.
 
+**\`Sheet\` on native requires \`SheetProvider\`** mounted below \`BeeUIProvider\` (\`BeeUIProvider > SheetProvider > app\`) — see llms-full.txt's "Provider and safe-area setup" and [apps/docs/src/content/docs/components/sheet.md](apps/docs/src/content/docs/components/sheet.md).
+
 ${HEADER_NOTE}
 `;
 }
@@ -318,14 +344,14 @@ function buildFull(model) {
     [
       '011-distribution-architecture',
       policy.published
-        ? `Public distribution model: three scoped packages + source-ownership CLI, public on npm under \`${tag}\` since ${policy.currentVersion}.`
+        ? `Public distribution model: three scoped packages + source-ownership CLI, public on npm under \`${tag}\` (last observed at ${publicationObservation(policy).publishedVersion}).`
         : 'Public distribution model: three scoped packages + source-ownership CLI, prepared not published.',
     ],
   ];
 
   const packagesHeading = policy.published ? `## Packages (public on npm under \`${tag}\`, one lockstep version)` : '## Packages (all unpublished / pre-1.0, one lockstep version)';
   const packagesNote = policy.published
-    ? `\`@beemvp/beeui-core\`, \`@beemvp/beeui-tokens\`, and \`@beemvp/beeui-ui\` share one lockstep version and are released together (ADR-011 D6). All three are public on npm at \`${policy.currentVersion}\` under the \`${tag}\` dist-tag (stable \`latest\` was last observed, at \`0.86.2-rc.1\`, resolving to the RC as well — re-verified after every publish and not an npm rule; the bootstrap used \`--tag next\` and the mechanism that also produced \`latest\` is not established — see docs/dist-tag-policy.md); \`exports\` maps ship dual ESM+CJS with \`.d.ts\`, a \`react-native\` condition for Metro, \`browser\`/\`default\` for Web, and \`@beemvp/beeui-tokens/theme.css\` for the Web theme.`
+    ? `\`@beemvp/beeui-core\`, \`@beemvp/beeui-tokens\`, and \`@beemvp/beeui-ui\` share one lockstep version and are released together (ADR-011 D6). All three are public on npm under the \`${tag}\` dist-tag (last observed at \`${publicationObservation(policy).publishedVersion}\`; during the prerelease line \`latest\` follows the newest complete, verified RC only after the owner moves it — see docs/dist-tag-policy.md); \`exports\` maps ship dual ESM+CJS with \`.d.ts\`, a \`react-native\` condition for Metro, \`browser\`/\`default\` for Web, and \`@beemvp/beeui-tokens/theme.css\` for the Web theme.`
     : '`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` share one lockstep version and are released together (ADR-011 D6). Package manifests declare `publishConfig.access=public` + provenance but remain unpublished; `exports` maps ship dual ESM+CJS with `.d.ts`, a `react-native` condition for Metro, `browser`/`default` for Web, and `@beemvp/beeui-tokens/theme.css` for the Web theme.';
   const centralizedModel = policy.published
     ? `1. Centralized packages (public RC, opt in with \`@${tag}\`): \`npm i @beemvp/beeui-ui@${tag}\` pulls \`@beemvp/beeui-core\` + \`@beemvp/beeui-tokens\`; import components from \`@beemvp/beeui-ui\`; wire Web theme with \`@import '@beemvp/beeui-tokens/theme.css'\`. Pin \`@${policy.currentVersion}\` for an immutable version in CI.`
@@ -370,6 +396,8 @@ Verification: \`pnpm check\` (typecheck + tests), \`pnpm release:verify\` (packa
 ## Provider and safe-area setup
 Wrap the app root in \`BeeUIProvider\` (installs safe-area measurement, the Toast runtime, and the shared anchored-overlay runtime). \`SafeArea\` assigns explicit \`top\`/\`bottom\`/\`left\`/\`right\` edge ownership; \`Screen\`, \`AppHeader\`, and \`BottomActionBar\` never add insets themselves. See [apps/docs/src/content/docs/start/provider-safe-area.md](apps/docs/src/content/docs/start/provider-safe-area.md).
 
+**\`Sheet\` on native requires \`SheetProvider\`.** Mount BeeUI's public \`SheetProvider\` directly below \`BeeUIProvider\`, above the rest of the app: \`BeeUIProvider > SheetProvider > app\`. On native, \`SheetProvider\` installs \`GestureHandlerRootView\` and gorhom's \`BottomSheetModalProvider\` itself — do not also mount an outer \`GestureHandlerRootView\`/\`BottomSheetModalProvider\` (the rc.1 wiring); remove that outer provider when upgrading. \`SheetProvider\` deliberately does not reuse an already-present outer gorhom provider (dev-time warning if one is detected). \`SheetContent\` only sees React contexts mounted above \`SheetProvider\`; app-wide providers (query client, i18n, navigation, app stores) belong above \`SheetProvider\`, and a screen-scoped provider that a Sheet's content still needs must be passed through \`SheetContent bridgeContexts\`. Web and the RN \`Modal\` fallback: \`SheetProvider\` is a pass-through. See [apps/docs/src/content/docs/components/sheet.md](apps/docs/src/content/docs/components/sheet.md) and [ADR-006](docs/decisions/006-sheet-gesture-engine.md).
+
 ## Web bundling (Vite + react-native-web)
 \`@import '@beemvp/beeui-tokens/theme.css'\` supplies the semantic tokens but is not, by itself, a Web build. A from-scratch Vite + react-native-web app needs a specific plugin stack and a Tailwind/Uniwind CSS entry; get it wrong and the app either fails to resolve \`react-native\` or builds **unstyled**. The tested stack:
 - \`vite.config.ts\` — three plugins, in this order: \`rnw()\` from \`vite-plugin-rnw\` (resolves \`react-native\` → \`react-native-web\`), \`tailwindcss()\` from \`@tailwindcss/vite\`, and \`uniwind()\` from \`uniwind/vite\` (passed \`cssEntryFile\` + \`dtsFile\`).
@@ -407,6 +435,7 @@ BeeUI does not build or bundle a styling compiler, router, backend, state librar
 ## Overlay model (summary)
 - Modal-class \`Dialog\`/\`AlertDialog\` use React Native core \`Modal\`. \`DialogContent\` defaults to \`overFullScreen\` (transparent); \`fullScreen\`/\`pageSheet\`/\`formSheet\` are non-transparent so RN honors the presentation.
 - Anchored \`Popover\`/\`DropdownMenu\`/\`Select\`/\`Tooltip\` share one non-modal geometry/runtime/portal/dismiss kernel installed by \`BeeUIProvider\`.
+- \`Sheet\` on native requires BeeUI's public \`SheetProvider\` mounted below \`BeeUIProvider\` (\`BeeUIProvider > SheetProvider > app\`); it installs \`GestureHandlerRootView\` + gorhom's \`BottomSheetModalProvider\` itself, so do not also mount an outer one. See "Provider and safe-area setup" above.
 - Portal transport: Web \`ReactDOM.createPortal\`; native New Architecture \`react-native-teleport\`; defensive legacy fallback (does not preserve consumer context).
 - Global dismissal targets the deepest active scope via semantic depth, independent of React effect order. Native measurement uses latest-request-wins generation guards.
 - \`Toast\` is a separate transient-notification runtime (not modal, not anchored).
@@ -502,7 +531,7 @@ The Showcase opens a local section chooser: Components (interactive playground) 
 - Compose existing primitives first; keep domain-specific composition local to the app, not in \`@beemvp/beeui-ui\`. Promote a shared primitive only after repeated or behaviorally complex evidence (the "Rule of Two", [docs/roadmap.md](docs/roadmap.md)).
 - App shell: wrap in \`BeeUIProvider\`; own safe-area edges explicitly with \`SafeArea\` around \`AppHeader\` / content / \`BottomActionBar\`.
 - Forms: \`Field\` composes label/description/error for text entry; \`FormGroup\` owns structural legend/description/error for related controls without collapsing them into one accessibility element. Controlled selection controls need their change callback.
-- Overlays: use \`Dialog\`/\`AlertDialog\` for modal-class flows; \`Popover\`/\`DropdownMenu\`/\`Select\`/\`Tooltip\` for anchored non-modal content; \`Sheet\` for gesture bottom sheets (requires \`GestureHandlerRootView\` + \`BottomSheetModalProvider\` at the app root on native, ADR-006). \`useToast()\` for transient notifications.
+- Overlays: use \`Dialog\`/\`AlertDialog\` for modal-class flows; \`Popover\`/\`DropdownMenu\`/\`Select\`/\`Tooltip\` for anchored non-modal content; \`Sheet\` for gesture bottom sheets — on native, mount BeeUI's public \`SheetProvider\` directly below \`BeeUIProvider\` (it installs \`GestureHandlerRootView\` + \`BottomSheetModalProvider\` itself; do not mount an outer \`BottomSheetModalProvider\` yourself, ADR-006). \`useToast()\` for transient notifications.
 - Data display: \`Table\` is a composable primitive family — map your own rows to \`TableRow\`/\`TableCell\`; sort/selection state stays caller-owned (ADR-007). \`Stat\`, \`Timeline\`, \`Badge\`, \`Avatar\`, \`DescriptionList\` are layout-only.
 - Dates: \`Calendar\`/\`DatePicker\`/\`DateTimePicker\` are timezone-free, single-date, \`Intl\`-driven; the app owns any timezone/business-calendar conversion (ADR-008).
 

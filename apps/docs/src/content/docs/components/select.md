@@ -8,7 +8,7 @@ description: "Persistent single string-value selection with anchored option surf
 Persistent single string-value selection with anchored option surface and listbox semantics on Web.
 
 :::note[Distribution status]
-BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. Stable `latest` was last observed (at `0.86.2-rc.1`) resolving to the RC as well; that observation is re-verified after every publish and is not an npm rule. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
+BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. The live registry was last observed resolving `next` to `0.86.2-rc.2` and `latest` to `0.86.2-rc.1`; dist-tags are re-verified after every publish. This repository is at release candidate `0.86.2-rc.3`, which is not published until the owner approves its staged packages. During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages, and stable `0.86.2` moves it at stable promotion (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -121,6 +121,7 @@ Also carries every prop of `Omit<RNTextProps, 'nativeID' | 'role'>` — that ups
 | `defaultOpen` | `boolean` | `false` | Initial open state for uncontrolled usage. Ignored once `open` is controlled. Defaults to false. |
 | `defaultValue` | `SelectOptionValue` | — | Initial selected value for uncontrolled usage. Ignored once `value` is controlled. |
 | `disabled` | `boolean` | `false` | Prevents the trigger from opening the listbox and disables the root. Defaults to false. |
+| `locale` | `string` | — | Locale of the built-in copy (`SelectValue`'s default placeholder). Explicit-only (ADR-008) — no ambient device/browser locale auto-detection; an unknown locale falls back to English. Defaults to `'en-US'`. |
 | `onOpenChange` | `(open: boolean) => void` | — | Called whenever the open state changes (trigger press, item selection, outside press, Escape). Required alongside `open` to make it controlled; otherwise falls back to internal open state with a dev-mode warning. |
 | `onValueChange` | `(value: SelectOptionValue) => void` | — | Called with the newly selected `SelectItem`'s `value`. Required for enabled controlled `value` usage (logs a dev warning otherwise). |
 | `open` | `boolean` | — | Controls whether the listbox is open. Open state becomes controlled only when this is a defined boolean and `onOpenChange` is a function; passing `open={undefined}` leaves it uncontrolled. Unlike `value`, presence of the key alone is not enough. |
@@ -142,7 +143,7 @@ Also carries every prop of `Omit<PressableProps, 'accessibilityRole' | 'children
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `className` | `string` | — | Extra utility classes, merged after the component's own via `cn(...)`, so they win on conflict. An escape hatch for source-owned and application work, not a cross-engine portability guarantee. |
-| `placeholder` | `React.ReactNode` | `'Select an option'` | Shown when no `SelectItem` is selected. Also used, when a plain string, as the trigger's fallback accessible name if no `accessibilityLabel` is set. Defaults to `'Select an option'`. |
+| `placeholder` | `React.ReactNode` | — | Shown when no `SelectItem` is selected. Also used, when a plain string, as the trigger's fallback accessible name if no `accessibilityLabel` is set and the Select is not inside a `Field`. Defaults to the `Select` root's `locale` copy (`'Select an option'` for `'en-US'`). |
 
 Also carries every prop of `Omit<RNTextProps, 'children' | 'role'>` — that upstream contract is not reproduced here.
 
@@ -175,7 +176,7 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 ## Accessibility
 
 - **Roles this family assigns:** `combobox`, `group` (Web), `listbox` (Web), `option` — set in `select.tsx` by the components themselves, not by the caller.
-- **Accessibility states and properties it sets:** `accessibilityElementsHidden`, `accessibilityLabel`, `accessibilityLabelledBy`, `accessible`, `controls`, `disabled`, `expanded`, `haspopup`, `hidden`, `labelledby` (Web), `selected`, `text` — read from `select.tsx`.
+- **Accessibility states and properties it sets:** `accessibilityElementsHidden`, `accessibilityHint`, `accessibilityLabel`, `accessibilityLabelledBy`, `accessible`, `controls`, `describedby` (Web), `disabled`, `expanded`, `haspopup`, `hidden`, `invalid`, `labelledby` (Web), `required`, `selected`, `text` — read from `select.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 

@@ -2,6 +2,8 @@ import * as React from 'react';
 
 export type FieldContextValue = {
   description?: string;
+  /** `nativeID` of the helper text currently rendered below the control (the error when invalid, otherwise the description); undefined when neither is shown. Field-consuming controls point `aria-describedby` at it on Web. */
+  descriptionNativeID?: string;
   disabled: boolean;
   error?: string;
   invalid: boolean;

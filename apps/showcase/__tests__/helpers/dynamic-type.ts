@@ -159,7 +159,7 @@ export const FIXED_HEIGHT_ALLOWLIST: Record<
       'h-control-icon': 1,
     },
     rationale:
-      'IconButton is icon-only by contract (no text label, no numberOfLines) — every size step is a fixed square glyph container, the same controlSize scale button.tsx already documents. The sm size keeps the ios:min-h-touch-target/android:min-h-touch-target guard so the tappable region floor stays >=44px even where the visual box is smaller.',
+      'IconButton is icon-only by contract (no text label, no numberOfLines) — every size step is a fixed square glyph container, the same controlSize scale button.tsx already documents. The sm size keeps its smaller visual box on native and extends only its tappable region to the >=44px floor through hitSlop (a min-h/min-w guard would grow the visual box back to 44).',
   },
   'progress.tsx': {
     classes: { 'h-1': 1, 'h-2': 1, 'h-3': 1, 'h-full': 1 },

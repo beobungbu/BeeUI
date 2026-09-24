@@ -8,7 +8,7 @@ description: "Thin View primitive with no design assumptions, for ad-hoc layout.
 Thin View primitive with no design assumptions, for ad-hoc layout.
 
 :::note[Distribution status]
-BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. Stable `latest` was last observed (at `0.86.2-rc.1`) resolving to the RC as well; that observation is re-verified after every publish and is not an npm rule. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
+BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. The live registry was last observed resolving `next` to `0.86.2-rc.2` and `latest` to `0.86.2-rc.1`; dist-tags are re-verified after every publish. This repository is at release candidate `0.86.2-rc.3`, which is not published until the owner approves its staged packages. During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages, and stable `0.86.2` moves it at stable promotion (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -131,7 +131,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Box** is actually used: 51 lines in 5 places, of 6 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1103 lines — where **Box** is actually used: 51 lines in 5 places, of 6 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -140,7 +140,7 @@ import { Badge, Box, Button, Popover, PopoverClose, PopoverContent, PopoverDescr
 import * as React from 'react';
 ````
 
-[lines 534–542](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L534-L542):
+[lines 535–543](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L535-L543):
 
 ````tsx
                 <Box className="gap-3">
@@ -154,7 +154,7 @@ import * as React from 'react';
                 </Box>
 ````
 
-[lines 548–562](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L548-L562):
+[lines 549–563](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L549-L563):
 
 ````tsx
               <Box className="flex-row flex-wrap gap-2">
@@ -174,7 +174,7 @@ import * as React from 'react';
               </Box>
 ````
 
-[lines 570–576](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L570-L576):
+[lines 571–577](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L571-L577):
 
 ````tsx
               <Box className="flex-row items-center gap-3">
@@ -186,13 +186,13 @@ import * as React from 'react';
               </Box>
 ````
 
-Fixture state this block reads (same file, line 460):
+Fixture state this block reads (same file, line 461):
 
 ````tsx
   const [notifications, setNotifications] = React.useState(true);
 ````
 
-[lines 643–650](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L643-L650):
+[lines 665–672](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L665-L672):
 
 ````tsx
               <Box className="flex-row items-center justify-between gap-4">
@@ -205,7 +205,7 @@ Fixture state this block reads (same file, line 460):
               </Box>
 ````
 
-[lines 855–866](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L855-L866):
+[lines 877–888](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L877-L888):
 
 ````tsx
                 <Box className="items-end">

@@ -1,10 +1,11 @@
-import { act, render } from '@testing-library/react-native';
+import { act } from '@testing-library/react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 // Explicit `.native` suffix (mirrors `sheet-native-rapid-close-reopen.test.tsx`): forces the
 // native presentation regardless of Jest's default platform resolution, and is the only way
 // to exercise the file that imports `@gorhom/bottom-sheet` at all.
 import { Sheet, SheetContent, SheetTitle } from '../../../packages/ui/src/components/sheet.native';
+import { renderWithModalProvider } from './helpers/render-with-modal-provider';
 
 // Astra review #2, item 10 (plausible-but-unverified): `sheet-native-rapid-close-reopen.test.tsx`
 // proves `handleDismiss` correctly ignores a single stale `onDismiss` superseded by one
@@ -34,10 +35,26 @@ jest.mock('@gorhom/bottom-sheet', () => {
     },
   );
 
+  const BottomSheetModalInternalContext = ReactActual.createContext(null);
+  const BottomSheetModalProvider = ({ children }: { children?: React.ReactNode }) =>
+    ReactActual.createElement(
+      BottomSheetModalInternalContext.Provider,
+      { value: { hostName: 'mock-bottom-sheet-host' } },
+      children,
+    );
+  const useBottomSheetModalInternal = (_unsafe?: boolean) =>
+    ReactActual.useContext(BottomSheetModalInternalContext);
+
   const BottomSheetView = ({ children }: { children?: React.ReactNode }) =>
     ReactActual.createElement(RNView, null, children);
 
-  return { __esModule: true, BottomSheetModal, BottomSheetView };
+  return {
+    __esModule: true,
+    BottomSheetModal,
+    BottomSheetModalProvider,
+    BottomSheetView,
+    useBottomSheetModalInternal,
+  };
 });
 
 const SAFE_AREA_INSETS = { top: 20, right: 0, bottom: 30, left: 0 };
@@ -84,7 +101,7 @@ function sheetElement(onOpenChange: (open: boolean) => void, open: boolean) {
 describe('Sheet (native) repeated close/reopen serialization', () => {
   it('coalesces repeated intent changes into one dismiss and one queued reopen', () => {
     const onOpenChange = jest.fn();
-    const { rerender } = render(sheetElement(onOpenChange, true));
+    const { rerender } = renderWithModalProvider(sheetElement(onOpenChange, true));
 
     rerender(sheetElement(onOpenChange, false));
     const pending = latestOnDismiss;
@@ -108,7 +125,7 @@ describe('Sheet (native) repeated close/reopen serialization', () => {
 
   it('stays closed when latest intent is false at completion', () => {
     const onOpenChange = jest.fn();
-    const { rerender } = render(sheetElement(onOpenChange, true));
+    const { rerender } = renderWithModalProvider(sheetElement(onOpenChange, true));
 
     rerender(sheetElement(onOpenChange, false));
     const pending = latestOnDismiss;

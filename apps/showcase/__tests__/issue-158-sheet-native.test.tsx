@@ -25,6 +25,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '../../../packages/ui/src/components/sheet.native';
+import { renderWithModalProvider } from './helpers/render-with-modal-provider';
 
 // BeeUI issue #158 (R4B.3, ADR-006 `docs/decisions/006-sheet-gesture-engine.md`).
 // Deterministic contract tests for the native `@gorhom/bottom-sheet` adapter:
@@ -275,7 +276,7 @@ describe('BeeUI issue #619 SheetProvider native ownership contract', () => {
 
 describe('BeeUI issue #158 Sheet (native/@gorhom/bottom-sheet adapter) contract', () => {
   it('presents on open and dismisses on close, driven by the controlled/uncontrolled contract', () => {
-    render(
+    renderWithModalProvider(
       <Sheet>
         <SheetTrigger>Open sheet</SheetTrigger>
         <SheetContent testID="sheet-content">
@@ -307,7 +308,7 @@ describe('BeeUI issue #158 Sheet (native/@gorhom/bottom-sheet adapter) contract'
   // `plans/260918-1559-consumer-audit-fix-all/reports/ws-b-sheet-584.md`),
   // but this locks in the deterministic part: the prop is always passed.
   it('always disables gorhom dynamic sizing, since snapPoints is always explicit (#584)', () => {
-    render(
+    renderWithModalProvider(
       <Sheet>
         <SheetTrigger>Open sheet</SheetTrigger>
         <SheetContent testID="sheet-content">
@@ -321,7 +322,7 @@ describe('BeeUI issue #158 Sheet (native/@gorhom/bottom-sheet adapter) contract'
   });
 
   it('disables dynamic sizing the same way when the caller supplies explicit snapPoints', () => {
-    render(
+    renderWithModalProvider(
       <Sheet>
         <SheetTrigger>Open sheet</SheetTrigger>
         <SheetContent snapPoints={['50%', '90%']} testID="sheet-content">
@@ -336,7 +337,7 @@ describe('BeeUI issue #158 Sheet (native/@gorhom/bottom-sheet adapter) contract'
 
   it('honors the controlled open/onOpenChange contract via the custom backdrop press', () => {
     const onOpenChange = jest.fn();
-    render(
+    renderWithModalProvider(
       <Sheet onOpenChange={onOpenChange} open>
         <SheetContent overlayTestID="sheet-overlay" testID="sheet-content">
           <SheetTitle>Filters</SheetTitle>
@@ -352,7 +353,7 @@ describe('BeeUI issue #158 Sheet (native/@gorhom/bottom-sheet adapter) contract'
 
   it('keeps the Sheet open when backdrop dismissal is disabled', () => {
     const onOpenChange = jest.fn();
-    render(
+    renderWithModalProvider(
       <Sheet onOpenChange={onOpenChange} open>
         <SheetContent closeOnBackdropPress={false} overlayTestID="sheet-overlay" testID="sheet-content">
           <SheetTitle>Filters</SheetTitle>
@@ -366,7 +367,7 @@ describe('BeeUI issue #158 Sheet (native/@gorhom/bottom-sheet adapter) contract'
 
   it('treats a gorhom-initiated dismiss (gesture/swipe) as a real close and notifies the caller', () => {
     const onOpenChange = jest.fn();
-    render(
+    renderWithModalProvider(
       <Sheet onOpenChange={onOpenChange} open>
         <SheetContent testID="sheet-content">
           <SheetTitle>Filters</SheetTitle>
@@ -381,7 +382,7 @@ describe('BeeUI issue #158 Sheet (native/@gorhom/bottom-sheet adapter) contract'
   it('re-presents after a gorhom-initiated dismiss when dismissOnRequestClose is false', () => {
     const onOpenChange = jest.fn();
     const onRequestClose = jest.fn();
-    render(
+    renderWithModalProvider(
       <Sheet onOpenChange={onOpenChange} open>
         <SheetContent
           dismissOnRequestClose={false}
@@ -403,7 +404,7 @@ describe('BeeUI issue #158 Sheet (native/@gorhom/bottom-sheet adapter) contract'
 
   it('does not treat our own effect-driven dismiss() as a gorhom-initiated close', () => {
     const onOpenChange = jest.fn();
-    const { rerender } = render(
+    const { rerender } = renderWithModalProvider(
       <Sheet onOpenChange={onOpenChange} open>
         <SheetContent testID="sheet-content">
           <SheetTitle>Filters</SheetTitle>
@@ -428,7 +429,7 @@ describe('BeeUI issue #158 Sheet (native/@gorhom/bottom-sheet adapter) contract'
   it('consumes Android hardware back while open and closes the Sheet', () => {
     setPlatform('android');
     const onOpenChange = jest.fn();
-    render(
+    renderWithModalProvider(
       <Sheet onOpenChange={onOpenChange} open>
         <SheetContent testID="sheet-content">
           <SheetTitle>Filters</SheetTitle>
@@ -445,7 +446,7 @@ describe('BeeUI issue #158 Sheet (native/@gorhom/bottom-sheet adapter) contract'
     setPlatform('android');
     const onOpenChange = jest.fn();
     const onRequestClose = jest.fn();
-    render(
+    renderWithModalProvider(
       <Sheet onOpenChange={onOpenChange} open>
         <SheetContent
           dismissOnRequestClose={false}
@@ -464,7 +465,7 @@ describe('BeeUI issue #158 Sheet (native/@gorhom/bottom-sheet adapter) contract'
   });
 
   it('registers SheetTitle/SheetDescription into the content accessibility relationship', () => {
-    render(
+    renderWithModalProvider(
       <Sheet defaultOpen>
         <SheetContent testID="sheet-content">
           <SheetTitle>Filters</SheetTitle>
@@ -482,7 +483,7 @@ describe('BeeUI issue #158 Sheet (native/@gorhom/bottom-sheet adapter) contract'
   });
 
   it('renders the default drag handle through the gorhom handle slot and can hide it', () => {
-    const { rerender } = render(
+    const { rerender } = renderWithModalProvider(
       <Sheet defaultOpen>
         <SheetContent testID="sheet-content">
           <SheetTitle>Filters</SheetTitle>
@@ -503,7 +504,7 @@ describe('BeeUI issue #158 Sheet (native/@gorhom/bottom-sheet adapter) contract'
 
   it('accepts text input focus and edits inside the panel', () => {
     const onChangeText = jest.fn();
-    render(
+    renderWithModalProvider(
       <Sheet defaultOpen>
         <SheetContent testID="sheet-content">
           <SheetTitle>Add note</SheetTitle>
@@ -523,7 +524,7 @@ describe('BeeUI issue #158 Sheet (native/@gorhom/bottom-sheet adapter) contract'
 describe('BeeUI issue #584 Sheet presents on the native gorhom engine', () => {
   it('sends dismiss() only for a sheet it presented, never on mount and never after gorhom dismissed it', () => {
     const onOpenChange = jest.fn();
-    const { rerender } = render(
+    const { rerender } = renderWithModalProvider(
       <Sheet onOpenChange={onOpenChange} open={false}>
         <SheetContent testID="sheet-content">
           <SheetTitle>Filters</SheetTitle>
@@ -601,7 +602,7 @@ describe('BeeUI issue #584 Sheet presents on the native gorhom engine', () => {
       );
     }
 
-    render(
+    renderWithModalProvider(
       <>
         <BeeUIProvider>
           <SafeAreaInsetsContext.Provider value={bridgedInsets}>
@@ -662,7 +663,7 @@ describe('BeeUI issue #584 Sheet presents on the native gorhom engine', () => {
   });
 
   it('keeps the root toast viewport when a mounted Sheet is closed', () => {
-    render(
+    renderWithModalProvider(
       <BeeUIProvider>
         <Sheet onOpenChange={() => {}} open={false}>
           <SheetContent testID="closed-sheet-content">
@@ -679,7 +680,7 @@ describe('BeeUI issue #584 Sheet presents on the native gorhom engine', () => {
   });
 
   it('renders the shared toast store only in the topmost active Sheet viewport', async () => {
-    render(
+    renderWithModalProvider(
       <BeeUIProvider>
         <Sheet onOpenChange={() => {}} open>
           <SheetContent testID="first-sheet-content">
@@ -707,7 +708,7 @@ describe('BeeUI issue #584 Sheet presents on the native gorhom engine', () => {
   it('routes anchored-overlay portal content inside a detached Sheet to its modal-local host', async () => {
     mockDetachChildren = true;
 
-    render(
+    renderWithModalProvider(
       <BeeUIProvider>
         <Sheet onOpenChange={() => {}} open>
           <SheetContent testID="overlay-sheet-content">
@@ -744,7 +745,7 @@ describe('BeeUI issue #584 Sheet presents on the native gorhom engine', () => {
   });
 
   it('renders the content in an in-flow flex box directly under the modal, with the modal not claiming accessibility for it', () => {
-    render(
+    renderWithModalProvider(
       <Sheet defaultOpen>
         <SheetContent testID="sheet-content">
           <SheetTitle>Filters</SheetTitle>

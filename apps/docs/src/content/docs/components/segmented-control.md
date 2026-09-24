@@ -8,7 +8,7 @@ description: "Compact mutually-exclusive selection surface with radiogroup seman
 Compact mutually-exclusive selection surface with radiogroup semantics.
 
 :::note[Distribution status]
-BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. Stable `latest` was last observed (at `0.86.2-rc.1`) resolving to the RC as well; that observation is re-verified after every publish and is not an npm rule. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
+BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. The live registry was last observed resolving `next` to `0.86.2-rc.2` and `latest` to `0.86.2-rc.1`; dist-tags are re-verified after every publish. This repository is at release candidate `0.86.2-rc.3`, which is not published until the owner approves its staged packages. During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages, and stable `0.86.2` moves it at stable promotion (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -96,7 +96,7 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 ## Accessibility
 
 - **Roles this family assigns:** `radio`, `radiogroup` — set in `segmented-control.tsx` by the components themselves, not by the caller.
-- **Accessibility states and properties it sets:** `accessibilityLabel`, `accessibilityLabelledBy`, `checked`, `disabled` — read from `segmented-control.tsx`.
+- **Accessibility states and properties it sets:** `accessibilityLabel`, `accessibilityLabelledBy`, `checked`, `disabled`, `hidden` — read from `segmented-control.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
@@ -151,7 +151,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Segmented Control** is actually used: 4 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1103 lines — where **Segmented Control** is actually used: 4 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -160,13 +160,13 @@ import { SegmentedControl, SegmentedControlItem } from '@beemvp/beeui-ui';
 import * as React from 'react';
 ````
 
-Fixture state this block reads (same file, line 465):
+Fixture state this block reads (same file, line 466):
 
 ````tsx
   const [viewMode, setViewMode] = React.useState('list');
 ````
 
-[lines 905–908](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L905-L908):
+[lines 927–930](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L927-L930):
 
 ````tsx
                 <SegmentedControl onValueChange={setViewMode} value={viewMode}>

@@ -8,7 +8,7 @@ description: "Accessible pressable with variant/size/loading/disabled states and
 Accessible pressable with variant/size/loading/disabled states and an optional label primitive.
 
 :::note[Distribution status]
-BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. Stable `latest` was last observed (at `0.86.2-rc.1`) resolving to the RC as well; that observation is re-verified after every publish and is not an npm rule. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
+BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. The live registry was last observed resolving `next` to `0.86.2-rc.2` and `latest` to `0.86.2-rc.1`; dist-tags are re-verified after every publish. This repository is at release candidate `0.86.2-rc.3`, which is not published until the owner approves its staged packages. During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages, and stable `0.86.2` moves it at stable promotion (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -112,8 +112,8 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/app-header-large-text.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/app-header-large-text.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/button-label-variant-inheritance-and-wrap.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/button-label-variant-inheritance-and-wrap.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/button-label-wrap-alignment.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/button-label-wrap-alignment.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/dynamic-type-contract.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/dynamic-type-contract.test.tsx)
 
 ### Addressable examples
 
@@ -156,7 +156,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Button** is actually used: 64 lines in 6 places, of 7 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1103 lines — where **Button** is actually used: 64 lines in 6 places, of 7 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -218,7 +218,7 @@ Placeholder for a prop this fixture receives (not fixture source — substitute 
 const onBack: () => void = () => {};
 ````
 
-[lines 481–489](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L481-L489):
+[lines 482–490](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L482-L490):
 
 ````tsx
               <Button
@@ -232,7 +232,7 @@ const onBack: () => void = () => {};
               </Button>
 ````
 
-[lines 534–542](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L534-L542):
+[lines 535–543](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L535-L543):
 
 ````tsx
                 <Box className="gap-3">
@@ -246,7 +246,7 @@ const onBack: () => void = () => {};
                 </Box>
 ````
 
-[lines 568–589](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L568-L589):
+[lines 569–590](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L569-L590):
 
 ````tsx
             <Card className="gap-4">
@@ -273,7 +273,7 @@ const onBack: () => void = () => {};
             </Card>
 ````
 
-[lines 1073–1076](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1073-L1076):
+[lines 1095–1098](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1095-L1098):
 
 ````tsx
         <BottomActionBar>

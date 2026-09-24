@@ -457,6 +457,7 @@ function ToastPlayground() {
 export function ComponentGallery({ onBack }: { onBack: () => void }) {
   const { theme } = useUniwind();
   const [accepted, setAccepted] = React.useState(false);
+  const [assignedStores, setAssignedStores] = React.useState<string[]>([]);
   const [notifications, setNotifications] = React.useState(true);
   const [plan, setPlan] = React.useState<'starter' | 'pro'>('starter');
   const [tab, setTab] = React.useState('overview');
@@ -639,6 +640,27 @@ export function ComponentGallery({ onBack }: { onBack: () => void }) {
                   <Radio label="Starter plan" value="starter" />
                   <Radio label="Pro plan" value="pro" />
                 </RadioGroup>
+              </FormGroup>
+              <FormGroup
+                error="Select at least one store."
+                invalid={assignedStores.length === 0}
+                legend="Assign to stores"
+                required
+                testID="stores-form-group"
+              >
+                {['Store A', 'Store B', 'Store C'].map((store) => (
+                  <Checkbox
+                    checked={assignedStores.includes(store)}
+                    key={store}
+                    label={store}
+                    onCheckedChange={(checked) =>
+                      setAssignedStores((current) =>
+                        checked ? [...current, store] : current.filter((value) => value !== store),
+                      )
+                    }
+                    testID={`stores-checkbox-${store.replace(/\s+/g, '-').toLowerCase()}`}
+                  />
+                ))}
               </FormGroup>
               <Box className="flex-row items-center justify-between gap-4">
                 <Text>Notifications</Text>

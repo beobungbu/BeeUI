@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react-native';
+import { act, screen, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
 import { AccessibilityInfo, Platform, ScrollView, Text, UIManager } from 'react-native';
 import {
@@ -16,6 +16,7 @@ import {
   SheetContent,
   SheetTitle,
 } from '../../../packages/ui/src/components/sheet.native';
+import { renderWithModalProvider } from './helpers/render-with-modal-provider';
 
 // BeeUI issue #160 (R4B.5): dedicated Sheet runtime-acceptance evidence.
 //
@@ -81,13 +82,25 @@ jest.mock('@gorhom/bottom-sheet', () => {
     },
   );
 
+  const BottomSheetModalInternalContext = ReactActual.createContext(null);
+  const BottomSheetModalProvider = ({ children }: { children?: React.ReactNode }) =>
+    ReactActual.createElement(
+      BottomSheetModalInternalContext.Provider,
+      { value: { hostName: 'mock-bottom-sheet-host' } },
+      children,
+    );
+  const useBottomSheetModalInternal = (_unsafe?: boolean) =>
+    ReactActual.useContext(BottomSheetModalInternalContext);
+
   const BottomSheetView = ({ children }: { children?: React.ReactNode }) =>
     ReactActual.createElement(View, null, children);
 
   return {
     __esModule: true,
     BottomSheetModal,
+    BottomSheetModalProvider,
     BottomSheetView,
+    useBottomSheetModalInternal,
   };
 });
 
@@ -207,7 +220,7 @@ async function flushReducedMotionSignal() {
 }
 
 async function renderAndSettle(ui: React.ReactNode) {
-  const utils = render(ui);
+  const utils = renderWithModalProvider(ui);
   await flushReducedMotionSignal();
   return utils;
 }
@@ -218,7 +231,7 @@ async function rerenderAndSettle(rerender: (ui: React.ReactNode) => void, ui: Re
 }
 
 async function renderRoot(ui: React.ReactNode) {
-  const utils = render(
+  const utils = renderWithModalProvider(
     <OverlayRuntimeProvider hostRectOverride={ROOT_RECT}>{ui}</OverlayRuntimeProvider>,
     { createNodeMock: anchorNodeMock },
   );
@@ -292,7 +305,7 @@ describe('BeeUI issue #160 Sheet runtime acceptance (deterministic contract laye
         }) as typeof AccessibilityInfo.addEventListener,
       );
 
-      render(
+      renderWithModalProvider(
         <Sheet defaultOpen>
           <SheetContent testID="sheet-content">
             <SheetTitle>Filters</SheetTitle>

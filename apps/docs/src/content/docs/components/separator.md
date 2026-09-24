@@ -8,7 +8,7 @@ description: "Decorative-by-default divider (semantic when requested); vertical 
 Decorative-by-default divider (semantic when requested); vertical orientation stretches across the cross axis.
 
 :::note[Distribution status]
-BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. Stable `latest` was last observed (at `0.86.2-rc.1`) resolving to the RC as well; that observation is re-verified after every publish and is not an npm rule. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
+BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. The live registry was last observed resolving `next` to `0.86.2-rc.2` and `latest` to `0.86.2-rc.1`; dist-tags are re-verified after every publish. This repository is at release candidate `0.86.2-rc.3`, which is not published until the owner approves its staged packages. During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages, and stable `0.86.2` moves it at stable promotion (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity
@@ -133,7 +133,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Separator** is actually used: 114 lines in 6 places, of 13 in total — open the fixture for the remaining 7. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1103 lines — where **Separator** is actually used: 114 lines in 6 places, of 13 in total — open the fixture for the remaining 7. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -143,7 +143,7 @@ import * as React from 'react';
 import { Uniwind, useUniwind } from 'uniwind';
 ````
 
-[lines 546–564](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L546-L564):
+[lines 547–565](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L547-L565):
 
 ````tsx
             <Card className="gap-4" variant="muted">
@@ -167,7 +167,7 @@ import { Uniwind, useUniwind } from 'uniwind';
             </Card>
 ````
 
-[lines 568–589](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L568-L589):
+[lines 569–590](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L569-L590):
 
 ````tsx
             <Card className="gap-4">
@@ -194,25 +194,25 @@ import { Uniwind, useUniwind } from 'uniwind';
             </Card>
 ````
 
-[line 621](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L621-L621):
+[line 622](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L622-L622):
 
 ````tsx
               <Separator />
 ````
 
-[line 726](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L726-L726):
+[line 748](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L748-L748):
 
 ````tsx
               <Separator />
 ````
 
-Fixture state this block reads (same file, line 462):
+Fixture state this block reads (same file, line 463):
 
 ````tsx
   const [tab, setTab] = React.useState('overview');
 ````
 
-[lines 921–956](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L921-L956):
+[lines 943–978](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L943-L978):
 
 ````tsx
             <Card className="gap-4">
@@ -253,14 +253,14 @@ Fixture state this block reads (same file, line 462):
             </Card>
 ````
 
-Fixture state this block reads (same file, lines 458, 460):
+Fixture state this block reads (same file, lines 458, 461):
 
 ````tsx
   const { theme } = useUniwind();
   const [notifications, setNotifications] = React.useState(true);
 ````
 
-[lines 1025–1059](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1025-L1059):
+[lines 1047–1081](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1047-L1081):
 
 ````tsx
               <Section description="Read-only application information patterns." title="Metadata and rows">

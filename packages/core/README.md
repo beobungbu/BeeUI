@@ -4,13 +4,13 @@ Small, framework-light utility surface shared by `@beemvp/beeui-ui`: the class-n
 
 ## Distribution state
 
-**Public release candidate:** `@beemvp/beeui-core@0.86.2-rc.2` is published on npm. During RC use the explicit `@next` channel (or pin the exact version):
+**Release candidate:** this README ships with `@beemvp/beeui-core@0.86.2-rc.3`. BeeUI release candidates are published under the explicit `@next` channel; during RC use it (or pin the exact version):
 
 ```bash
 npm install @beemvp/beeui-core@next
 ```
 
-The live registry currently also resolves `latest` to this RC, but the bootstrap publish used `--tag next` and the mechanism that also created the observed `latest` value has not been established. BeeUI therefore documents `@next` as the RC contract; a bare install is not the recommended RC path because `latest` moves to stable at the first deliberate stable promotion.
+During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the BeeUI owner moves it for all four packages, so it lags `next` between an RC publication and that move; stable `0.86.2` moves `latest` at stable promotion. BeeUI therefore documents `@next` as the RC contract, and a bare install is not the recommended RC path.
 
 It is normally installed transitively by `@beemvp/beeui-ui`.
 

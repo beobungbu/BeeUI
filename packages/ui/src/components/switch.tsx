@@ -1,3 +1,4 @@
+import { semanticColorVariable, type SemanticColorToken } from '@beemvp/beeui-tokens';
 import * as React from 'react';
 import { Platform, Switch as RNSwitch, type SwitchProps as RNSwitchProps } from 'react-native';
 import { useFieldContext } from './field-context';
@@ -10,6 +11,27 @@ type EngineSwitchProps = RNSwitchProps & {
   trackColorOffClassName?: string;
   trackColorOnClassName?: string;
 };
+
+// On Web the track/thumb colours reference the theme variables directly instead of going
+// through Uniwind's `*ColorClassName` accent bridge. That bridge reads the stylesheet's
+// rules during the first render; when the stylesheet reaches the page after that render
+// (Metro's development server can deliver it late on a cold load) the colour comes back
+// empty, logs "className 'accent-primary' ... no color was found", and the Switch keeps
+// react-native-web's default colours until something else re-renders it. A `var()` colour
+// is resolved by the browser whenever the stylesheet lands and follows theme and
+// `BeeThemeScope` switches with no re-render. react-native-web passes a colour string
+// through only when it starts with `var(`, so the dimmed disabled on-track carries its
+// `color-mix` (the same value `accent-primary/40` compiles to) as the fallback of an
+// unset custom property.
+const themeColor = (token: SemanticColorToken) => `var(${semanticColorVariable(token)})`;
+const webSwitchColors = {
+  trackOn: themeColor('primary'),
+  trackOnDisabled: `var(--beeui-switch-track-on-disabled, color-mix(in oklab, ${themeColor('primary')} 40%, transparent))`,
+  trackOff: themeColor('muted'),
+  trackOffDisabled: themeColor('disabled'),
+  thumb: themeColor('surface'),
+  thumbDisabled: themeColor('disabled-foreground'),
+} as const;
 
 export type SwitchProps = Omit<
   RNSwitchProps,
@@ -108,21 +130,31 @@ export const Switch = React.forwardRef<React.ComponentRef<typeof RNSwitch>, Swit
             },
           }),
       disabled: resolvedDisabled,
-      ios_backgroundColorClassName: resolvedDisabled ? 'accent-disabled' : 'accent-muted',
       onValueChange,
-      thumbColorClassName: resolvedDisabled ? 'accent-disabled-foreground' : 'accent-surface',
-      trackColorOffClassName: resolvedDisabled ? 'accent-disabled' : 'accent-muted',
-      // A disabled Switch previously collapsed both the on and off track
-      // colors to the flat `accent-disabled` swatch, making the current state
-      // unreadable (e.g. in a locked permissions matrix). Keeping the on-state
-      // at a dimmed primary tone instead — the issue's own suggested fix,
-      // "keep the on/off contrast at reduced opacity" — preserves the on/off
-      // distinction while disabled.
-      trackColorOnClassName: resolvedDisabled ? 'accent-primary/40' : 'accent-primary',
       value,
     };
+    const colorProps: Partial<EngineSwitchProps> = isWeb
+      ? {
+          thumbColor: resolvedDisabled ? webSwitchColors.thumbDisabled : webSwitchColors.thumb,
+          trackColor: {
+            false: resolvedDisabled ? webSwitchColors.trackOffDisabled : webSwitchColors.trackOff,
+            true: resolvedDisabled ? webSwitchColors.trackOnDisabled : webSwitchColors.trackOn,
+          },
+        }
+      : {
+          ios_backgroundColorClassName: resolvedDisabled ? 'accent-disabled' : 'accent-muted',
+          thumbColorClassName: resolvedDisabled ? 'accent-disabled-foreground' : 'accent-surface',
+          trackColorOffClassName: resolvedDisabled ? 'accent-disabled' : 'accent-muted',
+          // A disabled Switch previously collapsed both the on and off track
+          // colors to the flat `accent-disabled` swatch, making the current state
+          // unreadable (e.g. in a locked permissions matrix). Keeping the on-state
+          // at a dimmed primary tone instead — the issue's own suggested fix,
+          // "keep the on/off contrast at reduced opacity" — preserves the on/off
+          // distinction while disabled.
+          trackColorOnClassName: resolvedDisabled ? 'accent-primary/40' : 'accent-primary',
+        };
 
-    return <RNSwitch ref={ref} {...engineProps} />;
+    return <RNSwitch ref={ref} {...engineProps} {...colorProps} />;
   },
 );
 
