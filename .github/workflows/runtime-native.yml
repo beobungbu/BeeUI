@@ -95,7 +95,7 @@ jobs:
           package-manager-cache: false
 
       - name: Setup Java for Maestro
-        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v5.0.0
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5.0.0
         with:
           distribution: temurin
           java-version: '21'
@@ -186,7 +186,7 @@ jobs:
           package-manager-cache: false
 
       - name: Setup Java
-        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v5.0.0
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5.0.0
         with:
           distribution: temurin
           java-version: '21'
@@ -203,7 +203,7 @@ jobs:
           add-job-summary: always
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.0
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.0
         with:
           # Match ci.yml/expo-consumer.yml: cmdline-tools 20 no longer publishes the
           # legacy `tools` package that setup-android installs by default.
@@ -266,7 +266,7 @@ jobs:
         run: bash ./scripts/runtime-smoke/install-maestro.sh
 
       - name: Run Android Emulator smoke
-        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2.37.0
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         env:
           # Expo/RN invokes Node while Gradle configures app/build.gradle, so
           # configuration-cache must remain off on both normal and clean-room
