@@ -5,7 +5,7 @@ description: Use the public BeeUI CLI release candidate to copy governed compone
 
 Source ownership means BeeUI component source lives in **your** repository: you read it, edit it,
 review its diffs, and decide when to take upstream changes. The public CLI is
-`@beemvp/beeui-cli` and the current release candidate is `0.86.2-rc.2` on npm tag `next`.
+`@beemvp/beeui-cli`; the current release candidate is `0.86.2-rc.3` (published only once the owner approves it), and npm tag `next` was last observed at `0.86.2-rc.2`.
 
 **Prerequisites:** a Node.js project with `npx`/`pnpm dlx` available, and `@beemvp/beeui-core`
 installed for the copied imports to resolve against (see [Start](/docs/start/)).
@@ -23,7 +23,7 @@ npx @beemvp/beeui-cli@next diff
 npx @beemvp/beeui-cli@next update
 ```
 
-Pin `@0.86.2-rc.2` instead of `@next` when you need an immutable CLI version in automation.
+Pin `@0.86.2-rc.3` instead of `@next` when you need an immutable CLI version in automation.
 
 The CLI resolves the project from the current working directory, so run it from the consumer project you want it to modify.
 
@@ -88,6 +88,6 @@ That repository-local path is a maintainer/development convenience. External con
 
 ## Release channel
 
-`0.86.2-rc.2` is a prerelease. The live registry was last observed (at `0.86.2-rc.1`) resolving `latest` to the RC as well; that observation is re-verified after every publish and is not an npm rule. BeeUI's bootstrap publish used `--tag next`, and the mechanism that also produced `latest` has not been established (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)). Documentation and automation must therefore keep using `@next` or the exact RC until the stable release flow completes and `latest` is deliberately moved.
+`0.86.2-rc.3` is a prerelease. The live registry was last observed (2026-09-23) resolving `next` to `0.86.2-rc.2` and `latest` to `0.86.2-rc.1`; dist-tags are re-verified after every publish. During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages, so it lags `next` in between (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)). Documentation and automation must therefore keep using `@next` or the exact RC version.
 
 See the repository authority `docs/dist-tag-policy.md` for channel rules and `docs/registry-cli.md` for the full Registry/source-ownership contract.

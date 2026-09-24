@@ -4,7 +4,7 @@ This document defines BeeUI release-candidate evidence and the publication contr
 
 ## Current distribution model
 
-BeeUI's current public release candidate is **`0.86.2-rc.2`**, published under the opt-in npm **`next`** dist-tag. The lockstep release group is:
+BeeUI's newest published release candidate is **`0.86.2-rc.2`**, published under the opt-in npm **`next`** dist-tag. The repository is prepared at candidate **`0.86.2-rc.3`**, which is not published until the owner approves its staged packages. The lockstep release group is:
 
 - `@beemvp/beeui-core`
 - `@beemvp/beeui-tokens`
@@ -23,6 +23,8 @@ Use the explicit prerelease channel:
 npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next
 npx @beemvp/beeui-cli@next --help
 ```
+
+During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC once the owner moves it for all four packages (owner decision 2026-09-24, issue #561); the observation above is the last recorded state.
 
 `docs/dist-tag-policy.md` is the machine-checked channel/publication authority. `docs/rc-candidate.md` contains the exact current candidate, publication lineage and observed registry metadata.
 
@@ -49,7 +51,7 @@ Artifact integrity proves bytes. It does not by itself prove which Git commit pr
 
 The temporary bootstrap token was a first-publication exception, not the steady-state mechanism.
 
-### Current rc.2 publication
+### rc.2 publication
 
 `0.86.2-rc.2` used the protected staged path:
 
@@ -153,7 +155,8 @@ The current staged flow is:
 3. protected GitHub Environment approval allows the mutation job to proceed;
 4. OIDC stages canonical packages with provenance;
 5. owner performs npm-side staged-package approval/proof-of-presence;
-6. registry state is observed and recorded.
+6. registry state is observed and recorded;
+7. after the complete four-package set is public and verified, the owner moves `latest` for all four packages to that RC with npm 2FA (never from CI), then observes and records the four `latest` tags.
 
 ## Runtime and device gates
 
@@ -187,7 +190,8 @@ A new RC may be staged only when:
 7. source, integration, promotion and workflow identities are recorded separately;
 8. protected release authorization is obtained;
 9. registry mutation uses the approved operation and tag;
-10. the real public registry package set is verified after npm-side approval.
+10. the real public registry package set is verified after npm-side approval;
+11. only then does the owner move `latest` for all four packages to the RC and record the observed tags (`docs/dist-tag-policy.md`).
 
 ## Stable promotion checklist
 

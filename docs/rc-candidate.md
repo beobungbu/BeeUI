@@ -1,10 +1,10 @@
 # BeeUI release candidate authority
 
-> **Status:** `0.86.2-rc.2` is the current published BeeUI release candidate.
+> **Status:** `0.86.2-rc.2` is the current published BeeUI release candidate; `0.86.2-rc.3` is the prepared next candidate (not yet published).
 >
 > **Stable package line:** `0.86.2` (ADR-015).
 >
-> **Prerelease channel:** `0.86.2-rc.N` → `next`; `latest` is not the RC channel.
+> **Prerelease channel:** `0.86.2-rc.N` → `next`; during the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages.
 
 This file records the immutable source candidate, its integration/promotion lineage, the publication workflow identity and the observed npm registry result. Those identities are deliberately separate: registry integrity proves published bytes, while Git/GitHub evidence proves the release lineage.
 
@@ -115,6 +115,7 @@ A new public prerelease candidate is frozen only when:
 ## Publication channels
 
 - `0.86.2-rc.N` → `next`.
+- during the `0.86.2` prerelease line, `latest` → the newest complete, verified RC, moved by the owner for all four packages in one 2FA operation after publication and verification, then observed and recorded here.
 - stable `0.86.2` is staged/verified as a complete set before owner-controlled promotion to `latest`.
 - package staging order is `core` → `tokens` → `ui` → `cli`.
 - npm package versions are immutable; never overwrite an already-published version.

@@ -213,8 +213,25 @@ function packageLine(pkg, policy) {
   if (!policy.published) {
     return `\`${pkg.name}\` v${pkg.version} — ${pkg.description} [unpublished (publishConfig.access=public prepared)]`;
   }
+  const { tag, publishedVersion, candidatePending } = publicationObservation(policy);
+  const candidate = candidatePending ? `; v${policy.currentVersion} is the unpublished source candidate` : '';
+  return `\`${pkg.name}\` v${pkg.version} — ${pkg.description} [public on npm under \`${tag}\` (last observed ${publishedVersion})${candidate}]`;
+}
+
+// `currentVersion` is the source candidate; `observedDistTags` is the last recorded registry observation.
+// Between candidate preparation and the owner's publication they differ, and the generated surfaces must
+// never present the candidate as published (or as a dist-tag target) before the registry is observed.
+export function publicationObservation(policy) {
   const tag = policy.prereleaseDistTag ?? 'next';
-  return `\`${pkg.name}\` v${pkg.version} — ${pkg.description} [public on npm under \`${tag}\` (${policy.currentVersion})]`;
+  const observed = policy.observedDistTags ?? {};
+  const publishedVersion = observed[tag] ?? policy.currentVersion;
+  return {
+    tag,
+    publishedVersion,
+    latestVersion: observed.latest,
+    stableVersion: policy.candidateStableVersion ?? '0.86.2',
+    candidatePending: publishedVersion !== policy.currentVersion,
+  };
 }
 
 const HEADER_NOTE =
@@ -233,15 +250,21 @@ const UNPUBLISHED_NOTE =
 // identical publication truth instead of drifting again the next time a dist-tag changes.
 export function buildStatusNote(policy, policyHref = 'docs/dist-tag-policy.md') {
   if (!policy.published) return UNPUBLISHED_NOTE;
-  const tag = policy.prereleaseDistTag ?? 'next';
+  const { tag, publishedVersion, latestVersion, stableVersion, candidatePending } = publicationObservation(policy);
+  const observedTags = latestVersion
+    ? `resolving \`${tag}\` to \`${publishedVersion}\` and \`latest\` to \`${latestVersion}\``
+    : `resolving \`${tag}\` to \`${publishedVersion}\``;
+  const candidate = candidatePending
+    ? `This repository is at release candidate \`${policy.currentVersion}\`, which is not published until the owner approves its staged packages. `
+    : '';
   return (
-    `STATUS: BeeUI \`${policy.currentVersion}\` is public on npm under the opt-in \`${tag}\` dist-tag. The live ` +
-    "registry was last observed (at `0.86.2-rc.1`) resolving both `next` and `latest` to that RC; that " +
-    "observation is re-verified after every publish and is not an npm rule. The bootstrap workflow published " +
-    "with `--tag next`; the mechanism that also produced `latest` has not been established. " +
-    `\`latest\` moves to a real stable version at the first stable release. Every release-candidate install should still use \`@${tag}\` or pin ` +
-    'the exact version — do not recommend an unqualified, untagged install, since that stops matching the RC ' +
-    `once \`latest\` moves. \`npm install @beemvp/beeui-ui@${tag} @beemvp/beeui-core@${tag} @beemvp/beeui-tokens@${tag}\` and ` +
+    `STATUS: BeeUI \`${publishedVersion}\` is public on npm under the opt-in \`${tag}\` dist-tag. The live registry was ` +
+    `last observed ${observedTags}; dist-tags are re-verified after every publish. ${candidate}` +
+    `During the \`${stableVersion}\` prerelease line \`latest\` follows the newest complete, verified RC only after the owner ` +
+    `moves it for all four packages, and stable \`${stableVersion}\` moves it at stable promotion. Every release-candidate ` +
+    `install should still use \`@${tag}\` or pin the exact version — do not recommend an unqualified, untagged install, since ` +
+    `\`latest\` lags \`${tag}\` between an RC publication and the owner's move. ` +
+    `\`npm install @beemvp/beeui-ui@${tag} @beemvp/beeui-core@${tag} @beemvp/beeui-tokens@${tag}\` and ` +
     `\`npx @beemvp/beeui-cli@${tag} --help\` are live, working registry commands today. The source-ownership CLI ` +
     '(`pnpm beeui add <component>`) remains available from a repository checkout. See ' +
     `[docs/dist-tag-policy.md](${policyHref}) for the full release/dist-tag mechanics.`
@@ -321,14 +344,14 @@ function buildFull(model) {
     [
       '011-distribution-architecture',
       policy.published
-        ? `Public distribution model: three scoped packages + source-ownership CLI, public on npm under \`${tag}\` since ${policy.currentVersion}.`
+        ? `Public distribution model: three scoped packages + source-ownership CLI, public on npm under \`${tag}\` (last observed at ${publicationObservation(policy).publishedVersion}).`
         : 'Public distribution model: three scoped packages + source-ownership CLI, prepared not published.',
     ],
   ];
 
   const packagesHeading = policy.published ? `## Packages (public on npm under \`${tag}\`, one lockstep version)` : '## Packages (all unpublished / pre-1.0, one lockstep version)';
   const packagesNote = policy.published
-    ? `\`@beemvp/beeui-core\`, \`@beemvp/beeui-tokens\`, and \`@beemvp/beeui-ui\` share one lockstep version and are released together (ADR-011 D6). All three are public on npm at \`${policy.currentVersion}\` under the \`${tag}\` dist-tag (stable \`latest\` was last observed, at \`0.86.2-rc.1\`, resolving to the RC as well — re-verified after every publish and not an npm rule; the bootstrap used \`--tag next\` and the mechanism that also produced \`latest\` is not established — see docs/dist-tag-policy.md); \`exports\` maps ship dual ESM+CJS with \`.d.ts\`, a \`react-native\` condition for Metro, \`browser\`/\`default\` for Web, and \`@beemvp/beeui-tokens/theme.css\` for the Web theme.`
+    ? `\`@beemvp/beeui-core\`, \`@beemvp/beeui-tokens\`, and \`@beemvp/beeui-ui\` share one lockstep version and are released together (ADR-011 D6). All three are public on npm under the \`${tag}\` dist-tag (last observed at \`${publicationObservation(policy).publishedVersion}\`; during the prerelease line \`latest\` follows the newest complete, verified RC only after the owner moves it — see docs/dist-tag-policy.md); \`exports\` maps ship dual ESM+CJS with \`.d.ts\`, a \`react-native\` condition for Metro, \`browser\`/\`default\` for Web, and \`@beemvp/beeui-tokens/theme.css\` for the Web theme.`
     : '`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` share one lockstep version and are released together (ADR-011 D6). Package manifests declare `publishConfig.access=public` + provenance but remain unpublished; `exports` maps ship dual ESM+CJS with `.d.ts`, a `react-native` condition for Metro, `browser`/`default` for Web, and `@beemvp/beeui-tokens/theme.css` for the Web theme.';
   const centralizedModel = policy.published
     ? `1. Centralized packages (public RC, opt in with \`@${tag}\`): \`npm i @beemvp/beeui-ui@${tag}\` pulls \`@beemvp/beeui-core\` + \`@beemvp/beeui-tokens\`; import components from \`@beemvp/beeui-ui\`; wire Web theme with \`@import '@beemvp/beeui-tokens/theme.css'\`. Pin \`@${policy.currentVersion}\` for an immutable version in CI.`

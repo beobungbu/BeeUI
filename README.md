@@ -4,7 +4,7 @@
 
 BeeUI is a mobile-first TypeScript UI system focused on long-lived application interfaces: accessible behavior, explicit responsive contracts, semantic theming, production screen patterns, and source ownership without coupling application code to a styling engine.
 
-> **Distribution status — 2026-09-22:** BeeUI `0.86.2-rc.2` is publicly published on npm under the opt-in `next` dist-tag. The live registry was last observed resolving both `next` and `latest` to `0.86.2-rc.1`; BeeUI's bootstrap workflow published with `--tag next`, and the mechanism that also produced `latest` has not been established, so that observation is recorded as registry state rather than an npm rule and must be re-verified against the registry once the `0.86.2-rc.2` staged publish is approved. `latest` moves to a real stable version at the first `0.86.2` release. Use `@next` or pin `@0.86.2-rc.2` while evaluating the release candidate. `docs/dist-tag-policy.md` is the machine-checked authority.
+> **Distribution status — 2026-09-24:** BeeUI `0.86.2-rc.3` is the current release candidate in this repository; it becomes public only when the owner approves its staged npm packages. The newest publicly published version is `0.86.2-rc.2` under the opt-in `next` dist-tag: the live registry was last observed (2026-09-23) resolving `next` to `0.86.2-rc.2` and `latest` to `0.86.2-rc.1` for all four packages, and that observation is re-verified after every publish. During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages; stable `0.86.2` moves `latest` at stable promotion. Use `@next` or pin an exact version while evaluating the release candidate. `docs/dist-tag-policy.md` is the machine-checked authority.
 
 ## Install the public release candidate
 
@@ -13,7 +13,7 @@ npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@n
 npx @beemvp/beeui-cli@next --help
 ```
 
-Do not document a bare `npm install @beemvp/beeui-ui` as the RC install path. It was last observed (at `0.86.2-rc.1`) resolving to the same RC as `@next` (see the distribution-status note above); that observation is re-verified after every publish and is not an npm rule, and it stops applying the moment stable `0.86.2` publishes and `latest` moves off the prerelease — pin `@next` or the exact version so the command stays correct on both sides of that change.
+Do not document a bare `npm install @beemvp/beeui-ui` as the RC install path. It resolves through `latest`, which lags `next` between an RC publication and the owner's `latest` move (at the 2026-09-23 observation `latest` was still on `0.86.2-rc.1` while `next` was on `0.86.2-rc.2`) — pin `@next` or the exact version so the command stays correct on both sides of each move.
 
 ## What is included
 
@@ -98,7 +98,7 @@ export function AppShell() {
 
 BeeUI intentionally supports two product models:
 
-1. **Package boundary** — install the public RC from npm using `@next` (or pin `0.86.2-rc.2`) and consume the public `@beemvp/beeui-*` exports.
+1. **Package boundary** — install the public RC from npm using `@next` (or pin an exact version such as `0.86.2-rc.3` once it is published) and consume the public `@beemvp/beeui-*` exports.
 2. **Source ownership** — use `@beemvp/beeui-cli@next` to inspect/add owned component source into a consumer project.
 
 The two models share behavior, accessibility, token, compatibility, and component contracts. Source ownership is not permission to fork a second independent API inventory.
