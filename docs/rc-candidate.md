@@ -1,12 +1,57 @@
 # BeeUI release candidate authority
 
-> **Status:** `0.86.2-rc.2` is the current published BeeUI release candidate; `0.86.2-rc.3` is the prepared next candidate (not yet published).
+> **Status:** `0.86.2-rc.2` is the current published BeeUI release candidate; `0.86.2-rc.3` is the frozen next candidate (not yet published).
 >
 > **Stable package line:** `0.86.2` (ADR-015).
 >
 > **Prerelease channel:** `0.86.2-rc.N` → `next`; during the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages.
 
 This file records the immutable source candidate, its integration/promotion lineage, the publication workflow identity and the observed npm registry result. Those identities are deliberately separate: registry integrity proves published bytes, while Git/GitHub evidence proves the release lineage.
+
+## Frozen candidate — `0.86.2-rc.3`
+
+The third current-line RC is frozen from exact verified source SHA:
+
+- candidate source SHA: `1110844adec4fbbf6ae73d2f8ed1ed12986a5047`;
+- lockstep package version: `0.86.2-rc.3`;
+- branch: `release/0.86.2-rc.3` (from `development` at `f30fd8e2`, the #633 merge) → `development`; PR number, integration merge SHA and `main` promotion SHA are recorded here once they exist;
+- the evidence-only commit that adds this section changes no package/runtime contents relative to the candidate tree.
+
+Any package/CLI/registry/token source change after this freeze invalidates `0.86.2-rc.3` and requires a new `rc.N`. Evidence-only documentation may describe this frozen source candidate without changing the candidate package contents.
+
+### Release artifact identity
+
+`pnpm release:verify` passed for the exact candidate source and recorded these fresh `pnpm pack` artifacts (canonical + reproducible):
+
+| Package | Tarball | Bytes | SHA-256 |
+| --- | --- | ---: | --- |
+| `@beemvp/beeui-core` | `beemvp-beeui-core-0.86.2-rc.3.tgz` | 37,917 | `c1d72cd99af538e0154eb7b3495aa97af90d332bcb47a42035fe91b2eb130d72` |
+| `@beemvp/beeui-tokens` | `beemvp-beeui-tokens-0.86.2-rc.3.tgz` | 137,590 | `48c02df1864be41807e8b7e7bcf20fbe4a6b32f8edb3773d00652ef506119225` |
+| `@beemvp/beeui-ui` | `beemvp-beeui-ui-0.86.2-rc.3.tgz` | 1,018,481 | `8275dcb91b988b9fc3cdc1ed07a20556e621e9b6a7a31b335af0f0f92ffcad05` |
+| `@beemvp/beeui-cli` | `beemvp-beeui-cli-0.86.2-rc.3.tgz` | 280,039 | `66ff2d83c925564ef2db7e20ecf277d033b53a240bf13a4d5bb49daac3baf209` |
+
+The verifier again proved the packed manifests contain no unresolved `workspace:` protocol, package exports resolve to shipped files, the four tarballs install into a clean consumer, the CLI binary executes `help` and `list`, and the package set does not pull the Expo runtime.
+
+### Exact-head CI evidence
+
+For candidate SHA `1110844adec4fbbf6ae73d2f8ed1ed12986a5047`: **pending** — the pull-request CI results (primary `ci`, aggregate `verify` and its lanes, bare/Expo/Web consumers, Android/iOS native compile, Web accessibility, visual Web, public Web) are recorded here after the PR run completes. Label- or schedule-gated runtime workflows that are skipped by their own contract are recorded as skipped, not as passes.
+
+Locally, on the candidate tree before the PR was opened: `pnpm typecheck` exit 0; `pnpm lint` exit 0; `pnpm test` exit 0 (1012 node:test cases and 1259 Jest tests in 146 suites, 0 failures).
+
+### Publication / provenance state
+
+At freeze time:
+
+- `0.86.2-rc.2` is the newest published RC; the 2026-09-23 observation recorded `next` → `0.86.2-rc.2` and `latest` → `0.86.2-rc.1` for all four packages;
+- `stage-rc` is the publication path for this candidate: `operation=stage-rc`, `expected_version=0.86.2-rc.3`, `confirmation=BEEUI_RC_RELEASE`, dispatched on the exact promoted `main` SHA, staging all four packages under `next` through Trusted Publishing/OIDC, each approved by the owner with npm 2FA;
+- after all four packages are public and verified, the owner moves `latest` for all four to `0.86.2-rc.3` in one npm 2FA operation (owner decision 2026-09-24, issue #561) and the resulting dist-tags are observed and recorded; the workflow never moves dist-tags;
+- no package version or dist-tag for `0.86.2-rc.3` exists on the registry at freeze time.
+
+Registry mutation remains blocked until the repository owner explicitly dispatches and approves it.
+
+### Experimental / quarantined runtime dimension
+
+The iOS `pageSheet` / `formSheet` presentation surface remains **EXPERIMENTAL** for the 1.0 product milestone. Native runtime smoke for `Sheet` is wired for iOS only; Android smoke and a real-device run remain open.
 
 ## Current published candidate — `0.86.2-rc.2`
 
