@@ -54,6 +54,7 @@ import {
   PopoverTrigger,
   Radio,
   RadioGroup,
+  SearchInput,
   Select,
   SelectContent,
   SelectGroup,
@@ -106,6 +107,9 @@ import {
   type VisualScenarioId,
   type VisualTheme,
 } from './src/visual-contract';
+import { ColorTypographyFixture } from './src/color-typography-fixture';
+import { ControlsSizingFixture } from './src/controls-sizing-fixture';
+import { SelectFieldFixture, SelectMinimalRouteFixture } from './src/select-fixtures';
 
 function readVisualQuery(): { scenario: VisualScenarioId; theme: VisualTheme } {
   if (typeof window === 'undefined') {
@@ -150,9 +154,14 @@ type FixtureId =
   | 'date'
   | 'sheet-context-parity'
   | 'sheet-short-root'
+  | 'popover-scrolled-anchor'
   | 'keydown-bubble'
+  | 'controls-sizing'
   | 'keyboard-roving-focus'
-  | 'table-row-interactive-descendants';
+  | 'table-row-interactive-descendants'
+  | 'select-minimal-route'
+  | 'select-field'
+  | 'color-typography';
 
 const fixtureIds: readonly FixtureId[] = [
   'density',
@@ -165,9 +174,14 @@ const fixtureIds: readonly FixtureId[] = [
   'date',
   'sheet-context-parity',
   'sheet-short-root',
+  'popover-scrolled-anchor',
   'keydown-bubble',
+  'controls-sizing',
   'keyboard-roving-focus',
   'table-row-interactive-descendants',
+  'select-minimal-route',
+  'select-field',
+  'color-typography',
 ];
 
 function isFixtureId(value: string | null): value is FixtureId {
@@ -1557,17 +1571,60 @@ function SheetShortRootFixture() {
 }
 
 /**
- * BeeUI issue #606 — a single, minimal, unambiguous `Input` to focus and press
- * a key against. `tests/input-keydown-bubble.spec.ts` asserts whether a
- * bubble-phase `document.addEventListener('keydown', ...)` listener (the
- * consumer's own reported workaround needs a capture-phase one instead) still
- * fires while this Input holds focus.
+ * A Popover whose trigger is only reachable by scrolling the document, with a
+ * content height chosen by the `contentHeight` query parameter. The app root
+ * stays one viewport tall while this content overflows it, so once the page
+ * scrolls the root overlay host sits partly above the window — the shape the
+ * date fixture's below-the-fold DateTimePicker has. Varying the content height
+ * shows whether placement follows the trigger or only the host's position.
+ * `tests/popover-scrolled-anchor.spec.ts` drives it.
+ */
+function readPopoverContentHeightQuery(): number {
+  if (typeof window === 'undefined') return 120;
+  const requested = Number(new URLSearchParams(window.location.search).get('contentHeight'));
+  return Number.isFinite(requested) && requested > 0 ? Math.min(requested, 600) : 120;
+}
+
+function PopoverScrolledAnchorFixture() {
+  const [contentHeight] = React.useState(readPopoverContentHeightQuery);
+  return (
+    <Box className="gap-4 bg-surface p-6" testID="popover-scrolled-anchor-fixture">
+      <Text variant="title">Popover anchored below the fold</Text>
+      <Box style={{ height: 900 }} />
+      <Popover>
+        <PopoverTrigger testID="popover-scrolled-anchor-trigger">Open popover</PopoverTrigger>
+        {/* No padding or title, so the panel is `contentHeight` plus its 1px border. */}
+        <PopoverContent
+          accessibilityLabel={`Content ${contentHeight}px`}
+          className="p-0"
+          testID="popover-scrolled-anchor-content"
+        >
+          <Box style={{ height: contentHeight }} />
+        </PopoverContent>
+      </Popover>
+      <Box style={{ height: 900 }} />
+    </Box>
+  );
+}
+
+/**
+ * Minimal, unambiguous text fields to focus and press keys against.
+ * `tests/input-keydown-bubble.spec.ts` asserts that bubble-phase `window` and
+ * `document` keydown listeners (application-level shortcuts) still fire while
+ * an `Input` or `SearchInput` holds focus, and that a field whose own
+ * `onKeyPress` deliberately stops propagation still stops it.
  */
 function KeydownBubbleFixture() {
   return (
     <Box className="gap-4 p-6" testID="keydown-bubble-fixture">
       <Text>Focus the field below and press a key.</Text>
       <Input accessibilityLabel="Keydown bubble target" testID="keydown-bubble-input" />
+      <SearchInput accessibilityLabel="Keydown bubble search" testID="keydown-bubble-search-input" />
+      <Input
+        accessibilityLabel="Keydown bubble stopped"
+        onKeyPress={(event) => event.stopPropagation()}
+        testID="keydown-bubble-stopping-input"
+      />
     </Box>
   );
 }
@@ -1770,12 +1827,22 @@ export default function App() {
         <SheetContextParityFixture />
       ) : fixture === 'sheet-short-root' ? (
         <SheetShortRootFixture />
+      ) : fixture === 'popover-scrolled-anchor' ? (
+        <PopoverScrolledAnchorFixture />
       ) : fixture === 'keydown-bubble' ? (
         <KeydownBubbleFixture />
+      ) : fixture === 'controls-sizing' ? (
+        <ControlsSizingFixture />
       ) : fixture === 'keyboard-roving-focus' ? (
         <KeyboardRovingFocusFixture />
       ) : fixture === 'table-row-interactive-descendants' ? (
         <TableRowInteractiveDescendantsFixture />
+      ) : fixture === 'select-minimal-route' ? (
+        <SelectMinimalRouteFixture />
+      ) : fixture === 'select-field' ? (
+        <SelectFieldFixture />
+      ) : fixture === 'color-typography' ? (
+        <ColorTypographyFixture />
       ) : (
         <Scenario scenario={scenario} />
       )}

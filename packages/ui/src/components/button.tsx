@@ -64,7 +64,11 @@ const buttonVariants = cva(
   },
 );
 
-const buttonLabelVariants = cva('font-semibold', {
+// `text-center`: a label that wraps (a long localized CTA, large text) must
+// centre every line inside the button the way a single line is centred by the
+// row's `justify-center`. It is a no-op for a single line, whose box already
+// hugs its text.
+const buttonLabelVariants = cva('font-semibold text-center', {
   variants: {
     variant: {
       primary: 'text-primary-foreground',

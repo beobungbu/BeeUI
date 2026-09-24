@@ -665,7 +665,7 @@ The documentation contract, its required sections, and how it is enforced are de
 - **Platform (iOS / Android / Web):** see the [compatibility matrix](compatibility-matrix.md) and [web support contract](web-support-contract.md).
 - **Theme / density:** [theming](theming.md) · [density](density.md).
 - **Behavior contract:** [component catalog](components.md).
-- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/issue-276-structural-status-a11y.test.tsx`](../apps/showcase/__tests__/issue-276-structural-status-a11y.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
+- **Executable examples:** [`component-gallery/component-gallery.tsx`](../apps/showcase/component-gallery/component-gallery.tsx), [`__tests__/accent-colour-web-theme-variables.test.tsx`](../apps/showcase/__tests__/accent-colour-web-theme-variables.test.tsx), [`__tests__/issue-276-structural-status-a11y.test.tsx`](../apps/showcase/__tests__/issue-276-structural-status-a11y.test.tsx) (typechecked @beemvp/beeui-showcase fixtures).
 - **Limitations:** An arbitrary color is not accepted: the only color control is the seven-value `tone`. With no label and no labelled-by relationship the indicator falls back to the English literal Loading as its accessible name.
 
 ## `stack`

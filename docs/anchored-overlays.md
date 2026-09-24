@@ -76,7 +76,7 @@ An anchored overlay resolves against the **nearest `OverlayScope`**. `BeeUIProvi
 Each scope owns:
 
 1. **Host** — the portal destination. A modal-local host sits in the same native Modal window as its Dialog, so nested anchored content renders in front of that modal.
-2. **Geometry** — the measured destination-host rectangle in window coordinates. Window-space anchor/solution is translated by the nearest host origin; safe-area/collision policy uses that same host rectangle.
+2. **Geometry** — the measured destination-host rectangle in window coordinates. Window-space anchor/solution is translated by the nearest host origin; safe-area/collision policy uses that same host rectangle. The one exception is the Web root scope: its host is a DOM box in document flow that does not clip what it hosts and moves with document scroll, so it can sit partly outside the window while the trigger is on screen. Root-scope overlays on Web therefore collide against the browser window, and are still translated by the measured host origin.
 3. **Dismissal** — a stable per-scope dismiss controller/stack. Geometry updates do not change controller identity or reorder open overlays.
 4. **Semantic depth** — root is depth `0`; every modal boundary increments the nearest parent scope depth. Global dismissal selects the deepest active scope first, so correctness does not depend on React layout-effect execution order. Same-depth siblings use activation order only as a tie-breaker.
 

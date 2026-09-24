@@ -6,7 +6,6 @@ import {
   Platform,
   ScrollView,
   TextInput,
-  UIManager,
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -68,14 +67,24 @@ export type KeyboardAwareScreenProps = {
   testID?: string;
 };
 
+// The focused native input handle returned by `TextInput.State.currentlyFocusedInput()`
+// — a host-component ref, not the deprecated numeric field ID from
+// `currentlyFocusedField()`. Typed structurally (rather than importing RN's
+// internal host-instance type) so this stays stable across RN releases.
+type FocusedInputHandle = {
+  measureInWindow: (
+    callback: (x: number, y: number, width: number, height: number) => void,
+  ) => void;
+};
+
 type KeyboardAdjustment = {
-  field: number;
+  field: FocusedInputHandle;
   keyboardTop: number;
 };
 
 /**
  * Resolves whichever input currently has focus and scrolls it above the
- * software keyboard on Android.
+ * software keyboard.
  *
  * Expo's `edgeToEdgeEnabled` config (and, as of Android 16, the platform
  * itself) disables the native `adjustResize` window behavior, so the window
@@ -85,11 +94,20 @@ type KeyboardAdjustment = {
  * account for. This hook re-scrolls explicitly once the keyboard's real
  * on-screen position is known, via `keyboardDidShow`.
  *
- * Android also needs temporary bottom content space while the keyboard is
- * visible. Without it, a short form can have no remaining ScrollView range,
- * so a mathematically-correct `scrollTo` request is clamped before the final
- * field clears an overlaid keyboard. The keyboard height plus requested margin
- * becomes temporary content padding and is removed on `keyboardDidHide`.
+ * Both platforms also reserve temporary bottom content space while the
+ * keyboard is visible (`keyboardInset`, the keyboard's height plus the
+ * requested margin, removed again on `keyboardDidHide`). Without it, a form
+ * screen can end up with no remaining ScrollView range to satisfy a
+ * mathematically-correct `scrollTo` request, so it gets silently clamped
+ * before the final field clears the keyboard. This was originally
+ * Android-only: iOS's own `KeyboardAvoidingView behavior="padding"` shrinks
+ * its view by exactly the overlap between *that view's own frame* and the
+ * keyboard, which is sufficient when the screen owns the full window. Inside
+ * a shell layout (header above, tab bar below — #588/#631) the screen's own
+ * frame already ends short of the window's bottom edge, so that shrink alone
+ * does not guarantee enough scrollable range for a field near the end of a
+ * long form; iOS now gets the same explicit safety-net padding Android
+ * always has, rather than relying on that assumption.
  *
  * While the keyboard remains visible, focus can move from one input to
  * another without another `keyboardDidShow`. React Native focus events bubble,
@@ -101,11 +119,8 @@ type KeyboardAdjustment = {
  * `KeyboardAvoidingView behavior="padding"` only pushes the whole screen up by
  * the keyboard's height, which makes room but does not itself scroll a
  * specific focused field — already below the fold in a long form — into that
- * newly visible area. iOS does not get the extra bottom content-padding
- * compensation (`keyboardInset`) Android needs, since `KeyboardAvoidingView`
- * already reserves that space there. Web has no software keyboard event
- * stream and is skipped, so this degrades to a plain scroll view with no
- * runtime cost.
+ * newly visible area. Web has no software keyboard event stream and is
+ * skipped, so this degrades to a plain scroll view with no runtime cost.
  *
  * This dynamic path intentionally targets native-`TextInput`-backed fields
  * (BeeUI's `Input`, `Textarea`, `PasswordInput`, `OTPInput`, `SearchInput` all
@@ -124,7 +139,12 @@ function useScrollFocusedInputAboveKeyboard(
   const adjustFocusedField = React.useCallback(
     (keyboardTop: number) => {
       const scrollNode = scrollRef.current;
-      const focusedField = TextInput.State.currentlyFocusedField();
+      // `currentlyFocusedField()` (a numeric field ID looked up through
+      // `UIManager.measureInWindow`) is deprecated as of RN 0.86 and logs a
+      // LogBox warning on every focus. `currentlyFocusedInput()` returns the
+      // focused host component's own ref instead, which exposes
+      // `measureInWindow` directly.
+      const focusedField = TextInput.State.currentlyFocusedInput() as FocusedInputHandle | null;
       if (!scrollNode || focusedField == null) {
         return;
       }
@@ -137,7 +157,7 @@ function useScrollFocusedInputAboveKeyboard(
         return;
       }
 
-      UIManager.measureInWindow(focusedField, (_x, y, _width, height) => {
+      focusedField.measureInWindow((_x, y, _width, height) => {
         // Mark the pair as observed even when no scroll is needed. A repeated
         // keyboardDidShow for the same settled geometry should not stack another
         // correction; a different field or keyboard top remains eligible.
@@ -162,8 +182,10 @@ function useScrollFocusedInputAboveKeyboard(
 
   React.useEffect(() => {
     // Web has no software keyboard event stream. iOS and Android both run
-    // the scroll-into-view correction (#588); only Android additionally needs
-    // the temporary bottom content-padding compensation below.
+    // the scroll-into-view correction (#588) and both reserve the temporary
+    // bottom content-padding safety net below — iOS cannot assume
+    // `KeyboardAvoidingView` alone reserves enough scrollable range once the
+    // screen sits inside a shell layout (#631).
     if (Platform.OS === 'web') {
       return undefined;
     }
@@ -171,9 +193,7 @@ function useScrollFocusedInputAboveKeyboard(
     const showSubscription = Keyboard.addListener('keyboardDidShow', (event) => {
       const keyboardTop = event.endCoordinates.screenY;
       keyboardTopRef.current = keyboardTop;
-      if (Platform.OS === 'android') {
-        setKeyboardInset(Math.max(0, event.endCoordinates.height + margin));
-      }
+      setKeyboardInset(Math.max(0, event.endCoordinates.height + margin));
 
       // Apply the temporary scroll range before measuring/scrolling. On a short
       // form this prevents the native ScrollView from clamping the requested
@@ -183,9 +203,7 @@ function useScrollFocusedInputAboveKeyboard(
     const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
       keyboardTopRef.current = null;
       lastAdjustmentRef.current = null;
-      if (Platform.OS === 'android') {
-        setKeyboardInset(0);
-      }
+      setKeyboardInset(0);
     });
 
     return () => {
@@ -225,7 +243,10 @@ function useScrollFocusedInputAboveKeyboard(
  * bounded content width, and explicit safe-area ownership around arbitrary
  * children.
  *
- * - iOS: native `KeyboardAvoidingView behavior="padding"`.
+ * - iOS: native `KeyboardAvoidingView behavior="padding"`, plus the same
+ *   explicit scroll-into-view correction Android uses (see
+ *   `useScrollFocusedInputAboveKeyboard` above), since `padding` alone does
+ *   not scroll an already-below-the-fold focused field into the room it made.
  * - Android: the native window never resizes for the keyboard once
  *   `edgeToEdgeEnabled` is on, so the focused field is scrolled above the
  *   keyboard explicitly — see `useScrollFocusedInputAboveKeyboard` above.

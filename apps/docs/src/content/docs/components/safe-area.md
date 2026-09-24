@@ -145,7 +145,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Safe Area** is actually used: 28 lines in 2 places, of 3 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1103 lines — where **Safe Area** is actually used: 28 lines in 2 places, of 3 in total — open the fixture for the remaining 1. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -184,7 +184,7 @@ Placeholder for a prop this fixture receives (not fixture source — substitute 
 const onBack: () => void = () => {};
 ````
 
-[lines 475–496](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L475-L496):
+[lines 476–497](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L476-L497):
 
 ````tsx
       <SafeArea className="bg-surface" edges={['top', 'left', 'right']} testID="component-gallery-safe-area">
@@ -211,7 +211,7 @@ const onBack: () => void = () => {};
       </SafeArea>
 ````
 
-[lines 1072–1077](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1072-L1077):
+[lines 1094–1099](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1094-L1099):
 
 ````tsx
       <SafeArea className="bg-surface" edges={['bottom', 'left', 'right']}>

@@ -286,7 +286,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Dropdown Menu** is actually used: 70 lines in 5 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1103 lines — where **Dropdown Menu** is actually used: 70 lines in 5 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -396,7 +396,7 @@ function ThemeScopeValue({ testID }: { testID: string }) {
           </DropdownMenu>
 ````
 
-Fixture state this block reads (same file, lines 468, 469, 470):
+Fixture state this block reads (same file, lines 469, 470, 471):
 
 ````tsx
   const [menuToolbar, setMenuToolbar] = React.useState(true);
@@ -404,7 +404,7 @@ Fixture state this block reads (same file, lines 468, 469, 470):
   const [menuAction, setMenuAction] = React.useState('No action yet');
 ````
 
-[lines 770–797](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L770-L797):
+[lines 792–819](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L792-L819):
 
 ````tsx
                   <DropdownMenu>

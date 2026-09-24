@@ -1098,8 +1098,9 @@ export function useAnchoredOverlayPosition({
   shift = true,
   sideOffset = 0,
 }: UseAnchoredOverlayPositionOptions): UseAnchoredOverlayPositionResult {
-  const { hostRect, remeasureHost } = useNearestOverlayScope();
+  const { hostName, hostRect, remeasureHost } = useNearestOverlayScope();
   const { keyboardRect, safeAreaInsets, windowRect } = useOverlayRuntime();
+  const transportMode = React.useContext(OverlayTransportContext)?.mode;
   const measurementScheduler = React.useContext(OverlayMeasurementSchedulerContext);
   const hostRevision = hostRect
     ? `${hostRect.x},${hostRect.y},${hostRect.width},${hostRect.height}`
@@ -1231,20 +1232,38 @@ export function useAnchoredOverlayPosition({
     );
   }, []);
 
-  const viewportRect = React.useMemo(() => {
-    if (!hostRect) return null;
-    return avoidKeyboard
-      ? constrainOverlayViewportToKeyboard(hostRect, keyboardRect)
+  // The rectangle overlays may occupy. A modal-local host and a native root host
+  // bound what they can show, so collisions resolve against the host itself. The
+  // Web root host is different: it is an ordinary DOM box in document flow that
+  // does not clip its absolutely positioned children, and it moves with the
+  // document. Once the page scrolls (or the app root is shorter than the window),
+  // `host ∩ window` shrinks to whatever sliver of that box is still on screen —
+  // it can be shorter than the overlay and exclude the anchor entirely, and the
+  // resolver then pins every overlay to that sliver's top edge, detached from its
+  // trigger by however much the overlay is shorter than the sliver's reach. What
+  // the user sees there is bounded by the browser window, so that is the
+  // collision rectangle; rendering still translates by the measured host origin.
+  const collisionHostRect =
+    hostRect && transportMode === 'web-dom' && hostName === ROOT_OVERLAY_HOST
+      ? windowRect
       : hostRect;
-  }, [avoidKeyboard, hostRect, keyboardRect]);
+
+  const viewportRect = React.useMemo(() => {
+    if (!collisionHostRect) return null;
+    return avoidKeyboard
+      ? constrainOverlayViewportToKeyboard(collisionHostRect, keyboardRect)
+      : collisionHostRect;
+  }, [avoidKeyboard, collisionHostRect, keyboardRect]);
 
   const windowPosition = React.useMemo(() => {
-    if (!anchorRect || !hostRect || !overlaySize || !viewportRect) return null;
+    if (!anchorRect || !hostRect || !collisionHostRect || !overlaySize || !viewportRect) {
+      return null;
+    }
 
     const safePadding = avoidSafeArea
-      ? getSafeAreaCollisionPadding(hostRect, windowRect, safeAreaInsets)
+      ? getSafeAreaCollisionPadding(collisionHostRect, windowRect, safeAreaInsets)
       : { top: 0, right: 0, bottom: 0, left: 0 };
-    if (avoidKeyboard && viewportRect.height < hostRect.height) safePadding.bottom = 0;
+    if (avoidKeyboard && viewportRect.height < collisionHostRect.height) safePadding.bottom = 0;
 
     return resolveAnchoredOverlayPosition({
       anchorRect,
@@ -1265,6 +1284,7 @@ export function useAnchoredOverlayPosition({
     anchorRect,
     avoidKeyboard,
     avoidSafeArea,
+    collisionHostRect,
     collisionPadding,
     direction,
     flip,

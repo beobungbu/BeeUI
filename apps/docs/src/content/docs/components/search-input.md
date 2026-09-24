@@ -95,9 +95,9 @@ Colors, spacing and typography come from semantic tokens rather than from values
 ## Executable examples
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/input-line-height-follows-font-size.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/input-line-height-follows-font-size.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/input-placeholder-colour-web-theme-variable.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/input-placeholder-colour-web-theme-variable.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/input-value-accessibility-and-search-slot.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/input-value-accessibility-and-search-slot.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/issue-7-runtime-a11y.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-runtime-a11y.test.tsx)
-- **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
 
 ### Addressable examples
 
@@ -133,7 +133,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Search Input** is actually used: 3 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1103 lines — where **Search Input** is actually used: 3 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -141,7 +141,7 @@ Imports the examples below need (a filtered subset of the fixture's own top-leve
 import { Field, SearchInput } from '@beemvp/beeui-ui';
 ````
 
-[lines 599–601](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L599-L601):
+[lines 600–602](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L600-L602):
 
 ````tsx
               <Field label="Search">

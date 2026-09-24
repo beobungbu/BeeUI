@@ -162,7 +162,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Stack** is actually used: 51 lines in 6 places, of 11 in total — open the fixture for the remaining 5. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1103 lines — where **Stack** is actually used: 51 lines in 6 places, of 11 in total — open the fixture for the remaining 5. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -192,7 +192,7 @@ Placeholder for a prop this fixture receives (not fixture source — substitute 
 const onBack: () => void = () => {};
 ````
 
-[lines 480–491](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L480-L491):
+[lines 481–492](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L481-L492):
 
 ````tsx
             <HStack gap="sm">
@@ -237,7 +237,7 @@ function PlacementPopover({ placement }: { placement: 'top' | 'right' | 'bottom'
 }
 ````
 
-[lines 755–760](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L755-L760):
+[lines 777–782](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L777-L782):
 
 ````tsx
                 <HStack gap="sm" wrap>
@@ -248,7 +248,7 @@ function PlacementPopover({ placement }: { placement: 'top' | 'right' | 'bottom'
                 </HStack>
 ````
 
-[lines 810–819](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L810-L819):
+[lines 832–841](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L832-L841):
 
 ````tsx
                 <HStack gap="sm" wrap>
@@ -263,7 +263,7 @@ function PlacementPopover({ placement }: { placement: 'top' | 'right' | 'bottom'
                 </HStack>
 ````
 
-[lines 968–980](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L968-L980):
+[lines 990–1002](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L990-L1002):
 
 ````tsx
                 <Stack gap="lg">
@@ -281,7 +281,7 @@ function PlacementPopover({ placement }: { placement: 'top' | 'right' | 'bottom'
                   </HStack>
 ````
 
-[lines 1062–1067](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1062-L1067):
+[lines 1084–1089](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1084-L1089):
 
 ````tsx
             <VStack gap="xs">

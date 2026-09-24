@@ -7,6 +7,8 @@ Every BeeUI application mounts exactly one `BeeUIProvider` at its root. This pag
 
 Read this after you have a platform guide running: [Expo](/docs/start/expo/), [Bare React Native](/docs/start/bare-react-native/) or [Web](/docs/start/web/).
 
+**Prerequisites:** BeeUI installed and a platform guide running — [Expo](/docs/start/expo/), [Bare React Native](/docs/start/bare-react-native/) or [Web](/docs/start/web/) — with `BeeUIProvider` already mounted at your application root.
+
 ## What BeeUIProvider owns
 
 `BeeUIProvider` is BeeUI's application-root integration. It composes three runtimes in a fixed order:
@@ -106,7 +108,7 @@ Use a nested provider only when a documented provider-scoped behavior genuinely 
 
 ## Overlay scopes
 
-`Popover`, `DropdownMenu`, `Select`, `Tooltip`, `Dialog` and `Sheet` all use BeeUI's anchored-overlay runtime.
+`Popover`, `DropdownMenu`, `Select`, `Tooltip`, `Dialog` and `Sheet` all use BeeUI's anchored-overlay runtime. On native, `Sheet` additionally requires its own `SheetProvider` mounted below `BeeUIProvider` — see [Expo: Sheet on native](/docs/start/expo/#sheet-on-native) or [Bare React Native: Sheet on native](/docs/start/bare-react-native/#sheet-on-native).
 
 - The root scope is depth `0`. Each modal boundary opens a deeper local scope, one level below its parent.
 - Dismissal resolves to the **deepest active scope**, and ties at the same depth break by most recent activation. A single `Escape` or Android back press therefore closes the innermost overlay, not the outermost.

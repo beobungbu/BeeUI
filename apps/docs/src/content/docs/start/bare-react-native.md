@@ -7,7 +7,7 @@ Use this path for a React Native application that does not use the Expo runtime.
 
 **Prerequisites:** an existing bare React Native `0.86.x` project created with the React
 Native Community CLI (this page does not cover scaffolding one) and Node.js/npm available
-locally.
+locally. Already on `0.86.2-rc.1`? Read [Upgrading from 0.86.2-rc.1](/docs/guides/migration-versioning/#upgrading-from-0862-rc1-to-0862-rc2) first — the required `Sheet` provider rewiring is a breaking native-root change.
 
 ## Install
 
@@ -57,6 +57,28 @@ export default function App() {
 ```
 
 Your Metro/Uniwind setup should follow the maintained consumer fixture at `examples/bare-rn-consumer`.
+
+## Sheet on native
+
+If your app renders `Sheet`, mount BeeUI's public `SheetProvider` directly below `BeeUIProvider`, above the rest of the app:
+
+```tsx
+import { BeeUIProvider, SheetProvider } from '@beemvp/beeui-ui';
+
+export default function App() {
+  return (
+    <BeeUIProvider>
+      <SheetProvider>
+        {/* Screen / SafeArea as above */}
+      </SheetProvider>
+    </BeeUIProvider>
+  );
+}
+```
+
+`SheetProvider` is required on native: it installs `GestureHandlerRootView` and `@gorhom/bottom-sheet`'s `BottomSheetModalProvider` itself, so gorhom's portal host is constructed below BeeUI's runtime contexts. Do not also mount an outer `GestureHandlerRootView`/`BottomSheetModalProvider` — if you followed an earlier BeeUI release's guidance to wire `GestureHandlerRootView > BottomSheetModalProvider > BeeUIProvider`, remove that outer `BottomSheetModalProvider` when you upgrade. `SheetProvider` deliberately does not reuse an already-present outer gorhom provider.
+
+`SheetContent` only sees React contexts mounted above `SheetProvider`. Keep app-wide providers (a query client, i18n, navigation, your own app stores) above `SheetProvider`; a screen-scoped provider that a Sheet's content still needs to read must be passed through `SheetContent`'s `bridgeContexts` prop instead. See the [Sheet component reference](/docs/components/sheet/) for the full provider and `bridgeContexts` contract.
 
 ## Verify the maintained bare consumer
 

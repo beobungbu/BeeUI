@@ -4,7 +4,7 @@ import { Pressable, ScrollView, View, type ViewProps } from 'react-native';
 import { Text } from './text';
 import { useDirection } from './use-direction';
 import { useRequiredCallbackWarning } from './use-required-callback-warning';
-import { resolveTableDensityRowHeight, type TableAlign, type TableDensity, type TableLayout, type TableSortDirection } from './table-shared';
+import { plainTextContent, resolveTableDensityRowHeight, type TableAlign, type TableDensity, type TableLayout, type TableSortDirection } from './table-shared';
 
 export type { TableAlign, TableDensity, TableLayout, TableSortDirection } from './table-shared';
 
@@ -457,8 +457,9 @@ export const TableHead = React.forwardRef<React.ComponentRef<typeof View>, Table
   ) => {
     const layout = useTableLayout();
     const registry = React.useContext(TableColumnLabelRegistryContext);
-    const isPlainContent = typeof children === 'string' || typeof children === 'number';
-    const resolvedLabel = label ?? (isPlainContent ? String(children) : undefined);
+    const plainText = plainTextContent(children);
+    const isPlainContent = plainText !== undefined;
+    const resolvedLabel = label ?? plainText;
     const sortable = sortDirection !== undefined;
 
     useRequiredCallbackWarning('TableHead', 'onSortChange', onSortChange, !sortable);
@@ -587,7 +588,8 @@ export const TableCell = React.forwardRef<React.ComponentRef<typeof View>, Table
     const layout = useTableLayout();
     const registeredLabel = useTableColumnLabel(columnIndex);
     const resolvedLabel = label ?? registeredLabel;
-    const isPlainContent = typeof children === 'string' || typeof children === 'number';
+    const plainText = plainTextContent(children);
+    const isPlainContent = plainText !== undefined;
     const span = Number.isFinite(colSpan) ? Math.max(1, Math.floor(colSpan)) : 1;
 
     if (layout === 'stacked') {
@@ -626,7 +628,7 @@ export const TableCell = React.forwardRef<React.ComponentRef<typeof View>, Table
     // interactive controls) is left untouched so a caller-supplied control's
     // own accessibility contract is never swallowed by a synthetic label.
     const computedAccessibilityLabel =
-      accessibilityLabel ?? (resolvedLabel && isPlainContent ? `${resolvedLabel}: ${children}` : undefined);
+      accessibilityLabel ?? (resolvedLabel && isPlainContent ? `${resolvedLabel}: ${plainText}` : undefined);
     const resolvedAlign = align ?? 'start';
 
     return (

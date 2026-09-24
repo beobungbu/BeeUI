@@ -140,7 +140,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Badge** is actually used: 43 lines in 2 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1103 lines — where **Badge** is actually used: 43 lines in 2 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -150,7 +150,7 @@ import * as React from 'react';
 import { Uniwind, useUniwind } from 'uniwind';
 ````
 
-[lines 548–555](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L548-L555):
+[lines 549–556](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L549-L556):
 
 ````tsx
               <Box className="flex-row flex-wrap gap-2">
@@ -163,14 +163,14 @@ import { Uniwind, useUniwind } from 'uniwind';
               </Box>
 ````
 
-Fixture state this block reads (same file, lines 458, 460):
+Fixture state this block reads (same file, lines 458, 461):
 
 ````tsx
   const { theme } = useUniwind();
   const [notifications, setNotifications] = React.useState(true);
 ````
 
-[lines 1025–1059](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1025-L1059):
+[lines 1047–1081](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1047-L1081):
 
 ````tsx
               <Section description="Read-only application information patterns." title="Metadata and rows">

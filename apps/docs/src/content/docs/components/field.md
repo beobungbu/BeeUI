@@ -144,7 +144,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Field** is actually used: 34 lines in 4 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1103 lines — where **Field** is actually used: 34 lines in 4 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -161,14 +161,14 @@ import * as React from 'react';
           </Field>
 ````
 
-Fixture state this block reads (same file, lines 460, 463):
+Fixture state this block reads (same file, lines 461, 464):
 
 ````tsx
   const [notifications, setNotifications] = React.useState(true);
   const [otp, setOtp] = React.useState('');
 ````
 
-[lines 596–620](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L596-L620):
+[lines 597–621](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L597-L621):
 
 ````tsx
               <Field description="Used only for account notifications." label="Email" required testID="component-gallery-field">
@@ -198,7 +198,7 @@ Fixture state this block reads (same file, lines 460, 463):
               </Field>
 ````
 
-[lines 700–702](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L700-L702):
+[lines 722–724](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L722-L724):
 
 ````tsx
                       <Field label="Project name">
@@ -206,7 +206,7 @@ Fixture state this block reads (same file, lines 460, 463):
                       </Field>
 ````
 
-[lines 737–739](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L737-L739):
+[lines 759–761](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L759-L761):
 
 ````tsx
                     <Field label="Search">

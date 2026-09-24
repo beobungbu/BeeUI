@@ -38,8 +38,10 @@ describe('representative theme/token v2 consumers', () => {
 
     const defaultInput = cn(inputVariants({ size: 'md', invalid: false }));
     expect(defaultInput).toContain('text-[length:var(--text-body)]');
-    expect(defaultInput).toContain('leading-6');
-    expect(defaultInput).not.toContain('leading-[var(--text-body--line-height)]');
+    // Web-only line height, bound to the body token (same 24px as leading-6);
+    // native text fields take their line box from the font.
+    expect(defaultInput.split(/\s+/)).toContain('web:leading-[var(--text-body--line-height)]');
+    expect(defaultInput.split(/\s+/).filter((token) => token.startsWith('leading-'))).toEqual([]);
     expect(defaultInput).toContain('text-foreground');
   });
 

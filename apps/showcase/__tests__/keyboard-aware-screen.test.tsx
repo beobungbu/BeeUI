@@ -1,7 +1,16 @@
 import { act, render } from '@testing-library/react-native';
 import * as React from 'react';
-import { Keyboard, Platform, ScrollView, TextInput, UIManager } from 'react-native';
+import { Keyboard, Platform, ScrollView, TextInput } from 'react-native';
 import { KeyboardAwareScreen, Text } from '@beemvp/beeui-ui';
+
+// A minimal stand-in for the host-component ref `TextInput.State.currentlyFocusedInput()`
+// returns (RN 0.86+), replacing the deprecated numeric field ID from
+// `currentlyFocusedField()`.
+function createFocusedInputStub(
+  measureInWindow: (callback: (x: number, y: number, width: number, height: number) => void) => void,
+) {
+  return { measureInWindow: jest.fn(measureInWindow) };
+}
 
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');
@@ -26,16 +35,10 @@ jest.mock('react-native-safe-area-context', () => {
 
 describe('BeeUI KeyboardAwareScreen', () => {
   const originalOS = Platform.OS;
-  const originalMeasureInWindow = Object.getOwnPropertyDescriptor(UIManager, 'measureInWindow');
 
   afterEach(() => {
     Platform.OS = originalOS;
     jest.restoreAllMocks();
-    if (originalMeasureInWindow) {
-      Object.defineProperty(UIManager, 'measureInWindow', originalMeasureInWindow);
-    } else {
-      delete (UIManager as unknown as Record<string, unknown>).measureInWindow;
-    }
   });
 
   it('renders children inside the scrollable body', () => {
@@ -120,18 +123,9 @@ describe('BeeUI KeyboardAwareScreen', () => {
       return { remove: jest.fn() };
     }) as typeof Keyboard.addListener);
 
-    let focusedField = 101;
-    jest.spyOn(TextInput.State, 'currentlyFocusedField').mockImplementation(() => focusedField);
-    const measure = jest.fn((_field: number, callback: (x: number, y: number, width: number, height: number) => void) => {
-      callback(0, 700, 200, 50);
-    });
-    // jest-expo's UIManager mock does not expose measureInWindow at runtime even
-    // though React Native's TypeScript surface does. Install the seam explicitly.
-    Object.defineProperty(UIManager, 'measureInWindow', {
-      configurable: true,
-      value: measure,
-      writable: true,
-    });
+    let focusedInput = createFocusedInputStub((callback) => callback(0, 700, 200, 50));
+    jest.spyOn(TextInput.State, 'currentlyFocusedInput').mockImplementation(() => focusedInput as never);
+
     jest.spyOn(global, 'requestAnimationFrame').mockImplementation((callback) => {
       callback(0);
       return 1;
@@ -150,25 +144,24 @@ describe('BeeUI KeyboardAwareScreen', () => {
         endCoordinates: { height: 300, screenY: 600 },
       });
     });
-    expect(measure).toHaveBeenCalledTimes(1);
-    expect(measure.mock.calls[0]?.[0]).toBe(101);
+    expect(focusedInput.measureInWindow).toHaveBeenCalledTimes(1);
     // Keyboard height + default 24px margin creates enough temporary content
     // range for a short form's final field to scroll above an overlaid keyboard.
     expect(screen.getByTestId('ka-screen-scroll').props.contentContainerStyle.paddingBottom).toBe(324);
 
-    focusedField = 202;
+    const secondFocusedInput = createFocusedInputStub((callback) => callback(0, 700, 200, 50));
+    focusedInput = secondFocusedInput;
     act(() => {
       screen.getByTestId('ka-screen-scroll').props.onFocus?.({});
     });
-    expect(measure).toHaveBeenCalledTimes(2);
-    expect(measure.mock.calls[1]?.[0]).toBe(202);
+    expect(secondFocusedInput.measureInWindow).toHaveBeenCalledTimes(1);
 
     // Repeated focus/keyboard noise for the same field + same keyboard geometry
     // is ignored, so the focus-switch fix does not reintroduce overshoot.
     act(() => {
       screen.getByTestId('ka-screen-scroll').props.onFocus?.({});
     });
-    expect(measure).toHaveBeenCalledTimes(2);
+    expect(secondFocusedInput.measureInWindow).toHaveBeenCalledTimes(1);
 
     act(() => {
       listeners.get('keyboardDidHide')?.();
@@ -176,13 +169,47 @@ describe('BeeUI KeyboardAwareScreen', () => {
     expect(screen.getByTestId('ka-screen-scroll').props.contentContainerStyle.paddingBottom).toBe(0);
   });
 
+  // #631 item 1 — `TextInput.State.currentlyFocusedField()` is deprecated as of
+  // RN 0.86 and raises a LogBox `console.error` on every focus.
+  // `currentlyFocusedInput()` is the supported replacement.
+  it('resolves the focused field through the non-deprecated currentlyFocusedInput API', () => {
+    Platform.OS = 'android';
+    const listeners = new Map<string, (event?: unknown) => void>();
+    jest.spyOn(Keyboard, 'addListener').mockImplementation(((event: string, listener: (event?: unknown) => void) => {
+      listeners.set(event, listener);
+      return { remove: jest.fn() };
+    }) as typeof Keyboard.addListener);
+
+    const deprecatedSpy = jest.spyOn(TextInput.State, 'currentlyFocusedField');
+    const focusedInput = createFocusedInputStub((callback) => callback(0, 700, 200, 50));
+    jest.spyOn(TextInput.State, 'currentlyFocusedInput').mockImplementation(() => focusedInput as never);
+    jest.spyOn(global, 'requestAnimationFrame').mockImplementation((callback) => {
+      callback(0);
+      return 1;
+    });
+
+    render(
+      <KeyboardAwareScreen testID="ka-screen">
+        <Text>Body</Text>
+      </KeyboardAwareScreen>,
+    );
+
+    act(() => {
+      listeners.get('keyboardDidShow')?.({
+        endCoordinates: { height: 300, screenY: 600 },
+      });
+    });
+
+    expect(focusedInput.measureInWindow).toHaveBeenCalledTimes(1);
+    expect(deprecatedSpy).not.toHaveBeenCalled();
+  });
+
   // #588 — `KeyboardAvoidingView behavior="padding"` on iOS makes room for the
   // keyboard but never itself scrolls a specific already-below-the-fold
-  // focused field into that newly visible area. KeyboardAwareScreen now runs
-  // the same field-measure-and-scroll correction on iOS as it always has on
-  // Android — but without Android's extra bottom content-padding
-  // compensation, since KeyboardAvoidingView already reserves that room here.
-  it('scrolls the focused field above the keyboard on iOS, with no extra bottom padding', () => {
+  // focused field into that newly visible area. KeyboardAwareScreen runs the
+  // same field-measure-and-scroll correction on iOS as it always has on
+  // Android.
+  it('scrolls the focused field above the keyboard on iOS', () => {
     Platform.OS = 'ios';
     const listeners = new Map<string, (event?: unknown) => void>();
     jest.spyOn(Keyboard, 'addListener').mockImplementation(((event: string, listener: (event?: unknown) => void) => {
@@ -190,16 +217,11 @@ describe('BeeUI KeyboardAwareScreen', () => {
       return { remove: jest.fn() };
     }) as typeof Keyboard.addListener);
 
-    jest.spyOn(TextInput.State, 'currentlyFocusedField').mockImplementation(() => 303);
-    const measure = jest.fn((_field: number, callback: (x: number, y: number, width: number, height: number) => void) => {
+    const focusedInput = createFocusedInputStub((callback) => {
       // Field bottom (y + height = 780) sits 130px below the keyboard top (650).
       callback(0, 730, 200, 50);
     });
-    Object.defineProperty(UIManager, 'measureInWindow', {
-      configurable: true,
-      value: measure,
-      writable: true,
-    });
+    jest.spyOn(TextInput.State, 'currentlyFocusedInput').mockImplementation(() => focusedInput as never);
     jest.spyOn(global, 'requestAnimationFrame').mockImplementation((callback) => {
       callback(0);
       return 1;
@@ -217,8 +239,6 @@ describe('BeeUI KeyboardAwareScreen', () => {
       </KeyboardAwareScreen>,
     );
 
-    // iOS never gets Android's extra bottom content-padding compensation —
-    // KeyboardAvoidingView already reserves that room.
     expect(screen.getByTestId('ka-screen-scroll').props.contentContainerStyle.paddingBottom).toBe(0);
 
     act(() => {
@@ -227,10 +247,56 @@ describe('BeeUI KeyboardAwareScreen', () => {
       });
     });
 
-    expect(measure).toHaveBeenCalledTimes(1);
-    expect(measure.mock.calls[0]?.[0]).toBe(303);
+    expect(focusedInput.measureInWindow).toHaveBeenCalledTimes(1);
     // overlap (780 - 650 = 130) + default 24px margin.
     expect(scrollToSpy).toHaveBeenCalledWith({ animated: false, y: 154 });
+  });
+
+  // #588/#631 item 6 — inside a shell layout (header above, tab bar below) the
+  // screen's own frame ends short of the window's bottom edge, so
+  // `KeyboardAvoidingView`'s own shrink of its frame does not guarantee enough
+  // ScrollView range for the last field to clear the keyboard. iOS now
+  // reserves the same temporary bottom content-padding safety net Android
+  // always has, instead of assuming `KeyboardAvoidingView` alone reserves
+  // enough room. This only asserts the padding/offset math, since the actual
+  // clamping behavior of a shell-constrained ScrollView needs a real device or
+  // simulator to observe (see the report's simulator-proof note).
+  it('reserves temporary bottom content space on iOS too, so a shell-constrained screen keeps room to scroll the last field clear', () => {
+    Platform.OS = 'ios';
+    const listeners = new Map<string, (event?: unknown) => void>();
+    jest.spyOn(Keyboard, 'addListener').mockImplementation(((event: string, listener: (event?: unknown) => void) => {
+      listeners.set(event, listener);
+      return { remove: jest.fn() };
+    }) as typeof Keyboard.addListener);
+
+    const focusedInput = createFocusedInputStub((callback) => callback(0, 700, 200, 50));
+    jest.spyOn(TextInput.State, 'currentlyFocusedInput').mockImplementation(() => focusedInput as never);
+    jest.spyOn(global, 'requestAnimationFrame').mockImplementation((callback) => {
+      callback(0);
+      return 1;
+    });
+
+    const screen = render(
+      <KeyboardAwareScreen testID="ka-screen">
+        <Text>Body inside a header/tab-bar shell</Text>
+      </KeyboardAwareScreen>,
+    );
+
+    expect(screen.getByTestId('ka-screen-scroll').props.contentContainerStyle.paddingBottom).toBe(0);
+
+    act(() => {
+      listeners.get('keyboardDidShow')?.({
+        endCoordinates: { height: 300, screenY: 600 },
+      });
+    });
+
+    // Keyboard height + default 24px margin, the same safety-net formula
+    // Android already relies on — no longer 0 on iOS.
+    expect(screen.getByTestId('ka-screen-scroll').props.contentContainerStyle.paddingBottom).toBe(324);
+
+    act(() => {
+      listeners.get('keyboardDidHide')?.();
+    });
     expect(screen.getByTestId('ka-screen-scroll').props.contentContainerStyle.paddingBottom).toBe(0);
   });
 

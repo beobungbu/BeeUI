@@ -123,10 +123,10 @@ consumer/package.json` and `apps/showcase`).
 
 - **Design.** Platform-divergent code uses Metro's `.web.tsx` / `.native.tsx` file-split
   convention already used by `apps/showcase` (`app-providers.*`) and by BeeUI internally
-  (`overlay-transport.*`, `date-picker.*`). Native app-root providers
-  (`GestureHandlerRootView` + `BottomSheetModalProvider`, required by Sheet per ADR-006) are
-  wired exactly as `apps/showcase/app-providers.native.tsx`; the Web providers file loads
-  neither module.
+  (`overlay-transport.*`, `date-picker.*`). The native app root mounts BeeUI's public
+  `SheetProvider` directly below `BeeUIProvider` (required by Sheet per ADR-006; `SheetProvider`
+  installs `GestureHandlerRootView` + `BottomSheetModalProvider` itself), wired exactly as
+  `apps/showcase/app-providers.native.tsx`; the Web providers file loads neither module.
 - **Benefits.** Single source of truth across three platforms; inherits the Showcase's
   known-good native build/runtime setup and the compatibility matrix's pinned versions.
 - **Risk / mitigation.** Native Sheet/gesture wiring is easy to get wrong; mitigated by

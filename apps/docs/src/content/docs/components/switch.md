@@ -100,10 +100,10 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/accent-colour-web-theme-variables.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/accent-colour-web-theme-variables.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/component-contracts.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/component-contracts.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/field-required-aria-required-no-english-default.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/field-required-aria-required-no-english-default.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-7-remaining-hardening.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-7-remaining-hardening.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/perf-render-commit.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/perf-render-commit.test.tsx)
 
 ### Addressable examples
 
@@ -140,7 +140,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Switch** is actually used: 10 lines in 2 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1103 lines — where **Switch** is actually used: 10 lines in 2 places. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -149,13 +149,13 @@ import { Switch } from '@beemvp/beeui-ui';
 import * as React from 'react';
 ````
 
-Fixture state this block reads (same file, line 460):
+Fixture state this block reads (same file, line 461):
 
 ````tsx
   const [notifications, setNotifications] = React.useState(true);
 ````
 
-[lines 645–649](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L645-L649):
+[lines 667–671](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L667-L671):
 
 ````tsx
                 <Switch
@@ -165,13 +165,13 @@ Fixture state this block reads (same file, line 460):
                 />
 ````
 
-Fixture state this block reads (same file, line 460):
+Fixture state this block reads (same file, line 461):
 
 ````tsx
   const [notifications, setNotifications] = React.useState(true);
 ````
 
-[lines 1052–1056](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1052-L1056):
+[lines 1074–1078](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1074-L1078):
 
 ````tsx
                     <Switch

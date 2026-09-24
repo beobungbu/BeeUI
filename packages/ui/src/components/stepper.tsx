@@ -221,9 +221,11 @@ export const StepperItem = React.forwardRef<
         </Box>
         <Box className={cn('min-w-0 gap-0.5', horizontal ? 'items-center' : 'flex-1 pt-1')}>
           {typeof title === 'string' || typeof title === 'number' ? (
+            // The current title is marked by weight, not `tone="primary"`: primary is a fill
+            // colour (amber #f59e0b on white is 2.15:1), below AA for text. The filled
+            // primary step circle and `aria-current` already carry the current state.
             <Text
-              className={horizontal ? 'text-center' : undefined}
-              tone={current ? 'primary' : 'default'}
+              className={cn(horizontal && 'text-center', current && 'font-bold')}
               variant="label"
             >
               {title}

@@ -233,18 +233,21 @@ describe('Toast transient notification runtime', () => {
     expect(screen.getByLabelText('Dismiss Accessible').props.accessibilityRole).toBe('button');
   });
 
-  it('anchors the viewport above the measured bottom safe-area inset by default on native', () => {
-    // Native's toast viewport now anchors to the bottom safe-area edge by
-    // default (near the home indicator/tab bar) instead of the top (directly
-    // under the header) — a top anchor on iOS previously docked every toast
-    // right under the header, not where a native app's transient feedback is
-    // expected. `Platform.OS` here resolves through jest-expo's default
-    // native platform, so this exercises that native default directly.
+  // The toast runtime is mounted at the application root and cannot see the app's
+  // navigator. Each case is a real bottom navigation, docked on top of the bottom inset
+  // the way React Navigation / expo-router Tabs and Material 3 lay it out; the native
+  // default must leave the whole stack above it.
+  it.each([
+    ['an iOS tab bar', 49],
+    ['React Navigation bottom tabs on Android', 56],
+    ['a Material 3 navigation bar', 80],
+  ])('docks the native default toast stack above %s (%ipt)', (_name, barHeight) => {
     const { screen } = setup();
     const style = StyleSheet.flatten(screen.getByTestId('beeui-toast-viewport').props.style);
+    const navigationTopFromBottom = TEST_INSETS.bottom + barHeight;
 
-    expect(style.bottom).toBe(TEST_INSETS.bottom + 12);
     expect(style.top).toBeUndefined();
+    expect(style.bottom).toBeGreaterThan(navigationTopFromBottom);
   });
 
   it('keeps the top safe-area anchor as the default on Web', () => {

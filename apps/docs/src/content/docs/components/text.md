@@ -141,7 +141,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Text** is actually used: 59 lines in 6 places, of 11 in total — open the fixture for the remaining 5. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1103 lines — where **Text** is actually used: 59 lines in 6 places, of 11 in total — open the fixture for the remaining 5. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. Other uses of this family, and the parts of the file exercising other families, are not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -166,7 +166,7 @@ const description: string = undefined as never;
     </VStack>
 ````
 
-[lines 546–564](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L546-L564):
+[lines 547–565](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L547-L565):
 
 ````tsx
             <Card className="gap-4" variant="muted">
@@ -190,7 +190,7 @@ const description: string = undefined as never;
             </Card>
 ````
 
-[lines 568–589](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L568-L589):
+[lines 569–590](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L569-L590):
 
 ````tsx
             <Card className="gap-4">
@@ -217,13 +217,13 @@ const description: string = undefined as never;
             </Card>
 ````
 
-Fixture state this block reads (same file, line 460):
+Fixture state this block reads (same file, line 461):
 
 ````tsx
   const [notifications, setNotifications] = React.useState(true);
 ````
 
-[lines 643–650](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L643-L650):
+[lines 665–672](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L665-L672):
 
 ````tsx
               <Box className="flex-row items-center justify-between gap-4">
@@ -236,7 +236,7 @@ Fixture state this block reads (same file, line 460):
               </Box>
 ````
 
-Fixture state this block reads (same file, lines 468, 469, 470):
+Fixture state this block reads (same file, lines 469, 470, 471):
 
 ````tsx
   const [menuToolbar, setMenuToolbar] = React.useState(true);
@@ -244,7 +244,7 @@ Fixture state this block reads (same file, lines 468, 469, 470):
   const [menuAction, setMenuAction] = React.useState('No action yet');
 ````
 
-[lines 798–800](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L798-L800):
+[lines 820–822](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L820-L822):
 
 ````tsx
                   <Text tone="muted">
@@ -252,7 +252,7 @@ Fixture state this block reads (same file, lines 468, 469, 470):
                   </Text>
 ````
 
-[lines 1063–1065](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1063-L1065):
+[lines 1085–1087](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L1085-L1087):
 
 ````tsx
               <Text tone="muted" variant="caption">

@@ -62,8 +62,8 @@ Structural legend/description/error/disabled grouping; it stays `accessible={fal
 | `invalid` | `boolean` | `false` | Switches the helper text below `children` from `description` to `error`. Defaults to false. |
 | `legend` **(required)** | `string` | — | Heading text for the group, rendered as a `Label` above `children` (e.g. "Shipping method"). |
 | `legendNativeID` | `string` | — | `nativeID` for the rendered legend `Label`, used to build `accessibilityLabelledBy` links (e.g. from a `RadioGroup` rendered as `children`). Defaults to a generated, stable-per-mount ID. |
-| `required` | `boolean` | `false` | Renders the legend with a required indicator and appends `requiredAccessibilityLabel` to its accessible name. Defaults to false. |
-| `requiredAccessibilityLabel` | `string` | `'required'` | Text appended to the legend's accessible name when `required` is true (e.g. "Shipping method, required"). Defaults to `'required'`. |
+| `required` | `boolean` | `false` | Renders the legend with a required indicator and, when `requiredAccessibilityLabel` is also supplied, appends it to the accessible name. Defaults to false. |
+| `requiredAccessibilityLabel` | `string` | `'required'` | Text appended to the legend's accessible name when `required` is true (e.g. "Shipping method, required"). No default — omit to expose `required` only through the group's own required semantics on its interactive descendants, without injecting English copy. |
 
 Also carries every prop of `Omit<ViewProps, 'accessibilityRole' | 'accessible' | 'children' | 'role'>` — that upstream contract is not reproduced here.
 
@@ -79,7 +79,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 ## Platform behavior
 
-This family ships no platform-specific file, and its own source takes no `Platform` branch.
+This family ships no platform-specific file, but its source branches on `Platform`, so some behavior differs by target.
 
 The same public family is exposed across the supported target matrix; meaningful platform differences remain governed by the compatibility contract.
 
@@ -87,8 +87,8 @@ Evidence classes are not equal and this page does not blur them: Web behavior is
 
 ## Accessibility
 
-- **Roles this family assigns:** `alert` — set in `form-group.tsx` by the components themselves, not by the caller.
-- **Accessibility states and properties it sets:** `accessibilityLiveRegion`, `accessible` — read from `form-group.tsx`.
+- **Roles this family assigns:** `alert`, `group` — set in `form-group.tsx` by the components themselves, not by the caller.
+- **Accessibility states and properties it sets:** `accessibilityLabel`, `accessibilityLabelledBy`, `accessibilityLiveRegion`, `describedby` (Web), `disabled`, `invalid` (Web), `labelledby` (Web) — read from `form-group.tsx`.
 
 Keyboard/focus behavior, announcements, Dynamic Type/Web zoom, RTL and reduced-motion expectations are not derived here — see [Accessibility overview](/docs/accessibility/), [Keyboard & focus](/docs/accessibility/keyboard-focus/), [RTL/localization](/docs/accessibility/rtl/) and [Large text & zoom](/docs/accessibility/large-text/). BeeUI does not claim universal accessibility certification from automated tests.
 
@@ -103,8 +103,8 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 - **Primary executable fixture:** [`apps/showcase/__tests__/checkbox-radio-field-form-group-context.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/checkbox-radio-field-form-group-context.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/field-label-accessible-name-dedup.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/field-label-accessible-name-dedup.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/form-group-checkbox-list-group-semantics.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/form-group-checkbox-list-group-semantics.test.tsx)
 - **Additional fixture:** [`apps/showcase/__tests__/issue-15-alert-dialog-form-group.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-15-alert-dialog-form-group.test.tsx)
-- **Additional fixture:** [`apps/showcase/__tests__/perf-render-commit.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/perf-render-commit.test.tsx)
 
 ### Addressable examples
 
@@ -140,22 +140,23 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Form Group** is actually used: 13 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1103 lines — where **Form Group** is actually used: 34 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
 ````tsx
-import { FormGroup, Radio, RadioGroup } from '@beemvp/beeui-ui';
+import { Checkbox, FormGroup, Radio, RadioGroup } from '@beemvp/beeui-ui';
 import * as React from 'react';
 ````
 
-Fixture state this block reads (same file, line 461):
+Fixture state this block reads (same file, lines 460, 462):
 
 ````tsx
+  const [assignedStores, setAssignedStores] = React.useState<string[]>([]);
   const [plan, setPlan] = React.useState<'starter' | 'pro'>('starter');
 ````
 
-[lines 630–642](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L630-L642):
+[lines 631–664](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L631-L664):
 
 ````tsx
               <FormGroup
@@ -170,6 +171,27 @@ Fixture state this block reads (same file, line 461):
                   <Radio label="Starter plan" value="starter" />
                   <Radio label="Pro plan" value="pro" />
                 </RadioGroup>
+              </FormGroup>
+              <FormGroup
+                error="Select at least one store."
+                invalid={assignedStores.length === 0}
+                legend="Assign to stores"
+                required
+                testID="stores-form-group"
+              >
+                {['Store A', 'Store B', 'Store C'].map((store) => (
+                  <Checkbox
+                    checked={assignedStores.includes(store)}
+                    key={store}
+                    label={store}
+                    onCheckedChange={(checked) =>
+                      setAssignedStores((current) =>
+                        checked ? [...current, store] : current.filter((value) => value !== store),
+                      )
+                    }
+                    testID={`stores-checkbox-${store.replace(/\s+/g, '-').toLowerCase()}`}
+                  />
+                ))}
               </FormGroup>
 ````
 

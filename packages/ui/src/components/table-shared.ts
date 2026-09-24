@@ -1,4 +1,5 @@
 import { densityMetrics, spacing } from '@beemvp/beeui-tokens';
+import * as React from 'react';
 
 // Platform-agnostic type contracts shared by `table.tsx` (native/default) and
 // `table.web.tsx` (Web), mirroring the `overlay-transport-shared.ts` split
@@ -48,6 +49,20 @@ export type TableAlign = 'start' | 'center' | 'end';
  * `Table`'s rows following the ambient global density exactly as before this prop existed.
  */
 export type TableDensity = 'compact' | 'comfortable' | 'spacious' | 'dense48';
+
+/**
+ * The text of a header/cell whose children are only strings and numbers, or `undefined`
+ * for any other content. JSX such as `Row {n}` passes an array (`['Row ', n]`), not a
+ * string, so a plain `typeof children === 'string'` check sends it down the complex-content
+ * path: on native that places bare strings inside a `View` (outside any foreground `Text`)
+ * and on both platforms it loses the inferred column/accessible label.
+ */
+export function plainTextContent(children: React.ReactNode): string | undefined {
+  const parts = React.Children.toArray(children);
+  if (parts.length === 0) return undefined;
+  if (!parts.every((part) => typeof part === 'string' || typeof part === 'number')) return undefined;
+  return parts.join('');
+}
 
 /** Resolves one `TableDensity` step to its row-height pixel value — see `TableDensity`. */
 export function resolveTableDensityRowHeight(density: TableDensity): number {

@@ -71,7 +71,7 @@ The executable fixtures below are the source-grounded usage examples; consumers 
 
 ## Platform behavior
 
-This family ships no platform-specific file, and its own source takes no `Platform` branch.
+This family ships no platform-specific file, but its source branches on `Platform`, so some behavior differs by target.
 
 The same public family is exposed across the supported target matrix; meaningful platform differences remain governed by the compatibility contract.
 
@@ -93,7 +93,8 @@ Colors, spacing and typography come from semantic tokens rather than from values
 
 ## Executable examples
 
-- **Primary executable fixture:** [`apps/showcase/__tests__/issue-276-structural-status-a11y.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-276-structural-status-a11y.test.tsx)
+- **Primary executable fixture:** [`apps/showcase/__tests__/accent-colour-web-theme-variables.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/accent-colour-web-theme-variables.test.tsx)
+- **Additional fixture:** [`apps/showcase/__tests__/issue-276-structural-status-a11y.test.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/__tests__/issue-276-structural-status-a11y.test.tsx)
 - **Additional fixture:** [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx)
 
 ### Addressable examples
@@ -131,7 +132,7 @@ it is derived from the real public export family rather than a canvas-only diagr
 
 ## Verified example source
 
-These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1081 lines — where **Spinner** is actually used: 6 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
+These are the parts of the typechecked **runtime Showcase fixture behind this live preview** — [`apps/showcase/component-gallery/component-gallery.tsx`](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx), 1103 lines — where **Spinner** is actually used: 6 lines in 1 place. Each block is copied verbatim from the line range named above it, so it is the same executable source, not a retelling of it. The rest of that file exercises other families and is not reproduced here.
 
 Imports the examples below need (a filtered subset of the fixture's own top-level imports):
 
@@ -139,7 +140,7 @@ Imports the examples below need (a filtered subset of the fixture's own top-leve
 import { Box, Spinner } from '@beemvp/beeui-ui';
 ````
 
-[lines 557–562](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L557-L562):
+[lines 558–563](https://github.com/beobungbu/BeeUI/blob/main/apps/showcase/component-gallery/component-gallery.tsx#L558-L563):
 
 ````tsx
               <Box className="flex-row items-center gap-5">

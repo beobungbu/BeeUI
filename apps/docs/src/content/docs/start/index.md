@@ -63,6 +63,8 @@ The published npm version, the repository's `package.json` version, and the Reac
 
 The maintained consumer examples remain valuable even after public publication: they prove the exact package boundary in clean projects and catch deep imports, peer drift and bundler-resolution problems.
 
+Already on `0.86.2-rc.1`? See [Upgrading from 0.86.2-rc.1](/docs/guides/migration-versioning/#upgrading-from-0862-rc1-to-0862-rc2) for the required `Sheet` provider rewiring and the other rc.2 changes before you update.
+
 ## Evaluate from source
 
 Use the repository when you want the complete Showcase, demo and release evidence rather than only package consumption:

@@ -172,7 +172,7 @@ function findUnknownBehaviorPropReferences(component, rootDir, field = 'behavior
 // A ratchet rather than a pass/fail threshold: failing on any blank would fail today and teach
 // nothing, and a silent percentage would drift back down the way it drifted here. The floor is
 // the measured value at the time it was written, so coverage can only go up.
-export const PROP_DESCRIPTION_FLOOR = 677;
+export const PROP_DESCRIPTION_FLOOR = 678;
 
 // Two floors, because coverage alone is satisfiable by boilerplate: 22 props were added to the
 // total by one repeated sentence and 100% never moved.
@@ -184,7 +184,7 @@ export const PROP_DESCRIPTION_FLOOR = 677;
 // justify (0.44), and measuring what it was actually rejecting showed the real defect is one
 // sentence reused across props with *different names*, which `sharedAcrossProps` states directly
 // and a ratio only approximates.
-export const PROP_DISTINCT_DESCRIPTION_FLOOR = 336;
+export const PROP_DISTINCT_DESCRIPTION_FLOOR = 337;
 
 // Walks a resolved type entry the same way `applyGlossary` and the renderer do:
 // a `union` entry carries no `fields` of its own, only `variants`, each of which is
