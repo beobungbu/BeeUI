@@ -90,7 +90,11 @@ Against the public registry: `npm install` of `@beemvp/beeui-ui`, `@beemvp/beeui
 
 ### Exact-head CI evidence
 
-The PR #634 / #635 CI results for the candidate and promotion heads are not transcribed here yet; the npm release workflow reran the release control-plane checks and `pnpm release:verify` at the exact publication workflow SHA. Before the PR was opened, locally on the candidate tree: `pnpm typecheck` exit 0; `pnpm lint` exit 0; `pnpm test` exit 0 (1012 node:test cases and 1259 Jest tests in 146 suites, 0 failures).
+- PR #634 (`release/0.86.2-rc.3` → `development`, head `3ccecae3`): every PR check passed — `classify`, `verify` (fast/docs/runtime/tokens/release/release-prep/benchmark), `web-a11y`, `visual-web-report`, `web-consumer`, `expo-consumer`, `bare-consumer`, `build-and-local-smoke`, iOS/Android native compile.
+- Post-merge `development@f6d0d428`: `beeui-environment-ci` run `35972480966`, `ci`, `visual-web`, `web-a11y`, `expo-consumer`, `web-consumer`, `beeui-web` all success.
+- PR #635 (`development` → `main`, head `f6d0d428`): all required `main` checks passed, including the full `visual-web-full` matrix (canonical-and-smoke, showcase-integration, showcase-acceptance-matrix) and `environment-ci`.
+- Post-merge `main@9b1fb095`: `ci`, `visual-web`, `web-a11y`, `expo-consumer`, `web-consumer`, `beeui-web` success; the npm release workflow reran the release control-plane checks and `pnpm release:verify` at this exact SHA (run `35977601708`).
+- Not green on `main@9b1fb095`: `native-runtime-smoke` run `35977572695` — attempt 1 failed on iOS (`"Runtime toast" is visible`) and Android (`showcase-home` not visible); attempt 2 passed Android and failed iOS earlier at `runtime-ready`, so the iOS runtime smoke is recorded as unresolved evidence, not a pass. `beeui-web-delivery` run `35978847317` uploaded the Worker and assets for `9b1fb095` but failed updating the zone's Workers route (`No access to the specified resource`), a Cloudflare token-permission issue outside the package artifacts. Before the PR was opened, locally on the candidate tree: `pnpm typecheck` exit 0; `pnpm lint` exit 0; `pnpm test` exit 0 (1012 node:test cases and 1259 Jest tests in 146 suites, 0 failures).
 
 Runtime workflows that were skipped by their own change/schedule/label contract remain skipped evidence, not passes. The iOS `pageSheet` / `formSheet` presentation surface remains **EXPERIMENTAL**; native runtime smoke for `Sheet` is wired for iOS only, and Android smoke and a real-device run remain open.
 
