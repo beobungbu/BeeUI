@@ -2,7 +2,7 @@
 
 ## Status
 
-`@beemvp/beeui-cli` is publicly published at **`0.86.2-rc.2`** under npm tag **`next`**; the current release candidate **`0.86.2-rc.3`** is published only once the owner approves it. It is the supported source-ownership CLI for the current BeeUI release candidate.
+`@beemvp/beeui-cli` is publicly published at **`0.86.2-rc.3`** under npm tag **`next`** (observed 2026-09-24). It is the supported source-ownership CLI for the current BeeUI release candidate.
 
 External consumers should run the published RC explicitly:
 
@@ -101,7 +101,7 @@ The CLI releases in lockstep with:
 - `@beemvp/beeui-tokens`
 - `@beemvp/beeui-ui`
 
-Current release candidate: `0.86.2-rc.3` (not published until owner approval); `next` last observed at `0.86.2-rc.2`.
+Current public RC: `0.86.2-rc.3` under `next` (observed 2026-09-24).
 
 The channel/version authority is `docs/dist-tag-policy.md`. Do not infer stable availability from the existence of a public RC; every `latest` move, including stable promotion, is a separate owner-controlled release event.
 

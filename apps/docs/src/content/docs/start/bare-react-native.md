@@ -3,7 +3,7 @@ title: Bare React Native
 description: Install the BeeUI release candidate in a true bare React Native 0.86 application and verify native bundles without Expo.
 ---
 
-Use this path for a React Native application that does not use the Expo runtime. BeeUI `0.86.2-rc.2` is public under the npm `next` dist-tag, and `0.86.2-rc.3` is the current release candidate, published only once the owner approves it. The live registry was last observed (2026-09-23) resolving `next` to `0.86.2-rc.2` and `latest` to `0.86.2-rc.1`. During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages, so it lags `next` in between (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)); keep using `@next` in the commands below.
+Use this path for a React Native application that does not use the Expo runtime. BeeUI `0.86.2-rc.3` is public under the npm `next` dist-tag (observed 2026-09-24). During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages, so it can lag `next`; the last observed `latest` target is recorded in [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md); keep using `@next` in the commands below.
 
 **Prerequisites:** an existing bare React Native `0.86.x` project created with the React
 Native Community CLI (this page does not cover scaffolding one) and Node.js/npm available

@@ -25,7 +25,7 @@ which platform (Expo, bare React Native, Web) it happened on — this page is se
 literal text, not read top to bottom.
 
 :::caution[Distribution status]
-BeeUI `0.86.2-rc.2` **is publicly published on npm** under the opt-in `next` dist-tag; see
+BeeUI `0.86.2-rc.3` **is publicly published on npm** under the opt-in `next` dist-tag; see
 [Start](/docs/start/) for the install command. Some entries below still run from a BeeUI
 checkout or a packed tarball, because they diagnose the maintained example starters
 (`examples/*`), which deliberately consume packed tarballs rather than the npm package —
@@ -499,12 +499,10 @@ Related usage errors: `'add --all' does not accept explicit item names`,
 - **Applies to:** contributors editing documentation.
 - **Likely cause:** a page showed a registry-install or public-CLI command for a BeeUI
   package with no `@next`/exact-version tag — must not be left bare/unqualified — or one
-  that does not match the current dist-tag policy. BeeUI `0.86.2-rc.2` is
-  published under the opt-in `next` dist-tag and `0.86.2-rc.3` is the current release
-  candidate; the live registry was last observed (2026-09-23) resolving `latest` to
-  `0.86.2-rc.1`. During the `0.86.2` prerelease line `latest` follows the newest complete,
-  verified RC only after the owner moves it, so it lags `next` in between (see
-  `docs/dist-tag-policy.md`). `scripts/check-public-doc-truth.mjs` therefore rejects a bare,
+  that does not match the current dist-tag policy. BeeUI `0.86.2-rc.3` is
+  published under the opt-in `next` dist-tag. During the `0.86.2` prerelease line `latest`
+  follows the newest complete, verified RC only after the owner moves it, so it can lag
+  `next` (the last observed target is recorded in `docs/dist-tag-policy.md`). `scripts/check-public-doc-truth.mjs` therefore rejects a bare,
   unqualified install, unless the same line explicitly negates the command (for example,
   "do not install unqualified").
 - **Fix:** pin every registry-install/CLI example to `@next` or the exact

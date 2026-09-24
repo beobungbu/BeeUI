@@ -2,17 +2,16 @@
 
 This document is the machine-checked authority for BeeUI npm versioning, staging and dist-tag behavior.
 
-## Current public state — observed 2026-09-23
+## Current public state — observed 2026-09-24T09:27:49Z
 
-`0.86.2-rc.2` is published for all four lockstep packages. A read-only registry observation from GitHub Actions run `35848833210` verified:
+`0.86.2-rc.3` is published for all four lockstep packages, and the owner has moved `latest` to it under the prerelease-line rule below. A read-only registry observation by the release controller at 2026-09-24T09:27:49Z (registry cache bypassed) verified:
 
-- `next` → `0.86.2-rc.2` for all four packages;
-- `latest` → `0.86.2-rc.1` for all four packages;
-- each `0.86.2-rc.2` package exposes non-empty registry integrity/shasum metadata and the BeeUI repository URL.
+- `next` → `0.86.2-rc.3` for all four packages;
+- `latest` → `0.86.2-rc.3` for all four packages;
+- an untagged `npm install @beemvp/beeui-ui @beemvp/beeui-core @beemvp/beeui-tokens` resolves `0.86.2-rc.3`, and `npx @beemvp/beeui-cli version` prints `0.86.2-rc.3`;
+- each `0.86.2-rc.3` package exposes non-empty registry integrity/shasum metadata, sigstore provenance and the BeeUI repository URL.
 
-The current tag split is therefore intentional evidence, not an inference from the publish command. Consumer documentation must use `@next` or an exact RC version. Stable `0.86.2` has not been promoted to `latest`.
-
-The repository's `currentVersion` (below) is the release candidate prepared in source, `0.86.2-rc.3`. It is not published and no dist-tag resolves to it until the owner approves its staged packages and the post-publication observation is recorded here.
+The intermediate observation at 2026-09-24T09:02:17Z (after publication, before the owner's move) recorded `latest` → `0.86.2-rc.1`; it is retained in `docs/rc-candidate.md`. The tag state is observed evidence, not an inference from the publish command or the owner's intent. Consumer documentation still uses `@next` or an exact RC version, because `latest` lags `next` after every future RC publication until the owner moves it. Stable `0.86.2` has not been published.
 
 BeeUI 1.0 is the product milestone name. The stable npm package line is **`0.86.2`** per ADR-015.
 
@@ -32,7 +31,7 @@ npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@n
 npx @beemvp/beeui-cli@next --help
 ```
 
-Do not recommend an unqualified install for RC consumers. It resolves through `latest`, which lags `next` between an RC publication and the owner's `latest` move (see [`latest` during the `0.86.2` prerelease line](#latest-during-the-0862-prerelease-line)). At the 2026-09-23 observation `latest` was on `0.86.2-rc.1` while `next` was on `0.86.2-rc.2`.
+Do not recommend an unqualified install for RC consumers. It resolves through `latest`, which lags `next` between an RC publication and the owner's `latest` move (see [`latest` during the `0.86.2` prerelease line](#latest-during-the-0862-prerelease-line)). At the 2026-09-24T09:27:49Z observation both `latest` and `next` were on `0.86.2-rc.3`.
 
 ## Publication history and authority
 
@@ -68,6 +67,18 @@ The four npm stage IDs were:
 | `@beemvp/beeui-ui` | `06f1d318-fabe-4ceb-ab57-ba041ce8d8b5` |
 | `@beemvp/beeui-cli` | `24ba08d3-7be1-4639-8d2f-0ba39a8c89bf` |
 
+### `0.86.2-rc.3` — Trusted Publishing / staged release
+
+- candidate source SHA: `1110844adec4fbbf6ae73d2f8ed1ed12986a5047`;
+- release-prep branch head: `3ccecae3` (evidence only);
+- `development` integration SHA: `f6d0d4284e6a3bd319b572772c407132198f314e` (PR #634);
+- `main` promotion / publish workflow SHA: `9b1fb095d419198728b6389b55b9e383ba857ae6` (PR #635);
+- GitHub Actions run: `35977601708` (`stage-rc`);
+- transport: npm Trusted Publishing/OIDC with `npm stage publish --tag next --provenance`;
+- final registry exposure: owner approval of the four npm staged packages with npm 2FA.
+
+Registry metadata, provenance log indexes and the authoritative CI artifact digests are recorded in `docs/rc-candidate.md`.
+
 GitHub Environment approval and npm staged-package approval are distinct gates. OIDC authorizes staging; it does not turn the protected GitHub environment approval into npm-side approval.
 
 ## Persistent dist-tags
@@ -76,8 +87,8 @@ BeeUI uses exactly two persistent public dist-tags:
 
 | Tag | Current observed target | Meaning |
 | --- | --- | --- |
-| `latest` | `0.86.2-rc.1` | default-install channel; during the `0.86.2` prerelease line it follows the newest complete, verified RC once the owner moves it; at stable promotion it moves to `0.86.2` |
-| `next` | `0.86.2-rc.2` | opt-in release-candidate channel; tracks the newest published RC |
+| `latest` | `0.86.2-rc.3` | default-install channel; during the `0.86.2` prerelease line it follows the newest complete, verified RC once the owner moves it; at stable promotion it moves to `0.86.2` |
+| `next` | `0.86.2-rc.3` | opt-in release-candidate channel; tracks the newest published RC |
 
 When stable `0.86.2` is ready, it is staged under the safe non-default path, verified as a complete four-package set, and only then is `latest` moved to `0.86.2` in one coordinated owner-controlled operation.
 
@@ -181,8 +192,8 @@ The block below is parsed by the release/public-doc control plane. `currentVersi
   "stableDistTag": "latest",
   "stablePromotionTag": "latest",
   "observedDistTags": {
-    "latest": "0.86.2-rc.1",
-    "next": "0.86.2-rc.2"
+    "latest": "0.86.2-rc.3",
+    "next": "0.86.2-rc.3"
   },
   "lockstepPackages": ["@beemvp/beeui-core", "@beemvp/beeui-tokens", "@beemvp/beeui-ui"],
   "releaseEnvironment": "release"

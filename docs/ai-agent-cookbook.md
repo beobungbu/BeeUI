@@ -3,12 +3,11 @@
 This document tells a coding agent (Claude, Codex, or any other) how to reason about,
 build applications with, and contribute to BeeUI **without relying on hidden maintainer
 knowledge**. It is truthful to the current repository state: BeeUI is pre-1.0, and
-**`0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag**; the repository is at
-release candidate `0.86.2-rc.3`, which is not published until the owner approves it. `latest`
-was last observed (2026-09-23) resolving to `0.86.2-rc.1`; during the `0.86.2` prerelease line
-it follows the newest complete, verified RC only after the owner moves it, and it moves to the
-stable version at the `0.86.2` stable promotion (see
-[docs/dist-tag-policy.md](dist-tag-policy.md)). Everything an agent needs is in canonical,
+**`0.86.2-rc.3` is public on npm under the opt-in `next` dist-tag** (observed 2026-09-24).
+During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after
+the owner moves it, so it can lag `next`, and it moves to the stable version at the `0.86.2`
+stable promotion; the last observed `latest` target is recorded in
+[docs/dist-tag-policy.md](dist-tag-policy.md). Everything an agent needs is in canonical,
 in-repo, machine-checkable context.
 
 It has two parts:
@@ -40,14 +39,12 @@ Stat, Timeline, Badge, Avatar, DescriptionList, useToast
 ### 1. Read this before anything else: the current distribution-status rules
 
 BeeUI is **pre-1.0**, and **`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`,
-and `@beemvp/beeui-cli` are public on npm at `0.86.2-rc.2`** under the opt-in `next` dist-tag
-(the repository's current release candidate, `0.86.2-rc.3`, is not published until the owner approves it).
+and `@beemvp/beeui-cli` are public on npm at `0.86.2-rc.3`** under the opt-in `next` dist-tag.
 This is the single most important fact for an agent, because it flips the instinct from the
 pre-RC era — "install the library from npm" is now correct, but only with the `@next` suffix
-(or an exact pinned version). `latest` was last observed (2026-09-23) resolving to
-`0.86.2-rc.1`; during the `0.86.2` prerelease line it follows the newest complete, verified RC
-only after the owner moves it, so it lags `next` in between — always suffix commands with
-`@next` rather than relying on `latest`.
+(or an exact pinned version). During the `0.86.2` prerelease line `latest` follows the newest
+complete, verified RC only after the owner moves it, so it can lag `next` — always suffix
+commands with `@next` rather than relying on `latest`.
 
 - `npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next` and
   `npx @beemvp/beeui-cli@next --help` are **live, working commands today**. There is still
@@ -261,7 +258,7 @@ The canonical dispatcher prompt these align with is
 ### Shared preamble (prepend to any recipe)
 
 > Read [llms.txt](../llms.txt) first, then the specific docs it links. BeeUI is pre-1.0;
-> `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag (always suffix
+> `0.86.2-rc.3` is public on npm under the opt-in `next` dist-tag (always suffix
 > `npm install @beemvp/beeui-*` / `npx @beemvp/beeui-cli` with `@next` or the exact version —
 > `latest` follows the newest verified RC only after the owner moves it, so it lags `next`,
 > and it moves to stable at the `0.86.2` stable promotion). The no-registry-required

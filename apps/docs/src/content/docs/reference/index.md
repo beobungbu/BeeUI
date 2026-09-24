@@ -39,11 +39,10 @@ production patterns under [Patterns](/docs/patterns/).
 | Architecture decisions | [Architecture](/docs/architecture/) |
 
 :::caution[Publication state]
-BeeUI `0.86.2-rc.2` is publicly published on npm under the opt-in `next` dist-tag, and
-`0.86.2-rc.3` is the current release candidate, published only once the owner approves it. The
-live registry was last observed (2026-09-23) resolving `latest` to `0.86.2-rc.1`; during the
-`0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner
-moves it (see
+BeeUI `0.86.2-rc.3` is publicly published on npm under the opt-in `next` dist-tag (observed
+2026-09-24). During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC
+only after the owner moves it, so it can lag `next`; its last observed target is recorded in the
+dist-tag policy (see
 [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)).
 Commands on these pages that show `pnpm beeui ...` or another repository-local form remain
 available from a checkout as the no-registry-required alternative; they are not the only way

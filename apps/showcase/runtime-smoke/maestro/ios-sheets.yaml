@@ -2,15 +2,31 @@ appId: com.beeui.showcase
 ---
 - launchApp:
     clearState: true
+# clearState triggers a full cold relaunch (a new process, not just a JS
+# state reset). On a loaded CI runner the home catalog can take longer to
+# render than the scroll step's default timeout, so wait for it explicitly
+# the same way common.yaml does before navigating anywhere.
+- extendedWaitUntil:
+    timeout: 180000
+    visible:
+      id: "showcase-home"
 - scrollUntilVisible:
     element:
       id: "showcase-open-runtime"
     direction: DOWN
 - waitForAnimationToEnd
-- tapOn:
-    id: "showcase-open-runtime"
-- assertVisible:
-    id: "runtime-ready"
+# Mirror common.yaml's defended navigation: a delivered tap on a freshly
+# scrolled iOS control can race the destination's render, so retry the
+# tap/assert pair against the destination rather than trusting a single tap.
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "showcase-open-runtime"
+      - extendedWaitUntil:
+          visible:
+            id: "runtime-ready"
+          timeout: 12000
 - assertVisible:
     id: "runtime-safe-area-nonzero"
 

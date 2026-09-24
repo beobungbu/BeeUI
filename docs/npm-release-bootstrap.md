@@ -28,6 +28,8 @@ When intentionally moving the source tree to an RC version:
 6. regenerate checked generated docs/LLM surfaces required by the repository;
 7. run the release-control, distribution-policy, public-truth, Web and release-verification gates before dispatch.
 
+A local `pnpm release:verify` is a smoke check. The authoritative artifact digests are the ones produced by the `npm-release` preflight on the exact `main` workflow SHA. Record those in `docs/rc-candidate.md` after the run. Local and CI tarball bytes differ across build platforms, so the candidate-to-release check compares build inputs instead: the candidate SHA → `main` SHA diff must be documentation-only (`docs/release.md`, "Artifact digest authority").
+
 The active prerelease regex remains `^0\.86\.2-rc\.(0|[1-9][0-9]*)$`.
 
 ## First-ever RC bootstrap
