@@ -4,7 +4,24 @@ All notable consumer-facing changes to BeeUI are recorded here.
 
 ## Unreleased
 
-Fixes from the BeePOS consumer verification of `0.86.2-rc.2`.
+No unreleased consumer-facing changes are recorded after `0.86.2-rc.3` yet.
+
+## [0.86.2-rc.3] — 2026-09-24
+
+Third release candidate on the `0.86.2` line. It carries the fixes from the BeePOS consumer verification of `0.86.2-rc.2` (BeeUI #568–#631, landed through #633). The frozen candidate source SHA and the packed-tarball identities are recorded in `docs/rc-candidate.md`. Publication happens only through the protected `npm-release` workflow (`operation=stage-rc`) with owner approval of each staged package.
+
+### Distribution
+
+- `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`, and `@beemvp/beeui-cli` move in lockstep to `0.86.2-rc.3`.
+- The prerelease channel stays npm dist-tag **`next`**. During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC: once all four `0.86.2-rc.3` packages are published and verified, the owner moves `latest` for all four in one npm 2FA operation and records the observation (owner decision 2026-09-24, issue #561; `docs/dist-tag-policy.md`). The release workflow never moves dist-tags. Until that move is observed, `latest` stays on the last recorded target (`0.86.2-rc.1` at the 2026-09-23 observation).
+- Public RC install path:
+
+  ```bash
+  npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@next
+  npx @beemvp/beeui-cli@next --help
+  ```
+
+- Generated public docs, `llms.txt` surfaces, release state, and component portal pages are regenerated from the dist-tag policy; they name `0.86.2-rc.3` as the current candidate and state the last observed registry dist-tags separately.
 
 ### Fixed
 

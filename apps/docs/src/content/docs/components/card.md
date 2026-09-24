@@ -8,7 +8,7 @@ description: "Elevated/outlined surface with variant and spacing contract."
 Elevated/outlined surface with variant and spacing contract.
 
 :::note[Distribution status]
-BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. Stable `latest` was last observed (at `0.86.2-rc.1`) resolving to the RC as well; that observation is re-verified after every publish and is not an npm rule. The bootstrap publish used `--tag next`; the mechanism that also produced `latest` has not been established. It moves to a real stable version at the first stable release (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
+BeeUI `0.86.2-rc.2` is public on npm under the opt-in `next` dist-tag. The live registry was last observed resolving `next` to `0.86.2-rc.2` and `latest` to `0.86.2-rc.1`; dist-tags are re-verified after every publish. This repository is at release candidate `0.86.2-rc.3`, which is not published until the owner approves its staged packages. During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages, and stable `0.86.2` moves it at stable promotion (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
 :::
 
 ## Identity

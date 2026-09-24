@@ -33,9 +33,11 @@ publication**, not something run now.
    (`v1.0.0`) and its commit are immutable once consumers can fetch the artifact it produced.
    Fix forward with a new tag/version; do not force-push over release history
    ([docs/release-ruleset.md](release-ruleset.md)).
-4. **`latest` only ever points at a stable version; the atomic promotion is the commit
-   point.** A partial upload never reaches `latest` because `latest` is promoted last, together,
-   only after the whole lockstep set verifies ([docs/dist-tag-policy.md](dist-tag-policy.md)).
+4. **`latest` only ever points at a complete, verified set; the atomic promotion is the commit
+   point.** During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC;
+   after stable promotion it only ever points at a stable version. A partial upload never reaches
+   `latest` because `latest` is moved last, together, only after the whole lockstep set verifies
+   ([docs/dist-tag-policy.md](dist-tag-policy.md)).
 5. **Lockstep group.** `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui`
    share one version and are corrected together; the CLI (`@beemvp/beeui-cli`) tracks the
    matching line.

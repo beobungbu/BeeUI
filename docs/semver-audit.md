@@ -183,7 +183,9 @@ given CLI line targets the matching library line ([docs/dist-tag-policy.md](dist
 ### Prerelease and correction mechanics
 
 Prereleases are `1.0.0-rc.N` under the `next` dist-tag only; `latest` is only ever a stable
-version, promoted atomically after the whole lockstep set verifies
+version, promoted atomically after the whole lockstep set verifies (superseded for the `0.86.2`
+prerelease line by the 2026-09-24 owner decision: `latest` follows the newest complete, verified
+RC until stable promotion)
 ([docs/dist-tag-policy.md](dist-tag-policy.md)). A bad published version is corrected
 **forward** — dist-tag re-point, `npm deprecate`, and a new patched version — never by
 unpublishing ([docs/rollback-runbook.md](rollback-runbook.md)).

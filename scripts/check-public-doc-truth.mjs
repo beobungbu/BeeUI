@@ -114,7 +114,9 @@ export function collectRepositoryVisibilityViolations(rootDir = ROOT_DIR) {
 }
 
 const VERSION_SENTENCES = [
-  { file: 'README.md', label: 'distribution-status line', pattern: /BeeUI `([^`]+)` is publicly published/u, requiredWhenPublished: true, kind: 'current' },
+  // A published line may carry a newer, not-yet-published source candidate; the README then names it as the
+  // current release candidate rather than claiming it is published. Either form must state the workspace version.
+  { file: 'README.md', label: 'distribution-status line', pattern: /BeeUI `([^`]+)` is (?:publicly published|the current release candidate)/u, requiredWhenPublished: true, kind: 'current' },
   { file: 'README.md', label: 'distribution-status line', pattern: /repository\/package version is `([^`]+)`/u, requiredWhenPublished: false, kind: 'current', legacy: true },
   { file: 'docs/consumer-compatibility-report.md', label: 'candidate sentence', pattern: /candidate version `([^`]+)` today/u, kind: 'current' },
   { file: 'docs/decisions/015-package-version-0-86-2.md', label: 'decision line', pattern: /The lockstep package version is \*\*`([^`]+)`\*\*/u, kind: 'stable' },

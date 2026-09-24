@@ -365,7 +365,7 @@ module.exports = withUniwindConfig(getDefaultConfig(__dirname), {
 ## CLI and source-ownership conflicts
 
 Every command below is shown as a consumer would run it, `npx @beemvp/beeui-cli@next <command>`
-(pin `@0.86.2-rc.2` instead of `@next` for an immutable version). The repository-local
+(pin `@0.86.2-rc.3` instead of `@next` for an immutable version). The repository-local
 equivalent from a BeeUI checkout is the same command name under `pnpm beeui <command>` — see
 [CLI & source ownership](/docs/guides/cli-source-ownership/) for that distinction.
 
@@ -500,15 +500,15 @@ Related usage errors: `'add --all' does not accept explicit item names`,
 - **Likely cause:** a page showed a registry-install or public-CLI command for a BeeUI
   package with no `@next`/exact-version tag — must not be left bare/unqualified — or one
   that does not match the current dist-tag policy. BeeUI `0.86.2-rc.2` is
-  published under the opt-in `next` dist-tag; the live registry was last observed (at
-  `0.86.2-rc.1`) resolving `latest` to the RC as well; that observation is re-verified after
-  every publish and is not an npm rule. The bootstrap publish used `--tag next`, and the mechanism that
-  also produced `latest` has not been established (see `docs/dist-tag-policy.md`), but
-  `scripts/check-public-doc-truth.mjs` still rejects a bare, unqualified install because that
-  coincidence ends at the first stable `0.86.2` release, unless the same line explicitly
-  negates the command (for example, "do not install unqualified").
+  published under the opt-in `next` dist-tag and `0.86.2-rc.3` is the current release
+  candidate; the live registry was last observed (2026-09-23) resolving `latest` to
+  `0.86.2-rc.1`. During the `0.86.2` prerelease line `latest` follows the newest complete,
+  verified RC only after the owner moves it, so it lags `next` in between (see
+  `docs/dist-tag-policy.md`). `scripts/check-public-doc-truth.mjs` therefore rejects a bare,
+  unqualified install, unless the same line explicitly negates the command (for example,
+  "do not install unqualified").
 - **Fix:** pin every registry-install/CLI example to `@next` or the exact
-  `0.86.2-rc.2`, matching [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
+  `0.86.2-rc.3` (the policy's `currentVersion`), matching [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
   For an example that intentionally documents a repository-local path instead (workspace
   commands, starter scripts, `pnpm beeui ...`), say so explicitly on the same line.
 - **Verify:** `node ./scripts/check-public-doc-truth.mjs` and

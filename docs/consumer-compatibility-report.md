@@ -2,7 +2,7 @@
 
 > **Status:** public release-candidate compatibility evidence.
 > **Snapshot:** 2026-09-23.
-> **Packages under test:** `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`; current published candidate `0.86.2-rc.2`.
+> **Packages under test:** `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`; candidate `0.86.2-rc.3` (newest published: `0.86.2-rc.2`).
 
 BeeUI `0.86.2-rc.2` is published under the npm `next` dist-tag. `@beemvp/beeui-cli` is published in the same lockstep release group and is verified separately by the release/CLI smoke gates.
 
@@ -66,7 +66,7 @@ Parsed by `scripts/check-distribution-policy.mjs`. Version pins must equal the c
 {
   "published": true,
   "packageSet": ["@beemvp/beeui-core", "@beemvp/beeui-tokens", "@beemvp/beeui-ui"],
-  "candidateVersion": "0.86.2-rc.2",
+  "candidateVersion": "0.86.2-rc.3",
   "cleanConsumerScripts": [
     "scripts/verify-bare-consumer.sh",
     "scripts/verify-web-consumer.sh",

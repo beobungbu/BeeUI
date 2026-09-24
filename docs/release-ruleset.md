@@ -87,7 +87,7 @@ Operation-specific preflight guards require:
 
 Registry existence probes treat only npm `E404`/404 as absence; any other registry/network/authentication failure stops the workflow instead of being read as "package missing". Registry mutation is sequential in dependency order: core, tokens, ui, cli.
 
-The workflow intentionally does **not** call `npm dist-tag`. npm Trusted Publishing/OIDC authenticates publish/stage-publish, not dist-tag mutation. Final stable `latest` promotion therefore remains an owner proof-of-presence action after `verify-stable` is green, as defined in [docs/dist-tag-policy.md](dist-tag-policy.md) and issue #254.
+The workflow intentionally does **not** call `npm dist-tag`. npm Trusted Publishing/OIDC authenticates publish/stage-publish, not dist-tag mutation. Every `latest` move therefore remains an owner proof-of-presence action: during the `0.86.2` prerelease line after a complete RC set is published and verified (issue #561), and for stable after `verify-stable` is green, as defined in [docs/dist-tag-policy.md](dist-tag-policy.md) and issue #254.
 
 The npm-side owner handoff — token creation, teardown, Trusted Publisher binding, stable staging and final promotion sequence — is [docs/npm-release-bootstrap.md](npm-release-bootstrap.md).
 

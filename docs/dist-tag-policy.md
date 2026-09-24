@@ -12,6 +12,8 @@ This document is the machine-checked authority for BeeUI npm versioning, staging
 
 The current tag split is therefore intentional evidence, not an inference from the publish command. Consumer documentation must use `@next` or an exact RC version. Stable `0.86.2` has not been promoted to `latest`.
 
+The repository's `currentVersion` (below) is the release candidate prepared in source, `0.86.2-rc.3`. It is not published and no dist-tag resolves to it until the owner approves its staged packages and the post-publication observation is recorded here.
+
 BeeUI 1.0 is the product milestone name. The stable npm package line is **`0.86.2`** per ADR-015.
 
 ## Release group
@@ -30,7 +32,7 @@ npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@n
 npx @beemvp/beeui-cli@next --help
 ```
 
-Do not recommend an unqualified install for RC consumers. Today that resolves through `latest`, which remains on `0.86.2-rc.1`, while `next` resolves to `0.86.2-rc.2`.
+Do not recommend an unqualified install for RC consumers. It resolves through `latest`, which lags `next` between an RC publication and the owner's `latest` move (see [`latest` during the `0.86.2` prerelease line](#latest-during-the-0862-prerelease-line)). At the 2026-09-23 observation `latest` was on `0.86.2-rc.1` while `next` was on `0.86.2-rc.2`.
 
 ## Publication history and authority
 
@@ -74,10 +76,30 @@ BeeUI uses exactly two persistent public dist-tags:
 
 | Tag | Current observed target | Meaning |
 | --- | --- | --- |
-| `latest` | `0.86.2-rc.1` | default-install channel; do not deliberately move it again until approved stable promotion |
+| `latest` | `0.86.2-rc.1` | default-install channel; during the `0.86.2` prerelease line it follows the newest complete, verified RC once the owner moves it; at stable promotion it moves to `0.86.2` |
 | `next` | `0.86.2-rc.2` | opt-in release-candidate channel; tracks the newest published RC |
 
 When stable `0.86.2` is ready, it is staged under the safe non-default path, verified as a complete four-package set, and only then is `latest` moved to `0.86.2` in one coordinated owner-controlled operation.
+
+## `latest` during the `0.86.2` prerelease line
+
+Owner decision recorded 2026-09-24 (issue #561): until stable `0.86.2` is promoted, `latest` follows the newest **complete, verified** RC.
+
+- The owner moves `latest` only after the whole four-package set of that RC is published (all four staged packages approved) and verified: registry metadata observed and clean public consumption green.
+- The move covers all four packages in one owner-controlled operation with npm 2FA:
+
+  ```bash
+  npm dist-tag add @beemvp/beeui-core@<version> latest
+  npm dist-tag add @beemvp/beeui-tokens@<version> latest
+  npm dist-tag add @beemvp/beeui-ui@<version> latest
+  npm dist-tag add @beemvp/beeui-cli@<version> latest
+  ```
+
+- The owner then observes the four `latest` tags and records the observation here (`observedDistTags` and the persistent dist-tag table) and in `docs/rc-candidate.md`. Until that observation is recorded, documentation states the last recorded observation, not the intended target.
+- `latest` never points at a partial set. If only some of the four moves succeed, the owner completes or reverts the remaining moves in the same session so all four `latest` tags agree.
+- The `npm-release` workflow never mutates dist-tags; the `latest` move is an owner proof-of-presence operation for RCs exactly as for stable (`docs/npm-release-bootstrap.md`).
+- Stable `0.86.2` still moves `latest` to `0.86.2` at stable promotion, after which `latest` only ever points at a stable version.
+- Consumer documentation keeps recommending `@next` or an exact version for RCs, because `latest` lags `next` between an RC publication and the owner's move.
 
 ## Owner guard
 
@@ -99,9 +121,11 @@ For a later `0.86.2-rc.N`:
 4. GitHub Actions stages the canonical package set sequentially using Trusted Publishing/OIDC and provenance under `next`;
 5. the owner approves the staged npm packages;
 6. observe the real registry state and record version, integrity, shasum, unpacked size, repository metadata and dist-tags;
-7. verify clean public consumption.
+7. verify clean public consumption;
+8. once the complete four-package set is published and verified, the owner moves `latest` for all four packages to that RC in one operation (`npm dist-tag add @beemvp/beeui-<pkg>@<version> latest` ×4, npm 2FA);
+9. observe the four `latest` tags and record them in this policy and `docs/rc-candidate.md`.
 
-Do not infer publication merely because the stage workflow succeeded.
+Do not infer publication merely because the stage workflow succeeded, and do not infer the `latest` move from the owner's intent: record it only after observing it.
 
 ## Stable `0.86.2` publication
 
@@ -148,10 +172,10 @@ The block below is parsed by the release/public-doc control plane. `currentVersi
 ```json dist-tag-policy
 {
   "published": true,
-  "currentVersion": "0.86.2-rc.2",
+  "currentVersion": "0.86.2-rc.3",
   "candidateStableVersion": "0.86.2",
   "prereleaseVersionPattern": "^0\\.86\\.2-rc\\.(0|[1-9][0-9]*)$",
-  "prereleaseExample": "0.86.2-rc.2",
+  "prereleaseExample": "0.86.2-rc.3",
   "distTags": ["latest", "next"],
   "prereleaseDistTag": "next",
   "stableDistTag": "latest",
