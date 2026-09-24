@@ -6,13 +6,11 @@ description: Build mobile-first React Native interfaces for Expo, bare React Nat
 BeeUI is a production-oriented React Native UI system with one public behavior contract across
 Expo, bare React Native and Web.
 
-The current release candidate is **`0.86.2-rc.3`**; it is published only once the owner approves
-its staged npm packages. The newest published release candidate is **`0.86.2-rc.2`** under the opt-in
-**`next`** dist-tag: the live registry was last observed (2026-09-23) resolving `next` to `0.86.2-rc.2`
-and `latest` to `0.86.2-rc.1`, and dist-tags are re-verified after every publish. During the `0.86.2`
-prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all
-four packages (see
-[`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)).
+The current public release candidate, **`0.86.2-rc.3`**, is published on npm under the opt-in
+**`next`** dist-tag (observed 2026-09-24; dist-tags are re-verified after every publish). During the
+`0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it
+for all four packages, so it can lag `next`; the last observed `latest` target is recorded in
+[`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
 Use `@next` or the exact RC version in install commands; that stays correct while `latest` lags
 `next` and after the stable `0.86.2` promotion.
 
@@ -58,10 +56,10 @@ package exports themselves.
 
 ## Platform and release truth
 
-- **Current RC:** `0.86.2-rc.3` (candidate, not yet published); newest published RC `0.86.2-rc.2` on npm tag `next`.
-- **Default channel:** `latest` was last observed (2026-09-23) resolving to `0.86.2-rc.1`; that
-  observation is re-verified after every publish. During the `0.86.2` prerelease line `latest`
-  follows the newest complete, verified RC once the owner moves it for all four packages. It
+- **Current RC:** `0.86.2-rc.3` on npm tag `next`.
+- **Default channel:** during the `0.86.2` prerelease line `latest` follows the newest complete,
+  verified RC once the owner moves it for all four packages, so it can lag `next`; its last
+  observed target is recorded in the dist-tag policy and re-verified after every publish. It
   moves to the stable version, and never returns to a prerelease, at the `0.86.2` stable
   promotion. See
   [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
