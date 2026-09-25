@@ -22,21 +22,25 @@ pnpm --filter @beemvp/beeui-demo web
 pnpm --filter @beemvp/beeui-demo build:web
 `;
 
-function policy({ published, version = '0.86.2-rc.1' }) {
+function policy({ published, candidateStableVersion = '0.86.2' }) {
   return `\`\`\`json dist-tag-policy\n${JSON.stringify({
     published,
-    currentVersion: version,
+    candidateStableVersion,
     prereleaseDistTag: 'next',
   })}\n\`\`\`\n`;
 }
 
-function baseFiles({ published = false, version = '0.86.2-rc.1', readme } = {}) {
+// `packages/ui/package.json` is the single authored current version; `package.json` (root) is a
+// synced follower. Most fixtures keep both at the same version — the divergence test below sets
+// them apart on purpose to exercise the follower-drift violation.
+function baseFiles({ published = false, version = '0.86.2-rc.1', uiVersion = version, readme } = {}) {
   return {
     'README.md': readme ?? (published
       ? `> **Distribution status:** BeeUI \`${version}\` is publicly published on npm under \`next\`.\n`
       : `> the repository/package version is \`${version}\`.\n`),
     'package.json': JSON.stringify({ version }),
-    'docs/dist-tag-policy.md': policy({ published, version }),
+    'packages/ui/package.json': JSON.stringify({ version: uiVersion }),
+    'docs/dist-tag-policy.md': policy({ published }),
     'apps/demo/README.md': validDemo,
     'apps/docs/src/content/docs/index.md': published ? 'Public RC docs.\n' : 'BeeUI is unpublished.\n',
   };
@@ -132,11 +136,10 @@ test('README distribution status must match workspace version', () => {
   assert.ok(collectPublicTruthViolations(missing).some((v) => v.includes('no longer carries its distribution-status line')));
 });
 
-test('policy currentVersion must agree with the workspace version', () => {
-  const files = baseFiles({ published: true });
-  files['docs/dist-tag-policy.md'] = policy({ published: true, version: '0.86.2-rc.2' });
+test('the derived current version must agree with the root workspace version', () => {
+  const files = baseFiles({ published: true, uiVersion: '0.86.2-rc.2' });
   const violations = collectPublicTruthViolations(fixture(files));
-  assert.ok(violations.some((v) => /currentVersion 0\.86\.2-rc\.2 must equal workspace version 0\.86\.2-rc\.1/.test(v)));
+  assert.ok(violations.some((v) => /packages\/ui\/package\.json: version 0\.86\.2-rc\.2 .*must equal the root package\.json version 0\.86\.2-rc\.1/.test(v)));
 });
 
 test('malformed workspace manifest is reported', () => {

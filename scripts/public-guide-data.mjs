@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { assertNoLegacyPolicyFields, derivePrereleasePattern, readCurrentVersion } from './public-site-contract-lib.mjs';
+
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 function fencedJson(file, tag, rootDir = ROOT_DIR) {
@@ -20,7 +22,13 @@ export const GENERATED_RELEASE_PAGE = 'apps/docs/src/content/docs/guides/current
 
 export function readPublicGuideData(rootDir = ROOT_DIR) {
   const compatibility = fencedJson('docs/compatibility-matrix.md', 'compatibility-matrix', rootDir);
-  const distribution = fencedJson('docs/dist-tag-policy.md', 'dist-tag-policy', rootDir);
+  const rawDistribution = fencedJson('docs/dist-tag-policy.md', 'dist-tag-policy', rootDir);
+  assertNoLegacyPolicyFields(rawDistribution);
+  const distribution = {
+    ...rawDistribution,
+    currentVersion: readCurrentVersion(rootDir),
+    prereleaseVersionPattern: derivePrereleasePattern(rawDistribution.candidateStableVersion),
+  };
   const rootPackage = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8'));
   return { compatibility, distribution, version: rootPackage.version };
 }

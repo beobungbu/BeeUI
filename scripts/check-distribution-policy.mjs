@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { assertNoLegacyPolicyFields, derivePrereleasePattern } from './public-site-contract-lib.mjs';
+
 export const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const DIST_TAG_DOC = path.join(ROOT_DIR, 'docs', 'dist-tag-policy.md');
@@ -49,34 +51,45 @@ export function collectDistTagPolicyViolations({ policy, packageVersions, releas
   const violations = [];
   const label = 'docs/dist-tag-policy.md';
 
+  try {
+    assertNoLegacyPolicyFields(policy);
+  } catch (error) {
+    violations.push(`${label}: ${error.message}`);
+  }
+
   if (typeof policy.published !== 'boolean') {
     violations.push(`${label}: "published" must be a boolean.`);
   }
 
+  // The lockstep package version is authored once, in `packages/ui/package.json`; this policy no
+  // longer carries a second hand-typed copy. `packageVersions` is measured directly from the
+  // manifests, so "currentVersion" drift is now just "the lockstep manifests disagree".
   const distinct = [...new Set(Object.values(packageVersions))];
+  let currentVersion;
   if (distinct.length !== 1) {
     violations.push(`${label}: lockstep packages are not on one version (${JSON.stringify(packageVersions)}).`);
-  } else if (policy.currentVersion !== distinct[0]) {
-    violations.push(`${label}: "currentVersion" ${JSON.stringify(policy.currentVersion)} must equal the lockstep package version ${JSON.stringify(distinct[0])}.`);
+  } else {
+    [currentVersion] = distinct;
   }
 
-  const currentStableBase = stableBase(policy.currentVersion);
+  const currentStableBase = stableBase(currentVersion);
   if (policy.candidateStableVersion !== currentStableBase) {
-    violations.push(`${label}: "candidateStableVersion" ${JSON.stringify(policy.candidateStableVersion)} must equal the stable base ${JSON.stringify(currentStableBase)} of "currentVersion".`);
+    violations.push(`${label}: "candidateStableVersion" ${JSON.stringify(policy.candidateStableVersion)} must equal the stable base ${JSON.stringify(currentStableBase)} of the lockstep package version.`);
   }
 
   let re;
+  let pattern;
   try {
-    re = new RegExp(policy.prereleaseVersionPattern);
+    pattern = derivePrereleasePattern(policy.candidateStableVersion);
+    re = new RegExp(pattern);
   } catch (error) {
-    violations.push(`${label}: "prereleaseVersionPattern" is not a valid regex: ${error.message}.`);
+    violations.push(`${label}: cannot derive a prerelease pattern from "candidateStableVersion": ${error.message}.`);
   }
   if (re) {
-    if (!re.test(policy.prereleaseExample)) violations.push(`${label}: prereleaseExample ${JSON.stringify(policy.prereleaseExample)} does not match prereleaseVersionPattern.`);
-    if (!re.test(`${policy.candidateStableVersion}-rc.2`)) violations.push(`${label}: prereleaseVersionPattern must match "${policy.candidateStableVersion}-rc.2".`);
-    if (re.test(policy.candidateStableVersion)) violations.push(`${label}: prereleaseVersionPattern must NOT match the stable version ${JSON.stringify(policy.candidateStableVersion)}.`);
-    if (policy.currentVersion !== currentStableBase && !re.test(policy.currentVersion)) {
-      violations.push(`${label}: prerelease "currentVersion" ${JSON.stringify(policy.currentVersion)} must match prereleaseVersionPattern.`);
+    if (!re.test(`${policy.candidateStableVersion}-rc.2`)) violations.push(`${label}: derived prereleaseVersionPattern must match "${policy.candidateStableVersion}-rc.2".`);
+    if (re.test(policy.candidateStableVersion)) violations.push(`${label}: derived prereleaseVersionPattern must NOT match the stable version ${JSON.stringify(policy.candidateStableVersion)}.`);
+    if (currentVersion !== undefined && currentVersion !== currentStableBase && !re.test(currentVersion)) {
+      violations.push(`${label}: prerelease lockstep package version ${JSON.stringify(currentVersion)} must match the derived prereleaseVersionPattern ${JSON.stringify(pattern)}.`);
     }
   }
 
@@ -101,7 +114,7 @@ export function collectDistTagPolicyViolations({ policy, packageVersions, releas
   }
 
   // Once a prerelease is public, it must live on the opt-in channel rather than latest.
-  if (policy.published === true && policy.currentVersion !== currentStableBase && policy.prereleaseDistTag !== 'next') {
+  if (policy.published === true && currentVersion !== currentStableBase && policy.prereleaseDistTag !== 'next') {
     violations.push(`${label}: a published prerelease must use the "next" channel.`);
   }
 
@@ -124,13 +137,19 @@ export function collectCompatibilityReportViolations({ report, matrixSnapshot, u
 
   if (typeof report.published !== 'boolean') violations.push(`${label}: "published" must be a boolean.`);
 
+  // `candidateVersion` used to duplicate the lockstep version by hand; `packages/ui/package.json`
+  // is now the single authored source, so re-introducing it here is rejected rather than checked
+  // for agreement — there is nothing left for it to legitimately agree with.
+  if (Object.prototype.hasOwnProperty.call(report, 'candidateVersion')) {
+    violations.push(
+      `${label}: must not author "candidateVersion" (found ${JSON.stringify(report.candidateVersion)}); the lockstep version ` +
+        `is authored once, in packages/ui/package.json (root ${JSON.stringify(rootVersion)}). Remove the field.`,
+    );
+  }
+
   const expectedPackages = ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui'];
   if (!Array.isArray(report.packageSet) || report.packageSet.length !== expectedPackages.length || !expectedPackages.every((p) => report.packageSet.includes(p))) {
     violations.push(`${label}: "packageSet" must be ${JSON.stringify(expectedPackages)}.`);
-  }
-
-  if (report.candidateVersion !== rootVersion) {
-    violations.push(`${label}: "candidateVersion" ${JSON.stringify(report.candidateVersion)} must equal the lockstep root version ${JSON.stringify(rootVersion)}.`);
   }
 
   for (const rel of report.cleanConsumerScripts ?? []) {

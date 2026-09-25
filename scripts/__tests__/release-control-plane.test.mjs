@@ -30,9 +30,12 @@ function createFixture() {
   for (const doc of ['release.md', 'dist-tag-policy.md', 'consumer-compatibility-report.md', 'rc-candidate.md', 'rc-ci-matrix.md', 'registry-cli.md', 'package-compatibility-report.md', 'npm-release-bootstrap.md']) {
     fs.writeFileSync(path.join(root, 'docs', doc), 'current @beemvp package release guidance\n');
   }
+  // `packages/ui/package.json` (written above via EXPECTED_PACKAGE_NAMES) is the single authored
+  // current version; the policy block carries policy only — no currentVersion/prereleaseExample/
+  // prereleaseVersionPattern copy.
   fs.writeFileSync(
     path.join(root, 'docs/dist-tag-policy.md'),
-    `\`\`\`json dist-tag-policy\n${JSON.stringify({ published: false, currentVersion: EXPECTED_VERSION, prereleaseVersionPattern: FIXTURE_PRERELEASE_PATTERN })}\n\`\`\`\n`,
+    `\`\`\`json dist-tag-policy\n${JSON.stringify({ published: false, candidateStableVersion: EXPECTED_VERSION.replace(/-rc\.(0|[1-9][0-9]*)$/, '') })}\n\`\`\`\n`,
   );
   return root;
 }
@@ -56,27 +59,39 @@ test('rejects version drift and legacy release scope', () => {
   fs.rmSync(root, { recursive: true, force: true });
 });
 
-test('names the bump procedure when every package agrees and only the pin lags', () => {
+test('names the bump procedure when the lockstep packages move but the root manifest lags', () => {
   const root = createFixture();
+  // `changeset version` bumps the four public packages together (packages/ui/package.json
+  // included); the pin follows automatically because it is derived from packages/ui/package.json.
+  // The root manifest is not a workspace member, so this is the shape a bump leaves behind.
   for (const relative of ['packages/core/package.json', 'packages/tokens/package.json', 'packages/ui/package.json', 'packages/cli/package.json']) {
     const file = path.join(root, relative);
     const manifest = JSON.parse(fs.readFileSync(file, 'utf8'));
     fs.writeFileSync(file, `${JSON.stringify({ ...manifest, version: '9.9.9' })}\n`);
   }
 
+  assert.equal(readPinnedVersion(root), '9.9.9');
   const violations = collectReleaseControlPlaneViolations(root);
+  assert.ok(violations.some((v) => v.startsWith('package.json: expected version 9.9.9')), violations.join('\n'));
   assert.ok(violations.some((v) => v.includes('run `pnpm version:sync`')), violations.join('\n'));
-  assert.ok(violations.some((v) => v.includes('docs/dist-tag-policy.md pins')), violations.join('\n'));
-  assert.equal(readPinnedVersion(root), EXPECTED_VERSION);
 });
 
-test('the pin is read from dist-tag-policy, not from the root manifest', () => {
+test('the pin is read from packages/ui/package.json, not the root manifest', () => {
   const root = createFixture();
-  fs.writeFileSync(path.join(root, 'docs/dist-tag-policy.md'), '```json dist-tag-policy\n{"published":false,"currentVersion":"7.7.7"}\n```\n');
+  fs.writeFileSync(path.join(root, 'packages/ui/package.json'), `${JSON.stringify({ name: '@beemvp/beeui-ui', version: '7.7.7' })}\n`);
 
   assert.equal(readPinnedVersion(root), '7.7.7');
   const violations = collectReleaseControlPlaneViolations(root);
   assert.ok(violations.some((v) => v.startsWith('package.json: expected version 7.7.7')), violations.join('\n'));
+});
+
+test('an authored legacy version field in the policy block is rejected with an actionable error', () => {
+  const root = createFixture();
+  fs.writeFileSync(
+    path.join(root, 'docs/dist-tag-policy.md'),
+    `\`\`\`json dist-tag-policy\n${JSON.stringify({ published: false, currentVersion: EXPECTED_VERSION, candidateStableVersion: EXPECTED_VERSION.replace(/-rc\.(0|[1-9][0-9]*)$/, '') })}\n\`\`\`\n`,
+  );
+  assert.throws(() => readPinnedVersion(root), /must not author currentVersion/);
 });
 
 // The npm transport is the one workflow that can mutate a public registry. These assertions pin
@@ -141,7 +156,7 @@ test('the npm release workflow keeps RC/stable registry mutation main-only, envi
   assert.doesNotMatch(workflow, /npm dist-tag/);
 });
 
-function npmReleaseWorkflow({ defaultVersion = '0.86.2', guard = FIXTURE_PRERELEASE_PATTERN } = {}) {
+function npmReleaseWorkflow({ withDefault = false, required = true, guard = FIXTURE_PRERELEASE_PATTERN } = {}) {
   return [
     'on:',
     '  workflow_dispatch:',
@@ -149,8 +164,8 @@ function npmReleaseWorkflow({ defaultVersion = '0.86.2', guard = FIXTURE_PRERELE
     '      operation:',
     '        default: verify',
     '      expected_version:',
-    '        required: true',
-    `        default: ${defaultVersion}`,
+    ...(required ? ['        required: true'] : []),
+    ...(withDefault ? ['        default: 0.86.2'] : []),
     '        type: string',
     'jobs:',
     '  preflight:',
@@ -165,9 +180,16 @@ test('the npm release workflow version literals track the pin', () => {
   assert.deepEqual(collectNpmReleaseWorkflowViolations(npmReleaseWorkflow(), '0.86.2', FIXTURE_PRERELEASE_PATTERN), []);
 });
 
-test('a dispatch default left behind by a version bump is rejected', () => {
-  const v = collectNpmReleaseWorkflowViolations(npmReleaseWorkflow({ defaultVersion: '20260902.0.0' }), '0.86.2', FIXTURE_PRERELEASE_PATTERN);
-  assert.ok(v.some((m) => /"expected_version" default 20260902\.0\.0 must equal the pinned version 0\.86\.2/.test(m)), v.join('\n'));
+test('a hard-coded dispatch default is rejected, whether or not it still equals the pin', () => {
+  for (const guard of [FIXTURE_PRERELEASE_PATTERN]) {
+    const v = collectNpmReleaseWorkflowViolations(npmReleaseWorkflow({ withDefault: true, guard }), '0.86.2', FIXTURE_PRERELEASE_PATTERN);
+    assert.ok(v.some((m) => /"expected_version" must not declare a default/.test(m)), v.join('\n'));
+  }
+});
+
+test('expected_version without required: true is rejected', () => {
+  const v = collectNpmReleaseWorkflowViolations(npmReleaseWorkflow({ required: false }), '0.86.2', FIXTURE_PRERELEASE_PATTERN);
+  assert.ok(v.some((m) => /must be "required: true"/.test(m)), v.join('\n'));
 });
 
 test('a prerelease guard left behind by a version bump is rejected', () => {
@@ -202,7 +224,7 @@ test('a pin that carries no prerelease pattern cannot vacuously accept the guard
 
 test('the pin at a candidate keeps the guard on the same stable line', () => {
   assert.deepEqual(
-    collectNpmReleaseWorkflowViolations(npmReleaseWorkflow({ defaultVersion: '0.86.2-rc.1' }), '0.86.2-rc.1', FIXTURE_PRERELEASE_PATTERN),
+    collectNpmReleaseWorkflowViolations(npmReleaseWorkflow(), '0.86.2-rc.1', FIXTURE_PRERELEASE_PATTERN),
     [],
   );
 });
@@ -224,11 +246,11 @@ test('the repository npm release workflow agrees with the repository pin', () =>
 
 test('the repository check reaches the npm release workflow', () => {
   const root = createFixture();
-  fs.writeFileSync(path.join(root, '.github/workflows/npm-release.yml'), npmReleaseWorkflow({ defaultVersion: '20260902.0.0' }));
+  fs.writeFileSync(path.join(root, '.github/workflows/npm-release.yml'), npmReleaseWorkflow({ withDefault: true }));
 
   const violations = collectReleaseControlPlaneViolations(root);
 
-  assert.ok(violations.some((v) => v.includes('"expected_version" default 20260902.0.0')), violations.join('\n'));
+  assert.ok(violations.some((v) => v.includes('"expected_version" must not declare a default')), violations.join('\n'));
   fs.rmSync(root, { recursive: true, force: true });
 });
 

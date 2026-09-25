@@ -178,15 +178,18 @@ Registry integrity identifies published bytes. It does **not** by itself prove w
 
 ## Machine-readable policy contract
 
-The block below is parsed by the release/public-doc control plane. `currentVersion` remains the current-line pin until Phase 01 replaces duplicate authored version authorities with the package manifest authority.
+The block below is parsed by the release/public-doc control plane. It carries policy only —
+dist-tag names, the stable release line, lockstep package names and the release environment.
+The current lockstep version and the derived prerelease pattern are not authored here:
+`packages/ui/package.json` is the single authored current version (see "Package set and
+lockstep versioning" above), and the prerelease pattern is derived from `candidateStableVersion`.
+Authoring `currentVersion`, `prereleaseExample` or `prereleaseVersionPattern` in this block is
+rejected with an actionable error, so a stale duplicate pin cannot silently reappear.
 
 ```json dist-tag-policy
 {
   "published": true,
-  "currentVersion": "0.86.2-rc.3",
   "candidateStableVersion": "0.86.2",
-  "prereleaseVersionPattern": "^0\\.86\\.2-rc\\.(0|[1-9][0-9]*)$",
-  "prereleaseExample": "0.86.2-rc.3",
   "distTags": ["latest", "next"],
   "prereleaseDistTag": "next",
   "stableDistTag": "latest",

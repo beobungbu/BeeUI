@@ -8,6 +8,7 @@ import { ROOT_DIR } from '../component-docs-lib.mjs';
 import { installClaimViolations } from '../generate-public-surface-inventory.mjs';
 import {
   acknowledgeSurfaceSources,
+  canonicalOwnershipContent,
   gitBlobSha,
   validateAcknowledgedSurfaceSources,
   validateContributorSurfaceDocs,
@@ -83,6 +84,48 @@ test('release-truth scoping needs the containing section to declare unavailabili
     '```',
   ].join('\n');
   assert.equal(installClaimViolations('README.md', proximityOnly).length, 1);
+});
+
+test('a version-only change to a lockstep manifest needs no acknowledgement', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-surface-owner-version-'));
+  try {
+    const relPath = 'packages/ui/package.json';
+    const file = path.join(rootDir, relPath);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const manifest = { name: '@beemvp/beeui-ui', version: '0.86.2-rc.1', dependencies: { 'workspace-dep': 'workspace:^' } };
+    const initial = `${JSON.stringify(manifest)}\n`;
+    fs.writeFileSync(file, initial);
+    const policy = { acknowledgedSourceBlobs: { [relPath]: gitBlobSha(canonicalOwnershipContent(relPath, initial)) } };
+
+    assert.deepEqual(validateAcknowledgedSurfaceSources(rootDir, policy), []);
+
+    fs.writeFileSync(file, `${JSON.stringify({ ...manifest, version: '0.86.2-rc.2' })}\n`);
+    assert.deepEqual(validateAcknowledgedSurfaceSources(rootDir, policy), []);
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('a dependency-range change to a lockstep manifest still fails until acknowledged', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-surface-owner-range-'));
+  try {
+    const relPath = 'packages/ui/package.json';
+    const file = path.join(rootDir, relPath);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const manifest = { name: '@beemvp/beeui-ui', version: '0.86.2-rc.1', dependencies: { 'workspace-dep': 'workspace:^' } };
+    const initial = `${JSON.stringify(manifest)}\n`;
+    fs.writeFileSync(file, initial);
+    const policy = { acknowledgedSourceBlobs: { [relPath]: gitBlobSha(canonicalOwnershipContent(relPath, initial)) } };
+
+    assert.deepEqual(validateAcknowledgedSurfaceSources(rootDir, policy), []);
+
+    fs.writeFileSync(file, `${JSON.stringify({ ...manifest, dependencies: { 'workspace-dep': 'workspace:*' } })}\n`);
+    const violations = validateAcknowledgedSurfaceSources(rootDir, policy);
+    assert.equal(violations.length, 1);
+    assert.match(violations[0], /changed after documentation ownership was acknowledged/u);
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
 });
 
 test('acknowledge tooling rewrites only the recorded blob shas', () => {

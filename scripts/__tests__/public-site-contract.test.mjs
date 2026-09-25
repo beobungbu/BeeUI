@@ -5,7 +5,15 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { collectPublicSiteContractViolations } from '../check-public-site-contract.mjs';
-import { buildPublicSiteContract, normalizePublicSiteEnvironment, routeForPath } from '../public-site-contract-lib.mjs';
+import {
+  assertNoLegacyPolicyFields,
+  buildPublicSiteContract,
+  derivePrereleasePattern,
+  normalizePublicSiteEnvironment,
+  readCurrentVersion,
+  readPublicationState,
+  routeForPath,
+} from '../public-site-contract-lib.mjs';
 
 function fixture(overrides = {}, publication = { published: false, currentVersion: '0.86.2' }) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-site-contract-'));
@@ -46,9 +54,10 @@ function fixture(overrides = {}, publication = { published: false, currentVersio
 
   write('web/public-site.config.json', JSON.stringify(config));
   write('package.json', JSON.stringify({ version: publication.currentVersion }));
+  write('packages/ui/package.json', JSON.stringify({ version: publication.currentVersion }));
   write('docs/dist-tag-policy.md', `\`\`\`json dist-tag-policy\n${JSON.stringify({
     published: publication.published,
-    currentVersion: publication.currentVersion,
+    candidateStableVersion: publication.currentVersion.replace(/-rc\.(0|[1-9][0-9]*)$/, ''),
     stableDistTag: 'latest',
     prereleaseDistTag: 'next',
     lockstepPackages: ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui'],
@@ -83,7 +92,7 @@ test('accepts a verified published prerelease on next', () => {
 test('rejects a published prerelease on the stable channel', () => {
   const { root } = fixture({}, { published: true, currentVersion: '0.86.2-rc.1' });
   const policyPath = path.join(root, 'docs/dist-tag-policy.md');
-  fs.writeFileSync(policyPath, '```json dist-tag-policy\n{"published":true,"currentVersion":"0.86.2-rc.1","stableDistTag":"latest","prereleaseDistTag":"latest","lockstepPackages":[]}\n```\n');
+  fs.writeFileSync(policyPath, '```json dist-tag-policy\n{"published":true,"candidateStableVersion":"0.86.2","stableDistTag":"latest","prereleaseDistTag":"latest","lockstepPackages":[]}\n```\n');
   assert.ok(collectPublicSiteContractViolations(root).some((v) => /published prerelease.*next/.test(v)));
 });
 
@@ -125,4 +134,38 @@ test('rejects Pages runtime and duplicate route prefixes independently of public
   const violations = collectPublicSiteContractViolations(root).join('\n');
   assert.match(violations, /cloudflare-workers/u);
   assert.match(violations, /duplicated/u);
+});
+
+test('readCurrentVersion derives the current version from packages/ui/package.json only', () => {
+  const { root } = fixture({}, { published: true, currentVersion: '0.86.2-rc.5' });
+  assert.equal(readCurrentVersion(root), '0.86.2-rc.5');
+  assert.equal(readPublicationState(root).currentVersion, '0.86.2-rc.5');
+});
+
+test('an authored legacy version field in the policy block is rejected with an actionable error', () => {
+  for (const legacyField of ['currentVersion', 'prereleaseExample', 'prereleaseVersionPattern']) {
+    assert.throws(
+      () => assertNoLegacyPolicyFields({ published: true, candidateStableVersion: '0.86.2', [legacyField]: 'x' }),
+      new RegExp(`must not author ${legacyField}`),
+    );
+  }
+
+  const { root } = fixture({}, { published: true, currentVersion: '0.86.2-rc.1' });
+  fs.writeFileSync(
+    path.join(root, 'docs/dist-tag-policy.md'),
+    '```json dist-tag-policy\n{"published":true,"currentVersion":"0.86.2-rc.1","candidateStableVersion":"0.86.2"}\n```\n',
+  );
+  assert.throws(() => readPublicationState(root), /must not author currentVersion/);
+});
+
+test('derivePrereleasePattern accepts the stable line\'s release candidates and rejects everything else', () => {
+  const pattern = new RegExp(derivePrereleasePattern('0.86.2'));
+  for (const accepted of ['0.86.2-rc.0', '0.86.2-rc.1', '0.86.2-rc.23']) {
+    assert.ok(pattern.test(accepted), accepted);
+  }
+  for (const rejected of ['0.86.2', '0.86.2-rc.01', '0.86.2-rc.007', '0.86.3-rc.1', '10.86.2-rc.1', '0.86.2-rc.1-not-a-candidate']) {
+    assert.ok(!pattern.test(rejected), rejected);
+  }
+  assert.throws(() => derivePrereleasePattern(''), /non-empty candidateStableVersion/);
+  assert.throws(() => derivePrereleasePattern(undefined), /non-empty candidateStableVersion/);
 });

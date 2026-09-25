@@ -27,6 +27,31 @@ export function gitBlobSha(content) {
     .digest('hex');
 }
 
+// The three lockstep library manifests carry the one authored current version
+// (`packages/ui/package.json`) and its two synced siblings. Ownership review exists to catch a
+// changed export/dependency surface, not a routine version bump — hashing the raw file bytes made
+// every version bump fail this gate for a reason unrelated to its purpose (the scout report on
+// this phase measured it: *every* bump trips `docs:surface:check` on the manifest blob alone).
+// Only the top-level `version` value is excluded from the hash input; every other byte —
+// dependency ranges, `workspace:^` vs `workspace:*`, export maps, key order — stays significant.
+export const LOCKSTEP_MANIFEST_OWNERSHIP_PATHS = new Set([
+  'packages/ui/package.json',
+  'packages/tokens/package.json',
+  'packages/core/package.json',
+]);
+const VERSION_FIELD_RE = /"version"\s*:\s*"[^"]*"/u;
+
+export function canonicalOwnershipContent(relPath, content) {
+  const text = Buffer.isBuffer(content) ? content.toString('utf8') : content;
+  if (!LOCKSTEP_MANIFEST_OWNERSHIP_PATHS.has(relPath)) return text;
+  if (!VERSION_FIELD_RE.test(text)) {
+    throw new Error(`${relPath} has no "version" field to exclude from the ownership hash.`);
+  }
+  // A placeholder value keeps the line's shape (and therefore every other byte) unchanged; only
+  // the version's own value is erased before hashing.
+  return text.replace(VERSION_FIELD_RE, '"version": ""');
+}
+
 export function validateAcknowledgedSurfaceSources(rootDir = ROOT_DIR, policy = readJson(OWNER_POLICY_FILE, rootDir)) {
   const violations = [];
   const acknowledged = policy.acknowledgedSourceBlobs;
@@ -41,7 +66,7 @@ export function validateAcknowledgedSurfaceSources(rootDir = ROOT_DIR, policy = 
       violations.push(`${relPath} is an acknowledged public-surface source but no longer exists.`);
       continue;
     }
-    const actualSha = gitBlobSha(fs.readFileSync(absPath));
+    const actualSha = gitBlobSha(canonicalOwnershipContent(relPath, fs.readFileSync(absPath)));
     if (actualSha !== expectedSha) {
       violations.push(
         `${relPath} changed after documentation ownership was acknowledged ` +
@@ -244,7 +269,7 @@ export function acknowledgeSurfaceSources(rootDir = ROOT_DIR) {
   for (const relPath of Object.keys(policy.acknowledgedSourceBlobs ?? {})) {
     const absPath = path.join(rootDir, relPath);
     if (!fs.existsSync(absPath)) throw new Error(`${relPath} is acknowledged but no longer exists; update the policy by hand.`);
-    const sha = gitBlobSha(fs.readFileSync(absPath));
+    const sha = gitBlobSha(canonicalOwnershipContent(relPath, fs.readFileSync(absPath)));
     if (sha !== policy.acknowledgedSourceBlobs[relPath]) changed.push(relPath);
     updated[relPath] = sha;
   }
