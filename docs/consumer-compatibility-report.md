@@ -4,7 +4,7 @@
 > **Packages under test:** `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`; `@beemvp/beeui-cli` is published in the same lockstep release group and is verified separately by the release/CLI smoke gates.
 
 <!-- release-status:generated:start — written by `pnpm release-status:generate`; do not hand-edit between these markers. -->
-BeeUI `0.86.2-rc.3` is public on npm under the opt-in `next` dist-tag (observed 2026-09-25T06:25:18.371Z). `latest` currently resolves to `0.86.2-rc.3` and lags `next` until the owner moves it for all four packages.
+BeeUI `0.86.2-rc.3` is public on npm under the opt-in `next` dist-tag (observed 2026-09-25T09:44:50.316Z). `latest` currently resolves to `0.86.2-rc.3` and lags `next` until the owner moves it for all four packages.
 <!-- release-status:generated:end -->
 
 This report does not widen any promise beyond `docs/compatibility-matrix.md` and the peer ranges declared by `packages/ui/package.json`.

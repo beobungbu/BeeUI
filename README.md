@@ -5,7 +5,7 @@
 BeeUI is a mobile-first TypeScript UI system focused on long-lived application interfaces: accessible behavior, explicit responsive contracts, semantic theming, production screen patterns, and source ownership without coupling application code to a styling engine.
 
 <!-- release-status:generated:start — written by `pnpm release-status:generate`; do not hand-edit between these markers. -->
-BeeUI `0.86.2-rc.3` is public on npm under the opt-in `next` dist-tag (observed 2026-09-25T06:25:18.371Z). `latest` currently resolves to `0.86.2-rc.3` and lags `next` until the owner moves it for all four packages.
+BeeUI `0.86.2-rc.3` is public on npm under the opt-in `next` dist-tag (observed 2026-09-25T09:44:50.316Z). `latest` currently resolves to `0.86.2-rc.3` and lags `next` until the owner moves it for all four packages.
 <!-- release-status:generated:end -->
 
 ## Install the public release candidate

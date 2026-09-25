@@ -5,7 +5,7 @@ This document is the machine-checked authority for BeeUI npm versioning, staging
 ## Current public state
 
 <!-- release-status:generated:start — written by `pnpm release-status:generate`; do not hand-edit between these markers. -->
-BeeUI `0.86.2-rc.3` is public on npm under the opt-in `next` dist-tag (observed 2026-09-25T06:25:18.371Z). `latest` currently resolves to `0.86.2-rc.3` and lags `next` until the owner moves it for all four packages.
+BeeUI `0.86.2-rc.3` is public on npm under the opt-in `next` dist-tag (observed 2026-09-25T09:44:50.316Z). `latest` currently resolves to `0.86.2-rc.3` and lags `next` until the owner moves it for all four packages.
 <!-- release-status:generated:end -->
 
 The tag state above is observed registry evidence (`docs/registry-observation.json`, refreshed by `pnpm registry:observe`), not an inference from the publish command or the owner's intent. Full per-package integrity/shasum evidence and the history of prior observations (including the intermediate 2026-09-24T09:02:17Z observation before the owner's `latest` move) are retained in `docs/rc-candidate.md`. Consumer documentation still uses `@next` or an exact RC version, because `latest` lags `next` after every future RC publication until the owner moves it.
