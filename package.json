@@ -90,6 +90,7 @@
     "registry:observe": "node ./scripts/registry-observe.mjs",
     "registry:observe:stdout": "node ./scripts/registry-observe.mjs --stdout",
     "registry:observe:check": "node ./scripts/registry-observe.mjs --check",
+    "registry:refresh": "node ./scripts/release/refresh-registry-observation.mjs",
     "registry:observe:test": "node --test ./scripts/__tests__/registry-observe.test.mjs",
     "release-status:generate": "node ./scripts/generate-release-status.mjs",
     "release-status:check": "node ./scripts/generate-release-status.mjs --check",

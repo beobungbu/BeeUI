@@ -173,8 +173,8 @@ The current staged flow is:
 3. protected GitHub Environment approval allows the mutation job to proceed;
 4. OIDC stages canonical packages with provenance;
 5. owner performs npm-side staged-package approval/proof-of-presence;
-6. the owner dispatches the `registry-observe` workflow (or runs `pnpm registry:observe` locally) and merges the PR it opens into `development`, recording registry state in `docs/registry-observation.json`;
-7. after the complete four-package set is public and verified, the owner moves `latest` for all four packages to that RC with npm 2FA (never from CI), then dispatches `registry-observe` again and merges the resulting PR to record the four `latest` tags.
+6. the owner runs `pnpm registry:refresh` and opens a PR into `development` with the result, recording registry state in `docs/registry-observation.json`;
+7. after the complete four-package set is public and verified, the owner moves `latest` for all four packages to that RC with npm 2FA (never from CI), then runs `pnpm registry:refresh` again and opens a PR with the result to record the four `latest` tags.
 
 ## Runtime and device gates
 
@@ -209,7 +209,7 @@ A new RC may be staged only when:
 8. protected release authorization is obtained;
 9. registry mutation uses the approved operation and tag;
 10. the real public registry package set is verified after npm-side approval;
-11. only then does the owner move `latest` for all four packages to the RC and dispatch `registry-observe` (or run `pnpm registry:observe` locally) to record the observed tags, merging the resulting PR into `development`.
+11. only then does the owner move `latest` for all four packages to the RC and run `pnpm registry:refresh` to record the observed tags, opening a PR into `development` with the result.
 
 ## Stable promotion checklist
 
@@ -224,7 +224,7 @@ Stable requires:
 5. npm-side approval and verification of the complete real registry set;
 6. only then, coordinated owner-controlled promotion of `latest`;
 7. final verification that all four `latest` tags resolve to `0.86.2`;
-8. dispatch `registry-observe` (or run `pnpm registry:observe` locally) and merge the resulting PR into `development` to record the stable observation.
+8. run `pnpm registry:refresh` and open a PR into `development` with the result to record the stable observation.
 
 ## Cross-platform evidence commands
 
