@@ -7,9 +7,11 @@ import test from 'node:test';
 
 import {
   CANDIDATE_GENERATORS,
+  LOCKSTEP_MANIFESTS,
   assertValidCandidateVersion,
   collectPreviousVersionLiterals,
-  setUiManifestVersion,
+  setLockstepManifestVersions,
+  setManifestVersion,
 } from '../release/prepare-candidate.mjs';
 
 test('accepts the stable version and a valid release candidate on that line', () => {
@@ -29,7 +31,7 @@ test('rejects an empty version argument', () => {
   assert.throws(() => assertValidCandidateVersion(undefined, '0.86.2'), /non-empty version/);
 });
 
-test('setUiManifestVersion rewrites only the version field, byte-for-byte otherwise', () => {
+test('setManifestVersion rewrites only the version field, byte-for-byte otherwise', () => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-prepare-candidate-'));
   try {
     fs.mkdirSync(path.join(rootDir, 'packages/ui'), { recursive: true });
@@ -37,7 +39,7 @@ test('setUiManifestVersion rewrites only the version field, byte-for-byte otherw
     const original = '{\n  "name": "@beemvp/beeui-ui",\n  "version": "0.86.2-rc.1",\n  "dependencies": {}\n}\n';
     fs.writeFileSync(manifestPath, original);
 
-    setUiManifestVersion(rootDir, '0.86.2-rc.9');
+    setManifestVersion(rootDir, 'packages/ui/package.json', '0.86.2-rc.9');
     const rewritten = fs.readFileSync(manifestPath, 'utf8');
     assert.equal(rewritten, original.replace('0.86.2-rc.1', '0.86.2-rc.9'));
   } finally {
@@ -45,15 +47,44 @@ test('setUiManifestVersion rewrites only the version field, byte-for-byte otherw
   }
 });
 
-test('setUiManifestVersion fails closed when the manifest has no version field', () => {
+test('setManifestVersion fails closed when the manifest has no version field', () => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-prepare-candidate-'));
   try {
     fs.mkdirSync(path.join(rootDir, 'packages/ui'), { recursive: true });
     fs.writeFileSync(path.join(rootDir, 'packages/ui/package.json'), '{"name":"@beemvp/beeui-ui"}\n');
-    assert.throws(() => setUiManifestVersion(rootDir, '0.86.2-rc.9'), /has no "version" field/);
+    assert.throws(() => setManifestVersion(rootDir, 'packages/ui/package.json', '0.86.2-rc.9'), /has no "version" field/);
   } finally {
     fs.rmSync(rootDir, { recursive: true, force: true });
   }
+});
+
+test('setLockstepManifestVersions moves all four lockstep package manifests together', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-prepare-candidate-lockstep-'));
+  try {
+    for (const relPath of LOCKSTEP_MANIFESTS) {
+      const absolute = path.join(rootDir, relPath);
+      fs.mkdirSync(path.dirname(absolute), { recursive: true });
+      fs.writeFileSync(absolute, `${JSON.stringify({ name: relPath, version: '0.86.2-rc.1' })}\n`);
+    }
+
+    setLockstepManifestVersions(rootDir, '0.86.2-rc.9');
+
+    for (const relPath of LOCKSTEP_MANIFESTS) {
+      const manifest = JSON.parse(fs.readFileSync(path.join(rootDir, relPath), 'utf8'));
+      assert.equal(manifest.version, '0.86.2-rc.9', relPath);
+    }
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('the lockstep manifest list is exactly the four released packages', () => {
+  assert.deepEqual([...LOCKSTEP_MANIFESTS].sort(), [
+    'packages/cli/package.json',
+    'packages/core/package.json',
+    'packages/tokens/package.json',
+    'packages/ui/package.json',
+  ]);
 });
 
 test('collectPreviousVersionLiterals finds the previous version in tracked files and ignores everything else', () => {

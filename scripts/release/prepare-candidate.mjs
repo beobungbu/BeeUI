@@ -6,8 +6,10 @@
 // performs every mechanical step a bump requires and stops with an actionable error instead of
 // silently editing prose:
 //   1. validate <version> against the stable release line (`candidateStableVersion`);
-//   2. write it to packages/ui/package.json, the single authored lockstep version;
-//   3. propagate it to the follower manifests (`pnpm version:sync`);
+//   2. write it to the four lockstep package manifests (packages/ui/package.json is the single
+//      authored current version read elsewhere; the other three move with it here because
+//      Changesets is not yet operating the release flow — see the release-flow plan's D4);
+//   3. propagate it to the non-workspace follower manifests (`pnpm version:sync`);
 //   4. regenerate every canonical generated surface that embeds the version;
 //   5. report any hand-maintained file that still names the previous version — this tool never
 //      edits prose on its own.
@@ -17,8 +19,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { EXPECTED_PACKAGE_NAMES } from '../check-release-control-plane.mjs';
 import { ROOT_DIR, derivePrereleasePattern, readPublicationState } from '../public-site-contract-lib.mjs';
 import { SOURCE_MANIFEST, syncRootVersion } from '../sync-root-version.mjs';
+
+// The four packages Changesets would move together as a `fixed` group once Phase 03 lands.
+// `packages/ui/package.json` (`SOURCE_MANIFEST`) is also the single authored current version read
+// by every check; the other three are peers moved here so the lockstep set never desyncs.
+export const LOCKSTEP_MANIFESTS = [...EXPECTED_PACKAGE_NAMES.keys()];
 
 // Mirrors apps/docs's predev/prebuild/pretypecheck generator order (the same generators rc.2/rc.3
 // were prepared with) plus the two root-level generated surfaces (docs/component-reference.md and
@@ -48,12 +56,16 @@ export function assertValidCandidateVersion(version, candidateStableVersion) {
   }
 }
 
-export function setUiManifestVersion(rootDir, version) {
-  const manifestPath = path.join(rootDir, SOURCE_MANIFEST);
+export function setManifestVersion(rootDir, relPath, version) {
+  const manifestPath = path.join(rootDir, relPath);
   const text = fs.readFileSync(manifestPath, 'utf8');
-  if (!/"version"\s*:\s*"/u.test(text)) throw new Error(`${SOURCE_MANIFEST} has no "version" field.`);
+  if (!/"version"\s*:\s*"/u.test(text)) throw new Error(`${relPath} has no "version" field.`);
   const next = text.replace(/("version"\s*:\s*")[^"]*(")/u, `$1${version}$2`);
   fs.writeFileSync(manifestPath, next);
+}
+
+export function setLockstepManifestVersions(rootDir, version, manifests = LOCKSTEP_MANIFESTS) {
+  for (const relPath of manifests) setManifestVersion(rootDir, relPath, version);
 }
 
 // Best-effort, informational literal audit: every tracked file (respecting .gitignore, since
@@ -88,7 +100,7 @@ export function prepareCandidate(version, { rootDir = ROOT_DIR, generators = CAN
   assertValidCandidateVersion(version, publication.candidateStableVersion);
 
   const previousVersion = readManifestVersion(rootDir, SOURCE_MANIFEST);
-  setUiManifestVersion(rootDir, version);
+  setLockstepManifestVersions(rootDir, version);
   const { changed: syncedFollowers } = syncRootVersion(rootDir);
 
   for (const generator of generators) runGenerator(generator, rootDir);
@@ -108,6 +120,7 @@ function main() {
   try {
     const result = prepareCandidate(version);
     console.log(`Prepared candidate ${result.version} (was ${result.previousVersion}).`);
+    console.log(`Set lockstep manifests: ${LOCKSTEP_MANIFESTS.join(', ')}.`);
     console.log(`Synced follower manifests: ${result.syncedFollowers.length ? result.syncedFollowers.join(', ') : 'none (already in sync)'}.`);
     console.log(`Regenerated canonical surfaces: ${CANDIDATE_GENERATORS.length} generators ran.`);
     if (result.remainingLiterals.length) {
