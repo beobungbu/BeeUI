@@ -74,7 +74,7 @@ For a later fresh `0.86.2-rc.N` candidate:
 4. owner reviews/downloads the staged tarballs as needed and approves each package with npm 2FA;
 5. verify the actual public registry artifacts and clean-consumer behavior;
 6. only after all four packages are public and step 5 is green, the owner moves `latest` for all four packages to the new RC in one authenticated 2FA session (`npm dist-tag add @beemvp/beeui-<pkg>@0.86.2-rc.N latest` for `core`, `tokens`, `ui`, `cli`);
-7. the owner dispatches the `registry-observe` workflow (or runs `pnpm registry:observe` locally) to record the resulting `latest`/`next` tags for all four packages in `docs/registry-observation.json`, then merges the PR it opens into `development` (the PR also carries the regenerated `pnpm release-status:generate` blocks in README/dist-tag-policy/consumer-compatibility-report); `docs/rc-candidate.md`'s detailed evidence log is still updated by hand.
+7. the owner runs `pnpm registry:refresh` to record the resulting `latest`/`next` tags for all four packages in `docs/registry-observation.json`, then opens a PR into `development` with the result (the same diff carries every regenerated surface that renders the observation: README/dist-tag-policy/consumer-compatibility-report status blocks, llms files, component and pattern pages); `docs/rc-candidate.md`'s detailed evidence log is still updated by hand.
 
 During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC (owner decision 2026-09-24, issue #561; `docs/dist-tag-policy.md`). The workflow never performs step 6.
 
@@ -92,7 +92,7 @@ Stable publication uses the same staged-publishing trust path, but it deliberate
 6. dispatch `operation=verify-stable` from the exact approved stable main line;
 7. `verify-stable` requires all four public `0.86.2` versions, checks registry integrity and canonical repository metadata, verifies the `next` tag, installs the actual public packages into a clean consumer and executes the packed `beeui` binary;
 8. only after that verification is green, the owner moves `latest` for all four packages to `0.86.2` in one uninterrupted authenticated 2FA session;
-9. the owner dispatches the `registry-observe` workflow (or runs `pnpm registry:observe` locally) to record the resulting `latest` tags in `docs/registry-observation.json`, merges the PR it opens into `development`, and separately records release evidence in `docs/rc-candidate.md`.
+9. the owner runs `pnpm registry:refresh` to record the resulting `latest` tags in `docs/registry-observation.json`, opens a PR into `development` with the result, and separately records release evidence in `docs/rc-candidate.md`.
 
 The stable upload temporarily uses `next` as a safety channel because npm staged approval would otherwise attach the default `latest` tag package-by-package. `latest` remains the final consumer commit point.
 

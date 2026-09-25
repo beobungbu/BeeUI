@@ -105,7 +105,7 @@ Owner decision recorded 2026-09-24 (issue #561): until stable `0.86.2` is promot
   npm dist-tag add @beemvp/beeui-cli@<version> latest
   ```
 
-- The owner then runs `pnpm registry:observe` to record the four `latest` tags in `docs/registry-observation.json` (which regenerates the "Current public state" block above via `pnpm release-status:generate`) and in `docs/rc-candidate.md`. Until that observation is recorded, documentation states the last recorded observation, not the intended target.
+- The owner then runs `pnpm registry:refresh` to record the four `latest` tags in `docs/registry-observation.json` (which also regenerates the "Current public state" block above and every other surface that renders the observation) and in `docs/rc-candidate.md`. Until that observation is recorded, documentation states the last recorded observation, not the intended target.
 - `latest` never points at a partial set. If only some of the four moves succeed, the owner completes or reverts the remaining moves in the same session so all four `latest` tags agree.
 - The `npm-release` workflow never mutates dist-tags; the `latest` move is an owner proof-of-presence operation for RCs exactly as for stable (`docs/npm-release-bootstrap.md`).
 - Stable `0.86.2` still moves `latest` to `0.86.2` at stable promotion, after which `latest` only ever points at a stable version.
@@ -130,10 +130,10 @@ For a later `0.86.2-rc.N`:
 3. run `stage-rc` on that exact `main` workflow SHA;
 4. GitHub Actions stages the canonical package set sequentially using Trusted Publishing/OIDC and provenance under `next`;
 5. the owner approves the staged npm packages;
-6. dispatch the `registry-observe` workflow (or run `pnpm registry:observe` locally) to observe the real registry state — version, integrity, shasum, unpacked size, repository metadata and dist-tags — into `docs/registry-observation.json`, and merge the PR it opens into `development`;
+6. run `pnpm registry:refresh` to observe the real registry state — version, integrity, shasum, unpacked size, repository metadata and dist-tags — into `docs/registry-observation.json`, and open a PR into `development` with the result;
 7. verify clean public consumption;
 8. once the complete four-package set is published and verified, the owner moves `latest` for all four packages to that RC in one operation (`npm dist-tag add @beemvp/beeui-<pkg>@<version> latest` ×4, npm 2FA);
-9. dispatch `registry-observe` again (or run `pnpm registry:observe` locally) to observe the four `latest` tags, merge the resulting PR, and separately record them in `docs/rc-candidate.md`.
+9. run `pnpm registry:refresh` again to observe the four `latest` tags, open a PR with the result, and separately record them in `docs/rc-candidate.md`.
 
 Do not infer publication merely because the stage workflow succeeded, and do not infer the `latest` move from the owner's intent: record it only after observing it.
 
@@ -146,7 +146,7 @@ Stable publication deliberately separates upload from default-channel promotion:
 3. approve and verify all four real registry packages and clean-consumer behavior;
 4. only then move `latest` for all four packages to `0.86.2` in one owner-controlled operation;
 5. verify all `latest` tags resolve to the same stable version;
-6. dispatch the `registry-observe` workflow (or run `pnpm registry:observe` locally) to record the stable observation in `docs/registry-observation.json` and merge the PR it opens into `development`.
+6. run `pnpm registry:refresh` to record the stable observation in `docs/registry-observation.json` and open a PR into `development` with the result.
 
 ## Failure handling
 
@@ -184,11 +184,17 @@ The current lockstep version and the derived prerelease pattern are not authored
 `packages/ui/package.json` is the single authored current version (see "Package set and
 lockstep versioning" above), and the prerelease pattern is derived from `candidateStableVersion`.
 Publication state and observed dist-tags are not authored here either: `docs/registry-observation.json`
-(written only by `pnpm registry:observe`, never hand-edited) is the single committed registry
+(written only by `pnpm registry:observe`, usually through `pnpm registry:refresh`; never hand-edited) is the single committed registry
 observation, and `scripts/release-status-lib.mjs` derives `published`/the release state from it plus
 the workspace version. Authoring `currentVersion`, `prereleaseExample`, `prereleaseVersionPattern`,
 `published` or `observedDistTags` in this block is rejected with an actionable error, so a stale
 duplicate pin cannot silently reappear.
+
+The `registry-observe` workflow (manual dispatch plus a daily schedule) is a read-only drift check:
+it runs `pnpm registry:observe:check`, which compares the live registry facts with the committed
+snapshot while ignoring the observation timestamp, and fails with refresh instructions when they
+differ. It never commits or opens a PR; the refresh is always a reviewed `pnpm registry:refresh`
+commit.
 
 ```json dist-tag-policy
 {
