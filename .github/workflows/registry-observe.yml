@@ -1,24 +1,17 @@
 name: registry-observe
 
-# Refreshes the committed registry observation (docs/registry-observation.json) — the only
-# workflow that reaches the npm registry, and it is strictly read-only (`npm view`; never
-# `npm publish`/`npm dist-tag`, no npm token/secret). `workflow_dispatch` is the primary refresh
-# path, run explicitly by the owner right after a publish/`latest` move (see
-# docs/npm-release-bootstrap.md's post-publish steps). The daily schedule is a drift-detection
-# backstop only, in case a manual dispatch is missed — it is not the release step.
+# Read-only drift check for the committed registry observation (docs/registry-observation.json)
+# — the only workflow that reaches the npm registry, strictly read-only (`npm view`; never
+# `npm publish`/`npm dist-tag`, no npm token/secret). Dispatch it after a publish or `latest` move
+# to confirm the committed snapshot is current; the daily schedule catches a missed refresh.
 #
 # It is a drift check, not a writer: it compares the live registry facts (versions, dist-tags,
 # integrity/shasum per package) with the committed snapshot, ignoring the volatile
 # `observedAt`/`observedBy` fields, and fails when they differ. The fix is always a reviewed
 # commit made by a person: run `pnpm registry:refresh` (observation plus every generated surface
-# that renders it) and open a PR into `development`. The workflow
-# never opens that PR itself: GitHub Actions may not create PRs in this repository, and a PR
-# authored with `GITHUB_TOKEN` would not trigger the required PR checks anyway.
-
-on:
-# a bot-created PR has not been proven to trigger this repository's required PR checks unattended.
-# Treat the PR as owner-reviewed, not auto-mergeable, until that is proven or a GitHub App token
-# replaces this token path.
+# that renders it) and open a PR into `development`. The workflow never opens that PR itself:
+# GitHub Actions may not create PRs in this repository, and a PR authored with `GITHUB_TOKEN`
+# would not trigger the required PR checks anyway.
 
 on:
   workflow_dispatch: {}
