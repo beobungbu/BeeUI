@@ -7,9 +7,15 @@ name: registry-observe
 # docs/npm-release-bootstrap.md's post-publish steps). The daily schedule is a drift-detection
 # backstop only, in case a manual dispatch is missed — it is not the release step.
 #
-# When the observation changed, this workflow opens or updates a PR into `development` with the
-# refreshed snapshot and the regenerated release-status blocks (`pnpm release-status:generate`).
-# It never merges that PR itself. Using the default `GITHUB_TOKEN` here is a known limitation:
+# It is a drift check, not a writer: it compares the live registry facts (versions, dist-tags,
+# integrity/shasum per package) with the committed snapshot, ignoring the volatile
+# `observedAt`/`observedBy` fields, and fails when they differ. The fix is always a reviewed
+# commit made by a person: run `pnpm registry:refresh` (observation plus every generated surface
+# that renders it) and open a PR into `development`. The workflow
+# never opens that PR itself: GitHub Actions may not create PRs in this repository, and a PR
+# authored with `GITHUB_TOKEN` would not trigger the required PR checks anyway.
+
+on:
 # a bot-created PR has not been proven to trigger this repository's required PR checks unattended.
 # Treat the PR as owner-reviewed, not auto-mergeable, until that is proven or a GitHub App token
 # replaces this token path.
@@ -29,23 +35,20 @@ permissions:
 env:
   NODE_VERSION: 24.13.1
   PNPM_VERSION: 10.15.0
-  BRANCH_NAME: automation/registry-observation
 
 jobs:
   observe:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Read-only registry query needs no npm credential; only the PR-update step below needs
-    # write access, and only to contents/pull-requests, never id-token/environments.
+    # Read-only registry query and read-only checkout: no npm credential, no write access.
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
     steps:
       - name: Checkout development
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
         with:
           ref: development
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -66,41 +69,29 @@ jobs:
         run: pnpm install --frozen-lockfile --prefer-offline
 
       # Read-only: `npm view` only. No npm token/secret is configured anywhere in this job.
-      - name: Observe the npm registry
-        run: pnpm registry:observe
-
-      - name: Regenerate release-status blocks from the fresh observation
-        run: pnpm release-status:generate
-
-      - name: Check for a real change
-        id: diff
+      # `--check` compares facts only, so an unchanged registry never reports drift just because
+      # the observation timestamp moved.
+      - name: Compare the npm registry with the committed observation
         run: |
-          if git diff --quiet -- docs/registry-observation.json README.md docs/dist-tag-policy.md docs/consumer-compatibility-report.md; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
+          set -o pipefail
+          if pnpm --silent registry:observe:check 2>&1 | tee "$RUNNER_TEMP/registry-observe.txt"; then
+            {
+              echo "### Registry observation is fresh"
+              echo
+              echo '```'
+              cat "$RUNNER_TEMP/registry-observe.txt"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Registry observation has drifted"
+              echo
+              echo '```'
+              cat "$RUNNER_TEMP/registry-observe.txt"
+              echo '```'
+              echo
+              echo 'Refresh it from a checkout of `development`: run `pnpm registry:refresh`, review the diff'
+              echo '(snapshot plus every regenerated surface) and open a PR into `development`.'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
-
-      - name: Open or update the observation PR
-        if: steps.diff.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: 'chore(registry): refresh the committed registry observation'
-          branch: ${{ env.BRANCH_NAME }}
-          base: development
-          delete-branch: true
-          title: 'chore(registry): refresh the committed registry observation'
-          body: |
-            Automated refresh of `docs/registry-observation.json` from `pnpm registry:observe`,
-            with the generated release-status blocks (`pnpm release-status:generate`) updated to
-            match.
-
-            This PR was opened by the `registry-observe` workflow. It never mutates the npm
-            registry — the query is read-only. Review the diff before merging; this repository's
-            required PR checks have not been proven to run unattended against a bot-authored PR.
-          add-paths: |
-            docs/registry-observation.json
-            README.md
-            docs/dist-tag-policy.md
-            docs/consumer-compatibility-report.md
