@@ -20,17 +20,14 @@ A publishable RC must be a fresh lockstep `0.86.2-rc.N` version on an exact inte
 
 When intentionally moving the source tree to an RC version:
 
-1. update all four package manifests (`packages/core`, `packages/tokens`, `packages/ui`, `packages/cli`) to the same `0.86.2-rc.N`;
-2. run `pnpm version:sync` so `package.json`, `web/worker/package.json`, `apps/demo/app.json` and `apps/showcase/app.json` follow;
-3. update `currentVersion` in the `json dist-tag-policy` block while leaving `candidateStableVersion` at `0.86.2`;
-4. set `.github/workflows/npm-release.yml`'s `expected_version` default to the same RC version;
-5. update `candidateVersion` in `docs/consumer-compatibility-report.md`;
-6. regenerate checked generated docs/LLM surfaces required by the repository;
-7. run the release-control, distribution-policy, public-truth, Web and release-verification gates before dispatch.
+1. run `pnpm release:prepare <version>` — it validates the version against the `candidateStableVersion` release line, sets `packages/ui/package.json` (the single authored lockstep version), runs `pnpm version:sync` so `package.json`, `web/worker/package.json`, `apps/demo/app.json` and `apps/showcase/app.json` follow, regenerates every canonical generated surface, and reports any hand-maintained prose that still names the previous version;
+2. hand-edit the reported hand-maintained prose (`pnpm release:prepare` never edits prose silently);
+3. type the same version explicitly into `.github/workflows/npm-release.yml`'s `expected_version` dispatch input when running the workflow (it has no default, by design — see `docs/dist-tag-policy.md`);
+4. run the release-control, distribution-policy, public-truth, Web and release-verification gates before dispatch.
 
 A local `pnpm release:verify` is a smoke check. The authoritative artifact digests are the ones produced by the `npm-release` preflight on the exact `main` workflow SHA. Record those in `docs/rc-candidate.md` after the run. Local and CI tarball bytes differ across build platforms, so the candidate-to-release check compares build inputs instead: the candidate SHA → `main` SHA diff must be documentation-only (`docs/release.md`, "Artifact digest authority").
 
-The active prerelease regex remains `^0\.86\.2-rc\.(0|[1-9][0-9]*)$`.
+The active prerelease regex is derived from `candidateStableVersion` (`docs/dist-tag-policy.md`) and is currently `^0\.86\.2-rc\.(0|[1-9][0-9]*)$`.
 
 ## First-ever RC bootstrap
 
@@ -77,7 +74,7 @@ For a later fresh `0.86.2-rc.N` candidate:
 4. owner reviews/downloads the staged tarballs as needed and approves each package with npm 2FA;
 5. verify the actual public registry artifacts and clean-consumer behavior;
 6. only after all four packages are public and step 5 is green, the owner moves `latest` for all four packages to the new RC in one authenticated 2FA session (`npm dist-tag add @beemvp/beeui-<pkg>@0.86.2-rc.N latest` for `core`, `tokens`, `ui`, `cli`);
-7. observe the resulting `latest` and `next` tags for all four packages and record them in `docs/dist-tag-policy.md` and `docs/rc-candidate.md`.
+7. the owner dispatches the `registry-observe` workflow (or runs `pnpm registry:observe` locally) to record the resulting `latest`/`next` tags for all four packages in `docs/registry-observation.json`, then merges the PR it opens into `development` (the PR also carries the regenerated `pnpm release-status:generate` blocks in README/dist-tag-policy/consumer-compatibility-report); `docs/rc-candidate.md`'s detailed evidence log is still updated by hand.
 
 During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC (owner decision 2026-09-24, issue #561; `docs/dist-tag-policy.md`). The workflow never performs step 6.
 
@@ -95,7 +92,7 @@ Stable publication uses the same staged-publishing trust path, but it deliberate
 6. dispatch `operation=verify-stable` from the exact approved stable main line;
 7. `verify-stable` requires all four public `0.86.2` versions, checks registry integrity and canonical repository metadata, verifies the `next` tag, installs the actual public packages into a clean consumer and executes the packed `beeui` binary;
 8. only after that verification is green, the owner moves `latest` for all four packages to `0.86.2` in one uninterrupted authenticated 2FA session;
-9. verify the resulting `latest` tags and record release evidence.
+9. the owner dispatches the `registry-observe` workflow (or runs `pnpm registry:observe` locally) to record the resulting `latest` tags in `docs/registry-observation.json`, merges the PR it opens into `development`, and separately records release evidence in `docs/rc-candidate.md`.
 
 The stable upload temporarily uses `next` as a safety channel because npm staged approval would otherwise attach the default `latest` tag package-by-package. `latest` remains the final consumer commit point.
 
@@ -111,7 +108,7 @@ Registry-mutating workflow operations require:
 
 - `refs/heads/main`;
 - exact workflow SHA checkout;
-- user-entered `expected_version` equals the workspace root version;
+- user-entered `expected_version` equals the checked-out `packages/ui/package.json` version (the single authored lockstep version);
 - the correct version shape (`0.86.2-rc.N` for RC operations, exactly `0.86.2` for stable staging);
 - explicit confirmation (`BEEUI_RC_RELEASE` or `BEEUI_STABLE_STAGE`);
 - `pnpm release-control-plane:check`;

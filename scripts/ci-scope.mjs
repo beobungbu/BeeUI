@@ -123,9 +123,13 @@ const RELEASE_PREP_EXACT = new Set([
   'docs/rc-candidate.md',
   'docs/consumer-compatibility-report.md',
   'docs/rollback-runbook.md',
+  'docs/registry-observation.json',
   'scripts/verify-release.mjs',
   'scripts/pack-artifacts.mjs',
   'scripts/sync-root-version.mjs',
+  'scripts/registry-observe.mjs',
+  'scripts/release-status-lib.mjs',
+  'scripts/generate-release-status.mjs',
 ]);
 const RELEASE_PREP_PREFIXES = ['.changeset/', 'scripts/release/'];
 const RELEASE_PREP_MANIFEST_RE = /^packages\/(?:core|ui|tokens|cli)\/package\.json$/;

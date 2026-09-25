@@ -10,6 +10,7 @@ import {
   readPublicationState,
   readWorkspaceVersion,
 } from './public-site-contract-lib.mjs';
+import { renderStatusSentence } from './release-status-lib.mjs';
 
 export const ROUTE_MANIFEST_OUTPUT = 'apps/docs/public/route-manifest.json';
 export const RELEASE_STATE_OUTPUT = 'apps/docs/public/release-state.json';
@@ -193,9 +194,13 @@ export function buildReleaseState(rootDir = ROOT_DIR) {
 
   return {
     schemaVersion: 1,
-    generatedFrom: ['docs/dist-tag-policy.md', 'packages/cli/package.json', 'package.json', 'web/public-site.config.json'],
+    generatedFrom: ['docs/dist-tag-policy.md', 'docs/registry-observation.json', 'packages/cli/package.json', 'package.json', 'web/public-site.config.json'],
     published: publication.published,
     status,
+    // The full six-value derived state (scripts/release-status-lib.mjs) alongside the legacy
+    // three-value `status` field above, which existing consumers already read. `state` is what
+    // distinguishes "unpublished" from "a candidate ahead of the registry" — `status` cannot.
+    state: publication.state,
     channel,
     currentVersion: publication.currentVersion,
     workspaceVersion,
@@ -205,6 +210,13 @@ export function buildReleaseState(rootDir = ROOT_DIR) {
     publicInstallCommandsAvailable: publication.published,
     installCta: publication.published ? (prerelease ? 'prerelease' : 'stable') : 'hidden',
     sourceEvaluationCta: 'enabled',
+    observedAt: publication.observedAt,
+    installableVersion: publication.installableVersion,
+    installableDistTag: publication.installableDistTag,
+    // Pre-rendered narrative from the shared renderer (scripts/release-status-lib.mjs), so
+    // apps/docs/src/components/ReleaseStatus.astro can display it directly without importing a
+    // repository script into the Astro build graph — it only ever reads this generated JSON.
+    statusText: renderStatusSentence(publication.releaseState),
     ownerGate: releaseConfig.ownerGate,
     changelogHref: releaseConfig.changelogHref,
     migrationHref: releaseConfig.migrationHref,

@@ -1,10 +1,11 @@
 # BeeUI package consumer compatibility report
 
 > **Status:** public release-candidate compatibility evidence.
-> **Snapshot:** 2026-09-24.
-> **Packages under test:** `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`; current published candidate `0.86.2-rc.3`.
+> **Packages under test:** `@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`; `@beemvp/beeui-cli` is published in the same lockstep release group and is verified separately by the release/CLI smoke gates.
 
-BeeUI `0.86.2-rc.3` is published under the npm `next` dist-tag. `@beemvp/beeui-cli` is published in the same lockstep release group and is verified separately by the release/CLI smoke gates.
+<!-- release-status:generated:start — written by `pnpm release-status:generate`; do not hand-edit between these markers. -->
+BeeUI `0.86.2-rc.3` is public on npm under the opt-in `next` dist-tag (observed 2026-09-25T06:25:18.371Z). `latest` currently resolves to `0.86.2-rc.3` and lags `next` until the owner moves it for all four packages.
+<!-- release-status:generated:end -->
 
 This report does not widen any promise beyond `docs/compatibility-matrix.md` and the peer ranges declared by `packages/ui/package.json`.
 
@@ -60,13 +61,11 @@ Registry publication is also a separate evidence class: a successful stage comma
 
 ## Machine-readable evidence contract
 
-Parsed by `scripts/check-distribution-policy.mjs`. Version pins must equal the compatibility-matrix snapshot; peer promises must equal `packages/ui/package.json`; clean-consumer script paths must exist; publication state must match `docs/dist-tag-policy.md`.
+Parsed by `scripts/check-distribution-policy.mjs`. Version pins must equal the compatibility-matrix snapshot; peer promises must equal `packages/ui/package.json`; clean-consumer script paths must exist. This block no longer authors a candidate version or a publication boolean — `packages/ui/package.json` is the single authored lockstep version and publication state is derived from `docs/registry-observation.json`; authoring `candidateVersion` or `published` here again is rejected with an actionable error.
 
 ```json consumer-compatibility
 {
-  "published": true,
   "packageSet": ["@beemvp/beeui-core", "@beemvp/beeui-tokens", "@beemvp/beeui-ui"],
-  "candidateVersion": "0.86.2-rc.3",
   "cleanConsumerScripts": [
     "scripts/verify-bare-consumer.sh",
     "scripts/verify-web-consumer.sh",

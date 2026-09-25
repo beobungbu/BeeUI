@@ -8,7 +8,7 @@ description: "44px icon-only action; an accessible label is required."
 44px icon-only action; an accessible label is required.
 
 :::note[Distribution status]
-BeeUI `0.86.2-rc.3` is public on npm under the opt-in `next` dist-tag. The live registry was last observed resolving `next` to `0.86.2-rc.3` and `latest` to `0.86.2-rc.3`; dist-tags are re-verified after every publish. During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages, and stable `0.86.2` moves it at stable promotion (see [Start](/docs/start/) for the full install commands). The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout.
+BeeUI `0.86.2-rc.3` is public on npm under the opt-in `next` dist-tag (observed 2026-09-25T06:25:18.371Z). `latest` currently resolves to `0.86.2-rc.3` and lags `next` until the owner moves it for all four packages. See [Start](/docs/start/) for the full install commands. The import shape below works against the published package; the repository-local Registry command remains available as a no-registry-required alternative from a BeeUI checkout. Pin `@0.86.2-rc.3` instead of `@next` for an immutable version in CI.
 :::
 
 ## Identity

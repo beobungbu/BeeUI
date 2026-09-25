@@ -1,6 +1,7 @@
 ---
 title: Theming
 description: Apply semantic color, brand, density and runtime theme contracts without coupling product code to the styling engine.
+releaseStatus: true
 ---
 
 BeeUI components consume **semantic tokens** such as background, surface, foreground,
@@ -100,8 +101,7 @@ This is the complete, five-line CSS contract used by the clean Expo/Web consumer
 `@source` lines are required, or Tailwind emits no BeeUI utility classes and the app renders
 unstyled with no error. `@source` paths are relative to wherever this CSS file lives in your
 project (adjust the leading `../` to `./` if the file sits at your project root rather than
-under `src/`). BeeUI `0.86.2-rc.3` is publicly published on npm under the opt-in `next`
-dist-tag; see [Start](/docs/start/) for the exact install and styling-entry setup per platform.
+under `src/`). See the release status above and [Start](/docs/start/) for the exact install and styling-entry setup per platform.
 
 ## Typography scale
 

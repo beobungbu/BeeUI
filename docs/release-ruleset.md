@@ -79,7 +79,7 @@ Operation-specific preflight guards require:
 
 - exact checkout of `GITHUB_SHA`;
 - registry mutations only from `refs/heads/main`;
-- operator-entered `expected_version` equal to the workspace root version;
+- operator-entered `expected_version` equal to the checked-out `packages/ui/package.json` version (the single authored lockstep version);
 - `bootstrap-rc` / `stage-rc`: version matches the prerelease pattern in [docs/dist-tag-policy.md](dist-tag-policy.md) and confirmation is `BEEUI_RC_RELEASE`;
 - `stage-stable`: version is exactly `0.86.2` and confirmation is `BEEUI_STABLE_STAGE`;
 - `verify-stable`: exact stable `0.86.2` on `main`;

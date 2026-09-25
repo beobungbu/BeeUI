@@ -24,6 +24,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { extractPublicationPolicy } from './check-public-doc-truth.mjs';
+import { renderStatusSentence } from './release-status-lib.mjs';
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -210,27 +211,28 @@ export function buildModel({ registry, barrelSource, packages, policy = DEFAULT_
 
 function packageLine(pkg, policy) {
   if (pkg.private) return `\`${pkg.name}\` v${pkg.version} — ${pkg.description} [unpublished (private: true)]`;
-  if (!policy.published) {
+  if (!policy.registryHasLiveChannel) {
     return `\`${pkg.name}\` v${pkg.version} — ${pkg.description} [unpublished (publishConfig.access=public prepared)]`;
   }
-  const { tag, publishedVersion, candidatePending } = publicationObservation(policy);
-  const candidate = candidatePending ? `; v${policy.currentVersion} is the unpublished source candidate` : '';
-  return `\`${pkg.name}\` v${pkg.version} — ${pkg.description} [public on npm under \`${tag}\` (last observed ${publishedVersion})${candidate}]`;
+  const { tag, publishedVersion } = publicationObservation(policy);
+  return `\`${pkg.name}\` v${pkg.version} — ${pkg.description} [public on npm under \`${tag}\` (last observed ${publishedVersion})]`;
 }
 
-// `currentVersion` is the source candidate; `observedDistTags` is the last recorded registry observation.
-// Between candidate preparation and the owner's publication they differ, and the generated surfaces must
-// never present the candidate as published (or as a dist-tag target) before the registry is observed.
+// `policy.installableVersion`/`policy.observedDistTags` come from the shared release-state
+// derivation (scripts/release-status-lib.mjs), fed by docs/registry-observation.json — never a
+// hand-authored duplicate. `publicationObservation` is only called once
+// `policy.registryHasLiveChannel` is true, i.e. `installableVersion` is set — true whenever the
+// registry resolves something right now, whether or not it is this exact workspace version (a
+// workspace ahead of the registry is `candidate-ahead-of-registry`, and `installableVersion` is
+// the registry's older complete line in that case).
 export function publicationObservation(policy) {
   const tag = policy.prereleaseDistTag ?? 'next';
   const observed = policy.observedDistTags ?? {};
-  const publishedVersion = observed[tag] ?? policy.currentVersion;
   return {
     tag,
-    publishedVersion,
+    publishedVersion: policy.installableVersion ?? policy.currentVersion,
     latestVersion: observed.latest,
     stableVersion: policy.candidateStableVersion ?? '0.86.2',
-    candidatePending: publishedVersion !== policy.currentVersion,
   };
 }
 
@@ -245,26 +247,24 @@ const UNPUBLISHED_NOTE =
   'user to `npm install @beemvp/beeui-ui` or `npx @beemvp/beeui-cli` yet — those resolve to nothing today. The working, ' +
   'in-repo path is the source-ownership CLI (`pnpm beeui add <component>`).';
 
-// Mirrors the wording `apps/docs/src/content/docs/start/index.md` already carries (WS-D1,
-// consumer-audit #543/#574) so the human site and the agent-facing llms.txt family state the
-// identical publication truth instead of drifting again the next time a dist-tag changes.
+// The narrative sentence comes from the shared renderer (scripts/release-status-lib.mjs), fed by
+// docs/registry-observation.json, so the human site (README, Starlight release-status component)
+// and this agent-facing llms.txt family state the identical publication truth instead of
+// independently hand-writing it and drifting the next time a dist-tag changes. This also means
+// llms.txt now correctly narrates the states the old two-branch (published/unpublished) version
+// could not represent: a workspace candidate ahead of the registry, a partial four-package
+// publication, or an inconsistent registry observation.
 export function buildStatusNote(policy, policyHref = 'docs/dist-tag-policy.md') {
-  if (!policy.published) return UNPUBLISHED_NOTE;
-  const { tag, publishedVersion, latestVersion, stableVersion, candidatePending } = publicationObservation(policy);
-  const observedTags = latestVersion
-    ? `resolving \`${tag}\` to \`${publishedVersion}\` and \`latest\` to \`${latestVersion}\``
-    : `resolving \`${tag}\` to \`${publishedVersion}\``;
-  const candidate = candidatePending
-    ? `This repository is at release candidate \`${policy.currentVersion}\`, which is not published until the owner approves its staged packages. `
-    : '';
+  if (policy.state === 'unpublished' || !policy.releaseState) return UNPUBLISHED_NOTE;
+  const sentence = renderStatusSentence(policy.releaseState);
+  if (!policy.registryHasLiveChannel) {
+    return `STATUS: ${sentence} See [docs/dist-tag-policy.md](${policyHref}) for the full release/dist-tag mechanics.`;
+  }
+  const { tag } = publicationObservation(policy);
   return (
-    `STATUS: BeeUI \`${publishedVersion}\` is public on npm under the opt-in \`${tag}\` dist-tag. The live registry was ` +
-    `last observed ${observedTags}; dist-tags are re-verified after every publish. ${candidate}` +
-    `During the \`${stableVersion}\` prerelease line \`latest\` follows the newest complete, verified RC only after the owner ` +
-    `moves it for all four packages, and stable \`${stableVersion}\` moves it at stable promotion. Every release-candidate ` +
-    `install should still use \`@${tag}\` or pin the exact version — do not recommend an unqualified, untagged install, since ` +
-    `\`latest\` lags \`${tag}\` between an RC publication and the owner's move. ` +
-    `\`npm install @beemvp/beeui-ui@${tag} @beemvp/beeui-core@${tag} @beemvp/beeui-tokens@${tag}\` and ` +
+    `STATUS: ${sentence} Every release-candidate install should still use \`@${tag}\` or pin the exact version — ` +
+    `do not recommend an unqualified, untagged install, since \`latest\` lags \`${tag}\` between an RC publication ` +
+    `and the owner's move. \`npm install @beemvp/beeui-ui@${tag} @beemvp/beeui-core@${tag} @beemvp/beeui-tokens@${tag}\` and ` +
     `\`npx @beemvp/beeui-cli@${tag} --help\` are live, working registry commands today. The source-ownership CLI ` +
     '(`pnpm beeui add <component>`) remains available from a repository checkout. See ' +
     `[docs/dist-tag-policy.md](${policyHref}) for the full release/dist-tag mechanics.`
@@ -274,11 +274,11 @@ export function buildStatusNote(policy, policyHref = 'docs/dist-tag-policy.md') 
 function buildIndex(model) {
   const { packages, policy } = model;
   const tag = policy.prereleaseDistTag ?? 'next';
-  const installHeading = policy.published ? `## Install (both models; centralized is live under \`@${tag}\`)` : '## Install (both models, targets are unpublished)';
-  const centralizedInstall = policy.published
-    ? `- Centralized (public RC, opt in with \`@${tag}\`): \`npm i @beemvp/beeui-ui@${tag} @beemvp/beeui-core@${tag} @beemvp/beeui-tokens@${tag}\`, then \`import { Button } from '@beemvp/beeui-ui'\` and wire the Web theme via \`@import '@beemvp/beeui-tokens/theme.css'\`. Pin \`@${policy.currentVersion}\` instead of \`@${tag}\` for an immutable version in CI. See [docs/decisions/011-distribution-architecture.md](docs/decisions/011-distribution-architecture.md).`
+  const installHeading = policy.registryHasLiveChannel ? `## Install (both models; centralized is live under \`@${tag}\`)` : '## Install (both models, targets are unpublished)';
+  const centralizedInstall = policy.registryHasLiveChannel
+    ? `- Centralized (public RC, opt in with \`@${tag}\`): \`npm i @beemvp/beeui-ui@${tag} @beemvp/beeui-core@${tag} @beemvp/beeui-tokens@${tag}\`, then \`import { Button } from '@beemvp/beeui-ui'\` and wire the Web theme via \`@import '@beemvp/beeui-tokens/theme.css'\`. Pin \`@${policy.installableVersion}\` instead of \`@${tag}\` for an immutable version in CI. See [docs/decisions/011-distribution-architecture.md](docs/decisions/011-distribution-architecture.md).`
     : `- Centralized (release-ready target, NOT yet on npm): \`npm i @beemvp/beeui-ui @beemvp/beeui-core @beemvp/beeui-tokens\`, then \`import { Button } from '@beemvp/beeui-ui'\` and wire the Web theme via \`@import '@beemvp/beeui-tokens/theme.css'\`. See [docs/decisions/011-distribution-architecture.md](docs/decisions/011-distribution-architecture.md).`;
-  const cliInstall = policy.published
+  const cliInstall = policy.registryHasLiveChannel
     ? `- Source ownership (works today, repo-local): \`pnpm beeui add <component>\` copies component source into the consumer and rewrites \`@beemvp/beeui-core\` imports. The published CLI is \`@beemvp/beeui-cli\` (binary \`beeui\`), invoked \`npx @beemvp/beeui-cli@${tag} add <component>\` — NOT \`npx beeui\`. See [docs/registry-cli.md](docs/registry-cli.md) and [docs/distribution-names.md](docs/distribution-names.md).`
     : `- Source ownership (works today, repo-local): \`pnpm beeui add <component>\` copies component source into the consumer and rewrites \`@beemvp/beeui-core\` imports. The published CLI target is \`@beemvp/beeui-cli\` (binary \`beeui\`), invoked \`npx @beemvp/beeui-cli add <component>\` once released — NOT \`npx beeui\`. See [docs/registry-cli.md](docs/registry-cli.md) and [docs/distribution-names.md](docs/distribution-names.md).`;
   return `# BeeUI
@@ -343,20 +343,20 @@ function buildFull(model) {
     ['010-select-presentation-1-0-decision', 'Select presentation scope for 1.0 (no Sheet mode / virtualization).'],
     [
       '011-distribution-architecture',
-      policy.published
+      policy.registryHasLiveChannel
         ? `Public distribution model: three scoped packages + source-ownership CLI, public on npm under \`${tag}\` (last observed at ${publicationObservation(policy).publishedVersion}).`
         : 'Public distribution model: three scoped packages + source-ownership CLI, prepared not published.',
     ],
   ];
 
-  const packagesHeading = policy.published ? `## Packages (public on npm under \`${tag}\`, one lockstep version)` : '## Packages (all unpublished / pre-1.0, one lockstep version)';
-  const packagesNote = policy.published
+  const packagesHeading = policy.registryHasLiveChannel ? `## Packages (public on npm under \`${tag}\`, one lockstep version)` : '## Packages (all unpublished / pre-1.0, one lockstep version)';
+  const packagesNote = policy.registryHasLiveChannel
     ? `\`@beemvp/beeui-core\`, \`@beemvp/beeui-tokens\`, and \`@beemvp/beeui-ui\` share one lockstep version and are released together (ADR-011 D6). All three are public on npm under the \`${tag}\` dist-tag (last observed at \`${publicationObservation(policy).publishedVersion}\`; during the prerelease line \`latest\` follows the newest complete, verified RC only after the owner moves it — see docs/dist-tag-policy.md); \`exports\` maps ship dual ESM+CJS with \`.d.ts\`, a \`react-native\` condition for Metro, \`browser\`/\`default\` for Web, and \`@beemvp/beeui-tokens/theme.css\` for the Web theme.`
     : '`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, and `@beemvp/beeui-ui` share one lockstep version and are released together (ADR-011 D6). Package manifests declare `publishConfig.access=public` + provenance but remain unpublished; `exports` maps ship dual ESM+CJS with `.d.ts`, a `react-native` condition for Metro, `browser`/`default` for Web, and `@beemvp/beeui-tokens/theme.css` for the Web theme.';
-  const centralizedModel = policy.published
-    ? `1. Centralized packages (public RC, opt in with \`@${tag}\`): \`npm i @beemvp/beeui-ui@${tag}\` pulls \`@beemvp/beeui-core\` + \`@beemvp/beeui-tokens\`; import components from \`@beemvp/beeui-ui\`; wire Web theme with \`@import '@beemvp/beeui-tokens/theme.css'\`. Pin \`@${policy.currentVersion}\` for an immutable version in CI.`
+  const centralizedModel = policy.registryHasLiveChannel
+    ? `1. Centralized packages (public RC, opt in with \`@${tag}\`): \`npm i @beemvp/beeui-ui@${tag}\` pulls \`@beemvp/beeui-core\` + \`@beemvp/beeui-tokens\`; import components from \`@beemvp/beeui-ui\`; wire Web theme with \`@import '@beemvp/beeui-tokens/theme.css'\`. Pin \`@${policy.installableVersion}\` for an immutable version in CI.`
     : "1. Centralized packages (release-ready target, NOT on npm): `npm i @beemvp/beeui-ui` pulls `@beemvp/beeui-core` + `@beemvp/beeui-tokens`; import components from `@beemvp/beeui-ui`; wire Web theme with `@import '@beemvp/beeui-tokens/theme.css'`.";
-  const sourceOwnershipModel = policy.published
+  const sourceOwnershipModel = policy.registryHasLiveChannel
     ? `2. Source ownership (works today, repo-local): \`pnpm beeui add <component>\` copies component source in-tree and rewrites \`@beemvp/beeui-core\` imports via \`rewrite-beeui-core-cn\` / \`rewrite-beeui-core-module\`. Run \`pnpm beeui list\` for the canonical component list (generated from registry/registry.json). Published CLI: \`@beemvp/beeui-cli\` (binary \`beeui\`), \`npx @beemvp/beeui-cli@${tag} add <component>\` — never \`npx beeui\` (the unscoped name is an npm tombstone; see [docs/distribution-names.md](docs/distribution-names.md)).`
     : '2. Source ownership (works today, repo-local): `pnpm beeui add <component>` copies component source in-tree and rewrites `@beemvp/beeui-core` imports via `rewrite-beeui-core-cn` / `rewrite-beeui-core-module`. Run `pnpm beeui list` for the canonical component list (generated from registry/registry.json). Future published CLI: `@beemvp/beeui-cli` (binary `beeui`), `npx @beemvp/beeui-cli add <component>` — never `npx beeui` (the unscoped name is an npm tombstone; see [docs/distribution-names.md](docs/distribution-names.md)).';
 

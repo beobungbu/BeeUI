@@ -4,19 +4,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { readPublicationState } from './public-site-contract-lib.mjs';
+import { LOCKSTEP_MANIFEST_TO_PACKAGE_NAME, readPublicationState } from './public-site-contract-lib.mjs';
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-// The version a release is checked against is the one a human pinned in `docs/dist-tag-policy.md`
-// (`currentVersion` in its `json dist-tag-policy` block), not the manifests. Reading it from the
-// root manifest made every comparison against the root a tautology — `pack-artifacts` and
-// `verify-release` compare the root to this constant — and let `changeset version` move the
-// packages with nothing left to disagree. The pin is what a bump has to update on purpose.
+// `packages/ui/package.json` is the single authored lockstep version (single source of workspace
+// version truth). `readPublicationState` derives it from that manifest, so every other lockstep
+// manifest, the root manifest, and the npm-release workflow's dispatch value are checked against
+// this one authored source instead of a second hand-typed pin.
 export function readPinnedVersion(rootDir = ROOT_DIR) {
   return readPublicationState(rootDir).currentVersion;
 }
-// The same pin carries the pattern a candidate version must match. The npm workflow's shell guard
-// is required to be this exact string, so the two cannot drift apart.
+// The pattern a candidate version must match, derived from the policy's stable-line
+// `candidateStableVersion`. The npm workflow's shell guard is required to be this exact string,
+// so the two cannot drift apart.
 export function readPinnedPrereleasePattern(rootDir = ROOT_DIR) {
   return readPublicationState(rootDir).prereleaseVersionPattern;
 }
@@ -24,15 +24,14 @@ export const EXPECTED_VERSION = (() => {
   try {
     return readPinnedVersion(ROOT_DIR);
   } catch (error) {
-    throw new Error(`docs/dist-tag-policy.md must carry a \`json dist-tag-policy\` block with currentVersion; the release checks compare every manifest to it (${error.message}).`);
+    throw new Error(`packages/ui/package.json must carry a "version"; the release checks compare every manifest to it (${error.message}).`);
   }
 })();
-export const EXPECTED_PACKAGE_NAMES = new Map([
-  ['packages/core/package.json', '@beemvp/beeui-core'],
-  ['packages/tokens/package.json', '@beemvp/beeui-tokens'],
-  ['packages/ui/package.json', '@beemvp/beeui-ui'],
-  ['packages/cli/package.json', '@beemvp/beeui-cli'],
-]);
+// Re-exported from the shared library, which is the single authored source of the four-package
+// lockstep group (also consumed by scripts/registry-observe.mjs and release-status-lib.mjs
+// callers). Kept as a named export here for the scripts/release-flow tooling that already imports
+// EXPECTED_PACKAGE_NAMES from this module.
+export const EXPECTED_PACKAGE_NAMES = LOCKSTEP_MANIFEST_TO_PACKAGE_NAME;
 
 const OPERATIONAL_RELEASE_FILES = [
   'docs/release.md',
@@ -51,12 +50,16 @@ function stableBase(version) {
   return version.replace(/-rc\.(0|[1-9][0-9]*)$/, '');
 }
 
-// The npm transport carries the release version twice — the `expected_version` dispatch default
-// and the shell guard that decides whether a version may mutate the registry — and nothing else
-// compares either to the pin. The scan below reads `.github/workflows` only for the legacy
-// package scope, so a bump could move `docs/dist-tag-policy.md` and every manifest while the
-// workflow kept offering a superseded default and guarding a superseded release line, with all
-// release checks green.
+// The npm transport carries the release version in two places — the `expected_version` dispatch
+// input and the shell guard that decides whether a version may mutate the registry — and nothing
+// else compares either to the pin. The scan below reads `.github/workflows` only for the legacy
+// package scope, so a bump could move `packages/ui/package.json` while the workflow kept guarding
+// a superseded release line, with all release checks green.
+//
+// `expected_version` deliberately carries no default: a hard-coded default is exactly the second
+// hand-typed pin this module exists to remove (a version bump would leave it stale until someone
+// remembered to edit the workflow by hand). The preflight job instead asserts the dispatched value
+// equals the checked-out `packages/ui/package.json`, so every run must type the exact candidate.
 //
 // The guard is required to be the pin's own `prereleaseVersionPattern`, verbatim. Sampling a few
 // versions cannot characterise a regex: an anchored superset such as `^0\.86\.2-rc\.[0-9]+$`
@@ -73,13 +76,15 @@ export function collectNpmReleaseWorkflowViolations(workflow, pinnedVersion, pin
   } else {
     const body = [];
     for (let i = inputIndex + 1; i < lines.length && /^ {7,}\S/.test(lines[i]); i += 1) body.push(lines[i]);
-    const declared = /^ {8}default:\s*(\S+)\s*$/m.exec(body.join('\n'))?.[1];
-    if (declared === undefined) {
-      violations.push(`${NPM_RELEASE_WORKFLOW}: "expected_version" has no default to check against the pin.`);
-    } else if (declared !== pinnedVersion) {
+    const bodyText = body.join('\n');
+    if (/^ {8}default:/m.test(bodyText)) {
       violations.push(
-        `${NPM_RELEASE_WORKFLOW}: "expected_version" default ${declared} must equal the pinned version ${pinnedVersion} from docs/dist-tag-policy.md.`,
+        `${NPM_RELEASE_WORKFLOW}: "expected_version" must not declare a default; a hard-coded default recreates the duplicate ` +
+          `version pin this module removes. Every dispatch must type the exact candidate version explicitly.`,
       );
+    }
+    if (!/^ {8}required:\s*true\s*$/m.test(bodyText)) {
+      violations.push(`${NPM_RELEASE_WORKFLOW}: "expected_version" must be "required: true" now that it has no default.`);
     }
   }
 
@@ -146,24 +151,19 @@ export function collectReleaseControlPlaneViolations(rootDir = ROOT_DIR) {
   // Read from the tree under `rootDir`, not at module load, so a temporary root is checked
   // against its own pin rather than this repository's.
   const expected = readPinnedVersion(rootDir);
-  const seen = new Map();
-  if (rootManifest.version !== expected) violations.push(`package.json: expected version ${expected}, found ${rootManifest.version}`);
+  // `changeset version` bumps the workspace members together (they are a `fixed` group,
+  // `packages/ui/package.json` included), so a mid-bump repository never has the pin disagree
+  // with every lockstep package at once — the pin *is* one of them. What it cannot reach is the
+  // private root and the Worker/Expo followers, so that is the shape a bump leaves behind and the
+  // only lagging-manifest case worth a dedicated remediation hint.
+  if (rootManifest.version !== expected) {
+    violations.push(`package.json: expected version ${expected}, found ${rootManifest.version}; run \`pnpm version:sync\` after bumping packages/ui/package.json.`);
+  }
 
   for (const [relative, expectedName] of EXPECTED_PACKAGE_NAMES) {
     const manifest = JSON.parse(fs.readFileSync(path.join(rootDir, relative), 'utf8'));
     if (manifest.name !== expectedName) violations.push(`${relative}: expected name ${expectedName}, found ${manifest.name}`);
-    seen.set(relative, manifest.version);
     if (manifest.version !== expected) violations.push(`${relative}: expected version ${expected}, found ${manifest.version}`);
-  }
-
-  // `changeset version` bumps the workspace members and cannot reach the private root, so
-  // "every package agrees and the root lags" is the shape a bump leaves behind. Name the command.
-  const packageVersions = new Set(seen.values());
-  if (packageVersions.size === 1 && !packageVersions.has(expected)) {
-    violations.push(
-      `packages are at ${[...packageVersions][0]} while docs/dist-tag-policy.md pins ${expected}: if that bump is intended, ` +
-        'set `currentVersion` (and the prerelease pattern) there, then run `pnpm version:sync` for the root, Worker and Expo identities.',
-    );
   }
 
   const npmReleaseWorkflow = path.join(rootDir, NPM_RELEASE_WORKFLOW);

@@ -1,0 +1,106 @@
+name: registry-observe
+
+# Refreshes the committed registry observation (docs/registry-observation.json) — the only
+# workflow that reaches the npm registry, and it is strictly read-only (`npm view`; never
+# `npm publish`/`npm dist-tag`, no npm token/secret). `workflow_dispatch` is the primary refresh
+# path, run explicitly by the owner right after a publish/`latest` move (see
+# docs/npm-release-bootstrap.md's post-publish steps). The daily schedule is a drift-detection
+# backstop only, in case a manual dispatch is missed — it is not the release step.
+#
+# When the observation changed, this workflow opens or updates a PR into `development` with the
+# refreshed snapshot and the regenerated release-status blocks (`pnpm release-status:generate`).
+# It never merges that PR itself. Using the default `GITHUB_TOKEN` here is a known limitation:
+# a bot-created PR has not been proven to trigger this repository's required PR checks unattended.
+# Treat the PR as owner-reviewed, not auto-mergeable, until that is proven or a GitHub App token
+# replaces this token path.
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '17 4 * * *' # daily, low-frequency backstop — see comment above
+
+concurrency:
+  group: registry-observe
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 24.13.1
+  PNPM_VERSION: 10.15.0
+  BRANCH_NAME: automation/registry-observation
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Read-only registry query needs no npm credential; only the PR-update step below needs
+    # write access, and only to contents/pull-requests, never id-token/environments.
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout development
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+        with:
+          ref: development
+          persist-credentials: true
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pinned pnpm
+        run: |
+          npm install -g corepack@0.33.0
+          corepack enable
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
+          test "$(node --version)" = "v${NODE_VERSION}"
+          test "$(pnpm --version)" = "${PNPM_VERSION}"
+          pnpm config set store-dir "$HOME/.pnpm-store"
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      # Read-only: `npm view` only. No npm token/secret is configured anywhere in this job.
+      - name: Observe the npm registry
+        run: pnpm registry:observe
+
+      - name: Regenerate release-status blocks from the fresh observation
+        run: pnpm release-status:generate
+
+      - name: Check for a real change
+        id: diff
+        run: |
+          if git diff --quiet -- docs/registry-observation.json README.md docs/dist-tag-policy.md docs/consumer-compatibility-report.md; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open or update the observation PR
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore(registry): refresh the committed registry observation'
+          branch: ${{ env.BRANCH_NAME }}
+          base: development
+          delete-branch: true
+          title: 'chore(registry): refresh the committed registry observation'
+          body: |
+            Automated refresh of `docs/registry-observation.json` from `pnpm registry:observe`,
+            with the generated release-status blocks (`pnpm release-status:generate`) updated to
+            match.
+
+            This PR was opened by the `registry-observe` workflow. It never mutates the npm
+            registry — the query is read-only. Review the diff before merging; this repository's
+            required PR checks have not been proven to run unattended against a bot-authored PR.
+          add-paths: |
+            docs/registry-observation.json
+            README.md
+            docs/dist-tag-policy.md
+            docs/consumer-compatibility-report.md

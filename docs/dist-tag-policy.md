@@ -2,16 +2,13 @@
 
 This document is the machine-checked authority for BeeUI npm versioning, staging and dist-tag behavior.
 
-## Current public state — observed 2026-09-24T09:27:49Z
+## Current public state
 
-`0.86.2-rc.3` is published for all four lockstep packages, and the owner has moved `latest` to it under the prerelease-line rule below. A read-only registry observation by the release controller at 2026-09-24T09:27:49Z (registry cache bypassed) verified:
+<!-- release-status:generated:start — written by `pnpm release-status:generate`; do not hand-edit between these markers. -->
+BeeUI `0.86.2-rc.3` is public on npm under the opt-in `next` dist-tag (observed 2026-09-25T06:25:18.371Z). `latest` currently resolves to `0.86.2-rc.3` and lags `next` until the owner moves it for all four packages.
+<!-- release-status:generated:end -->
 
-- `next` → `0.86.2-rc.3` for all four packages;
-- `latest` → `0.86.2-rc.3` for all four packages;
-- an untagged `npm install @beemvp/beeui-ui @beemvp/beeui-core @beemvp/beeui-tokens` resolves `0.86.2-rc.3`, and `npx @beemvp/beeui-cli version` prints `0.86.2-rc.3`;
-- each `0.86.2-rc.3` package exposes non-empty registry integrity/shasum metadata, sigstore provenance and the BeeUI repository URL.
-
-The intermediate observation at 2026-09-24T09:02:17Z (after publication, before the owner's move) recorded `latest` → `0.86.2-rc.1`; it is retained in `docs/rc-candidate.md`. The tag state is observed evidence, not an inference from the publish command or the owner's intent. Consumer documentation still uses `@next` or an exact RC version, because `latest` lags `next` after every future RC publication until the owner moves it. Stable `0.86.2` has not been published.
+The tag state above is observed registry evidence (`docs/registry-observation.json`, refreshed by `pnpm registry:observe`), not an inference from the publish command or the owner's intent. Full per-package integrity/shasum evidence and the history of prior observations (including the intermediate 2026-09-24T09:02:17Z observation before the owner's `latest` move) are retained in `docs/rc-candidate.md`. Consumer documentation still uses `@next` or an exact RC version, because `latest` lags `next` after every future RC publication until the owner moves it.
 
 BeeUI 1.0 is the product milestone name. The stable npm package line is **`0.86.2`** per ADR-015.
 
@@ -83,12 +80,14 @@ GitHub Environment approval and npm staged-package approval are distinct gates. 
 
 ## Persistent dist-tags
 
-BeeUI uses exactly two persistent public dist-tags:
+BeeUI uses exactly two persistent public dist-tags. The current observed target of each is stated
+in ["Current public state"](#current-public-state) above and in `docs/registry-observation.json`;
+this table records their durable meaning, not a point-in-time value:
 
-| Tag | Current observed target | Meaning |
-| --- | --- | --- |
-| `latest` | `0.86.2-rc.3` | default-install channel; during the `0.86.2` prerelease line it follows the newest complete, verified RC once the owner moves it; at stable promotion it moves to `0.86.2` |
-| `next` | `0.86.2-rc.3` | opt-in release-candidate channel; tracks the newest published RC |
+| Tag | Meaning |
+| --- | --- |
+| `latest` | default-install channel; during the `0.86.2` prerelease line it follows the newest complete, verified RC once the owner moves it; at stable promotion it moves to `0.86.2` |
+| `next` | opt-in release-candidate channel; tracks the newest published RC |
 
 When stable `0.86.2` is ready, it is staged under the safe non-default path, verified as a complete four-package set, and only then is `latest` moved to `0.86.2` in one coordinated owner-controlled operation.
 
@@ -106,7 +105,7 @@ Owner decision recorded 2026-09-24 (issue #561): until stable `0.86.2` is promot
   npm dist-tag add @beemvp/beeui-cli@<version> latest
   ```
 
-- The owner then observes the four `latest` tags and records the observation here (`observedDistTags` and the persistent dist-tag table) and in `docs/rc-candidate.md`. Until that observation is recorded, documentation states the last recorded observation, not the intended target.
+- The owner then runs `pnpm registry:observe` to record the four `latest` tags in `docs/registry-observation.json` (which regenerates the "Current public state" block above via `pnpm release-status:generate`) and in `docs/rc-candidate.md`. Until that observation is recorded, documentation states the last recorded observation, not the intended target.
 - `latest` never points at a partial set. If only some of the four moves succeed, the owner completes or reverts the remaining moves in the same session so all four `latest` tags agree.
 - The `npm-release` workflow never mutates dist-tags; the `latest` move is an owner proof-of-presence operation for RCs exactly as for stable (`docs/npm-release-bootstrap.md`).
 - Stable `0.86.2` still moves `latest` to `0.86.2` at stable promotion, after which `latest` only ever points at a stable version.
@@ -131,10 +130,10 @@ For a later `0.86.2-rc.N`:
 3. run `stage-rc` on that exact `main` workflow SHA;
 4. GitHub Actions stages the canonical package set sequentially using Trusted Publishing/OIDC and provenance under `next`;
 5. the owner approves the staged npm packages;
-6. observe the real registry state and record version, integrity, shasum, unpacked size, repository metadata and dist-tags;
+6. dispatch the `registry-observe` workflow (or run `pnpm registry:observe` locally) to observe the real registry state — version, integrity, shasum, unpacked size, repository metadata and dist-tags — into `docs/registry-observation.json`, and merge the PR it opens into `development`;
 7. verify clean public consumption;
 8. once the complete four-package set is published and verified, the owner moves `latest` for all four packages to that RC in one operation (`npm dist-tag add @beemvp/beeui-<pkg>@<version> latest` ×4, npm 2FA);
-9. observe the four `latest` tags and record them in this policy and `docs/rc-candidate.md`.
+9. dispatch `registry-observe` again (or run `pnpm registry:observe` locally) to observe the four `latest` tags, merge the resulting PR, and separately record them in `docs/rc-candidate.md`.
 
 Do not infer publication merely because the stage workflow succeeded, and do not infer the `latest` move from the owner's intent: record it only after observing it.
 
@@ -146,7 +145,8 @@ Stable publication deliberately separates upload from default-channel promotion:
 2. stage the full stable release group under the safe non-default channel;
 3. approve and verify all four real registry packages and clean-consumer behavior;
 4. only then move `latest` for all four packages to `0.86.2` in one owner-controlled operation;
-5. verify all `latest` tags resolve to the same stable version.
+5. verify all `latest` tags resolve to the same stable version;
+6. dispatch the `registry-observe` workflow (or run `pnpm registry:observe` locally) to record the stable observation in `docs/registry-observation.json` and merge the PR it opens into `development`.
 
 ## Failure handling
 
@@ -178,23 +178,25 @@ Registry integrity identifies published bytes. It does **not** by itself prove w
 
 ## Machine-readable policy contract
 
-The block below is parsed by the release/public-doc control plane. `currentVersion` remains the current-line pin until Phase 01 replaces duplicate authored version authorities with the package manifest authority.
+The block below is parsed by the release/public-doc control plane. It carries policy only —
+dist-tag names, the stable release line, lockstep package names and the release environment.
+The current lockstep version and the derived prerelease pattern are not authored here:
+`packages/ui/package.json` is the single authored current version (see "Package set and
+lockstep versioning" above), and the prerelease pattern is derived from `candidateStableVersion`.
+Publication state and observed dist-tags are not authored here either: `docs/registry-observation.json`
+(written only by `pnpm registry:observe`, never hand-edited) is the single committed registry
+observation, and `scripts/release-status-lib.mjs` derives `published`/the release state from it plus
+the workspace version. Authoring `currentVersion`, `prereleaseExample`, `prereleaseVersionPattern`,
+`published` or `observedDistTags` in this block is rejected with an actionable error, so a stale
+duplicate pin cannot silently reappear.
 
 ```json dist-tag-policy
 {
-  "published": true,
-  "currentVersion": "0.86.2-rc.3",
   "candidateStableVersion": "0.86.2",
-  "prereleaseVersionPattern": "^0\\.86\\.2-rc\\.(0|[1-9][0-9]*)$",
-  "prereleaseExample": "0.86.2-rc.3",
   "distTags": ["latest", "next"],
   "prereleaseDistTag": "next",
   "stableDistTag": "latest",
   "stablePromotionTag": "latest",
-  "observedDistTags": {
-    "latest": "0.86.2-rc.3",
-    "next": "0.86.2-rc.3"
-  },
   "lockstepPackages": ["@beemvp/beeui-core", "@beemvp/beeui-tokens", "@beemvp/beeui-ui"],
   "releaseEnvironment": "release"
 }
