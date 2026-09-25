@@ -20,17 +20,14 @@ A publishable RC must be a fresh lockstep `0.86.2-rc.N` version on an exact inte
 
 When intentionally moving the source tree to an RC version:
 
-1. update all four package manifests (`packages/core`, `packages/tokens`, `packages/ui`, `packages/cli`) to the same `0.86.2-rc.N`;
-2. run `pnpm version:sync` so `package.json`, `web/worker/package.json`, `apps/demo/app.json` and `apps/showcase/app.json` follow;
-3. update `currentVersion` in the `json dist-tag-policy` block while leaving `candidateStableVersion` at `0.86.2`;
-4. set `.github/workflows/npm-release.yml`'s `expected_version` default to the same RC version;
-5. update `candidateVersion` in `docs/consumer-compatibility-report.md`;
-6. regenerate checked generated docs/LLM surfaces required by the repository;
-7. run the release-control, distribution-policy, public-truth, Web and release-verification gates before dispatch.
+1. run `pnpm release:prepare <version>` — it validates the version against the `candidateStableVersion` release line, sets `packages/ui/package.json` (the single authored lockstep version), runs `pnpm version:sync` so `package.json`, `web/worker/package.json`, `apps/demo/app.json` and `apps/showcase/app.json` follow, regenerates every canonical generated surface, and reports any hand-maintained prose that still names the previous version;
+2. hand-edit the reported hand-maintained prose (`pnpm release:prepare` never edits prose silently);
+3. type the same version explicitly into `.github/workflows/npm-release.yml`'s `expected_version` dispatch input when running the workflow (it has no default, by design — see `docs/dist-tag-policy.md`);
+4. run the release-control, distribution-policy, public-truth, Web and release-verification gates before dispatch.
 
 A local `pnpm release:verify` is a smoke check. The authoritative artifact digests are the ones produced by the `npm-release` preflight on the exact `main` workflow SHA. Record those in `docs/rc-candidate.md` after the run. Local and CI tarball bytes differ across build platforms, so the candidate-to-release check compares build inputs instead: the candidate SHA → `main` SHA diff must be documentation-only (`docs/release.md`, "Artifact digest authority").
 
-The active prerelease regex remains `^0\.86\.2-rc\.(0|[1-9][0-9]*)$`.
+The active prerelease regex is derived from `candidateStableVersion` (`docs/dist-tag-policy.md`) and is currently `^0\.86\.2-rc\.(0|[1-9][0-9]*)$`.
 
 ## First-ever RC bootstrap
 
@@ -111,7 +108,7 @@ Registry-mutating workflow operations require:
 
 - `refs/heads/main`;
 - exact workflow SHA checkout;
-- user-entered `expected_version` equals the workspace root version;
+- user-entered `expected_version` equals the checked-out `packages/ui/package.json` version (the single authored lockstep version);
 - the correct version shape (`0.86.2-rc.N` for RC operations, exactly `0.86.2` for stable staging);
 - explicit confirmation (`BEEUI_RC_RELEASE` or `BEEUI_STABLE_STAGE`);
 - `pnpm release-control-plane:check`;

@@ -15,9 +15,8 @@ on:
           - stage-stable
           - verify-stable
       expected_version:
-        description: Exact lockstep package version expected at this workflow SHA
+        description: Exact lockstep package version expected at this workflow SHA (no default; must be typed explicitly every run)
         required: true
-        default: 0.86.2-rc.3
         type: string
       confirmation:
         description: Registry mutation confirmation (`BEEUI_RC_RELEASE` or `BEEUI_STABLE_STAGE`)
@@ -79,7 +78,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
-          version="$(node -p "require('./package.json').version")"
+          version="$(node -p "require('./packages/ui/package.json').version")"
           test "$version" = "$EXPECTED_VERSION_INPUT"
 
           case "$OPERATION" in

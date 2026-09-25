@@ -38,16 +38,16 @@
     "./lifecycle.json"
   ],
   "acknowledgedSourceBlobs": {
-    "packages/ui/package.json": "f03fa198c154b03711c700b6d4f8b728edb26c66",
+    "packages/ui/package.json": "ff44a1ba8e922f80e960a5a89d4e5c560146c48d",
     "packages/ui/src/index.ts": "8e87b1d55ceaa3afa7e4c8a3a97210f0d3124b65",
-    "packages/tokens/package.json": "ab63407df384b1f5040f585674ef1de799747792",
+    "packages/tokens/package.json": "2d5ec92fce0341ec511d0c517309c74abcee06cc",
     "packages/tokens/tokens.json": "97eab70437a93bca1904059b385dd125499fe09e",
     "packages/tokens/src/index.ts": "a809c960477ccf23718048afd458b0e86ba19356",
     "packages/tokens/src/registry.ts": "493d3fdbf060764d1ed2c8cf8844c7e8cc491466",
     "packages/tokens/src/theme-overrides.ts": "0df9d73600a65d9c22f7a2dcf17569bd0dd284a5",
     "packages/tokens/src/token-reader.ts": "eb66ebf91b39f518e0c299fca4fe0ea1d48ec555",
     "packages/tokens/src/motion-runtime.ts": "a18a48ab526602dea2250dd58f03d527124e51d9",
-    "packages/core/package.json": "08412e2d291679890d431d46e42d1b027ea70b3f",
+    "packages/core/package.json": "256589688708e3c8031572eb165e0bba4535efcd",
     "packages/core/src/index.ts": "8bc4dd7cd94583aa191188c52dc6c4ba883ca56a",
     "packages/cli/src/beeui.mjs": "b3d6eccecb6c5ec814b90bcf29083d2e55c0f796",
     "registry/registry.json": "d23d70bf7f94faa3f23dcc5b857036a291f03dd0"

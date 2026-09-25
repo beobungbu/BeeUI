@@ -4,7 +4,7 @@ Typed React Native + Web components built on `@beemvp/beeui-core` and `@beemvp/b
 
 ## Distribution state
 
-**Release candidate:** this README ships with `@beemvp/beeui-ui@0.86.2-rc.3`. BeeUI release candidates are published under the explicit `@next` channel; during RC use it (or pin the exact version):
+**Release candidate:** this package currently ships as a release candidate. BeeUI release candidates are published under the explicit `@next` channel; during RC use it (or pin an exact version — see [CHANGELOG.md](https://github.com/beobungbu/BeeUI/blob/main/CHANGELOG.md) for the current candidate):
 
 ```bash
 npm install @beemvp/beeui-ui@next

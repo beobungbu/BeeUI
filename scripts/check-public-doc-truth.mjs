@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { assertNoLegacyPolicyFields, derivePrereleasePattern, readCurrentVersion } from './public-site-contract-lib.mjs';
+
 export const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const PUBLIC_ROOTS = [
@@ -45,16 +47,27 @@ function isPrerelease(version) {
 }
 
 export function extractPublicationPolicy(rootDir = ROOT_DIR) {
+  const fallback = { published: false, currentVersion: undefined, prereleaseDistTag: 'next' };
   const file = path.join(rootDir, 'docs', 'dist-tag-policy.md');
-  if (!fs.existsSync(file)) return { published: false, currentVersion: undefined, prereleaseDistTag: 'next' };
+  if (!fs.existsSync(file)) return fallback;
   const markdown = fs.readFileSync(file, 'utf8');
   const match = /```json dist-tag-policy\n([\s\S]*?)\n```/u.exec(markdown);
-  if (!match) return { published: false, currentVersion: undefined, prereleaseDistTag: 'next' };
+  if (!match) return fallback;
+  let policy;
   try {
-    return JSON.parse(match[1]);
+    policy = JSON.parse(match[1]);
   } catch {
-    return { published: false, currentVersion: undefined, prereleaseDistTag: 'next' };
+    return fallback;
   }
+  // An unreadable/malformed policy fails closed into the unpublished fallback above, but an
+  // authored legacy field is well-formed JSON describing a stale duplicate pin — that is an
+  // actionable authoring mistake, not a read failure, so it throws instead of being swallowed.
+  assertNoLegacyPolicyFields(policy);
+  return {
+    ...policy,
+    currentVersion: readCurrentVersion(rootDir),
+    prereleaseVersionPattern: derivePrereleasePattern(policy.candidateStableVersion),
+  };
 }
 
 function registrySpecChannel(spec) {
@@ -158,7 +171,9 @@ export function collectPublicTruthViolations(rootDir = ROOT_DIR) {
 
   if (workspaceVersion) {
     if (policy.currentVersion && policy.currentVersion !== workspaceVersion) {
-      violations.push(`docs/dist-tag-policy.md: currentVersion ${policy.currentVersion} must equal workspace version ${workspaceVersion}.`);
+      violations.push(
+        `packages/ui/package.json: version ${policy.currentVersion} (the derived current version) must equal the root package.json version ${workspaceVersion}; run \`pnpm version:sync\`.`,
+      );
     }
     const stableVersion = stableBase(workspaceVersion);
     const readme = path.join(rootDir, 'README.md');

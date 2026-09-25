@@ -60,13 +60,12 @@ Registry publication is also a separate evidence class: a successful stage comma
 
 ## Machine-readable evidence contract
 
-Parsed by `scripts/check-distribution-policy.mjs`. Version pins must equal the compatibility-matrix snapshot; peer promises must equal `packages/ui/package.json`; clean-consumer script paths must exist; publication state must match `docs/dist-tag-policy.md`.
+Parsed by `scripts/check-distribution-policy.mjs`. Version pins must equal the compatibility-matrix snapshot; peer promises must equal `packages/ui/package.json`; clean-consumer script paths must exist; publication state must match `docs/dist-tag-policy.md`. This block no longer authors a candidate version — `packages/ui/package.json` is the single authored lockstep version; authoring `candidateVersion` here again is rejected with an actionable error.
 
 ```json consumer-compatibility
 {
   "published": true,
   "packageSet": ["@beemvp/beeui-core", "@beemvp/beeui-tokens", "@beemvp/beeui-ui"],
-  "candidateVersion": "0.86.2-rc.3",
   "cleanConsumerScripts": [
     "scripts/verify-bare-consumer.sh",
     "scripts/verify-web-consumer.sh",

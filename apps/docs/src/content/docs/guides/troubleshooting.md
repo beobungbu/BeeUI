@@ -506,7 +506,7 @@ Related usage errors: `'add --all' does not accept explicit item names`,
   unqualified install, unless the same line explicitly negates the command (for example,
   "do not install unqualified").
 - **Fix:** pin every registry-install/CLI example to `@next` or the exact
-  `0.86.2-rc.3` (the policy's `currentVersion`), matching [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
+  `0.86.2-rc.3` (the lockstep version authored in `packages/ui/package.json`), matching [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
   For an example that intentionally documents a repository-local path instead (workspace
   commands, starter scripts, `pnpm beeui ...`), say so explicitly on the same line.
 - **Verify:** `node ./scripts/check-public-doc-truth.mjs` and

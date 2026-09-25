@@ -47,10 +47,7 @@ const MATRIX_SNAPSHOT = {
 
 const GOOD_POLICY = {
   published: true,
-  currentVersion: '0.86.2-rc.1',
   candidateStableVersion: '0.86.2',
-  prereleaseVersionPattern: '^0\\.86\\.2-rc\\.(0|[1-9][0-9]*)$',
-  prereleaseExample: '0.86.2-rc.1',
   distTags: ['latest', 'next'],
   prereleaseDistTag: 'next',
   stableDistTag: 'latest',
@@ -62,7 +59,6 @@ const GOOD_POLICY = {
 const GOOD_REPORT = {
   published: true,
   packageSet: ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui'],
-  candidateVersion: '0.86.2-rc.1',
   cleanConsumerScripts: [
     'scripts/verify-bare-consumer.sh',
     'scripts/verify-web-consumer.sh',
@@ -108,17 +104,32 @@ test('published must be boolean', () => {
   assert.ok(policyViolations({ published: 'yes' }).some((v) => /published.*boolean/.test(v)));
 });
 
-test('currentVersion must equal library package boundary version', () => {
-  assert.ok(policyViolations({ currentVersion: '0.86.2-rc.2' }).some((v) => /currentVersion/.test(v)));
+test('lockstep package version must agree across manifests', () => {
+  assert.ok(policyViolations({}, { ...PACKAGE_VERSIONS, '@beemvp/beeui-ui': '0.86.2-rc.2' }).some((v) => /lockstep packages are not on one version/.test(v)));
 });
 
-test('stable candidate must equal prerelease stable base', () => {
+test('stable candidate must equal the stable base of the lockstep package version', () => {
   assert.ok(policyViolations({ candidateStableVersion: '1.0.0' }).some((v) => /candidateStableVersion/.test(v)));
 });
 
-test('prerelease pattern rejects stable and describes current RC', () => {
-  assert.ok(policyViolations({ prereleaseVersionPattern: '^0\\.86\\.2(-rc\\.[0-9]+)?$' }).some((v) => /must NOT match/.test(v)));
-  assert.ok(policyViolations({ prereleaseVersionPattern: '^0\\.86\\.2-rc\\.[2-9]$', prereleaseExample: '0.86.2-rc.2' }).some((v) => /currentVersion/.test(v)));
+test('authoring a legacy version field is rejected with an actionable error', () => {
+  for (const legacyOverride of [
+    { currentVersion: '0.86.2-rc.1' },
+    { prereleaseExample: '0.86.2-rc.1' },
+    { prereleaseVersionPattern: '^0\\.86\\.2-rc\\.(0|[1-9][0-9]*)$' },
+  ]) {
+    const violations = policyViolations(legacyOverride);
+    assert.ok(violations.some((v) => /must not author/.test(v)), JSON.stringify(legacyOverride));
+  }
+});
+
+test('a lockstep version off the pinned stable line fails the derived prerelease pattern', () => {
+  const violations = policyViolations({}, {
+    '@beemvp/beeui-core': '9.9.9-rc.2',
+    '@beemvp/beeui-tokens': '9.9.9-rc.2',
+    '@beemvp/beeui-ui': '9.9.9-rc.2',
+  });
+  assert.ok(violations.some((v) => /must equal the stable base/.test(v)));
 });
 
 test('dist tags are exactly latest/next with separate stable and RC channels', () => {
@@ -141,6 +152,10 @@ test('published compatibility report is valid', () => {
 
 test('compatibility report published flag must be boolean', () => {
   assert.ok(reportViolations({ published: 'yes' }).some((v) => /published.*boolean/.test(v)));
+});
+
+test('a re-authored candidateVersion is rejected', () => {
+  assert.ok(reportViolations({ candidateVersion: '0.86.2-rc.1' }).some((v) => /must not author "candidateVersion"/.test(v)));
 });
 
 test('peer and version-pin drift are rejected', () => {
