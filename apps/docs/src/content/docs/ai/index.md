@@ -1,6 +1,7 @@
 ---
 title: Use BeeUI with coding agents
 description: Give coding agents the canonical BeeUI context and verification boundaries without hidden maintainer knowledge.
+releaseStatus: true
 ---
 
 BeeUI publishes a small family of generated text files for coding-agent context. They are model-agnostic and generated from the same public package, Registry, compatibility, component and pattern authorities used by human docs.
@@ -24,7 +25,7 @@ Start small and add the larger file only when the task needs it. The files are p
 ## Rules an agent must preserve
 
 - BeeUI is UI infrastructure; routing, data fetching, backend, auth, payments and business rules remain application-owned.
-- `0.86.2-rc.3` is public on npm under the opt-in `next` dist-tag (observed 2026-09-24; dist-tags are re-verified after every publish). During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages, so it can lag `next`; the last observed `latest` target is recorded in [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md), and stable `0.86.2` moves it at stable promotion. Always suffix a registry command with `@next` (or the exact RC version) — `npm install @beemvp/beeui-ui@next` and `npx @beemvp/beeui-cli@next` are live, working commands; do not recommend an unqualified, untagged install, since `latest` lags `next` between an RC publication and the owner's move. See [Start](/docs/start/) and [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
+- See the release status above for the current publication truth. During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages, so it can lag `next`; the last observed `latest` target is recorded in [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md), and stable `0.86.2` moves it at stable promotion. Always suffix a registry command with `@next` (or the exact RC version) — do not recommend an unqualified, untagged install, since `latest` lags `next` between an RC publication and the owner's move. See [Start](/docs/start/) and [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
 - Prefer public exports and semantic tokens; do not import private workspace internals.
 - Mobile-first responsive behavior, keyboard/focus, RTL, large text and reduced motion are correctness constraints, not optional polish.
 - Web preview evidence is Web evidence. Native compile/bundle evidence is not native interaction proof.

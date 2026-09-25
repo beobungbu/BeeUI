@@ -40,6 +40,11 @@ export const CANDIDATE_GENERATORS = [
   'scripts/generate-docs-foundation.mjs',
   'scripts/generate-component-reference.mjs',
   'scripts/generate-llms-txt.mjs',
+  // Regenerates the release-status:generated marker blocks in README.md, docs/dist-tag-policy.md
+  // and docs/consumer-compatibility-report.md from the (unchanged, network-untouched)
+  // docs/registry-observation.json plus the new candidate version — this is what makes a bump
+  // correctly render "candidate ahead of registry" instead of leaving a stale published sentence.
+  'scripts/generate-release-status.mjs',
 ];
 
 export function assertValidCandidateVersion(version, candidateStableVersion) {

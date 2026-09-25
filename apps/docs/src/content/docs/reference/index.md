@@ -1,6 +1,7 @@
 ---
 title: Reference
 description: Exact BeeUI API, token, CLI, Registry and styling facts, derived from the canonical sources rather than restated.
+releaseStatus: true
 ---
 
 Use **Reference** when you need a fact, not a tutorial: does this symbol exist, what is it called,
@@ -39,12 +40,7 @@ production patterns under [Patterns](/docs/patterns/).
 | Architecture decisions | [Architecture](/docs/architecture/) |
 
 :::caution[Publication state]
-BeeUI `0.86.2-rc.3` is publicly published on npm under the opt-in `next` dist-tag (observed
-2026-09-24). During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC
-only after the owner moves it, so it can lag `next`; its last observed target is recorded in the
-dist-tag policy (see
-[`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)).
-Commands on these pages that show `pnpm beeui ...` or another repository-local form remain
-available from a checkout as the no-registry-required alternative; they are not the only way
-to consume the published package.
+See the release status at the top of this page. Commands on these pages that show `pnpm beeui ...`
+or another repository-local form remain available from a checkout as the no-registry-required
+alternative; they are not the only way to consume the published package.
 :::

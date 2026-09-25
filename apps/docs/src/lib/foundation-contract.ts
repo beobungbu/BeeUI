@@ -1,6 +1,18 @@
 import { showcaseHref } from '../../../showcase/showcase-target.ts';
 
 export type PublicationStatus = 'unpublished' | 'prerelease' | 'stable';
+
+// The six-value derived release state (scripts/release-status-lib.mjs), computed from
+// docs/registry-observation.json plus the workspace version. Distinguishes states
+// `PublicationStatus` cannot represent, such as a workspace candidate ahead of the registry or a
+// partial four-package publication.
+export type ReleaseDerivedState =
+  | 'unpublished'
+  | 'candidate-ahead-of-registry'
+  | 'partial-publication'
+  | 'prerelease-published'
+  | 'stable'
+  | 'registry-inconsistent';
 export type DocumentationStatus = 'stable' | 'experimental' | 'deprecated' | 'internal';
 export type PlatformId = 'expo' | 'bare-react-native' | 'web' | 'ios' | 'android';
 export type PlatformSupport = 'supported' | 'partial' | 'unsupported' | 'unknown';
@@ -72,6 +84,7 @@ export interface ReleaseState {
   generatedFrom: readonly string[];
   published: boolean;
   status: PublicationStatus;
+  state: ReleaseDerivedState;
   channel: 'closed' | 'next' | 'latest';
   currentVersion: string;
   workspaceVersion: string;
@@ -85,6 +98,10 @@ export interface ReleaseState {
   changelogHref: string;
   migrationHref: string;
   sourceEvaluationHref: string;
+  observedAt: string | null;
+  installableVersion: string | null;
+  installableDistTag: string | null;
+  statusText: string;
 }
 
 export interface RedirectRule {

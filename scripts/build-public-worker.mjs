@@ -107,6 +107,25 @@ export function buildComposedRootFiles({ rootDir, contract, identity }) {
   };
 }
 
+// `version` is this deploy's workspace/build version (a fact about the deployed code); `published`/
+// `releaseState`/`observedRegistryVersion` are the separate, independently-provenanced registry
+// observation (scripts/release-status-lib.mjs, fed by docs/registry-observation.json). Keeping
+// both on the identity artifact lets a consumer of /api/health tell them apart instead of
+// assuming a deployed workspace version is automatically an installable npm version.
+export function buildWorkerIdentity({ contract, commit, environment }) {
+  const publication = contract.buildTruth.publication;
+  return {
+    service: 'beeui-web',
+    version: contract.buildTruth.version,
+    commit,
+    environment,
+    published: publication.published,
+    releaseState: publication.state,
+    observedRegistryVersion: publication.installableVersion,
+    observedAt: publication.observedAt,
+  };
+}
+
 export function composeWorkerAssets({
   rootDir = ROOT_DIR,
   outDir = path.join(rootDir, 'web/worker/dist'),
@@ -130,12 +149,7 @@ export function composeWorkerAssets({
   copyOutput(path.join(rootDir, 'apps/showcase/dist-public-web'), path.join(outDir, 'showcase'), outDir, claimed, 'showcase');
   copyOutput(path.join(rootDir, 'apps/demo/dist-public-web'), path.join(outDir, 'demo'), outDir, claimed, 'demo');
 
-  const identity = {
-    service: 'beeui-web',
-    version: contract.buildTruth.version,
-    commit: exactCommit,
-    environment,
-  };
+  const identity = buildWorkerIdentity({ contract, commit: exactCommit, environment });
   // /showcase/ and /demo/ are JS-only Expo exports that sit in the sitemap. Give each a
   // static catalog for readers and crawlers that never run the app (#464, #465).
   for (const [portal, render, marker] of [

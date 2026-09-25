@@ -8,6 +8,7 @@ import {
   OUTPUT_FILES,
   parseBarrelExports,
 } from '../generate-llms-txt.mjs';
+import { deriveReleaseState } from '../release-status-lib.mjs';
 
 const SAMPLE_BARREL = `
 export { Button, ButtonLabel, buttonVariants, type ButtonProps } from './components/button';
@@ -162,8 +163,36 @@ test('all linked paths resolve to real repository files', () => {
 // `scripts/check-public-doc-truth.mjs` reads for the human docs site — is now threaded through
 // `buildModel`'s `policy` option; omitting it keeps the conservative unpublished defaults the
 // tests above pin, so this only needs to prove the *other* branch is reachable and correct.
+// Publication state is derived (scripts/release-status-lib.mjs) from a registry observation, never
+// authored — so this fixture builds the same shape readPublicationState() would, from a synthetic
+// observation where every lockstep package agrees the workspace RC is live under `next`.
+const LOCKSTEP_PACKAGE_NAMES = ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui', '@beemvp/beeui-cli'];
+
 function publishedPolicy() {
-  return { published: true, currentVersion: '0.86.2-rc.1', prereleaseDistTag: 'next' };
+  const observation = {
+    observedAt: '2026-01-01T00:00:00.000Z',
+    observedBy: 'test',
+    packages: Object.fromEntries(LOCKSTEP_PACKAGE_NAMES.map((name) => [name, { versions: ['0.86.2-rc.1'], distTags: { next: '0.86.2-rc.1' } }])),
+  };
+  const releaseState = deriveReleaseState({
+    workspaceVersion: '0.86.2-rc.1',
+    candidateStableVersion: '0.86.2',
+    prereleaseDistTag: 'next',
+    stableDistTag: 'latest',
+    packageNames: LOCKSTEP_PACKAGE_NAMES,
+    observation,
+  });
+  return {
+    published: releaseState.published,
+    registryHasLiveChannel: releaseState.installableVersion !== null,
+    state: releaseState.state,
+    currentVersion: '0.86.2-rc.1',
+    candidateStableVersion: '0.86.2',
+    prereleaseDistTag: 'next',
+    installableVersion: releaseState.installableVersion,
+    observedDistTags: releaseState.observedDistTags,
+    releaseState,
+  };
 }
 
 test('buildFamily states a real npm publication instead of UNPUBLISHED when the policy says published', () => {

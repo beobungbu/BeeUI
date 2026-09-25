@@ -1,9 +1,10 @@
 ---
 title: Migration & versioning
 description: Understand BeeUI's public RC channel, version authority, and the migration rules that will govern later upgrades.
+releaseStatus: true
 ---
 
-BeeUI's current public npm release candidate is **`0.86.2-rc.3`** under the opt-in **`next`** dist-tag (the first was `0.86.2-rc.1`; observed 2026-09-24). During the `0.86.2` prerelease line **`latest`** follows the newest complete, verified RC only after the owner moves it for all four packages, so it can lag `next`, and it moves to the stable version at the `0.86.2` stable promotion; the last observed `latest` target is recorded in [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
+The first public release candidate was `0.86.2-rc.1`. During the `0.86.2` prerelease line **`latest`** follows the newest complete, verified RC only after the owner moves it for all four packages, so it can lag `next`, and it moves to the stable version at the `0.86.2` stable promotion; the last observed `latest` target is recorded in [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
 
 `0.86.2-rc.1` was the first public package release; `0.86.2-rc.2` was the second and `0.86.2-rc.3` is the third, and consumers who installed the RC channel now have a real upgrade to make — see [Upgrading from 0.86.2-rc.1](#upgrading-from-0862-rc1-to-0862-rc2) below. The migration work described in the rest of this page (moving repository/internal consumers onto the public package boundary) is a separate, one-time move.
 

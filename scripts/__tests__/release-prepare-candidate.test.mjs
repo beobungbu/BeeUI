@@ -110,7 +110,7 @@ test('collectPreviousVersionLiterals returns an empty list with no previous vers
   assert.deepEqual(collectPreviousVersionLiterals('/nonexistent', undefined), []);
 });
 
-test('the generator sequence mirrors the canonical docs generation order used to prepare rc.2/rc.3', () => {
+test('the generator sequence mirrors the canonical docs generation order, ending with the release-status blocks', () => {
   assert.deepEqual(CANDIDATE_GENERATORS, [
     'scripts/public-component-reference.mjs',
     'scripts/public-component-previews.mjs',
@@ -120,5 +120,6 @@ test('the generator sequence mirrors the canonical docs generation order used to
     'scripts/generate-docs-foundation.mjs',
     'scripts/generate-component-reference.mjs',
     'scripts/generate-llms-txt.mjs',
+    'scripts/generate-release-status.mjs',
   ]);
 });

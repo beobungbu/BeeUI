@@ -35,7 +35,7 @@ function createFixture() {
   // prereleaseVersionPattern copy.
   fs.writeFileSync(
     path.join(root, 'docs/dist-tag-policy.md'),
-    `\`\`\`json dist-tag-policy\n${JSON.stringify({ published: false, candidateStableVersion: EXPECTED_VERSION.replace(/-rc\.(0|[1-9][0-9]*)$/, '') })}\n\`\`\`\n`,
+    `\`\`\`json dist-tag-policy\n${JSON.stringify({ candidateStableVersion: EXPECTED_VERSION.replace(/-rc\.(0|[1-9][0-9]*)$/, '') })}\n\`\`\`\n`,
   );
   return root;
 }
@@ -89,7 +89,7 @@ test('an authored legacy version field in the policy block is rejected with an a
   const root = createFixture();
   fs.writeFileSync(
     path.join(root, 'docs/dist-tag-policy.md'),
-    `\`\`\`json dist-tag-policy\n${JSON.stringify({ published: false, currentVersion: EXPECTED_VERSION, candidateStableVersion: EXPECTED_VERSION.replace(/-rc\.(0|[1-9][0-9]*)$/, '') })}\n\`\`\`\n`,
+    `\`\`\`json dist-tag-policy\n${JSON.stringify({ currentVersion: EXPECTED_VERSION, candidateStableVersion: EXPECTED_VERSION.replace(/-rc\.(0|[1-9][0-9]*)$/, '') })}\n\`\`\`\n`,
   );
   assert.throws(() => readPinnedVersion(root), /must not author currentVersion/);
 });

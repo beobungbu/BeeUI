@@ -1,9 +1,10 @@
 ---
 title: Start
 description: Install the BeeUI release candidate from npm or evaluate the repository, then follow the verified Expo, bare React Native or Web path.
+releaseStatus: true
 ---
 
-BeeUI **`0.86.2-rc.3` is public on npm** under the opt-in `next` dist-tag (observed 2026-09-24; dist-tags are re-verified after every publish). Every release-candidate install should still use `@next` or pin the exact RC version.
+Every release-candidate install should still use `@next` or pin the exact RC version — see the release status above.
 
 :::caution[Release-candidate channel]
 Use `@next` while evaluating the release candidate. An unqualified install resolves through `latest`, which during the `0.86.2` prerelease line follows the newest complete, verified RC only after the owner moves it for all four packages, so it lags `next` in between (see [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md)); keep the commands below tagged so they stay correct on both sides of each move and after stable `0.86.2` is promoted.

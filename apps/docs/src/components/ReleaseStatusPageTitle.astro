@@ -1,0 +1,15 @@
+---
+// Extends Starlight's default `PageTitle` with the release-status callout on pages that opt in
+// via `releaseStatus: true` frontmatter (apps/docs/src/content.config.ts). Wraps/reuses the
+// default component so title rendering itself is unchanged — this file only decides whether to
+// render ReleaseStatus.astro underneath it, following the same override pattern already used for
+// `Head` (SearchFilterHead.astro) and `Search` (Search.astro).
+import Default from '@astrojs/starlight/components/PageTitle.astro';
+
+import ReleaseStatus from './ReleaseStatus.astro';
+
+const showReleaseStatus = Astro.locals.starlightRoute.entry.data.releaseStatus === true;
+---
+
+<Default {...Astro.props} />
+{showReleaseStatus && <ReleaseStatus />}

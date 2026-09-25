@@ -57,9 +57,9 @@ export function collectDistTagPolicyViolations({ policy, packageVersions, releas
     violations.push(`${label}: ${error.message}`);
   }
 
-  if (typeof policy.published !== 'boolean') {
-    violations.push(`${label}: "published" must be a boolean.`);
-  }
+  // "published" is no longer authored here: it is derived from docs/registry-observation.json
+  // (see scripts/release-status-lib.mjs) and rejected as a legacy field by assertNoLegacyPolicyFields
+  // above if re-introduced.
 
   // The lockstep package version is authored once, in `packages/ui/package.json`; this policy no
   // longer carries a second hand-typed copy. `packageVersions` is measured directly from the
@@ -113,11 +113,6 @@ export function collectDistTagPolicyViolations({ policy, packageVersions, releas
     violations.push(`${label}: "releaseEnvironment" ${JSON.stringify(policy.releaseEnvironment)} must equal docs/release-ruleset.md's ${JSON.stringify(releaseEnvironment)}.`);
   }
 
-  // Once a prerelease is public, it must live on the opt-in channel rather than latest.
-  if (policy.published === true && currentVersion !== currentStableBase && policy.prereleaseDistTag !== 'next') {
-    violations.push(`${label}: a published prerelease must use the "next" channel.`);
-  }
-
   return violations;
 }
 
@@ -135,8 +130,6 @@ export function collectCompatibilityReportViolations({ report, matrixSnapshot, u
   const violations = [];
   const label = 'docs/consumer-compatibility-report.md';
 
-  if (typeof report.published !== 'boolean') violations.push(`${label}: "published" must be a boolean.`);
-
   // `candidateVersion` used to duplicate the lockstep version by hand; `packages/ui/package.json`
   // is now the single authored source, so re-introducing it here is rejected rather than checked
   // for agreement — there is nothing left for it to legitimately agree with.
@@ -144,6 +137,16 @@ export function collectCompatibilityReportViolations({ report, matrixSnapshot, u
     violations.push(
       `${label}: must not author "candidateVersion" (found ${JSON.stringify(report.candidateVersion)}); the lockstep version ` +
         `is authored once, in packages/ui/package.json (root ${JSON.stringify(rootVersion)}). Remove the field.`,
+    );
+  }
+
+  // `published` used to duplicate docs/dist-tag-policy.md's own (also formerly hand-authored)
+  // boolean. Both are now derived from docs/registry-observation.json instead — see
+  // scripts/release-status-lib.mjs — so re-authoring it here is rejected the same way.
+  if (Object.prototype.hasOwnProperty.call(report, 'published')) {
+    violations.push(
+      `${label}: must not author "published" (found ${JSON.stringify(report.published)}); publication state is derived ` +
+        'from docs/registry-observation.json. Remove the field.',
     );
   }
 
@@ -199,9 +202,9 @@ export function collectDistributionPolicyViolations({
     ...collectCompatibilityReportViolations({ report, matrixSnapshot, uiPeerDependencies, rootVersion, existsSync }),
   ];
 
-  if (policy.published !== report.published) {
-    violations.push(`docs/consumer-compatibility-report.md: "published" ${JSON.stringify(report.published)} must match docs/dist-tag-policy.md ${JSON.stringify(policy.published)}.`);
-  }
+  // Neither document authors "published" any more (both are rejected above), so there is nothing
+  // left to cross-check for agreement; publication state has exactly one derivation path now
+  // (docs/registry-observation.json via scripts/release-status-lib.mjs).
 
   return violations;
 }

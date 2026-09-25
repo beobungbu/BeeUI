@@ -57,6 +57,9 @@ export default defineConfig({
         // almost nothing. Starlight serialises the `pagefind` option with JSON.stringify, so
         // neither can be passed there as a function.
         Search: './src/components/Search.astro',
+        // Renders the generated release-status callout (apps/docs/src/components/ReleaseStatus.astro)
+        // on pages with `releaseStatus: true` frontmatter; see src/content.config.ts.
+        PageTitle: './src/components/ReleaseStatusPageTitle.astro',
       },
       pagefind: {
         ranking: PAGEFIND_RANKING,

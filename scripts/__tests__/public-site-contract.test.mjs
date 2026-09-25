@@ -15,6 +15,19 @@ import {
   routeForPath,
 } from '../public-site-contract-lib.mjs';
 
+const LOCKSTEP_PACKAGES = ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui', '@beemvp/beeui-cli'];
+
+// Publication state is derived from a committed registry observation (docs/registry-observation.json),
+// never authored in docs/dist-tag-policy.md. A fixture that wants `published: true` writes an
+// observation where every lockstep package agrees the workspace version is live on `distTag`.
+function writeRegistryObservation(write, version, distTag = 'next') {
+  write('docs/registry-observation.json', JSON.stringify({
+    observedAt: '2026-01-01T00:00:00.000Z',
+    observedBy: 'test',
+    packages: Object.fromEntries(LOCKSTEP_PACKAGES.map((name) => [name, { versions: [version], distTags: { [distTag]: version } }])),
+  }));
+}
+
 function fixture(overrides = {}, publication = { published: false, currentVersion: '0.86.2' }) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'beeui-site-contract-'));
   const write = (relative, content) => {
@@ -56,13 +69,13 @@ function fixture(overrides = {}, publication = { published: false, currentVersio
   write('package.json', JSON.stringify({ version: publication.currentVersion }));
   write('packages/ui/package.json', JSON.stringify({ version: publication.currentVersion }));
   write('docs/dist-tag-policy.md', `\`\`\`json dist-tag-policy\n${JSON.stringify({
-    published: publication.published,
     candidateStableVersion: publication.currentVersion.replace(/-rc\.(0|[1-9][0-9]*)$/, ''),
     stableDistTag: 'latest',
     prereleaseDistTag: 'next',
     lockstepPackages: ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui'],
   })}\n\`\`\`\n`);
   write('scripts/generate-llms-txt.mjs', '');
+  if (publication.published) writeRegistryObservation(write, publication.currentVersion);
 
   const hosts = { development: 'beeui-dev.beemvp.com', staging: 'beeui-stg.beemvp.com', production: 'beeui.beemvp.com' };
   for (const [environment, host] of Object.entries(hosts)) {
@@ -90,9 +103,14 @@ test('accepts a verified published prerelease on next', () => {
 });
 
 test('rejects a published prerelease on the stable channel', () => {
-  const { root } = fixture({}, { published: true, currentVersion: '0.86.2-rc.1' });
+  const { root } = fixture({}, { published: false, currentVersion: '0.86.2-rc.1' });
   const policyPath = path.join(root, 'docs/dist-tag-policy.md');
-  fs.writeFileSync(policyPath, '```json dist-tag-policy\n{"published":true,"candidateStableVersion":"0.86.2","stableDistTag":"latest","prereleaseDistTag":"latest","lockstepPackages":[]}\n```\n');
+  fs.writeFileSync(policyPath, '```json dist-tag-policy\n{"candidateStableVersion":"0.86.2","stableDistTag":"latest","prereleaseDistTag":"latest","lockstepPackages":[]}\n```\n');
+  // Misconfigured doc: prereleaseDistTag is "latest" instead of "next". The registry observation
+  // reflects that every package's real "latest" tag carries the prerelease version (a plausible
+  // publish mistake), so the derived state is still `published: true` even though the channel is wrong.
+  const write = (relative, content) => fs.writeFileSync(path.join(root, relative), content);
+  writeRegistryObservation(write, '0.86.2-rc.1', 'latest');
   assert.ok(collectPublicSiteContractViolations(root).some((v) => /published prerelease.*next/.test(v)));
 });
 
@@ -143,9 +161,9 @@ test('readCurrentVersion derives the current version from packages/ui/package.js
 });
 
 test('an authored legacy version field in the policy block is rejected with an actionable error', () => {
-  for (const legacyField of ['currentVersion', 'prereleaseExample', 'prereleaseVersionPattern']) {
+  for (const legacyField of ['currentVersion', 'prereleaseExample', 'prereleaseVersionPattern', 'published', 'observedDistTags']) {
     assert.throws(
-      () => assertNoLegacyPolicyFields({ published: true, candidateStableVersion: '0.86.2', [legacyField]: 'x' }),
+      () => assertNoLegacyPolicyFields({ candidateStableVersion: '0.86.2', [legacyField]: 'x' }),
       new RegExp(`must not author ${legacyField}`),
     );
   }
@@ -153,7 +171,7 @@ test('an authored legacy version field in the policy block is rejected with an a
   const { root } = fixture({}, { published: true, currentVersion: '0.86.2-rc.1' });
   fs.writeFileSync(
     path.join(root, 'docs/dist-tag-policy.md'),
-    '```json dist-tag-policy\n{"published":true,"currentVersion":"0.86.2-rc.1","candidateStableVersion":"0.86.2"}\n```\n',
+    '```json dist-tag-policy\n{"currentVersion":"0.86.2-rc.1","candidateStableVersion":"0.86.2"}\n```\n',
   );
   assert.throws(() => readPublicationState(root), /must not author currentVersion/);
 });
