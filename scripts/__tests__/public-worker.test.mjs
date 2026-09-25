@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { handleRequest } from '../../web/worker/src/index.mjs';
-import { buildComposedRootFiles } from '../build-public-worker.mjs';
+import { buildComposedRootFiles, buildWorkerIdentity } from '../build-public-worker.mjs';
 import { ROOT_DIR } from '../public-site-contract-lib.mjs';
 
 function createEnv() {
@@ -72,6 +72,25 @@ test('the composed worker root owns build identity, headers, redirects and the r
   assert.deepEqual(JSON.parse(files['build-identity.json']), identity);
   assert.match(files._headers, /X-Content-Type-Options: nosniff/u);
   assert.match(files._redirects, /^\/docs\/getting-started\/\* \/docs\/start\/:splat 308$/mu);
+});
+
+// The build identity's `version` (deployed workspace state) and `published`/`releaseState`
+// (registry observation) are independently-provenanced facts; the worker identity must never
+// collapse them, so a deploy of an unpublished candidate version reports that honestly.
+test('buildWorkerIdentity keeps the deployed workspace version and the registry observation as separate facts', () => {
+  const publishedContract = { buildTruth: { version: '0.86.2-rc.3', publication: { published: true, state: 'prerelease-published', installableVersion: '0.86.2-rc.3', observedAt: '2026-01-01T00:00:00Z' } } };
+  const published = buildWorkerIdentity({ contract: publishedContract, commit: 'abc123', environment: 'production' });
+  assert.equal(published.version, '0.86.2-rc.3');
+  assert.equal(published.published, true);
+  assert.equal(published.releaseState, 'prerelease-published');
+  assert.equal(published.observedRegistryVersion, '0.86.2-rc.3');
+
+  const aheadContract = { buildTruth: { version: '0.86.2-rc.9', publication: { published: false, state: 'candidate-ahead-of-registry', installableVersion: '0.86.2-rc.2', observedAt: '2026-01-01T00:00:00Z' } } };
+  const ahead = buildWorkerIdentity({ contract: aheadContract, commit: 'def456', environment: 'production' });
+  assert.equal(ahead.version, '0.86.2-rc.9');
+  assert.equal(ahead.published, false);
+  assert.equal(ahead.releaseState, 'candidate-ahead-of-registry');
+  assert.equal(ahead.observedRegistryVersion, '0.86.2-rc.2');
 });
 
 // #566 item 6: a bare `/sitemap-index.xml` request at the site root returned an empty 200 body.

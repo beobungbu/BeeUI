@@ -1,0 +1,85 @@
+{
+  "observedAt": "2026-09-25T06:25:18.371Z",
+  "observedBy": "local:textsoft",
+  "command": {
+    "tool": "npm",
+    "args": [
+      "view",
+      "<package>[@<version>]",
+      "versions",
+      "dist-tags",
+      "dist",
+      "--json"
+    ]
+  },
+  "packages": {
+    "@beemvp/beeui-core": {
+      "versions": [
+        "0.86.2-rc.1",
+        "0.86.2-rc.2",
+        "0.86.2-rc.3"
+      ],
+      "distTags": {
+        "latest": "0.86.2-rc.3",
+        "next": "0.86.2-rc.3"
+      },
+      "dist": {
+        "version": "0.86.2-rc.3",
+        "integrity": "sha512-6H37vDe8Sp/pbQkkJpyogNqgcq0xBlGjx+4lomH8lANg5zGapmncfdsX27nZ3y1Zj257Fjhyw9KwNqEQmYb1fQ==",
+        "shasum": "53bf3df9bd2d568f7958923097f0a3ef7e4cb1fc",
+        "unpackedSize": 153625
+      }
+    },
+    "@beemvp/beeui-tokens": {
+      "versions": [
+        "0.86.2-rc.1",
+        "0.86.2-rc.2",
+        "0.86.2-rc.3"
+      ],
+      "distTags": {
+        "latest": "0.86.2-rc.3",
+        "next": "0.86.2-rc.3"
+      },
+      "dist": {
+        "version": "0.86.2-rc.3",
+        "integrity": "sha512-oJpDC2d5OE8aUJkSnvVpOaljizCIrX8N3AK5lLgX5bOeSVMtrEBXKpXgnui4VVJnyEUh6AUsEOVPAhQhYANNSw==",
+        "shasum": "e8cd99871163245317b001a6ee45b417f8bdab8f",
+        "unpackedSize": 591601
+      }
+    },
+    "@beemvp/beeui-ui": {
+      "versions": [
+        "0.86.2-rc.1",
+        "0.86.2-rc.2",
+        "0.86.2-rc.3"
+      ],
+      "distTags": {
+        "latest": "0.86.2-rc.3",
+        "next": "0.86.2-rc.3"
+      },
+      "dist": {
+        "version": "0.86.2-rc.3",
+        "integrity": "sha512-uoNqUlEVnQfjhjdY8e8DB8M1KHtw0QUbXqIqtEVAqRXmjc+SmszgS2VzUQuaPSnz+9v0FhA2LvJWJhmcGwJf8A==",
+        "shasum": "5744e25f60819404d8386fd55ababe012756362d",
+        "unpackedSize": 4119746
+      }
+    },
+    "@beemvp/beeui-cli": {
+      "versions": [
+        "0.86.2-rc.1",
+        "0.86.2-rc.2",
+        "0.86.2-rc.3"
+      ],
+      "distTags": {
+        "latest": "0.86.2-rc.3",
+        "next": "0.86.2-rc.3"
+      },
+      "dist": {
+        "version": "0.86.2-rc.3",
+        "integrity": "sha512-sJadsm06euJoE+gq7tR70UdoVUCSXVV6+HTb6kTnBL0w2yMiSi23rzvy3k1F/xyJLBc6PXoWtZFdDAoHAdJsiQ==",
+        "shasum": "d9f5ab8764313ee8d4715fd427be8430fc9b7047",
+        "unpackedSize": 1112301
+      }
+    }
+  }
+}

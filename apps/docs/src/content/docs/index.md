@@ -1,13 +1,13 @@
 ---
 title: BeeUI Docs
 description: Build mobile-first React Native interfaces for Expo, bare React Native and Web with BeeUI.
+releaseStatus: true
 ---
 
 BeeUI is a production-oriented React Native UI system with one public behavior contract across
 Expo, bare React Native and Web.
 
-The current public release candidate, **`0.86.2-rc.3`**, is published on npm under the opt-in
-**`next`** dist-tag (observed 2026-09-24; dist-tags are re-verified after every publish). During the
+The release status above states the current npm publication truth. During the
 `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it
 for all four packages, so it can lag `next`; the last observed `latest` target is recorded in
 [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
@@ -56,7 +56,7 @@ package exports themselves.
 
 ## Platform and release truth
 
-- **Current RC:** `0.86.2-rc.3` on npm tag `next`.
+- **Current RC:** see the release status at the top of this page.
 - **Default channel:** during the `0.86.2` prerelease line `latest` follows the newest complete,
   verified RC once the owner moves it for all four packages, so it can lag `next`; its last
   observed target is recorded in the dist-tag policy and re-verified after every publish. It

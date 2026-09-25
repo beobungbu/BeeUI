@@ -4,7 +4,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { assertNoLegacyPolicyFields, derivePrereleasePattern, readCurrentVersion } from './public-site-contract-lib.mjs';
+import { GENERATED_COMPATIBILITY_PAGE, GENERATED_RELEASE_PAGE } from './public-guide-data.mjs';
+import { assertNoLegacyPolicyFields, readPublicationState } from './public-site-contract-lib.mjs';
+import { renderStatusSentence } from './release-status-lib.mjs';
 
 export const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -13,6 +15,8 @@ const PUBLIC_ROOTS = [
   'apps/demo/README.md',
   'apps/docs/src/content/docs',
   'docs/component-reference.md',
+  'docs/dist-tag-policy.md',
+  'docs/consumer-compatibility-report.md',
 ];
 const NEGATED_COMMAND_CONTEXT = /\b(?:do not|don't|not available|unavailable|unpublished|not published|must not|never)\b/i;
 const FALSE_DIST_TAG_CAUSAL_CLAIMS = [
@@ -47,7 +51,17 @@ function isPrerelease(version) {
 }
 
 export function extractPublicationPolicy(rootDir = ROOT_DIR) {
-  const fallback = { published: false, currentVersion: undefined, prereleaseDistTag: 'next' };
+  const fallback = {
+    published: false,
+    registryHasLiveChannel: false,
+    state: 'unpublished',
+    currentVersion: undefined,
+    prereleaseDistTag: 'next',
+    observedDistTags: {},
+    observedAt: null,
+    installableVersion: null,
+    installableDistTag: null,
+  };
   const file = path.join(rootDir, 'docs', 'dist-tag-policy.md');
   if (!fs.existsSync(file)) return fallback;
   const markdown = fs.readFileSync(file, 'utf8');
@@ -63,11 +77,10 @@ export function extractPublicationPolicy(rootDir = ROOT_DIR) {
   // authored legacy field is well-formed JSON describing a stale duplicate pin — that is an
   // actionable authoring mistake, not a read failure, so it throws instead of being swallowed.
   assertNoLegacyPolicyFields(policy);
-  return {
-    ...policy,
-    currentVersion: readCurrentVersion(rootDir),
-    prereleaseVersionPattern: derivePrereleasePattern(policy.candidateStableVersion),
-  };
+  // Re-derives through the same shared function every other consumer uses (single derivation
+  // path), rather than duplicating the currentVersion/prereleaseVersionPattern/registry-state
+  // projection a second time in this module.
+  return readPublicationState(rootDir);
 }
 
 function registrySpecChannel(spec) {
@@ -78,9 +91,15 @@ function registrySpecChannel(spec) {
 
 function collectRegistryCommandViolations(relative, lines, policy) {
   const violations = [];
-  const published = policy.published === true;
-  const currentVersion = policy.currentVersion;
-  const prerelease = isPrerelease(currentVersion);
+  // A registry command is live exactly when `policy.registryHasLiveChannel` is true — the
+  // registry resolves *something* under a persistent tag right now. True for
+  // `prerelease-published`/`stable`, and also for `candidate-ahead-of-registry` (the tag still
+  // resolves the registry's older complete line; the workspace's new candidate just isn't it yet).
+  // `partial-publication`/`registry-inconsistent` never set it, so both correctly forbid every
+  // command, matching the fully-unpublished state.
+  const installableVersion = policy.installableVersion ?? null;
+  const registryHasLiveInstall = policy.registryHasLiveChannel === true;
+  const prerelease = isPrerelease(installableVersion ?? policy.currentVersion);
   const prereleaseTag = policy.prereleaseDistTag ?? 'next';
 
   lines.forEach((line, index) => {
@@ -90,15 +109,18 @@ function collectRegistryCommandViolations(relative, lines, policy) {
       for (const match of line.matchAll(pattern)) {
         const command = match[0];
         const spec = match[1];
-        if (!published) {
+        if (!registryHasLiveInstall) {
           violations.push(`${relative}:${index + 1}: public output contains unavailable registry command ${JSON.stringify(command)}.`);
           continue;
         }
         if (!prerelease) continue;
         const channel = registrySpecChannel(spec);
-        if (channel !== prereleaseTag && channel !== currentVersion) {
+        // An exact-version pin is valid only against the version the registry actually resolves
+        // right now, never the workspace's newer (not-yet-published) candidate version — pinning
+        // that would be exactly the false "it's installable" claim this check exists to reject.
+        if (channel !== prereleaseTag && channel !== installableVersion) {
           violations.push(
-            `${relative}:${index + 1}: public RC command ${JSON.stringify(command)} must pin @${prereleaseTag} or @${currentVersion}; unqualified installs resolve the stable channel.`,
+            `${relative}:${index + 1}: public RC command ${JSON.stringify(command)} must pin @${prereleaseTag} or @${installableVersion}; unqualified installs resolve the stable channel.`,
           );
         }
       }
@@ -127,13 +149,58 @@ export function collectRepositoryVisibilityViolations(rootDir = ROOT_DIR) {
 }
 
 const VERSION_SENTENCES = [
-  // A published line may carry a newer, not-yet-published source candidate; the README then names it as the
-  // current release candidate rather than claiming it is published. Either form must state the workspace version.
-  { file: 'README.md', label: 'distribution-status line', pattern: /BeeUI `([^`]+)` is (?:publicly published|the current release candidate)/u, requiredWhenPublished: true, kind: 'current' },
-  { file: 'README.md', label: 'distribution-status line', pattern: /repository\/package version is `([^`]+)`/u, requiredWhenPublished: false, kind: 'current', legacy: true },
-  { file: 'docs/consumer-compatibility-report.md', label: 'candidate sentence', pattern: /candidate version `([^`]+)` today/u, kind: 'current' },
   { file: 'docs/decisions/015-package-version-0-86-2.md', label: 'decision line', pattern: /The lockstep package version is \*\*`([^`]+)`\*\*/u, kind: 'stable' },
 ];
+
+const RELEASE_STATUS_MARKER_PATTERN = /release-status:generated:start[\s\S]*?release-status:generated:end/gu;
+
+// Public-truth rule: a hand-written sentence asserting *current* npm registry state ("is publicly
+// published", "is public on npm") is forbidden outside a `release-status:generated` block or a
+// fully machine-generated surface. Every such claim now has exactly one legitimate source: the
+// shared renderer (scripts/release-status-lib.mjs), fed by docs/registry-observation.json —
+// never a second hand-typed copy that can independently drift or collapse partial/inconsistent
+// registry states into a bare "published" claim.
+const FORBIDDEN_CURRENT_STATE_CLAIMS = [
+  /\bis publicly published\b/iu,
+  /\bis public on npm\b/iu,
+  /\bpublicly published on npm\b/iu,
+];
+
+// Entire files that are machine-generated (regenerated by a `pnpm docs:*:generate`/`llms:generate`
+// script and freshness-checked by its own `docs:*:check`) are exempt at the file level: any
+// current-state sentence in them is rendered from the shared derivation, not hand-typed.
+const FULLY_GENERATED_PREFIXES = [
+  'apps/docs/src/content/docs/components/',
+  'apps/docs/src/content/docs/patterns/',
+  'apps/docs/src/content/docs/reference/',
+];
+const FULLY_GENERATED_EXACT = new Set(['docs/component-reference.md', GENERATED_RELEASE_PAGE, GENERATED_COMPATIBILITY_PAGE]);
+
+export function collectHandWrittenCurrentStateClaimViolations(rootDir = ROOT_DIR) {
+  const violations = [];
+  const files = PUBLIC_ROOTS.flatMap((relative) => {
+    const target = path.join(rootDir, relative);
+    return fs.existsSync(target) ? walkTextFiles(target) : [];
+  });
+
+  for (const file of files) {
+    const relative = path.relative(rootDir, file).replaceAll(path.sep, '/');
+    if (FULLY_GENERATED_EXACT.has(relative) || FULLY_GENERATED_PREFIXES.some((prefix) => relative.startsWith(prefix))) continue;
+    const text = fs.readFileSync(file, 'utf8');
+    const scrubbed = text.replace(RELEASE_STATUS_MARKER_PATTERN, '');
+    for (const pattern of FORBIDDEN_CURRENT_STATE_CLAIMS) {
+      const match = pattern.exec(scrubbed);
+      if (match) {
+        violations.push(
+          `${relative}: hand-written current-state registry claim ${JSON.stringify(match[0])} outside a release-status:generated ` +
+            'block. Render it from the shared renderer instead (a release-status:generated marker block via ' +
+            '`pnpm release-status:generate`, or the Starlight releaseStatus component/frontmatter flag).',
+        );
+      }
+    }
+  }
+  return violations;
+}
 
 export function collectPublicTruthViolations(rootDir = ROOT_DIR) {
   const violations = [];
@@ -176,19 +243,25 @@ export function collectPublicTruthViolations(rootDir = ROOT_DIR) {
       );
     }
     const stableVersion = stableBase(workspaceVersion);
+    // README's distribution-status line is now a `release-status:generated` block rendered by
+    // the shared renderer (scripts/release-status-lib.mjs); `pnpm release-status:check` proves it
+    // is byte-fresh against docs/registry-observation.json + the workspace version. Here it is
+    // enough to prove the block exists and states the exact current-state sentence — a
+    // stronger, state-agnostic replacement for the old two-pattern (published/unpublished) regex,
+    // which could not represent the states release-status-lib.mjs added.
     const readme = path.join(rootDir, 'README.md');
-    if (fs.existsSync(readme)) {
+    if (fs.existsSync(readme) && policy.releaseState) {
       const text = fs.readFileSync(readme, 'utf8');
-      const currentPattern = policy.published === true ? VERSION_SENTENCES[0].pattern : VERSION_SENTENCES[1].pattern;
-      const stated = text.match(currentPattern);
-      if (!stated) {
-        violations.push('README.md: no longer carries its distribution-status line, so the version it states cannot be checked.');
-      } else if (stated[1] !== workspaceVersion) {
-        violations.push(`README.md: distribution-status line states version ${stated[1]} but the workspace version is ${workspaceVersion}.`);
+      const block = text.match(RELEASE_STATUS_MARKER_PATTERN);
+      const expected = renderStatusSentence(policy.releaseState);
+      if (!block) {
+        violations.push('README.md: is missing its release-status:generated marker block.');
+      } else if (!block[0].includes(expected)) {
+        violations.push('README.md: release-status:generated block does not state the current release status; run `pnpm release-status:generate`.');
       }
     }
 
-    for (const { file, label, pattern, kind } of VERSION_SENTENCES.slice(2)) {
+    for (const { file, label, pattern, kind } of VERSION_SENTENCES) {
       const absolute = path.join(rootDir, file);
       if (!fs.existsSync(absolute)) continue;
       const stated = fs.readFileSync(absolute, 'utf8').match(pattern);
@@ -216,6 +289,7 @@ export function collectPublicTruthViolations(rootDir = ROOT_DIR) {
   }
 
   violations.push(...collectRepositoryVisibilityViolations(rootDir));
+  violations.push(...collectHandWrittenCurrentStateClaimViolations(rootDir));
   return violations;
 }
 

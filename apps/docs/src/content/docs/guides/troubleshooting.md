@@ -1,6 +1,7 @@
 ---
 title: Troubleshooting
 description: Search your exact error string and get the cause, the fix, and the command that proves the fix worked.
+releaseStatus: true
 ---
 
 Search this page for the **exact text your console printed**. Every entry below is derived
@@ -25,8 +26,7 @@ which platform (Expo, bare React Native, Web) it happened on — this page is se
 literal text, not read top to bottom.
 
 :::caution[Distribution status]
-BeeUI `0.86.2-rc.3` **is publicly published on npm** under the opt-in `next` dist-tag; see
-[Start](/docs/start/) for the install command. Some entries below still run from a BeeUI
+See the release status above and [Start](/docs/start/) for the install command. Some entries below still run from a BeeUI
 checkout or a packed tarball, because they diagnose the maintained example starters
 (`examples/*`), which deliberately consume packed tarballs rather than the npm package —
 those entries say so explicitly.
@@ -499,14 +499,14 @@ Related usage errors: `'add --all' does not accept explicit item names`,
 - **Applies to:** contributors editing documentation.
 - **Likely cause:** a page showed a registry-install or public-CLI command for a BeeUI
   package with no `@next`/exact-version tag — must not be left bare/unqualified — or one
-  that does not match the current dist-tag policy. BeeUI `0.86.2-rc.3` is
-  published under the opt-in `next` dist-tag. During the `0.86.2` prerelease line `latest`
+  that does not match the current dist-tag policy (see the release status on the [Start](/docs/start/)
+  page). During the `0.86.2` prerelease line `latest`
   follows the newest complete, verified RC only after the owner moves it, so it can lag
   `next` (the last observed target is recorded in `docs/dist-tag-policy.md`). `scripts/check-public-doc-truth.mjs` therefore rejects a bare,
   unqualified install, unless the same line explicitly negates the command (for example,
   "do not install unqualified").
-- **Fix:** pin every registry-install/CLI example to `@next` or the exact
-  `0.86.2-rc.3` (the lockstep version authored in `packages/ui/package.json`), matching [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
+- **Fix:** pin every registry-install/CLI example to `@next` or the exact release-candidate
+  version (the lockstep version authored in `packages/ui/package.json`), matching [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
   For an example that intentionally documents a repository-local path instead (workspace
   commands, starter scripts, `pnpm beeui ...`), say so explicitly on the same line.
 - **Verify:** `node ./scripts/check-public-doc-truth.mjs` and

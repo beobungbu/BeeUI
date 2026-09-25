@@ -4,7 +4,9 @@
 
 BeeUI is a mobile-first TypeScript UI system focused on long-lived application interfaces: accessible behavior, explicit responsive contracts, semantic theming, production screen patterns, and source ownership without coupling application code to a styling engine.
 
-> **Distribution status — 2026-09-24:** BeeUI `0.86.2-rc.3` is publicly published on npm under the opt-in `next` dist-tag. The live registry was last observed (2026-09-24T09:27:49Z) resolving both `next` and `latest` to `0.86.2-rc.3` for all four packages; that observation is re-verified after every publish. During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after the owner moves it for all four packages, so it lags `next` after each new RC publication until that move; stable `0.86.2` moves `latest` at stable promotion. Use `@next` or pin `@0.86.2-rc.3` while evaluating the release candidate. `docs/dist-tag-policy.md` is the machine-checked authority.
+<!-- release-status:generated:start — written by `pnpm release-status:generate`; do not hand-edit between these markers. -->
+BeeUI `0.86.2-rc.3` is public on npm under the opt-in `next` dist-tag (observed 2026-09-25T06:25:18.371Z). `latest` currently resolves to `0.86.2-rc.3` and lags `next` until the owner moves it for all four packages.
+<!-- release-status:generated:end -->
 
 ## Install the public release candidate
 

@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { readPublicationState } from './public-site-contract-lib.mjs';
+import { LOCKSTEP_MANIFEST_TO_PACKAGE_NAME, readPublicationState } from './public-site-contract-lib.mjs';
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // `packages/ui/package.json` is the single authored lockstep version (single source of workspace
@@ -27,12 +27,11 @@ export const EXPECTED_VERSION = (() => {
     throw new Error(`packages/ui/package.json must carry a "version"; the release checks compare every manifest to it (${error.message}).`);
   }
 })();
-export const EXPECTED_PACKAGE_NAMES = new Map([
-  ['packages/core/package.json', '@beemvp/beeui-core'],
-  ['packages/tokens/package.json', '@beemvp/beeui-tokens'],
-  ['packages/ui/package.json', '@beemvp/beeui-ui'],
-  ['packages/cli/package.json', '@beemvp/beeui-cli'],
-]);
+// Re-exported from the shared library, which is the single authored source of the four-package
+// lockstep group (also consumed by scripts/registry-observe.mjs and release-status-lib.mjs
+// callers). Kept as a named export here for the scripts/release-flow tooling that already imports
+// EXPECTED_PACKAGE_NAMES from this module.
+export const EXPECTED_PACKAGE_NAMES = LOCKSTEP_MANIFEST_TO_PACKAGE_NAME;
 
 const OPERATIONAL_RELEASE_FILES = [
   'docs/release.md',

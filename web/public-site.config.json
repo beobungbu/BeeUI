@@ -149,7 +149,7 @@
     "accessibility": ["docs/accessibility-contract.md", "docs/keyboard-focus-acceptance-matrix.md", "docs/dynamic-type.md", "docs/reduced-motion-acceptance-matrix.md"],
     "patterns": ["apps/showcase/patterns", "docs/pattern-library.content.json", "scripts/generate-pattern-library.mjs"],
     "demo": ["apps/demo/app", "apps/demo/src", "docs/decisions/013-production-demo-architecture.md"],
-    "publication": ["docs/dist-tag-policy.md", "scripts/check-distribution-policy.mjs"],
+    "publication": ["docs/dist-tag-policy.md", "docs/registry-observation.json", "scripts/release-status-lib.mjs", "scripts/check-distribution-policy.mjs"],
     "version": ["package.json", "packages/core/package.json", "packages/tokens/package.json", "packages/ui/package.json"],
     "changelog": ["CHANGELOG.md"],
     "ai": ["scripts/generate-llms-txt.mjs", "llms.txt", "llms-full.txt", "llms-components.txt", "llms-patterns.txt"]

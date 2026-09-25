@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { extractPublicationPolicy } from './check-public-doc-truth.mjs';
 import { publicationObservation } from './generate-llms-txt.mjs';
+import { renderStatusSentence } from './release-status-lib.mjs';
 import { coverageForComponent } from '../apps/showcase/component-coverage.ts';
 import { showcaseHref } from '../apps/showcase/showcase-target.ts';
 import { buildPublicSurfaceInventory } from './generate-public-surface-inventory.mjs';
@@ -1365,9 +1366,13 @@ function renderDerivedLimitations(component, rootDir) {
 // the same `docs/dist-tag-policy.md` machine-readable block the docs site's own publication-truth
 // check (`scripts/check-public-doc-truth.mjs`) and the llms.txt family (`scripts/generate-llms-txt.mjs`)
 // already read, so all three surfaces state one publication truth instead of drifting independently.
+// The narrative sentence is the shared renderer's (scripts/release-status-lib.mjs), fed by
+// docs/registry-observation.json — the same source llms.txt's buildStatusNote and README's
+// generated block read, so this page, the AI-agent surfaces and the human site can never
+// independently drift on what "published" means for the current workspace version.
 function distributionStatusNote(rootDir) {
   const policy = extractPublicationPolicy(rootDir);
-  if (!policy.published) {
+  if (policy.state === 'unpublished' || !policy.releaseState) {
     return (
       'BeeUI packages and the public CLI remain unpublished. The import shape below is the ' +
       'stable public package boundary used by workspace/packed-consumer verification; use the ' +
@@ -1375,21 +1380,16 @@ function distributionStatusNote(rootDir) {
       'explicitly authorized.'
     );
   }
-  const { tag, publishedVersion, latestVersion, stableVersion, candidatePending } = publicationObservation(policy);
-  const observedTags = latestVersion
-    ? `resolving \`${tag}\` to \`${publishedVersion}\` and \`latest\` to \`${latestVersion}\``
-    : `resolving \`${tag}\` to \`${publishedVersion}\``;
-  const candidate = candidatePending
-    ? `This repository is at release candidate \`${policy.currentVersion}\`, which is not published until the owner approves its staged packages. `
-    : '';
+  const sentence = renderStatusSentence(policy.releaseState);
+  if (!policy.registryHasLiveChannel) {
+    return `${sentence} The import shape below is the stable public package boundary; use the repository-local Registry command until this version is published and re-observed.`;
+  }
+  const { tag } = publicationObservation(policy);
   return (
-    `BeeUI \`${publishedVersion}\` is public on npm under the opt-in \`${tag}\` dist-tag. The live registry was last ` +
-    `observed ${observedTags}; dist-tags are re-verified after every publish. ${candidate}` +
-    `During the \`${stableVersion}\` prerelease line \`latest\` follows the newest complete, verified RC only after the ` +
-    `owner moves it for all four packages, and stable \`${stableVersion}\` moves it at stable promotion ` +
-    '(see [Start](/docs/start/) for the full install commands). The import shape below ' +
+    `${sentence} See [Start](/docs/start/) for the full install commands. The import shape below ` +
     'works against the published package; the repository-local Registry command remains available ' +
-    'as a no-registry-required alternative from a BeeUI checkout.'
+    `as a no-registry-required alternative from a BeeUI checkout. Pin \`@${policy.installableVersion}\` instead of ` +
+    `\`@${tag}\` for an immutable version in CI.`
   );
 }
 

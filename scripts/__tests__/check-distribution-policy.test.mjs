@@ -46,7 +46,6 @@ const MATRIX_SNAPSHOT = {
 };
 
 const GOOD_POLICY = {
-  published: true,
   candidateStableVersion: '0.86.2',
   distTags: ['latest', 'next'],
   prereleaseDistTag: 'next',
@@ -57,7 +56,6 @@ const GOOD_POLICY = {
 };
 
 const GOOD_REPORT = {
-  published: true,
   packageSet: ['@beemvp/beeui-core', '@beemvp/beeui-tokens', '@beemvp/beeui-ui'],
   cleanConsumerScripts: [
     'scripts/verify-bare-consumer.sh',
@@ -92,16 +90,8 @@ function reportViolations(overrides = {}) {
   });
 }
 
-test('published RC policy is valid', () => {
+test('a policy block with no authored publication field is valid', () => {
   assert.deepEqual(policyViolations(), []);
-});
-
-test('unpublished state remains representable for a future fresh line', () => {
-  assert.deepEqual(policyViolations({ published: false }), []);
-});
-
-test('published must be boolean', () => {
-  assert.ok(policyViolations({ published: 'yes' }).some((v) => /published.*boolean/.test(v)));
 });
 
 test('lockstep package version must agree across manifests', () => {
@@ -112,11 +102,13 @@ test('stable candidate must equal the stable base of the lockstep package versio
   assert.ok(policyViolations({ candidateStableVersion: '1.0.0' }).some((v) => /candidateStableVersion/.test(v)));
 });
 
-test('authoring a legacy version field is rejected with an actionable error', () => {
+test('authoring a legacy version or publication field is rejected with an actionable error', () => {
   for (const legacyOverride of [
     { currentVersion: '0.86.2-rc.1' },
     { prereleaseExample: '0.86.2-rc.1' },
     { prereleaseVersionPattern: '^0\\.86\\.2-rc\\.(0|[1-9][0-9]*)$' },
+    { published: true },
+    { observedDistTags: { latest: '0.86.2-rc.1', next: '0.86.2-rc.1' } },
   ]) {
     const violations = policyViolations(legacyOverride);
     assert.ok(violations.some((v) => /must not author/.test(v)), JSON.stringify(legacyOverride));
@@ -146,16 +138,16 @@ test('release environment must match ruleset', () => {
   assert.ok(policyViolations({ releaseEnvironment: 'prod' }).some((v) => /releaseEnvironment/.test(v)));
 });
 
-test('published compatibility report is valid', () => {
+test('a compatibility report with no authored publication field is valid', () => {
   assert.deepEqual(reportViolations(), []);
-});
-
-test('compatibility report published flag must be boolean', () => {
-  assert.ok(reportViolations({ published: 'yes' }).some((v) => /published.*boolean/.test(v)));
 });
 
 test('a re-authored candidateVersion is rejected', () => {
   assert.ok(reportViolations({ candidateVersion: '0.86.2-rc.1' }).some((v) => /must not author "candidateVersion"/.test(v)));
+});
+
+test('a re-authored published flag is rejected', () => {
+  assert.ok(reportViolations({ published: true }).some((v) => /must not author "published"/.test(v)));
 });
 
 test('peer and version-pin drift are rejected', () => {
@@ -174,16 +166,23 @@ test('missing clean consumer is rejected', () => {
   assert.ok(violations.some((v) => /verify-expo-consumer/.test(v)));
 });
 
-test('combined policy requires report publication state to match dist policy', () => {
-  const distTagMarkdown = `\`\`\`json dist-tag-policy\n${JSON.stringify(GOOD_POLICY)}\n\`\`\``;
-  const reportMarkdown = `\`\`\`json consumer-compatibility\n${JSON.stringify({ ...GOOD_REPORT, published: false })}\n\`\`\``;
+test('combined policy rejects an authored publication boolean on either document, since neither has a legitimate value to agree with', () => {
+  const goodDistTagMarkdown = `\`\`\`json dist-tag-policy\n${JSON.stringify(GOOD_POLICY)}\n\`\`\``;
+  const goodReportMarkdown = `\`\`\`json consumer-compatibility\n${JSON.stringify(GOOD_REPORT)}\n\`\`\``;
   const matrixMarkdown = `\`\`\`json compatibility-matrix\n${JSON.stringify(MATRIX_SNAPSHOT)}\n\`\`\``;
   const releaseRulesetMarkdown = `\`\`\`json release-ruleset\n${JSON.stringify({ releaseEnvironment: 'release' })}\n\`\`\``;
-  const violations = collectDistributionPolicyViolations({
+  const run = (distTagMarkdown, reportMarkdown) => collectDistributionPolicyViolations({
     distTagMarkdown, reportMarkdown, matrixMarkdown, releaseRulesetMarkdown,
     packageVersions: PACKAGE_VERSIONS, rootVersion: ROOT_VERSION, uiPeerDependencies: UI_PEERS, existsSync: alwaysExists,
   });
-  assert.ok(violations.some((v) => /published.*must match/.test(v)));
+
+  assert.deepEqual(run(goodDistTagMarkdown, goodReportMarkdown), []);
+
+  const publishedDistTagMarkdown = `\`\`\`json dist-tag-policy\n${JSON.stringify({ ...GOOD_POLICY, published: true })}\n\`\`\``;
+  assert.ok(run(publishedDistTagMarkdown, goodReportMarkdown).some((v) => /must not author/.test(v)));
+
+  const publishedReportMarkdown = `\`\`\`json consumer-compatibility\n${JSON.stringify({ ...GOOD_REPORT, published: true })}\n\`\`\``;
+  assert.ok(run(goodDistTagMarkdown, publishedReportMarkdown).some((v) => /must not author "published"/.test(v)));
 });
 
 test('real repository fenced blocks pass combined policy check', () => {
@@ -192,8 +191,10 @@ test('real repository fenced blocks pass combined policy check', () => {
   const matrixMarkdown = fs.readFileSync(path.join(ROOT_DIR, 'docs/compatibility-matrix.md'), 'utf8');
   const releaseRulesetMarkdown = fs.readFileSync(path.join(ROOT_DIR, 'docs/release-ruleset.md'), 'utf8');
 
-  assert.equal(extractDistTagPolicy(distTagMarkdown).published, true);
-  assert.equal(extractConsumerCompatibility(reportMarkdown).published, true);
+  // Neither document authors "published" any more — it is derived from docs/registry-observation.json
+  // (see scripts/release-status-lib.mjs), not read off these raw fenced-JSON extractions.
+  assert.equal(extractDistTagPolicy(distTagMarkdown).published, undefined);
+  assert.equal(extractConsumerCompatibility(reportMarkdown).published, undefined);
 
   const readPkg = (rel) => JSON.parse(fs.readFileSync(path.join(ROOT_DIR, rel), 'utf8'));
   const packageVersions = Object.fromEntries(['packages/core', 'packages/tokens', 'packages/ui'].map((dir) => {

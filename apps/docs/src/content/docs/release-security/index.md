@@ -1,11 +1,12 @@
 ---
 title: Release & security
 description: BeeUI publication state, release channels, security reporting and license.
+releaseStatus: true
 ---
 
-BeeUI `0.86.2-rc.3` is publicly published on npm under the opt-in **`next`** dist-tag (observed 2026-09-24; dist-tags are re-verified after every publish). During the `0.86.2` prerelease line **`latest`** follows the newest complete, verified RC only after the owner moves it for all four packages, so it can lag `next`, and it moves to the stable version at the `0.86.2` stable promotion; the last observed `latest` target is recorded in [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
+During the `0.86.2` prerelease line **`latest`** follows the newest complete, verified RC only after the owner moves it for all four packages, so it can lag `next`, and it moves to the stable version at the `0.86.2` stable promotion; the last observed `latest` target is recorded in [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
 
-Use `@next` or pin `@0.86.2-rc.3` while evaluating this release candidate — see [Start](/docs/start/) for the full install command per platform (Expo, bare React Native, Web).
+Use `@next` or pin the exact release-candidate version while evaluating this release candidate — see [Start](/docs/start/) for the full install command per platform (Expo, bare React Native, Web).
 
 A green verification matrix, package publication, and a `latest` move are separate release events. The current RC was published only after owner approval, `latest` moves only after the owner verifies the complete four-package set, and stable `0.86.2` still requires its own release and promotion gates.
 
