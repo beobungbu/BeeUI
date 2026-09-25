@@ -162,10 +162,12 @@ jobs:
           pnpm compat:test
           pnpm dist-policy:check
           pnpm dist-policy:test
+          pnpm ci-workflows:check
           node --test \
             ./scripts/__tests__/classify-ci-changes.test.mjs \
             ./scripts/__tests__/ci-scope.test.mjs \
-            ./scripts/__tests__/ios-build-cache-contract.test.mjs
+            ./scripts/__tests__/ios-build-cache-contract.test.mjs \
+            ./scripts/__tests__/check-workflow-shape.test.mjs
 
   verify-docs:
     needs: [classify]

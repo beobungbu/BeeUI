@@ -32,7 +32,8 @@
     "docs:reference:generate": "node ./scripts/public-reference.mjs",
     "docs:reference:check": "node ./scripts/public-reference.mjs --check",
     "docs:reference:test": "node --test ./scripts/__tests__/public-reference.test.mjs",
-    "ci-contract:test": "node --test ./scripts/__tests__/classify-ci-changes.test.mjs ./scripts/__tests__/ci-scope.test.mjs ./scripts/__tests__/ios-build-cache-contract.test.mjs",
+    "ci-contract:test": "node --test ./scripts/__tests__/classify-ci-changes.test.mjs ./scripts/__tests__/ci-scope.test.mjs ./scripts/__tests__/ios-build-cache-contract.test.mjs ./scripts/__tests__/check-workflow-shape.test.mjs",
+    "ci-workflows:check": "node ./scripts/check-workflow-shape.mjs",
     "portal-shell:test": "node --test ./scripts/__tests__/public-portal-shell.test.mjs",
     "docs:portal-pages:generate": "node ./scripts/public-component-reference.mjs && node ./scripts/public-component-previews.mjs && node ./scripts/public-pattern-reference.mjs",
     "docs:portal-pages:check": "node ./scripts/check-portal-pages-fresh.mjs",
@@ -133,7 +134,8 @@
     "eslint": "10.9.1",
     "eslint-plugin-react-hooks": "7.1.1",
     "react-native-builder-bob": "0.43.0",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "yaml": "2.9.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

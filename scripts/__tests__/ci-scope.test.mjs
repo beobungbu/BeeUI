@@ -148,6 +148,7 @@ const NO_LANE_REQUIRED = [
   { prefix: 'scripts/check-release-control-plane', why: 'verify-fast runs release-control-plane:* unconditionally' },
   { prefix: 'scripts/check-release-ruleset', why: 'verify-fast runs release-ruleset:* unconditionally' },
   { prefix: 'scripts/check-repo-hygiene', why: 'verify-fast runs hygiene:check unconditionally' },
+  { prefix: 'scripts/check-workflow-shape', why: 'verify-fast runs ci-workflows:check unconditionally' },
   { prefix: 'scripts/__tests__/check-compatibility-matrix', why: 'run by verify-fast' },
   { prefix: 'scripts/__tests__/check-distribution-policy', why: 'run by verify-fast' },
   { prefix: 'scripts/__tests__/release-control-plane', why: 'run by verify-fast' },
@@ -158,6 +159,7 @@ const NO_LANE_REQUIRED = [
   { prefix: 'scripts/__tests__/ci-scope', why: 'run by verify-fast' },
   { prefix: 'scripts/__tests__/classify-ci-changes', why: 'run by verify-fast' },
   { prefix: 'scripts/__tests__/ios-build-cache-contract', why: 'run by verify-fast' },
+  { prefix: 'scripts/__tests__/check-workflow-shape', why: 'run by verify-fast' },
 
   // Exercised only by the scheduled runtime-native workflow, which no pull
   // request lane can trigger.
