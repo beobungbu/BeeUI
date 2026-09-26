@@ -26,8 +26,9 @@ tarball boundary as the Web starter.
 
 ## Publication status (read this first)
 
-BeeUI `0.86.2-rc.3` **is publicly published on npm** under the opt-in `next`
-dist-tag (see the root [`README.md`](../README.md) and
+BeeUI's current release candidate **is publicly published on npm** under the
+opt-in `next` dist-tag (see the root [`README.md`](../README.md) for the exact
+currently published version and
 [`docs/dist-tag-policy.md`](../docs/dist-tag-policy.md), the machine-checked
 authority). A real application should follow [Start](https://beeui.beemvp.com/docs/start/)
 and install `@next` from npm directly.

@@ -2,7 +2,7 @@
 
 ## Status
 
-`@beemvp/beeui-cli` is publicly published at **`0.86.2-rc.3`** under npm tag **`next`** (observed 2026-09-24). It is the supported source-ownership CLI for the current BeeUI release candidate.
+`@beemvp/beeui-cli` is publicly published under the opt-in npm tag **`next`**; see [`docs/dist-tag-policy.md`](dist-tag-policy.md) (or `README.md`'s generated release-status block) for the exact currently published version and observation timestamp. It is the supported source-ownership CLI for the current BeeUI release candidate.
 
 External consumers should run the published RC explicitly:
 
@@ -18,7 +18,7 @@ npx @beemvp/beeui-cli@next diff
 npx @beemvp/beeui-cli@next update
 ```
 
-Pin `@0.86.2-rc.3` instead of `@next` when an immutable CLI version is required.
+Pin the exact version from `CHANGELOG.md` instead of `@next` when an immutable CLI version is required.
 
 `latest` follows the newest complete, verified RC only after the owner moves it, so it lags `next` between an RC publication and that move; RC documentation must not use an unqualified CLI package name as the recommended install/run command.
 
@@ -101,7 +101,7 @@ The CLI releases in lockstep with:
 - `@beemvp/beeui-tokens`
 - `@beemvp/beeui-ui`
 
-Current public RC: `0.86.2-rc.3` under `next` (observed 2026-09-24).
+Current public RC: see [`docs/dist-tag-policy.md`](dist-tag-policy.md) for the exact version and observation timestamp under `next`.
 
 The channel/version authority is `docs/dist-tag-policy.md`. Do not infer stable availability from the existence of a public RC; every `latest` move, including stable promotion, is a separate owner-controlled release event.
 
@@ -112,7 +112,7 @@ Repository tests pin command parsing, negative cases, Registry integrity, depend
 For public RC verification, prefer the published command:
 
 ```sh
-npx @beemvp/beeui-cli@0.86.2-rc.3 --help
+npx @beemvp/beeui-cli@<exact-version> --help
 ```
 
 For contributor verification from source:

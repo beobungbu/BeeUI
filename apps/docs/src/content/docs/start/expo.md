@@ -28,7 +28,7 @@ npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@n
   react-native-teleport@~1.1.13 tailwindcss@4.3.3 uniwind@1.10.1
 ```
 
-Pin `@0.86.2-rc.3` instead of `@next` when you need an immutable RC dependency.
+Pin the exact version from `CHANGELOG.md` instead of `@next` when you need an immutable RC dependency — see the release status above for today's exact version.
 
 Optional native peers used by `Sheet`, `DatePicker` and `DateTimePicker` are listed in [Compatibility](/docs/compatibility/); install only the ones your application uses.
 

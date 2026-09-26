@@ -66,40 +66,13 @@ const MANIFEST_EXACT = new Set([
 // version; they are not release prose and derive their own expectations dynamically.
 const TEST_PREFIXES = ['scripts/__tests__/'];
 
-// Known remaining hand-maintained docs deliberately left unconverted for now: README, the
-// dist-tag policy, the consumer-compatibility report, the llms.txt family, generated component
-// pages and the Starlight start/guides/ai/theming/release-security pages were converted to render
-// from the shared derivation; the rest of the hand-maintained corpus that also names the current
-// version was not, to keep this change bounded. This is a ratchet, not a permanent exemption —
-// shrink it as later work converts more files; a *new* file outside this list still trips `--check`.
-const PENDING_CONVERSION_EXACT = new Set([
-  // "Pin `@<version>` instead of `@next`" is per-command CI/reproducibility guidance, not a
-  // registry-state claim; this phase's public-truth rule (scripts/check-public-doc-truth.mjs)
-  // targets "is published"/"is public on npm" sentences, not exact-version pin suggestions.
-  'apps/docs/src/content/docs/guides/cli-source-ownership.md',
-  'apps/docs/src/content/docs/guides/migration-versioning.md',
-  'apps/docs/src/content/docs/guides/troubleshooting.md',
-  'apps/docs/src/content/docs/start/index.md',
-  'apps/docs/src/content/docs/start/web.md',
-  'apps/docs/src/content/docs/start/expo.md',
-  'apps/docs/src/content/docs/start/bare-react-native.md',
-  // Hand-authored generator input (scripts/public-reference.mjs joins this with derived inventory
-  // data); the generated output pages themselves are in GENERATED_PREFIXES above.
-  'docs/reference.content.json',
-  // Remaining hand-maintained operational docs, distinct from the files already converted above
-  // (README/dist-tag-policy/consumer-compatibility-report/llms/component pages/Starlight pages).
-  // Each still states "is publicly published"/"is public on npm" by hand.
-  'docs/registry-cli.md',
-  'docs/ai-agent-cookbook.md',
-  'docs/release.md',
-  'examples/README.md',
-  'examples/agent-reference-app/README.md',
-  'examples/bare-rn-consumer/README.md',
-  'examples/demo-reproduction-records/README.md',
-  'examples/expo-package-consumer/README.md',
-  'examples/web-consumer/README.md',
-  'examples/scripts/pack-beeui-packages.mjs',
-]);
+// Every hand-maintained doc that named the current version literal has now been converted to
+// either version-free prose pointing at CHANGELOG.md/docs/dist-tag-policy.md/docs/rc-candidate.md,
+// or a `release-status:generated`/Starlight `releaseStatus` block (D7,
+// plans/260923-1217-release-flow-improvement/plan.md). This set is intentionally empty: a *new*
+// hand-typed current-version literal in any file outside the allowlists above still trips
+// `--check`, so it stays that way rather than becoming a permanent exemption.
+const PENDING_CONVERSION_EXACT = new Set([]);
 const PENDING_CONVERSION_PREFIXES = [];
 
 function isAllowed(relative) {

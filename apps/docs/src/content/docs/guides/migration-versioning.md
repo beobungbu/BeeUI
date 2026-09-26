@@ -6,7 +6,7 @@ releaseStatus: true
 
 The first public release candidate was `0.86.2-rc.1`. During the `0.86.2` prerelease line **`latest`** follows the newest complete, verified RC only after the owner moves it for all four packages, so it can lag `next`, and it moves to the stable version at the `0.86.2` stable promotion; the last observed `latest` target is recorded in [`docs/dist-tag-policy.md`](https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md).
 
-`0.86.2-rc.1` was the first public package release; `0.86.2-rc.2` was the second and `0.86.2-rc.3` is the third, and consumers who installed the RC channel now have a real upgrade to make — see [Upgrading from 0.86.2-rc.1](#upgrading-from-0862-rc1-to-0862-rc2) below. The migration work described in the rest of this page (moving repository/internal consumers onto the public package boundary) is a separate, one-time move.
+`0.86.2-rc.1` was the first public package release and `0.86.2-rc.2` was the second — see the release status above for the current RC. Consumers who installed the RC channel now have a real upgrade to make — see [Upgrading from 0.86.2-rc.1](#upgrading-from-0862-rc1-to-0862-rc2) below. The migration work described in the rest of this page (moving repository/internal consumers onto the public package boundary) is a separate, one-time move.
 
 Canonical source: https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-policy.md
 
@@ -17,7 +17,7 @@ Canonical source: https://github.com/beobungbu/BeeUI/blob/main/docs/dist-tag-pol
 
 | Channel | Exists today | What it means |
 | --- | --- | --- |
-| **Prerelease (`next`)** | Yes | Public opt-in release-candidate channel; tracks the newest published RC (observed at `0.86.2-rc.3` on 2026-09-24). |
+| **Prerelease (`next`)** | Yes | Public opt-in release-candidate channel; tracks the newest published RC (see the release status above for the currently observed version and timestamp). |
 | **Default (`latest`)** | Yes | Last observed target recorded in `docs/dist-tag-policy.md`. During the `0.86.2` prerelease line it follows the newest complete, verified RC only after the owner moves it for all four packages, so it lags `next` in between. At the `0.86.2` stable promotion it moves to the stable version and never returns to a prerelease after that. |
 | **Repository source** | Yes | Development/evaluation path for exact commits and unpublished work. |
 
@@ -28,7 +28,7 @@ npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@n
 npx @beemvp/beeui-cli@next --help
 ```
 
-Pin `@0.86.2-rc.3` instead of `@next` when reproducibility matters more than following the newest RC.
+Pin the exact version from `CHANGELOG.md` instead of `@next` when reproducibility matters more than following the newest RC — see the release status above for today's exact version.
 
 ## Version authority
 
