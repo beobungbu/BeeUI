@@ -1,6 +1,6 @@
 # Release-flow improvement plan — one source of version truth, observable registry state, reproducible release evidence
 
-**Status:** PROPOSED / IMPLEMENTATION-READY AFTER D1–D7 (revised 2026-09-23 after independent review).
+**Status:** D1–D7 approved 2026-09-25 and implemented 2026-09-26. Phases 00 (#625), 04 (#626), 01 (#639), 02 (#640, #642, #644), 03 (#648: pre mode + `release:version`; tag verification #647) and the D7 literal sweep (#649) are merged. Two deviations, both forced by live repository settings and recorded in `reports/phase-03-changesets-pre-mode-report.md`: no bot Version Packages workflow (Actions may not open PRs), and `v*` tags are created by the owner and verified by CI (only admins may create signed release tags). Not started: the rest of Phase 05 (machine-readable release ledger, candidate evidence generated from it, the preflight check that publish artifacts match the frozen candidate digests, post-publication evidence).
 **Baseline:** `development@8c63c9d`; rc.2 candidate is PR #622. Do not rebase Phases 01–03 onto the rc.2 release branch.
 **Evidence:** three scout reports in `reports/` (version data flow, pipeline/process docs, literal inventory/CI scope). The reports describe the audited repository state; this plan adds implementation constraints discovered during review.
 
