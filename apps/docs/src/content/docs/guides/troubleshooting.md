@@ -365,7 +365,8 @@ module.exports = withUniwindConfig(getDefaultConfig(__dirname), {
 ## CLI and source-ownership conflicts
 
 Every command below is shown as a consumer would run it, `npx @beemvp/beeui-cli@next <command>`
-(pin `@0.86.2-rc.3` instead of `@next` for an immutable version). The repository-local
+(pin the exact version from `CHANGELOG.md` instead of `@next` for an immutable version — see the
+release status above for today's exact version). The repository-local
 equivalent from a BeeUI checkout is the same command name under `pnpm beeui <command>` — see
 [CLI & source ownership](/docs/guides/cli-source-ownership/) for that distinction.
 

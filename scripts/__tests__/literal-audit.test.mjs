@@ -45,6 +45,19 @@ test('a literal in a test fixture is allowed', () => {
   assert.deepEqual(violations, []);
 });
 
+test('a hand-typed current-version literal in a formerly-pending file is now a violation', () => {
+  // examples/web-consumer/README.md was in PENDING_CONVERSION_EXACT before D7; it was converted to
+  // version-free prose and the set was emptied, so a new hand-typed literal there must trip the
+  // gate exactly like any other unlisted file.
+  const { violations } = collectLiteralAuditViolations(
+    ROOT_DIR,
+    '9.9.9-rc.1',
+    fakeGrep(['examples/web-consumer/README.md:11:BeeUI `9.9.9-rc.1` is publicly published on npm under the `next` dist-tag']),
+  );
+  assert.equal(violations.length, 1);
+  assert.match(violations[0], /examples\/web-consumer\/README\.md/);
+});
+
 test('a literal in an unrecognized hand-maintained file is a violation', () => {
   const { violations } = collectLiteralAuditViolations(
     ROOT_DIR,

@@ -13,8 +13,8 @@ this example.
 
 ## Packed-tarball consumption
 
-BeeUI `0.86.2-rc.3` is publicly published on npm under the `next` dist-tag
-(see `../../README.md`). This app deliberately keeps consuming real
+BeeUI's current release candidate is publicly published on npm under the `next` dist-tag
+(see `../../README.md` for the exact currently published version). This app deliberately keeps consuming real
 `pnpm pack` tarballs through the same package boundary CI's
 `scripts/verify-web-consumer.sh` uses — never a `workspace:*` link and never a
 hand-copied `dist/` folder. It is **not** registered in the root pnpm workspace;

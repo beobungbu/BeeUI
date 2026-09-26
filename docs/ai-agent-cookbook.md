@@ -3,7 +3,9 @@
 This document tells a coding agent (Claude, Codex, or any other) how to reason about,
 build applications with, and contribute to BeeUI **without relying on hidden maintainer
 knowledge**. It is truthful to the current repository state: BeeUI is pre-1.0, and
-**`0.86.2-rc.3` is public on npm under the opt-in `next` dist-tag** (observed 2026-09-24).
+**BeeUI's packages are public on npm under the opt-in `next` dist-tag** — see
+[docs/dist-tag-policy.md](dist-tag-policy.md) or `README.md`'s generated release-status block for
+the exact currently published version and observation timestamp.
 During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC only after
 the owner moves it, so it can lag `next`, and it moves to the stable version at the `0.86.2`
 stable promotion; the last observed `latest` target is recorded in
@@ -39,7 +41,8 @@ Stat, Timeline, Badge, Avatar, DescriptionList, useToast
 ### 1. Read this before anything else: the current distribution-status rules
 
 BeeUI is **pre-1.0**, and **`@beemvp/beeui-core`, `@beemvp/beeui-tokens`, `@beemvp/beeui-ui`,
-and `@beemvp/beeui-cli` are public on npm at `0.86.2-rc.3`** under the opt-in `next` dist-tag.
+and `@beemvp/beeui-cli` are public on npm** under the opt-in `next` dist-tag — see
+[docs/dist-tag-policy.md](dist-tag-policy.md) for the exact currently published version.
 This is the single most important fact for an agent, because it flips the instinct from the
 pre-RC era — "install the library from npm" is now correct, but only with the `@next` suffix
 (or an exact pinned version). During the `0.86.2` prerelease line `latest` follows the newest
@@ -51,8 +54,8 @@ commands with `@next` rather than relying on `latest`.
   **no `v1.0.0` tag** and **no GitHub Release** — every `latest` move (the newest verified RC
   during the prerelease line, then stable `0.86.2`) remains owner-gated (see
   [docs/dist-tag-policy.md](dist-tag-policy.md)).
-- Pin `@0.86.2-rc.3` instead of `@next` when you need an immutable prerelease version in CI
-  or a reproducible consumer fixture. See [docs/distribution-names.md](distribution-names.md)
+- Pin the exact version from `CHANGELOG.md` instead of `@next` when you need an immutable
+  prerelease version in CI or a reproducible consumer fixture. See [docs/distribution-names.md](distribution-names.md)
   and [ADR-011](decisions/011-distribution-architecture.md).
 - **Always** suffix a registry command with `@next` (or the exact RC version). An unqualified
   `npm install @beemvp/beeui-ui`/`npx @beemvp/beeui-cli` is not the documented RC install path
@@ -234,7 +237,7 @@ must do:
 
 | Symptom | Cause | Recovery |
 | --- | --- | --- |
-| `npm install @beemvp/beeui-ui` resolves an unexpected/older version | no `@next`/version suffix — an unqualified install is not the documented RC path | Use `npm install @beemvp/beeui-ui@next` (or pin `@0.86.2-rc.3`). Do not recommend a bare, unqualified install. |
+| `npm install @beemvp/beeui-ui` resolves an unexpected/older version | no `@next`/version suffix — an unqualified install is not the documented RC path | Use `npm install @beemvp/beeui-ui@next` (or pin the exact version from `CHANGELOG.md`). Do not recommend a bare, unqualified install. |
 | `npx beeui add ...` does nothing / wrong package | `beeui` unscoped is a tombstone; the real CLI is `@beemvp/beeui-cli` | Use `npx @beemvp/beeui-cli@next add ...` (published) or `pnpm beeui add ...` (repo-local source ownership). |
 | Copied component fails to resolve `@beemvp/beeui-core` | expected — imports are rewritten to a local copy | Ensure `pnpm beeui add` ran fully; it copies `core-cn`/`core-overlay` and rewrites imports. |
 | `Sheet` misbehaves on native | `SheetProvider` not mounted | `SheetProvider` is required on native: mount it directly below `BeeUIProvider` (`BeeUIProvider > SheetProvider > app`, ADR-006) and install the native peers the CLI reported. Do not also mount an outer `GestureHandlerRootView`/`BottomSheetModalProvider` — `SheetProvider` installs those itself. |
@@ -258,7 +261,8 @@ The canonical dispatcher prompt these align with is
 ### Shared preamble (prepend to any recipe)
 
 > Read [llms.txt](../llms.txt) first, then the specific docs it links. BeeUI is pre-1.0;
-> `0.86.2-rc.3` is public on npm under the opt-in `next` dist-tag (always suffix
+> its packages are public on npm under the opt-in `next` dist-tag (see
+> [docs/dist-tag-policy.md](dist-tag-policy.md) for the exact currently published version; always suffix
 > `npm install @beemvp/beeui-*` / `npx @beemvp/beeui-cli` with `@next` or the exact version —
 > `latest` follows the newest verified RC only after the owner moves it, so it lags `next`,
 > and it moves to stable at the `0.86.2` stable promotion). The no-registry-required

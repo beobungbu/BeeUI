@@ -24,7 +24,7 @@ npx @beemvp/beeui-cli@next diff
 npx @beemvp/beeui-cli@next update
 ```
 
-Pin `@0.86.2-rc.3` instead of `@next` when you need an immutable CLI version in automation.
+Pin the exact CLI version from `CHANGELOG.md` instead of `@next` when you need an immutable version in automation — see the release status above for today's exact version.
 
 The CLI resolves the project from the current working directory, so run it from the consumer project you want it to modify.
 

@@ -29,7 +29,7 @@ npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@n
 npm install -D vite-plugin-rnw@0.0.12 @tailwindcss/vite@4.3.3
 ```
 
-Pin `@0.86.2-rc.3` instead of `@next` when you need an immutable RC dependency. Check [Compatibility](/docs/compatibility/) before changing the pinned Web stack.
+Pin the exact version from `CHANGELOG.md` instead of `@next` when you need an immutable RC dependency — see the release status above for today's exact version. Check [Compatibility](/docs/compatibility/) before changing the pinned Web stack.
 
 ## Styling entry
 
