@@ -94,6 +94,8 @@ All four public packages use one lockstep version.
 - packed manifests must not expose unresolved `workspace:*` ranges;
 - BeeUI 1.0 is not npm version `1.0.0`.
 
+The version moves through `pnpm release:version`: Changesets is in prerelease mode with tag `rc` (`.changeset/pre.json`), so the pending changesets decide the next `0.86.2-rc.N`, and the command refuses any result off the `0.86.2` line. The maintainer runs it and opens the bump PR into `development`; no workflow does. `pnpm release:prepare <version>` remains the explicit override. See `.changeset/README.md`.
+
 ## Canonical release artifact rule
 
 `pnpm release:verify` builds and verifies the release package set and records canonical tarballs under `.artifacts/release-packages`.
@@ -165,12 +167,13 @@ Steady state after the rc.1 bootstrap is npm Trusted Publishing/OIDC through `.g
 The current staged flow is:
 
 1. exact release state reaches `main`;
-2. owner dispatches the approved operation;
-3. protected GitHub Environment approval allows the mutation job to proceed;
-4. OIDC stages canonical packages with provenance;
-5. owner performs npm-side staged-package approval/proof-of-presence;
-6. the owner runs `pnpm registry:refresh` and opens a PR into `development` with the result, recording registry state in `docs/registry-observation.json`;
-7. after the complete four-package set is public and verified, the owner moves `latest` for all four packages to that RC with npm 2FA (never from CI), then runs `pnpm registry:refresh` again and opens a PR with the result to record the four `latest` tags.
+2. the owner creates the signed repository tag on that `main` commit (`git tag -s v<version> <main-commit>`, then `git push origin v<version>`) and `tag-release-verify` passes; the tag never starts publication;
+3. owner dispatches the approved operation;
+4. protected GitHub Environment approval allows the mutation job to proceed;
+5. OIDC stages canonical packages with provenance;
+6. owner performs npm-side staged-package approval/proof-of-presence;
+7. the owner runs `pnpm registry:refresh` and opens a PR into `development` with the result, recording registry state in `docs/registry-observation.json`;
+8. after the complete four-package set is public and verified, the owner moves `latest` for all four packages to that RC with npm 2FA (never from CI), then runs `pnpm registry:refresh` again and opens a PR with the result to record the four `latest` tags.
 
 ## Runtime and device gates
 
@@ -213,14 +216,16 @@ Stable `0.86.2` is a separate release event. A successful RC does not imply stab
 
 Stable requires:
 
-1. exact stable source candidate on `main`;
-2. lockstep `0.86.2` across all four packages;
-3. fresh release/docs/runtime/visual evidence as required;
-4. staged publication under the safe channel;
-5. npm-side approval and verification of the complete real registry set;
-6. only then, coordinated owner-controlled promotion of `latest`;
-7. final verification that all four `latest` tags resolve to `0.86.2`;
-8. run `pnpm registry:refresh` and open a PR into `development` with the result to record the stable observation.
+1. leave prerelease mode on `development` (`pnpm exec changeset pre exit`, then `pnpm release:version`, which lands exactly on `0.86.2`) and promote that state;
+2. exact stable source candidate on `main`;
+3. lockstep `0.86.2` across all four packages;
+4. the signed `v0.86.2` tag on that `main` commit, verified by `tag-release-verify`;
+5. fresh release/docs/runtime/visual evidence as required;
+6. staged publication under the safe channel;
+7. npm-side approval and verification of the complete real registry set;
+8. only then, coordinated owner-controlled promotion of `latest`;
+9. final verification that all four `latest` tags resolve to `0.86.2`;
+10. run `pnpm registry:refresh` and open a PR into `development` with the result to record the stable observation.
 
 ## Cross-platform evidence commands
 
