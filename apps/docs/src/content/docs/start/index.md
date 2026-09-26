@@ -24,7 +24,7 @@ The CLI is published separately in the same lockstep release:
 npx @beemvp/beeui-cli@next --help
 ```
 
-Pin `@0.86.2-rc.3` instead of `@next` when you need an immutable prerelease version in CI or a reproducible consumer fixture.
+Pin the exact version from `CHANGELOG.md` instead of `@next` when you need an immutable prerelease version in CI or a reproducible consumer fixture — see the release status above for today's exact version.
 
 ## Which intent is yours
 
@@ -145,7 +145,7 @@ Read [Provider & safe area](/docs/start/provider-safe-area/) before building a p
 
 After installation:
 
-1. Confirm `npm ls @beemvp/beeui-ui @beemvp/beeui-core @beemvp/beeui-tokens` resolves the current candidate `0.86.2-rc.3` when using `@next`.
+1. Confirm `npm ls @beemvp/beeui-ui @beemvp/beeui-core @beemvp/beeui-tokens` resolves the current candidate (see the release status above) when using `@next`.
 2. Typecheck your application.
 3. Build or export for every platform you ship.
 4. Exercise at least one real BeeUI component under `BeeUIProvider`.

@@ -4,18 +4,14 @@ This document defines BeeUI release-candidate evidence and the publication contr
 
 ## Current distribution model
 
-BeeUI's current public release candidate is **`0.86.2-rc.3`**, published under the opt-in npm **`next`** dist-tag. The lockstep release group is:
+BeeUI's release-candidate line publishes under the opt-in npm **`next`** dist-tag ahead of stable `0.86.2` promotion. The lockstep release group is:
 
 - `@beemvp/beeui-core`
 - `@beemvp/beeui-tokens`
 - `@beemvp/beeui-ui`
 - `@beemvp/beeui-cli`
 
-Observed registry state on 2026-09-24T09:27:49Z:
-
-- `next` → `0.86.2-rc.3` for all four packages;
-- `latest` → `0.86.2-rc.3` for all four packages (moved by the owner after publication and verification);
-- stable `0.86.2` is not yet published/promoted.
+For the exact currently published version, dist-tag targets and observation timestamp, see [`docs/rc-candidate.md`](rc-candidate.md), [`docs/dist-tag-policy.md`](dist-tag-policy.md), or `README.md`'s generated release-status block.
 
 Use the explicit prerelease channel:
 
@@ -24,7 +20,7 @@ npm install @beemvp/beeui-ui@next @beemvp/beeui-core@next @beemvp/beeui-tokens@n
 npx @beemvp/beeui-cli@next --help
 ```
 
-During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC once the owner moves it for all four packages (owner decision 2026-09-24, issue #561); the observation above is the last recorded state.
+During the `0.86.2` prerelease line `latest` follows the newest complete, verified RC once the owner moves it for all four packages (owner decision 2026-09-24, issue #561); `docs/rc-candidate.md` records the last observed registry state.
 
 `docs/dist-tag-policy.md` is the machine-checked channel/publication authority. `docs/rc-candidate.md` contains the exact current candidate, publication lineage and observed registry metadata.
 
@@ -51,9 +47,9 @@ Artifact integrity proves bytes. It does not by itself prove which Git commit pr
 
 The temporary bootstrap token was a first-publication exception, not the steady-state mechanism.
 
-### Current rc.3 publication
+### Current candidate publication
 
-`0.86.2-rc.3` used the protected staged path:
+The current candidate used the protected staged path (see [`docs/rc-candidate.md`](rc-candidate.md) for its exact identity):
 
 - candidate source SHA: `1110844adec4fbbf6ae73d2f8ed1ed12986a5047`;
 - release-prep head: `3ccecae3` (evidence only);
