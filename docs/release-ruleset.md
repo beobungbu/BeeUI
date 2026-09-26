@@ -55,9 +55,15 @@ Applied as repository ruleset `main-required-checks-and-protections` (id `218882
 
 The ruleset enforces pull-request merging, stale-review dismissal, the five strict required checks above, linear history, conversation resolution, force-push/deletion protection, and the repository-admin emergency bypass path.
 
+### Required approving reviews: 0 (deliberate)
+
+`requiredApprovingReviewCount` is `0` because BeeUI has one maintainer: a required approval could only be satisfied by the admin bypass, which would make every merge an audit exception. Until a second maintainer exists the convention is that the author reviews the full diff against its plan before merging and records any bypass. The ruleset does not enforce that convention and this document does not claim it does. When a second maintainer joins, raise the count to `1` in the live ruleset and in the JSON block above in the same change.
+
 ## Tag protection ruleset (`v*`)
 
-Ruleset `release-tag-protection` (id `21888212`) protects `refs/tags/v*`. No tag is created by ordinary CI verification.
+Ruleset `release-tag-protection` (id `21888212`) protects `refs/tags/v*`: creation, update and deletion are limited to the repository-admin bypass, and tags must be signed. No workflow can create a release tag with `GITHUB_TOKEN`, and none tries to.
+
+The owner creates the repository release tag by hand on the promoted `main` commit, `git tag -s v<version> <main-commit>` followed by `git push origin v<version>`. `.github/workflows/tag-release-verify.yml` then runs `pnpm release:tag:verify` on the pushed tag: it must be annotated, its name must equal the lockstep version in all four package manifests at the tagged commit, and that commit must be on `main`. The workflow is read-only and does not start publication; `npm-release.yml` stays `workflow_dispatch`.
 
 ## Release environment (`release`)
 

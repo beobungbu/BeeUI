@@ -1,0 +1,38 @@
+name: tag-release-verify
+
+# Verifies a repository release tag after the owner pushes it. Only admins can create `v*` tags
+# (ruleset release-tag-protection, signed tags required), so no workflow creates one; this job
+# only checks it: annotated, named after the lockstep version at the tagged commit, and on main.
+# It publishes nothing and never starts publication — npm-release.yml stays workflow_dispatch.
+
+on:
+  push:
+    tags:
+      - v*
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 24.13.1
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Verify release tag
+        run: |
+          git fetch --no-tags origin main
+          node ./scripts/release/verify-release-tag.mjs "$GITHUB_REF_NAME"
