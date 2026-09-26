@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 
-// `pnpm release:prepare <version>` — the single supported way to move the workspace to a new
-// candidate/stable lockstep version while the 0.86.2 line uses the explicit preparation tool
-// (Changesets prerelease adoption is deferred to a later phase; see the release-flow plan). It
-// performs every mechanical step a bump requires and stops with an actionable error instead of
-// silently editing prose:
+// `pnpm release:prepare <version>` — the explicit way to move the workspace to a given
+// candidate/stable lockstep version. Routine bumps go through `pnpm release:version`
+// (scripts/release/version-packages.mjs), which lets Changesets pick the next version from the
+// pending changesets and then runs the same finishing steps as this tool. Keep this one for a
+// deliberate override (for example leaving the Changesets prerelease line). It performs every
+// mechanical step a bump requires and stops with an actionable error instead of silently editing
+// prose:
 //   1. validate <version> against the stable release line (`candidateStableVersion`);
 //   2. write it to the four lockstep package manifests (packages/ui/package.json is the single
-//      authored current version read elsewhere; the other three move with it here because
-//      Changesets is not yet operating the release flow — see the release-flow plan's D4);
+//      authored current version read elsewhere; the other three always move with it);
 //   3. propagate it to the non-workspace follower manifests (`pnpm version:sync`);
 //   4. regenerate every canonical generated surface that embeds the version;
 //   5. report any hand-maintained file that still names the previous version — this tool never
@@ -23,7 +24,7 @@ import { EXPECTED_PACKAGE_NAMES } from '../check-release-control-plane.mjs';
 import { ROOT_DIR, derivePrereleasePattern, readPublicationState } from '../public-site-contract-lib.mjs';
 import { SOURCE_MANIFEST, syncRootVersion } from '../sync-root-version.mjs';
 
-// The four packages Changesets would move together as a `fixed` group once Phase 03 lands.
+// The four packages Changesets moves together as a `fixed` group (.changeset/config.json).
 // `packages/ui/package.json` (`SOURCE_MANIFEST`) is also the single authored current version read
 // by every check; the other three are peers moved here so the lockstep set never desyncs.
 export const LOCKSTEP_MANIFESTS = [...EXPECTED_PACKAGE_NAMES.keys()];
@@ -92,12 +93,24 @@ export function collectPreviousVersionLiterals(rootDir, previousVersion) {
   }
 }
 
-function readManifestVersion(rootDir, relPath) {
+export function readManifestVersion(rootDir, relPath) {
   return JSON.parse(fs.readFileSync(path.join(rootDir, relPath), 'utf8')).version;
 }
 
 function runGenerator(relPath, rootDir) {
   execFileSync(process.execPath, [path.join(rootDir, relPath)], { stdio: 'inherit', cwd: rootDir });
+}
+
+// The steps every bump shares once the four lockstep manifests carry the new version, whoever
+// wrote it (this tool or `changeset version`).
+export function finishVersionBump(previousVersion, version, { rootDir = ROOT_DIR, generators = CANDIDATE_GENERATORS } = {}) {
+  const { changed: syncedFollowers } = syncRootVersion(rootDir);
+
+  for (const generator of generators) runGenerator(generator, rootDir);
+
+  const remainingLiterals = previousVersion === version ? [] : collectPreviousVersionLiterals(rootDir, previousVersion);
+
+  return { previousVersion, version, syncedFollowers, remainingLiterals };
 }
 
 export function prepareCandidate(version, { rootDir = ROOT_DIR, generators = CANDIDATE_GENERATORS } = {}) {
@@ -106,13 +119,24 @@ export function prepareCandidate(version, { rootDir = ROOT_DIR, generators = CAN
 
   const previousVersion = readManifestVersion(rootDir, SOURCE_MANIFEST);
   setLockstepManifestVersions(rootDir, version);
-  const { changed: syncedFollowers } = syncRootVersion(rootDir);
+  return finishVersionBump(previousVersion, version, { rootDir, generators });
+}
 
-  for (const generator of generators) runGenerator(generator, rootDir);
-
-  const remainingLiterals = previousVersion === version ? [] : collectPreviousVersionLiterals(rootDir, previousVersion);
-
-  return { previousVersion, version, syncedFollowers, remainingLiterals };
+export function printBumpReport(result, label) {
+  console.log(`${label} ${result.version} (was ${result.previousVersion}).`);
+  console.log(`Lockstep manifests: ${LOCKSTEP_MANIFESTS.join(', ')}.`);
+  console.log(`Synced follower manifests: ${result.syncedFollowers.length ? result.syncedFollowers.join(', ') : 'none (already in sync)'}.`);
+  console.log(`Regenerated canonical surfaces: ${CANDIDATE_GENERATORS.length} generators ran.`);
+  if (result.remainingLiterals.length) {
+    console.log(
+      `\n${result.remainingLiterals.length} tracked line(s) still contain the previous version ${result.previousVersion}. ` +
+        'This tool does not edit prose; review each and update hand-maintained current-state sentences only ' +
+        '(dated history/evidence entries should keep the old literal):',
+    );
+    for (const hit of result.remainingLiterals) console.log(`- ${hit}`);
+  } else {
+    console.log('\nNo remaining previous-version literal was found in tracked files.');
+  }
 }
 
 function main() {
@@ -123,21 +147,7 @@ function main() {
     return;
   }
   try {
-    const result = prepareCandidate(version);
-    console.log(`Prepared candidate ${result.version} (was ${result.previousVersion}).`);
-    console.log(`Set lockstep manifests: ${LOCKSTEP_MANIFESTS.join(', ')}.`);
-    console.log(`Synced follower manifests: ${result.syncedFollowers.length ? result.syncedFollowers.join(', ') : 'none (already in sync)'}.`);
-    console.log(`Regenerated canonical surfaces: ${CANDIDATE_GENERATORS.length} generators ran.`);
-    if (result.remainingLiterals.length) {
-      console.log(
-        `\n${result.remainingLiterals.length} tracked line(s) still contain the previous version ${result.previousVersion}. ` +
-          'This tool does not edit prose; review each and update hand-maintained current-state sentences only ' +
-          '(dated history/evidence entries should keep the old literal):',
-      );
-      for (const hit of result.remainingLiterals) console.log(`- ${hit}`);
-    } else {
-      console.log('\nNo remaining previous-version literal was found in tracked files.');
-    }
+    printBumpReport(prepareCandidate(version), 'Prepared candidate');
   } catch (error) {
     console.error(`release:prepare failed: ${error.message}`);
     process.exitCode = 1;
