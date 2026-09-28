@@ -37,6 +37,11 @@ export type ToastOptions = {
   title: string;
   /** Secondary line under the title. */
   description?: string;
+  /**
+   * Accessible name for the close button. Defaults to `Dismiss ${title}` for backward
+   * compatibility. Supply localized copy when the application UI is not English.
+   */
+  dismissAccessibilityLabel?: string;
   /** Semantic surface the toast renders in; each value maps to one surface class. */
   variant?: ToastVariant;
   /**
@@ -61,6 +66,7 @@ type NormalizedToast = {
   id: ToastId;
   title: string;
   description?: string;
+  dismissAccessibilityLabel?: string;
   variant: ToastVariant;
   duration: ToastDuration;
   action?: ToastAction;
@@ -124,6 +130,10 @@ function normalizeToastOptions(options: ToastOptions): Omit<NormalizedToast, 'id
     typeof options.description === 'string' && options.description.trim()
       ? options.description
       : undefined;
+  const dismissAccessibilityLabel =
+    typeof options.dismissAccessibilityLabel === 'string' && options.dismissAccessibilityLabel.trim()
+      ? options.dismissAccessibilityLabel.trim()
+      : undefined;
 
   let action: ToastAction | undefined;
   if (
@@ -143,6 +153,7 @@ function normalizeToastOptions(options: ToastOptions): Omit<NormalizedToast, 'id
   return {
     title,
     description,
+    dismissAccessibilityLabel,
     variant,
     duration: normalizeDuration(options.duration),
     action,
@@ -239,7 +250,7 @@ function ToastCard({ toast, dismiss }: { toast: NormalizedToast; dismiss: (id: T
           ) : null}
         </View>
         <Pressable
-          accessibilityLabel={`Dismiss ${toast.title}`}
+          accessibilityLabel={toast.dismissAccessibilityLabel ?? `Dismiss ${toast.title}`}
           accessibilityRole="button"
           className="rounded-md px-2 py-1"
           onPress={() => dismiss(toast.id)}

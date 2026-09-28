@@ -4,8 +4,30 @@ import { Pressable, View, type PressableProps, type ViewProps } from 'react-nati
 import { Text } from './text';
 import { useDirection } from './use-direction';
 
+export type PaginationLabels = {
+  /** Accessible name for the pagination container. */
+  container: string;
+  /** Accessible name for the previous-page control. */
+  previous: string;
+  /** Accessible name for the next-page control. */
+  next: string;
+  /** Accessible name for an invalid/non-finite page item. */
+  invalidPage: string;
+  /** Accessible name formatter for numbered page items. */
+  page: (page: number) => string;
+};
+
+const DEFAULT_PAGINATION_LABELS: PaginationLabels = {
+  container: 'Pagination',
+  previous: 'Previous page',
+  next: 'Next page',
+  invalidPage: 'Page',
+  page: (page) => `Page ${page}`,
+};
+
 type PaginationContextValue = {
   disabled: boolean;
+  labels: PaginationLabels;
   onPageChange?: (page: number) => void;
   page: number;
   pageCount: number;
@@ -24,6 +46,11 @@ export type PaginationProps = Omit<ViewProps, 'children' | 'role'> & {
   className?: string;
   /** Disables every `PaginationItem` inside, overriding each item's own `disabled`. Defaults to false. */
   disabled?: boolean;
+  /**
+   * Localized accessibility labels inherited by every item. Omitted fields keep the existing
+   * English defaults; an explicit `accessibilityLabel` on the root or an item still wins.
+   */
+  labels?: Partial<PaginationLabels>;
   /** Called with the requested page number when a non-selected, in-range `PaginationItem` is pressed. Not called for the currently selected page or an out-of-range target. */
   onPageChange?: (page: number) => void;
   /** The current page, clamped to `[1, pageCount]`. Non-finite values fall back to 1. */
@@ -35,10 +62,11 @@ export type PaginationProps = Omit<ViewProps, 'children' | 'role'> & {
 export const Pagination = React.forwardRef<React.ComponentRef<typeof View>, PaginationProps>(
   (
     {
-      accessibilityLabel = 'Pagination',
+      accessibilityLabel,
       children,
       className,
       disabled = false,
+      labels,
       onPageChange,
       page,
       pageCount,
@@ -51,9 +79,25 @@ export const Pagination = React.forwardRef<React.ComponentRef<typeof View>, Pagi
       : 1;
     const finitePage = Number.isFinite(page) ? Math.floor(page) : 1;
     const normalizedPage = Math.min(normalizedPageCount, Math.max(1, finitePage));
+    const resolvedLabels = React.useMemo<PaginationLabels>(
+      () => ({
+        container: labels?.container ?? DEFAULT_PAGINATION_LABELS.container,
+        previous: labels?.previous ?? DEFAULT_PAGINATION_LABELS.previous,
+        next: labels?.next ?? DEFAULT_PAGINATION_LABELS.next,
+        invalidPage: labels?.invalidPage ?? DEFAULT_PAGINATION_LABELS.invalidPage,
+        page: labels?.page ?? DEFAULT_PAGINATION_LABELS.page,
+      }),
+      [labels],
+    );
     const context = React.useMemo(
-      () => ({ disabled, onPageChange, page: normalizedPage, pageCount: normalizedPageCount }),
-      [disabled, normalizedPage, normalizedPageCount, onPageChange],
+      () => ({
+        disabled,
+        labels: resolvedLabels,
+        onPageChange,
+        page: normalizedPage,
+        pageCount: normalizedPageCount,
+      }),
+      [disabled, normalizedPage, normalizedPageCount, onPageChange, resolvedLabels],
     );
 
     return (
@@ -61,7 +105,7 @@ export const Pagination = React.forwardRef<React.ComponentRef<typeof View>, Pagi
         <View
           ref={ref}
           {...props}
-          accessibilityLabel={accessibilityLabel}
+          accessibilityLabel={accessibilityLabel ?? resolvedLabels.container}
           className={cn('flex-row flex-wrap items-center gap-2', className)}
         >
           {children}
@@ -164,12 +208,12 @@ export const PaginationItem = React.forwardRef<
             : String(targetPage);
     const inferredLabel =
       type === 'previous'
-        ? 'Previous page'
+        ? pagination.labels.previous
         : type === 'next'
-          ? 'Next page'
+          ? pagination.labels.next
           : invalidPageItem
-            ? 'Page'
-            : `Page ${targetPage}`;
+            ? pagination.labels.invalidPage
+            : pagination.labels.page(targetPage);
 
     React.useEffect(() => {
       if (typeof __DEV__ !== 'undefined' && __DEV__ && invalidPageItem) {
