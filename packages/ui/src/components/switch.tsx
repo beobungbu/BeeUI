@@ -51,8 +51,6 @@ export const Switch = React.forwardRef<React.ComponentRef<typeof RNSwitch>, Swit
     },
     ref,
   ) => {
-    useRequiredCallbackWarning('Switch', 'onValueChange', onValueChange, disabled);
-
     // Inside a `Field`, a Switch with no accessible name of its own (no
     // caller `accessibilityLabel`/`accessibilityLabelledBy`) falls back to the
     // Field's own label the same way `Input` already does, so
@@ -61,6 +59,7 @@ export const Switch = React.forwardRef<React.ComponentRef<typeof RNSwitch>, Swit
     // `accessibilityLabel`/`accessibilityLabelledBy` from the caller always wins.
     const field = useFieldContext();
     const resolvedDisabled = disabled || field?.disabled === true;
+    useRequiredCallbackWarning('Switch', 'onValueChange', onValueChange, resolvedDisabled);
     const resolvedAccessibilityLabelledBy = accessibilityLabelledBy ?? field?.labelNativeID;
     // The real DOM `aria-labelledby` attribute is a single space-separated ID
     // list string, while the RN-side `accessibilityLabelledBy` prop also

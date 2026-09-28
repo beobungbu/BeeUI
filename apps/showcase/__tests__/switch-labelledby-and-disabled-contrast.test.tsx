@@ -8,6 +8,7 @@ describe('BeeUI Switch accessibilityLabelledBy reaches the interactive input', (
 
   afterEach(() => {
     Object.defineProperty(Platform, 'OS', { configurable: true, value: originalPlatformOS });
+    jest.restoreAllMocks();
   });
 
   it('forwards a literal aria-labelledby on Web alongside accessibilityLabelledBy', () => {
@@ -50,6 +51,20 @@ describe('BeeUI Switch accessibilityLabelledBy reaches the interactive input', (
 
     const control = screen.UNSAFE_getByType(RNSwitch);
     expect(control.props.accessibilityLabel).toBe('Push notifications');
+  });
+
+  it('does not warn for a Switch disabled by its enclosing Field', () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    render(
+      <Field disabled label="Notifications">
+        <Switch value />
+      </Field>,
+    );
+
+    expect(warn).not.toHaveBeenCalledWith(
+      expect.stringContaining('Switch'),
+    );
   });
 });
 
