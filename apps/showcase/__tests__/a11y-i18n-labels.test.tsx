@@ -3,7 +3,7 @@ import {
   PaginationItem,
   useToast,
 } from '@beemvp/beeui-ui';
-import { act, render, waitFor } from '@testing-library/react-native';
+import { render, waitFor } from '@testing-library/react-native';
 import * as React from 'react';
 import { View } from 'react-native';
 import { ToastRuntimeProvider } from '../../../packages/ui/src/components/toast';
