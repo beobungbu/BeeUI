@@ -100,6 +100,25 @@ function renderMenuChildren(children: React.ReactNode, textClassName?: string) {
   });
 }
 
+function getCheckableMenuItemAccessibilityProps(
+  kind: 'checkbox' | 'radio',
+  checked: boolean,
+): PressableProps {
+  if (Platform.OS === 'web') {
+    return {
+      'aria-checked': checked,
+      role: kind === 'checkbox' ? 'menuitemcheckbox' : 'menuitemradio',
+    } as unknown as PressableProps;
+  }
+  return { accessibilityRole: kind };
+}
+
+function getRadioGroupAccessibilityProps(): ViewProps {
+  return Platform.OS === 'web'
+    ? ({ role: 'group' } as unknown as ViewProps)
+    : ({ accessibilityRole: 'radiogroup' } as ViewProps);
+}
+
 type DropdownMenuBaseProps = {
   children?: React.ReactNode;
 };
@@ -725,7 +744,7 @@ export const DropdownMenuCheckboxItem = React.forwardRef<
       <Pressable
         ref={registration.setRef}
         {...props}
-        accessibilityRole="menuitem"
+        {...getCheckableMenuItemAccessibilityProps('checkbox', checked)}
         accessibilityState={{ ...accessibilityState, checked, disabled: isDisabled }}
         className={cn(
           'min-h-10 flex-row items-center gap-2 rounded-md px-3 py-2 active:bg-muted web:hover:bg-surface-muted web:focus-visible:bee-focus-ring',
@@ -747,7 +766,6 @@ export const DropdownMenuCheckboxItem = React.forwardRef<
           onPress?.(event);
           toggle();
         }}
-        role="menuitem"
         tabIndex={registration.current ? 0 : -1}
       >
         <Text accessibilityElementsHidden aria-hidden className="w-4 text-center text-foreground">
@@ -810,7 +828,7 @@ export function DropdownMenuRadioGroup({
 
   return (
     <DropdownMenuRadioGroupContext.Provider value={context}>
-      <View {...props} role="radiogroup">
+      <View {...props} {...getRadioGroupAccessibilityProps()}>
         {children}
       </View>
     </DropdownMenuRadioGroupContext.Provider>
@@ -879,7 +897,7 @@ export const DropdownMenuRadioItem = React.forwardRef<
       <Pressable
         ref={registration.setRef}
         {...props}
-        accessibilityRole="menuitem"
+        {...getCheckableMenuItemAccessibilityProps('radio', checked)}
         accessibilityState={{ ...accessibilityState, checked, disabled: resolvedDisabled }}
         className={cn(
           'min-h-10 flex-row items-center gap-2 rounded-md px-3 py-2 active:bg-muted web:hover:bg-surface-muted web:focus-visible:bee-focus-ring',
@@ -901,7 +919,6 @@ export const DropdownMenuRadioItem = React.forwardRef<
           onPress?.(event);
           select();
         }}
-        role="menuitem"
         tabIndex={registration.current ? 0 : -1}
       >
         <Text accessibilityElementsHidden aria-hidden className="w-4 text-center text-foreground">
