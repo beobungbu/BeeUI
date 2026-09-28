@@ -32,6 +32,7 @@ import {
 import { getSelectDefaultPlaceholder } from './select-locale';
 import { Text } from './text';
 import { resolveDirection } from './use-direction';
+import { useWindowOrderedItems } from './use-window-ordered-items';
 
 export type SelectOptionValue = string;
 export type SelectPlacement = AnchoredOverlayPlacement;
@@ -61,7 +62,6 @@ type SelectItemRegistration = {
   focus: (options?: SelectFocusOptions) => void;
   id: string;
   node: () => SelectFocusableNode | null;
-  order: number;
   textValue: string;
   value: SelectOptionValue;
 };
@@ -92,7 +92,6 @@ function useSelectRootContext() {
 }
 
 type SelectItemsContextValue = {
-  claimOrder: () => number;
   currentItemId: string | null;
   registerLayout: (id: string, y: number, height: number) => void;
   setCurrentItem: (id: string) => void;
@@ -249,7 +248,6 @@ export function Select(props: SelectProps) {
         existing.disabled === item.disabled &&
         existing.focus === item.focus &&
         existing.node === item.node &&
-        existing.order === item.order &&
         existing.textValue === item.textValue &&
         existing.value === item.value
       ) {
@@ -650,13 +648,7 @@ export const SelectContent = React.forwardRef<
       React.ComponentRef<typeof ScrollView> | React.ComponentRef<typeof View> | null
     >(null);
     const typeaheadRef = React.useRef({ query: '', timestamp: 0 });
-    const renderOrderRef = React.useRef(0);
-    renderOrderRef.current = 0;
-    const claimOrder = React.useCallback(() => renderOrderRef.current++, []);
-    const orderedItems = React.useMemo(
-      () => [...items].sort((a, b) => a.order - b.order),
-      [items],
-    );
+    const { orderedItems } = useWindowOrderedItems(items);
     const { isTopmost } = useOverlayDismissable({
       onDismiss: () => setOpen(false),
       open,
@@ -862,8 +854,8 @@ export const SelectContent = React.forwardRef<
     }, []);
 
     const itemsContext = React.useMemo<SelectItemsContextValue>(
-      () => ({ claimOrder, currentItemId, registerLayout, setCurrentItem }),
-      [claimOrder, currentItemId, registerLayout, setCurrentItem],
+      () => ({ currentItemId, registerLayout, setCurrentItem }),
+      [currentItemId, registerLayout, setCurrentItem],
     );
 
     const resolvedStyle = !open
@@ -991,7 +983,6 @@ export const SelectItem = React.forwardRef<React.ComponentRef<typeof Pressable>,
     const itemsContext = React.useContext(SelectItemsContext);
     if (!itemsContext) throw new Error('SelectItem must be used inside SelectContent.');
     const id = useOverlayId('beeui-select-item');
-    const order = itemsContext.claimOrder();
     const internalRef = React.useRef<SelectFocusableNode | null>(null);
     const focusNode = React.useCallback(
       (options?: SelectFocusOptions) => internalRef.current?.focus?.(options),
@@ -1034,12 +1025,11 @@ export const SelectItem = React.forwardRef<React.ComponentRef<typeof Pressable>,
         focus: focusNode,
         id,
         node: getNode,
-        order,
         textValue: resolvedTextValue,
         value,
       });
       return () => unregisterItem(id);
-    }, [disabled, focusNode, getNode, id, order, registerItem, resolvedTextValue, unregisterItem, value]);
+    }, [disabled, focusNode, getNode, id, registerItem, resolvedTextValue, unregisterItem, value]);
 
     // On Web the current option follows real pointer movement, not hover-in: a
     // browser also reports hover when the list opens (or scrolls) under a
