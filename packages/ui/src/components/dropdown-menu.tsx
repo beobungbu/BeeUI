@@ -27,6 +27,7 @@ import {
   type OverlayMeasurableNode,
 } from './overlay-runtime';
 import { Text, type TextProps } from './text';
+import { useWindowOrderedItems } from './use-window-ordered-items';
 
 export type DropdownMenuPlacement = AnchoredOverlayPlacement;
 export type DropdownMenuAlign = AnchoredOverlayAlign;
@@ -49,15 +50,17 @@ function useDropdownMenuRootContext() {
   return context;
 }
 
-type MenuFocusableNode = React.ComponentRef<typeof Pressable> & {
-  focus?: () => void;
-};
+type MenuFocusableNode = React.ComponentRef<typeof Pressable> &
+  OverlayMeasurableNode & {
+    focus?: () => void;
+  };
 
 type MenuItemRegistration = {
   activate: () => void;
   disabled: boolean;
   focus: () => void;
   id: string;
+  node: () => MenuFocusableNode | null;
 };
 
 type DropdownMenuItemsContextValue = {
@@ -189,7 +192,7 @@ export function DropdownMenu(props: DropdownMenuProps) {
 
   // #146 — focus-restoration contract: mirrors `select.tsx`'s identical
   // `focusTrigger`/`previousOpenRef` effect. `DropdownMenuContent` now moves
-  // real DOM focus onto the roving-tabindex current item while open (see
+  // real DOM focus onto the roving-tabindex "current" item while open (see
   // that file's own #146 comment); closing (Escape, outside press, item
   // selection) then unmounts that focused item, which the browser would
   // otherwise resolve by moving focus to `document.body` instead of back to
@@ -328,6 +331,7 @@ export const DropdownMenuContent = React.forwardRef<
     const rootContext = useDropdownMenuRootContext();
     const { anchorRef, contentNativeID, open, overlayId, setOpen } = rootContext;
     const [items, setItems] = React.useState<MenuItemRegistration[]>([]);
+    const { orderedItems } = useWindowOrderedItems(items);
     const [currentItemId, setCurrentItemId] = React.useState<string | null>(null);
     const { isTopmost } = useOverlayDismissable({
       onDismiss: () => setOpen(false),
@@ -374,10 +378,12 @@ export const DropdownMenuContent = React.forwardRef<
         return;
       }
       setCurrentItemId((current) => {
-        if (current && items.some((item) => item.id === current && !item.disabled)) return current;
-        return items.find((item) => !item.disabled)?.id ?? null;
+        if (current && orderedItems.some((item) => item.id === current && !item.disabled)) {
+          return current;
+        }
+        return orderedItems.find((item) => !item.disabled)?.id ?? null;
       });
-    }, [items, open]);
+    }, [open, orderedItems]);
 
     // #146 — real Web keyboard reachability: without moving actual DOM focus
     // onto the roving-tabindex "current" item, a keyboard user who Tabs to
@@ -389,16 +395,16 @@ export const DropdownMenuContent = React.forwardRef<
     // the same roving-tabindex contract.
     React.useEffect(() => {
       if (!open || Platform.OS !== 'web' || !currentItemId) return;
-      items.find((item) => item.id === currentItemId)?.focus();
-    }, [currentItemId, items, open]);
+      orderedItems.find((item) => item.id === currentItemId)?.focus();
+    }, [currentItemId, open, orderedItems]);
 
     const setCurrentItem = React.useCallback(
       (id: string) => {
-        const target = items.find((item) => item.id === id && !item.disabled);
+        const target = orderedItems.find((item) => item.id === id && !item.disabled);
         if (!target) return;
         setCurrentItemId(id);
       },
-      [items],
+      [orderedItems],
     );
 
     const focusItem = React.useCallback((item: MenuItemRegistration | undefined) => {
@@ -409,20 +415,20 @@ export const DropdownMenuContent = React.forwardRef<
 
     const moveCurrent = React.useCallback(
       (delta: 1 | -1) => {
-        const enabled = items.filter((item) => !item.disabled);
+        const enabled = orderedItems.filter((item) => !item.disabled);
         if (!enabled.length) return;
         const currentIndex = enabled.findIndex((item) => item.id === currentItemId);
         const baseIndex = currentIndex >= 0 ? currentIndex : delta > 0 ? -1 : 0;
         const nextIndex = (baseIndex + delta + enabled.length) % enabled.length;
         focusItem(enabled[nextIndex]);
       },
-      [currentItemId, focusItem, items],
+      [currentItemId, focusItem, orderedItems],
     );
 
     const activateCurrent = React.useCallback(() => {
-      const current = items.find((item) => item.id === currentItemId && !item.disabled);
+      const current = orderedItems.find((item) => item.id === currentItemId && !item.disabled);
       current?.activate();
-    }, [currentItemId, items]);
+    }, [currentItemId, orderedItems]);
 
     const handleWebKeyDown = React.useCallback(
       (event: WebKeyboardEvent) => {
@@ -437,11 +443,11 @@ export const DropdownMenuContent = React.forwardRef<
             break;
           case 'Home':
             event.preventDefault?.();
-            focusItem(items.find((item) => !item.disabled));
+            focusItem(orderedItems.find((item) => !item.disabled));
             break;
           case 'End':
             event.preventDefault?.();
-            focusItem([...items].reverse().find((item) => !item.disabled));
+            focusItem([...orderedItems].reverse().find((item) => !item.disabled));
             break;
           case 'Enter':
           case ' ':
@@ -452,7 +458,7 @@ export const DropdownMenuContent = React.forwardRef<
             break;
         }
       },
-      [activateCurrent, focusItem, items, moveCurrent],
+      [activateCurrent, focusItem, moveCurrent, orderedItems],
     );
 
     const itemsContext = React.useMemo<DropdownMenuItemsContextValue>(
@@ -593,6 +599,7 @@ function useRegisteredMenuItem({
       disabled,
       activate: () => activateRef.current(),
       focus: () => internalRef.current?.focus?.(),
+      node: () => internalRef.current,
     });
   }, [disabled, id, registerItem]);
 
