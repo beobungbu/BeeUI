@@ -1,6 +1,7 @@
 import { cn } from '@beemvp/beeui-core';
 import * as React from 'react';
 import {
+  Platform,
   Pressable,
   View,
   type LayoutChangeEvent,
@@ -48,6 +49,70 @@ function resolveMinWidthScale(controlWidth: number, segments: SegmentMeasurement
 
 function sameScale(a: number, b: number) {
   return Math.abs(a - b) < 0.001;
+}
+
+// Web-only structural DOM shapes. `packages/ui` deliberately excludes the DOM
+// lib, so keep this narrow instead of pulling browser globals into the public
+// TypeScript surface. The temporary clone is appended only long enough to read
+// word widths, then removed synchronously; unlike the RC3 hidden React child it
+// never remains in `textContent` for Playwright/text selectors to discover.
+type WebMeasureStyle = {
+  display: string;
+  left: string;
+  maxWidth: string;
+  minWidth: string;
+  pointerEvents: string;
+  position: string;
+  top: string;
+  visibility: string;
+  whiteSpace: string;
+  width: string;
+};
+
+type WebMeasureNode = {
+  cloneNode: (deep?: boolean) => WebMeasureNode;
+  getBoundingClientRect: () => { width: number };
+  remove: () => void;
+  setAttribute: (name: string, value: string) => void;
+  style: WebMeasureStyle;
+  textContent: string | null;
+};
+
+type WebMeasureDocument = {
+  body?: { appendChild: (node: WebMeasureNode) => void };
+};
+
+function measureWidestWebWord(source: WebMeasureNode | null, words: readonly string[]): number {
+  if (Platform.OS !== 'web' || !source || words.length === 0) return 0;
+  const doc = (globalThis as { document?: WebMeasureDocument }).document;
+  if (!doc?.body) return 0;
+
+  const clone = source.cloneNode(true);
+  clone.setAttribute('aria-hidden', 'true');
+  Object.assign(clone.style, {
+    display: 'inline-block',
+    left: '-10000px',
+    maxWidth: 'none',
+    minWidth: '0',
+    pointerEvents: 'none',
+    position: 'fixed',
+    top: '0',
+    visibility: 'hidden',
+    whiteSpace: 'pre',
+    width: 'max-content',
+  });
+  doc.body.appendChild(clone);
+
+  let widest = 0;
+  try {
+    for (const word of words) {
+      clone.textContent = word;
+      widest = Math.max(widest, clone.getBoundingClientRect().width);
+    }
+  } finally {
+    clone.remove();
+  }
+  return widest;
 }
 
 const SegmentedControlContext = React.createContext<SegmentedControlContextValue | null>(null);
@@ -177,21 +242,36 @@ export const SegmentedControlItem = React.forwardRef<
     )
       ? childArray.map(String).join('')
       : undefined;
-    const labelWords = inferredLabel?.split(/\s+/).filter(Boolean) ?? [];
+    const labelWords = React.useMemo(
+      () => inferredLabel?.split(/\s+/).filter(Boolean) ?? [],
+      [inferredLabel],
+    );
 
-    // Word-boundary floor: the widest single word (measured by an invisible
-    // copy of the label laid out one word per line at its natural width) plus
-    // this item's own horizontal padding and border, i.e. twice the label's
-    // start offset inside the item. Both stay constant while the item's width
-    // changes, so applying the floor cannot feed back into it. The extra 1px
-    // absorbs sub-pixel rounding of the measured word.
+    // Word-boundary floor: the widest single word plus this item's own
+    // horizontal padding and border, i.e. twice the label's start offset inside
+    // the item. Native keeps the invisible one-word-per-line measurement child;
+    // on Web that persistent text clone broke consumer text selectors (#650), so
+    // the visible label is cloned into the DOM only for a synchronous measurement
+    // and the clone is removed immediately. The extra 1px absorbs sub-pixel
+    // rounding of the measured word.
     const segmentId = React.useId();
     const { reportSegment } = control;
     const [widestWord, setWidestWord] = React.useState(0);
     const [labelInset, setLabelInset] = React.useState<number | null>(null);
     const [itemLayout, setItemLayout] = React.useState<{ width: number; x: number } | null>(null);
+    const webLabelRef = React.useRef<WebMeasureNode | null>(null);
     const required =
       widestWord > 0 && labelInset !== null ? Math.ceil(widestWord + 2 * labelInset) + 1 : 0;
+
+    const measureWebWords = React.useCallback(() => {
+      const next = measureWidestWebWord(webLabelRef.current, labelWords);
+      if (next <= 0) return;
+      setWidestWord((current) => (Math.abs(current - next) < 0.01 ? current : next));
+    }, [labelWords, labelClassName]);
+
+    React.useEffect(() => {
+      measureWebWords();
+    }, [measureWebWords]);
 
     React.useEffect(() => {
       if (!itemLayout) return undefined;
@@ -246,8 +326,12 @@ export const SegmentedControlItem = React.forwardRef<
         }}
         style={resolvedStyle}
       >
-        {labelWords.length > 0 ? (
-          <View aria-hidden className="absolute inset-0 flex-row items-start overflow-hidden opacity-0" pointerEvents="none">
+        {Platform.OS !== 'web' && labelWords.length > 0 ? (
+          <View
+            aria-hidden
+            className="absolute inset-0 flex-row items-start overflow-hidden opacity-0"
+            pointerEvents="none"
+          >
             <Text
               className={cn('shrink-0', labelClassName)}
               onLayout={(event) => setWidestWord(event.nativeEvent.layout.width)}
@@ -261,6 +345,13 @@ export const SegmentedControlItem = React.forwardRef<
           typeof child === 'string' || typeof child === 'number' ? (
             <Text
               key={`segmented-control-label-${index}`}
+              ref={
+                index === 0
+                  ? (node) => {
+                      webLabelRef.current = node as unknown as WebMeasureNode | null;
+                    }
+                  : undefined
+              }
               className={cn(
                 // A React Native flex item's default `flexShrink` is `0`
                 // (unlike CSS Web's `1` — see Button's own `max-w-full` note), so
@@ -273,7 +364,14 @@ export const SegmentedControlItem = React.forwardRef<
                 selected ? 'text-foreground' : 'text-muted-foreground',
                 labelClassName,
               )}
-              onLayout={index === 0 ? (event) => setLabelInset(event.nativeEvent.layout.x) : undefined}
+              onLayout={
+                index === 0
+                  ? (event) => {
+                      setLabelInset(event.nativeEvent.layout.x);
+                      measureWebWords();
+                    }
+                  : undefined
+              }
               variant="label"
             >
               {child}
